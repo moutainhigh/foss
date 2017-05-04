@@ -1,0 +1,1352 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE struts PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN" "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="load-default" extends="foss-default">
+		<interceptors>
+			<interceptor name="bampInterceptor" class="com.deppon.foss.module.transfer.common.server.interceptor.CommonBampInterceptor"></interceptor>
+			<interceptor-stack name="loadStack">
+				<interceptor-ref name="fossStack" />
+				<interceptor-ref name="bampInterceptor" />
+			</interceptor-stack>
+		</interceptors>
+		<default-interceptor-ref name="loadStack" />
+	</package>
+	
+	<package name="load" namespace="/load" extends="load-default">
+		<!-- ————————————————————快递到达action配置 ————————————————————-->
+		<!-- 新增快递到达单页面跳转 -->
+		<action name="expressArrivalindex">
+			<result name="success">expressArrivalindex.jsp</result>
+			<result name="error" type="json"/>
+		</action>
+		
+		<!-- 查询快递到达数据 -->
+		<action name="queryExpressArrival" class="expressArrivalAction" method="queryExpressArrival">
+			<result name="success" type="json" />
+			<result name="error" type="json"/>
+		</action>
+		<!-- 快递到达 确认按钮 -->
+		<action name="expressArrivalConfirm" class="expressArrivalAction" method="expressArrivalConfirm">
+			<result name="success" type="json" />
+			<result name="error" type="json"/>
+		</action>
+		
+		<!-- 快递到达退回按钮 -->
+		<action name="expressArrivalBack" class="expressArrivalAction" method="expressArrivalBack">
+			<result name="success" type="json" />
+			<result name="error" type="json"/>
+		</action>
+		<!-- ————————————————————快递到达action配置结束 ————————————————————-->
+		
+		<!-- ————————————————————交接单模块action配置———————————————————— -->
+		<!-- 新增交接单页面跳转 -->
+		<action name="handoverbilladdnewindex" class="handOverBillAction" method="handOverBillAddNewIndex">
+			<result name="success">handoverbilladdnewindex.jsp</result>
+			<result name="error">handoverbillerrorpage.jsp</result>
+		</action>
+		<!-- 新增交接单页面跳转 嵌入GUI -->
+		<action name="handoverbilladdnewindex_include" class="handOverBillAction" method="handOverBillAddNewIndex">
+			<result name="success">handoverbilladdnewindex_include.jsp</result>
+			<result name="error">handoverbillerrorpage_include.jsp</result>
+		</action>
+		<!-- 交接单新增页面，查询交接运单，查询库存运单action -->
+		<action name="queryWaybillStockList" class="handOverBillAction" method="queryWaybillStockList">
+			<result name="success" type="json" >
+			</result>
+			<result name="error" type="json"/>
+		</action>
+		<!--获取产品类型-->
+		<action name="queryProductList" class="handOverBillAction" method="queryProductList">
+			<result name="success" type="json" >
+			</result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 交接单新增页面，通过运单号快速获取运单及流水号库存action -->
+		<action name="queryWaybillStockByWaybillNo" class="handOverBillAction" method="queryWaybillStockByWaybillNo">
+			<result name="success" type="json" >
+			</result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 交接单新增页面，查询交接运单，查询在途运单action -->
+		<action name="queryEnRouteWaybillList" class="handOverBillAction" method="queryEnRouteWaybillList">
+			<result name="success" type="json" >
+			</result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 交接单新增页面，查询交接运单后，双击在途运单某条记录，根据交接单号、运单号查询库存流水号action-->
+		<action name="queryEnRouteSerialNoListByNos" class="handOverBillAction" method="queryEnRouteSerialNoListByNos">
+			<result name="success" type="json" >
+			</result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 交接单新增页面，查询交接运单后，双击某行记录，根据运单号查询库存流水号action-->
+		<action name="querySerialNoStockList" class="handOverBillAction" method="querySerialNoStockList">
+			<result name="success" type="json" >
+			</result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 新增交接单，保存数据action -->
+		<action name="saveHandOverBill" class = "handOverBillAction" method="saveHandOverBill">
+			<result name = "success" type = "json"></result>
+			<result name = "input" type = 'json'></result>
+			<result name = "error" type="json"/>
+		</action>
+		<!-- 查询交接单页面跳转 -->
+		<action name="handoverbillqueryindex" class = "handOverBillAction" method="handOverBillQueryIndex">
+			<result name="success">handoverbillqueryindex.jsp</result>
+			<result name="error">handoverbillerrorpage.jsp</result>
+		</action>
+		<!-- 查询交接单页面跳转 嵌入GUI -->
+		<action name="handoverbillqueryindex_include" class = "handOverBillAction" method="handOverBillQueryIndex">
+			<result name="success">handoverbillqueryindex_include.jsp</result>
+			<result name="error">handoverbillerrorpage_include.jsp</result>
+		</action>
+		<!-- 查询交接单，获取交接单List之action -->
+		<action name="queryHandOverBillList" class = "handOverBillAction" method = "queryHandOverBillList">
+			<result name = "success" type = "json"></result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 交接单查询界面，导出交接单 -->
+		<action name="exportHandOverBillExcel"  class = "handOverBillAction" method = "exportHandOverBillExcel">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel;charset=UTF-8</param>
+                <param name="inputName">handOverBillExcelStream</param>
+                <param name="contentDisposition">attachment;filename="${excelFileName}.xls"</param>
+                <param name="bufferSize">1024</param>
+            </result>
+            <result name="error" type="json"/>
+		</action>
+		<!-- 根据交接单号，获取交接单基本信息 -->
+		<action name="queryHandOverBillByNo" class = "handOverBillAction" method = "queryHandOverBillByNo">
+			<result name = "success" type = "json"></result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 交接单详情页面跳转 -->
+		<action name="handoverbillshowindex" >
+			<result name="success">handoverbillshowindex.jsp</result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 交接单详情页面跳转 嵌入GUI -->
+		<action name="handoverbillshowindex_include" >
+			<result name="success">handoverbillshowindex_include.jsp</result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 根据交接单号获取运单列表 -->
+		<action name="queryHandOverBillDetailByNo" class = "handOverBillAction" method = "queryHandOverBillDetailByNo">
+			<result name = "success" type = "json"></result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 根据交接单号和运单号获取流水号列表 -->
+		<action name="queryWaybillDetailByNos" class = "handOverBillAction" method = "queryWaybillDetailByNos">
+			<result name = "success" type = "json"></result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 根据交接单号，获取修改日志列表 -->
+		<action name="queryHandOverBillOptLogByNo" class = "handOverBillAction" method = "queryHandOverBillOptLogByNo">
+			<result name = "success" type = "json"></result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 根据交接单号，作废交接单 -->
+		<action name="cancelHandOverBillbyNo"  class = "handOverBillAction" method = "cancelHandOverBillByNo">
+			<result name = "success" type = "json"></result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 交接单详情界面，导出运单列表 -->
+		<action name="exportWayBillExcel"  class = "handOverBillAction" method = "exportWayBillExcel">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel;charset=UTF-8</param>
+                <param name="inputName">wayBillExcelStream</param>
+                <param name="contentDisposition">attachment;filename="${excelFileName}.xls"</param>
+                <param name="bufferSize">1024</param>
+            </result>
+            <result name="error" type="json"/>
+		</action>
+		<action name="checkPrintHandOverBill"  class = "handOverBillAction" method = "checkPrintHandOverBill">
+			<result name="success"	type="json" />
+			<result name="error"	type="json" />
+		</action>
+		<action name="getVehicleassembleNoByHandoverNo"  class = "handOverBillAction" method = "getVehicleassembleNoByHandoverNo">
+			<result name="success"	type="json" />
+			<result name="error"	type="json" />
+		</action>
+		<!-- 交接单修改页面跳转 -->
+		<action name="handoverbillmodifyindex" class = "handOverBillAction" method = "handOverBillModifyIndex">
+			<result name="success">handoverbillmodifyindex.jsp</result>
+			<result name="error">handoverbillerrorpage.jsp</result>
+		</action>
+		<!-- 交接单修改页面跳转 嵌入GUI -->
+		<action name="handoverbillmodifyindex_include" >
+			<result name="success">handoverbillmodifyindex_include.jsp</result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 交接单修改页面，根据交接单号加载所有流水号list -->
+		<action name="querySerialNoListByHandOverBillNo"  class = "handOverBillAction" method = "querySerialNoListByHandOverBillNo">
+			<result name = "success" type = "json"></result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 修改交接单后，提交修改数据action -->
+		<action name="updateHandOverBill"  class = "handOverBillAction" method = "updateHandOverBill">
+			<result name = "success" type = "json"></result>
+			<result name = "input" type = 'json'></result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 修改交接单(PDA)页面跳转action -->
+		<action name="handoverbillmodifypdaindex" class = "handOverBillAction" method = "handOverBillModifyIndex">
+			<result name="success">handoverbillmodifypdaindex.jsp</result>
+			<result name="error">handoverbillerrorpage.jsp</result>
+		</action>
+		<!-- 修改交接单(PDA)页面跳转action 嵌入GUI-->
+		<action name="handoverbillmodifypdaindex_include" >
+			<result name="success">handoverbillmodifypdaindex_include.jsp</result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 根据到达部门code，返回获取的外场实体，可能返回null -->
+		<action name="queryHandOverBillOutfieldByCode"  class = "handOverBillAction" method = "queryOutfieldByCode">
+			<result name = "success" type = "json"></result>
+			<result name = "input" type = 'json'></result>
+			<result name="error" type="json"/>
+		</action>
+		<!--根据车牌号获取司机信息-->
+		<action name="queryDriverInfoByVehicleNoForHandOverBill"  class = "handOverBillAction" method = "queryDriverInfoByVehicleNo">
+			<result name = "success" type = "json"></result>
+			<result name = "input" type = 'json'></result>
+			<result name="error" type="json"/>
+		</action>
+		<!--查询 交接单在租标记表中的预提状态 -->
+		<action name="queryHoldingstate" class="com.deppon.foss.module.transfer.load.server.action.HandOverBillAction" method="queryHoldingstate" >
+			<result name="success" type="json" />
+			<result name="error" type="json"/>
+		</action>
+		<!--————————————————————交接单模块action end————————————————————-->
+		
+		<!-- ————————————————————营业部交接单模块action配置———————————————————— -->
+		<!-- 新增交接单页面跳转 -->
+		<action name="handoverbillsaleaddnewindex" class="handOverBillSaleAction" method="handOverBillAddNewIndex">
+			<result name="success">handoverbillsaleaddnewindex.jsp</result>
+			<result name="error">handoverbillerrorpage.jsp</result>
+		</action>
+		<!-- 交接单新增页面，查询交接运单，查询库存运单action -->
+		<action name="queryWaybillSaleStockList" class="handOverBillSaleAction" method="queryWaybillStockList">
+			<result name="success" type="json" />
+			<result name="error" type="json"/>
+		</action>
+		<!-- 交接单新增页面，通过运单号快速获取运单及流水号库存action -->
+		<action name="queryWaybillStockSaleByWaybillNo" class="handOverBillSaleAction" method="queryWaybillStockByWaybillNo">
+			<result name="success" type="json" />
+			<result name="error" type="json"/>
+		</action>
+		<!-- 新增交接单，保存数据action -->
+		<action name="saveHandOverBillSale" class = "handOverBillSaleAction" method="saveHandOverBill">
+			<result name = "success" type = "json"></result>
+			<result name = "input" type = 'json'></result>
+			<result name = "error" type="json"/>
+		</action>
+		<!-- 查询交接单页面跳转 -->
+		<action name="handoverbillsalequeryindex" class = "handOverBillSaleAction" method="handOverBillQueryIndex">
+			<result name="success">handoverbillsalequeryindex.jsp</result>
+			<result name="error">handoverbillerrorpage.jsp</result>
+		</action>
+		<!-- 查询交接单，获取交接单List之action -->
+		<action name="queryHandOverBillSaleList" class = "handOverBillSaleAction" method = "queryHandOverBillList">
+			<result name = "success" type = "json"></result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 根据交接单号，获取交接单基本信息 -->
+		<action name="queryHandOverBillSaleByNo" class = "handOverBillSaleAction" method = "queryHandOverBillByNo">
+			<result name = "success" type = "json"></result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 交接单详情页面跳转 -->
+		<action name="handoverbillsaleshowindex" >
+			<result name="success">handoverbillsaleshowindex.jsp</result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 根据交接单号获取运单列表 -->
+		<action name="queryHandOverBillSaleDetailByNo" class = "handOverBillSaleAction" method = "queryHandOverBillDetailByNo">
+			<result name = "success" type = "json"></result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 根据交接单号，作废交接单 -->
+		<action name="cancelHandOverBillSalebyNo"  class = "handOverBillSaleAction" method = "cancelHandOverBillByNo">
+			<result name = "success" type = "json"></result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 交接单修改页面跳转 -->
+		<action name="handoverbillsalemodifyindex" class = "handOverBillSaleAction" method = "handOverBillModifyIndex">
+			<result name="success">handoverbillsalemodifyindex.jsp</result>
+			<result name="error">handoverbillerrorpage.jsp</result>
+		</action>
+		<!-- 修改交接单后，提交修改数据action -->
+		<action name="updateHandOverBillSale"  class = "handOverBillSaleAction" method = "updateHandOverBill">
+			<result name = "success" type = "json"></result>
+			<result name = "input" type = 'json'></result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 根据到达部门code，返回获取的外场实体，可能返回null -->
+		<action name="queryHandOverBillSaleOutfieldByCode"  class = "handOverBillSaleAction" method = "queryOutfieldByCode">
+			<result name = "success" type = "json"></result>
+			<result name = "input" type = 'json'></result>
+			<result name="error" type="json"/>
+		</action>
+		<!--————————————————————营业部交接单模块action end————————————————————-->
+		
+		<!-- ————————————————————配载单模块action配置———————————————————— -->
+		<!-- 新增配载单页面跳转 -->
+		<action name="vehicleassemblebilladdnewindex" >
+			<result name="success">vehicleassemblebilladdnewindex.jsp</result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 新增配载单页面跳转 -->
+		<action name="vehicleassemblebilladdnewindex_include" >
+			<result name="success">vehicleassemblebilladdnewindex_include.jsp</result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 查询待配载交接单界面，获取待配载交接单list -->
+		<action name="queryUnAssembledHandOverBillList"  class = "vehicleAssembleBillAction" method = "queryUnAssembledHandOverBillList">
+			<result name = "success" type = "json"></result>
+			<result name="error" type="json"/>
+		</action>
+		
+		<!-- 查询待配载交接单界面，判断此交接单是零担还是快递 -->
+		<action name="isNOrYVehicleAssembleBill"  class = "vehicleAssembleBillAction" method = "isNOrYVehicleAssembleBill">
+			<result name = "success" type = "json"></result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 新增配载单，保存数据action -->
+		<action name="saveVehicleAssembleBill" class = "vehicleAssembleBillAction" method="saveVehicleAssembleBill">
+			<result name = "success" type = "json"></result>
+			<result name = "input" type = 'json'></result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 查询配载单页面跳转 -->
+		<action name="vehicleassemblebillqueryindex" class = "vehicleAssembleBillAction" method="vehicleAssembleBillQueryIndex">
+			<result name="success">vehicleassemblebillqueryindex.jsp</result>
+			<result name="error">vehicleassemblebillerrorpage.jsp</result>
+		</action>
+		<!-- 查询配载单页面跳转 嵌入GUI-->
+		<action name="vehicleassemblebillqueryindex_include" class = "vehicleAssembleBillAction" method="vehicleAssembleBillQueryIndex">
+			<result name="success">vehicleassemblebillqueryindex_include.jsp</result>
+			<result name="error">vehicleassemblebillerrorpage.jsp</result>
+		</action>
+		<!-- 查询配载单 -->
+		<action name="queryVehicleAssembleBillList"  class = "vehicleAssembleBillAction" method="queryVehicleAssembleBillList">
+			<result name = "success" type = "json"></result>
+			<result name="error" type="json"/>
+		</action>
+		<!--查询配载单界面，导出配载单-->
+		<action name="exportVehicleAssembleBillExcel"  class = "vehicleAssembleBillAction" method = "exportVehicleAssembleBillExcel">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel;charset=UTF-8</param>
+                <param name="inputName">vehicleAssembleBillExcelStream</param>
+                <param name="contentDisposition">attachment;filename="${excelFileName}.xls"</param>
+                <param name="bufferSize">1024</param>
+            </result>
+            <result name="error" type="json"/>
+		</action>
+		<!-- 配载单详情页面跳转 -->
+		<action name="vehicleassemblebillshowindex" >
+			<result name="success">vehicleassemblebillshowindex.jsp</result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 根据配载单号获取配载单基本信息 -->
+		<action name="queryVehicleAssembleBillByNo" class = "vehicleAssembleBillAction" method = "queryVehicleAssembleBillByNo">
+			<result name = "success" type = "json"></result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 根据配载单号获取其下交接单列表 -->
+		<action name="queryHandOverBillListByVNo" class = "vehicleAssembleBillAction" method = "queryHandOverBillListByVNo">
+			<result name = "success" type = "json"></result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 根据配载单号获取修改日志列表 -->
+		<action name="queryVehicleAssembleBillOptLogByNo" class = "vehicleAssembleBillAction" method = "queryVehicleAssembleBillOptLogByNo">
+			<result name = "success" type = "json"></result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 配载单修改页面跳转 -->
+		<action name="vehicleassemblebillmodifyindex" >
+			<result name="success">vehicleassemblebillmodifyindex.jsp</result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 配载单打印_根据配载单号查询出该配载单下所有的交接单_zyx-->
+		<action name="queryHandOverBillNosByVehicleAssembleNo" class = "vehicleAssembleBillAction" method = "queryHandOverBillNosByVehicleAssembleNo">
+			<result name = "success" type = "json"></result>
+			<result name="error"	type="json" />
+		</action>
+		<!-- 配载单打印_用于验证选择的配载单在该车牌下是否还有其他的没选择_zyx-->
+		<action name="checkPrintVehicleAssembleBill"  class = "vehicleAssembleBillAction" method = "checkPrintVehicleAssembleBill">
+			<result name="success"	type="json" />
+			<result name="error"	type="json" />
+		</action>
+		<!-- 判断运输合同是否重复打印 _zyx-->
+		<action name="checkCarriageContractPrinted"  class = "vehicleAssembleBillAction" method = "checkCarriageContractPrinted">
+			<result name="success"	type="json" />
+			<result name="error"	type="json" />
+		</action>
+		<!-- 更新配载单action -->
+		<action name="updateVehicleAssembleBill" class = "vehicleAssembleBillAction" method = "updateVehicleAssembleBill">
+			<result name = "success" type = "json"></result>
+			<result name = "input" type = 'json'></result>
+			<result name="error" type="json"/>
+		</action>
+		<!--根据车牌号获取车辆信息-->
+		<action name="queryVehicleInfoByVehicleNo" class = "vehicleAssembleBillAction" method = "queryVehicleInfoByVehicleNo">
+			<result name = "success" type = "json"></result>
+			<result name="error"	type="json" />
+		</action>
+		<!--根据货柜编号获取货柜信息-->
+		<action name="queryContainerInfoByContainerNo" class = "vehicleAssembleBillAction" method = "queryContainerInfoByContainerNo">
+			<result name = "success" type = "json"></result>
+			<result name="error"	type="json" />
+		</action>
+		<!--根据到达部门code获取该部门是否支持自动分拣，如果传入有出发日期，则同时生成车次号-->
+		<action name="someCmpLostFocus" class = "vehicleAssembleBillAction" method = "someCmpLostFocus">
+			<result name = "success" type = "json"></result>
+			<result name="error"	type="json" />
+		</action>
+		<!--根据配载单号作废配载单-->
+		<action name="cancelVehicleAssembleBill" class = "vehicleAssembleBillAction" method = "cancelVehicleAssembleBill">
+			<result name = "success" type = "json"></result>
+			<result name="error"	type="json" />
+		</action>
+		<!-- 根据到达部门code，返回获取的外场实体，可能返回null -->
+		<action name="queryOutfieldByCodeForVehicleAssembleBill"  class = "vehicleAssembleBillAction" method = "queryOutfieldByCode">
+			<result name = "success" type = "json"></result>
+			<result name = "input" type = 'json'></result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 传入配载车次号，调用结算接口，获取出发付款确认状态 -->
+		<action name="queryDepartPaymentConfirmState"  class = "vehicleAssembleBillAction" method = "queryDepartPaymentConfirmState">
+			<result name = "success" type = "json"></result>
+			<result name = "input" type = 'json'></result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 传入运输性质、到达部门code、发车日期、车牌号，获取运行时数 -->
+		<action name="queryRunHoursByTransProperty"  class = "vehicleAssembleBillAction" method = "queryRunHoursByTransProperty">
+			<result name = "success" type = "json"></result>
+			<result name = "input" type = 'json'></result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 传入运输性质、车次号、车牌号，获取运行时数 -->
+		<action name="queryModifyRunHoursByTransProperty"  class = "vehicleAssembleBillAction" method = "queryModifyRunHoursByTransProperty">
+			<result name = "success" type = "json"></result>
+			<result name = "input" type = 'json'></result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 配载单查询界面，导出运单列表 -->
+		<action name="exportWayBillExcelByVNo"  class = "vehicleAssembleBillAction" method = "exportWayBillExcel">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel;charset=UTF-8</param>
+                <param name="inputName">wayBillExcelStream</param>
+                <param name="contentDisposition">attachment;filename="${excelFileName}.xls"</param>
+                <param name="bufferSize">1024</param>
+            </result>
+            <result name="error" type="json"/>
+		</action>
+		<!-- ——————————————————配载单模块action end—————————————————————— -->
+		
+		<!-- 装车封签 begin -->
+		<action name="sealindex">
+			<result name="success">sealindex.jsp</result>
+		</action>
+		<!-- 装车封签 嵌入GUI -->
+		<action name="sealindex_include">
+			<result name="success">sealindex_include.jsp</result>
+		</action>
+		<action name="saveSealOrig" class="vehicleSealAction" method="saveSealOrig">
+			<result name="success"	type="json" />
+			<result name="error"	type="json" />
+		</action>
+
+		<action name="saveSealDest" class="vehicleSealAction" method="saveSealDest">
+			<result name="success"	type="json" />
+			<result name="error"	type="json" />
+		</action>
+
+		<action name="checkoutSeal" class="vehicleSealAction" method="checkoutSeal">
+			<result name="success"	type="json" />
+			<result name="error"	type="json" />
+		</action>
+
+		<action name="queryAllvehicleSealList" class="vehicleSealAction" method="queryAllvehicleSealList">
+			<result name="success"	type="json" />
+			<result name="error"	type="json" />
+		</action>
+
+		<action name="sealCompareResults" class="vehicleSealAction" method="sealCompareResults">
+			<result name="success"	type="json" />
+			<result name="error"	type="json" />
+		</action>
+
+		<action name="sealDamaged" class="vehicleSealAction" method="sealDamaged">
+			<result name="success"	type="json" />
+			<result name="error"	type="json" />
+		</action>
+
+		<action name="loadOrigSeal" class="vehicleSealAction" method="loadOrigSeal">
+			<result name="success"	type="json" />
+			<result name="error"	type="json" />
+		</action>
+
+		<action name="editSealOrig" class="vehicleSealAction" method="editSealOrig">
+			<result name="success"	type="json" />
+			<result name="error"	type="json" />
+		</action>
+		<action name="queryDriverNameByVehicleNo" class="vehicleSealAction" method="queryDriverNameByVehicleNo">
+			<result name="success"	type="json" />
+			<result name="error"	type="json" />
+		</action>
+
+		<action name="queryDriverInfoByVehicleNo" class="vehicleSealAction" method="queryDriverInfoByVehicleNo">
+			<result name="success"	type="json" />
+			<result name="error"	type="json" />
+		</action>
+
+		<action name="queryDriverInfoByTruckTaskId" class="vehicleSealAction" method="queryDriverInfoByTruckTaskId">
+			<result name="success"	type="json" />
+			<result name="error"	type="json" />
+		</action>
+
+		<action name="queryBillInfoByTruckTaskId" class="vehicleSealAction" method="queryBillInfoByTruckTaskId">
+			<result name="success"	type="json" />
+			<result name="error"	type="json" />
+		</action>
+		<action name="deleteSeal" class="vehicleSealAction" method="deleteSeal">
+			<result name="success"	type="json" />
+			<result name="error"	type="json" />
+		</action>
+		<!-- 装车封签 end -->
+		<!-- 查询装车任务 begin -->
+		<action name="queryloadtaskindex" class="loadTaskQueryAction" method="queryOutfieldCode">
+			<result name="success">loadtaskquery.jsp</result>
+		</action>
+		<!-- 查询装车任务 嵌入GUI -->
+		<action name="queryloadtaskindex_include">
+			<result name="success">loadtaskquery_include.jsp</result>
+		</action>
+		<!-- 装车明细 -->
+		<action name="loadtaskwaybilldetailIndex">
+			<result name="success">loadtaskwaybilldetailindex.jsp</result>
+			<result name="error" type="json" />
+		</action>
+		<!-- 装车明细 嵌入GUI-->
+		<action name="loadtaskwaybilldetailIndex_include">
+			<result name="success">loadtaskwaybilldetailindex_include.jsp</result>
+			<result name="error" type="json" />
+		</action>
+		
+		<action name="queryLoadTask" class="loadTaskQueryAction" method="queryLoadTask">
+			<result name="success"	type="json" />
+			<result name="error"	type="json" />
+		</action>
+		<action name="queryLoaderByTaskId" class="loadTaskQueryAction" method="queryLoaderByTaskId">
+			<result name="success"	type="json" />
+			<result name="error"	type="json" />
+		</action>
+		<action name="exportLoadTask" class="loadTaskQueryAction" method="exportLoadTask">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel;charset=UTF-8</param>
+                <param name="inputName">excelStream</param>
+                <param name="contentDisposition">attachment;filename="${fileName}.xls"</param>
+                <param name="bufferSize">1024</param>
+            </result>
+            <result name="error" type="json"/>
+		</action>
+		<action name="exportLoadWayBillByTaskNo" class="loadTaskQueryAction" method="exportLoadWayBillByTaskNo">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel;charset=UTF-8</param>
+                <param name="inputName">excelStream</param>
+                <param name="contentDisposition">attachment;filename="${fileName}.xls"</param>
+                <param name="bufferSize">1024</param>
+            </result>
+            <result name="error" type="json"/>
+		</action>
+		<action name="queryLoadWayBillByTaskNo" class="loadTaskQueryAction" method="queryLoadWayBillByTaskNo">
+			<result name="success"	type="json" />
+			<result name="error"	type="json" />
+		</action>
+		<action name="queryloadSerialNoByLoadWaybillDetailId" class="loadTaskQueryAction" method="queryloadSerialNoByLoadWaybillDetailId">
+			<result name="success"	type="json" />
+			<result name="error"	type="json" />
+		</action>
+		<action name="queryLoadGaprepIdByGaprepNo" class="loadTaskQueryAction" method="queryLoadGaprepIdByGaprepNo">
+			<result name="success"	type="json" />
+			<result name="error"	type="json" />
+		</action>
+		<action name="queryLoadGaprepReport" class="loadTaskQueryAction" method="queryLoadGaprepReport">
+			<result name="success"	type="json" />
+			<result name="error"	type="json" />
+		</action>
+		<!-- 查询装车任务 end -->
+		<!--**************************分配派送装车任务 Begin*****************************-->
+		<action name="assignloadtaskindex">
+			<result name="success">assignloadtaskindex.jsp</result>
+		</action>
+		<!-- 分配派送装车任务 嵌入GUI -->
+		<action name="assignloadtaskindex_include">
+			<result name="success">assignloadtaskindex_include.jsp</result>
+		</action>
+		<action name="queryDeliverBill" class="assignLoadTaskAction" method="queryDeliverBill">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<action name="queryLoader" class="assignLoadTaskAction" method="queryLoader">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<action name="assign" class="assignLoadTaskAction" method="assign">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<action name="queryUnstartAssignLoadTask" class="assignLoadTaskAction" method="queryUnstartAssignLoadTask">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<action name="cancelAssign" class="assignLoadTaskAction" method="cancelAssign">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<!--**************************分配派送装车任务 End*******************************-->
+		<!--**************************查询分配派送装车任务 Begin*****************************-->
+		<action name="assignedloadtaskqueryindex">
+			<result name="success">assignedloadtaskqueryindex.jsp</result>
+		</action>
+		<!-- 查询分配派送装车任务 嵌入GUI -->
+		<action name="assignedloadtaskqueryindex_include">
+			<result name="success">assignedloadtaskqueryindex_include.jsp</result>
+		</action>
+		<action name="queryAssignLoadTaskByCondition" class="assignLoadTaskAction" method="queryAssignLoadTaskByCondition">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<action name="queryUnfinishedWordLoadByLoader" class="assignLoadTaskAction" method="queryUnfinishedWordLoadByLoader">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<!--**************************查询分配派送装车任务 End*******************************-->
+		<!--**************************查询派送装车差异报告 End*******************************-->
+		<action name="deliverloadgapreportindex">
+			<result name="success">deliverloadgapreportindex.jsp</result>
+		</action>
+		<!-- 派送装车差异报告 嵌入GUI -->
+		<action name="deliverloadgapreportindex_include">
+			<result name="success">deliverloadgapreportindex_include.jsp</result>
+		</action>
+ 		<action name="queryDeliverLoadGapReport" class="deliverLoadGapReportAction" method="queryDeliverLoadGapReport"> 
+ 			<result name="success" type="json" ></result> 
+ 			<result name="error"	type="json" /> 
+ 		</action> 
+		<action name="queryDeliverLoadGapReportWayBills" class="deliverLoadGapReportAction" method="queryDeliverLoadGapReportWayBills">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<action name="queryDeliverLoadGapReportSerials" class="deliverLoadGapReportAction" method="queryDeliverLoadGapReportSerials">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<action name="exportDeliverLoadGapDetailExcel"  class = "deliverLoadGapReportAction" method = "exportDeliverLoadGapDetailExcel">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel;charset=UTF-8</param>
+                <param name="inputName">deliverLoadGapReportDetailExcelStream</param>
+                <param name="contentDisposition">attachment;filename="${excelFileName}.xls"</param>
+                <param name="bufferSize">1024</param>
+            </result>
+            <result name="error" type="json"/>
+		</action>
+		<!--**************************查询派送装车差异报告 End*******************************-->
+
+		<!--**************************外请车费用调整 Begin*******************************-->
+		<action name="outsidevehiclechargeindex">
+			<result name="success">outsidevehiclechargeindex.jsp</result>
+		</action>
+ 		<action name="queryOutsideVehicleChargeList" class="outsideVehicleChargeAction" method="queryOutsideVehicleChargeList"> 
+ 			<result name="success" type="json" ></result> 
+ 			<result name="error"	type="json" /> 
+ 		</action>
+ 		<action name="exportOutsideVehicleCharge" class="outsideVehicleChargeAction" method="exportOutsideVehicleCharge"> 
+ 			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel;charset=UTF-8</param>
+                <param name="inputName">excelStream</param>
+                <param name="contentDisposition">attachment;filename="${fileName}.xls"</param>
+                <param name="bufferSize">1024</param>
+            </result>
+            <result name="error" type="json"/>
+ 		</action>
+ 		<action name="deleteOutsideVehicleCharge" class="outsideVehicleChargeAction" method="deleteOutsideVehicleCharge"> 
+ 			<result name="success" type="json" ></result> 
+ 			<result name="error"	type="json" /> 
+ 		</action>
+ 		<action name="updateOutsideVehicleCharge" class="outsideVehicleChargeAction" method="updateOutsideVehicleCharge"> 
+ 			<result name="success" type="json" ></result> 
+ 			<result name="error"	type="json" /> 
+ 		</action>
+ 		<action name="auditOutsideVehicleCharge" class="outsideVehicleChargeAction" method="auditOutsideVehicleCharge"> 
+ 			<result name="success" type="json" ></result> 
+ 			<result name="error"	type="json" /> 
+ 		</action>
+ 		 <action name="approvalOutsideVehicleCharge" class="outsideVehicleChargeAction" method="approvalOutsideVehicleCharge"> 
+ 			<result name="success" type="json" ></result> 
+ 			<result name="error"	type="json" /> 
+ 		</action>
+ 		<action name="queryByVehicleassembleNo" class="outsideVehicleChargeAction" method="queryByVehicleassembleNo"> 
+ 			<result name="success" type="json" ></result> 
+ 			<result name="error"	type="json" /> 
+ 		</action>
+ 		<action name="addOutsideVehicleCharge" class="outsideVehicleChargeAction" method="addOutsideVehicleCharge"> 
+ 			<result name="success" type="json" ></result> 
+ 			<result name="error"	type="json" /> 
+ 		</action>
+ 		<action name="queryById" class="outsideVehicleChargeAction" method="queryById"> 
+ 			<result name="success" type="json" ></result> 
+ 			<result name="error"	type="json" /> 
+ 		</action>	
+ 		 <action name="queryApprovalById" class="outsideVehicleChargeAction" method="queryApprovalById"> 
+ 			<result name="success" type="json" ></result> 
+ 			<result name="error"	type="json" /> 
+ 		</action>
+ 			<action name="queryBillPayableIsWriteOff" class="outsideVehicleChargeAction" method="queryBillPayableIsWriteOff"> 
+ 			<result name="success" type="json" ></result> 
+ 			<result name="error"	type="json" /> 
+ 		</action>
+ 		<action name="adjustOutVehicleFee" class="outsideVehicleChargeAction" method="adjustOutVehicleFee"> 
+ 			<result name="success" type="json" ></result> 
+ 			<result name="error"	type="json" /> 
+ 		</action>	
+ 		<action name="queryConfigurationParamsExactByEntity" class="outsideVehicleChargeAction" method="queryConfigurationParamsExactByEntity"> 
+ 			<result name="success" type="json" ></result> 
+ 			<result name="error"	type="json" /> 
+ 		</action>
+ 		<action name="queryOutsideVehicleChargeByVehicleassembleNo" class="outsideVehicleChargeAction" method="queryOutsideVehicleChargeByVehicleassembleNo"> 
+ 			<result name="success" type="json" ></result> 
+ 			<result name="error"	type="json" /> 
+ 		</action> 	
+ 		<action name="queryUpdateLogs" class="outsideVehicleChargeAction" method="queryUpdateLogs"> 
+ 			<result name="success" type="json" ></result> 
+ 			<result name="error"	type="json" /> 
+ 		</action> 	
+ 		 <action name="noAuditAndAuditInCount" class="outsideVehicleChargeAction" method="noAuditAndAuditInCount"> 
+ 			<result name="success" type="json" ></result> 
+ 			<result name="error"	type="json" /> 
+ 		</action>
+ 		 <action name="approvalAdjustOutVehicleFee" class="outsideVehicleChargeAction" method="approvalAdjustOutVehicleFee"> 
+ 			<result name="success" type="json" ></result> 
+ 			<result name="error"	type="json" /> 
+ 		</action> 	
+		<!--**************************外请车费用调整  End*******************************-->
+		
+	<!-- =========================查询装车进度============================= -->
+		<action name="queryloadingprogressindex" class="queryLoadingProgressAction">
+			<result name="success">queryloadingprogressindex.jsp</result>
+		</action>
+		<!-- 查询装车进度 嵌入GUI -->
+		<action name="queryloadingprogressindex_include" class="queryLoadingProgressAction">
+			<result name="success">queryloadingprogressindex_include.jsp</result>
+		</action>
+		
+		<action name="queryLoadingProgressInfo" class="queryLoadingProgressAction" method="queryLoadingProgressInfo">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<!-- =========================查询装车进度============================= -->
+
+		<!-- 查询装卸车工作量 begin -->
+		<action name="loaderworkloadindex">
+			<result name="success">loaderworkloadindex.jsp</result>
+			<result name="error" type="json" />
+		</action>
+		<action name="queryPersonCount" class="loaderWorkloadAction" method="queryPersonCount">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<!-- (快递)查询装卸车工作量 begin -->
+		<action name="queryPersonCountExpress" class="loaderWorkloadAction" method="queryPersonCountExpress">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<action name="queryPersonCountSummary" class="loaderWorkloadAction" method="queryPersonCountSummary">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<action name="queryPersonCountSummaryExpress" class="loaderWorkloadAction" method="queryPersonCountSummaryExpress">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<action name="queryTeamCount" class="loaderWorkloadAction" method="queryTeamCount">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<action name="queryTeamCountExpress" class="loaderWorkloadAction" method="queryTeamCountExpress">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<action name="queryTeamCountSummary" class="loaderWorkloadAction" method="queryTeamCountSummary">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<action name="queryTeamCountSummaryExpress" class="loaderWorkloadAction" method="queryTeamCountSummaryExpress">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<action name="querySuperiorOrgByOrgCode" class="loaderWorkloadAction" method="querySuperiorOrgByOrgCode">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<action name="exportPersonCountExcel" class="loaderWorkloadAction" method="exportPersonCountExcel">
+            <result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel;charset=UTF-8</param>
+                <param name="inputName">excelStream</param>
+                <param name="contentDisposition">attachment;filename="${fileName}.xls"</param>
+                <param name="bufferSize">1024</param>
+            </result>
+            <result name="error" type="json"/>
+		</action>
+		<action name="exportTeamCountExcel" class="loaderWorkloadAction" method="exportTeamCountExcel">
+            <result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel;charset=UTF-8</param>
+                <param name="inputName">excelStream</param>
+                <param name="contentDisposition">attachment;filename="${fileName}.xls"</param>
+                <param name="bufferSize">1024</param>
+            </result>
+            <result name="error" type="json"/>
+		</action>
+		<!-- 查询装卸车工作量 end -->
+
+		<!-- 修改装卸车工作量 begin -->
+		<action name="loaderworkloadmodify">
+			<result name="success">loaderworkloadmodify.jsp</result>
+			<result name="error" type="json" />
+		</action>
+		<!-- 修改装卸车工作量 (快递)begin -->
+		<action name="loaderworkloadmodifyExpress">
+			<result name="success">loaderworkloadmodifyExpress.jsp</result>
+			<result name="error" type="json" />
+		</action>
+		<action name="queryLoaderWorkloadDetail" class="loaderWorkloadModifyAAction" method="queryLoaderWorkloadDetail">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<action name="queryLoaderWorkloadDetailExpress" class="loaderWorkloadModifyAAction" method="queryLoaderWorkloadDetailExpress">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<action name="querySummaryDetail" class="loaderWorkloadModifyAAction" method="querySummaryDetail">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<action name="querySummaryDetailExpress" class="loaderWorkloadModifyAAction" method="querySummaryDetailExpress">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<action name="queryLoaderWorksByTaskNo" class="loaderWorkloadModifyAAction" method="queryLoaderWorksByTaskNo">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<action name="queryLoaderWorksByTaskNoExpress" class="loaderWorkloadModifyAAction" method="queryLoaderWorksByTaskNoExpress">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<action name="saveLoaderWork" class="loaderWorkloadModifyAAction" method="saveLoaderWork">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<action name="saveLoaderWorkExpress" class="loaderWorkloadModifyAAction" method="saveLoaderWorkExpress">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<action name="queryLoaderWorksById" class="loaderWorkloadModifyAAction" method="queryLoaderWorksById">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+			<action name="queryLoaderWorksByIdExpress" class="loaderWorkloadModifyAAction" method="queryLoaderWorksByIdExpress">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+
+		<action name="modifyLoaderWork" class="loaderWorkloadModifyAAction" method="modifyLoaderWork">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<action name="modifyLoaderWorkExpress" class="loaderWorkloadModifyAAction" method="modifyLoaderWorkExpress">
+			<result name="success" type="json" ></result>
+			<result name="error"	type="json" />
+		</action>
+		<action name="queryErrorVolumeDeductionList"  class = "loaderWorkloadAction" method = "queryErrorVolumeDeductionList">
+			<result name="success" type="json"/>
+            <result name="error" type="json"/>
+		</action>
+		<!-- 查询装卸车工作量 end -->
+		
+		<!--ShiWei 手工确认派送装车任务 begin-->
+		<!--页面跳转-->
+		<action name="deliverloadtaskconfirmindex">
+			<result name="success">deliverloadtaskconfirmindex.jsp</result>
+			<result name="error" type="json"/>
+		</action>
+		<!--手工确认派送装车任务 嵌入GUI -->
+		<action name="deliverloadtaskconfirmindex_include">
+			<result name="success">deliverloadtaskconfirmindex_include.jsp</result>
+			<result name="error" type="json"/>
+		</action>
+		<!--加载派送单数据-->
+		<action name="loadDeliverBillAndDetailListByNo" class="deliverLoadTaskAction" method="loadDeliverBillAndDetailListByNo">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--加载流水号库存-->
+		<action name="querySerialNoListForDeliverBill" class="deliverLoadTaskAction" method="querySerialNoListForDeliverBill">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--结束派送装车任务-->
+		<action name="confirmDeliverLoadTask" class="deliverLoadTaskAction" method="confirmDeliverLoadTask">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--=====================================叉车扫描信息模块============================================================-->
+		<!-- 查询叉车扫描信息页面跳转 -->
+		<action name="trayscanqueryindex"  class="trayScanAction" method="trayscanqueryindex">
+			<result name="success">trayscanqueryindex.jsp</result>
+			<result name="error" type="json"/>
+		</action>
+		<!--查询托盘扫描任务明细  零担-->
+		<action name='queryWaybillByTaskNo' class="trayScanAction" method="queryWaybillByTaskNo">
+			<result name="success" type="json" />
+			<result name="error" type="json"/>
+		</action>
+		<!--查询托盘扫描任务明细  快递-->
+		<action name='queryWaybillByTaskNoExpress' class="trayScanAction" method="queryWaybillByTaskNoExpress">
+			<result name="success" type="json" />
+			<result name="error" type="json"/>
+		</action>
+		<!--查询托盘扫描任务 零担-->
+		<action name='queryTrayScanList' class="trayScanAction" method="queryTrayScanList">
+			<result name="success" type="json" />
+			<result name="error" type="json"/>
+		</action>
+		<!--查询托盘扫描任务 快递-->
+		<action name='queryTrayScanListExpress' class="trayScanAction" method="queryTrayScanListExpress">
+			<result name="success" type="json" />
+			<result name="error" type="json"/>
+		</action>
+		<!--查询叉车总票数  零担-->
+		<action name='queryTrayScanSummary' class="trayScanAction" method="queryTrayScanSummary">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--查询叉车总票数  快递-->
+		<action name='queryTrayScanSummaryExpress' class="trayScanAction" method="queryTrayScanSummaryExpress">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 托盘任务查询界面，导出导出托盘任务   零担-->
+		<action name="exportTrayScanTaskExcel"  class = "trayScanAction" method = "exportTrayScanTaskExcel">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel;charset=UTF-8</param>
+                <param name="inputName">trayScanExcelStream</param>
+                <param name="contentDisposition">attachment;filename="${excelFileName}.xls"</param>
+                <param name="bufferSize">1024</param>
+            </result>
+            <result name="error" type="json"/>
+		</action>
+		
+		<!-- 托盘任务查询界面，导出导出托盘任务   快递-->
+		<action name="exportTrayScanTaskExcelExpress"  class = "trayScanAction" method = "exportTrayScanTaskExcelExpress">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel;charset=UTF-8</param>
+                <param name="inputName">trayScanExcelStream</param>
+                <param name="contentDisposition">attachment;filename="${excelFileName}.xls"</param>
+                <param name="bufferSize">1024</param>
+            </result>
+            <result name="error" type="json"/>
+		</action>
+		
+				
+		<!--————————————————快递包管理——————————————————-->
+		<!--查询包界面跳转-->
+		<action name="expresspackagequeryindex" class = "expressPackageAction" method = "expressPackageQueryIndex">
+			<result name="success">expresspackagequeryindex.jsp</result>
+		</action>
+		<!--通过运单号查询库存运单-->
+		<action name="queryWaybillStockByWaybillNoForPackage" class="expressPackageAction" method="queryWaybillStockByWaybillNo">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--查询是否存在始发线路-->
+		<action name="queryExpressLineIsExist" class="expressPackageAction" method="queryExpressLineIsExist">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--条件查询库存运单-->
+		<action name="queryWaybillStockListForPackage" class="expressPackageAction" method="queryWaybillStockListForPackage">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--新增快递包-->
+		<action name="saveExpressPackage" class="expressPackageAction" method="saveExpressPackage">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--查询包号是否已经存在-->
+		<action name="queryIsExistPackageNo" class="expressPackageAction" method="queryIsExistPackageNo">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<action name="expresspackagequeryindex_include" class="expressPackageAction" method="expressPackageQueryIndex">
+			<result name="success">expresspackagequeryindex_include.jsp</result>
+		</action>
+		<!--查询包-->
+		<action name="queryExpressPackageList" class="expressPackageAction" method="queryExpressPackageList">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 新增包跳转 -->
+		<action name="expresspackageaddnewindex">
+			<result>expresspackageaddnew.jsp</result>
+		</action>
+		<action name="expresspackageaddnewindex_include">
+			<result name="success">expresspackageaddnew_include.jsp</result>
+		</action>
+		<!--撤销包-->
+		<action name="cancelExpressPackage" class="expressPackageAction" method="cancelExpressPackage">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--修改包信息-->
+		<action name="modifyPackageInfo" class = "expressPackageAction" method = "modifyPackageInfo">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--生成交接单页面跳转-->
+		<action name="expresshandoverbilladdnewindex" class = "expressHandOverBillAction" method = "expressHandOverbillAddnewIndex">
+			<result name="success">expresshandoverbilladdnewindex.jsp</result>
+		</action>
+		
+		<!--——————————————————————补码管理——————————————-->
+		<!--补码查询页面跳转-->
+		<action name="complementqueryindex" class = "complementAction" method = "complementQueryIndex">
+			<result name="success">complementqueryindex.jsp</result>
+		</action>
+		<action name="complementqueryindex_include" class="complementAction" method="complementQueryIndex">
+			<result name="success">complementqueryindex_include.jsp</result>
+		</action>
+		<!--补码查询-->
+		<action name="queryComplementList" class="complementAction" method="queryComplementList">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--退回补码查询-->
+		<action name="queryComplementBackList" class="complementAction" method="queryComplementBackList">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--补码-->
+		<action name="complementPkpOrg" class="complementAction" method="complementPkpOrg">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		
+		<!--补码查询页面跳转-->
+		<action name="complementLogIndex" class = "complementAction" method = "complementLogIndex">
+			<result name="success">expresscomplementlogquery.jsp</result>
+		</action>
+		
+		<!--补码日志查询-->
+		<action name="queryComplementLogList" class="complementAction" method="queryComplementLogList">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		
+		<!--补码标签打印页面跳转-->
+		<action name="complementLabelPrintIndex" class = "complementAction" method = "complementLabelPrintIndex">
+			<result name="success">complementlabelprint.jsp</result>
+		</action>
+		
+		<!-- 补码标签打印 -->
+		<action name="printComplementLabel" class="complementAction" method="printComplementLabel">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		
+		<action name="complementByHand" class="complementAction" method="complementByHand">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<action name="findAsyncComplementFailed" class="complementAction" method="findAsyncComplementFailed">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<action name="complementFailed" class="complementAction" method="complementFailed">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--————————————————包交接单——————————————————-->
+		<!--生成交接单、加载包数据-->
+		<action name="loadExpressPackageInfo" class="expressHandOverBillAction" method="loadExpressPackageInfo">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--保存包交接单-->
+		<action name="saveExpressHandOverBill" class="expressHandOverBillAction" method="saveExpressHandOverBill">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		
+		<!--生成交接单、加载包数据-->
+		<action name="loadExpressPackageInfo" class="expressHandOverBillAction" method="loadExpressPackageInfo">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--保存包交接单-->
+		<action name="saveExpressHandOverBill" class="expressHandOverBillAction" method="saveExpressHandOverBill">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		
+		<!--********************** 包标签打印start************************ -->
+		<!-- 入口action -->
+		<action name="printPackageLabelIndex" class="printPackageLabelAction" method="printPackageLabelIndex">
+			<result name="success">printPackageLabelIndex.jsp</result>
+		</action>
+		<!-- 校验指定包是否存在 -->
+		<action name="validatePackageNo" class="printPackageLabelAction" method="validatePackageNo">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		
+		<!-- 检查用户密码和包是否正确 -->
+		<action name="validation" class="printPackageLabelAction" method="validation">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--生成包号 -->
+		<action name="creatPackageNo" class="printPackageLabelAction" method="creatPackageNo">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--包标签打印日志  -->
+		<action name="addPackagePrintLog" class="printPackageLabelAction" method="addPackagePrintLog">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--———————————————————————————————————————————— 接驳交接单相关action—————————————————————————————————————————— -->
+		<!-- 查询接驳交接单页面跳转 -->
+		<action name="connectionbillqueryindex" class = "connectionBillAction" method="connectionBillQueryIndex">
+			<result name="success">connectionbillqueryindex.jsp</result>
+			<result name="error">connectionbillerrorpage.jsp</result>
+		</action>
+		
+		<!-- 接驳交接单查询action -->
+		<action name="queryConnectionBillList" class = "connectionBillAction" method="queryConnectionBillList">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 接驳交接单（到达）查询action 218427 foss-hongwy -->
+		<action name="queryArrivalConnectionBillList" class ="connectionBillAction" method ="queryArrivalConnectionBillList">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 新增接驳交接单页面跳转 -->
+		<action name="connectionbilladdnewindex" class="connectionBillAction" method="connectionBillAddNewIndex">
+			<result name="success">connectionbilladdnewindex.jsp</result>
+			<result name="error">connectionbillerrorpage.jsp</result>
+		</action>
+		
+		<!-- 新增接驳交接单_查询库存运单 -->
+		<action name="queryConnectionWaybillStockList" class="connectionBillAction" method="queryWaybillStockList">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		
+		<!-- 新增接驳交接单保存 -->
+		<action name="saveConnectionBill" class="connectionBillAction" method="saveConnectionBill">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		
+		<!-- 接驳交接单详情页面跳转 -->
+		<action name="conectionbillshowindex" >
+			<result name="success">connectionbillshowindex.jsp</result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 接驳交接单（到达）页面跳转  218427 foss-hongwy-->
+		<action name="arrivalconnectionbillshowindex">
+		    <result name="success">arrivalconnectionbillshowindex.jsp</result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 通过接驳交接单单号查询接驳交接单 -->
+		<action name="queryConnectionBillByNo" class="connectionBillAction" method="queryConnectionBillByNo">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--通过接驳交接单（到达）单号查询接驳交接单  218427 foss-hongwy-->
+		<action name ="queryArrivalConnectionBillByNo" class="connectionBillAction" method="queryArrivalConnectionBillByNo">
+		    <result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 通过接驳交接单单号查询接驳交接单 -->
+		<action name="queryConnectionBillDetailByNo" class="connectionBillAction" method="queryConnectionBillDetailByNo">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		
+		<!-- 通过接驳交接单单号查询到达接驳单 218427 foss-hongwy -->
+		<action name="queryArrivalConnectionBillDetailByNo" class="connectionBillAction" method ="queryArrivalConnectionBillDetailByNo">
+		    <result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 通过接驳交接单单号查询接驳交接单 -->
+		<action name="queryConnectionWaybillDetailByNos" class="connectionBillAction" method="queryWaybillDetailByNos">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 通过接驳交接单单号查询接驳交接单 218427 foss-hongwy -->
+		<action name="queryArrivalConnectionBillDetailByNos" class="connectionBillAction" method="queryArrivalWaybillDetailByNos">
+		    <result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--接驳交接单修改跳转  -->
+		
+		<action name="connectionbillmodifyindex" >
+			<result name="success">connectionbillmodifyindex.jsp</result>
+			<result name="error" type="json"/>
+		</action>
+		
+		<!-- 修改接驳交接单 -->
+		<action name="updateConnectionBill" class="connectionBillAction" method="updateConnectionBill">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		
+		
+		<!-- 作废接驳交接单 -->
+		<action name="cancelConnectionBillbyNo" class="connectionBillAction" method="cancelConnectionBillbyNo">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		
+		<!-- 接驳交接单导出 -->
+		<action name="exportConnectionBillExcel"  class = "connectionBillAction" method = "exportConnectionBillExcel">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel;charset=UTF-8</param>
+                <param name="inputName">exportExcelStream</param>
+                <param name="contentDisposition">attachment;filename="${excelFileName}.xls"</param>
+                <param name="bufferSize">1024</param>
+            </result>
+            <result name="error" type="json"/>
+		</action>
+		
+		<!--导出交接单明细-->
+		<action name="exportConnectionDetailExcel"  class = "connectionBillAction" method = "exportConnectionDetailExcel">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel;charset=UTF-8</param>
+                <param name="inputName">exportExcelStream</param>
+                <param name="contentDisposition">attachment;filename="${excelFileName}.xls"</param>
+                <param name="bufferSize">1024</param>
+            </result>
+            <result name="error" type="json"/>
+		</action>
+		<!--车辆空驶单页面 -->
+		<action name="vehiclEmptyBill">
+			<result name="success">vehiclEmptyBill.jsp</result>
+		</action>
+		<!--车辆空驶单查询 -->
+		<action name="queryvehiclEmptyBill" class="vehiclEmptyBillAction" method="queryvehiclEmptyBill">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--增加车辆空驶单查询 -->
+		<action name="addvehiclEmptyBill" class="vehiclEmptyBillAction" method="addvehiclEmptyBill">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--校验车辆状态是否到达 -->
+		<action name="CheckVehicleStatusIsArrive" class="vehiclEmptyBillAction" method="CheckVehicleStatusIsArrive">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--校验车辆状态是否未出发 -->
+		<action name="CheckVehicleStatusIsDepart" class="vehiclEmptyBillAction" method="CheckVehicleStatusIsDepart">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--校验车辆状态是否未出发 -->
+		<action name="cancelVehiclEmptyBillByVehicleNo" class="vehiclEmptyBillAction" method="cancelVehiclEmptyBillByVehicleNo">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--******************长途车辆行驶档案  begin**************************-->
+		<action name="lfDrivingFileIndex" class="lfDrivingFileAction">
+			<result name="success">lfDrivingFile.jsp</result>
+		</action>
+		<action name="lfDrivingFileInfoindex" >
+			<result name="success">lfDrivingFileInfo.jsp</result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 根据配载单号 查询配载信息 -->
+		<action name="qureyVehicleassembleInfo" class="lfDrivingFileAction" method="qureyVehicleassembleInfo">
+		    <result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<action name="lfDrivingFileAddindex" >
+			<result name="success">lfDrivingFileAdd.jsp</result>
+			<result name="error" type="json"/>
+		</action>
+		<action name="lfDrivingFileUpdateindex" >
+			<result name="success">lfDrivingFileUpdate.jsp</result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 获取对应车队 当天的最大行驶号，用于生成 行驶档案 行驶号时使用 -->
+		<action name="queryLatestDrivingNo" class="lfDrivingFileAction" method="queryLatestDrivingNo">
+		    <result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 新增  长途车辆行驶档案-->
+		<action name="saveLFDrivingFile" class="lfDrivingFileAction" method="saveLFDrivingFile">
+		    <result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+			<!-- 查询  长途车辆行驶档案-->
+		<action name="querylfDrivingFileList" class="lfDrivingFileAction" method="querylfDrivingFileList">
+		    <result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+			<!-- 根据车牌 查询 车辆信息 -->
+		<action name="lfDrivingFileVehicle" class="lfDrivingFileAction" method="lfDrivingFileVehicle">
+		    <result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+			<!-- 根据行驶编码 查询行驶档案（包括 配载信息） -->
+		<action name="queryLfDrivingFile" class="lfDrivingFileAction" method="queryLfDrivingFile">
+		    <result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+			<!-- 修改 行驶档案（包括 配载信息） -->
+		<action name="updateLFDrivingFile" class="lfDrivingFileAction" method="updateLFDrivingFile">
+		    <result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 根据登陆部门查询所属车队 -->
+		<action name="queryOrgIdCode" class="lfDrivingFileAction" method="queryOrgIdCode">
+		    <result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--******************长途车辆行驶档案  end  **************************-->
+		<!--查询装车异常任务页面跳转-->
+		<action name="loadexeceptiontaskqueryindex">
+			<result name="success">loadexeceptiontaskqueryindex.jsp</result>
+		</action>
+		<action name="queryLoadManagerException" class="loadManagerExceptionAction" method="queryLoadManagerException">
+		    <result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<action name="editLoadTaskVehicleNo" class="loadManagerExceptionAction" method="editLoadTaskVehicleNo">
+		    <result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<action name="queryDriverMsgByVehicleNo" class="loadManagerExceptionAction" method="queryDriverMsgByVehicleNo">
+		    <result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+	</package>
+</struts>

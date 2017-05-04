@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.DriverCollectionRptEntityDao" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.pay.api.shared.domain.DriverCollectionRptEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="REPORT_NO" property="reportNo" jdbcType="VARCHAR" />
+    <result column="DRIVER_CODE" property="driverCode" jdbcType="VARCHAR" />
+    <result column="DRIVER_NAME" property="driverName" jdbcType="VARCHAR" />
+  <!--   <result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" /> -->
+    <result column="WAYBILL_QTY_TOTAL" property="waybillQtyTotal" jdbcType="DECIMAL" />
+    <result column="RECEIVE_AMOUNT_TOTAL" property="receiveAmountTotal" jdbcType="DECIMAL" />
+    <result column="RECEIVED_AMOUNT_TOTAL" property="receivedAmountTotal" jdbcType="DECIMAL" />
+    <result column="VOLUME_TOTAL" property="volumeTotal" jdbcType="DECIMAL" />
+    <result column="WEIGHT_TOTAL" property="weightTotal" jdbcType="DECIMAL" />
+    <result column="SIGNWAYBILL_TOTAL" property="signwaybillTotal" jdbcType="DECIMAL" />
+    <result column="RETURN_TICKET_TOTAL" property="returnTicketTotal" jdbcType="DECIMAL" />
+    <result column="BUSINESS_DATE" property="businessDate" jdbcType="TIMESTAMP" />
+    <result column="CREATE_USER_CODE" property="createUserCode" jdbcType="VARCHAR" />
+    <result column="CREATE_USER_NAME" property="createUserName" jdbcType="VARCHAR" />
+    <result column="CREATE_ORG_CODE" property="createOrgCode" jdbcType="VARCHAR" />
+    <result column="CREATE_ORG_NAME" property="createOrgName" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="MODIFY_USER_CODE" property="modifyUserCode" jdbcType="VARCHAR" />
+    <result column="MODIFY_USER_NAME" property="modifyUserName" jdbcType="VARCHAR" />
+    <result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+    <result column="REPORT_BEGIN_DATE" property="reportBeginDate" jdbcType="TIMESTAMP" />
+    <result column="REPORT_END_DATE" property="reportEndDate" jdbcType="TIMESTAMP" />
+    <result column="NOTES" property="notes" jdbcType="VARCHAR" />
+    <result column="CURRENCY_CODE" property="currencyCode" jdbcType="VARCHAR" />
+    <result column="PIECES_TOTAL" property="piecesTotal" jdbcType="DECIMAL" />
+    <result column="RPT_TYPE" property="rptType" jdbcType="VARCHAR" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    ID, REPORT_NO, DRIVER_CODE, DRIVER_NAME, VEHICLE_NO, WAYBILL_QTY_TOTAL, RECEIVE_AMOUNT_TOTAL/100 RECEIVE_AMOUNT_TOTAL, 
+    RECEIVED_AMOUNT_TOTAL/100 RECEIVED_AMOUNT_TOTAL, VOLUME_TOTAL, WEIGHT_TOTAL, SIGNWAYBILL_TOTAL, RETURN_TICKET_TOTAL, 
+    BUSINESS_DATE, CREATE_USER_CODE, CREATE_USER_NAME, CREATE_ORG_CODE, CREATE_ORG_NAME, 
+    CREATE_TIME, MODIFY_USER_CODE, MODIFY_USER_NAME, MODIFY_TIME, NOTES,REPORT_BEGIN_DATE,REPORT_END_DATE,CURRENCY_CODE,
+    PIECES_TOTAL,RPT_TYPE
+  </sql>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.String" >
+    select 
+    <include refid="Base_Column_List" />
+    from STL.T_STL_DRIVER_COLLECTION_RPT
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+  <insert id="insert" parameterType="com.deppon.foss.module.settlement.pay.api.shared.domain.DriverCollectionRptEntity" >
+    insert into STL.T_STL_DRIVER_COLLECTION_RPT (ID, REPORT_NO, DRIVER_CODE, 
+      DRIVER_NAME, VEHICLE_NO, WAYBILL_QTY_TOTAL, 
+      RECEIVE_AMOUNT_TOTAL, RECEIVED_AMOUNT_TOTAL, 
+      VOLUME_TOTAL, WEIGHT_TOTAL, SIGNWAYBILL_TOTAL, 
+      RETURN_TICKET_TOTAL, BUSINESS_DATE, CREATE_USER_CODE, 
+      CREATE_USER_NAME, CREATE_ORG_CODE, CREATE_ORG_NAME, 
+      CREATE_TIME, MODIFY_USER_CODE, MODIFY_USER_NAME, 
+      MODIFY_TIME, NOTES,REPORT_BEGIN_DATE,REPORT_END_DATE,CURRENCY_CODE,
+      PIECES_TOTAL,RPT_TYPE)
+    values (#{id,jdbcType=VARCHAR}, #{reportNo,jdbcType=VARCHAR}, #{driverCode,jdbcType=VARCHAR}, 
+      #{driverName,jdbcType=VARCHAR}, #{vehicleNo,jdbcType=VARCHAR}, #{waybillQtyTotal,jdbcType=DECIMAL}, 
+      #{receiveAmountTotal,jdbcType=DECIMAL}*100, #{receivedAmountTotal,jdbcType=DECIMAL}*100, 
+      #{volumeTotal,jdbcType=DECIMAL}, #{weightTotal,jdbcType=DECIMAL}, #{signwaybillTotal,jdbcType=DECIMAL}, 
+      #{returnTicketTotal,jdbcType=DECIMAL}, #{businessDate,jdbcType=TIMESTAMP}, #{createUserCode,jdbcType=VARCHAR}, 
+      #{createUserName,jdbcType=VARCHAR}, #{createOrgCode,jdbcType=VARCHAR}, #{createOrgName,jdbcType=VARCHAR}, 
+      #{createTime,jdbcType=TIMESTAMP}, #{modifyUserCode,jdbcType=VARCHAR}, #{modifyUserName,jdbcType=VARCHAR}, 
+      #{modifyTime,jdbcType=TIMESTAMP}, #{notes,jdbcType=VARCHAR}, #{reportBeginDate,jdbcType=TIMESTAMP}, 
+      #{reportEndDate,jdbcType=TIMESTAMP}, #{currencyCode,jdbcType=VARCHAR}, #{piecesTotal,jdbcType=DECIMAL},
+      #{rptType,jdbcType=DECIMAL})
+  </insert>
+  <!-- 获取当前查询条件下最近一次缴款日期 -->
+  <select id="selectMaxReportDate" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.DriverCollectionRptDto" resultType="java.util.Date">
+  	SELECT /*获取当前查询条件下最近一次缴款日期*/
+		MAX(R.REPORT_END_DATE)
+  	FROM STL.T_STL_DRIVER_COLLECTION_RPT R
+ 	WHERE R.DRIVER_CODE = #{driverCode,jdbcType=VARCHAR}
+         <![CDATA[ AND R.BUSINESS_DATE >=#{reportBeginDate,jdbcType=TIMESTAMP} AND R.BUSINESS_DATE < #{reportEndDate,jdbcType=TIMESTAMP}]]>
+         <if test="rptType!=null and rptType!='' ">
+         	AND ( R.RPT_TYPE = #{rptType,jdbcType=VARCHAR} OR R.RPT_TYPE IS NULL)
+         </if>
+  </select>
+  
+  
+   <!-- 获取当前查询条件下最近一次缴款日期 零担 -->
+  <select id="selectMaxReportDateByDate" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.DriverCollectionRptDto" resultType="java.util.Date">
+  	SELECT /*获取当前查询条件下最近一次缴款日期*/
+		MAX(R.REPORT_END_DATE)
+  	FROM STL.T_STL_DRIVER_COLLECTION_RPT R
+ 	WHERE R.DRIVER_CODE = #{driverCode,jdbcType=VARCHAR}
+ 		AND (
+	 			(<![CDATA[R.REPORT_END_DATE > = #{reportBeginDate,jdbcType=TIMESTAMP} AND R.REPORT_END_DATE <= #{reportEndDate,jdbcType=TIMESTAMP}]]>
+		       	 			AND(R.RPT_TYPE = #{rptType,jdbcType=VARCHAR} OR R.RPT_TYPE IS NULL)
+		       	)OR	(R.RPT_TYPE IS NULL AND R.REPORT_END_DATE > #{reportEndDate,jdbcType=TIMESTAMP})
+		    )
+  </select>
+  
+  <!-- 查询司机缴款列表 -->
+  <select id="queryReceiveReportBill" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.DriverCollectionRptDto" resultMap="BaseResultMap">
+  	select/*查询司机缴款列*/
+  		<include refid="Base_Column_List"/>
+  	from STL.T_STL_DRIVER_COLLECTION_RPT R
+  	where 
+  		  <![CDATA[R.BUSINESS_DATE >=#{reportBeginDate,jdbcType=TIMESTAMP} AND R.BUSINESS_DATE < #{reportEndDate,jdbcType=TIMESTAMP}]]>
+  		  AND  R.CREATE_ORG_CODE = #{createOrgCode,jdbcType=VARCHAR}
+  		  <if test="driverCode!=null and driverCode!=''">
+  		 	 AND R.DRIVER_CODE = #{driverCode,jdbcType=VARCHAR}
+  		  </if>
+    	  <if test="reportNo!=null and reportNo!=''">
+    	  	AND R.REPORT_NO = #{reportNo,jdbcType=VARCHAR}
+    	  </if>
+    	  <if test="rptType!=null and rptType!='' ">
+         	AND R.RPT_TYPE = #{rptType,jdbcType=VARCHAR} 
+         </if>
+  </select>
+  <!-- 查询司机缴款列表 -->
+  <select id="queryReceiveReportBillCount" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.DriverCollectionRptDto" resultType="int">
+  	select/*查询司机缴款列表*/
+  		count(1)
+  	from STL.T_STL_DRIVER_COLLECTION_RPT R
+  	where 
+  		  <![CDATA[R.BUSINESS_DATE >=#{reportBeginDate,jdbcType=TIMESTAMP} AND R.BUSINESS_DATE < #{reportEndDate,jdbcType=TIMESTAMP}]]>
+  		  AND  R.CREATE_ORG_CODE = #{createOrgCode,jdbcType=VARCHAR}
+  		  <if test="driverCode!=null and driverCode!=''">
+  		 	 AND R.DRIVER_CODE = #{driverCode,jdbcType=VARCHAR}
+  		  </if>
+    	  <if test="reportNo!=null and reportNo!=''">
+    	  	AND R.REPORT_NO = #{reportNo,jdbcType=VARCHAR}
+    	  </if>  
+    	   <if test="rptType!=null and rptType!='' ">
+         	AND R.RPT_TYPE = #{rptType,jdbcType=VARCHAR} 
+         </if>
+   </select>
+   <!-- 根据报表起始日期和结束日期查询是否在改时间已经有报表生成 -->
+  <select id="isExistReport" parameterType="com.deppon.foss.module.settlement.pay.api.shared.domain.DriverCollectionRptEntity" resultType="int">
+  	SELECT /*根据报表起始日期和结束日期查询是否在改时间已经有报表生成*/
+  		count(1)
+	FROM STL.T_STL_DRIVER_COLLECTION_RPT R
+	WHERE R.DRIVER_CODE = #{driverCode,jdbcType=VARCHAR}
+          AND R.CREATE_ORG_CODE = #{createOrgCode,jdbcType=VARCHAR}
+        <![CDATA[ AND R.REPORT_BEGIN_DATE = #{reportBeginDate,jdbcType=TIMESTAMP} ]]>  
+         <if test="rptType!=null and rptType!='' ">
+         	AND (R.RPT_TYPE = #{rptType,jdbcType=VARCHAR} OR R.RPT_TYPE IS NULL)
+         </if>
+  </select>
+  
+   <!-- 查询司机缴款列表 -->
+  <select id="queryReceiveReportByReportNo" parameterType="String" resultMap="BaseResultMap">
+  	select /*查询司机缴款列表*/
+  		<include refid="Base_Column_List"/>
+  	from STL.T_STL_DRIVER_COLLECTION_RPT R
+  	where 
+    	R.REPORT_NO = #{reportNo,jdbcType=VARCHAR}
+   </select>
+  
+</mapper>

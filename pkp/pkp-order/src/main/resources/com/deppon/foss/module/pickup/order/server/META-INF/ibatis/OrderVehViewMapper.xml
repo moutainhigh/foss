@@ -1,0 +1,503 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper
+	namespace="com.deppon.foss.module.pickup.order.api.server.dao.IOrderVehViewDao">
+	<resultMap id="DriverSignResultMap"
+		type="com.deppon.foss.module.pickup.order.api.shared.dto.OrderVehViewSignDto">
+		<result column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="ORDER_NO" property="orderNo" jdbcType="VARCHAR" />
+		<result column="ORDER_VEHICLE_ORG_NAME" property="orderVehicleOrgName"
+			jdbcType="VARCHAR" />
+		<result column="ORDER_VEHICLE_ORG_CODE" property="orderVehicleOrgCode"
+			jdbcType="VARCHAR" />
+		<result column="PICKUP_ADDRESS" property="pickupAddress"
+			jdbcType="VARCHAR" />
+		<result column="CUSTOMER_TELEPHONE" property="customerTelephone"
+			jdbcType="VARCHAR" />
+		<result column="DRIVER_NAME" property="driverName" jdbcType="VARCHAR" />
+		<result column="DRIVER_CODE" property="driverCode" jdbcType="VARCHAR" />
+		<result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+		<result column="DEP_TELEPHONE" property="depTelephone"
+			jdbcType="VARCHAR" />
+	</resultMap>
+
+	<resultMap id="DriverResultMap"
+		type="com.deppon.foss.module.pickup.order.api.shared.dto.OwnTruckSignDto">
+		<result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+		<result column="DRIVER_NAME" property="driverName" jdbcType="VARCHAR" />
+		<result column="DRIVER_CODE" property="driverCode" jdbcType="VARCHAR" />
+		<result column="DRIVER_MOBILE_PHONE" property="driverMobilePhone"
+			jdbcType="VARCHAR" />
+		<result column="VEHICLE_TYPE" property="vehicleType" jdbcType="VARCHAR" />
+		<result column="VEHICLE_LENGTH" property="vehicleNoType"
+			jdbcType="VARCHAR" />
+		<result column="WORK_STATUS" property="recieveOrderStatus"
+			jdbcType="VARCHAR" />
+		<result column="REGION_NAME" property="regionName" jdbcType="VARCHAR" />
+		<result column="REGION_CODE" property="regionCode" jdbcType="VARCHAR" />
+		<result column="GIS_ID" property="gisId" jdbcType="VARCHAR" />
+		<result column="SIGN_WAYBILL_TOTAL" property="signWaybillTotal"
+			jdbcType="DECIMAL" />
+		<result column="DELIVER_WAYBILL_TOTAL" property="deliverWaybillTotal"
+			jdbcType="DECIMAL" />
+		<result column="RECEIVE_ORDER_TOTAL" property="receiveOrderTotal"
+			jdbcType="DECIMAL" />
+		<result column="RECEIVE_WAYBILL_ORDER_TOTAL" property="receiveWaybillOrderTotal"
+			jdbcType="DECIMAL" />
+	</resultMap>
+
+	<resultMap id="BaseBillCountMap"
+		type="com.deppon.foss.module.pickup.order.api.shared.dto.DriverBillCountDto">
+		<result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+		<result column="RECEIVE_COUNT" property="receiveCount"
+			jdbcType="INTEGER" />
+		<result column="COMPLETE_COUNT" property="completeCount"
+			jdbcType="INTEGER" />
+		<result column="TOTALWEIGHT" property="totalWeight" jdbcType="DECIMAL" />
+		<result column="TOTALVOLUME" property="totalVolume" jdbcType="DECIMAL" />
+	</resultMap>
+
+	<!-- 接送货-可视化订单-查询订单 -->
+	<select id="queryOrderVehViewByCommon" resultMap="DriverSignResultMap"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.dto.DriverQueryDto">
+		SELECT /*模块：接送货-可视化订单-查询订单*/
+		O.ID,
+		O.ORDER_NO AS ORDER_NO,
+		ORG.NAME AS
+		ORDER_VEHICLE_ORG_NAME,
+		ORG.CODE AS ORDER_VEHICLE_ORG_CODE,
+		O.PICKUP_PROVINCE || O.PICKUP_CITY || O.PICKUP_COUNTY ||
+		O.PICKUP_ELSE_ADDRESS AS PICKUP_ADDRESS,
+		O.MOBILE || '，' || O.TEL AS
+		CUSTOMER_TELEPHONE,
+		O.DRIVER_NAME AS DRIVER_NAME,
+		O.DRIVER_CODE AS
+		DRIVER_CODE,
+		O.VEHICLE_NO AS VEHICLE_NO,
+		ORG.DEP_TELEPHONE AS
+		DEP_TELEPHONE
+		FROM PKP.T_SRV_DISPATCH_ORDER O
+		join
+		BSE.T_BAS_SALES_DEPARTMENT S on O.SALES_DEPARTMENT_CODE = S.CODE and
+		S.ACTIVE = 'Y'
+		LEFT JOIN BSE.T_BAS_ORG ORG
+		ON ORG.CODE = S.CODE
+		AND
+		ORG.ACTIVE = 'Y'
+		WHERE 1=1
+		and S.IN_CENTRALIZED_SHUTTLE = 'Y'
+			AND O.PRODUCT_CODE not in 
+			<foreach collection="productCodes" item="item" index="index"
+				open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		 <![CDATA[ AND O.ORDER_STATUS IN ('NONE_HANDLE','AGAIN_PICKUP')]]>
+		<if test="fleetCodeList != null and fleetCodeList.size() > 0">
+			AND O.FLEET_CODE in
+			<foreach collection="fleetCodeList" item="item" index="index"
+				open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		<if test="orderNo != null and orderNo != ''">
+			AND O.ORDER_NO = #{orderNo,jdbcType=VARCHAR}
+		</if>
+		<if test="vehicleNoList != null and vehicleNoList.size() > 0">
+			AND O.VEHICLE_NO in
+			<foreach collection="vehicleNoList" item="item" index="index"
+				open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		AND ROWNUM <![CDATA[ <= ]]>
+		300
+	</select>
+
+	<!-- 接送货-订单可视化-查询车辆司机信息 -->
+	<select id="queryDriverByCommon" resultMap="DriverResultMap"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.dto.DriverQueryDto">
+		SELECT DISTINCT/*模块：接送货-订单可视化-查询车辆司机信息*/
+		TR.VEHICLE_NO,
+		TMD.DRIVER_CODE,
+		TMD.DRIVER_NAME,
+		TMD.DRIVER_MOBILE_PHONE,
+		DECODE(TV.VEHICLE_TYPE,
+		'FIRST_CONSTANT_AREA_CAR',
+		'一级',
+		'SECOND_CONSTANT_AREA_CAR',
+		'二级',
+		'MOTOR_VEHICLE',
+		'机动',
+		TV.VEHICLE_TYPE)
+		AS VEHICLE_TYPE,
+		VT.VEHICLE_LENGTH,
+		DECODE(PM.WORK_STATUS, 'STOP', '暂停',
+		'OPEN', '开启', '开启') AS WORK_STATUS,
+		TV.REGION_CODE,
+		TV.REGION_NAME,
+		TV.GIS_ID
+		FROM BSE.T_BAS_OWN_TRUCK TR
+		INNER JOIN BSE.T_BAS_ORG ORG
+		ON
+		ORG.CODE = TR.ORG_ID
+		AND ORG.ACTIVE = 'Y'
+		LEFT JOIN
+		BSE.T_BAS_VEHICLE_TYPE_LENGTH VT
+		ON VT.VEHICLE_LENGTH_CODE =
+		TR.VEHICLE_LENGHT_CODE
+		AND VT.ACTIVE = 'Y'
+		LEFT JOIN (SELECT DISTINCT
+		V.REGION_CODE,
+		V.REGION_NAME,
+		V.VEHICLE_TYPE,
+		V.VEHICLE_NO,
+		SB.BIG_REGION_CODE,
+		SM.SMALL_REGION_CODE,
+		SM.GIS_ID
+		FROM
+		BSE.T_BAS_REGION_VEHICLE V
+		LEFT JOIN (SELECT SM.GISID AS GIS_ID,
+		SM.VIRTUAL_CODE AS SMALL_VIRTUAL_CODE,
+		SM.REGION_CODE AS
+		SMALL_REGION_CODE
+		FROM BSE.T_BAS_SERVICE_SMALLZONE SM
+		WHERE SM.ACTIVE =
+		'Y'
+		AND SM.REGION_TYPE = 'PK') SM
+		ON SM.SMALL_VIRTUAL_CODE =
+		V.REGION_CODE
+		LEFT JOIN (SELECT SB.VIRTUAL_CODE AS BIG_VIRTUAL_CODE,
+		SB.REGION_CODE AS BIG_REGION_CODE
+		FROM BSE.T_BAS_SERVICE_BIGZONE SB
+		WHERE SB.ACTIVE = 'Y'
+		AND SB.TYPE = 'PK') SB
+		ON SB.BIG_VIRTUAL_CODE =
+		V.REGION_CODE
+		WHERE V.ACTIVE = 'Y'
+		AND V.REGION_TYPE = 'PK') TV
+		ON
+		TR.VEHICLE_NO = TV.VEHICLE_NO
+		LEFT JOIN (SELECT DISTINCT PS.VEHICLE_NO
+		AS VEHICLE_NO,
+		PS.DRIVER_CODE AS DRIVER_CODE,
+		DR.EMP_NAME AS
+		DRIVER_NAME,
+		DR.EMP_PHONE AS DRIVER_MOBILE_PHONE
+		FROM PKP.T_SRV_PDA_SIGN
+		PS
+		INNER JOIN BSE.T_BAS_OWNDRIVER DR
+		ON PS.DRIVER_CODE = DR.EMP_CODE
+		AND
+		DR.ACTIVE = 'Y'
+		AND PS.STATUS = 'BUNDLE'
+		UNION (SELECT DISTINCT
+		ST.VEHICLE_NO AS VEHICLE_NO,
+		S.DRIVER_CODE AS DRIVER_CODE,
+		DR.EMP_NAME
+		AS DRIVER_NAME,
+		DR.EMP_PHONE AS DRIVER_MOBILE_PHONE
+		FROM
+		TFR.T_OPT_TRUCK_SCHEDULING S
+		INNER JOIN TFR.T_OPT_TRUCK_SCHEDULING_TASK
+		ST
+		ON S.ID = ST.T_OPT_TRUCK_SCHEDULING_ID
+		LEFT JOIN BSE.T_BAS_OWNDRIVER
+		DR
+		ON S.DRIVER_CODE = DR.EMP_CODE
+		AND DR.ACTIVE = 'Y'
+		WHERE
+		S.SCHEDULING_STATUS = 'Y'
+		AND S.SCHEDULING_TYPE = 'PKP'
+				                      <![CDATA[ AND S.SCHEDULING_DATE >= TRUNC(SYSDATE)
+				                      AND S.SCHEDULING_DATE < TRUNC(SYSDATE+1))) TMD
+				                      ]]>
+		ON TMD.VEHICLE_NO = TR.VEHICLE_NO
+		LEFT JOIN (SELECT TM.VEHICLE_NO,
+		TM.WORK_STATUS
+		FROM (SELECT EMP.VEHICLE_NO,
+		EMP.WORK_STATUS,
+		ROW_NUMBER() OVER(PARTITION BY VEHICLE_NO ORDER BY ROWNUM) CN
+		FROM
+		(SELECT *
+		FROM PKP.T_SRV_EMPLOYEEWORKSTATUS
+		ORDER BY MODIFY_TIME DESC)
+		EMP) TM
+		WHERE TM.CN = 1) PM
+		ON PM.VEHICLE_NO = TR.VEHICLE_NO
+		WHERE
+		TR.ACTIVE = 'Y'
+		AND TR.USED_TYPE = 'used_type_pkp'
+		<if test="fleetCodeList != null and fleetCodeList.size() > 0">
+			AND ORG.CODE IN
+			<foreach collection="fleetCodeList" item="item" index="index"
+				open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		<if test="driverCode != null and driverCode != ''">
+			AND TMD.DRIVER_CODE = #{driverCode,jdbcType=CHAR}
+		</if>
+		<if test="smallZoneCode != null and smallZoneCode != ''">
+			AND TV.SMALL_REGION_CODE = #{smallZoneCode,jdbcType=CHAR}
+		</if>
+		<!--219396 cdl DMANA-4867 订单可视化界面优化 -->
+		<if test="bigZoneCodes != null and bigZoneCodes.size() > 0">
+			AND TV.BIG_REGION_CODE IN
+			<foreach collection="bigZoneCodes" item="item" index="index"
+				open="(" separator="," close=")">
+				#{item}
+			</foreach>
+			<if test="smallZoneCodes != null and smallZoneCodes.size() > 0">
+				OR TV.SMALL_REGION_CODE IN
+				<foreach collection="smallZoneCodes" item="item" index="index"
+					open="(" separator="," close=")">
+						#{item}
+				</foreach>
+			</if>
+		</if>
+		<if test="vehicleNo != null and vehicleNo != ''">
+			AND TR.VEHICLE_NO = #{vehicleNo,jdbcType=CHAR}
+		</if>
+		<if test="recieveOrderStatus != null and recieveOrderStatus != ''">
+			AND PM.WORK_STATUS = #{recieveOrderStatus,jdbcType=CHAR}
+		</if>
+		order by WORK_STATUS desc
+	</select>
+
+	<!-- 接送货-订单可视化-查询车辆司机总条数 -->
+	<select id="queryDriverByCommonCount" resultType="java.lang.Long"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.dto.DriverQueryDto">
+		SELECT/*模块：接送货-订单可视化-查询车辆司机总条数*/
+		COUNT(DISTINCT TV.VEHICLE_NO)
+		FROM
+		BSE.T_BAS_OWN_TRUCK TR
+		INNER JOIN BSE.T_BAS_ORG ORG
+		ON ORG.CODE =
+		TR.ORG_ID
+		AND ORG.ACTIVE = 'Y'
+		LEFT JOIN BSE.T_BAS_VEHICLE_TYPE_LENGTH
+		VT
+		ON VT.VEHICLE_LENGTH_CODE = TR.VEHICLE_LENGHT_CODE
+		AND VT.ACTIVE =
+		'Y'
+		LEFT JOIN (SELECT DISTINCT V.REGION_CODE,
+		V.REGION_NAME,
+		V.VEHICLE_TYPE,
+		V.VEHICLE_NO,
+		SB.BIG_REGION_CODE,
+		SM.SMALL_REGION_CODE,
+		SM.GIS_ID
+		FROM BSE.T_BAS_REGION_VEHICLE V
+		LEFT JOIN (SELECT SM.GISID AS
+		GIS_ID,
+		SM.VIRTUAL_CODE AS SMALL_VIRTUAL_CODE,
+		SM.REGION_CODE AS
+		SMALL_REGION_CODE
+		FROM BSE.T_BAS_SERVICE_SMALLZONE SM
+		WHERE SM.ACTIVE =
+		'Y'
+		AND SM.REGION_TYPE = 'PK') SM
+		ON SM.SMALL_VIRTUAL_CODE =
+		V.REGION_CODE
+		LEFT JOIN (SELECT SB.VIRTUAL_CODE AS BIG_VIRTUAL_CODE,
+		SB.REGION_CODE AS BIG_REGION_CODE
+		FROM BSE.T_BAS_SERVICE_BIGZONE SB
+		WHERE SB.ACTIVE = 'Y'
+		AND SB.TYPE = 'PK') SB
+		ON SB.BIG_VIRTUAL_CODE =
+		V.REGION_CODE
+		WHERE V.ACTIVE = 'Y'
+		AND V.REGION_TYPE = 'PK') TV
+		ON
+		TR.VEHICLE_NO = TV.VEHICLE_NO
+		LEFT JOIN (SELECT DISTINCT PS.VEHICLE_NO
+		AS VEHICLE_NO,
+		PS.DRIVER_CODE AS DRIVER_CODE,
+		DR.EMP_NAME AS
+		DRIVER_NAME,
+		DR.EMP_PHONE AS DRIVER_MOBILE_PHONE
+		FROM PKP.T_SRV_PDA_SIGN
+		PS
+		INNER JOIN BSE.T_BAS_OWNDRIVER DR
+		ON PS.DRIVER_CODE = DR.EMP_CODE
+		AND
+		DR.ACTIVE = 'Y'
+		AND PS.STATUS = 'BUNDLE'
+		UNION (SELECT DISTINCT
+		ST.VEHICLE_NO AS VEHICLE_NO,
+		S.DRIVER_CODE AS DRIVER_CODE,
+		DR.EMP_NAME
+		AS DRIVER_NAME,
+		DR.EMP_PHONE AS DRIVER_MOBILE_PHONE
+		FROM
+		TFR.T_OPT_TRUCK_SCHEDULING S
+		INNER JOIN TFR.T_OPT_TRUCK_SCHEDULING_TASK
+		ST
+		ON S.ID = ST.T_OPT_TRUCK_SCHEDULING_ID
+		LEFT JOIN BSE.T_BAS_OWNDRIVER
+		DR
+		ON S.DRIVER_CODE = DR.EMP_CODE
+		AND DR.ACTIVE = 'Y'
+		WHERE
+		S.SCHEDULING_STATUS = 'Y'
+		AND S.SCHEDULING_TYPE = 'PKP'
+				                      <![CDATA[ AND S.SCHEDULING_DATE >= TRUNC(SYSDATE)
+				                      AND S.SCHEDULING_DATE < TRUNC(SYSDATE+1))) TMD
+				                      ]]>
+		ON TMD.VEHICLE_NO = TR.VEHICLE_NO
+		LEFT JOIN (SELECT TM.VEHICLE_NO,
+		TM.WORK_STATUS
+		FROM (SELECT EMP.VEHICLE_NO,
+		EMP.WORK_STATUS,
+		ROW_NUMBER() OVER(PARTITION BY VEHICLE_NO ORDER BY ROWNUM) CN
+		FROM
+		(SELECT *
+		FROM PKP.T_SRV_EMPLOYEEWORKSTATUS
+		ORDER BY MODIFY_TIME DESC)
+		EMP) TM
+		WHERE TM.CN = 1) PM
+		ON PM.VEHICLE_NO = TR.VEHICLE_NO
+		WHERE
+		TR.ACTIVE = 'Y'
+		AND TR.USED_TYPE = 'used_type_pkp'
+		<if test="fleetCodeList != null and fleetCodeList.size() > 0">
+			AND ORG.CODE IN
+			<foreach collection="fleetCodeList" item="item" index="index"
+				open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		<if test="driverCode != null and driverCode != ''">
+			AND TMD.DRIVER_CODE = #{driverCode,jdbcType=CHAR}
+		</if>
+		<if test="smallZoneCode != null and smallZoneCode != ''">
+			AND TV.SMALL_REGION_CODE = #{smallZoneCode,jdbcType=CHAR}
+		</if>
+		<!--219396 cdl DMANA-4867 订单可视化界面优化 -->
+		<if test="bigZoneCodes != null and bigZoneCodes.size() > 0">
+			AND TV.BIG_REGION_CODE IN
+			<foreach collection="bigZoneCodes" item="item" index="index"
+				open="(" separator="," close=")">
+				#{item}
+			</foreach>
+			<if test="smallZoneCodes != null and smallZoneCodes.size() > 0">
+				OR TV.SMALL_REGION_CODE IN
+				<foreach collection="smallZoneCodes" item="item" index="index"
+					open="(" separator="," close=")">
+						#{item}
+				</foreach>
+			</if>
+		</if>
+		<if test="vehicleNo != null and vehicleNo != ''">
+			AND TR.VEHICLE_NO = #{vehicleNo,jdbcType=CHAR}
+		</if>
+		<if test="recieveOrderStatus != null and recieveOrderStatus != ''">
+			AND PM.WORK_STATUS = #{recieveOrderStatus,jdbcType=CHAR}
+		</if>
+
+	</select>
+	<!-- 统计派送总数 -->
+	<select id="queryDeliverBillCount" resultMap="BaseBillCountMap"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.dto.DriverQueryDto">
+		SELECT BILL.VEHICLE_NO AS VEHICLE_NO,
+		count(1) AS RECEIVE_COUNT,
+		SUM(DECODE(WS.ID, NULL, 0, 1)) AS
+		COMPLETE_COUNT
+		FROM
+		PKP.T_SRV_DELIVERBILL BILL
+		INNER JOIN PKP.T_SRV_DELIVERBILL_DETAIL
+		DETAIL
+		ON BILL.ID = DETAIL.T_SRV_DELIVERBILL_ID
+		LEFT JOIN
+		PKP.T_SRV_WAYBILL_SIGN_RESULT WS
+		ON WS.WAYBILL_NO = DETAIL.WAYBILL_NO
+		AND WS.ACTIVE = 'Y'
+		WHERE 1=1
+		 	<![CDATA[ 
+		 		AND (BILL.IS_EXPRESS <> 'Y' OR BILL.IS_EXPRESS IS NULL)
+		   		AND BILL.SUBMIT_TIME >= TRUNC(SYSDATE)
+		   ]]>
+		and BILL.STATUS in ('CONFIRMED','PDA_DOWNLOADED','SIGNINFO_CONFIRMED') <!--10.11 
+			gcl ON-1388 -->
+		<if test="vehicleNo != null and vehicleNo != ''">
+			AND BILL.VEHICLE_NO = #{vehicleNo,jdbcType=CHAR}
+		</if>
+		GROUP BY BILL.VEHICLE_NO
+	</select>
+
+	<!-- 统计订单总数 -->
+	<select id="queryOrderBillCount" resultMap="BaseBillCountMap"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.dto.DriverQueryDto">
+		SELECT ORDERS.VEHICLE_NO AS VEHICLE_NO,
+		SUM(DECODE(ORDERS.ORDER_STATUS,
+		'PDA_ACCEPT',
+		ORDERS.WEIGHT,
+		'PICKUPING',
+		ORDERS.WEIGHT,
+		'WAYBILL',
+		ORDERS.WEIGHT,
+		'DISPATCH_VEHICLE',
+		ORDERS.WEIGHT,
+		0)) TOTALWEIGHT,
+		SUM(DECODE(ORDERS.ORDER_STATUS,
+		'PDA_ACCEPT',
+		ORDERS.VOLUME,
+		'PICKUPING',
+		ORDERS.VOLUME,
+		'WAYBILL',
+		ORDERS.VOLUME,
+		'DISPATCH_VEHICLE',
+		ORDERS.VOLUME,
+		0)) TOTALVOLUME,
+		SUM(DECODE(ORDERS.ORDER_STATUS,
+		'PDA_ACCEPT',
+		1,
+		'PICKUPING',
+		1,
+		'WAYBILL',
+		1,
+		'DISPATCH_VEHICLE',
+		1,
+		0)) AS RECEIVE_COUNT,
+		SUM(DECODE(ORDERS.ORDER_STATUS,
+		'PDA_ACCEPT',
+		1,
+		'PICKUPING',
+		1,
+		'DISPATCH_VEHICLE',
+		1,
+		0)) AS COMPLETE_COUNT
+		FROM
+		PKP.T_SRV_DISPATCH_ORDER ORDERS
+		WHERE 1=1
+	      <![CDATA[ 
+	      	 AND ORDERS.OPERATE_TIME >= TRUNC(SYSDATE)
+	      ]]>
+	     	 AND ORDERS.PRODUCT_CODE not in 
+	     	 <foreach collection="productCodes" item="item" index="index"
+			 	open="(" separator="," close=")">
+					#{item}
+			 </foreach>
+	       
+		<if test="vehicleNo != null and vehicleNo != ''">
+			AND ORDERS.VEHICLE_NO = #{vehicleNo,jdbcType=CHAR}
+		</if>
+		GROUP BY ORDERS.VEHICLE_NO
+	</select>
+	
+	<!-- 根据大区编码查询小区 -->
+	<select id="querySmallZoneCodesByBigZoneCodes" resultType="com.deppon.foss.module.pickup.order.api.shared.dto.DriverQueryDto"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.dto.DriverQueryDto">
+		SELECT B.REGION_CODE smallZoneCode
+  			FROM BSE.T_BAS_SERVICE_SMALLZONE B
+				WHERE B.BIGZONECODE in (SELECT BIG.VIRTUAL_CODE
+                     FROM BSE.T_BAS_SERVICE_BIGZONE BIG
+                          WHERE BIG.REGION_CODE in 
+                          <foreach collection="bigZoneCodes" item="item" index="index"
+							open="(" separator="," close=")">
+								#{item}
+						  </foreach>
+                          AND BIG.ACTIVE = 'Y')
+   				AND B.ACTIVE = 'Y'		
+	</select>
+</mapper>

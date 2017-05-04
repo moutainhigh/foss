@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jaxws="http://cxf.apache.org/jaxws"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://www.springframework.org/schema/jee 
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+			http://www.springframework.org/schema/aop 
+			http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+			http://cxf.apache.org/jaxws http://cxf.apache.org/schemas/jaxws.xsd">
+
+	<!-- 数据源 -->
+	<bean id="dataSource"
+		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver" />
+		<!-- <property name="url" value="jdbc:oracle:thin:@192.168.10.11:1521:fossdb" />  -->
+		<!-- <property name="url" value="jdbc:oracle:thin:@192.168.4.56:1521:shidiandb" />-->
+		<property name="url" value="jdbc:oracle:thin:@192.168.10.120:1521:FOSSSTD" />
+		
+		<property name="username" value="bse" />
+		<property name="password" value="fossdev" />
+	</bean>
+
+	<!-- JDBC模版 -->
+	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+		<constructor-arg ref="dataSource" />
+	</bean>
+
+	<!-- 数据连接管理 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<!-- 事务注解支持 -->
+	<tx:annotation-driven transaction-manager="transactionManager" />
+	<aop:config proxy-target-class="true"></aop:config>
+
+	<!-- myBatis文件 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="configLocation"
+			value="/com/deppon/foss/module/base/baseinfo/server/META-INF/mybatis.xml" />
+		<!-- 正式测试环境路径 -->
+		<property name="mapperLocations"
+			value="classpath*:com/deppon/**/META-INF/ibatis/*-mapper.xml" />
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+    
+
+	<!-- 国际化 -->
+	<bean id="messageCacheProvider"
+		class="com.deppon.foss.framework.server.cache.message.MessageCacheProvider">
+	</bean>
+	<bean id="messageCache"
+		class="com.deppon.foss.framework.server.cache.message.MessageCache">
+		<property name="cacheProvider" ref="messageCacheProvider" />
+	</bean>
+	<bean id="messageBundle"
+		class="com.deppon.foss.framework.server.web.message.MessageBundle">
+	</bean>
+	
+  	<bean id="client" class="com.deppon.foss.framework.cache.redis.RedisClient">
+		<!-- <property name="host1" value="192.168.10.246"></property> -->
+		<property name="host1" value="192.168.10.39"></property>
+		<property name="port1" value="6379"></property>
+		<!-- <property name="host2" value="192.168.10.248"></property> -->
+		<property name="host2" value="192.168.10.40"></property>
+		<property name="port2" value="6379"></property>
+	</bean>
+	
+	<bean id="storage"
+		class="com.deppon.foss.framework.cache.storage.RedisCacheStorage">
+		<property name="client" ref="client"></property>
+	</bean> 
+
+	<bean id="storage1"
+		class="com.deppon.foss.framework.cache.storage.RedisCacheStorage">
+		<property name="client" ref="client"></property>
+	</bean> 
+
+	<bean id="storage2"
+		class="com.deppon.foss.framework.cache.storage.RedisCacheStorage">
+		<property name="client" ref="client"></property>
+	</bean> 
+
+	<bean id="storage3"
+		class="com.deppon.foss.framework.cache.storage.RedisCacheStorage">
+		<property name="client" ref="client"></property>
+	</bean> 
+
+ 	<bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg index="0" ref="sqlSessionFactory" />
+	</bean>
+	
+	<!-- 启动MQ监听 -->
+	<bean id="esbInitUtil" class="com.deppon.esb.api.util.ESBInitUtil" init-method="process" lazy-init="false">
+	
+	</bean>
+	<!-- GPS同步接口Client -->
+	<jaxws:client id="depponGpsService" 
+				serviceClass="org.example.deppon_gps_service.DepponGpsService" 
+				address="${esb.ws}/foss2gps/gpsService">
+	</jaxws:client>
+
+	<context:annotation-config />
+	<context:component-scan base-package="com.deppon.foss.module.base.baseinfo" />
+
+	<import resource="spring.xml" />
+	
+	<import resource="classpath*:com/deppon/foss/module/base/dict/server/META-INF/spring.xml"/>	
+	<!-- 加载价格模型工程 -->
+	<import resource="classpath*:com/deppon/foss/module/pickup/pricing/server/META-INF/spring.xml"/>
+
+</beans>

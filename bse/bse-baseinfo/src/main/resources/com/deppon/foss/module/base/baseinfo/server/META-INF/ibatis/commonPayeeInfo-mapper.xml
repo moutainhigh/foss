@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.commmonPayeeInfo">
+	<resultMap id="payeeInfoResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.PayeeInfoEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="PAYEE_CODE" property="payeeNo" jdbcType="VARCHAR" />
+		<result column="OPERATOR_NO" property="operatorId" jdbcType="VARCHAR" />
+		<result column="ACCOUNT_TYPE" property="accountType" jdbcType="VARCHAR" />
+		<result column="BENEFICIARY_NAME" property="beneficiaryName"
+			jdbcType="VARCHAR" />
+		<result column="ACCOUNT_NO" property="accountNo" jdbcType="VARCHAR" />
+		<result column="ACCOUNTBANK_CODE" property="accountbankCode"
+			jdbcType="VARCHAR" />
+		<result column="ACCOUNTBRANCHBANK_CODE" property="accountbranchbankCode"
+			jdbcType="VARCHAR" />
+		<result column="ACCOUNTBANKCITY_CODE" property="accountbankcityCode"
+			jdbcType="VARCHAR" />
+		<result column="ACCOUNTBANKSTATE_CODE" property="accountbankstateCode"
+			jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+		<result column="ACC_SORT" property="accSort"
+			jdbcType="VARCHAR" />	
+	</resultMap>
+	<!-- 数据字段 -->
+	<sql id="payeeInfo_Column_List">
+		ID, PAYEE_CODE, OPERATOR_NO, ACCOUNT_TYPE, BENEFICIARY_NAME, ACCOUNT_NO,
+		ACCOUNTBANK_CODE,
+		ACCOUNTBRANCHBANK_CODE, ACCOUNTBANKCITY_CODE, ACCOUNTBANKSTATE_CODE, CREATE_TIME,
+		MODIFY_TIME, ACTIVE, CREATE_USER_CODE, MODIFY_USER_CODE,ACC_SORT
+	</sql>
+
+	<!-- 分页查询条件old -->
+	<sql id="queryWhere">
+		<where>
+			<if test="payeeNo != null and payeeNo != ''">
+				and PAYEE_CODE = #{payeeNo,jdbcType=CHAR}
+			</if>
+			<if test="accountType != null and accountType != ''">
+				and ACCOUNT_TYPE = #{accountType,jdbcType=CHAR}
+			</if>
+			<if test="accountTypes != null and  accountTypes.size()>0">
+				AND ACCOUNT_TYPE IN
+				<foreach collection="accountTypes" index="index" item="item" open="(" separator="," close=")">
+					#{item}
+				</foreach>
+			</if>
+			<if test="beneficiaryName != null and beneficiaryName != ''">
+				and BENEFICIARY_NAME  LIKE CONCAT(CONCAT('%', #{beneficiaryName,jdbcType=CHAR}),'%')
+			</if>
+			<if test="accountNo != null and accountNo != ''">
+				and ACCOUNT_NO = #{accountNo,jdbcType=CHAR}
+			</if>
+			<if test="accountbankCode != null and accountbankCode != ''">
+				and ACCOUNTBANK_CODE = #{accountbankCode,jdbcType=CHAR}
+			</if>
+			<if test="accountbranchbankCode != null and accountbranchbankCode != ''">
+				and ACCOUNTBRANCHBANK_CODE = #{accountbranchbankCode,jdbcType=CHAR}
+			</if>
+			<if test="accountbankcityCode != null and accountbankcityCode != ''">
+				and ACCOUNTBANKCITY_CODE = #{accountbankcityCode,jdbcType=CHAR}
+			</if>
+			<if test="accountbankstateCode != null and accountbankstateCode != ''">
+				and ACCOUNTBANKSTATE_CODE = #{accountbankstateCode,jdbcType=CHAR}
+			</if>
+			<if test="operatorId != null and operatorId != ''">
+				and OPERATOR_NO = #{operatorId,jdbcType=CHAR}
+			</if>
+			<if test="active != null and active != ''">
+				and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</sql>
+
+	<!-- 分页查询条件 -->
+	<sql id="queryWhereNew">
+		<where>
+			<if test="accountTypes != null and  accountTypes.size()>0">
+				( ACCOUNT_TYPE IN
+				<foreach collection="accountTypes" index="index" item="item" open="(" separator="," close=")">
+					#{item}
+				</foreach>
+			</if>
+			<if test="accSort != null and accSort != '' and accountType == '1'.toString()">
+				or (ACC_SORT = #{accSort,jdbcType=CHAR} and ACCOUNT_TYPE = '1')
+			</if>
+				)
+			<if test="beneficiaryName != null and beneficiaryName != ''">
+				and BENEFICIARY_NAME  LIKE CONCAT(CONCAT('%', #{beneficiaryName,jdbcType=CHAR}),'%')
+			</if>
+			<if test="accountNo != null and accountNo != ''">
+				and ACCOUNT_NO = #{accountNo,jdbcType=CHAR}
+			</if>
+			<if test="accountbankCode != null and accountbankCode != ''">
+				and ACCOUNTBANK_CODE = #{accountbankCode,jdbcType=CHAR}
+			</if>
+			<if test="accountbranchbankCode != null and accountbranchbankCode != ''">
+				and ACCOUNTBRANCHBANK_CODE = #{accountbranchbankCode,jdbcType=CHAR}
+			</if>
+			<if test="payeeNo != null and payeeNo != ''">
+				and PAYEE_CODE = #{payeeNo,jdbcType=CHAR}
+			</if>
+			<if test="accountbankcityCode != null and accountbankcityCode != ''">
+				and ACCOUNTBANKCITY_CODE = #{accountbankcityCode,jdbcType=CHAR}
+			</if>
+			<if test="accountbankstateCode != null and accountbankstateCode != ''">
+				and ACCOUNTBANKSTATE_CODE = #{accountbankstateCode,jdbcType=CHAR}
+			</if>
+			<if test="operatorId != null and operatorId != ''">
+				and OPERATOR_NO = #{operatorId,jdbcType=CHAR}
+			</if>
+			<if test="active != null and active != ''">
+				and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</sql>
+
+	<!-- 查询所有收款方信息 -->
+	<select id="queryAllInfos"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PayeeInfoEntity"
+		resultMap="payeeInfoResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有收款方信息 **/
+		]]>
+		<include refid="payeeInfo_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_PAYEEINFO T
+		]]>
+		<include refid="queryWhere" />
+	</select>
+	<!-- 查询所有收款方信息 -->
+	<select id="queryAllInfosNew"
+			parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PayeeInfoEntity"
+			resultMap="payeeInfoResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有收款方信息 **/
+		]]>
+		<include refid="payeeInfo_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_PAYEEINFO T
+		]]>
+		<include refid="queryWhereNew" />
+	</select>
+	<!-- 统计总记录数 -->
+	<select id="queryCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PayeeInfoEntity">
+	    <![CDATA[
+	       	SELECT/** 综合:统计总记录数 **/ COUNT(*) FROM BSE.T_BAS_PAYEEINFO T
+	    ]]>
+		<include refid="queryWhere" />
+	</select>
+	<!-- 统计总记录数 -->
+	<select id="queryCountNew" resultType="Long"
+			parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PayeeInfoEntity">
+		<![CDATA[
+	       	SELECT/** 综合:统计总记录数 **/ COUNT(*) FROM BSE.T_BAS_PAYEEINFO T
+	    ]]>
+		<include refid="queryWhereNew" />
+	</select>
+</mapper>

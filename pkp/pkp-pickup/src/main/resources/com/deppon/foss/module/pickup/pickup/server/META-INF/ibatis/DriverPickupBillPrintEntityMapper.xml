@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.deppon.foss.module.pickup.pickup.server.META-INF.ibatis.DriverPickupBillPrintEntityMapper" >
+  
+  <select id="queryDriverPickupBillPrint" 
+  	resultType="com.deppon.foss.module.pickup.pickup.api.shared.dto.RtDriverPickupBillPrintDto">
+     SELECT 
+    	waybill.ID as id,
+    	waybill.BILL_TIME as pickupTime,   --开单时间
+    	waybill.WAYBILL_NO  as waybillNo,  --运单号
+    	waybill.DRIVER_CODE as driverCode,  --司机工号
+    	employee.EMP_NAME as driverName, --接货司机姓名 
+    	orgreceive.NAME as createOrgName   --开单部门NAME
+    FROM PKP.T_SRV_WAYBILL waybill 
+    LEFT JOIN BSE.T_BAS_EMPLOYEE employee ON  waybill.DRIVER_CODE = employee.EMP_CODE  AND employee.Active = 'Y'
+    LEFT JOIN BSE.T_BAS_ORG orgreceive ON waybill.CREATE_ORG_CODE = orgreceive.CODE      AND orgreceive.ACTIVE='Y'
+    WHERE waybill.ACTIVE='Y' and waybill.IS_EXPRESS='N' and waybill.PICKUP_TO_DOOR='Y'
+    <if test=" pickupTimeBegin != null  ">
+		<![CDATA[ AND waybill.BILL_TIME >= #{pickupTimeBegin,jdbcType=TIMESTAMP} ]]>
+	</if>
+    
+    <if test=" pickupTimeEnd != null  ">
+		<![CDATA[ AND waybill.BILL_TIME <= #{pickupTimeEnd,jdbcType=TIMESTAMP} ]]>
+	</if>
+    
+    
+    <if test="driverCode != null and driverCode != ''">
+		<![CDATA[ AND waybill.DRIVER_CODE =#{driverCode} ]]>
+	</if>
+	
+	<if test="driverName != null and driverName != ''">
+		<![CDATA[ AND employee.EMP_NAME =#{driverName} ]]>
+	</if>
+	
+	<if test="waybillNo != null and waybillNo != ''">
+		<![CDATA[ AND waybill.WAYBILL_NO =#{waybillNo} ]]>
+	</if>
+	<if test="orgCode != null and orgCode != ''">
+		<![CDATA[ AND waybill.CREATE_ORG_CODE =#{orgCode} ]]>
+	</if>
+	
+    ORDER BY waybill.BILL_TIME DESC
+  </select>
+  
+  
+    <select id="queryDriverPickupBillPrintTotal" 
+  	resultType="Long"  >
+    SELECT  
+    	COUNT(1)
+    FROM PKP.T_SRV_WAYBILL waybill 
+    LEFT JOIN BSE.T_BAS_EMPLOYEE employee ON  waybill.DRIVER_CODE = employee.EMP_CODE  AND employee.Active = 'Y'
+    LEFT JOIN BSE.T_BAS_ORG orgreceive ON waybill.RECEIVE_ORG_CODE = orgreceive.CODE      AND orgreceive.ACTIVE='Y'
+    WHERE waybill.ACTIVE='Y' and waybill.IS_EXPRESS='N' and waybill.PICKUP_TO_DOOR='Y'
+    
+     <if test=" pickupTimeBegin != null  ">
+		<![CDATA[ AND waybill.BILL_TIME >= #{pickupTimeBegin,jdbcType=TIMESTAMP} ]]>
+	</if>
+    
+    <if test=" pickupTimeEnd != null  ">
+		<![CDATA[ AND waybill.BILL_TIME <= #{pickupTimeEnd,jdbcType=TIMESTAMP} ]]>
+	</if>
+    
+    
+    <if test="driverCode != null and driverCode != ''">
+		<![CDATA[ AND waybill.DRIVER_CODE =#{driverCode} ]]>
+	</if>
+	
+	<if test="driverName != null and driverName != ''">
+		<![CDATA[ AND employee.EMP_NAME =#{driverName} ]]>
+	</if>
+	
+	<if test="waybillNo != null and waybillNo != ''">
+		<![CDATA[ AND waybill.WAYBILL_NO =#{waybillNo} ]]>
+	</if>
+	<if test="orgCode != null and orgCode != ''">
+		<![CDATA[ AND waybill.CREATE_ORG_CODE =#{orgCode} ]]>
+	</if>
+  </select>
+  
+
+</mapper>

@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!-- 超时装卸费付款申请模块 -->
+<mapper namespace="foss.stl.OverdueSFPaymentApplyDao">
+
+	<resultMap id="OverdueSFPaymentApplyDtoMap"
+		type="com.deppon.foss.module.settlement.consumer.api.shared.dto.OverdueSFPaymentApplyDto">
+		<result column="ACCOUNT_DATE" property="accountDate" />
+		<result column="AMOUNT" property="amount" />
+		<result column="APPLY_ORG_CODE" property="applyOrgCode" />
+		<result column="APPLY_ORG_NAME" property="applyOrgName" />
+		<result column="APPLY_USER_NAME" property="applyUserName" />
+		<result column="AUDIT_ORG_CODE" property="auditOrgCode" />
+		<result column="AUDIT_ORG_NAME" property="auditOrgName" />
+		<result column="AUDIT_STATUS" property="auditStatus" />
+		<result column="AUDIT_USER_NAME" property="auditUserName" />
+		<result column="BUSINESS_DATE" property="businessDate" />
+		<result column="CREATE_TIME" property="createTime" />
+		<result column="CUSTOMER_CODE" property="customerCode" />
+		<result column="CUSTOMER_CONTACT" property="customerContact" />
+		<result column="CUSTOMER_CONTACT_NAME" property="customerContactName" />
+		<result column="CUSTOMER_NAME" property="customerName" />
+		<result column="CUSTOMER_PHONE" property="customerPhone" />
+		<result column="ID" property="id" />
+		<result column="MODIFY_TIME" property="modifyTime" />
+		<result column="NOTES" property="notes" />
+		<result column="PAYABLE_NO" property="payableNo" />
+		<result column="PAYABLE_ORG_CODE" property="payableOrgCode" />
+		<result column="PAYABLE_ORG_NAME" property="payableOrgName" />
+		<result column="REASON" property="reason" />
+		<result column="WAYBILL_NO" property="waybillNo" />
+		<result column="ACTIVE" property="active" />
+		<result column="APPLY_USER_CODE" property="applyUserCode" />
+		<result column="AUDIT_USER_CODE" property="auditUserCode" />
+	</resultMap>
+
+	<!-- 公用查询语句 -->
+	<sql id="OverdueSFPaymentApply_Column_List">
+		ACCOUNT_DATE,
+		AMOUNT/100 AMOUNT,
+		APPLY_ORG_CODE,
+		APPLY_ORG_NAME,
+		APPLY_USER_NAME,
+		AUDIT_ORG_CODE,
+		AUDIT_ORG_NAME,
+		AUDIT_STATUS,
+		AUDIT_USER_NAME,
+		BUSINESS_DATE,
+		CREATE_TIME,
+		CUSTOMER_CODE,
+		CUSTOMER_CONTACT,
+		CUSTOMER_CONTACT_NAME,
+		CUSTOMER_NAME,
+		CUSTOMER_PHONE,
+		ID,
+		MODIFY_TIME,
+		NOTES,
+		PAYABLE_NO,
+		PAYABLE_ORG_CODE,
+		PAYABLE_ORG_NAME,
+		REASON,
+		WAYBILL_NO,
+		ACTIVE,
+		APPLY_USER_CODE,
+		AUDIT_USER_CODE
+	</sql>
+
+	<select id="queryByAccountDate"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.OverdueSFPaymentApplyQueryDto"
+		resultMap="OverdueSFPaymentApplyDtoMap">
+		SELECT
+		<include refid="OverdueSFPaymentApply_Column_List" />
+		FROM STL.STL_OVERDUE_PAYABLE_SF_VIEW T
+		WHERE 
+		<![CDATA[
+			T.ACCOUNT_DATE >= #{beginAccountDate}
+			AND T.ACCOUNT_DATE <= #{endAccountDate}
+		]]>
+		<if test="consumer != null and consumer !='' ">
+			AND T.CUSTOMER_CODE = #{consumer}
+		</if>
+		<if test="status != null and status !='' ">
+			AND T.AUDIT_STATUS = #{status}
+		</if>
+		<if test="depts != null and depts.size() > 0">
+			AND T.PAYABLE_ORG_CODE IN
+			<foreach collection="depts" item="item" open="(" close=")"
+				separator="," index="index">
+				#{item}
+			</foreach>
+		</if>
+		AND T.ACTIVE = #{active}
+		<if test="empCode!=null and empCode!=''">
+			AND EXISTS (SELECT 1
+			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW UOV
+			WHERE UOV.EMP_CODE = #{empCode}
+			AND UOV.ORG_CODE = T.PAYABLE_ORG_CODE)
+		</if>
+	</select>
+
+	<select id="queryCountByAccountDate"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.OverdueSFPaymentApplyQueryDto"
+		resultType="int">
+		SELECT
+		count(0)
+		FROM STL.STL_OVERDUE_PAYABLE_SF_VIEW T
+		WHERE 
+		<![CDATA[
+			T.ACCOUNT_DATE >= #{beginAccountDate}
+			AND T.ACCOUNT_DATE <= #{endAccountDate}
+		]]>
+		<if test="consumer != null and consumer !='' ">
+			AND T.CUSTOMER_CODE = #{consumer}
+		</if>
+		<if test="depts != null and depts.size() > 0">
+			AND T.PAYABLE_ORG_CODE IN
+			<foreach collection="depts" item="item" open="(" close=")"
+				separator="," index="index">
+				#{item}
+			</foreach>
+		</if>
+		<if test="status != null and status !='' ">
+			AND T.AUDIT_STATUS = #{status}
+		</if>
+		AND T.ACTIVE = #{active}
+		<if test="empCode!=null and empCode!=''">
+			AND EXISTS (SELECT 1
+			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW UOV
+			WHERE UOV.EMP_CODE = #{empCode}
+			AND UOV.ORG_CODE = T.PAYABLE_ORG_CODE)
+		</if>
+	</select>
+	<select id="queryByWaybillNos"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.OverdueSFPaymentApplyQueryDto"
+		resultMap="OverdueSFPaymentApplyDtoMap">
+		SELECT
+		<include refid="OverdueSFPaymentApply_Column_List" />
+		FROM STL.STL_OVERDUE_PAYABLE_SF_VIEW T
+		WHERE
+		T.WAYBILL_NO IN
+		<foreach collection="waybillNos" item="item" open="(" close=")"
+			separator="," index="index">
+			#{item}
+		</foreach>
+		AND T.ACTIVE = #{active}
+		<if test="empCode!=null and empCode!=''">
+			AND EXISTS (SELECT 1
+			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW UOV
+			WHERE UOV.EMP_CODE = #{empCode}
+			AND UOV.ORG_CODE = T.PAYABLE_ORG_CODE)
+		</if>
+	</select>
+
+	<select id="queryByPayableNos"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.OverdueSFPaymentApplyQueryDto"
+		resultMap="OverdueSFPaymentApplyDtoMap">
+		SELECT
+		<include refid="OverdueSFPaymentApply_Column_List" />
+		FROM STL.STL_OVERDUE_PAYABLE_SF_VIEW T
+		WHERE
+		T.PAYABLE_NO IN
+		<foreach collection="payableNos" item="item" open="(" close=")"
+			separator="," index="index">
+			#{item,javaType=String,jdbcType=VARCHAR}
+		</foreach>
+		AND T.ACTIVE = #{active}
+		<if test="empCode!=null and empCode!=''">
+			AND EXISTS (SELECT 1
+			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW UOV
+			WHERE UOV.EMP_CODE = #{empCode}
+			AND UOV.ORG_CODE = T.PAYABLE_ORG_CODE)
+		</if>
+	</select>
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.domain.OverdueSFPaymentApplyEntity">
+		insert into
+		STL.T_STL_OVERDUE_PAYABLE_SF_AUDIT(APPLY_ORG_CODE,
+		APPLY_ORG_NAME,
+		APPLY_USER_NAME,
+		AUDIT_ORG_CODE,
+		AUDIT_ORG_NAME,
+		AUDIT_STATUS,
+		AUDIT_USER_NAME,
+		CREATE_TIME,
+		ID,
+		MODIFY_TIME,
+		NOTES,
+		PAYABLE_NO,
+		REASON,
+		WAYBILL_NO,
+		ACTIVE,
+		PAYABLE_ID,
+		AUDIT_USER_CODE,
+		APPLY_USER_CODE
+		)
+		values(
+		#{applyOrgCode},
+		#{applyOrgName},
+		#{applyUserName},
+		#{auditOrgCode},
+		#{auditOrgName},
+		#{auditStatus},
+		#{auditUserName},
+		#{createTime,jdbcType=TIMESTAMP},
+		#{id},
+		#{modifyTime,jdbcType=TIMESTAMP},
+		#{notes},
+		#{payableNo},
+		#{reason},
+		#{waybillNo},
+		#{active},
+		#{payableId},
+		#{auditUserCode},
+		#{applyUserCode},
+		)
+	</insert>
+
+	<insert id="insertOrUpdate"	
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.domain.OverdueSFPaymentApplyEntity">
+		MERGE INTO STL.T_STL_OVERDUE_PAYABLE_SF_AUDIT O
+		USING
+		(SELECT COUNT(1)
+		COUNT
+		FROM STL.T_STL_OVERDUE_PAYABLE_SF_AUDIT O2
+		WHERE
+		O2.PAYABLE_ID =	#{payableId}
+		AND O2.ACTIVE = #{active} ) F
+		ON (F.COUNT =1)
+		WHEN
+		MATCHED	THEN
+			UPDATE SET
+			<if test="applyOrgCode != null and applyOrgCode != ''">
+				o.APPLY_ORG_CODE= #{applyOrgCode,jdbcType=VARCHAR},
+			</if>
+			<if test="applyOrgName !=null and applyOrgName !=''">
+				o.APPLY_ORG_NAME= #{applyOrgName,jdbcType=VARCHAR},
+			</if>
+			<if test="applyUserName !=null and applyUserName !=''">
+				o.APPLY_USER_NAME=#{applyUserName,jdbcType=VARCHAR},
+			</if>
+			<if test="applyUserCode !=null and applyUserCode !=''">
+				o.APPLY_USER_CODE= #{applyUserCode,jdbcType=VARCHAR},
+			</if>
+			o.AUDIT_ORG_CODE=null,
+			o.AUDIT_ORG_NAME=null,
+			o.AUDIT_USER_NAME=null,
+			o.AUDIT_USER_CODE=null,
+			o.NOTES=null,
+			o.AUDIT_STATUS=#{auditStatus,jdbcType=VARCHAR},
+			o.CREATE_TIME=#{createTime,jdbcType=TIMESTAMP},
+			o.MODIFY_TIME=#{modifyTime,jdbcType=TIMESTAMP},
+			o.PAYABLE_NO=#{payableNo,jdbcType=VARCHAR},
+			o.REASON= #{reason,jdbcType=VARCHAR},
+			o.WAYBILL_NO=#{waybillNo,jdbcType=VARCHAR},
+			o.ACTIVE=#{active,jdbcType=VARCHAR}
+		WHERE
+		o.PAYABLE_ID= #{payableId,jdbcType=VARCHAR}
+		WHEN NOT MATCHED THEN
+			INSERT
+			(
+			APPLY_ORG_CODE,
+			APPLY_ORG_NAME,
+			APPLY_USER_NAME,
+			AUDIT_ORG_CODE,
+			AUDIT_ORG_NAME,
+			AUDIT_STATUS,
+			AUDIT_USER_NAME,
+			CREATE_TIME,
+			ID,
+			MODIFY_TIME,
+			NOTES,
+			PAYABLE_NO,
+			REASON,
+			WAYBILL_NO,
+			ACTIVE,
+			PAYABLE_ID,
+			AUDIT_USER_CODE,
+			APPLY_USER_CODE
+			)
+			VALUES
+			(
+			#{applyOrgCode,jdbcType=VARCHAR},
+			#{applyOrgName,jdbcType=VARCHAR},
+			#{applyUserName,jdbcType=VARCHAR},
+			#{auditOrgCode,jdbcType=VARCHAR},
+			#{auditOrgName,jdbcType=VARCHAR},
+			#{auditStatus,jdbcType=VARCHAR},
+			#{auditUserName,jdbcType=VARCHAR},
+			#{createTime,jdbcType=TIMESTAMP},
+			sys_guid(),
+			#{modifyTime,jdbcType=TIMESTAMP},
+			#{notes,jdbcType=VARCHAR},
+			#{payableNo,jdbcType=VARCHAR},
+			#{reason,jdbcType=VARCHAR},
+			#{waybillNo,jdbcType=VARCHAR},
+			#{active,jdbcType=VARCHAR},
+			#{payableId,jdbcType=VARCHAR},
+			#{auditUserCode,jdbcType=VARCHAR},
+			#{applyUserCode,jdbcType=VARCHAR}
+			)
+	</insert>
+	
+	<update id="updateForAudit" 
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.domain.OverdueSFPaymentApplyEntity">
+		UPDATE STL.T_STL_OVERDUE_PAYABLE_SF_AUDIT O SET
+		<if test="auditOrgCode !=null and auditOrgCode !=''">
+			o.AUDIT_ORG_CODE=#{auditOrgCode,jdbcType=VARCHAR},
+		</if>
+		<if test="auditOrgName !=null and auditOrgName !=''">
+			o.AUDIT_ORG_NAME=#{auditOrgName,jdbcType=VARCHAR},
+		</if>
+		o.AUDIT_STATUS=#{auditStatus,jdbcType=VARCHAR},
+		<if test="auditUserName !=null and auditUserName !=''">
+			o.AUDIT_USER_NAME=#{auditUserName,jdbcType=VARCHAR},
+		</if>
+		<if test="auditUserCode !=null and auditUserCode !=''">
+			o.AUDIT_USER_CODE=#{auditUserCode,jdbcType=VARCHAR},
+		</if>
+		o.NOTES=#{notes,jdbcType=VARCHAR},
+		o.MODIFY_TIME=#{modifyTime,jdbcType=TIMESTAMP},
+		o.PAYABLE_NO=#{payableNo,jdbcType=VARCHAR},
+		o.WAYBILL_NO=#{waybillNo,jdbcType=VARCHAR},
+		o.ACTIVE=#{active,jdbcType=VARCHAR}
+		WHERE
+		o.PAYABLE_ID= #{payableId,jdbcType=VARCHAR}
+	</update>
+</mapper>

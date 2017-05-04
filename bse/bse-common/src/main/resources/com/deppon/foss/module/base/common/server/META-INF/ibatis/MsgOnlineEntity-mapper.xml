@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-common.MsgOnlineDao" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.base.common.api.shared.domain.MsgOnlineEntity" >
+  	<id column="ID" property="id"  />
+  	 <result column="Id" property="id" jdbcType="VARCHAR" />
+    <result column="SEND_USER_CODE" property="sendUserCode" jdbcType="VARCHAR" />
+    <result column="SEND_USER_NAME" property="sendUserName" jdbcType="VARCHAR" />
+    <result column="SEND_ORG_CODE" property="sendOrgCode" jdbcType="VARCHAR" />
+    <result column="SEND_ORG_NAME" property="sendOrgName" jdbcType="VARCHAR" />
+    <result column="RECEIVE_USER_CODE" property="receiveUserCode" jdbcType="VARCHAR" />
+    <result column="RECEIVE_USER_NAME" property="receiveUserName" jdbcType="VARCHAR" />
+    <result column="CONTEXT" property="context" jdbcType="VARCHAR" />
+    <result column="MSG_TYPE" property="msgType" jdbcType="VARCHAR" />
+    <result column="ACTIVE" property="active" jdbcType="VARCHAR" />
+    <result column="CREATE_TYPE" property="createType" jdbcType="VARCHAR" />
+    <result column="IS_READED" property="isReaded" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" /> 
+    <result column="EXPIRE_TIME" property="expireTime" jdbcType="TIMESTAMP" />
+    <result column="NO_DEAL_NUM" property="noDealNum" jdbcType="NUMERIC"/> 
+    <result column="RECEIVE_ORG_CODE" property="receiveOrgCode" jdbcType="VARCHAR" />
+    <result column="RECEIVE_ORG_NAME" property="receiveOrgName" jdbcType="VARCHAR" /> 
+    <result column="RECEIVE_SUB_ORG_CODE" property="receiveSubOrgCode" jdbcType="VARCHAR" />
+    <result column="RECEIVE_SUB_ORG_NAME" property="receiveSubOrgName" jdbcType="VARCHAR" /> 
+    <result column="RECEIVE_ROLE_CODE" property="receiveRoleCode" jdbcType="VARCHAR" />
+    <result column="RECEIVE_TYPE" property="receiveType" jdbcType="VARCHAR" /> 
+    <result column="REMARKS" property="remarks" jdbcType="VARCHAR" /> 
+    <result column="ACCEPT_STATUS" property="acceptStatus" jdbcType="VARCHAR" />
+    <result column="MODIFY_TIME" property="modifyTime" jdbcType="VARCHAR" />
+    <result column="MODIFY_USER_CODE" property="modifyUserCode" jdbcType="VARCHAR" />
+    <result column="MODIFY_USER_NAME" property="modifyUserName" jdbcType="VARCHAR" /> 
+    <result column="SERIAL_NUMBER" property="serialNumber" jdbcType="VARCHAR" /> 
+    <result column="AIR_WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" /> 
+    
+  </resultMap>
+	<!-- 查询字段 -->
+	<sql id="select_param">
+		ID,
+		SEND_USER_CODE, 
+		SEND_USER_NAME, 
+		SEND_ORG_CODE,
+		SEND_ORG_NAME,	
+		RECEIVE_USER_CODE,
+		RECEIVE_USER_NAME, 
+		CONTEXT, 
+	   	CREATE_TIME,
+	   	EXPIRE_TIME,
+	   	RECEIVE_ORG_CODE,
+	   	RECEIVE_ORG_NAME,
+	   	RECEIVE_ROLE_CODE,
+	   	RECEIVE_TYPE,
+	   	ACCEPT_STATUS,
+	   	REMARKS,
+	   	MODIFY_TIME,
+	   	MODIFY_USER_CODE,
+	   	MODIFY_USER_NAME,
+	   	AIR_WAYBILL_NO
+	</sql>
+	<sql id="queryWhereByEntity">
+				T.ACTIVE ='Y' 
+		<if test="waybillNo != null and waybillNo != ''">
+			AND T.AIR_WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+		</if>
+		<if test="sendUserCode != null and sendUserCode != ''">
+			AND T.SEND_USER_CODE = #{sendUserCode,jdbcType=VARCHAR}
+		</if>
+		<if test="receiveOrgCode != null and receiveOrgCode != ''">
+			AND T.RECEIVE_ORG_CODE = #{receiveOrgCode,jdbcType=VARCHAR}
+		</if>
+		<if test="sendOrgCode != null and sendOrgCode != ''">
+			AND T.SEND_ORG_CODE = #{sendOrgCode,jdbcType=VARCHAR}
+		</if>
+		<if test="acceptStatus != null and acceptStatus != ''">
+			AND T.ACCEPT_STATUS = #{acceptStatus,jdbcType=VARCHAR}
+		</if>
+		<if test="createStartTime != null  and createEndTime != null ">
+			<![CDATA[ AND T.CREATE_TIME >=#{createStartTime,jdbcType=TIMESTAMP} and T.CREATE_TIME <#{createEndTime,jdbcType=TIMESTAMP} ]]>  
+		</if>
+	</sql>
+	<!-- 根据站内信实体查询出所有站内消息数据  -->
+	<select id="queryOnlineMsgByEntity" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.base.common.api.shared.domain.MsgOnlineEntity">
+		SELECT 
+		/** 综合:根据站内信实体查询出所有站内消息数据 **/
+			<include refid="select_param" />
+		FROM BSE.t_bas_onlinenotice_msg T
+		<where>
+			 <include refid="queryWhereByEntity"/>
+		</where> 
+	</select>
+	<!-- 根据站内信实体查询出所有站内消息数据总条数  -->
+	<select id="countQueryInstationMsgByEntity" resultType="Long" parameterType="com.deppon.foss.module.base.common.api.shared.domain.MsgOnlineEntity">
+	   SELECT/** 综合:根据站内信实体查询出所有站内消息数据总条数 **/ COUNT(1)
+		FROM BSE.t_bas_onlinenotice_msg T 
+		<where>
+			 <include refid="queryWhereByEntity"/>
+		</where> 
+	</select>
+	<sql id="queryWhereByCurrentInfo">
+		(
+		   T.RECEIVE_SUB_ORG_CODE IN (#{receiveSubOrgCode,jdbcType=VARCHAR},#{systemConstant,jdbcType=VARCHAR})
+		 )
+		AND T.MSG_TYPE IN (#{msgType_allNet,jdbcType=VARCHAR},#{msgType_normal,jdbcType=VARCHAR})
+		AND T.ACTIVE = #{active,jdbcType=VARCHAR}
+		AND T.IS_READED = #{isReaded,jdbcType=VARCHAR} 
+	</sql>
+	
+  
+    <!-- 统计未处理消息  -->
+	<select id="queryInstationMsgTotal" resultType="java.lang.Integer" parameterType="com.deppon.foss.module.base.common.api.shared.domain.MsgOnlineEntity" >
+		<![CDATA[
+				SELECT 
+				       COUNT(*) 
+				FROM BSE.T_BAS_ONLINENOTICE_MSG T
+				WHERE T.ACTIVE =#{active,jdbcType=VARCHAR} 
+				  AND T.RECEIVE_ORG_CODE =#{receiveOrgCode,jdbcType=VARCHAR}
+				  AND T.ACCEPT_STATUS='G'
+				  ]]>  
+				
+	</select>
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		 AND T.RECEIVE_SUB_ORG_CODE IN (#{receiveSubOrgCode,jdbcType=VARCHAR},#{systemConstant,jdbcType=VARCHAR})
+		 AND T.IS_READED = #{isReaded,jdbcType=VARCHAR}
+		 AND T.MSG_TYPE = #{msgType,jdbcType=VARCHAR}
+		<if test="msgType == msgType_allNet ">
+			<![CDATA[ AND sysdate <= T.EXPIRE_TIME ]]>  
+		</if>
+	</sql>
+	<!--界面新增一条记录-->
+<insert id="addOnlineMsg" parameterType="com.deppon.foss.module.base.common.api.shared.domain.MsgOnlineEntity">
+ <![CDATA[ INSERT INTO BSE.T_BAS_ONLINENOTICE_MSG
+  (]]>  
+   ID,
+   SEND_USER_CODE,
+   RECEIVE_USER_CODE,
+   CONTEXT,
+   ACTIVE,
+   <!--IS_READED,-->
+   CREATE_TIME,
+   EXPIRE_TIME,
+   SEND_USER_NAME,
+   SEND_ORG_CODE,
+   SEND_ORG_NAME,
+   RECEIVE_USER_NAME,
+   RECEIVE_ORG_CODE,
+   RECEIVE_ORG_NAME,
+   <!--RECEIVE_SUB_ORG_CODE,-->
+   <!--RECEIVE_SUB_ORG_NAME,-->
+   RECEIVE_ROLE_CODE,
+   ACCEPT_STATUS,
+   REMARKS,
+   MODIFY_TIME,
+   AIR_WAYBILL_NO
+   <![CDATA[  )
+   VALUES
+   ( ]]>  
+   #{id,jdbcType=VARCHAR},
+   #{sendUserCode,jdbcType=VARCHAR},
+   #{receiveUserCode,jdbcType=VARCHAR},
+   #{context,jdbcType=VARCHAR},
+   'Y',
+   <!--#{isReaded,jdbcType=VARCHAR},-->
+   #{createTime,jdbcType=TIMESTAMP},
+   #{expireTime,jdbcType=TIMESTAMP},
+   #{sendUserName,jdbcType=VARCHAR},
+   #{sendOrgCode,jdbcType=VARCHAR},
+   #{sendOrgName,jdbcType=VARCHAR},
+   #{receiveUserName,jdbcType=VARCHAR},
+   #{receiveOrgCode,jdbcType=VARCHAR},
+   #{receiveOrgName,jdbcType=VARCHAR},
+   <!--#{receiveSubOrgCode,jdbcType=VARCHAR},-->
+   <!--#{receiveSubOrgName,jdbcType=VARCHAR},-->
+   #{receiveRoleCode,jdbcType=VARCHAR},
+   #{acceptStatus,jdbcType=VARCHAR},
+   #{remarks,jdbcType=VARCHAR},
+   #{modifyTime,jdbcType=TIMESTAMP},
+   #{waybillNo,jdbcType=VARCHAR}
+   <![CDATA[  )]]>  
+	</insert>
+	
+<!--作废一条记录后，新插入一条  -->
+<insert id="addOnlineMsgAfterCancell" parameterType="java.util.Map">
+ <![CDATA[ INSERT INTO BSE.T_BAS_ONLINENOTICE_MSG
+  ( ]]>  
+   ID,
+   SEND_USER_CODE,
+   RECEIVE_USER_CODE,
+   CONTEXT,
+   ACTIVE,
+   <!--IS_READED,-->
+   CREATE_TIME,
+   EXPIRE_TIME,
+   SEND_USER_NAME,
+   SEND_ORG_CODE,
+   SEND_ORG_NAME,
+   RECEIVE_USER_NAME,
+   RECEIVE_ORG_CODE,
+   RECEIVE_ORG_NAME,
+   <!--RECEIVE_SUB_ORG_CODE,-->
+   <!--RECEIVE_SUB_ORG_NAME,-->
+   RECEIVE_ROLE_CODE,
+   MODIFY_USER_CODE,
+   MODIFY_USER_NAME,
+   ACCEPT_STATUS,
+   REMARKS,
+   MODIFY_TIME,
+   AIR_WAYBILL_NO
+<![CDATA[  )
+   SELECT  ]]>  
+   #{newId,jdbcType=VARCHAR},
+   T.SEND_USER_CODE,
+   T.RECEIVE_USER_CODE,
+   T.CONTEXT,
+   'Y',
+   <!--T.IS_READED,-->
+   #{entity.createTime,jdbcType=TIMESTAMP},
+   T.EXPIRE_TIME,
+   T.SEND_USER_NAME,
+   T.SEND_ORG_CODE,
+   T.SEND_ORG_NAME,
+   T.RECEIVE_USER_NAME,
+   T.RECEIVE_ORG_CODE,
+   T.RECEIVE_ORG_NAME,
+   <!--T.RECEIVE_SUB_ORG_CODE,-->
+   <!--T.RECEIVE_SUB_ORG_NAME,-->
+   T.RECEIVE_ROLE_CODE,
+   #{entity.modifyUserCode,jdbcType=VARCHAR},
+   #{entity.modifyUserName,jdbcType=VARCHAR},
+   #{entity.acceptStatus,jdbcType=VARCHAR},
+   #{entity.remarks,jdbcType=VARCHAR},
+   #{entity.modifyTime,jdbcType=TIMESTAMP},
+   t.AIR_WAYBILL_NO
+   FROM BSE.T_BAS_ONLINENOTICE_MSG t
+   <where>
+   t.id = #{entity.id,jdbcType=VARCHAR}
+   </where> 
+</insert>
+  
+ <!-- 作废一条记录 -->
+ <update id="updateOnlineMsg" parameterType="com.deppon.foss.module.base.common.api.shared.domain.MsgOnlineEntity">
+  UPDATE BSE.T_BAS_ONLINENOTICE_MSG t
+	SET t.modify_user_code = #{modifyUserCode,jdbcType=VARCHAR},
+		t.modify_user_name = #{modifyUserName,jdbcType=VARCHAR},
+		t.modify_time = #{modifyTime,jdbcType=TIMESTAMP},
+		t.active = 'N'
+	WHERE t.id = #{id,jdbcType=VARCHAR}
+ </update>
+</mapper>

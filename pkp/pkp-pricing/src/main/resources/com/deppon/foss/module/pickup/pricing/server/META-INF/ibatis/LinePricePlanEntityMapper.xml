@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 整车线路价格方案  -->
+<mapper namespace="foss.pkp.pkp-pricing.LinePricePlanEntityMapper" >
+	<resultMap  id="BaseResultMap" type="com.deppon.foss.module.pickup.pricing.api.shared.domain.CarloadLinePricePlanEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="DEPARTURE_CITY_CODE" property="departureCityCode" jdbcType="VARCHAR" />
+		<result column="DEPARTURE_CITY_NAME" property="departureCityName" jdbcType="VARCHAR" />
+		<result column="ARRIVAL_CITY_CODE" property="arrivalCityCode" jdbcType="VARCHAR" />
+		<result column="ARRIVAL_CITY_NAME" property="arrivalCityName" jdbcType="VARCHAR" />
+		<result column="REMARK" property="remark" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_NAME" property="modifyUserName" jdbcType="VARCHAR" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="modifyDate" property="modifyDate" jdbcType="TIMESTAMP" />
+	</resultMap>
+	<resultMap  id="DetailBaseResultMap" type="com.deppon.foss.module.pickup.pricing.api.shared.domain.CarloadLinePricePlanDetailEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="CARLOAD_LINEPRICE_ID" property="carloadLinePriceId" jdbcType="VARCHAR" />
+		<result column="P_TYPE" property="type" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="INVOICE_TYPE" property="invoiceType" jdbcType="VARCHAR" />
+		<result column="UP_LIMIT" property="upLimit" jdbcType="DECIMAL" />
+		<result column="DOWN_LIMIT" property="downLimit" jdbcType="DECIMAL" />
+		<result column="CHARGE_STANDARD" property="chargeStandard" jdbcType="DECIMAL" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="REMARK" property="remark" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<!-- 整车线路价格方案  -->
+	<sql id="Base_Column_List">
+		ID ID,
+		DEPARTURE_CITY_CODE DEPARTURE_CITY_CODE,
+		DEPARTURE_CITY_NAME DEPARTURE_CITY_NAME,
+		ARRIVAL_CITY_CODE ARRIVAL_CITY_CODE,
+		ARRIVAL_CITY_NAME ARRIVAL_CITY_NAME,
+		REMARK REMARK,
+		MODIFY_USER_CODE MODIFY_USER_CODE,
+		MODIFY_USER_NAME MODIFY_USER_NAME,
+		MODIFY_TIME MODIFY_TIME,
+		CREATE_USER_CODE CREATE_USER_CODE,
+		CREATE_USER_NAME CREATE_USER_NAME,
+		CREATE_TIME CREATE_TIME
+	</sql>
+	<!-- 整车线路价格方案明细  -->
+	<sql id="Detail_Base_Column_List">
+		ID ID,
+		CARLOAD_LINEPRICE_ID CARLOAD_LINEPRICE_ID,
+		P_TYPE P_TYPE,
+		ACTIVE ACTIVE,
+		INVOICE_TYPE INVOICE_TYPE,
+		UP_LIMIT UP_LIMIT,
+		DOWN_LIMIT DOWN_LIMIT,
+		CHARGE_STANDARD CHARGE_STANDARD,
+		CREATE_TIME CREATE_TIME,
+		MODIFY_TIME MODIFY_TIME,
+		CREATE_USER_CODE CREATE_USER_CODE,
+		MODIFY_USER_CODE MODIFY_USER_CODE,
+		REMARK REMARK
+	</sql>
+	
+	<!-- 查询整车线路方案-->
+	<select id="queryCarloadLinePricePlanByEntity"
+		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.CarloadLinePricePlanEntity"
+		resultMap="BaseResultMap">
+		SELECT
+		<include refid="Base_Column_List" />
+		FROM PKP.T_SRV_PRICE_CARLOAD_LINE
+		<include refid="CarloadLinePricePlanQueryWhere" />
+	</select>
+	
+	<!-- 查询整车线路条数  -->
+	<select id="queryCarloadLinePricePlanCountByEntity"
+		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.CarloadLinePricePlanEntity"
+		resultType="Long">
+		SELECT
+		count(id) total
+		FROM PKP.T_SRV_PRICE_CARLOAD_LINE
+		<include refid="CarloadLinePricePlanQueryWhere" />
+	</select>
+	
+	<sql id="CarloadLinePricePlanQueryWhere">
+		<where>
+			<if test="id != null and id != ''">
+				id = #{id,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				active = #{active,jdbcType=CHAR}
+			</if>
+			<if test="departureCityCode != null and departureCityCode != ''">
+				AND DEPARTURE_CITY_CODE = #{departureCityCode,jdbcType=VARCHAR}
+			</if>
+			<if test="departureCityName != null and departureCityName != ''">
+				AND DEPARTURE_CITY_NAME = #{departureCityName,jdbcType=VARCHAR}
+			</if>
+			<if test="arrivalCityCode != null and arrivalCityCode != ''">
+				AND ARRIVAL_CITY_CODE = #{arrivalCityCode,jdbcType=VARCHAR}
+			</if>
+			<if test="arrivalCityName != null and arrivalCityName != ''">
+				and ARRIVAL_CITY_NAME = #{arrivalCityName,jdbcType=VARCHAR}
+			</if>
+		</where>
+		ORDER BY CREATE_TIME
+	</sql>
+	
+	
+	<!-- 查询整车线路方案明细-->
+	<select id="queryCarloadLinePricePlanDetailByEntity"
+		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.CarloadLinePricePlanDetailEntity"
+		resultMap="DetailBaseResultMap">
+		SELECT
+		<include refid="Detail_Base_Column_List" />
+		FROM PKP.T_SRV_PRICE_CLINE_DETAIL
+		<include refid="CarloadLinePricePlanDetailQueryWhere" />
+	</select>
+	
+	<!-- 查询整车线路明细条数  -->
+	<select id="queryCarloadLinePricePlanDetailCountByEntity"
+		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.CarloadLinePricePlanDetailEntity"
+		resultType="Long">
+		SELECT
+		count(id) total
+		FROM PKP.T_SRV_PRICE_CLINE_DETAIL
+		<include refid="CarloadLinePricePlanDetailQueryWhere" />
+	</select>
+	
+	<sql id="CarloadLinePricePlanDetailQueryWhere">
+		<where>
+			<if test="id != null and id != ''">
+				id = #{id,jdbcType=VARCHAR}
+			</if>
+			<if test="carloadLinePriceId != null and carloadLinePriceId != ''">
+				AND CARLOAD_LINEPRICE_ID = #{carloadLinePriceId,jdbcType=VARCHAR}
+			</if>
+			<if test="type != null and type != ''">
+				AND P_TYPE = #{type,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND ACTIVE = #{active,jdbcType=VARCHAR}
+			</if>
+			<if test="invoiceType != null and invoiceType != ''">
+				and INVOICE_TYPE = #{invoiceType,jdbcType=VARCHAR}
+			</if>
+			<if test="upLimit != null">
+				AND up_limit = #{upLimit,jdbcType=DECIMAL}
+			</if>
+			<if test="downLimit != null ">
+				AND down_limit = #{downLimit,jdbcType=DECIMAL}
+			</if>
+			<if test="chargeStandard != null">
+				and CHARGE_STANDARD = #{chargeStandard,jdbcType=DECIMAL}
+			</if>
+		</where>
+		ORDER BY CREATE_TIME
+	</sql>
+	
+	<!-- 插入整车线路价格方案 -->
+	<insert id="insertCarloadLinePricePlan">
+		insert into 
+		  PKP.T_SRV_PRICE_CARLOAD_LINE(id,departure_city_code,departure_city_name,arrival_city_code,arrival_city_name,
+		  active,create_time,modify_time,create_user_code,create_user_name,modify_user_code,modify_user_name,remark)
+		 values
+		 (#{id,jdbcType=VARCHAR},
+		 #{departureCityCode,jdbcType=VARCHAR},
+		 #{departureCityName,jdbcType=VARCHAR},
+		 #{arrivalCityCode,jdbcType=VARCHAR},
+		 #{arrivalCityName,jdbcType=VARCHAR},
+		 #{active,jdbcType=CHAR},
+		 #{createDate,jdbcType=TIMESTAMP},
+		 #{modifyDate,jdbcType=TIMESTAMP},
+		 #{createUser,jdbcType=VARCHAR},
+		 #{createUserName,jdbcType=VARCHAR},
+		 #{modifyUser,jdbcType=VARCHAR},
+		 #{modifyUserName,jdbcType=VARCHAR},
+		 #{remark,jdbcType=VARCHAR})
+	</insert>
+	
+	<!-- 插入整车线路价格明细方案 -->
+	<insert id="insertCarloadLinePricePlanDetail">
+		insert into 
+		  PKP.T_SRV_PRICE_CLINE_DETAIL(id,carload_lineprice_id,p_type,active,invoice_type,up_limit,down_limit,
+		  charge_standard,create_time,modify_time,create_user_code,modify_user_code,remark)
+		 values
+		 (#{id,jdbcType=VARCHAR},
+		 #{carloadLinePriceId,jdbcType=VARCHAR},
+		 #{type,jdbcType=VARCHAR},
+		 #{active,jdbcType=CHAR},
+		 #{invoiceType,jdbcType=VARCHAR},
+		 #{upLimit,jdbcType=DECIMAL},
+		 #{downLimit,jdbcType=DECIMAL},
+		 #{chargeStandard,jdbcType=DECIMAL},
+		 #{createDate,jdbcType=TIMESTAMP},
+		 #{modifyDate,jdbcType=TIMESTAMP},
+		 #{createUser,jdbcType=VARCHAR},
+		 #{modifyUser,jdbcType=VARCHAR},
+		 #{remark,jdbcType=VARCHAR})
+	</insert>
+</mapper>

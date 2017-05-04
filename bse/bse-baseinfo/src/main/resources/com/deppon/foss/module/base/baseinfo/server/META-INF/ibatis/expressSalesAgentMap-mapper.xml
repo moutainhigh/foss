@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.expressSalesAgentMap" >
+	<!-- 返回结果映射表，将表字段映射成实体中的属性，从而返回实体 -->
+	<resultMap id="expressSalesAgentMapResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressSalesAgentMapEntity">
+		<result column="id" property="id" jdbcType="VARCHAR" />
+		<result column="express_sales_dept_code" property="expressSalesDeptCode" jdbcType="VARCHAR" />
+		<result column="express_sales_dept_name" property="expressSalesDeptName" jdbcType="VARCHAR" />
+		<result column="express_agent_dept_code" property="expressAgentDeptCode" jdbcType="VARCHAR" />
+		<result column="express_agent_dept_name" property="expressAgentDeptName" jdbcType="VARCHAR" />
+ 		<result column="active" property="active" jdbcType="CHAR" />
+		<result column="create_time" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="modify_time" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+	</resultMap>
+	<!-- 根据所有条件分页查询 -->
+	<select id="queryExpressSalesAgentMapListByCondition" resultMap="expressSalesAgentMapResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressSalesAgentMapEntity">
+		select  /** 综合:根据所有条件，分页查询虚拟营业部与快递代理网点映射关系  **/
+		T.id as id,
+		T.express_sales_dept_code as express_sales_dept_code,
+		O.name as express_sales_dept_name,
+		T.express_agent_dept_code as express_agent_dept_code,
+		B.agent_dept_name as express_agent_dept_name,
+		T.active as active,
+		T.create_time as create_time,
+		T.modify_time as modify_time,
+		T.CREATE_USER_CODE as CREATE_USER_CODE,
+		T.MODIFY_USER_CODE as MODIFY_USER_CODE
+		from bse.t_bas_express_sales_agent_map T
+		left join bse.t_bas_org O on T.express_sales_dept_code=O.code and O.active='Y'
+		left join bse.t_bas_outer_branch B on T.express_agent_dept_code=B.agent_dept_code and B.active='Y'
+		<where>
+			<if test="expressSalesDeptCode != null and expressSalesDeptCode != ''">
+				AND T.express_sales_dept_code = #{expressSalesDeptCode, jdbcType=VARCHAR} 
+			</if>
+			<if test="expressAgentDeptCode != null and expressAgentDeptCode != ''">
+				AND T.express_agent_dept_code = #{expressAgentDeptCode, jdbcType=VARCHAR}
+			</if>
+			AND T.active='Y'
+		</where>
+		order by T.express_sales_dept_code
+	</select>
+	<!-- 根据所有条件分页查询的查询总数 -->
+	<select id="queryExpressSalesAgentMapListByConditionCount"  resultType="Long"  parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressSalesAgentMapEntity">
+		select  /** 综合:根据所有条件，分页查询虚拟营业部与快递代理网点映射关系，计数  **/
+		count(*)
+		from bse.t_bas_express_sales_agent_map T
+		<where>
+			<if test="expressSalesDeptCode != null and expressSalesDeptCode != ''">
+				AND T.express_sales_dept_code = #{expressSalesDeptCode, jdbcType=VARCHAR} 
+			</if>
+			<if test="expressAgentDeptCode != null and expressAgentDeptCode != ''">
+				AND T.express_agent_dept_code = #{expressAgentDeptCode, jdbcType=VARCHAR}
+			</if>
+			AND T.active='Y'
+		</where>
+	</select>
+	<!-- 批量删除（非物理删除） -->
+	<update id="deleteExpressSalesAgentMap" parameterType="map">
+		update bse.t_bas_express_sales_agent_map
+		<set>
+			active='N',
+			modify_time = #{modifyDate,jdbcType=TIMESTAMP} ,
+			modify_user_code = #{modifyUser,jdbcType=VARCHAR}
+		</set>
+		where id in
+		<foreach collection="ids" open="(" close=")" separator="," item="id">
+			#{id, jdbcType=VARCHAR} 
+		</foreach>
+	</update>
+	<!-- 新增映射关系 -->
+	<insert id="addExpressSalesAgentMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressSalesAgentMapEntity">
+		insert into bse.t_bas_express_sales_agent_map (
+		id,
+		express_sales_dept_code,
+		express_agent_dept_code,
+		active,
+		create_time,
+		modify_time,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE
+		)
+		values (
+		#{id, jdbcType=VARCHAR},
+		#{expressSalesDeptCode, jdbcType=VARCHAR},
+		#{expressAgentDeptCode, jdbcType=VARCHAR},
+		'Y',
+		#{createDate, jdbcType=TIMESTAMP},
+		#{modifyDate, jdbcType=TIMESTAMP},
+		#{createUser, jdbcType=VARCHAR},
+		#{modifyUser, jdbcType=VARCHAR}
+		)
+	</insert>
+	<select id="queryRepeat" resultMap="expressSalesAgentMapResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressSalesAgentMapEntity">
+		select /** 综合:根据虚拟营业部编码与ID，进行虚拟营业部与快递代理网点映射关系的查重  **/
+		*
+		from bse.t_bas_express_sales_agent_map
+		<where>
+			<if test="expressSalesDeptCode != null and expressSalesDeptCode != ''">
+				AND express_sales_dept_code = #{expressSalesDeptCode, jdbcType=VARCHAR} 
+			</if>
+			<if test="id != null and id != ''">
+				AND id != #{id, jdbcType=VARCHAR}
+			</if>
+			AND active='Y'
+		</where>
+	</select>
+	<select id="queryExpressSalesAgentMapBySalesCodes" resultMap="expressSalesAgentMapResultMap" parameterType="map">
+		select /** 综合:根据虚拟营业部编码集合，查询虚拟营业部与快递代理网点映射关系  **/
+		T.id as id,
+		T.express_sales_dept_code as express_sales_dept_code,
+		O.name as express_sales_dept_name,
+		T.express_agent_dept_code as express_agent_dept_code,
+		B.agent_dept_name as express_agent_dept_name,
+		T.active as active,
+		T.create_time as create_time,
+		T.modify_time as modify_time,
+		T.CREATE_USER_CODE as CREATE_USER_CODE,
+		T.MODIFY_USER_CODE as MODIFY_USER_CODE
+		from bse.t_bas_express_sales_agent_map T
+		left join bse.t_bas_org O on T.express_sales_dept_code=O.code and O.active='Y'
+		left join bse.t_bas_outer_branch B on T.express_agent_dept_code=B.agent_dept_code and B.active='Y'
+		<where>
+			AND T.express_sales_dept_code in
+			<foreach collection="codes" open="(" close=")" separator="," item="code">
+				#{code, jdbcType=VARCHAR} 
+			</foreach>
+			AND T.active='Y'
+		</where>
+	</select>
+</mapper>

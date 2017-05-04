@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="Foss.scheduling.stowagePlans" >
+	<select id="selectStowagePlansList" parameterType="Map" resultType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.StowagePlansEntity">
+		SELECT 
+			sp.id					AS	id,
+			sp.orig_org_name		AS	origOrgName, 	<!-- 当前外场名称-->
+			sp.orig_org_code		AS	origOrgCode, 	<!-- 当前外场编码-->
+			sp.dest_org_name		AS	destOrgName, 	<!-- 到达外场名称-->
+			sp.dest_org_code		AS	destOrgCode, 	<!-- 到达外场编码-->
+			sp.create_user_name		AS	createUserName, <!-- 创建人名称   -->
+			sp.create_user_code		AS	createUserCode, <!-- 创建人编码   -->
+			sp.modify_user_name		AS	modifyUserName, <!-- 修改人名称   -->
+			sp.modify_user_code		AS	modifyUserCode, <!-- 修改人编码   -->
+			sp.create_time			AS	createTime, 	<!-- 创建时间    -->
+			sp.modify_time			AS	modifyTime  	<!-- 修改时间     -->
+		FROM tfr.t_opt_stowage_plans sp 
+		<where>
+			<if test="id != null and id != ''">
+				sp.id=#{id}
+			</if>
+			<if test="origOrgCode != null and origOrgCode != ''">
+			and 
+				sp.orig_org_code=#{origOrgCode}
+			</if>
+			<if test="destOrgCode != null and destOrgCode != ''">
+			and 
+				sp.dest_org_code=#{destOrgCode}
+			</if>
+		</where>
+	</select>
+	<select id="selectStowagePlansListCount" parameterType="Map" resultType="java.lang.Long">
+		SELECT 
+			count(1)
+		FROM tfr.t_opt_stowage_plans sp 
+		<where>
+			<if test="id != null and id != ''">
+				sp.id=#{id}
+			</if>
+			<if test="origOrgCode != null and origOrgCode != ''">
+			and 
+				sp.orig_org_code=#{origOrgCode}
+			</if>
+			<if test="destOrgCode != null and destOrgCode != ''">
+			and 
+				sp.dest_org_code=#{destOrgCode}
+			</if>
+		</where>
+	</select>
+	<select id="selectStowagePlansDetailList" parameterType="Map" resultType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.StowagePlansDetailEntity">
+		SELECT 
+			spd.id						AS	id,
+			spd.stowage_plans_id		AS	stowagePlansId,
+			spd.org_name				AS	orgName,
+			spd.org_code				AS	orgCode
+		FROM 
+			tfr.t_opt_stowage_plans_detail spd
+		<where>
+			<if test="id != null and id != ''">
+					spd.id=#{id}
+			</if>
+			<if test="stowagePlansId != null and stowagePlansId != ''">
+				and 
+					spd.stowage_plans_id=#{stowagePlansId}
+			</if>
+		</where> 
+	</select>
+	<insert id="insertStowagePlans" parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.StowagePlansEntity">
+		INSERT INTO tfr.t_opt_stowage_plans
+		(
+			id,
+			orig_org_name,
+			orig_org_code,
+			dest_org_name,
+			dest_org_code,
+			create_user_name,
+			create_user_code,
+			modify_user_name,
+			modify_user_code,
+			create_time,
+			modify_time
+		)
+		values
+		(
+			#{id,jdbcType=VARCHAR},
+			#{origOrgName,jdbcType=VARCHAR},
+			#{origOrgCode,jdbcType=VARCHAR},
+			#{destOrgName,jdbcType=VARCHAR},
+			#{destOrgCode,jdbcType=VARCHAR},
+			#{createUserName,jdbcType=VARCHAR},
+			#{createUserCode,jdbcType=VARCHAR},
+			#{modifyUserName,jdbcType=VARCHAR},
+			#{modifyUserCode,jdbcType=VARCHAR},
+			#{createTime,jdbcType=TIMESTAMP},
+			#{modifyTime,jdbcType=TIMESTAMP}
+		)
+	</insert>
+	<insert id="insertStowagePlansDetail"  parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.StowagePlansDetailEntity">
+		INSERT INTO tfr.t_opt_stowage_plans_detail
+		(
+			id,
+			stowage_plans_id,
+			org_name,
+			org_code
+		)
+		VALUES
+		(
+			#{id,jdbcType=VARCHAR},
+			#{stowagePlansId,jdbcType=VARCHAR},
+			#{orgName,jdbcType=VARCHAR},
+			#{orgCode,jdbcType=VARCHAR}
+		)
+	</insert>
+	<update id="updateStowagePlans" parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.StowagePlansEntity">
+		UPDATE
+			tfr.t_opt_stowage_plans sp
+		SET
+		<if test="origOrgName != null and origOrgName != ''">
+			sp.orig_org_name		= #{origOrgName},
+		</if>
+		<if test="origOrgCode != null and origOrgCode != ''">
+			sp.orig_org_code		= #{origOrgCode},
+		</if>
+		<if test="destOrgName != null and destOrgName != ''">
+			sp.dest_org_name		= #{destOrgName},
+		</if>
+		<if test="destOrgCode != null and destOrgCode != ''">
+			sp.dest_org_code		= #{destOrgCode},
+		</if>
+		<if test="modifyUserName != null and modifyUserName != ''">
+			sp.modify_user_name		= #{modifyUserName},
+		</if>
+		<if test="modifyUserCode != null and modifyUserCode != ''">
+			sp.modify_user_code		= #{modifyUserCode},
+		</if>
+		<if test="modifyTime != null and modifyTime != ''">
+			sp.modify_time			= #{modifyTime}
+		</if>
+		WHERE
+			sp.id=#{id}
+	</update>
+	<delete id="deleteStowagePlansDetailWithStowagePlansId"  parameterType="Map">
+	DELETE 
+	FROM 
+		tfr.t_opt_stowage_plans_detail spd 
+	WHERE 
+		spd.stowage_plans_id		= #{stowagePlansId}
+	</delete>
+	<delete id="deleteStowagePlansWithId"  parameterType="Map">
+	DELETE 
+	FROM 
+		tfr.t_opt_stowage_plans sp
+	WHERE 
+		sp.id		= #{id}
+	</delete>
+
+</mapper>

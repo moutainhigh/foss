@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://www.springframework.org/schema/jee 
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+			http://www.springframework.org/schema/aop 
+			http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">
+	
+	<!-- 数据源 -->
+	<bean id="dataSource"
+		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver" />
+		<property name="url" value="jdbc:oracle:thin:@192.168.10.120:1521:fossstd" />
+		<property name="username" value="tfr" />
+		<property name="password" value="fossdev" />
+	</bean>
+
+	<!-- JDBC模版 -->
+	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+		<constructor-arg ref="dataSource" />
+	</bean>
+
+	<!-- 数据连接管理 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<!-- 事务注解支持 -->
+	<tx:annotation-driven transaction-manager="transactionManager" />
+	<aop:config proxy-target-class="true"></aop:config>
+
+	<!-- myBatis文件 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="configLocation"
+			value="/com/deppon/foss/module/transfer/unload/server/mybatis.xml" />
+		<!-- 正式测试环境路径 -->
+		<property name="mapperLocations"
+			value="classpath*:com/deppon/**/META-INF/ibatis/*-mapper.xml" />
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<context:annotation-config />
+	<tx:annotation-driven/>
+	<context:component-scan base-package="com.deppon.foss.module.transfer.unload" />
+	<bean id="unloadTaskDao" class="com.deppon.foss.module.transfer.unload.server.dao.impl.UnloadTaskDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+	<bean id="batchSaveProcessDao" class="com.deppon.foss.module.transfer.unload.server.dao.impl.BatchSaveProcessDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+<!--**************************PDA接口卸车任务 Begin*****************************-->
+	<bean id="pdaUnloadTaskService" class="com.deppon.foss.module.transfer.unload.server.service.impl.PDAUnloadTaskService">
+		  <property name="pdaUnloadTaskDao"	ref="pdaUnloadTaskDao"/> 
+	</bean>	
+	<bean id="pdaUnloadTaskDao" class="com.deppon.foss.module.transfer.unload.server.dao.impl.PDAUnloadTaskDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+		<property name="batchSaveProcessDao" ref="batchSaveProcessDao"></property>
+	</bean>
+<!--**************************PDA接口卸车任务 End*****************************-->
+	<bean id="assignUnloadTaskDao"	class="com.deppon.foss.module.transfer.unload.server.dao.impl.AssignUnloadTaskDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+		<property name="batchSaveProcessDao" ref="batchSaveProcessDao"></property>
+	</bean>
+	<bean id="pdaortingDao"	class="com.deppon.foss.module.transfer.unload.server.dao.impl.PDASortingDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+	<!-- 点单差异报告配置 -->  
+    <bean id='orderDifferReportService' class="com.deppon.foss.module.transfer.unload.server.service.impl.OrderDifferReportService" scope="prototype"></bean>
+    <bean id='orderDifferReportDao' class="com.deppon.foss.module.transfer.unload.server.dao.impl.OrderDifferReportDao" scope="prototype"></bean>
+	<bean id="orderTaskDao"	class="com.deppon.foss.module.transfer.unload.server.dao.impl.OrderTaskDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+	<!-- 车辆卸车任务相关配置 -->  
+	<bean id="unloadTaskQueryService"	class="com.deppon.foss.module.transfer.unload.server.service.impl.UnloadTaskQueryService"></bean>
+    <bean id="unloadTaskService"	class="com.deppon.foss.module.transfer.unload.server.service.impl.UnloadTaskService"></bean>
+    <bean id="assignUnloadTaskService"	class="com.deppon.foss.module.transfer.unload.server.service.impl.AssignUnloadTaskService"></bean>
+</beans>

@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.InvoiceDao">
+	<resultMap id="InvoiceBaseResultMap"
+		type="com.deppon.foss.module.settlement.consumer.api.shared.domain.InvoiceEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="SOURCE_BILL_NO" property="sourceBillNo" jdbcType="VARCHAR" />
+		<result column="SOURCE_BILL_TYPE" property="sourceBillType" jdbcType="VARCHAR" />
+		<result column="INVOICE_TYPE" property="invoiceType" jdbcType="VARCHAR" />
+		<result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+		<result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+		<result column="TOTAL_AMOUNT" property="totalAmount" jdbcType="DECIMAL" />
+		<result column="ALREADY_OPEN_AMOUNT" property="alreadyOpenAmount" jdbcType="DECIMAL" />
+		<result column="BUSINESS_DATE" property="businessDate" jdbcType="TIMESTAMP" />
+		<result column="APPLY_USER_NAME" property="applyUserName" jdbcType="VARCHAR" />
+		<result column="APPLY_USER_CODE" property="applyUserCode" jdbcType="VARCHAR" />
+		<result column="ORG_NAME" property="orgName" jdbcType="VARCHAR" />		
+		<result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CURRENCY_CODE" property="currencyCode" jdbcType="VARCHAR" />
+		<result column="VERSION_NO" property="versionNo" jdbcType="DECIMAL" />
+	</resultMap>
+
+	<sql id="invoiceAllColumnList">
+		t.ID,
+		t.SOURCE_BILL_NO,
+		t.SOURCE_BILL_TYPE,
+		t.INVOICE_TYPE,
+		t.CUSTOMER_CODE,
+		t.CUSTOMER_NAME,
+		t.TOTAL_AMOUNT/100 as TOTAL_AMOUNT,<!-- 输出以元单位,除100-->
+		t.ALREADY_OPEN_AMOUNT/100 as ALREADY_OPEN_AMOUNT,
+		t.BUSINESS_DATE,
+		t.APPLY_USER_NAME,
+		t.APPLY_USER_CODE,
+		t.ACTIVE,
+		t.CURRENCY_CODE,
+		t.VERSION_NO
+	</sql>
+
+	<!-- 新加开发票记录 -->
+	<insert id="addInvoice"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.domain.InvoiceEntity">
+		insert/*结算-客户管理-新加开发票记录    */ into STL.T_STL_INVOICE t (
+			t.ID,
+			t.SOURCE_BILL_NO,
+			t.SOURCE_BILL_TYPE,
+			t.INVOICE_TYPE,
+			t.CUSTOMER_CODE,
+			t.CUSTOMER_NAME,
+			t.TOTAL_AMOUNT,
+			t.ALREADY_OPEN_AMOUNT,
+			t.BUSINESS_DATE,
+			t.APPLY_USER_NAME,
+			t.APPLY_USER_CODE,
+			t.ORG_NAME,
+			t.ORG_CODE,			
+			t.ACTIVE,
+			t.CURRENCY_CODE,
+			t.VERSION_NO  )
+		values (
+			#{id,jdbcType=VARCHAR},
+			#{sourceBillNo,jdbcType=VARCHAR},
+			#{sourceBillType,jdbcType=VARCHAR},
+			#{invoiceType,jdbcType=VARCHAR},
+			#{customerCode,jdbcType=VARCHAR},
+			#{customerName,jdbcType=VARCHAR},
+			#{totalAmount,jdbcType=DECIMAL}*100,<!-- 数据库以分单位,乘100-->
+			#{alreadyOpenAmount,jdbcType=DECIMAL}*100,
+			#{businessDate,jdbcType=TIMESTAMP},
+			#{applyUserName,jdbcType=VARCHAR},
+			#{applyUserCode,jdbcType=VARCHAR},
+			#{orgName,jdbcType=VARCHAR},
+			#{orgCode,jdbcType=VARCHAR},			
+			#{active,jdbcType=CHAR},
+			#{currencyCode,jdbcType=VARCHAR},
+			#{versionNo,jdbcType=DECIMAL} )
+	</insert>
+	
+	<!-- 更新开发票记录 -->
+	<update id="updateInvoice"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.domain.InvoiceEntity">
+		update/*结算-客户管理-更新开发票记录    */ STL.T_STL_INVOICE t
+		   set t.SOURCE_BILL_NO 		= #{sourceBillNo,jdbcType=VARCHAR},
+			   t.SOURCE_BILL_TYPE 		= #{sourceBillType,jdbcType=VARCHAR},
+			   t.INVOICE_TYPE 			= #{invoiceType,jdbcType=VARCHAR},
+			   t.CUSTOMER_CODE 			= #{customerCode,jdbcType=VARCHAR},
+			   t.CUSTOMER_NAME 			= #{customerName,jdbcType=VARCHAR},
+			   t.TOTAL_AMOUNT 			= #{totalAmount,jdbcType=DECIMAL},
+			   t.ALREADY_OPEN_AMOUNT 	= #{alreadyOpenAmount,jdbcType=DECIMAL}*100,
+			   t.BUSINESS_DATE 			= #{businessDate,jdbcType=VARCHAR},
+			   t.APPLY_USER_NAME 		= #{applyUserName,jdbcType=VARCHAR},
+			   t.APPLY_USER_CODE 		= #{applyUserCode,jdbcType=VARCHAR},
+			   t.ORG_NAME 				= #{orgName,jdbcType=VARCHAR},
+			   t.ORG_CODE 				= #{orgCode,jdbcType=VARCHAR},			   
+			   t.ACTIVE 				= #{active,jdbcType=CHAR},
+			   t.CURRENCY_CODE 			= #{currencyCode,jdbcType=VARCHAR},
+			   t.VERSION_NO 			= t.version_no + 1
+		 where <!-- 来源单据号 -->
+			   t.SOURCE_BILL_NO = #{sourceBillNo,jdbcType=VARCHAR}
+		   and t.version_no = #{versionNo}
+		   <!-- BUG-56554 增加限制条件部门 -->
+		   and t.ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+		   <!-- 是否有效 -->
+		   <if test="active != null and active != ''">
+		   	   and t.ACTIVE = #{active,jdbcType=CHAR}
+		   </if>
+	</update>
+	
+	<!-- 判断开发票记录是否存在,如存在则返回发票记录实体 -->
+	<select id="existsInvoice" resultMap="InvoiceBaseResultMap"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.domain.InvoiceEntity" >
+		select/*结算-客户管理-判断开发票记录是否存在,如存在则返回发票记录实体    */ <include refid="invoiceAllColumnList" />
+		  from STL.T_STL_INVOICE t
+		 where t.SOURCE_BILL_NO = #{sourceBillNo,jdbcType=VARCHAR}
+		 <!-- BUG-56554 增加查询条件部门 -->
+		 and t.ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+		<!-- 是否有效 -->
+		<if test="active != null and active != ''">   
+			and t.ACTIVE = #{active,jdbcType=CHAR}
+		</if>
+	</select>
+	
+	<!-- 查询开发票记录 -->
+	<select id="queryInvoice" resultMap="InvoiceBaseResultMap" 
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.InvoiceDto" >
+		select/*结算-客户管理-查询开发票记录   */ <include refid="invoiceAllColumnList" />
+		  from STL.T_STL_INVOICE t
+		 where t.SOURCE_BILL_NO IN
+		<foreach collection="sourceBillNoList"  index="index" item="item"  open="(" separator="," close=")">  
+		        #{item} 
+		</foreach>
+		<!-- 是否有效 -->
+		<if test="active != null and active != ''">   
+			and t.ACTIVE = #{active,jdbcType=CHAR}
+		</if>
+	</select>	
+	
+</mapper>

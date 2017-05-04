@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.lineItem" >
+
+	<resultMap id="lineItemResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.LineItemEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="virtual_code" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="line_virtual_code" property="lineVirtualCode" jdbcType="VARCHAR" />
+		<result column="seq" property="sequence" jdbcType="NUMERIC" />
+		<result column="orig_org_code" property="orginalOrganizationCode" jdbcType="VARCHAR" />
+		<result column="dest_org_code" property="destinationOrganizationCode" jdbcType="VARCHAR" />
+		<result column="distance" property="distance" jdbcType="NUMERIC" />
+		<result column="dept_city_code" property="orginalCityCode" jdbcType="VARCHAR" />
+		<result column="arrive_city_code" property="destinationCityCode" jdbcType="VARCHAR" />
+		<result column="common_aging" property="commonAging" jdbcType="NUMERIC" />
+		<result column="fast_aging" property="fastAging" jdbcType="NUMERIC" />
+		<result column="passby_time" property="passbyAging" jdbcType="NUMERIC" />
+		<result column="virtual_code" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="active" property="active" jdbcType="CHAR" />
+		<result column="notes" property="notes" jdbcType="VARCHAR" />
+		<result column="create_time" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="modify_time" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="VERSION_NO" property="version" jdbcType="NUMERIC" />
+	</resultMap>
+	
+	<sql id="columns">
+		ID,
+		SEQ,
+		DISTANCE,
+		ORIG_ORG_CODE,
+		DEST_ORG_CODE,
+		DEPT_CITY_CODE,
+		ARRIVE_CITY_CODE,
+		COMMON_AGING,
+		FAST_AGING,
+		PASSBY_TIME,
+		CREATE_TIME,
+		MODIFY_TIME,
+		ACTIVE,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE,
+		NOTES,
+		VIRTUAL_CODE,
+		LINE_VIRTUAL_CODE,
+		VERSION_NO
+	</sql>
+	
+	<sql id="values">
+		#{id,jdbcType=VARCHAR},
+		#{sequence,jdbcType=NUMERIC}, 
+		#{distance, jdbcType=NUMERIC}, 
+		#{orginalOrganizationCode,jdbcType=VARCHAR},  
+		#{destinationOrganizationCode,jdbcType=VARCHAR}, 
+		#{orginalCityCode,jdbcType=VARCHAR},
+		#{destinationCityCode,jdbcType=VARCHAR},
+		#{commonAging,jdbcType=NUMERIC}, 
+		#{fastAging,jdbcType=NUMERIC},  
+		#{passbyAging,jdbcType=NUMERIC}, 
+		#{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=CHAR}, 
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR}, 
+		#{notes,jdbcType=VARCHAR}, 
+		#{virtualCode, jdbcType=VARCHAR}, 
+		#{lineVirtualCode,jdbcType=VARCHAR},
+		#{version, jdbcType=NUMERIC}
+	</sql>
+
+
+	<insert id="addLineItem" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.LineItemEntity">
+		insert into BSE.T_BAS_LINE_ITEM (
+		<include refid="columns"/>
+		) values ( 
+		<include refid="values"/>
+		)
+	</insert>
+
+	<update id="deleteLineItem" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.LineItemEntity">
+		update BSE.T_BAS_LINE_ITEM 
+		set active = #{active, jdbcType=CHAR} 
+		, modify_time = #{modifyDate,jdbcType=TIMESTAMP} 
+		, version_no = #{version,jdbcType=NUMERIC}
+		, modify_user_code = #{modifyUser,jdbcType=VARCHAR} 
+		where VIRTUAL_CODE = #{virtualCode, jdbcType=VARCHAR}
+		and active = 'Y'
+	</update>
+
+	<update id="deleteLineItemByLine" parameterType="map">
+		update BSE.T_BAS_LINE_ITEM 
+		set active = #{inactive, jdbcType=CHAR} 
+		, modify_time = #{modifyDate,jdbcType=TIMESTAMP} 
+		, version_no = #{version,jdbcType=NUMERIC}
+		, modify_user_code = #{modifyUser,jdbcType=VARCHAR} 
+		where LINE_VIRTUAL_CODE = #{lineVirtualCode,jdbcType=VARCHAR}
+		and active = #{active, jdbcType=CHAR} 
+	</update>
+
+
+	<select id="queryLineItemById" resultMap="lineItemResultMap" parameterType="java.lang.String">
+		select 
+		<include refid="columns"/>
+		 from BSE.T_BAS_LINE_ITEM where id = #{id}
+	</select>
+
+	<select id="queryLineItemByVirtualCode" resultMap="lineItemResultMap" parameterType="map">
+		select 
+		<include refid="columns"/>
+		 from BSE.T_BAS_LINE_ITEM 
+		 where VIRTUAL_CODE = #{virtualCode}
+		 and active = #{active} 
+	</select>
+
+	<select id="queryLineItemListByLineVirtualCode" resultMap="lineItemResultMap" parameterType="map" >
+		select  
+		<include refid="columns"/>
+		from BSE.T_BAS_LINE_ITEM
+		where line_virtual_code = #{lineVirtualCode}
+		and active = #{active}
+		order by seq
+	</select>
+	
+	<select id="queryLineItemListByCondition"  resultMap="lineItemResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.LineItemEntity">
+		select 
+		<include refid="columns"/>
+		from BSE.T_BAS_LINE_ITEM
+		<where>
+			<if test="active != null">
+				and active = #{active}
+			</if>
+			<if test="orginalOrganizationCode != null">
+				and orig_org_code = #{orginalOrganizationCode}
+			</if>
+			<if test="destinationOrganizationCode != null">
+				and dest_org_code = #{destinationOrganizationCode}
+			</if>
+		</where>
+		order by VERSION_NO desc
+	</select>
+	
+	
+	<select id="sumAgingByLineVirtualCode" resultType="map" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.LineEntity">
+	    select 
+	    nvl(sum(passby_time),0)  as PASSBY, 
+	    nvl(sum(fast_aging),0)   as FAST, 
+	    nvl(sum(common_aging),0) as COMMON
+		from BSE.T_BAS_LINE_ITEM
+		where line_virtual_code = #{lineVirtualCode}
+		and active = #{active}
+	</select>
+
+	<update id="updateLineAging" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.LineEntity">
+		update BSE.T_BAS_LINE
+		set common_aging = #{commonAging, jdbcType=NUMERIC},
+		fast_aging = #{fastAging, jdbcType=NUMERIC},
+		version_no = #{version,jdbcType=NUMERIC},
+		modify_time = #{modifyDate,jdbcType=TIMESTAMP},
+		modify_user_code = #{modifyUser,jdbcType=VARCHAR}
+		where virtual_code = #{virtualCode, jdbcType=VARCHAR}
+		and active = #{active, jdbcType=CHAR}
+	</update>
+
+
+	<select id="queryLineItemListForDownload" resultMap="lineItemResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.LineItemEntity">
+		select 
+		<include refid="columns"/>
+		from BSE.T_BAS_LINE_ITEM 
+		<where>
+			<if test="version != null">
+				<![CDATA[ AND version_no >= #{version}  ]]>
+			</if>
+		</where>
+		order by version_no,id ASC
+	</select>
+
+	<!-- 以下为 cache 使用 -->
+
+	<select id="queryLastVersion" resultType="long">
+		<![CDATA[
+			SELECT MAX(VERSION_NO)
+			FROM BSE.T_BAS_LINE_ITEM
+		]]>
+	</select>
+	
+	<select id="queryLineItemListForCache" resultMap="lineItemResultMap" parameterType="string">
+		select 
+		<include refid="columns"/>
+		FROM BSE.T_BAS_LINE_ITEM
+		where active = #{active,jdbcType=CHAR}
+		order by version_no ASC
+	</select>
+
+
+
+</mapper>

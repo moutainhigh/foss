@@ -1,0 +1,360 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.priceEntityMapper" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.domain.PriceEntity" >
+    <result column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="NAME" property="name" jdbcType="VARCHAR" />
+    <result column="CODE" property="code" jdbcType="VARCHAR" />
+    <result column="ACTIVE" property="active" jdbcType="CHAR" />
+    <result column="REF_ID" property="refId" jdbcType="VARCHAR" />
+    <result column="REF_CODE" property="refCode" jdbcType="VARCHAR" />
+    <result column="VERSION_NO" property="versionNo" jdbcType="DECIMAL" />
+    <result column="DESCRIPTION" property="remarks" jdbcType="VARCHAR" />
+    <result column="BEGIN_TIME" property="beginTime"   />
+    <result column="END_TIME" property="endTime"   />
+    <result column="CREATE_TIME" property="createDate"   />
+    <result column="MODIFY_TIME" property="modifyDate"   />
+    <result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+    <result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+    <result column="CREATE_ORG_CODE" property="createOrgCode" jdbcType="VARCHAR" />
+    <result column="MODIFY_ORG_CODE" property="modifyOrgCode" jdbcType="VARCHAR" />
+    <result column="BELONG_PRICE_ENTRY_ID" property="blongPricingId" jdbcType="VARCHAR" />
+    <result column="BELONG_PRICE_ENTRY_CODE" property="blongPricingCode" jdbcType="VARCHAR" />
+    <result column="BELONG_PRICE_ENTRY_NAME" property="blongPricingName" jdbcType="VARCHAR" />
+  </resultMap>
+  
+  <!-- 查询字段 -->
+	<sql id="select_param">
+	   MASTER.ID                   AS ID,
+       MASTER.NAME                 AS NAME,
+       MASTER.CODE                 AS CODE,
+       MASTER.ACTIVE               AS ACTIVE,
+       MASTER.REF_ID               AS REF_ID,
+       MASTER.REF_CODE             AS REF_CODE,
+       MASTER.VERSION_NO           AS VERSION_NO,
+       MASTER.DESCRIPTION          AS remarks,
+       MASTER.BEGIN_TIME           AS BEGIN_TIME,
+       MASTER.END_TIME             AS END_TIME,
+       MASTER.CREATE_TIME          AS CREATE_TIME,
+       MASTER.MODIFY_TIME          AS MODIFY_TIME, 
+       MASTER.CREATE_USER_CODE     AS CREATE_USER_CODE, 
+       MASTER.MODIFY_USER_CODE     AS MODIFY_USER_CODE, 
+       MASTER.CREATE_ORG_CODE      AS CREATE_ORG_CODE, 
+       MASTER.MODIFY_ORG_CODE      AS MODIFY_ORG_CODE,
+       MASTER.BELONG_PRICE_ENTRY_ID AS BELONG_PRICE_ENTRY_ID,
+       MASTER.BELONG_PRICE_ENTRY_CODE AS BELONG_PRICE_ENTRY_CODE,
+       BLONG.NAME AS BELONG_PRICE_ENTRY_NAME
+	</sql>
+	<!-- 单表查询字段 -->
+	<sql id="query_cloumn">
+	   ID                   AS ID,
+       NAME                 AS NAME,
+       CODE                 AS CODE,
+       ACTIVE               AS ACTIVE,
+       REF_ID               AS REF_ID,
+       REF_CODE             AS REF_CODE,
+       VERSION_NO           AS VERSION_NO,
+       DESCRIPTION          AS remarks,
+       BEGIN_TIME           AS BEGIN_TIME,
+       END_TIME             AS END_TIME,
+       CREATE_TIME          AS CREATE_TIME,
+       MODIFY_TIME          AS MODIFY_TIME, 
+       CREATE_USER_CODE     AS CREATE_USER_CODE, 
+       MODIFY_USER_CODE     AS MODIFY_USER_CODE, 
+       CREATE_ORG_CODE      AS CREATE_ORG_CODE, 
+       MODIFY_ORG_CODE      AS MODIFY_ORG_CODE,
+       BELONG_PRICE_ENTRY_ID AS BELONG_PRICE_ENTRY_ID,
+       BELONG_PRICE_ENTRY_CODE AS BELONG_PRICE_ENTRY_CODE
+	</sql>
+	
+  	<!-- 根据条件查询价格区域 -->
+	<select id="searchValueAddedType" resultMap="BaseResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PriceEntity">
+		<![CDATA[
+			SELECT /*综合-价格-根据条件查询价格区域*/ 
+		]]>
+		<include refid="select_param" />
+		<![CDATA[
+			FROM pkp.T_SRV_PRICING_ENTRY MASTER
+			LEFT JOIN pkp.T_SRV_PRICING_ENTRY BLONG
+			ON MASTER.BELONG_PRICE_ENTRY_ID = BLONG.ID
+		]]>
+		<where>
+			<if test="id != null and id != ''">
+				MASTER.ID = #{id}
+			</if>
+			<if test="name != null and name != ''">
+				AND MASTER.NAME  = #{name}
+			</if>
+			<if test="refId != null and refId != ''">
+				AND MASTER.REF_ID = #{regionName}
+			</if>
+			<if test="refCode != null and refCode != ''">
+				AND MASTER.REF_CODE = #{refCode}
+			</if>
+			<if test="active != null and active != ''">
+				AND MASTER.ACTIVE  = #{active}
+			</if>
+			<if test="blongPricingId != null and blongPricingId != ''">
+				AND MASTER.BELONG_PRICE_ENTRY_ID  = #{blongPricingId}
+			</if>
+			<if test="blongPricingCode != null and blongPricingCode != ''">
+				AND MASTER.BELONG_PRICE_ENTRY_CODE  = #{blongPricingCode}
+			</if>
+			<if test="receiveDate != null and receiveDate != ''">
+				AND #{receiveDate} between MASTER.BEGIN_TIME and MASTER.END_TIME
+			</if>
+		</where>
+		<![CDATA[
+			ORDER BY MASTER.MODIFY_TIME DESC
+		]]>
+	</select>
+  <insert id="insert" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PriceEntity" >
+    insert /*综合-价格-插入计价条目*/  
+    into PKP.T_SRV_PRICING_ENTRY (ID, NAME, CODE, 
+      ACTIVE, REF_ID, REF_CODE, 
+      VERSION_NO, DESCRIPTION, BEGIN_TIME, 
+      END_TIME, CREATE_TIME, MODIFY_TIME, 
+      CREATE_USER_CODE, MODIFY_USER_CODE, CREATE_ORG_CODE, 
+      MODIFY_ORG_CODE,BELONG_PRICE_ENTRY_ID,BELONG_PRICE_ENTRY_CODE)
+    values (#{id,jdbcType=VARCHAR}, #{name,jdbcType=VARCHAR}, #{code,jdbcType=VARCHAR}, 
+      #{active,jdbcType=CHAR}, #{refId,jdbcType=VARCHAR}, #{refCode,jdbcType=VARCHAR}, 
+      #{versionNo,jdbcType=DECIMAL}, #{remarks,jdbcType=VARCHAR}, #{beginTime,jdbcType=TIMESTAMP}, 
+      #{endTime,jdbcType=TIMESTAMP}, #{createDate,jdbcType=TIMESTAMP}, #{modifyDate,jdbcType=TIMESTAMP}, 
+      #{createUser,jdbcType=VARCHAR}, #{modifyUser,jdbcType=VARCHAR}, #{createOrgCode,jdbcType=VARCHAR}, 
+      #{modifyOrgCode,jdbcType=VARCHAR},#{blongPricingId,jdbcType=VARCHAR},#{blongPricingCode,jdbcType=VARCHAR})
+  </insert>
+  <!-- 根据条件查询计价条目明细 -->
+  <select id="queryPriceEntryDetail"  resultMap="BaseResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PriceEntity" >
+    select /*综合-价格-根据条件查询计价条目明细*/
+    <include refid="query_cloumn" /> 
+    from PKP.T_SRV_PRICING_ENTRY MASTER 
+    <where>
+	<if test="modifyDate != null and modifyDate != '' ">
+		MASTER.MODIFY_TIME  <![CDATA[ >= ]]> #{modifyDate,jdbcType=TIMESTAMP}
+	</if>
+	<if test="code != null and code != '' ">
+		AND MASTER.CODE = #{code,jdbcType=VARCHAR}
+	</if>
+	<if test="active != null and active != '' ">
+		AND MASTER.ACTIVE = #{active,jdbcType=VARCHAR}
+	</if>
+	<if test="blongPricingCode != null and blongPricingCode != '' ">
+		AND MASTER.BELONG_PRICE_ENTRY_CODE = #{blongPricingCode,jdbcType=VARCHAR}
+	</if>
+	<if test="receiveDate!=null and receiveDate!=''">
+		AND MASTER.BEGIN_TIME <![CDATA[ <= ]]> #{receiveDate} 
+		AND MASTER.END_TIME  <![CDATA[ > ]]>	#{receiveDate} 
+	</if>
+	<if test="versionNo!=null and versionNo!=''"> 
+		AND MASTER.VERSION_NO >= #{versionNo}        
+  	</if>
+    </where>
+    order by MASTER.VERSION_NO,MASTER.ID ASC 
+  </select>
+  
+  <!-- 根据条目编码与当前查询时间获得条目名称-->
+  <select id="queryPriceEntryNameByCode" resultType="string" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PriceEntity">
+    select /*综合-价格-根据条目编码与当前查询时间获得条目名称*/
+    NAME
+    from PKP.T_SRV_PRICING_ENTRY MASTER 
+    <where>
+		<if test="code != null and code != '' ">
+			AND MASTER.CODE = #{code,jdbcType=VARCHAR}
+		</if>
+		<if test="active != null and active != '' ">
+			AND MASTER.ACTIVE = #{active,jdbcType=VARCHAR}
+		</if>
+		<if test="receiveDate!=null and receiveDate!=''">
+			AND MASTER.BEGIN_TIME <![CDATA[ <= ]]>  #{receiveDate} 
+			AND MASTER.END_TIME  <![CDATA[ > ]]>	#{receiveDate} 
+		</if>
+    </where>
+  </select>
+  
+  <select id="queryPriceEntryByCode" resultMap="BaseResultMap" parameterType="java.util.Map">
+    select /*综合-价格-根据条目编码查询计价条目信息*/
+    <include refid="query_cloumn" /> 
+    from PKP.T_SRV_PRICING_ENTRY MASTER 
+    <where>
+		<if test="code != null and code != '' ">
+			AND MASTER.CODE = #{code,jdbcType=VARCHAR}
+		</if>
+		<if test="active != null and active != '' ">
+			AND MASTER.ACTIVE = #{active,jdbcType=VARCHAR}
+		</if>
+		<if test="receiveDate!=null and receiveDate!=''">
+			AND MASTER.BEGIN_TIME <![CDATA[ <= ]]>  #{receiveDate} 
+			AND MASTER.END_TIME  <![CDATA[ > ]]>	#{receiveDate} 
+		</if>
+    </where>
+  </select>
+  
+  <!-- 根据条目编码与当前查询时间获得条目名称-->
+  <select id="queryPriceEntryNameByEntryCodes" resultMap="BaseResultMap" parameterType="java.util.Map">
+    select /*综合-价格-根据条目编码集合与当前查询时间获得条目名称*/
+    <include refid="query_cloumn" /> 
+    from PKP.T_SRV_PRICING_ENTRY MASTER 
+    <where>
+		MASTER.ACTIVE = #{active,jdbcType=VARCHAR}
+		AND MASTER.BEGIN_TIME <![CDATA[ <= ]]>  #{receiveDate} 
+		AND MASTER.END_TIME  <![CDATA[ > ]]>	#{receiveDate} 
+		<if test="entryCodes!=null">
+			AND MASTER.CODE in
+			<foreach collection="entryCodes" index="index" item="entryCode"
+				open="(" separator="," close=")">
+				#{entryCode}
+			</foreach>
+		</if>
+    </where>
+  </select>
+  <update id="updateByPrimaryKey" parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.GoodsTypeEntity" >				     
+    	update PKP.T_SRV_PRICING_ENTRY  /*综合-价格-根据主键修改计费条目*/
+    <set>
+	   	<if test="code != null and code !=''">
+	    CODE = #{code,jdbcType=VARCHAR},
+	    </if>
+	    <if test="name != null and name != ''">
+	     NAME = #{name,jdbcType=VARCHAR},
+	    </if>
+	    <if test="active != null and active !=''">
+	    ACTIVE = #{active,jdbcType=CHAR},
+	    </if>
+	    <if test="remarks != null">
+	    DESCRIPTION = #{remarks,jdbcType=VARCHAR},
+	    </if>
+	    <if test="versionNo != null and versionNo !=''">
+	    VERSION_NO = #{versionNo,jdbcType=DECIMAL},
+	    </if>
+	    <if test="beginTime != null and beginTime !=''">
+	    	BEGIN_TIME = #{beginTime,jdbcType=TIMESTAMP},
+	    </if>
+	    <if test="endTime != null and endTime !=''">
+	   		END_TIME = #{endTime,jdbcType=TIMESTAMP},
+	    </if>
+	    <if test="createDate != null and createDate !=''">
+	    	CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+	    </if>
+	    <if test="modifyDate != null and modifyDate !=''">
+	   		MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}, 
+	    </if>
+	    <if test="createUser != null and createUser !='' ">
+	    	CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+	    </if>
+	    <if test="modifyUser != null and modifyUser !='' ">
+	    	MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+	    </if>
+	    <if test="createOrgCode != null and createOrgCode !='' ">
+	    	CREATE_ORG_CODE = #{createOrgCode,jdbcType=VARCHAR},
+	    </if>
+	    <if test="modifyOrgCode != null and modifyOrgCode !='' ">
+	    	MODIFY_ORG_CODE = #{modifyOrgCode,jdbcType=VARCHAR},
+	    </if>
+	    <if test="blongPricingId != null and blongPricingId !=''">
+	    	BELONG_PRICE_ENTRY_ID = #{blongPricingId,jdbcType=VARCHAR},
+	    </if>
+	    <if test="blongPricingCode != null and blongPricingCode !=''">
+	    	BELONG_PRICE_ENTRY_CODE = #{blongPricingCode,jdbcType=VARCHAR},
+	    </if>
+	</set>
+		where ID = #{id,jdbcType=VARCHAR}
+	</update>
+  	<select id="findPriceEntryByCondiction" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PriceEntity">
+  		SELECT    /*综合-价格- 计价条目- 查询分页*/
+  			<include refid="query_cloumn" />
+  		 	FROM PKP.T_SRV_PRICING_ENTRY entry
+  		 	<where>
+		  		<if test="code!=null and code!=''"> 
+						AND entry.CODE = #{code}        
+		  		</if>
+		  		<if test="name!=null and name!=''"> 
+						AND entry.NAME like CONCAT(CONCAT('%', #{name,jdbcType=VARCHAR}),'%')    
+		  		</if>
+		  		<if test="versionNo!=null and versionNo!=''"> 
+						AND entry.VERSION_NO > #{versionNo}        
+		  		</if>
+				<if test="blongPricingCode!=null and blongPricingCode!=''"> 
+						AND entry.BELONG_PRICE_ENTRY_CODE =  #{blongPricingCode} 
+		  		</if>
+		  		<if test="refCode!=null and refCode!=''"> 
+						AND entry.REF_CODE =  #{refCode} 
+		  		</if>
+		  		<if test="receiveDate!=null and receiveDate!=''"> 
+						AND #{receiveDate} >= entry.BEGIN_TIME
+						AND #{receiveDate} <![CDATA[  <  ]]>  entry.END_TIME        
+		  		</if>
+			</where>
+			order by entry.VERSION_NO ASC 
+  	</select>
+  	<select id="countPriceEntityByCondition" resultType="Long" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PriceEntity">
+  		SELECT 
+  			count(*)  /*综合-价格- 计价条目- 查询分页总数*/
+  		 	FROM PKP.T_SRV_PRICING_ENTRY entry
+  		 	<where>
+		   		<if test="name!=null and name!=''"> 
+						AND entry.NAME LIKE CONCAT(CONCAT('%', #{name}), '%')        
+		  		</if>
+		  		<if test="code!=null and code!=''"> 
+						AND entry.CODE = #{code}        
+		  		</if>
+		  		<if test="versionNo!=null and versionNo!=''"> 
+						AND entry.VERSION_NO > #{versionNo}        
+		  		</if>
+				<if test="blongPricingCode!=null and blongPricingCode!=''"> 
+						AND entry.BELONG_PRICE_ENTRY_CODE =  #{blongPricingCode} 
+		  		</if>
+		  		<if test="refCode!=null and refCode!=''"> 
+						AND entry.REF_CODE =  #{refCode} 
+		  		</if>
+		  		<if test="receiveDate!=null and receiveDate!=''"> 
+						AND #{receiveDate} >= entry.BEGIN_TIME
+						AND #{receiveDate} <![CDATA[  <  ]]>  entry.END_TIME        
+		  		</if>
+			</where>
+			order by entry.VERSION_NO ASC 
+  	</select>
+  	<select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.String" >
+	    select 
+	    <include refid="query_cloumn" />
+	    from PKP.T_SRV_PRICING_ENTRY MASTER
+	    where MASTER.ID = #{id,jdbcType=VARCHAR}
+  </select>
+  <!-- 检查重复计价条目code  -->
+  <select id="modifyBeforeCheckPriceEntryCode" resultMap="BaseResultMap" parameterType="java.util.Map">
+    select  /*综合-价格- 计价条目- 查询是否有重复记录*/
+    <include refid="query_cloumn" /> 
+    from PKP.T_SRV_PRICING_ENTRY MASTER 
+    <where>
+		<if test="code != null and code != '' ">
+			AND MASTER.CODE = #{code,jdbcType=VARCHAR}
+		</if>
+		<if test="name != null and name != '' ">
+			AND MASTER.NAME = #{name,jdbcType=VARCHAR}
+		</if>
+		<if test="active != null and active != '' ">
+			AND MASTER.ACTIVE = #{active,jdbcType=VARCHAR}
+		</if>
+		<if test="receiveDate!=null and receiveDate!=''">
+			AND MASTER.BEGIN_TIME <![CDATA[ <= ]]>  #{receiveDate} 
+			AND MASTER.END_TIME  <![CDATA[ > ]]>	#{receiveDate} 
+		</if>
+		<if test="id!=null and id!=''">
+			AND MASTER.ID !=  #{id} 
+		</if>
+    </where>
+  </select>
+  <select id="findParentPriceEntryByCondiction" resultMap="BaseResultMap">
+  		SELECT    /*综合-价格- 计价条目- 查询其他费用*/
+  			<include refid="query_cloumn" />
+  		 	FROM PKP.T_SRV_PRICING_ENTRY entry
+  		 	<where>
+  		 		AND entry.ACTIVE = 'Y' 
+				AND entry.REF_CODE = 'VAS' OR  entry.CODE = 'FRT'
+		  		<if test="receiveDate!=null and receiveDate!=''"> 
+						AND #{receiveDate} >= entry.BEGIN_TIME
+						AND #{receiveDate} <![CDATA[  <  ]]>  entry.END_TIME        
+		  		</if>
+			</where>
+			order by entry.VERSION_NO ASC 
+  	</select>
+</mapper>

@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.WscWayBillManageDao">
+	<!-- 基础结果对象映射 -->
+	<resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.common.api.shared.domain.WSCWayBillEntity">
+		<id column="ID" property="wscItemId" jdbcType="VARCHAR" />
+		<result column="WSC_ITEM_ID" property="id" jdbcType="VARCHAR" />
+		<result column="WAYBILL_NO" property="wayBillNo" jdbcType="VARCHAR" />
+		<result column="WAYBILL_SOURCE" property="wayBillSource" jdbcType="VARCHAR" />
+		<result column="SEND_CUSTOMER_CODE" property="sendCustomerCode" jdbcType="VARCHAR" />
+		<result column="SEND_CUSTOMER_NAME" property="sendCustomerName" jdbcType="VARCHAR" />
+		<result column="CREATE_BILL_ORG_CODE" property="createBillOrgCode" jdbcType="VARCHAR" />
+		<result column="CREATE_BILL_ORG_NAME" property="createBillOrgName" jdbcType="VARCHAR" />
+		<result column="CREATE_BILL_TIME" property="createBillTime" jdbcType="TIMESTAMP" />
+		<result column="PAYMENT_STATUS" property="paymentStatus" jdbcType="VARCHAR" />
+		<result column="WAYBILL_AMOUNT" property="wayBillAmount" jdbcType="DECIMAL" />
+		<result column="WAIT_SWIPE_AMOUNT" property="waitSwipeAmount" jdbcType="DECIMAL" />
+		<result column="ALREADY_SWIPE_AMOUNT" property="alreadySwipeAmount" jdbcType="DECIMAL" />
+		<result column="SWIPECARD_ORG_CODE" property="swipeCardOrgCode" jdbcType="VARCHAR" />
+		<result column="SWIPECARD_ORG_NAME" property="swipeCardOrgName" jdbcType="VARCHAR" />
+		<result column="SWIPECARD_TIME" property="swipeCardTime" jdbcType="TIMESTAMP" />
+		<result column="SWIPECARD_USER_CODE" property="swipeCardUserCode" jdbcType="VARCHAR" />
+		<result column="SWIPECARD_USER_NAME" property="swipeCardUserName" jdbcType="VARCHAR" />
+		<result column="SERIAL_NO" property="serialNo" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER_CODE" property="createUserCode" jdbcType="VARCHAR" />
+		<result column="CREATE_USER_NAME" property="createUserName" jdbcType="VARCHAR" />
+		<result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_USER_CODE" property="modifyUserCode" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_NAME" property="modifyUserName" jdbcType="VARCHAR" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 待刷卡表查询基本列字段 -->
+	<sql id="Full_Column_List_Select">
+		ID, WSC_ITEM_ID, WAYBILL_NO, WAYBILL_SOURCE, SEND_CUSTOMER_CODE, SEND_CUSTOMER_NAME,
+		CREATE_BILL_ORG_CODE, CREATE_BILL_ORG_NAME, CREATE_BILL_TIME, PAYMENT_STATUS,
+		WAYBILL_AMOUNT/100 WAYBILL_AMOUNT, 
+		WAIT_SWIPE_AMOUNT/100 WAIT_SWIPE_AMOUNT, 
+		ALREADY_SWIPE_AMOUNT/100 ALREADY_SWIPE_AMOUNT,
+		SWIPECARD_ORG_CODE, SWIPECARD_ORG_NAME, SWIPECARD_TIME, SWIPECARD_USER_CODE, SWIPECARD_USER_NAME,
+		SERIAL_NO, ACTIVE, CREATE_TIME, CREATE_USER_CODE, CREATE_USER_NAME,
+		MODIFY_TIME, MODIFY_USER_CODE, MODIFY_USER_NAME, NOTES
+	</sql>
+
+	<!-- 获取符合查询条件的待刷卡运单数据 -->
+	<select id="queryBySearchCondition" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.WscWayBillManageDto" resultMap="BaseResultMap">
+		SELECT /*获取符合查询条件的待刷卡运单数据 */
+		<include refid="Full_Column_List_Select" />
+		FROM
+		STL.T_STL_BILL_WAITSWIPECARD
+		<where>
+			1=1
+			<if test="queryStartDate != null and queryStartDate != ''">
+			<![CDATA[
+				and CREATE_BILL_TIME >= #{queryStartDate}
+			]]>
+			</if>
+			<if test="queryEndDate != null and queryEndDate != ''">
+			<![CDATA[
+				and CREATE_BILL_TIME < #{queryEndDate}
+			]]>
+			</if>
+			<if test="wayBillNo != null and wayBillNo != ''">
+				and WAYBILL_NO = #{wayBillNo,jdbcType=VARCHAR}
+			</if>
+			<if test="wayBillSource != null and wayBillSource != ''">
+				and WAYBILL_SOURCE = #{wayBillSource,jdbcType=VARCHAR}
+			</if>
+			<if test="paymentStatus != null and paymentStatus != ''">
+				and PAYMENT_STATUS = #{paymentStatus,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				and ACTIVE = #{active,jdbcType=VARCHAR}
+			</if>
+			<!-- 限制登录人只能查询其所属部门的待刷卡运单数据 -->
+			AND CREATE_BILL_ORG_CODE IN (
+			  SELECT ORG_CODE
+			  FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW
+			  WHERE EMP_CODE = #{currentEmpCode,jdbcType=VARCHAR}
+			)
+		</where>
+		<!-- 开单时间倒序排列 -->
+		ORDER BY CREATE_BILL_TIME DESC
+	</select>
+
+	<!-- 获取符合查询条件的待刷卡运单数据条数 -->
+	<select id="queryCountBySearchCondition" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.WscWayBillManageDto" resultType="java.util.Map">
+		SELECT /*获取符合查询条件的待刷卡运单数据条数 */
+		COUNT(ID) COUNTID,
+		SUM(WAIT_SWIPE_AMOUNT)/100 SUMAMOUNT
+		FROM
+		STL.T_STL_BILL_WAITSWIPECARD
+		<where>
+			1=1
+			<if test="queryStartDate != null and queryStartDate != ''">
+			<![CDATA[
+				and CREATE_BILL_TIME >= #{queryStartDate}
+			]]>
+			</if>
+			<if test="queryEndDate != null and queryEndDate != ''">
+			<![CDATA[
+				and CREATE_BILL_TIME < #{queryEndDate}
+			]]>
+			</if>
+			<if test="wayBillNo != null and wayBillNo != ''">
+				and WAYBILL_NO = #{wayBillNo,jdbcType=VARCHAR}
+			</if>
+			<if test="wayBillSource != null and wayBillSource != ''">
+				and WAYBILL_SOURCE = #{wayBillSource,jdbcType=VARCHAR}
+			</if>
+			<if test="paymentStatus != null and paymentStatus != ''">
+				and PAYMENT_STATUS = #{paymentStatus,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				and ACTIVE = #{active,jdbcType=VARCHAR}
+			</if>
+			<!-- 限制登录人只能查询其所属部门的待刷卡运单数据 -->
+			AND CREATE_BILL_ORG_CODE IN (
+			  SELECT ORG_CODE
+			  FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW
+			  WHERE EMP_CODE = #{currentEmpCode,jdbcType=VARCHAR}
+			)
+		</where>
+	</select>
+
+	<!-- 查询在id集合中的待刷卡运单数据 -->
+	<select id="queryByIDs" parameterType="java.util.List" resultMap="BaseResultMap">
+		SELECT /* 查询在id集合中的待刷卡运单数据 */
+		<include refid="Full_Column_List_Select" />
+		FROM
+		STL.T_STL_BILL_WAITSWIPECARD
+		WHERE WSC_ITEM_ID IN
+		<foreach collection="list" item="item" index="index" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+	</select>
+
+</mapper>

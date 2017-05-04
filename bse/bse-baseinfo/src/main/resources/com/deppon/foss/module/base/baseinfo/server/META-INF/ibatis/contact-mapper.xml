@@ -1,0 +1,476 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.cusContact">
+	<!-- 客户联系人信息 --> 
+	<resultMap id="cusContactResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.ContactEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="GENDER" property="gender" jdbcType="CHAR" />
+		<result column="CONTACT_PHONE" property="contactPhone"
+			jdbcType="VARCHAR" />
+		<result column="MOBILE_PHONE" property="mobilePhone" jdbcType="VARCHAR" />
+		<result column="FAX_NO" property="faxNo" jdbcType="VARCHAR" />
+		<result column="ADDRESS" property="address" jdbcType="VARCHAR" />
+		<result column="EMAIL" property="email" jdbcType="VARCHAR" />
+		<result column="ZIP_CODE" property="zipCode" jdbcType="VARCHAR" />
+		<result column="BIRTHDAY" property="birthday" jdbcType="TIMESTAMP" />
+		<result column="ID_CARD" property="idCard" jdbcType="VARCHAR" />
+		<result column="HOBBY" property="hobby" jdbcType="VARCHAR" />
+		<result column="RECEIVE_EMAIL" property="receiveEmail"
+			jdbcType="CHAR" />
+		<result column="RECEIVE_MESSAGE" property="receiveMessage"
+			jdbcType="CHAR" />
+		<result column="RECEIVE_LETTER" property="receiveLetter"
+			jdbcType="CHAR" />
+		<result column="WAY" property="way" jdbcType="VARCHAR" />
+		<result column="NATION" property="nation" jdbcType="VARCHAR" />
+		<result column="HOMETOWN" property="hometown" jdbcType="VARCHAR" />
+		<result column="TITLE" property="title" jdbcType="VARCHAR" />
+		<result column="WORKING_DEPT" property="workingDept" jdbcType="VARCHAR" />
+		<result column="CONTACT_NAME" property="contactName" jdbcType="VARCHAR" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+		<result column="CONTACT_TYPE" property="contactType" jdbcType="VARCHAR" />
+		<result column="MAIN_CONTRACT" property="mainContract"
+			jdbcType="CHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+		<!-- CUSTOMER_CODE 字段重命名为：CRM_CUS_ID 实体属性 customerCode 未作更改-->
+		<result column="CRM_CUS_ID" property="customerCode"
+			jdbcType="DECIMAL" />
+		<result column="VIRTUAL_CODE" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="CRM_ID" property="crmId" jdbcType="DECIMAL" />
+		<result column="CODE" property="code" jdbcType="VARCHAR" />
+		<!--wp_20140423-crm2期-->
+		<result column="CUSTFOSSID" property="ownCustId" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 客户联系人-偏好地址-客户接送货地址信息 -->
+	<resultMap id="contactAddressResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.dto.ContactAddressDto">
+		<result column="MOBILE_PHONE" property="mobilePhone" jdbcType="VARCHAR" />
+		<result column="CONTACT_NAME" property="contactName" jdbcType="VARCHAR" />
+		<result column="CONTACT_TYPE" property="contactType" jdbcType="VARCHAR" />
+		<result column="MAIN_CONTRACT" property="mainContract"
+			jdbcType="CHAR" />
+		<result column="CONTACT_ADDRESS" property="contactAddress"
+			jdbcType="VARCHAR" />
+		<result column="ADDRESS" property="address" jdbcType="VARCHAR" />
+		<result column="ZIP_CODE" property="zipCode" jdbcType="VARCHAR" />
+		<result column="PROVINCE_NAME" property="provinceName"
+			jdbcType="VARCHAR" />
+		<result column="CITY_CODE" property="cityCode" jdbcType="VARCHAR" />
+		<result column="COUNTY_CODE" property="countyCode" jdbcType="VARCHAR" />
+		<result column="ADDRESS_TYPE" property="addressType" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 数据字段 -->
+	<sql id="cusContact_Column_List">
+		ID, GENDER, CONTACT_PHONE, MOBILE_PHONE, FAX_NO, ADDRESS,
+		EMAIL,
+		ZIP_CODE, BIRTHDAY,
+		ID_CARD, HOBBY, RECEIVE_EMAIL,
+		RECEIVE_MESSAGE, RECEIVE_LETTER, WAY, NATION,
+		HOMETOWN,
+		TITLE,
+		WORKING_DEPT, CONTACT_NAME, NOTES, CONTACT_TYPE, MAIN_CONTRACT,
+		CREATE_TIME,
+		MODIFY_TIME, ACTIVE, CREATE_USER_CODE, MODIFY_USER_CODE,
+		CRM_CUS_ID,
+		VIRTUAL_CODE,CRM_ID,CODE,CUSTFOSSID
+	</sql>
+
+	<!-- 联系人-偏好地址-客户接送货地址数据字段 -->
+	<sql id="contactAddress_Column_List">
+		T.CONTACT_NAME AS CONTACT_NAME,
+		T.MOBILE_PHONE AS
+		MOBILE_PHONE,
+		T.CONTACT_TYPE AS CONTACT_TYPE,
+		T.MAIN_CONTRACT AS
+		MAIN_CONTRACT,
+		D.CONTACT_ADDRESS AS CONTACT_ADDRESS,
+		J.ADDRESS AS
+		ADDRESS,
+		J.ZIP_CODE AS ZIP_CODE,
+		J.PROVINCE_CODE AS PROVINCE_NAME,
+		J.CITY_CODE AS CITY_CODE,
+		J.COUNTY_CODE AS COUNTY_CODE,
+		J.ADDRESS_TYPE
+		AS ADDRESS_TYPE
+	</sql>
+
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<if test="active != null and active != ''">
+				and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</sql>
+
+	<!-- 查询所有客户联系人信息 -->
+	<select id="queryAllInfos"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ContactEntity"
+		resultMap="cusContactResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有客户联系人信息 **/
+		]]>
+		<include refid="cusContact_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUS_CONTACT T
+		]]>
+		<include refid="queryWhere" />
+	</select>
+
+	<!-- 验证客户联系人是否存在 -->
+	<select id="queryCusContactByCrmId" parameterType="map"
+		resultMap="cusContactResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:验证客户联系人是否存在 **/
+		]]>
+		<include refid="cusContact_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUS_CONTACT 
+		]]>
+		<where>
+			<if test="crmId != null and crmId != ''">
+				CRM_ID = #{crmId,jdbcType=DECIMAL}
+			</if>
+			<if test="modifyDate != null and modifyDate != ''">
+				AND MODIFY_TIME <![CDATA[  >=  ]]> #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="active != null and active != ''">
+				AND active = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+
+	<!-- 根据客户ID查询客户联系人-偏好地址-客户接送货地址信息 -->
+	<select id="queryContactAddressByCrmId" parameterType="java.lang.String"
+		resultMap="contactAddressResultMap">
+        <![CDATA[
+			SELECT 
+			/** 综合:根据客户ID查询客户联系人-偏好地址-客户接送货地址信息 **/
+		]]>
+		<include refid="contactAddress_Column_List" />
+		<![CDATA[
+		    FROM BSE.T_BAS_CUS_CONTACT T,BSE.T_BAS_CUS_CONTACT_ADDRESS D,BSE.T_BAS_CUS_ADDRESS J
+		]]>
+		<where>
+			T.CRM_ID = D.CONTACT_CRM_ID(+)
+			AND D.ADDRESS_CRM_ID = J.CRM_ID(+)
+			AND T.ACTIVE = D.ACTIVE(+)
+			AND D.ACTIVE = J.ACTIVE(+)
+			AND T.ACTIVE ='Y'
+			AND T.CRM_CUS_ID = #{crmCusId,jdbcType=VARCHAR}
+		</where>
+	</select>
+
+	<!-- 统计总记录数 -->
+	<select id="queryCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ContactEntity">
+	    <![CDATA[
+	       	select/** 综合:统计总记录数 **/ count(*) from BSE.T_BAS_CUS_CONTACT T
+	    ]]>
+		<include refid="queryWhere" />
+
+	</select>
+
+	<!-- 新增信息 -->
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ContactEntity">
+		
+		<![CDATA[
+			INSERT/** 综合:新增信息**/ INTO BSE.T_BAS_CUS_CONTACT T	(
+		]]>
+		<include refid="cusContact_Column_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, #{gender,jdbcType=CHAR},
+		#{contactPhone,jdbcType=VARCHAR},
+		#{mobilePhone,jdbcType=VARCHAR},
+		#{faxNo,jdbcType=VARCHAR}, #{address,jdbcType=VARCHAR},
+		#{email,jdbcType=VARCHAR}, #{zipCode,jdbcType=VARCHAR},
+		#{birthday,jdbcType=TIMESTAMP},
+		#{idCard,jdbcType=VARCHAR},
+		#{hobby,jdbcType=VARCHAR}, #{receiveEmail,jdbcType=CHAR},
+		#{receiveMessage,jdbcType=CHAR}, #{receiveLetter,jdbcType=CHAR},
+		#{way,jdbcType=VARCHAR},
+		#{nation,jdbcType=VARCHAR},
+		#{hometown,jdbcType=VARCHAR}, #{title,jdbcType=VARCHAR},
+		#{workingDept,jdbcType=VARCHAR}, #{contactName,jdbcType=VARCHAR},
+		#{notes,jdbcType=VARCHAR},
+		#{contactType,jdbcType=VARCHAR},
+		#{mainContract,jdbcType=CHAR}, #{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP}, #{active,jdbcType=CHAR},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR},
+		#{customerCode,jdbcType=DECIMAL},
+		#{virtualCode,jdbcType=VARCHAR},#{crmId,jdbcType=DECIMAL},
+		#{code,jdbcType=VARCHAR},
+		#{ownCustId,jdbcType=VARCHAR}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+
+	<!-- 修改信息 -->
+	<update id="update"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ContactEntity">
+		update/** 综合:修改信息**/ BSE.T_BAS_CUS_CONTACT
+		<set>
+				<if test="crmId != null and customserNature == 'SC_CUSTOMER'">
+					CRM_ID = #{crmId,jdbcType=DECIMAL},
+				</if> 
+				GENDER = #{gender,jdbcType=CHAR},
+				CONTACT_PHONE = #{contactPhone,jdbcType=VARCHAR},
+				MOBILE_PHONE = #{mobilePhone,jdbcType=VARCHAR},
+				FAX_NO = #{faxNo,jdbcType=VARCHAR},
+				ADDRESS = #{address,jdbcType=VARCHAR},
+				EMAIL = #{email,jdbcType=VARCHAR},
+				ZIP_CODE = #{zipCode,jdbcType=VARCHAR},
+				BIRTHDAY = #{birthday,jdbcType=TIMESTAMP},
+				ID_CARD = #{idCard,jdbcType=VARCHAR},
+				HOBBY = #{hobby,jdbcType=VARCHAR},
+				RECEIVE_EMAIL = #{receiveEmail,jdbcType=CHAR},
+				RECEIVE_MESSAGE = #{receiveMessage,jdbcType=CHAR},
+				RECEIVE_LETTER = #{receiveLetter,jdbcType=CHAR},
+				WAY = #{way,jdbcType=VARCHAR},
+				NATION = #{nation,jdbcType=VARCHAR},
+				HOMETOWN = #{hometown,jdbcType=VARCHAR},
+				TITLE = #{title,jdbcType=VARCHAR},
+				WORKING_DEPT = #{workingDept,jdbcType=VARCHAR},
+				CONTACT_NAME = #{contactName,jdbcType=VARCHAR},
+				NOTES = #{notes,jdbcType=VARCHAR},
+				CONTACT_TYPE = #{contactType,jdbcType=VARCHAR},
+				MAIN_CONTRACT = #{mainContract,jdbcType=CHAR},
+				CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+				ACTIVE = #{active,jdbcType=CHAR},
+				CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+				CRM_CUS_ID = #{customerCode,jdbcType=DECIMAL},
+				VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR},
+				CODE = #{code,jdbcType=VARCHAR}
+			<!-- <if test="crmId != null"> CRM_ID = #{crmId,jdbcType=DECIMAL}, </if> -->
+		</set>
+
+		<where>
+			<if test="crmId != null">
+			 <choose>
+			   <when test="customserNature == 'SC_CUSTOMER'">
+			       <if test="ownCustId != null and ownCustId != ''">
+			    		CUSTFOSSID = #{ownCustId,jdbcType=VARCHAR}
+			       </if>
+			       <if test="crmId != null">
+			          OR CRM_ID = #{crmId,jdbcType=DECIMAL}
+			       </if>
+			   </when>
+			   <otherwise>
+				CRM_ID = #{crmId,jdbcType=DECIMAL}
+			   </otherwise>
+			 </choose>
+			</if>
+		</where>
+
+	</update>
+
+	<!-- 作废信息 -->
+	<update id="deleteByCode" parameterType="map">
+		update/** 综合:作废信息**/ BSE.T_BAS_CUS_CONTACT
+
+		<set>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+
+		</set>
+
+		<where>
+			<if test="code !=null and code != ''">
+				CRM_ID = #{code,jdbcType=DECIMAL}
+			</if>
+			<if test="active0 != null and active0 != ''">
+				AND ACTIVE = #{active0,jdbcType=CHAR}
+			</if>
+		</where>
+	</update>
+
+	<!-- 根据手机号码查询联系人信息 -->
+	<select id="queryContactInfo"
+		parameterType="map"
+		resultMap="cusContactResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有客户联系人信息 **/
+		]]>
+		<include refid="cusContact_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUS_CONTACT T
+		]]>
+		<where>
+			    T.ACTIVE = 'Y'
+			<if test="mobilePhone != null and mobilePhone != ''">
+				AND T.MOBILE_PHONE = #{mobilePhone,jdbcType=VARCHAR}
+				
+			</if>
+		</where>
+	</select>
+	
+	<!-- 根据电话号码查询联系人信息 -->
+	<select id="queryContactInfoByPhone"
+		parameterType="map"
+		resultMap="cusContactResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有客户联系人信息 **/
+		]]>
+		<include refid="cusContact_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUS_CONTACT T
+		]]>
+		<where>
+			    T.ACTIVE = 'Y'
+		<if test="contactPhone != null and contactPhone != ''">
+				AND T.CONTACT_PHONE = #{contactPhone,jdbcType=VARCHAR}
+		</if>
+		</where>
+	</select>
+	
+	<!-- 根据手机号码或电话号码与名称查询联系人信息 -->
+	<select id="queryCusContactByMobileOrPhoneAndName"
+		parameterType="map"
+		resultMap="cusContactResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有客户联系人信息 **/
+		]]>
+		<include refid="cusContact_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUS_CONTACT T
+		]]>
+		<where>
+			    T.ACTIVE = 'Y'
+			<if test="mobilePhone != null and mobilePhone != ''">
+				AND T.MOBILE_PHONE = #{mobilePhone,jdbcType=VARCHAR}
+			</if>
+			<if test="contactPhone != null and contactPhone != ''">
+				AND T.CONTACT_PHONE = #{contactPhone,jdbcType=VARCHAR}
+			</if>
+			<if test="contactName != null and contactName != ''">
+				AND T.contact_name = #{contactName,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</select>
+	
+		<!-- 根据手机号码或电话号码查询联系人信息 -->
+	<select id="queryCusContactByMobileOrPhone"
+		parameterType="map"
+		resultMap="cusContactResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有客户联系人信息 **/
+		]]>
+		<include refid="cusContact_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUS_CONTACT T
+		]]>
+		<where>
+			    T.ACTIVE = 'Y' AND 
+			    (
+			    T.MOBILE_PHONE = #{mobilePhone,jdbcType=VARCHAR}
+			    OR T.CONTACT_PHONE = #{contactPhone,jdbcType=VARCHAR}
+			    )
+			    
+		</where>
+	</select>
+	
+	<!-- 散客问题的修补CSS -->
+	<select id="queryCusContactByOwnCustId"
+		parameterType="map"
+		resultMap="cusContactResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有客户联系人信息通过CUSTFOSSID **/
+		]]>
+		<include refid="cusContact_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUS_CONTACT T
+		]]>
+		<where>
+			    T.ACTIVE = 'Y'
+			<if test="ownCustId != null and ownCustId != ''">
+				AND T.CUSTFOSSID = #{ownCustId,jdbcType=VARCHAR}
+			</if>			
+		</where>
+	</select>
+	
+	<!-- 修改信息通过散客生成的CUSFOSSID -->
+	<update id="updateCusContactByCusfossid"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ContactEntity">
+		update/** 综合:通过CUSFOSSID修改信息**/ BSE.T_BAS_CUS_CONTACT
+		<set>
+				<if test="crmId != null ">
+					CRM_ID = #{crmId,jdbcType=DECIMAL},
+				</if> 
+				GENDER = #{gender,jdbcType=CHAR},
+				CONTACT_PHONE = #{contactPhone,jdbcType=VARCHAR},
+				MOBILE_PHONE = #{mobilePhone,jdbcType=VARCHAR},
+				FAX_NO = #{faxNo,jdbcType=VARCHAR},
+				ADDRESS = #{address,jdbcType=VARCHAR},
+				EMAIL = #{email,jdbcType=VARCHAR},
+				ZIP_CODE = #{zipCode,jdbcType=VARCHAR},
+				BIRTHDAY = #{birthday,jdbcType=TIMESTAMP},
+				ID_CARD = #{idCard,jdbcType=VARCHAR},
+				HOBBY = #{hobby,jdbcType=VARCHAR},
+				RECEIVE_EMAIL = #{receiveEmail,jdbcType=CHAR},
+				RECEIVE_MESSAGE = #{receiveMessage,jdbcType=CHAR},
+				RECEIVE_LETTER = #{receiveLetter,jdbcType=CHAR},
+				WAY = #{way,jdbcType=VARCHAR},
+				NATION = #{nation,jdbcType=VARCHAR},
+				HOMETOWN = #{hometown,jdbcType=VARCHAR},
+				TITLE = #{title,jdbcType=VARCHAR},
+				WORKING_DEPT = #{workingDept,jdbcType=VARCHAR},
+				CONTACT_NAME = #{contactName,jdbcType=VARCHAR},
+				NOTES = #{notes,jdbcType=VARCHAR},
+				CONTACT_TYPE = #{contactType,jdbcType=VARCHAR},
+				MAIN_CONTRACT = #{mainContract,jdbcType=CHAR},
+				CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+				ACTIVE = #{active,jdbcType=CHAR},
+				CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+				CRM_CUS_ID = #{customerCode,jdbcType=DECIMAL},
+				VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR},
+				CODE = #{code,jdbcType=VARCHAR}
+		</set>
+
+		<where>
+			<if test="ownCustId != null and ownCustId != ''">
+			    		CUSTFOSSID = #{ownCustId,jdbcType=VARCHAR}
+			       </if>
+		</where>
+
+	</update>
+	
+	<!--根据手机号码,固话 验证客户联系人信息是否存在 -->
+	<select id="queryExistsCusContactByMobileOrTelphone"
+		parameterType="java.util.Map"
+		resultType="long">
+        select count(*) from BSE.T_BAS_CUS_CONTACT T where (T.MOBILE_PHONE = #{mobilePhone,jdbcType=VARCHAR} or T.CONTACT_PHONE = #{contactPhone,jdbcType=VARCHAR})  AND T.ACTIVE='Y'
+	</select>
+	
+	<!--根据crmId 验证客户客户联系人信息是否存在 -->
+	<select id="queryExistsCusContactByCrmId" parameterType="java.util.Map" resultType="long">
+        select count(*) from BSE.T_BAS_CUS_CONTACT T where T.CRM_ID = #{crmId,jdbcType=DECIMAL}
+	</select>
+	
+	
+</mapper>

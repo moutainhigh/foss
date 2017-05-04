@@ -1,0 +1,1677 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tfr-unload" >
+	<resultMap id="arriveBillResultMap"
+		type="com.deppon.foss.module.transfer.unload.api.shared.dto.ArriveBillDto">
+		<result property="id" column="billId" />
+		<result property="arriveVehicleId" column="arriveVehicleId" />
+		<result property="billNo" column="billNo" />
+		<result property="billLevel" column="billLevel" />
+		<result property="origOrgName" column="origOrg" />
+		<result property="assignState" column="assignState_bill" />
+		<result property="weightTotal" column="weightTotal_bill" />
+		<result property="volumeTotal" column="volumeTotal_bill" />
+		<result property="goodsQtyTotal" column="goodsQtyTotal_bill" />
+		<result property="fastWayBillQtyTotal" column="fastWayBillQtyTotal_bill" />
+		<result property="vehicleNo" column="vehicleNo_bill" />
+		<result property="arriveTime" column="arriveTime_bill" />
+		<result property="origOrgCode" column="origOrgCode" />
+		<result property="destOrgCode" column="destOrgCode" />
+		<result property="billType" column="billType" />
+		<result property="unloadBeginTime" column="unloadBeginTime" />
+		<result property="unloadEndTime" column="unloadEndTime" />
+		<result property="expressWayBillQty" column="totalQty" />	
+	</resultMap>
+	<resultMap id="loaderResultMap"
+		type="com.deppon.foss.module.transfer.unload.api.shared.dto.LoaderDto">
+		<result property="id" column="loaderId" />
+		<result property="loaderCode" column="loaderCode" />
+		<result property="loaderName" column="loaderName" />
+		<result property="orgCode" column="orgCode" />
+		<result property="orgName" column="orgName" />
+		<result property="state" column="state" />
+		<result property="title" column="title" />
+		<result property="unfinishedWeight" column="unfinishedWeight" />
+		<result property="unfinishedTaskQty" column="unfinishedTaskQty" />
+		<result property="assignedWeight" column="assignedWeight" />
+		<result property="finishedWeight" column="finishedWeight" />
+	</resultMap>
+	<resultMap id="assignedTaskResultMap"
+		type="com.deppon.foss.module.transfer.unload.api.shared.dto.AssignUnloadTaskDto">
+		<result property="id" column="id" />
+		<result property="beCanceled" column="beCanceled" />
+		<result property="createUserName" column="createUserName" />
+		<result property="createUserCode" column="createUserCode" />
+		<result property="modifyUserName" column="modifyUserName" />
+		<result property="modifyUserCode" column="modifyUserCode" />
+		<result property="createOrgCode" column="createOrgCode" />
+		<result property="createOrgName" column="createOrgName" />
+		<result property="createTime" column="createTime" />
+		<result property="modifyTime" column="modifyTime" />
+		<result property="state" column="taskState" />
+		<result property="unloadBeginTime" column="unloadBeginTime" />
+		<result property="unloadEndTime" column="unloadEndTime" />
+		<result property="billNo" column="billNo" />
+	</resultMap>
+	<resultMap id="assignedTaskTotalResultMap"
+		type="com.deppon.foss.module.transfer.unload.api.shared.dto.AssignUnloadTaskTotalDto">
+		<result property="id" column="id" />
+		<result property="beCanceled" column="beCanceled" />
+		<result property="createUserName" column="createUserName" />
+		<result property="createUserCode" column="createUserCode" />
+		<result property="modifyUserName" column="modifyUserName" />
+		<result property="modifyUserCode" column="modifyUserCode" />
+		<result property="createOrgCode" column="createOrgCode" />
+		<result property="createOrgName" column="createOrgName" />
+		<result property="createTime" column="createTime" />
+		<result property="modifyTime" column="modifyTime" />
+		<result property="vehicleNo" column="vehicleNo" />
+		<result property="line" column="line" />
+		<result property="unloadType" column="unloadType" />
+		<result property="arriveTime" column="arriveTime" />
+		<result property="vehicleType" column="vehicleType" />
+		<result property="loaderName" column="loaderName" />
+		<result property="loaderCode" column="loaderCode" />
+		<result property="loaderOrgName" column="loaderOrgName" />
+		<result property="loaderOrgCode" column="loaderOrgCode" />
+		<result property="billQtyTotal" column="billQtyTotal" />
+		<result property="weightTotal" column="weightTotal" />
+		<result property="volumeTotal" column="volumeTotal" />
+		<result property="goodsQtyTotal" column="goodsQtyTotal" />
+		<result property="taskState" column="taskState" />
+		<result property="platformNo" column="platformNo" />
+		<result property="platformVirtualCode" column="platformVirtualCode" />
+		<result property="fastWayBillQtyTotal" column="fastWayBillQtyTotal" />
+		<result property="afWayBillQtyTotal" column="afWayBillQtyTotal" />
+		<result property="afVolumeTotal" column="afVolumeTotal" />
+		<result property="afWeightTotal" column="afWeightTotal" />
+		<result property="flfWayBillQtyTotal" column="flfWayBillQtyTotal" />
+		<result property="flfVolumeTotal" column="flfVolumeTotal" />
+		<result property="flfWeightTotal" column="flfWeightTotal" />
+		<result property="fsfWayBillQtyTotal" column="fsfWayBillQtyTotal" />
+		<result property="fsfVolumeTotal" column="fsfVolumeTotal" />
+		<result property="fsfWeightTotal" column="fsfWeightTotal" />
+		<result property="wayBillQtyTotal" column="wayBillQtyTotal" />
+	    <result property="billNo" column="billNo" />
+	    <result property="expressWayBillQty" column="totalQty" />
+	    <result property="assignedBillQty" column="assignedBillQty" />
+		<result property="expressBillQty" column="expressBillQty" />
+	</resultMap>
+	
+	<!-- 查询理货员状态：在线、离线 -->
+	<select id="queryLoaderState" parameterType="java.util.List" resultMap="loaderResultMap">
+		select loaderCode, state
+		  from (select s.driver_code as loaderCode,
+		               s.STATUS as state,
+		               row_number() over(partition by s.driver_code order by s.create_time desc) as rn
+		          from pkp.t_Srv_Pda_Sign s
+		        where s.driver_code in 
+				<foreach 
+					collection="list" open="(" close=")" item="item" separator="," index="index"> 
+					#{item.loaderCode} 
+				</foreach>
+		        )
+ 		where rn = 1
+	</select>
+	
+	<!-- 查询理货员未完成货量、未完成任务数 -->
+	<select id="queryLoaderUnfinishedWorkLoad" parameterType="java.util.List" resultMap="loaderResultMap">
+		select t.loader_code as loaderCode, sum(t.weight_total) as unfinishedWeight, count(t.id) as unfinishedTaskQty
+		  from tfr.t_opt_unload_assign_task t
+		 where 
+		 (t.state = 'UNSTART' or t.state='PROCESSING')<!-- 任务状态为未开始或进行中 -->
+		   and t.loader_code in 
+		   <foreach 
+					collection="list" open="(" close=")" item="item" separator="," index="index"> 
+					#{item.loaderCode} 
+			</foreach>
+			and t.BE_CANCELED='N'
+		 group by t.loader_code
+	</select>
+	
+	<!-- 查询理货员已完成货量、已完成任务数 -->
+	<select id="queryLoaderFinishedWorkLoad" parameterType="HashMap" resultMap="loaderResultMap">
+		select t.loader_code as loaderCode,
+		       sum(t.weight_total) as assignedWeight,
+		       sum(case
+		             when t.state = 'FINISHED' then
+		              t.weight_total
+		             else
+		              0
+		           end) as finishedWeight
+		  from tfr.t_opt_unload_assign_task t
+		  <where>
+		   	t.loader_code in 
+		  	<foreach 
+					collection="loaders" open="(" close=")" item="item" separator="," index="index"> 
+					#{item.loaderCode} 
+			</foreach>
+		   <![CDATA[and t.assign_time<=to_date(#{queryTimeEnd},'yyyy-mm-dd hh24:mi:ss')]]>
+		   <![CDATA[and t.assign_time>=to_date(#{queryTimeBegin},'yyyy-mm-dd hh24:mi:ss')]]>
+		   and t.BE_CANCELED='N'
+		  </where>
+		 group by t.loader_code
+	</select>
+	
+	<!-- 查询中转已到达车辆 -->
+	<select id="queryArriveTransferVehicle" parameterType="HashMap" resultMap="assignedTaskTotalResultMap">
+		<![CDATA[select * from (select max(t.id) as id,
+		               max(t.vehicle_no) as vehicleNo,
+		               max(t.truck_type) as vehicleType,
+		               max(t.line_name) as line,
+		               max(t.business_type) as unloadType,
+		               max(to_char(t.actual_arrive_time, 'yyyy-mm-dd hh24:mi:ss')) as arriveTime,
+		               sum(nvl(h.weight_total,0) +nvl(wk.totalweight,0)) as weightTotal,
+		               sum(nvl(h.volume_total,0)+nvl(wk.totalvolumn,0)) as volumeTotal,
+		               sum(nvl(h.goods_qty_total,0)+nvl(wk.totalqty,0)) as goodsQtyTotal,
+		               sum(h.waybill_qty_total) as wayBillQtyTotal,
+		               sum(h.fast_waybill_qty) as fastWayBillQtyTotal,
+		               sum(h.AF_GOODS_QTY) as afWayBillQtyTotal,
+		               sum(h.AF_GOODS_VOLUME) as afVolumeTotal,
+		               sum(h.AF_GOODS_WEIGHT) as afWeightTotal,
+		               sum(h.FLF_GOODS_QTY) as flfWayBillQtyTotal,
+		               sum(h.FLF_GOODS_VOLUME) as flfVolumeTotal,
+		               sum(h.FLF_GOODS_WEIGHT) as flfWeightTotal,
+		               sum(h.FSF_GOODS_QTY) as fsfWayBillQtyTotal,
+		               sum(wk.TOTALQTY) as totalqty,
+		               sum(h.FSF_GOODS_VOLUME) as fsfVolumeTotal,
+		               sum(h.FSF_GOODS_WEIGHT) as fsfWeightTotal,
+		               sum(case
+		                     when b.bill_level = '1' then
+		                      1
+		                     else
+		                      0
+		                   end) as billQtyTotal,
+		               sum(case
+		                     when b.assign_state = 'UNASSIGN' then
+		                      0
+		                     else
+		                      1
+		                   end) as assignedBillQty,
+		               max(p.platform_no) as platformVirtualCode,
+		               max(pf.platform_code) as platformNo,
+		               count(wk.handoverbillno) as expressBillQty
+		          from tfr.t_opt_truck_task_detail t
+		          left join tfr.t_opt_truck_task_bill b on b.truck_task_detail_id = t.id
+		          left join tfr.t_opt_handoverbill h on h.handover_no = b.bill_no
+		                                            and b.bill_type = 'HANDOVER'
+		          left join tfr.T_OPT_PLATFORM_DISTRIBUTE p on p.platform_distribute_id = t.platform_distribute_id
+		          left join tfr.t_wk_trf_bill  wk on b.bill_no=wk.handoverbillno
+		                                            and b.bill_type = 'HANDOVER'
+		          left join BSE.T_BAS_PLATFORM pf on pf.virtual_code = p.platform_no]]>
+		      <where>
+				      t.dest_org_code in
+		 		   <foreach 
+						collection="destOrgCodes" open="(" close=")" item="item" separator="," index="index"> 
+						#{item} 
+				   </foreach>
+		           <![CDATA[and t.BE_CAR_LOAD<>'Y']]>
+		           <![CDATA[and t.actual_arrive_time >= to_date(#{arriveTimeBegin}, 'yyyy-mm-dd hh24:mi:ss')]]>
+		           <![CDATA[and t.actual_arrive_time <= to_date(#{arriveTimeEnd}, 'yyyy-mm-dd hh24:mi:ss')]]>
+		           <![CDATA[and t.BUSINESS_TYPE <>'PARTIALLINE']]><!-- 12月27日修改，不查询业务类型为偏线的到达单据明细 -->
+		           <if test="vehicleNo != null and vehicleNo !=''"><![CDATA[and t.vehicle_no = #{vehicleNo}]]></if>
+		           <![CDATA[and t.status <> 'CANCLED']]>
+		           <if test="productCode != null and productCode !=''">
+		           		<if test="productCode =='AF' ">
+		           			<![CDATA[and h.af_goods_qty>=1]]>
+		           		</if>
+		           		<if test="productCode =='FLF' ">
+		           			<![CDATA[and h.flf_goods_qty>=1]]>
+		           		</if>
+		           		<if test="productCode =='FSF' ">
+		           			<![CDATA[and h.fsf_goods_qty>=1]]>
+		           		</if>
+		           		<if test="productCode =='BGFLF' ">
+		           			<![CDATA[and h.bgflf_goods_qty>=1]]>
+		           		</if>
+		           		<if test="productCode =='BGFSF' ">
+		           			<![CDATA[and h.bgfsf_goods_qty>=1]]>
+		           		</if>
+		           </if>
+		           <if test="unloadType != null and unloadType !=''"><![CDATA[and t.business_type = #{unloadType}]]></if>
+		           <if test="departOrg != null and departOrg !=''"><![CDATA[and t.orig_org_code = #{departOrg}]]></if>
+		           <if test="billNo != null and billNo !=''"><![CDATA[and exists (select 'a'
+		                  from tfr.t_opt_truck_task_bill nb
+		                 where nb.truck_task_detail_id = t.id
+		                   and nb.bill_no = #{billNo})]]></if>
+		       </where>
+		         group by t.vehicle_no,t.actual_arrive_time)
+		   		where billQtyTotal > assignedBillQty   
+	</select>
+	
+	
+	<!-- 查询营业部中转已到达车辆 (不包含快递)-->
+	<select id="querySalesDeptArriveTransferVehicle" parameterType="HashMap" resultMap="assignedTaskTotalResultMap">
+		<![CDATA[select *
+		  from (select max(t.id) as id,
+		               max(t.vehicle_no) as vehicleNo,
+		               max(t.truck_type) as vehicleType,
+		               max(t.line_name) as line,
+		               max(t.business_type) as unloadType,
+		               max(to_char(t.actual_arrive_time, 'yyyy-mm-dd hh24:mi:ss')) as arriveTime,
+		               sum(nvl(h.weight_total, 0)) as weightTotal,
+		               sum(nvl(h.volume_total, 0)) as volumeTotal,
+		               sum(nvl(h.goods_qty_total, 0)) as goodsQtyTotal,
+		               sum(h.waybill_qty_total) as wayBillQtyTotal,
+		               sum(h.fast_waybill_qty) as fastWayBillQtyTotal,
+		               sum(h.AF_GOODS_QTY) as afWayBillQtyTotal,
+		               sum(h.AF_GOODS_VOLUME) as afVolumeTotal,
+		               sum(h.AF_GOODS_WEIGHT) as afWeightTotal,
+		               sum(h.FLF_GOODS_QTY) as flfWayBillQtyTotal,
+		               sum(h.FLF_GOODS_VOLUME) as flfVolumeTotal,
+		               sum(h.FLF_GOODS_WEIGHT) as flfWeightTotal,
+		               sum(h.FSF_GOODS_QTY) as fsfWayBillQtyTotal,
+		               sum(h.FSF_GOODS_VOLUME) as fsfVolumeTotal,
+		               sum(h.FSF_GOODS_WEIGHT) as fsfWeightTotal,
+		               count (b.bill_no) as billSUM,
+		               sum(case
+		                     when b.bill_level = '1' then
+		                      1
+		                     else
+		                      0
+		                   end) as billQtyTotal,
+		               sum(case
+		                     when b.assign_state = 'UNASSIGN' then
+		                      0
+		                     else
+		                      1
+		                   end) as assignedBillQty,
+		               max(p.platform_no) as platformVirtualCode,
+		               max(pf.platform_code) as platformNo
+		          from tfr.t_opt_truck_task_detail t
+		          left join tfr.t_opt_truck_task_bill b
+		            on b.truck_task_detail_id = t.id
+		          left join tfr.t_opt_handoverbill h
+		            on h.handover_no = b.bill_no
+		           and b.bill_type = 'HANDOVER'
+		          left join tfr.T_OPT_PLATFORM_DISTRIBUTE p
+		            on p.platform_distribute_id = t.platform_distribute_id
+		          left join BSE.T_BAS_PLATFORM pf
+		            on pf.virtual_code = p.platform_no]]>
+		      <where>
+				      t.dest_org_code in
+		 		   <foreach 
+						collection="destOrgCodes" open="(" close=")" item="item" separator="," index="index"> 
+						#{item} 
+				   </foreach>
+				      and b.bill_no  not in
+			           (
+			           select wk.handoverbillno from  tfr.t_wk_trf_bill wk 
+			           where wk.ARRIVEORGCODE in 
+			            <foreach 
+						collection="destOrgCodes" open="(" close=")" item="item" separator="," index="index"> 
+						#{item} 
+				        </foreach>
+				        <if test="vehicleNo != null and vehicleNo !=''"><![CDATA[and wk.vehicleno = #{vehicleNo}]]></if>
+			           )
+		           <![CDATA[and t.BE_CAR_LOAD<>'Y']]>
+		           <![CDATA[and t.actual_arrive_time >= to_date(#{arriveTimeBegin}, 'yyyy-mm-dd hh24:mi:ss')]]>
+		           <![CDATA[and t.actual_arrive_time <= to_date(#{arriveTimeEnd}, 'yyyy-mm-dd hh24:mi:ss')]]>
+		           <![CDATA[and t.BUSINESS_TYPE <>'PARTIALLINE']]>
+		           <if test="vehicleNo != null and vehicleNo !=''"><![CDATA[and t.vehicle_no = #{vehicleNo}]]></if>
+		           <![CDATA[and t.status <> 'CANCLED']]>
+		           <if test="productCode != null and productCode !=''">
+		           		<if test="productCode =='AF' ">
+		           			<![CDATA[and h.af_goods_qty>=1]]>
+		           		</if>
+		           		<if test="productCode =='FLF' ">
+		           			<![CDATA[and h.flf_goods_qty>=1]]>
+		           		</if>
+		           		<if test="productCode =='FSF' ">
+		           			<![CDATA[and h.fsf_goods_qty>=1]]>
+		           		</if>
+		           		<if test="productCode =='BGFLF' ">
+		           			<![CDATA[and h.bgflf_goods_qty>=1]]>
+		           		</if>
+		           		<if test="productCode =='BGFSF' ">
+		           			<![CDATA[and h.bgfsf_goods_qty>=1]]>
+		           		</if>
+		           </if>
+		           <if test="unloadType != null and unloadType !=''"><![CDATA[and t.business_type = #{unloadType}]]></if>
+		           <if test="departOrg != null and departOrg !=''"><![CDATA[and t.orig_org_code = #{departOrg}]]></if>
+		           <if test="billNo != null and billNo !=''"><![CDATA[and exists (select 'a'
+		                  from tfr.t_opt_truck_task_bill nb
+		                 where nb.truck_task_detail_id = t.id
+		                   and nb.bill_no = #{billNo})]]></if>
+		       </where>
+		         group by t.vehicle_no,t.actual_arrive_time)
+		   		where billQtyTotal > assignedBillQty   
+	</select>
+	
+	
+	
+	<!-- 查询接送货已到达车辆 -->
+	<select id="queryArrivePickUpVehicle" parameterType="HashMap" resultMap="assignedTaskTotalResultMap">
+		<![CDATA[select * from(
+		        select max(ps.id) as id,
+		               max(ps.vehicle_no) as vehicleNo,
+		               '' as vehicleType,
+		               '' as line,
+		               'DELIVER' as unloadType,
+		               max(to_char(ps.CREATE_TIME, 'yyyy-mm-dd hh24:mi:ss')) as arriveTime,
+		               sum(ps.weight_total) as weightTotal,
+		               sum(ps.volume_total) as volumeTotal,
+		               sum(ps.goods_qty_total) as goodsQtyTotal,
+		               max((select count(hd.id) from pkp.t_srv_stay_handoverdetail hd 
+                  			 where  hd.t_srv_stay_handover_id = ps.id )) wayBillQtyTotal,
+		               sum(ps.fast_waybill_qty) as fastWayBillQtyTotal,
+		               sum(ps.AF_WAYBILL_QTY) as afWayBillQtyTotal,
+		               sum(ps.AF_WAYBILL_VOLUME) as afVolumeTotal,
+		               sum(ps.AF_WAYBILL_WEIGHT) as afWeightTotal,
+		               sum(ps.FLF_WAYBILL_QTY) as flfWayBillQtyTotal,
+		               sum(ps.FLF_WAYBILL_VOLUME) as flfVolumeTotal,
+		               sum(ps.FLF_WAYBILL_WEIGHT) as flfWeightTotal,
+		               sum(ps.FSF_WAYBILL_QTY) as fsfWayBillQtyTotal,
+		               sum(ps.FSF_WAYBILL_VOLUME) as fsfVolumeTotal,
+		               sum(ps.FSF_WAYBILL_WEIGHT) as fsfWeightTotal,
+		               count(ps.id) as billQtyTotal,
+		               sum(case
+		                     when ps.assign_state = 'UNASSIGN' then
+		                      0
+		                     else
+		                      1
+		                   end) as assignedBillQty,
+		                   '' as platformVirtualCode,
+		                   '' as platformNo
+		          from pkp.T_SRV_STAY_HANDOVER ps]]>
+		        <where>
+		           ps.transfer_center in
+		 		   <foreach 
+						collection="destOrgCodes" open="(" close=")" item="item" separator="," index="index"> 
+						#{item} 
+				   </foreach>
+		           <![CDATA[and ps.CREATE_TIME > to_date(#{arriveTimeBegin}, 'yyyy-mm-dd hh24:mi:ss')]]>
+		           <![CDATA[and ps.CREATE_TIME < to_date(#{arriveTimeEnd}, 'yyyy-mm-dd hh24:mi:ss')]]>
+		           <if test="vehicleNo != null and vehicleNo !=''"><![CDATA[and ps.vehicle_no = #{vehicleNo}]]></if>
+		           <if test="productCode != null and productCode !=''">
+		           		<if test="productCode =='AF' ">
+		           			<![CDATA[and ps.af_waybill_qty>=1]]>
+		           		</if>
+		           		<if test="productCode =='FLF' ">
+		           			<![CDATA[and ps.flf_waybill_qty>=1]]>
+		           		</if>
+		           		<if test="productCode =='FSF' ">
+		           			<![CDATA[and ps.fsf_waybill_qty>=1]]>
+		           		</if>
+		           </if>
+		           <if test="billNo != null and billNo !=''"><![CDATA[and exists (select 'a'
+		                  from pkp.T_SRV_STAY_HANDOVER nps
+		                 where nps.vehicle_no = ps.vehicle_no
+		                   and nps.handovertask_no = #{billNo})]]></if>
+		       </where>
+		          <![CDATA[group by ps.vehicle_no,ps.CREATE_TIME]]>)
+		   		where billQtyTotal > assignedBillQty
+		   
+	</select>
+    
+	<!-- 2015.02.02chenmingyan:查询已到快递集中卸车车辆 -->
+	<select id="queryArriveExpressVehicle" parameterType="HashMap" resultMap="assignedTaskTotalResultMap">
+		<![CDATA[select * from(
+		      	 select  max(ps.id) as id,
+		               max(ps.vehicle_no) as vehicleNo,                                     /*车牌号 */
+		               '' as vehicleType,			                                            	/*车型 */
+		               '' as line,						                                              /*线路 */
+		               'EXPRESS_PICK' as unloadType,		                                    /*卸车类型 */
+		               max(to_char(ps.CREATE_TIME, 'yyyy-mm-dd hh24:mi:ss')) as arriveTime, /*到达时间 */
+		               sum(ps.weight_total) as weightTotal,  							                  /*总重量 */
+		               sum(ps.volume_total) as volumeTotal,									                /*总体积 */
+		               sum(ps.goods_qty_total) as goodsQtyTotal,						                /*总件数 */
+		               sum((select count(hd.id) from TFR.T_OPT_PICK_HANDOVER_DETAIL hd 
+                  			 where  hd.handover_no = ps.handover_no )) wayBillQtyTotal,
+		               sum(ps.waybill_qty) as fastWayBillQtyTotal,						              /*卡货总票数 */
+		               0 as afWayBillQtyTotal,						                                  /*空运票数 */
+		               0 as afVolumeTotal,							                                    /*空运体积 */
+		               0 as afWeightTotal,						                                      /*空运重量 */
+		               sum(ps.waybill_qty) as flfWayBillQtyTotal,				                    /*卡航票数 */
+		               sum(ps.volume_total) as flfVolumeTotal,					                    /*卡航体积 */
+		               sum(ps.weight_total) as flfWeightTotal,						                  /*卡航重量 */
+		               0 as fsfWayBillQtyTotal,						                                  /*城际票数 */
+		               0 as fsfVolumeTotal,						                                      /*城际体积 */
+		               0 as fsfWeightTotal,						                                      /*城际重量 */
+		               count(ps.id) as billQtyTotal,										                    /*单据数 */
+		                sum(case
+		                     when ps.assign_state = 'UNASSIGN' then
+		                      0
+		                     else
+		                      1
+		                   end) as assignedBillQty,
+		               '' as platformVirtualCode,										
+		               '' as platformNo													                            /*月台 */
+		          from tfr.t_opt_pick_handover ps]]>
+		        <where>
+		           ps.dest_org_code in
+		 		   <foreach 
+						collection="destOrgCodes" open="(" close=")" item="item" separator="," index="index"> 
+						#{item} 
+				   </foreach>
+				   	 and (ps.handover_type = 'EXPRESS_PICK'
+				   	 or (ps.handover_type = 'EXPRESS_DRIVER' and ps.arrival_status = '1'))
+             		 and ps.assign_state = 'UNASSIGN'
+             		 and ps.bill_valid = '1'
+		           <![CDATA[and ps.CREATE_TIME > to_date(#{arriveTimeBegin}, 'yyyy-mm-dd hh24:mi:ss')]]>
+		           <![CDATA[and ps.CREATE_TIME < to_date(#{arriveTimeEnd}, 'yyyy-mm-dd hh24:mi:ss')]]>
+		           <if test="vehicleNo != null and vehicleNo !=''">
+		           		<![CDATA[and ps.vehicle_no = #{vehicleNo}]]>
+		           </if>
+		           <if test="billNo != null and billNo !=''">
+		           		<![CDATA[and ps.handover_no = #{billNo,jdbcType=VARCHAR} ]]>
+		            </if>
+		       </where>   
+		       		<![CDATA[group by ps.vehicle_no, to_char(ps.CREATE_TIME, 'yyyy-mm-dd')]]>)
+		            where billQtyTotal > assignedBillQty
+	</select>
+	
+	<!-- 查询到达中转单据 -->
+	<select id="queryArriveTransderBill" parameterType="HashMap" resultMap="arriveBillResultMap">
+	    select b.id as billId,
+	    	   max(b.truck_task_detail_id) as arriveVehicleId,
+	           max(b.bill_no) as billNo,
+	           COALESCE(max(v.orig_org_name),max(h.orig_org_name),max(wk.DEPARTORGNAME)) as origOrg,
+               max(b.assign_state) as assignState,
+	           COALESCE(sum(vh.weight_total), max(h.weight_total),sum(wk.TOTALWEIGHT)) as weightTotal,
+	           COALESCE(sum(vh.volume_total),max(h.volume_total),sum(wk.TOTALVOLUMN)) as volumeTotal,
+	           nvl(sum(vh.fast_waybill_qty),max(h.fast_waybill_qty)) as fastWayBillQtyTotal,
+	           sum(wk.TOTALQTY) as totalQty,
+	           COALESCE(sum(vh.goods_qty_total),max(h.goods_qty_total),sum(wk.TOTALQTY)) as goodsQtyTotal,
+	           max(d.vehicle_no) as vehicleNo_bill,
+	           COALESCE(max(v.orig_org_code),max(h.orig_org_code),max(wk.DEPARTORGCODE)) as origOrgCode,
+               COALESCE(max(v.dest_org_code),max(h.dest_org_code),max(wk.ARRIVEORGCODE)) as destOrgCode,
+	           to_char(max(d.actual_arrive_time),'yyyy-mm-dd hh24:mi:ss') as arriveTime_bill
+	      from tfr.t_opt_truck_task_bill b
+	      left join tfr.t_opt_truck_task_detail d on d.id = b.truck_task_detail_id
+	      left join tfr.t_opt_handoverbill h on h.handover_no = b.bill_no
+	      left join TFR.T_WK_TRF_BILL wk on wk.HANDOVERBILLNO = b.bill_no
+	      left join tfr.t_opt_vehicleassemblebill v on v.vehicleassemble_no = b.bill_no
+	      left join tfr.t_opt_vehicleassemble_detail vd on vd.vehicleassemblebill_id = v.id
+	      left join tfr.t_opt_handoverbill vh on vh.handover_no = vd.handover_no
+	     where b.bill_level = '1'<!-- 单据级别为1 -->
+	     <if test="assignState != null and assignState !=''">
+	       and b.assign_state = #{assignState}
+	      </if>
+	      <if test="destOrgCode != null and destOrgCode !=''">
+	      <![CDATA[and d.dest_org_code = #{destOrgCode}]]>
+	      </if>
+	       and d.vehicle_no = #{vehicleNo}
+           and cast(d.actual_arrive_time as date) = to_date(#{arriveTime},'yyyy-mm-dd hh24:mi:ss')
+            <![CDATA[and d.BUSINESS_TYPE <>'PARTIALLINE']]><!-- 12月27日修改，不查询业务类型为偏线的到达单据明细 -->
+           <!-- and b.assign_state not in('UNLOADING','UNLOADED') --><!-- 12月25日修改，查询全部单据，已卸车和卸车完成的显示为已分配 -->
+	     group by b.id
+	</select>
+	
+	<!-- 查询到达接送货单据 -->
+	<select id="queryArrivePickUpBill" parameterType="HashMap" resultMap="arriveBillResultMap">
+		 select s.id as billId,
+		            s.handovertask_no as billNo,
+		            s.handover_type as origOrg,
+		            s.assign_state as assignState,
+		            s.weight_total as weightTotal,
+		            s.volume_total as volumeTotal,
+		            s.fast_waybill_qty as fastWayBillQtyTotal,
+		            s.goods_qty_total as goodsQtyTotal,
+		            s.vehicle_no as vehicleNo_bill,
+		            to_char(s.CREATE_TIME,'yyyy-mm-dd hh24:mi:ss') as arriveTime_bill
+		       from pkp.t_srv_stay_handover s
+		      where s.vehicle_no = #{vehicleNo}
+		        and cast(s.CREATE_TIME as date) = to_date(#{arriveTime},'yyyy-mm-dd hh24:mi:ss')
+		        <if test="assignState != null and assignState !=''">
+		         and s.assign_state= #{assignState}
+		        </if>
+		        <if test="destOrgCode != null and destOrgCode !=''">
+			      <![CDATA[and s.TRANSFER_CENTER in(#{destOrgCode},'N/A')]]>
+			     </if>
+		        <!-- and s.assign_state not in('UNLOADING','UNLOADED') --><!-- 12月25日修改，查询全部单据，已卸车和卸车完成的显示为已分配 -->
+	</select>
+	
+	<!-- 2015.02.03chenmingyan：查询快递集中卸车单据 -->
+	<select id="queryArriveExpressBill" parameterType="HashMap" resultMap="arriveBillResultMap">
+		select h.id as billId,
+		            h.handover_no as billNo,
+		            h.handover_type as origOrg,
+		            h.assign_state as assignState,
+		            h.weight_total as weightTotal,
+		            h.volume_total as volumeTotal,
+		            h.waybill_qty as fastWayBillQtyTotal,
+		            h.goods_qty_total as goodsQtyTotal,
+		            h.vehicle_no as vehicleNo_bill,
+		            to_char(h.CREATE_TIME,'yyyy-mm-dd hh24:mi:ss') as arriveTime_bill
+		       from tfr.t_opt_pick_handover h
+		      where h.vehicle_no = #{vehicleNo}
+		       <if test="unloadBeginTime != null and unloadBeginTime !=''">
+		        <![CDATA[and h.CREATE_TIME >= to_date(#{unloadBeginTime}, 'yyyy-mm-dd hh24:mi:ss')]]>
+		        </if>
+		      	 <if test="unloadEndTime != null and unloadEndTime !=''">
+		        <![CDATA[and h.CREATE_TIME <= to_date(#{unloadEndTime}, 'yyyy-mm-dd hh24:mi:ss')]]>
+		        </if>
+		        <if test="assignState != null and assignState !=''">
+		         and h.assign_state= #{assignState}
+		        </if>
+		        <if test="destOrgCode != null and destOrgCode !=''">
+			      <![CDATA[and h.dest_org_code in(#{destOrgCode},'N/A')]]>
+			     </if>
+			     <![CDATA[and h.handover_type <>'CREATE_PDA_BSE_PIC']]>
+			     and h.bill_valid = '1'
+	
+	</select>
+	
+	<!-- 2016-7-24 322610：查询电子面单卸车单据 -->
+	<select id="queryElecWayBill" parameterType="HashMap" resultMap="arriveBillResultMap">
+		select /**查询电子面单卸车单据**/h.id as billId,
+	            h.handover_no as billNo,
+	            '零担电子运单接货' as origOrg,
+		        h.assign_state as assignState,
+	            h.weight_total as weightTotal,
+	            h.volume_total as volumeTotal,
+	            h.waybill_qty as fastWayBillQtyTotal,
+	            h.goods_qty_total as goodsQtyTotal,
+	            h.vehicle_no as vehicleNo_bill,
+	            #{arriveTime} as arriveTime_bill
+		      from tfr.t_opt_pick_handover h
+		      where h.vehicle_no = #{vehicleNo}
+       			 and h.handover_type ='CREATE_PDA_BSE_PIC'
+		      	<![CDATA[and h.CREATE_TIME >= to_date(#{unloadBeginTime}, 'yyyy-mm-dd hh24:mi:ss')]]>
+		        <![CDATA[and h.CREATE_TIME <= to_date(#{unloadEndTime}, 'yyyy-mm-dd hh24:mi:ss')]]>
+		        <if test="destOrgCode != null and destOrgCode !=''">
+			      <![CDATA[and h.dest_org_code in(#{destOrgCode},'N/A')]]>
+			     </if>
+			     and h.bill_valid = '1'
+   			   order by h.arrive_date desc
+	
+	</select>
+	
+	<!-- 查询分配记录 -->
+	<select id="queryAssignUnloadTask" parameterType="HashMap" resultMap="assignedTaskTotalResultMap">
+		select   ID as id,                 
+         vehicleno as vehicleNo,          
+         createtime as createTime,         
+         line as line,               
+         unloadtype as unloadType,         
+         arrivetime as arriveTime,         
+         vehicletype as vehicleType,        
+         loadername as loaderName,         
+         loadercode as loaderCode,         
+         orgname as loaderOrgName,            
+         platformno as platformNo,
+         modifyUserName as modifyUserName,         
+         billqtytotal as billQtyTotal,       
+         weighttotal as weightTotal,        
+         volumetotal as volumeTotal,        
+         fastwaybillqtytotal as fastWayBillQtyTotal,
+         goodsqtytotal as goodsQtyTotal,
+         totalQty   as    totalQty, 
+         CASE
+            WHEN  billqtytotal = sum_unload_end THEN 'FINISHED'
+            WHEN  billqtytotal = sum_unload_unbegin THEN  'UNSTART'
+            WHEN billqtytotal = sum_unload_cancel THEN 'CANCELED'
+            ELSE 'PROCESSING'
+         END as taskState
+		FROM (
+			SELECT   Max(a.ID)                                           AS ID,
+			         a.vehicle_no                                        AS vehicleno,
+			         Max(To_char(a.assign_time,'yyyy-mm-dd hh24:mi:ss')) AS createtime,
+			         Max(a.line)                                         AS line,
+			         Max(a.unload_type)                                  AS unloadtype,
+			         Max(To_char(a.arrive_time,'yyyy-mm-dd hh24:mi:ss')) AS arrivetime,
+			         Max(a.vehicle_type_length)                          AS vehicletype,
+			         Max(a.loader_name)                                  AS loadername,
+			         Max(a.loader_code)                                  AS loadercode,
+			         Max(a.load_org_name)                                AS orgname,
+			         Max(a.platform_no)                                  AS platformno,
+			         Max(a.modify_user_name)                             AS modifyUserName,
+			         Count(a.ID)                                         AS billqtytotal,
+			         Sum(a.weight_total)                                 AS weighttotal,
+			         Sum(a.volume_total)                                 AS volumetotal,
+			         Sum(a.fast_waybill_qty)                             AS fastwaybillqtytotal,
+			         Sum(a.goods_qty_total)                              AS goodsqtytotal,
+			         Sum(CASE
+                                     WHEN a.state = 'FINISHED' then
+                                      1
+                                     ELSE
+                                      0
+                                   END) as sum_unload_end,
+                     Sum(CASE
+                                     WHEN a.state = 'UNSTART' and a.be_canceled= 'N' then
+                                      1
+                                     ELSE
+                                      0
+                                   END) as sum_unload_unbegin,
+                   Sum(CASE
+                                     WHEN a.be_canceled = 'Y' then
+                                      1
+                                     ELSE
+                                      0
+                                   END) as sum_unload_cancel,
+                     sum(wk.totalqty)   as totalQty
+			FROM     tfr.t_opt_unload_assign_task a
+			left join tfr.t_wk_trf_bill wk  on a.bill_no=wk.handoverbillno
+			and wk.vehicleno=a.vehicle_no
+			 	<include refid="queryAssignUnloadTask_Where"/>
+		 	<!-- group by a.vehicle_no --> 
+		) 
+		<if test="state != null and state !=''">
+        	<where>
+        	(CASE WHEN billqtytotal = sum_unload_end THEN 'FINISHED' WHEN
+		        billqtytotal = sum_unload_unbegin THEN 'UNSTART'
+		        WHEN billqtytotal = sum_unload_cancel THEN 'CANCELED' ELSE 'PROCESSING' END) = #{state} 
+        	</where>
+        </if>      
+         
+	</select>
+	<!-- 查询分配记录条数 -->
+	<select id="queryAssignUnloadTaskCount" parameterType="HashMap" resultType="Long">
+		select count(id) from (
+			select max(a.id) as id,
+               Count(a.ID) AS billqtytotal,
+               Sum(CASE
+                                     WHEN a.state = 'FINISHED' then
+                                      1
+                                     ELSE
+                                      0
+                                   END) as sum_unload_end,
+               Sum(CASE
+                                     WHEN a.state = 'UNSTART' and a.be_canceled= 'N' then
+                                      1
+                                     ELSE
+                                      0
+                                   END) as sum_unload_unbegin,
+                   Sum(CASE
+                                     WHEN a.be_canceled = 'Y' then
+                                      1
+                                     ELSE
+                                      0
+                                   END) as sum_unload_cancel 
+          from tfr.t_opt_unload_assign_task a
+	        <include refid="queryAssignUnloadTask_Where"/> 
+		 	<!-- group by a.assign_time, a.vehicle_no -->         
+        )
+        <if test="state != null and state !=''">
+        	<where>
+        	(CASE WHEN billqtytotal = sum_unload_end THEN 'FINISHED' WHEN
+		        billqtytotal = sum_unload_unbegin THEN 'UNSTART'
+		        WHEN billqtytotal = sum_unload_cancel THEN 'CANCELED'
+		         ELSE 'PROCESSING' END) = #{state} 
+        	</where>
+        </if> 
+	</select>
+	<!-- 查询分配记录查询条件 -->
+	<sql id="queryAssignUnloadTask_Where">
+		<where>
+		<if test="beCanceled != null and beCanceled !=''">
+			a.be_canceled = #{beCanceled}
+		</if>	
+			and a.assign_org_code in 
+			<foreach 
+				collection="orgCodes" open="(" close=")" item="item" separator="," index="index"> 
+				#{item} 
+			</foreach>
+			<!--and a.assign_org_code=#{createOrgCode}-->
+	        <![CDATA[and a.assign_time<=to_date(#{queryTimeEnd},'yyyy-mm-dd hh24:mi:ss')]]>
+        	<![CDATA[and a.assign_time>=to_date(#{queryTimeBegin},'yyyy-mm-dd hh24:mi:ss')]]>
+        	<if test="bill != null">
+				<if test="bill.billNo !=null and bill.billNo !=''"><![CDATA[and a.bill_no=#{bill.billNo}]]></if>
+			</if>
+	        <if test="vehicle !=null">
+	          <if test="vehicle.unloadType != null and vehicle.unloadType !=''">
+	            and a.unload_type=#{vehicle.unloadType}
+	          </if>
+	          <if test="vehicle.vehicleNo != null and vehicle.vehicleNo !=''">
+	            and a.vehicle_no=#{vehicle.vehicleNo}
+	          </if>
+	           <if test="vehicle.flightNo != null and vehicle.flightNo !=''">
+	            and a.vehicle_no=#{vehicle.flightNo}
+	          </if>
+	        </if>
+	        <if test="loader != null">
+	          <if test="loader.loaderCode != null and loader.loaderCode !=''">
+	            and a.loader_code=#{loader.loaderCode}
+	          </if>
+	          <if test="loader.orgCode != null and loader.orgCode !=''">
+	              and a.load_org_code=#{loader.orgCode}
+	          </if>
+	        </if>
+		</where>
+		group by a.assign_time,a.vehicle_no
+	</sql>
+	<!-- 查询中转分配记录明细 -->
+	<select id="queryAssignTransferUnloadTaskDetail" parameterType="HashMap" resultMap="arriveBillResultMap">
+		select 
+		t.id as id,
+		t.bill_no as billNo,
+			to_char(t.unload_begin_time,'yyyy-mm-dd hh24:mi:ss') as unloadBeginTime,
+			COALESCE(to_char(t.unload_end_time,'yyyy-mm-dd hh24:mi:ss'),to_char(wk.ARRIVETIME,'yyyy-mm-dd hh24:mi:ss')) as unloadEndTime,
+			d.orig_org_name as origOrg,
+			nvl(t.weight_total,wk.totalweight) as weightTotal_bill,
+	      	nvl(t.volume_total,wk.totalvolumn) as volumeTotal_bill,
+	      	nvl(t.goods_qty_total,wk.totalqty) as goodsQtyTotal_bill,
+	      	t.fast_waybill_qty as fastWayBillQtyTotal_bill,
+	      	wk.totalqty  as totalQty
+	  from tfr.t_opt_unload_assign_task t
+	  inner join tfr.T_OPT_TRUCK_TASK_BILL b on b.bill_no = t.bill_no
+	  inner join tfr.t_opt_truck_task_detail d on d.id = b.truck_task_detail_id
+	  left join tfr.T_WK_TRF_BILL wk on b.bill_no=wk.handoverbillno
+	 where t.vehicle_no = #{vehicle.vehicleNo}
+	   and cast(t.assign_time as date) = to_date(#{createTime}, 'yyyy-mm-dd hh24:mi:ss')
+	   and t.BE_CANCELED='N'
+	</select>
+	
+	<!-- 查询接送货分配记录明细 -->
+	<select id="queryAssignPickUpUnloadTaskDetail" parameterType="HashMap" resultMap="arriveBillResultMap">
+		select 
+		t.id as id,
+		t.bill_no           as billNo,
+	       to_char(t.unload_begin_time,'yyyy-mm-dd hh24:mi:ss') as unloadBeginTime,
+	       to_char(t.unload_end_time,'yyyy-mm-dd hh24:mi:ss')   as unloadEndTime,
+	       h.handover_type     as origOrg,
+	       t.weight_total      as weightTotal_bill,
+	       t.volume_total      as volumeTotal_bill,
+	       t.goods_qty_total   as goodsQtyTotal_bill,
+	       t.fast_waybill_qty  as fastWayBillQtyTotal_bill
+	  from tfr.t_opt_unload_assign_task t
+	  inner join pkp.t_srv_stay_handover h on h.handovertask_no = t.bill_no
+	 where t.vehicle_no = #{vehicle.vehicleNo}
+	   and cast(t.assign_time as date) = to_date(#{createTime}, 'yyyy-mm-dd hh24:mi:ss')
+	   and t.BE_CANCELED='N'
+	</select>
+	
+	<!-- 查询接送货分配记录明细 -->
+	<select id="queryAssignAirUnloadTaskDetail" parameterType="HashMap" resultMap="arriveBillResultMap">
+		select t.id as id,
+           t.bill_no as billNo,
+           to_char(t.unload_begin_time, 'yyyy-mm-dd hh24:mi:ss') as unloadBeginTime,
+           to_char(t.unload_end_time, 'yyyy-mm-dd hh24:mi:ss') as unloadEndTime,
+           w.transporttype as origOrg,
+           t.weight_total as weightTotal_bill,
+           t.volume_total as volumeTotal_bill,
+           t.goods_qty_total as goodsQtyTotal_bill,
+           t.fast_waybill_qty as fastWayBillQtyTotal_bill
+     	from tfr.t_opt_unload_assign_task t
+      	join TFR.T_OPT_AIR_WAYBILL w on w.air_waybill_no = t.bill_no
+     	where t.vehicle_no = #{vehicle.vehicleNo}
+       	and cast(t.assign_time as date) =
+           	to_date(#{createTime}, 'yyyy-mm-dd hh24:mi:ss')
+       	and t.BE_CANCELED = 'N'
+	</select>
+	
+	<!-- 2015.02.03chenmingyan查询快递集中卸车分配记录明细 -->
+	<select id="queryAssignExpressUnloadTaskDetail" parameterType="HashMap" resultMap="arriveBillResultMap">
+		select t.id as id,
+           t.bill_no as billNo,
+           to_char(t.unload_begin_time, 'yyyy-mm-dd hh24:mi:ss') as unloadBeginTime,
+           to_char(t.unload_end_time, 'yyyy-mm-dd hh24:mi:ss') as unloadEndTime,
+           p.handover_type as origOrg,
+           t.weight_total as weightTotal_bill,
+           t.volume_total as volumeTotal_bill,
+           t.goods_qty_total as goodsQtyTotal_bill,
+           t.fast_waybill_qty as fastWayBillQtyTotal_bill
+     	from tfr.t_opt_unload_assign_task t
+      	join TFR.T_OPT_PICK_HANDOVER p on p.handover_no = t.bill_no
+     	where t.vehicle_no = #{vehicle.vehicleNo}
+       	and cast(t.assign_time as date) =
+           	to_date(#{createTime}, 'yyyy-mm-dd hh24:mi:ss')
+       	and t.BE_CANCELED = 'N'
+	</select>
+	
+	<!-- 插入分配记录 -->
+	<insert id="inserta" parameterType="java.util.List" >
+		begin 
+		<foreach collection="list" item="item" separator=";">
+			insert into tfr.t_opt_unload_assign_task
+				  (id,
+				   bill_no,
+				   vehicle_no,
+				   vehicle_type_length,
+				   unload_type,
+				   arrive_time,
+				   weight_total,
+				   volume_total,
+				   goods_qty_total,
+				   fast_waybill_qty,
+				   platform_id,
+				   platform_no,
+				   line,
+				   loader_code,
+				   loader_name,
+				   load_org_code,
+				   load_org_name,
+				   assign_time,
+				   assign_user_code,
+				   assign_user_name,
+				   modify_time,
+				   modify_user_code,
+				   modify_user_name,
+				   assign_org_code,
+				   assign_org_name,
+				   STATE,
+				   be_canceled,
+				   BILL_ORIG_ORG_CODE,
+				   BILL_DEST_ORG_CODE )
+				values(	
+				#{item.id,jdbcType=VARCHAR}, 
+				#{item.bill.billNo,jdbcType=VARCHAR},
+				#{item.vehicle.vehicleNo,jdbcType=VARCHAR},
+				#{item.vehicle.vehicleType,jdbcType=VARCHAR},
+				#{item.vehicle.unloadType,jdbcType=VARCHAR},
+				to_date(#{item.vehicle.arriveTime,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss'),
+				#{item.bill.weightTotal,jdbcType=DECIMAL},
+				#{item.bill.volumeTotal,jdbcType=DECIMAL},
+				#{item.bill.goodsQtyTotal,jdbcType=DECIMAL},
+				#{item.bill.fastWayBillQtyTotal,jdbcType=DECIMAL},
+				#{item.vehicle.platformVirtualCode,jdbcType=VARCHAR},
+				#{item.vehicle.platformNo,jdbcType=VARCHAR},
+				#{item.vehicle.line,jdbcType=VARCHAR},
+				#{item.loader.loaderCode,jdbcType=VARCHAR},
+				#{item.loader.loaderName,jdbcType=VARCHAR},
+				#{item.loader.orgCode,jdbcType=VARCHAR},
+				#{item.loader.orgName,jdbcType=VARCHAR},
+				to_date(#{item.createTime,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss'),
+				#{item.createUserCode,jdbcType=VARCHAR},
+				#{item.createUserName,jdbcType=VARCHAR},
+				to_date(#{item.modifyTime,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss'),
+				#{item.modifyUserCode,jdbcType=VARCHAR},
+				#{item.modifyUserName,jdbcType=VARCHAR},
+				#{item.createOrgCode,jdbcType=VARCHAR},
+				#{item.createOrgName,jdbcType=VARCHAR},
+				#{item.state,jdbcType=VARCHAR},
+				#{item.beCanceled,jdbcType=VARCHAR},
+				#{item.bill.origOrgCode,jdbcType=VARCHAR},
+				#{item.bill.destOrgCode,jdbcType=VARCHAR}
+				)
+		</foreach>
+		;end;
+	</insert>
+	
+	<!-- 新增和取消分配时修改中转单据状态 -->
+	<update id='batchUpdate' parameterType="java.util.List">
+		begin 
+		<foreach collection="list" item="item" separator=";" index="index"> 
+			update tfr.t_wk_trf_bill wk set wk.HANDOVERSTATE=#{item.bill.assignState} where wk.handoverbillno = #{item.bill.billNo} 
+		</foreach>
+		;end;
+	</update>
+	
+	
+	<!-- 新增前查询中转单据状态 -->
+	<select id="queryTransferBillsState" parameterType="HashMap" resultMap="arriveBillResultMap">
+				<![CDATA[
+				select b.bill_no as billNo,
+				b.assign_state as assignState,
+				b.bill_level as billLevel,
+				b.bill_type as billType
+				 from tfr.t_opt_truck_task_bill b 
+		]]>
+		<where>
+			b.bill_no in
+ 			<foreach 
+				collection="list" open="(" close=")" item="item" separator="," index="index"> 
+				#{item.billNo} 
+			</foreach>
+		</where>
+		union all
+		<![CDATA[
+				select wt.HANDOVERBILLNO as billNo,
+				(
+				case 
+				when wt.HANDOVERSTATE='ASSINGED'
+				then
+				 'ASSINGED'
+				else
+				 'UNASSIGN'
+				end)as assignState,
+				'' as billLevel,
+				wt.HANDOVERTYPE as billType
+				 from tfr.t_wk_trf_bill wt 
+		]]>
+		<where>
+			wt.HANDOVERBILLNO in
+ 			<foreach 
+				collection="list" open="(" close=")" item="item" separator="," index="index"> 
+				#{item.billNo} 
+			</foreach>
+			 and wt.handovertype ='AIR_TRANS_HANDOVER'
+		</where>
+	</select>
+	<!-- 新增前查询接送货单据状态 -->
+	<select id="queryPickUpBillsState" parameterType="HashMap" resultMap="arriveBillResultMap">
+				<![CDATA[
+				select h.handovertask_no as billNo, h.assign_state as assignState,h.HANDOVER_TYPE as billType
+  				from pkp.t_srv_stay_handover h
+		]]>
+		<where>
+			h.handovertask_no in 
+ 			<foreach 
+				collection="list" open="(" close=")" item="item" separator="," index="index"> 
+				#{item.billNo} 
+			</foreach>
+		</where>
+	</select>
+
+	<!-- 2015.02.02chenmingyan新增：新增前查询快递单据状态 -->
+	<select id="queryExpressBillState" parameterType="HashMap" resultMap="arriveBillResultMap">
+		<![CDATA[
+				select p.handover_no as billNo ,p.assign_state as assignState, p.handover_type as billType 
+					from tfr.t_opt_pick_handover p 
+		]]>
+		<where>
+			p.handover_no in 
+ 			<foreach 
+				collection="list" open="(" close=")" item="item" separator="," index="index"> 
+				#{item.billNo} 
+			</foreach>
+		</where>
+	</select>
+
+	<!-- 新增和取消分配时修改中转单据状态 -->
+	<update id='updateArriveTransferBillState' parameterType="HashMap">
+		begin 
+		<foreach collection="list" item="item" separator=";" index="index"> 
+			update tfr.t_opt_truck_task_bill b set b.assign_state=#{item.assignState} where b.bill_no = #{item.billNo} 
+		</foreach>
+		;end;
+	</update>
+	<!-- 根据状态修改中转单据状态 -->
+	<update id='updateArriveTransferBillByState' parameterType="HashMap">
+			update tfr.t_opt_truck_task_bill b
+			   set b.assign_state = #{afterBillState}
+			 where b.bill_no = #{billNo}
+			 <if test="billLevel != null and billLevel !=''">
+			   and b.bill_level = #{billLevel}
+			 </if>
+			   and b.assign_state = #{beforeBillState}
+	</update>
+	<!-- 新增和取消分配时修改接送货单据状态 -->
+	<update id='updateArrivePickUpBillState' parameterType="HashMap">
+		begin 
+		<foreach collection="list" item="item" separator=";" index="index"> 
+			update pkp.t_srv_stay_handover b set b.assign_state=#{item.assignState} where b.handovertask_no = #{item.billNo} 
+		</foreach>
+		;end;
+	</update>
+	<!-- 根据状态修改接送货单据状态 -->
+	<update id='updateArrivePickUpBillByState' parameterType="HashMap">
+		update pkp.t_srv_stay_handover b
+		   set b.assign_state = #{afterBillState}
+		 where b.handovertask_no = #{billNo}
+		 and b.assign_state= #{beforeBillState}
+	</update>
+	
+	<!-- 根据状态修改航空正单单据状态 -->
+	<update id='updateArriveAirByState' parameterType="HashMap">
+		update tfr.t_opt_air_waybill w 
+			set w.assign_state =  #{afterBillState}
+     		where w.air_waybill_no = #{billNo}
+     		and w.assign_state = #{beforeBillState}
+	</update>
+	
+	<!-- 2015.02.02chenmingyan:根据状态修改快递单据状态 -->
+	<update id="updateArriveExpressBillByState" parameterType="HashMap">
+		update tfr.t_opt_pick_handover p 
+			set p.assign_state =  #{afterBillState}
+     		where p.handover_no = #{billNo}
+     		and p.assign_state = #{beforeBillState}
+	</update>
+	
+	<!-- 2015.02.02chenmingyan:新增和取消分配时修改快递单据状态 -->
+	<update id="updateArriveExpressBillState" parameterType="HashMap">
+		begin 
+		<foreach collection="list" item="item" separator=";" index="index"> 
+			update tfr.t_opt_pick_handover p set p.assign_state = #{item.assignState} 
+				where p.handover_no = #{item.billNo} 
+		</foreach>
+		;end;
+	</update>
+	
+	<!-- 2016-7-28 322610:新增和取消分配时修改零担电子面单单据状态 -->
+	<update id="updateElecWayBillState" parameterType="HashMap">
+		begin 
+		<foreach collection="list" item="item" separator=";" index="index"> 
+			update tfr.t_opt_pick_handover p set p.assign_state = #{item.assignState} 
+				where p.handover_no = #{item.billNo} 
+		</foreach>
+		;end;
+	</update>
+	
+	<!-- 逻辑删除分配记录 -->
+	<update id='cancelAssignUnloadTask' parameterType="HashMap">
+			update tfr.t_opt_unload_assign_task t
+				set t.be_canceled = #{beCanceled,jdbcType=VARCHAR},
+				t.modify_time = to_date(#{modifyTime,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss'),
+				t.modify_user_code = #{modifyUserCode,jdbcType=VARCHAR},
+      			t.modify_user_name = #{modifyUserName,jdbcType=VARCHAR}
+      			where t.id = #{id} and t.state = 'UNSTART'
+	</update>
+	<!-- 刷新 -->
+	<select id="queryUnStartTask" parameterType="HashMap" resultMap="assignedTaskTotalResultMap">
+		
+				select max(a.id) as id,
+				a.vehicle_no as vehicleNo,
+               to_char(a.assign_time,'yyyy-mm-dd hh24:mi:ss') as createTime,
+               to_char(max(a.arrive_time),'yyyy-mm-dd hh24:mi:ss') as arriveTime,
+               max(a.vehicle_type_length) as vehicleType,
+               max(a.loader_code) as loaderCode,
+               max(a.loader_name) as loaderName,
+               max(a.load_org_code) as loaderOrgCode,
+               max(a.load_org_name) as loaderOrgName,
+               max(a.platform_no) as platformNo,
+               max(a.unload_type) as unloadType,
+               max(a.line) as line,
+               max(a.platform_id) as platformVirtualCode,
+               count(a.id) as billQtyTotal,
+               sum(a.weight_total) as weightTotal,
+               sum(a.volume_total) as volumeTotal,
+               sum(a.fast_waybill_qty) as fastWayBillQtyTotal,
+               sum(a.goods_qty_total) as goodsQtyTotal
+			  from tfr.t_opt_unload_assign_task a
+		
+		<include refid="queryUnStartTask_Where"/>    
+	<!-- 刷新记录数 -->
+	</select>
+		<select id="queryUnStartTaskCount" parameterType="HashMap" resultType="Long">
+		select count(vehicleNo)
+		  from (
+			  select a.vehicle_no as vehicleNo
+			          from tfr.t_opt_unload_assign_task a
+			          <include refid="queryUnStartTask_Where"/>    
+		  )
+	</select>
+	<sql id="queryUnStartTask_Where">
+		<where>
+			a.be_canceled = #{beCanceled}
+			and a.assign_org_code=#{createOrgCode}
+			and a.state=#{state}
+		</where>
+		 group by a.assign_time,
+                  a.vehicle_no 
+	</sql>
+	<!-- 取消分配前查询分配任务是否已取消、是否已开始 -->
+		<select id="queryTaskByVehicle" parameterType="HashMap" resultMap="assignedTaskResultMap">
+		<![CDATA[
+				select t.id as id,t.bill_no as billNo,t.be_canceled as beCanceled,t.state as taskState from tfr.t_opt_unload_assign_task t
+		]]>
+		<where>
+			cast(t.assign_time as date)=to_date(#{createTime},'yyyy-mm-dd hh24:mi:ss')
+			and t.vehicle_no=#{vehicle.vehicleNo}
+		</where>
+	</select>
+	<!--查询进行中卸车任务 -->
+	<select id="queryUnfinishedTask" parameterType="HashMap" resultType="String">
+		select distinct t.unload_task_no
+		  from tfr.t_opt_unload_assign_task a
+		  inner join tfr.t_opt_unload_bill_detail b on b.bill_no = a.bill_no
+		  inner join tfr.t_opt_unload_task t on t.id = b.unload_task_id
+		 where a.loader_code = #{loaderCode}
+		   and a.vehicle_no = #{vehicleNo}
+		   and a.be_canceled = 'N'
+		   and a.state = 'PROCESSING'
+		   and t.task_state='UNLOADING'
+	</select>
+	
+	<!-- 查询中转到达未卸车数 -->
+	<select id="queryTransferArrivedCount" parameterType="HashMap" resultType="int">
+	select COUNT(1) from (
+		select sum(case
+		                     when b.bill_level = '1' then
+		                      1
+		                     else
+		                      0
+		                   end) as billQtyTotal,
+		               sum(case
+		                     when b.assign_state = 'UNASSIGN' then
+		                      0
+		                     else
+		                      1
+		                   end) as assignedBillQty 
+		from tfr.t_opt_truck_task_detail t
+		left join tfr.t_opt_truck_task_bill b on b.truck_task_detail_id = t.id
+		<where>  t.dest_org_code in 
+			<foreach 
+				collection="orgCodes" open="(" close=")" item="item" separator="," index="index"> 
+				#{item} 
+			</foreach>
+           	<if test="vehicleType != null and vehicleType !=''">
+   				<![CDATA[and t.business_type = #{vehicleType}]]>
+ 		   	</if>
+			<![CDATA[and t.BE_CAR_LOAD<>'Y']]>
+			<![CDATA[and t.BUSINESS_TYPE <>'PARTIALLINE']]>
+			and b.assign_state = 'UNASSIGN'
+			and t.status = 'ARRIVED'
+			and  not exists  (
+  			   select 1 from pkp.T_SRV_STAY_HANDOVER ps
+				where  ps.transfer_center in 
+					<foreach 
+						collection="orgCodes" open="(" close=")" item="item" separator="," index="index"> 
+						#{item} 
+			   		</foreach>
+    			and ps.assign_state = 'UNASSIGN' and ps.vehicle_no=t.vehicle_no
+   			)
+		</where>
+		group by T.vehicle_no)
+		where billQtyTotal > assignedBillQty
+	</select>
+	
+	<!-- 查询接送货到达未卸车数 -->
+	<select id="queryPickUpArrivedCount" parameterType="HashMap" resultType="int">
+		select count(1) from  ( select max(ps.id) from pkp.T_SRV_STAY_HANDOVER ps
+		<where>  ps.transfer_center in 
+				<foreach 
+				collection="orgCode" open="(" close=")" item="item" separator="," index="index"> 
+				#{item} 
+			   </foreach>
+			    and ps.assign_state = 'UNASSIGN'
+		</where>
+		group by ps.vehicle_no)
+	</select>
+	
+	
+	<!-- 根据车牌号查询任务车辆 id-->
+   <select id="queryTruckTaskIdByVehicleNo" resultType="string" parameterType="string">
+		select *
+		  from (select t.id
+		          from tfr.t_opt_truck_task t
+		         where t.vehicle_no = #{vehicleNo}
+		           and t.status in ('UNDEPART', 'ONTHEWAY', 'HALFWAY_ARRIVE','ARRIVED')
+		         order by t.create_time desc)
+		 where <![CDATA[rownum <= 1]]>
+	</select>
+	
+	<!-- 根据valeCode在数据字典中查询value_name -->
+	<select id="queryDictionaryValueNameByValueCode" resultType="string" parameterType="string">
+	 SELECT t.value_name
+	  FROM BSE.T_BAS_DATA_DICTIONARY_VALUE T
+	 WHERE T.VALUE_CODE = #{valueCode}
+	   AND T.ACTIVE = 'Y'
+	</select>
+	<!-- 根据单据编号，车牌号查询卸车任务 -->
+	<select id="queryAssUnloadTaskByBillNo" parameterType="map" resultMap="assignedTaskTotalResultMap">
+	    select t.id id,
+		       t.bill_no billNo,
+		       t.vehicle_no vehicleNo,
+		       t.unload_type unloadType
+		  from tfr.t_opt_unload_assign_task t
+		 where t.bill_no = #{billNo}
+		   and t.be_canceled = 'N'
+		   and t.vehicle_no = #{vechicleNo}
+	</select>
+	
+   <!-- 根据单据编号，车牌号查询部分任务车辆信息 -->
+   <select id="queryTruckTaskDetailByBillNoAndVechicleNo" parameterType="map" resultType="com.deppon.foss.module.transfer.unload.api.shared.dto.TruckTaskDetailDto">
+	    select t.id truckTaskDetailId,
+	      t.truck_task_id truckTaskId,
+	      t.vehicle_no vehicleNo,
+	      t.business_type businesstype,
+	      t.orig_org_code origOrgcode,
+	      t.dest_org_code destOrgCode,
+	      t.status status,
+	      t.plan_depart_time planDepartTime,
+	      t.actual_depart_time actualDepartTime,
+	      t.plan_arrive_time planArriveTime,
+	      t.actual_arrive_time actualArriveTime,
+	      b.bill_type billType,
+	      b.load_task_no loadTaskNo
+	 from tfr.t_opt_truck_task_detail t
+	 join tfr.t_opt_truck_task_bill b
+	   on t.id = b.truck_task_detail_id
+	where t.vehicle_no = #{vechicleNo}
+	  and b.bill_no = #{billNo}
+	  and t.dest_org_code=#{destOrgCode}
+   </select>
+	
+	<!-- 根据卸车任务id查询所有的交接单 -->
+	
+   <select id="queryHandNosByTruckTaskId" parameterType="String" resultType="String">
+	select bill.bill_no
+        from tfr.t_opt_truck_task t
+        join tfr.t_opt_truck_task_detail d
+          on t.id = d.truck_task_id
+        join tfr.t_opt_truck_task_bill bill
+          on d.id = bill.truck_task_detail_id
+     where t.id = #{truckTaskId}
+       and bill.bill_type='HANDOVER'
+   </select>	
+	
+	<!-- 修改空运正单交接单卸车状态（商务专递） 263072 linyuzhu 2015-9-19 14:19:17 -->
+	<update id='updateAirHandoverBillState' parameterType="HashMap">
+		begin 
+		<foreach collection="list" item="item" separator=";" index="index"> 
+			Update Tfr.t_Opt_Air_Handoverbill Hb
+			   Set Hb.Express_Unload_Status   = #{item.assignState},
+			       Hb.Modify_Time             = Sysdate
+			 Where 
+			 Hb.Air_Handover_No=#{item.billNo}
+		</foreach>
+		;end;
+	</update>
+	<!-- 272681：查询商务专递卸车单据 -->
+	<select id="queryArriveBusinessBill" parameterType="HashMap" resultMap="arriveBillResultMap">
+		select      f.id as billId,
+		            f.AIR_HANDOVER_NO as billNo,
+		            f.org_name as origOrg,
+		            f.EXPRESS_ASSIGN_STATUS as assignState,
+		            f.BILLING_WEIGHT_TOTAL as weightTotal,
+		            f.HANDOVER_VOLUME_TOTAL as volumeTotal,
+		            f.WAYBILL_QTY_TOTAL as fastWayBillQtyTotal,
+		            f.GOODS_QTY_TOTAL as goodsQtyTotal,
+		            0 as totalQty,
+		            f.FLIGHT_NO as vehicleNo_bill,
+                    '' as arriveTime_bill 
+		       from tfr.t_opt_air_handoverbill f 
+		      where f.id = #{arriveVehicleId}
+		        <if test="assignState != null and assignState !=''">
+		         and f.EXPRESS_ASSIGN_STATUS= #{assignState}
+		        </if>
+		         <if test="destOrgCode != null and destOrgCode !=''">
+			      <![CDATA[and f.EXPRESS_ARRIVE_CODE in(#{destOrgCode},'N/A')]]>
+			     </if>
+			     <!-- 快递 空运-->
+			     union all
+			     select      wk.handoverbillno as billId,
+		            wk.handoverbillno as billNo,
+		            wk.departorgname as origOrg,
+		            (
+		                case 
+		                when wk.handoverstate='ASSINGED' 
+		                then
+		                'ASSINGED'
+		                else
+		                'UNASSIGN'
+		                   end)  as assignState,
+		            wk.airlifttotalweight as weightTotal,
+		            wk.airlifttotalvolumn as volumeTotal,
+		            0 as fastWayBillQtyTotal,
+		            wk.airlifttotalqty as goodsQtyTotal,
+		            wk.airlifttotalqty as totalQty,
+		            wk.vehicleno as vehicleNo_bill,
+                    '' as arriveTime_bill 
+		       from tfr.t_wk_trf_bill wk 
+		      where 
+		         <if test="arriveVehicleId != null and arriveVehicleId !=''">
+		          wk.handoverbillno = #{arriveVehicleId}
+		          <![CDATA[and]]>
+		         </if>
+		         <if test="destOrgCode != null and destOrgCode !=''">
+			      <![CDATA[wk.arriveorgcode in(#{destOrgCode},'N/A')]]>
+			     </if>
+			     <![CDATA[and wk.handoverstate not in('HAVE_CANCEL','HAVE_STOCK')]]>
+	</select>
+	
+	<!-- 2015/8/26 272681 查询商务专递卸车分配记录明细 -->
+	<select id="queryAssignBusinessUnloadTaskDetail" parameterType="HashMap" resultMap="arriveBillResultMap">
+		select t.id as id,
+           t.bill_no as billNo,
+           to_char(t.unload_begin_time, 'yyyy-mm-dd hh24:mi:ss') as unloadBeginTime,
+           to_char(t.unload_end_time, 'yyyy-mm-dd hh24:mi:ss') as unloadEndTime,
+           p.ORG_NAME as origOrg,
+           t.weight_total as weightTotal_bill,
+           t.volume_total as volumeTotal_bill,
+           t.goods_qty_total as goodsQtyTotal_bill,
+           t.fast_waybill_qty as fastWayBillQtyTotal_bill,
+           0 as totalQty
+     	from tfr.t_opt_unload_assign_task t
+      	join tfr.t_opt_air_handoverbill p on p.AIR_HANDOVER_NO = t.bill_no
+     	where t.vehicle_no = #{vehicle.vehicleNo}
+       	and cast(t.assign_time as date) =
+           	to_date(#{createTime}, 'yyyy-mm-dd hh24:mi:ss')
+       	and t.BE_CANCELED = 'N'
+       	union all
+	 select t.id as id,
+	       t.bill_no as billNo,
+	       to_char(t.unload_begin_time, 'yyyy-mm-dd hh24:mi:ss') as unloadBeginTime,
+	       to_char(t.unload_end_time, 'yyyy-mm-dd hh24:mi:ss') as unloadEndTime,
+	       wk.DEPARTORGNAME as origOrg,
+	       nvl(t.weight_total,wk.AIRLIFTTOTALWEIGHT) as weightTotal_bill,
+	       nvl(t.volume_total,wk.AIRLIFTTOTALVOLUMN) as volumeTotal_bill,
+	       nvl(t.goods_qty_total,wk.AIRLIFTTOTALQTY) as goodsQtyTotal_bill,
+	       t.fast_waybill_qty as fastWayBillQtyTotal_bill,
+	       wk.AIRLIFTTOTALQTY as totalQty
+	  from tfr.t_opt_unload_assign_task t
+	  join tfr.t_wk_trf_bill wk
+	    on wk.HANDOVERBILLNO = t.bill_no
+	 where t.vehicle_no = #{vehicle.vehicleNo}
+	   and cast(t.assign_time as date) =
+	       to_date(#{createTime}, 'yyyy-mm-dd hh24:mi:ss')
+	   and t.BE_CANCELED = 'N'
+	   and wk.HANDOVERTYPE='AIR_TRANS_HANDOVER'
+	</select>
+	
+	<!-- 2016-7-26 322610 查询零担电子运单卸车分配记录明细 -->
+	<select id="queryElecWayUnloadTaskDetail" parameterType="HashMap" resultMap="arriveBillResultMap">
+    	select t.id as id,
+           t.bill_no as billNo,
+           to_char(t.unload_begin_time, 'yyyy-mm-dd hh24:mi:ss') as unloadBeginTime,
+           to_char(t.unload_end_time, 'yyyy-mm-dd hh24:mi:ss') as unloadEndTime,
+           '零担电子运单接货' as origOrg,
+           t.weight_total as weightTotal_bill,
+           t.volume_total as volumeTotal_bill,
+           t.goods_qty_total as goodsQtyTotal_bill,
+           t.fast_waybill_qty as fastWayBillQtyTotal_bill
+        from tfr.t_opt_unload_assign_task t
+        join tfr.t_opt_pick_handover p on p.HANDOVER_NO = t.bill_no
+     	where t.vehicle_no = #{vehicle.vehicleNo}
+       	and t.BE_CANCELED = 'N'
+       	and p.handover_type ='CREATE_PDA_BSE_PIC'
+	</select>
+	
+	<!-- 根据状态修改商务专递单据状态 272681-->
+	<update id='updateArriveBusinessAirBillByState' parameterType="HashMap">
+		update tfr.t_opt_air_handoverbill h
+			set h.EXPRESS_ASSIGN_STATUS = #{afterBillState}
+     		where h.AIR_HANDOVER_NO = #{billNo}
+     		and h.EXPRESS_ASSIGN_STATUS = #{beforeBillState}
+	</update>
+	
+	<!-- 根据状态修改商务专递单据状态 322610-->
+	<update id='updateElecTransportBillByState' parameterType="HashMap">
+		update tfr.t_opt_pick_handover h
+			set h.ASSIGN_STATE = #{afterBillState}
+     		where h.HANDOVER_NO = #{billNo}
+     		and h.ASSIGN_STATE = #{beforeBillState}
+	</update>
+	
+	<!-- 新增和取消分配时修改商务专递单据状态272681 -->
+	<update id='updateArriveBusinessBillState' parameterType="HashMap">
+		begin 
+		<foreach collection="list" item="item" separator=";" index="index"> 
+			update tfr.t_opt_air_handoverbill w set w.EXPRESS_ASSIGN_STATUS = #{item.assignState},
+			w.express_unload_status = #{item.unloadState}
+			where w.AIR_HANDOVER_NO = #{item.billNo} 
+		</foreach>
+		;end;
+	</update> 
+	
+	<!-- 2015/8/26查询已分配任务取消任务时修改商务专递单据状态272681 -->
+	<update id='updateBusinessAirBillState' parameterType="HashMap">
+		begin 
+		<foreach collection="list" item="item" separator=";" index="index"> 
+			update tfr.t_opt_air_handoverbill w set w.EXPRESS_ASSIGN_STATUS = #{item.assignState}
+			where w.AIR_HANDOVER_NO = #{item.billNo} 
+		</foreach>
+		;end;
+	</update> 
+	
+	<!-- 2015-08-14 272681 chenlei:查询已到商务专递 -->
+	<select id="queryArriveBusinessVehice" parameterType="HashMap" resultMap="assignedTaskTotalResultMap">
+		<![CDATA[select * from(
+		      	 select  max(f.id) as id, 
+		                 f.flight_no as vehicleNo,                                               /*车牌号 */
+		                 '' as vehicleType,			                                            /*车型 */
+		                 max(f.org_name ||'-'|| f.EXPRESS_ARRIVE_NAME) as line,						        /*线路 */                                 
+		                 'BUSINESS_AIR' as unloadType,		                                    /*卸车类型 */
+		                 '' as arriveTime,                                                        /*到达时间 */	
+		                 sum(f.BILLING_WEIGHT_TOTAL) as weightTotal,
+                         sum(f.HANDOVER_VOLUME_TOTAL) as volumeTotal,
+                         sum(f.GOODS_QTY_TOTAL) as goodsQtyTotal,                                       /*总件数 */
+		                 sum(f.WAYBILL_QTY_TOTAL) as wayBillQtyTotal,                                    /*总票数*/
+		                 sum(f.WAYBILL_QTY_TOTAL) as fastWayBillQtyTotal,                                /*卡货总票数 */
+		                 0 as afWayBillQtyTotal,						                              /*空运票数 */
+			             0 as afVolumeTotal,							                             /*空运体积 */
+			             0 as afWeightTotal,						                                  /*空运重量 */
+			             0 as flfWayBillQtyTotal,				                                      /*卡航票数 */
+			             0 as flfVolumeTotal,					                                      /*卡航体积 */
+			             0 as flfWeightTotal,						                                  /*卡航重量 */
+			             0 as fsfWayBillQtyTotal,						                              /*城际票数 */
+			             0 as fsfVolumeTotal,						                                  /*城际体积 */
+			             0 as fsfWeightTotal,						                                  /*城际重量 */
+			             count(f.id) as billQtyTotal,
+			             sum(case
+		                     when f.EXPRESS_ASSIGN_STATUS = 'UNASSIGN' then
+		                      0
+		                     else
+		                      1
+		                   end) as assignedBillQty,									                      /*单据数 */
+			             '' as platformVirtualCode,										
+			             '' as platformNo													               /*月台 */
+		          from tfr.t_opt_air_handoverbill f]]>
+		        <where>
+		           f.EXPRESS_ARRIVE_CODE in
+		 		   <foreach 
+						collection="destOrgCodes" open="(" close=")" item="item" separator="," index="index"> 
+						#{item} 
+				   </foreach> 
+             		 and f.EXPRESS_ASSIGN_STATUS = 'UNASSIGN'
+             		 and f.AIR_HANDOVERTYPE  = 'PACKAGE_HANDOVER'
+		           <![CDATA[and f.CREATE_TIME > to_date(#{arriveTimeBegin}, 'yyyy-mm-dd hh24:mi:ss')]]>
+		           <![CDATA[and f.CREATE_TIME < to_date(#{arriveTimeEnd}, 'yyyy-mm-dd hh24:mi:ss')]]> 
+		           <if test="vehicleNo != null and vehicleNo !=''">
+		           		<![CDATA[and f.flight_no = #{vehicleNo}]]>
+		           </if>
+		           <if test="flightNo != null and flightNo !=''">
+		           		<![CDATA[and f.flight_no = #{flightNo}]]>
+		           </if>
+		           <if test="billNo != null and billNo !=''">
+		           		<![CDATA[and f.AIR_HANDOVER_NO = #{billNo,jdbcType=VARCHAR} ]]>
+		           </if>
+		           <if test="departOrg != null and departOrg !=''">
+		                <![CDATA[and f.ORG_CODE = #{departOrg}]]>
+		           </if>
+		       </where>   
+	           <![CDATA[group by f.flight_no,f.air_handover_no,f.flight_date]]>)
+	           where billQtyTotal > assignedBillQty
+	           
+	           <!--  快递空运 -->
+	           union all
+	           <![CDATA[select * from(
+		      	 select  wk.handoverbillno as id, 
+		                 wk.vehicleno as vehicleNo,                                               /*车牌号 */
+		                 '' as vehicleType,			                                            /*车型 */
+		                 max(wk.departorgname ||'-'|| wk.arriveorgname) as line,						        /*线路 */                                 
+		                 'BUSINESS_AIR' as unloadType,		                                    /*卸车类型 */
+		                 '' as arriveTime,                                                        /*到达时间 */	
+		                 sum(wk.totalweight) as weightTotal,
+                         sum(wk.totalvolumn) as volumeTotal,
+                         sum(wk.totalqty) as goodsQtyTotal,                                       /*总件数 */
+		                 sum(wk.totalqty) as wayBillQtyTotal,                                    /*总票数*/
+		                 0 as fastWayBillQtyTotal,                                               /*卡货总票数 */
+		                 sum(wk.airlifttotalqty) as afWayBillQtyTotal,						                              /*空运票数 */
+			             sum(wk.airlifttotalvolumn) as afVolumeTotal,							                             /*空运体积 */
+			             sum(wk.airlifttotalweight) as afWeightTotal,						                                  /*空运重量 */
+			             0 as flfWayBillQtyTotal,				                                      /*卡航票数 */
+			             0 as flfVolumeTotal,					                                      /*卡航体积 */
+			             0 as flfWeightTotal,						                                  /*卡航重量 */
+			             0 as fsfWayBillQtyTotal,						                              /*城际票数 */
+			             0 as fsfVolumeTotal,						                                  /*城际体积 */
+			             0 as fsfWeightTotal,						                                  /*城际重量 */
+			             count(wk.handoverbillno) as billQtyTotal,
+			             sum(case
+		                     when wk.handoverstate ='ASSINGED'
+		                      then
+		                      1
+		                     else
+		                      0
+		                   end) as assignedBillQty,									                      /*单据数 */
+			             '' as platformVirtualCode,										
+			             '' as platformNo													               /*月台 */
+		          from tfr.t_wk_trf_bill wk]]>
+		        <where>
+		           wk.arriveorgcode in
+		 		   <foreach 
+						collection="destOrgCodes" open="(" close=")" item="item" separator="," index="index"> 
+						#{item} 
+				   </foreach> 
+             		 and wk.handoverstate not in('HAVE_STOCK','ASSINGED','HAVE_CANCEL')
+             		 and wk.handovertype  = 'AIR_TRANS_HANDOVER'
+		           <![CDATA[and wk.CREATETIME > to_date(#{arriveTimeBegin}, 'yyyy-mm-dd hh24:mi:ss')]]>
+		           <![CDATA[and wk.CREATETIME < to_date(#{arriveTimeEnd}, 'yyyy-mm-dd hh24:mi:ss')]]> 
+		           <if test="vehicleNo != null and vehicleNo !=''">
+		           		<![CDATA[and wk.vehicleno = #{vehicleNo}]]>
+		           </if>
+		           <if test="flightNo != null and flightNo !=''">
+		           		<![CDATA[and wk.vehicleno = #{flightNo}]]>
+		           </if>
+		           <if test="billNo != null and billNo !=''">
+		           		<![CDATA[and wk.handoverbillno = #{billNo,jdbcType=VARCHAR} ]]>
+		           </if>
+		           <if test="departOrg != null and departOrg !=''">
+		                <![CDATA[and wk.departorgcode = #{departOrg}]]>
+		           </if>
+		       </where>   
+	           <![CDATA[group by wk.vehicleno,wk.handoverbillno]]>)
+	           where billQtyTotal > assignedBillQty
+	          
+	          
+	</select>
+	
+	<select id="querySalesDeptArriveBusinessVehicle" parameterType="HashMap" resultMap="assignedTaskTotalResultMap">
+		<![CDATA[select * from(
+		      	 select  max(f.id) as id, 
+		                 f.flight_no as vehicleNo,                                               /*车牌号 */
+		                 '' as vehicleType,			                                            /*车型 */
+		                 max(f.org_name ||'-'|| f.EXPRESS_ARRIVE_NAME) as line,						        /*线路 */                                 
+		                 'BUSINESS_AIR' as unloadType,		                                    /*卸车类型 */
+		                 '' as arriveTime,                                                        /*到达时间 */	
+		                 sum(f.BILLING_WEIGHT_TOTAL) as weightTotal,
+                         sum(f.HANDOVER_VOLUME_TOTAL) as volumeTotal,
+                         sum(f.GOODS_QTY_TOTAL) as goodsQtyTotal,                                       /*总件数 */
+		                 sum(f.WAYBILL_QTY_TOTAL) as wayBillQtyTotal,                                    /*总票数*/
+		                 sum(f.WAYBILL_QTY_TOTAL) as fastWayBillQtyTotal,                                /*卡货总票数 */
+		                 0 as afWayBillQtyTotal,						                              /*空运票数 */
+			             0 as afVolumeTotal,							                             /*空运体积 */
+			             0 as afWeightTotal,						                                  /*空运重量 */
+			             0 as flfWayBillQtyTotal,				                                      /*卡航票数 */
+			             0 as flfVolumeTotal,					                                      /*卡航体积 */
+			             0 as flfWeightTotal,						                                  /*卡航重量 */
+			             0 as fsfWayBillQtyTotal,						                              /*城际票数 */
+			             0 as fsfVolumeTotal,						                                  /*城际体积 */
+			             0 as fsfWeightTotal,						                                  /*城际重量 */
+			             count(f.id) as billQtyTotal,
+			             sum(case
+		                     when f.EXPRESS_ASSIGN_STATUS = 'UNASSIGN' then
+		                      0
+		                     else
+		                      1
+		                   end) as assignedBillQty,									                      /*单据数 */
+			             '' as platformVirtualCode,										
+			             '' as platformNo													               /*月台 */
+		          from tfr.t_opt_air_handoverbill f]]>
+		        <where>
+		           f.EXPRESS_ARRIVE_CODE in
+		 		   <foreach 
+						collection="destOrgCodes" open="(" close=")" item="item" separator="," index="index"> 
+						#{item} 
+				   </foreach> 
+             		 and f.EXPRESS_ASSIGN_STATUS = 'UNASSIGN'
+             		 and f.AIR_HANDOVERTYPE  = 'PACKAGE_HANDOVER'
+		           <![CDATA[and f.CREATE_TIME > to_date(#{arriveTimeBegin}, 'yyyy-mm-dd hh24:mi:ss')]]>
+		           <![CDATA[and f.CREATE_TIME < to_date(#{arriveTimeEnd}, 'yyyy-mm-dd hh24:mi:ss')]]> 
+		           <if test="vehicleNo != null and vehicleNo !=''">
+		           		<![CDATA[and f.flight_no = #{vehicleNo}]]>
+		           </if>
+		           <if test="flightNo != null and flightNo !=''">
+		           		<![CDATA[and f.flight_no = #{flightNo}]]>
+		           </if>
+		           <if test="billNo != null and billNo !=''">
+		           		<![CDATA[and f.AIR_HANDOVER_NO = #{billNo,jdbcType=VARCHAR} ]]>
+		           </if>
+		           <if test="departOrg != null and departOrg !=''">
+		                <![CDATA[and f.ORG_CODE = #{departOrg}]]>
+		           </if>
+		       </where>   
+	           <![CDATA[group by f.flight_no,f.air_handover_no,f.flight_date]]>)
+	           where billQtyTotal > assignedBillQty
+	           
+	</select>
+		<!-- 2016-7-22 322610  查询零担电子面单卸车任务 -->
+	<select id="queryElecTransportVehicle" parameterType="HashMap" resultMap="assignedTaskTotalResultMap">
+		<![CDATA[select * from(
+		      	 select max(f.id) as id,
+				       f.vehicle_no as vehicleNo, /*车牌号 */
+				       '' as vehicleType, /*车型 */
+				       '' as line, /*线路 */
+				       'ELECTRANSPORT' as unloadType, /*卸车类型 */
+				       max(f.arrive_date) as arriveTime, /*到达时间 */
+				       sum(f.WEIGHT_TOTAL) as weightTotal,
+				       sum(f.volume_total) as volumeTotal,
+				       sum(f.goods_qty_total) as goodsQtyTotal, /*总件数 */
+				       sum(f.waybill_qty) as wayBillQtyTotal, /*总票数*/
+				       sum(f.waybill_qty) as fastWayBillQtyTotal, /*卡货总票数 */
+				       0 as afWayBillQtyTotal, /*空运票数 */
+				       0 as afVolumeTotal, /*空运体积 */
+				       0 as afWeightTotal, /*空运重量 */
+				       0 as flfWayBillQtyTotal, /*卡航票数 */
+				       0 as flfVolumeTotal, /*卡航体积 */
+				       0 as flfWeightTotal, /*卡航重量 */
+				       0 as fsfWayBillQtyTotal, /*城际票数 */
+				       0 as fsfVolumeTotal, /*城际体积 */
+				       0 as fsfWeightTotal, /*城际重量 */
+				       1 as billQtyTotal,
+				       0 as assignedBillQty, /*单据数 */
+				       '' as platformVirtualCode,
+				       '' as platformNo /*月台 */
+				  from tfr.t_opt_pick_handover f]]>
+	        <where>
+            		 f.assign_state = 'UNASSIGN'
+			         and f.dest_org_code in
+			 		 <foreach collection="destOrgCodes" open="(" close=")" item="item" separator="," index="index"> 
+						#{item} 
+					 </foreach> 
+            		 and f.handover_type  = 'CREATE_PDA_BSE_PIC'
+	           <![CDATA[and f.CREATE_TIME > to_date(#{arriveTimeBegin}, 'yyyy-mm-dd hh24:mi:ss')]]>
+	           <![CDATA[and f.CREATE_TIME < to_date(#{arriveTimeEnd}, 'yyyy-mm-dd hh24:mi:ss')]]> 
+	           <if test="vehicleNo != null and vehicleNo !=''">
+	           		<![CDATA[and f.vehicle_no = #{vehicleNo}]]>
+	           </if>
+	       </where>                 
+   			<![CDATA[group by f.vehicle_no)]]>
+	</select>
+	
+	
+		<!-- 新增前查询商务专递单据状态 272681-->
+		<select id="queryAirBusinessBillState" parameterType="HashMap" resultMap="arriveBillResultMap">
+		<![CDATA[
+			select w.AIR_HANDOVER_NO as billNo,w.EXPRESS_ASSIGN_STATUS as assignState,w.AIR_HANDOVERTYPE as billType 
+      			from tfr.t_opt_air_handoverbill w
+		]]>
+		<where>
+			w.AIR_HANDOVER_NO in 
+ 			<foreach 
+				collection="list" open="(" close=")" item="item" separator="," index="index"> 
+				#{item.billNo} 
+			</foreach>
+		</where>
+		
+		<![CDATA[
+				union all
+				select wk.HANDOVERBILLNO as billNo,
+				(
+				case 
+				when wk.HANDOVERSTATE='ASSINGED'
+				then
+				'ASSINGED'
+				else
+				'UNASSIGN'
+				 end
+				 ) as assignState,
+				 wk.HANDOVERTYPE as billType
+				from tfr.t_wk_trf_bill wk
+		]]>
+		<where>
+			wk.HANDOVERBILLNO in 
+ 			<foreach 
+				collection="list" open="(" close=")" item="item" separator="," index="index"> 
+				#{item.billNo} 
+			</foreach>
+			and wk.HANDOVERTYPE='AIR_TRANS_HANDOVER'
+			and wk.HANDOVERSTATE not in ('HAVE_STOCK','ASSINGED','HAVE_CANCEL')
+		</where>
+	</select>
+	
+	<!-- 新增前查询零担电子面单单据状态 3222610-->
+	<select id="queryElecTransportBillState" parameterType="HashMap" resultMap="arriveBillResultMap">
+				<![CDATA[
+			select w.HANDOVER_NO as billNo,w.ASSIGN_STATE as assignState,w.HANDOVER_TYPE as billType 
+        			from tfr.t_opt_pick_handover w
+		]]>
+		<where>
+			w.HANDOVER_NO in 
+ 			<foreach 
+				collection="list" open="(" close=")" item="item" separator="," index="index"> 
+				#{item.billNo} 
+			</foreach>
+		</where>
+	</select>
+	
+	   <!-- 查询是否是已分配过的卸车任务，用于判断是否二次分配 duhao-276198-20151024 -->	
+   <select id="isExistAllotedUnload" parameterType="String" resultType="java.lang.Integer" >
+   		select count(1) from tfr.t_opt_unload_assign_task w where w.bill_no=#{billNo}
+   </select>
+	
+</mapper>

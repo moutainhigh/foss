@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.partialline.dpjzSignInMsgMapper" >
+	<!--运单信息查询结果集-->
+	<resultMap id="DpjzSignInMsgResultMap" type="com.deppon.foss.module.transfer.partialline.api.shared.dto.DpjzSignInDetailDto" >
+		<id column="ID" property="id" jdbcType="VARCHAR" /> 
+		<result column="DOP_ID"  property="dopId"  jdbcType="VARCHAR" />    
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="TRANS_CARGO_NAME" property="transcargoName" jdbcType="VARCHAR" />
+		<result column="REAL_INSTALL_INFO" property="realInstallInfo" jdbcType="VARCHAR" />
+		<result column="FEED_BACK_TIME" property="feedBackTime" jdbcType="TIMESTAMP" />
+		<result column="SIGN_IN_MSG" property="signInMsg" jdbcType="VARCHAR" />
+		<result column="SUPP_NAME" property="suppName" jdbcType="VARCHAR" />
+		<result column="SUPP_CODE" property="suppCode" jdbcType="VARCHAR" />
+		<result column="STATUS" property="status" jdbcType="VARCHAR" />
+		<result column="CHECK_OPINION" property="checkOpinion" jdbcType="VARCHAR" />
+		<result column="LAST_OPER_TIME" property="lastOperTime" jdbcType="TIMESTAMP" />
+		<result column="CREATE_TIME"  property="createTime"  jdbcType="TIMESTAMP" />
+		<result column="LAST_OPER_USER_NAME" property="lastOperUser" jdbcType="VARCHAR" />
+		<result column="LAST_OPER_USER_CODE" property="lastOperUserCode" jdbcType="VARCHAR" />
+		<result column="receive_org_code"  property="receiveOrgCode"  jdbcType="VARCHAR" />
+		<result column="receive_org_name"  property="receiveOrgName"  jdbcType="VARCHAR" />
+		
+    
+	</resultMap>
+  
+	<!-- 按照条件查询家装送装明细及签收确认信息list -->
+	<select id="querydpjzSignInDetailBills" resultMap="DpjzSignInMsgResultMap" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.DpjzSignInDetailDto" >
+     select
+     	dpjz.ID 					AS  id,
+     	dpjz.DOP_ID                 AS  dopId,           /**DOP推送唯一id**/  
+     	dpjz.WAYBILL_NO 			AS  waybillNo, 		 /**运单号**/
+     	dpjz.TRANS_CARGO_NAME		AS  transcargoName,	 /**德邦开单安装明细**/
+     	dpjz.REAL_INSTALL_INFO		AS  realInstallInfo, /**供应商送装明细**/
+     	dpjz.FEED_BACK_TIME			AS  feedBackTime,	 /**供应商反馈时间**/
+     	dpjz.SIGN_IN_MSG			AS  signInMsg,		/**供应商签收信息**/
+     	dpjz.STATUS					AS  status,			/**操作状态**/
+     	dpjz.LAST_OPER_TIME			AS  lastOperTime,	/**最后操作时间**/
+     	dpjz.LAST_OPER_USER_NAME	AS  lastOperUser,	/**最后操作人**/
+     	dpjz.CREATE_TIME            AS  createTime      /**创建时间**/  
+	 from TFR.T_OPT_DPJZ_SIGNIN_MSG dpjz
+	 left join pkp.t_srv_waybill  W
+  		 on W.waybill_no=dpjz.waybill_no
+   		 and W.active='Y'
+	<where >
+			<if test="waybillNo!=null and waybillNo!=''">
+				dpjz.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+			</if>
+			<if test="startEndTimeFrom!=null and startEndTimeFrom!=''">
+			<![CDATA[ and dpjz.CREATE_TIME > to_date(#{startEndTimeFrom,jdbcType=VARCHAR}, 'YYYY-MM-DD HH24:MI:SS')]]>  
+			</if>
+			<if test="startEndTimeTo!=null and startEndTimeTo!=''">
+			<![CDATA[ and dpjz.CREATE_TIME < to_date(#{startEndTimeTo,jdbcType=VARCHAR}, 'YYYY-MM-DD HH24:MI:SS') ]]>  
+			</if>
+				and dpjz.active='Y'	
+				and W.RECEIVE_ORG_CODE = #{currentOrg,jdbcType=VARCHAR}
+		</where>
+     order by dpjz.CREATE_TIME DESC
+	</select>
+  
+	<!-- 根据条件统计符合条件的落地配外发单条数 -->
+	<select id="querydpjzSignInDetailBillsCount" resultType="Long"	parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.DpjzSignInDetailDto">
+		<![CDATA[
+			select
+	     		count(*)
+			from TFR.T_OPT_DPJZ_SIGNIN_MSG dpjz
+			left join pkp.t_srv_waybill  W
+  		 		on W.waybill_no=dpjz.waybill_no
+   				and W.active='Y'
+		]]>
+		<where >
+			<if test="waybillNo!=null and waybillNo!=''">
+				dpjz.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+			</if>
+			<if test="startEndTimeFrom!=null and startEndTimeFrom!=''">
+			<![CDATA[ and dpjz.CREATE_TIME > to_date(#{startEndTimeFrom,jdbcType=VARCHAR}, 'YYYY-MM-DD HH24:MI:SS')]]>  
+			</if>
+			<if test="startEndTimeTo!=null and startEndTimeTo!=''">
+			<![CDATA[ and dpjz.CREATE_TIME < to_date(#{startEndTimeTo,jdbcType=VARCHAR}, 'YYYY-MM-DD HH24:MI:SS') ]]>  
+			</if>
+			and dpjz.active='Y'
+			and W.RECEIVE_ORG_CODE = #{currentOrg,jdbcType=VARCHAR}
+		</where>
+
+	</select>
+
+	<!-- 保存德邦家装送装信息以及签收确认 -->
+	<insert id="insert" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.DpjzSignInDetailDto" >
+    insert into TFR.T_OPT_DPJZ_SIGNIN_MSG (
+    	 	ID, 
+    	 	WAYBILL_NO,
+    	 	DOP_ID,
+    	 	TRANS_CARGO_NAME,
+    	 	REAL_INSTALL_INFO,
+    	 	FEED_BACK_TIME,
+    	 	SIGN_IN_MSG,
+		 	SUPP_NAME,
+		 	SUPP_CODE,
+		 	STATUS, 
+		 	CHECK_OPINION,
+		 	LAST_OPER_TIME,
+		 	LAST_OPER_USER_NAME,
+			LAST_OPER_USER_CODE,
+			CREATE_TIME,
+			ACTIVE
+			)
+    values (#{id,jdbcType=VARCHAR}, 
+    		#{waybillNo,jdbcType=VARCHAR},
+    		#{dopId,jdbcType=VARCHAR},
+    		#{transcargoName,jdbcType=VARCHAR},
+    		#{realInstallInfo,jdbcType=VARCHAR},
+    		#{feedBackTime,jdbcType=VARCHAR},
+    		#{signInMsg,jdbcType=VARCHAR}, 
+    	    #{suppName,jdbcType=VARCHAR},
+    	    #{suppCode,jdbcType=VARCHAR},
+    	    #{status,jdbcType=VARCHAR}, 
+    		#{checkOpinion,jdbcType=VARCHAR},
+    		#{lastOperTime,jdbcType=VARCHAR},
+    		#{lastOperUser,jdbcType=VARCHAR},
+      	    #{lastOperUserCode,jdbcType=VARCHAR},
+      	    SYSDATE,
+      	    'Y')
+	</insert>	
+	
+	<!--更新德邦家装送装信息以及签收确认-核对意见-->
+	<update id = 'dpjzSignInDetialCheck' parameterType="com.deppon.foss.module.transfer.partialline.api.shared.domain.DpjzSignInDetialBillEntity" >
+		update TFR.T_OPT_DPJZ_SIGNIN_MSG set 
+			CHECK_OPINION=#{checkOpinion,jdbcType=VARCHAR},
+			LAST_OPER_USER_CODE =#{lastOperUserCode,jdbcType=VARCHAR},
+			LAST_OPER_USER_NAME=#{lastOperUser,jdbcType=VARCHAR},
+			STATUS=#{status,jdbcType=VARCHAR},
+			LAST_OPER_TIME = #{lastOperTime,jdbcType=TIMESTAMP}
+		where WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+			and ID = #{id,jdbcType=VARCHAR}
+	</update>
+	
+	<!-- 更新德邦家装送装信息以及签收确认-数据有效性 -->
+	<update id="updateDpjzSignInStatus" parameterType="java.util.Map">
+		update TFR.T_OPT_DPJZ_SIGNIN_MSG dp 
+		set dp.active = #{active,jdbcType=VARCHAR}
+		where dp.id = #{id,jdbcType=VARCHAR}
+	</update>
+	
+	
+	<!--条件查询 该运单DOP是否已经推送到foss-->
+	<select id="queryWayBillNoIsExist" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.domain.DpjzSignInDetialBillEntity" resultMap="DpjzSignInMsgResultMap">
+		select 
+		   	dpjz.ID 					AS  id,
+     		dpjz.DOP_ID                 AS  dopId,           /**DOP推送唯一id**/  
+	     	dpjz.WAYBILL_NO 			AS  waybillNo, 		 /**运单号**/
+	     	dpjz.CHECK_OPINION		    AS  checkOpinion,	 /**审核信息**/
+	     	dpjz.STATUS					AS  status			/**操作状态**/
+		from 
+		TFR.T_OPT_DPJZ_SIGNIN_MSG dpjz
+		left join pkp.t_srv_waybill  W
+  		 		on W.WAYBILL_NO=dpjz.WAYBILL_NO
+   				and W.active='Y'
+		<where>
+			dpjz.WAYBILL_NO= #{waybillNo,jdbcType=VARCHAR}
+			and dpjz.active='Y'
+		</where>			
+	</select>
+	<!--条件查询所有需要处理的运单数据-->
+	<select id="queryDpjzSignInMsgWaybill" parameterType="HashMap" resultMap="DpjzSignInMsgResultMap">
+		select 
+	     	dpjz.WAYBILL_NO 			AS  waybillNo, 		 /**运单号**/
+	     	dpjz.CHECK_OPINION		    AS  checkOpinion,	 /**审核信息**/
+	     	dpjz.STATUS					AS  status,			/**操作状态**/
+	     	dpjz.LAST_OPER_TIME			AS  lastOperTime,	/**最后操作时间**/
+	     	dpjz.LAST_OPER_USER_NAME	AS  lastOperUser,	/**最后操作人**/
+	     	dpjz.CREATE_TIME            AS  createTime,      /**创建时间**/ 
+	     	W.RECEIVE_ORG_CODE			AS receiveOrgCode,   /**收货部门code**/
+	     	W.receive_org_name			AS receiveOrgName   /**收货部门name**/
+		from 
+		TFR.T_OPT_DPJZ_SIGNIN_MSG dpjz
+		left join pkp.t_srv_waybill  W
+  		 		on W.waybill_no=dpjz.waybill_no
+   				and W.active='Y'
+		<where>
+			<!--未审核并且在有效的时间内，是有效的数据才可以被自动审核-->
+			dpjz.active='Y'
+			and dpjz.status='UNCOMMITTED'
+			<![CDATA[ and dpjz.CREATE_TIME <= to_date(to_char(sysdate-(#{dopCheckHourRule,jdbcType=INTEGER}/24),'YYYY-MM-DD HH24:MI:SS'), 'YYYY-MM-DD HH24:MI:SS')]]>  
+		</where>			
+	</select>
+	
+	<!-- 自动审核 德邦家装送装信息以及签收确认 -->
+	<update id="updateDpjzSignInMsgWaybill" parameterType="java.util.Map">
+		update TFR.T_OPT_DPJZ_SIGNIN_MSG dp set
+		    CHECK_OPINION=#{checkOpinion,jdbcType=VARCHAR},
+			LAST_OPER_USER_CODE =#{lastOperUserCode,jdbcType=VARCHAR},
+			LAST_OPER_USER_NAME=#{lastOperUser,jdbcType=VARCHAR},
+			STATUS=#{status,jdbcType=VARCHAR},
+			LAST_OPER_TIME = sysdate
+		where waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		and active='Y'
+	</update>
+	<!--根据运单号查询收货部门信息-->
+	<select id="queryDpjzReceiveMsgWaybill" parameterType="HashMap" resultMap="DpjzSignInMsgResultMap">
+		select   
+			w.RECEIVE_ORG_CODE			AS receiveOrgCode,   /**收货部门code**/
+	     	w.receive_org_name			AS receiveOrgName   /**收货部门name**/
+		from pkp.t_srv_waybill w
+		<where>
+			w.active='Y'
+			and w.waybill_no=#{waybillNo,jdbcType=VARCHAR}
+		</where>			
+	</select>
+
+</mapper>

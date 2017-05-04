@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-common.InstationJobMsgDao" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.base.common.api.shared.domain.InstationJobMsgEntity" >
+    <id column="ID"  property="id"/>
+    <result column="SENDER_CODE" property="senderCode" jdbcType="VARCHAR" />
+    <result column="SENDER_USER_NAME" property="senderName" jdbcType="VARCHAR" />
+    <result column="SENDER_ORG_CODE" property="senderOrgCode" jdbcType="VARCHAR" />
+    <result column="SENDER_ORG_NAME" property="senderOrgName" jdbcType="VARCHAR" />
+    <result column="RECEVIE_ORG_CODE" property="receiveOrgCode" jdbcType="VARCHAR" />
+    <result column="RECEIVE_ORG_NAME" property="receiveOrgName" jdbcType="VARCHAR" />
+    <result column="RECEIVE_ROLE_CODE" property="receiveRoleCode" jdbcType="VARCHAR" />
+    <result column="RECEIVE_TYPE" property="receiveType" jdbcType="VARCHAR" />
+    <result column="CONTEXT" property="context" jdbcType="VARCHAR" />
+    <result column="MSG_TYPE" property="msgType" jdbcType="VARCHAR" />
+    <result column="POST_DATE" property="postDate" jdbcType="TIMESTAMP" />
+    <result column="EXPIRE_TIME" property="expireTime" jdbcType="TIMESTAMP" />
+    <result column="STATUS" property="status" jdbcType="VARCHAR" />
+  </resultMap>
+
+<!-- 查询字段 -->
+	<sql id="select_param">
+		ID,
+		SENDER_CODE, 
+		SENDER_USER_NAME,
+		SENDER_ORG_CODE,
+		SENDER_ORG_NAME, 
+		RECEVIE_ORG_CODE, 
+		RECEIVE_ORG_NAME, 
+		RECEIVE_ROLE_CODE, 
+		RECEIVE_TYPE, 
+		CONTEXT, 
+		MSG_TYPE, 
+	    EXPIRE_TIME,
+	   	POST_DATE, 
+	   	STATUS 
+	</sql>
+	<!-- 根据状态查询未分发的消息数据  -->
+	<select id="queryInstationJobMsgByStatus" resultMap="BaseResultMap" parameterType="java.lang.String">
+			SELECT 
+			/** 综合:根据状态查询未分发的消息数据 **/
+		<include refid="select_param" />
+			FROM BSE.T_BAS_INSTATION_JOB_MSG T WHERE T.STATUS = #{status,jdbcType=VARCHAR} 
+	</select>
+	<!-- 保存人对组织发的消息数据 -->
+	<insert id="insertInstationJobMsg" parameterType="com.deppon.foss.module.base.common.api.shared.domain.InstationJobMsgEntity" >
+	    INSERT/** 综合:保存人对组织发的消息数据 **/ INTO BSE.T_BAS_INSTATION_JOB_MSG
+	    (
+	    	ID,
+			SENDER_CODE, 
+			SENDER_USER_NAME,
+			SENDER_ORG_CODE,
+			SENDER_ORG_NAME, 
+			RECEVIE_ORG_CODE, 
+			RECEIVE_ORG_NAME, 
+			RECEIVE_ROLE_CODE, 
+			RECEIVE_TYPE, 
+			CONTEXT, 
+			MSG_TYPE, 
+		    EXPIRE_TIME,
+		   	POST_DATE, 
+		   	STATUS 
+	    )
+	    VALUES
+	    ( 
+	   		#{id,jdbcType=VARCHAR}, 
+	   		#{senderCode,jdbcType=VARCHAR}, 
+	   		#{senderName,jdbcType=VARCHAR}, 
+	   		#{senderOrgCode,jdbcType=VARCHAR}, 
+	   		#{senderOrgName,jdbcType=VARCHAR}, 
+	   		#{receiveOrgCode,jdbcType=VARCHAR}, 
+	   		#{receiveOrgName,jdbcType=VARCHAR},
+	      	#{receiveRoleCode,jdbcType=VARCHAR}, 
+	      	#{receiveType,jdbcType=VARCHAR},
+	   		#{context,jdbcType=VARCHAR}, 
+	   		#{msgType,jdbcType=VARCHAR}, 
+	      	#{expireTime,jdbcType=TIMESTAMP}, 
+	      	#{postDate,jdbcType=TIMESTAMP}, 
+	      	#{status,jdbcType=VARCHAR}
+	     )
+	 </insert>
+	 <!-- 更新人对组织发的消息数据状态-->
+  	 <update id="updateInstationJobMsgStatusById" parameterType="java.util.Map">
+		UPDATE/** 综合:更新人对组织发的消息数据状态 **/ BSE.T_BAS_INSTATION_JOB_MSG T
+		SET
+			   T.STATUS =  #{status}
+		WHERE  T.ID=#{id} 
+  	</update>
+</mapper>

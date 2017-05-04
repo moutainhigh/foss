@@ -1,0 +1,734 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE struts PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN" "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="writeoff-default"  extends="foss-default">
+		<interceptors>
+			<interceptor name="myinterceptor" class="com.deppon.foss.module.settlement.common.server.interceptors.StlBampExceptionInterceptor"></interceptor>
+				<interceptor-stack name="writeoffStack">
+					<interceptor-ref name="fossStack" />
+					<interceptor-ref name="myinterceptor" />
+				</interceptor-stack>
+			</interceptors>
+		<default-interceptor-ref name="writeoffStack" />
+	</package>
+	<package name="writeoff" namespace="/writeoff"
+		extends="foss-default">
+		<!-- 制作对账单首页-->
+        <action name="statementAdd">
+			<result name="success">statementAdd.jsp</result>
+	    </action>
+	    <!-- 制作对账单首页GUI-->
+        <action name="statementAdd_include">
+			<result name="success">statementAdd_include.jsp</result>
+	    </action>
+	    <!-- 修改对账单首页-->
+        <action name="statementEdit">
+			<result name="success">statementEdit.jsp</result>
+	    </action>
+	    <!-- 修改对账单首页GUI-->
+        <action name="statementEdit_include">
+			<result name="success">statementEdit_include.jsp</result>
+	    </action>
+	    <!-- 制作对账单查询 -->
+	    <action name="queryForStatementMake" class="statementMakeAction" method="queryForStatementMake">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <!-- 保存对账单 -->
+	    <action name="addStatement" class="statementMakeAction" method="addStatement">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <!-- 确认、分确认对账单 -->
+	    <action name="confirmStatement" class="statementModifyAction" method="confirmStatement">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+      	<!-- 删除对账单明细 -->
+	    <action name="deleteStatementEntry" class="statementModifyAction" method="deleteStatementEntry">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <!-- 查询对账单 -->
+	    <action name="queryStatement" class="statementModifyAction" method="queryStatement">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	     <!-- 查询对账单明细 -->
+	    <action name="queryStatementDetailByNumber" class="statementModifyAction" method="queryStatementDetailByNumber">
+	    	<result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <!-- 添加对账单明细 -->
+	    <action name="addStatementDetail" class="statementModifyAction" method="addStatementDetail">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <!-- 查询数据添加到对账单中-->
+	    <action name="queryStatementForAdd" class="statementModifyAction" method="queryStatementForAdd">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <!-- 还款/批量还款-->
+	     <action name="repayment" class="statementModifyAction" method="repayment">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <!-- 批量核销 -->
+	    <action name="batchWriteoffStatement" class="statementModifyAction" method="batchWriteoffStatement">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+    	<!-- 导出对账单 -->
+	   <action name="exportStatement" class="statementModifyAction" method="exportStatement">
+	        <result name="success" type="stream">
+                <param name="contentType">application/pdf;charset=UTF-8</param>
+                <param name="inputName">pdfStream</param>
+                <param name="contentDisposition">attachment;filename="${fileName}.pdf"</param>
+               <param name="bufferSize">1024</param>
+            </result>
+	    </action>
+		 
+		<!-- 导出对账单 -->
+	   <action name="exportStatementDetail" class="statementModifyAction" method="exportStatementDetail">
+	        <result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel</param>
+                <param name="contentDisposition">attachment;filename="${excelName}.xls"</param>
+                <param name="inputName">inputStream</param>
+                <param name="bufferSize">1024</param>
+    		</result>
+	    </action>   
+	    <!-- foss-pengzhen 20121018 -->
+	    <!-- 空运预付冲应付界面 -->
+	    <action name="airPaymentPayable">
+			<result name="success">airPaymentPayable.jsp</result>
+	    </action>
+	    <!-- 空运预付冲应付的查询 -->
+	    <action name="queryPaymentPayableNos" class="advPayWriteoffBillPayAction" method="queryPaymentPayableNos">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+	    </action>
+	    <action name="queryPaymentPayableParams" class="advPayWriteoffBillPayAction" method="queryPaymentPayableParams">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+	    </action>
+	    <!-- 空运预付冲应付核销 -->
+	    <action name="writeoffAdvancedAndPayable" class="advPayWriteoffBillPayAction" method="writeoffAdvancedAndPayable">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+	    </action>
+	     <action name="advancedListExport" class="advPayWriteoffBillPayAction" method="advancedListExport">
+	    	 <result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel</param>
+                <param name="contentDisposition">attachment;filename="${fileName}.xls"</param>
+                <param name="inputName">inputStream</param>
+                <param name="bufferSize">1024</param>
+    		</result>
+    		<result name="error" type="json">
+    		</result>
+	    </action> 
+	     <action name="payableListExport" class="advPayWriteoffBillPayAction" method="payableListExport">
+	    	 <result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel</param>
+                <param name="contentDisposition">attachment;filename="${fileName}.xls"</param>
+                <param name="inputName">inputStream</param>
+                <param name="bufferSize">1024</param>
+    		</result>
+    		<result name="error" type="json">
+    		</result>
+	    </action> 
+	    
+		<!-- 应收冲应付管理界面    dp-liqin  2012-10-12 -->
+        <action name="recWriteOffPayble">
+			<result name="success">receivableWriteOffPayble.jsp</result>
+	    </action>
+	    <!-- 应收冲应付管理界面    GUI -->
+        <action name="recWriteOffPayble_include">
+			<result name="success">receivableWriteOffPayble_include.jsp</result>
+	    </action>
+
+	    <!--查询应收单应付单清单  查询应收应付界面-->
+	    <action name="queryForBillReceivableAndBillPayable" class="billRecWriteoffBillPayAction" method="queryForBillReceivableAndBillPayable">
+	    	 <result name="success" type="json"></result>
+	    	 <result name="error" type="json"></result>
+	    </action>
+	    <!-- 按照单号查询 应收单，应付单清单 -->
+	     <action name="queryBillReceivableAndBillPayableForNumbers" class="billRecWriteoffBillPayAction" method="queryBillReceivableOrBillPayableOrWaybillForNumbers">
+	    	 <result name="success" type="json"></result>
+	    	 <result name="error" type="json"></result>
+	    </action>
+	    <!-- 应收冲应付核销 -->
+	     <action name="writeoffBillReceivableAndBillPayable" class="billRecWriteoffBillPayAction" method="writeoffBillReceivableAndBillPayable">
+	    	 <result name="success" type="json"></result>
+	    	 <result name="error" type="json"></result>
+	    </action>
+	    
+	    <!-- 应付冲应收单导出应收单 liqin 2012-12-27 -->
+		<action name="exportWriteoffBillRec" class="billRecWriteoffBillPayAction" method="exportWriteoffBillRec">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel</param>
+                <param name="contentDisposition">attachment;filename="${fileName}.xls"</param>
+                <param name="inputName">inputStream</param>
+                <param name="bufferSize">1024</param>
+    		</result>
+    		<result name="error" type="json"></result>
+		</action> 
+		
+		 <!-- 应付冲应收单导出应付单 liqin 2012-12-27 -->
+		<action name="exportWriteoffBillPay" class="com.deppon.foss.module.settlement.writeoff.server.action.BillRecWriteoffBillPayAction" method="exportWriteoffBillPay">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel</param>
+                <param name="contentDisposition">attachment;filename="${fileName}.xls"</param>
+                <param name="inputName">inputStream</param>
+                <param name="bufferSize">1024</param>
+    		</result>
+    		<result name="error" type="json"></result>
+		</action> 
+
+	    <!-- 预收冲应收 foss-qiaolifeng 2012-10-16 -->
+	    <!-- 预收冲应收首页 -->
+        <action name="billDepWriteOffBillRec">
+			<result name="success">billDepWriteOffBillRec.jsp</result>
+	    </action>
+	    
+	     <action name="billDepWriteOffBillRec_include">
+			<result name="success">billDepWriteOffBillRec_include.jsp</result>
+	    </action>
+	    
+	    <!-- 查询预收冲应收的预收单、应收单-->
+        <action name="queryBillDep" class="billDepWriteoffBillRecAction" method="queryBillDep">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+	    </action>
+	     <action name="queryBillRec" class="billDepWriteoffBillRecAction" method="queryBillRec">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+	    </action>
+	    <action name="writeoffBillDepAndBillRecByAccounting" class="billDepWriteoffBillRecAction" method="writeoffBillDepAndBillRecByAccounting">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+	    </action>
+	    <action name="writeoffBillDepAndBillRecByCashier" class="billDepWriteoffBillRecAction" method="writeoffBillDepAndBillRecByCashier">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+	    </action>
+	    
+	     <!-- 反核消 foss-qiaolifeng-->
+	    <!-- 反核销首页 -->
+        <action name="reverseWriteOff">
+			<result name="success">reverseWriteoff.jsp</result>
+	    </action>
+	    <!-- 反核销首页 GUI-->
+        <action name="reverseWriteOff_include">
+			<result name="success">reverseWriteoff_include.jsp</result>
+	    </action>
+	    <!-- 查询核销单 -->
+	    <action name="queryBillWriteoffEntityListByParams" class="reverseBillWriteoffAction" method="queryBillWriteoffEntityListByParams">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+	    </action>
+	    <!-- 反核销 -->
+	    <action name="reverseBillWriteoff" class="reverseBillWriteoffAction" method="reverseBillWriteoff">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+	    </action>
+	    <!-- 导出核销单 -->
+	    <action name="exportReverseWriteoffBill" class="reverseBillWriteoffAction" method="exportReverseWriteoffBill">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel</param>
+                <param name="contentDisposition">attachment;filename="${execlName}.xls"</param>
+                <param name="inputName">inputStream</param>
+                <param name="bufferSize">1024</param>
+    		</result>
+		</action> 
+
+
+
+
+	   <!-- 查询-核销-反核销更改单 dp  liqin  2012-10-26 -->
+	    <action name="modifyBillWriteoffReverse">
+			<result name="success">modifyBillWriteoffReverse.jsp</result>
+	    </action>
+	    
+	    <!--查询待核销的更改单清单，显示到界面 dp liqin 2012 11-01 -->
+	    <action name="queryModifyBill" class="modifyBillWriteoffAction" method="queryModifyBill">
+	    	 <result name="success" type="json"></result>
+	    	 <result name="error" type="json"></result>
+	    </action>
+	    <!-- 核销更改单  核销通过、核销不通过  dp liqin 2012 11-01-->
+	     <action name="writeoffModifyBill" class="modifyBillWriteoffAction" method="writeoffModifyBill">
+	    	 <result name="success" type="json"></result>
+	    	 <result name="error" type="json"></result>
+	    </action>
+		<!-- 反核销更改单 lq-->
+	     <action name="reverseModifyBill" class="modifyBillWriteoffAction" method="reverseModifyBill">
+	    	 <result name="success" type="json"></result>
+	    	 <result name="error" type="json"></result>
+	    </action>
+	    
+	    <!-- 导出更改单dp lq 2012-12-21-->
+	    <action name="exportBillWillbayChange" class="modifyBillWriteoffAction" method="exportBillWillbayChange">
+	    	<result name="success" type="stream">
+	               <param name="contentType">application/zip</param>
+	               <param name="contentDisposition">attachment;filename="${fileName}.zip"</param>
+	               <param name="inputName">stream</param>
+	               <param name="bufferSize">1024</param>
+	   		</result>
+	    </action>
+	    
+	    
+	    <!-- 进入对账单回执信息界面 -->
+	    <action name="addStatementConfReceipt" class="statementReceiptAction" method="addStatementConfReceipt">
+	    	 <result name="success" type="json"></result>
+	    	 <result name="error" type="json"></result>
+	    </action>
+	     <!-- 查询最新打印的对账单回执 -->
+	    <action name="queryStatementReceipt" class="statementReceiptAction" method="queryStatementReceipt">
+	    	 <result name="success" type="json"></result>
+	    	 <result name="error" type="json"></result>
+	    </action>
+	     <!-- 保存对账单回执 -->
+	    <action name="printStatementReceipt" class="statementReceiptAction" method="printStatementReceipt">
+	    	 <result name="success" type="json"></result>
+	    	 <result name="error" type="json"></result>
+	    </action>
+	    
+	    <action name="exportStatementXLS" class="statementModifyAction" method="exportStatementXLS">
+	        <result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel</param>
+                <param name="contentDisposition">attachment;filename="${excelName}.xls"</param>
+                <param name="inputName">inputStream</param>
+                <param name="bufferSize">1024</param>
+    		</result>
+	    </action>
+	    
+	    <action name="customersNotReconciled">
+			<result name="success">customersNotReconciled.jsp</result>
+	    </action>
+	    <action name="queryCustomersNotReconciled" class="customersNotReconciledAction" method="queryCustomersNotReconciled">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <action name="exportXLS" class="customersNotReconciledAction" method="exportXLS">
+	        <result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel</param>
+                <param name="contentDisposition">attachment;filename="${excelName}.xls"</param>
+                <param name="inputName">inputStream</param>
+                <param name="bufferSize">1024</param>
+    		</result>
+	    </action>
+	    <action name="applyStatement" class="statementModifyAction" method="applyStatement">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    
+	    <action name="woodenStatementAdd">
+			<result name="success">woodenStatementAdd.jsp</result>
+	    </action>
+	    
+	    <!-- 查询代打木架详细 -->
+	    <action name="queryWoodenStatementD" class="woodenStatementAction" method="queryWoodenStatementD">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <!-- 生成对账单 -->
+	    <action name="woodenStatementSave" class="woodenStatementAction" method="woodenStatementSave">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <action name="woodenStatementEdit">
+			<result name="success">woodenStatementEdit.jsp</result>
+	    </action>
+	    <action name="queryWoodenStatement" class="woodenStatementAction" method="queryWoodenStatement">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <action name="queryWoodenDByStatementBillNo" class="woodenStatementAction" method="queryWoodenDByStatementBillNo">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <action name="confirmWoodenStatement" class="woodenStatementAction" method="confirmWoodenStatement">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <action name="addWoodenStatementD" class="woodenStatementAction" method="addWoodenStatementD">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <action name="queryAddWoodenStatementD" class="woodenStatementAction" method="queryAddWoodenStatementD">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <action name="delWoodenStatementD" class="woodenStatementAction" method="delWoodenStatementD">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <action name="queryDelWoodenStatementD" class="woodenStatementAction" method="queryDelWoodenStatementD">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <action name="woodenExportXLS" class="woodenStatementAction" method="woodenExportXLS">
+	        <result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel</param>
+                <param name="contentDisposition">attachment;filename="${excelName}.xls"</param>
+                <param name="inputName">inputStream</param>
+                <param name="bufferSize">1024</param>
+    		</result>
+	    </action>
+	    <!--家装对账单管理-->
+	    <action name="homeStatements" class="homeStatementsAction">
+			<result name="success">homeStatements.jsp</result>
+			<result name="error" type="json"></result>
+	    </action>
+	    <!-- 查询家装对账单 -->
+	    <action name="queryHome" class="homeStatementsAction" method="queryHome">
+			<result name="success" type="json"/>
+			<result name="error" type="json" />
+		</action>
+		<!-- 双击对账单记录查看明细，按对账单单号查询 -->
+		<action name="queryHomeStatementBillNo" class="homeStatementsAction" method="queryHomeStatementBillNo">
+			<result name="success" type="json"/>
+			<result name="error" type="json" />
+		</action>
+		<!-- 家装对账单添加明细查询应收应付单 -->
+		<action name="queryAddHomeByNo" class="homeStatementsAction" method="queryAddHomeByNo">
+			<result name="success" type="json"/>
+			<result name="error" type="json" />
+		</action>
+		<!-- 家装对账单添加明细 -->
+		<action name="addHomeStatement" class="homeStatementsAction" method="addHomeStatement">
+			<result name="success" type="json"/>
+			<result name="error" type="json" />
+		</action>
+		<!-- 家装对账单删除明细查询应收应付单 -->
+		<action name="queryDelHomeByNo" class="homeStatementsAction" method="queryDelHomeByNo">
+			<result name="success" type="json"/>
+			<result name="error" type="json" />
+		</action>
+		<!-- 家装对账单删除明细 -->
+		<action name="delHomeStatement" class="homeStatementsAction" method="delHomeStatement">
+			<result name="success" type="json"/>
+			<result name="error" type="json" />
+		</action>
+		<!-- 确认代打木架对账单 -->
+		<action name="confirmHomeStatement" class="homeStatementsAction" method="confirmWoodenStatement">
+			<result name="success" type="json"/>
+			<result name="error" type="json" />
+		</action>
+		<!-- 家装对账单导出对账单明细 -->
+		<action name="homeExportXLS" class="homeStatementsAction" method="homeExportXLS">
+	        <result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel</param>
+                <param name="contentDisposition">attachment;filename="${excelName}.xls"</param>
+                <param name="inputName">inputStream</param>
+                <param name="bufferSize">1024</param>
+    		</result>
+	    </action>
+	    
+	    <!-- 家装对账单 新增-->
+	    <action name="homeStatementAdd">
+			<result name="success">homeStatementAdd.jsp</result>
+	    </action>
+	    
+	    <!-- 查询家装对账单详细 -->
+	    <action name="queryHomeStatementD" class="homeStatementAction" method="queryWoodenStatementD">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    
+	    <!-- 生成家装对账单 -->
+	    <action name="homeStatementSave" class="homeStatementAction" method="homeStatementSave">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    
+	    <!-- 大客户对账单页面 -->
+	    <action name="customerStatementAdd">
+			<result name="success">customerStatementAdd.jsp</result>
+	    </action>    
+	    <action name="queryCustomerStatementD" class="customerStatementAction" method="queryCustomerStatementD">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <action name="customerStatementSave" class="customerStatementAction" method="customerStatementSave">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>	    
+	    <action name="customerStatementEdit">
+			<result name="success">customerStatementEdit.jsp</result>
+	    </action>
+	    <action name="queryCustomerStatement" class="customerStatementAction" method="queryCustomerStatement">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <action name="queryCustomerDByStatementBillNo" class="customerStatementAction" method="queryCustomerDByStatementBillNo">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <action name="confirmOrUnConfirmStatement" class="customerStatementAction" method="confirmOrUnConfirmStatement">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <action name="queryAddCustomerStatementD" class="customerStatementAction" method="queryAddCustomerStatementD">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <action name="addCustomerStatementD" class="customerStatementAction" method="addCustomerStatementD">
+	    	<result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <action name="queryDelCustomerStatementD" class="customerStatementAction" method="queryDelCustomerStatementD">
+	    	<result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <action name="delCustomerStatementD" class="customerStatementAction" method="delCustomerStatementD">
+	    	<result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <action name="customerExportXLS" class="customerStatementAction" method="customerExportXLS">
+	        <result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel</param>
+                <param name="contentDisposition">attachment;filename="${excelName}.xls"</param>
+                <param name="inputName">inputStream</param>
+                <param name="bufferSize">1024</param>
+    		</result>
+	    </action>
+		<!--合伙人收款对账单 -->
+		<action name="receivableStatement">
+			<result name="success">receivableStatement.jsp</result>
+		</action>
+		<!--合伙人收款对账单新增 -->
+		<action name="receivableStatementAdd">
+			<result name="success">receivableStatementAdd.jsp</result>
+		</action>
+		<!-- 合伙人应收单查询-->
+		<action name="queryReceivableStatement" class="receivableStatementAction" method="queryReceivableStatement">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 合伙人对账单新增-->
+		<action name="addReceivableStatement" class="receivableStatementAction" method="addReceivableStatement">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 合伙人对账单查询-->
+		<action name="queryPartnerReceivalbeStatement" class="receivableStatementAction" method="queryPartnerReceivalbeStatement">
+		<result name="success" type="json"></result>
+		<result name="error" type="json"></result>
+		</action>
+		<!-- 合伙人对账单明细-->
+		<action name="queryReceivalbeStatementByBillNo" class="receivableStatementAction" method="queryReceivalbeStatementByBillNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 合伙人更新对账的状态-->
+		<action name="updateStatementByStatementStatus" class="receivableStatementAction" method="updateStatementByStatementStatus">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 删除合伙人对账单明细-->
+		<action name="deleteReceivableStatementById" class="receivableStatementAction" method="deleteReceivableStatementById">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 合伙人收款对账单还款-->
+		<action name="partnerRepayment" class="receivableStatementAction" method="partnerRepayment">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 对账单还款前的校验-->
+		<action name="repaymentBillofStatementNo" class="receivableStatementAction" method="repaymentBillofStatementNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 合伙人收款对账单明细新增-->
+		<action name="addReceivableStatementDetail" class="receivableStatementAction" method="addReceivableStatementDetail">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--导出合伙人收款对账单 -->
+		<action name="receivableStatemenExl" class="receivableStatementAction" method="receivableStatemenExl">
+			<result name="success" type="stream">
+				<param name="contentType">application/vnd.ms-excel</param>
+				<param name="contentDisposition">attachment;filename="${excelName}.xls"</param>
+				<param name="inputName">inputStream</param>
+				<param name="bufferSize">1024</param>
+			</result>
+		</action>
+
+		<!--导出合伙人收款对账单明细 -->
+		<action name="receivableStatemenDetailExl" class="receivableStatementAction" method="receivableStatemenDetailExl">
+			<result name="success" type="stream">
+				<param name="contentType">application/vnd.ms-excel</param>
+				<param name="contentDisposition">attachment;filename="${excelName}.xls"</param>
+				<param name="inputName">inputStream</param>
+				<param name="bufferSize">1024</param>
+			</result>
+		</action>
+	 <!-- add by Zhurongrong 2016-01-28 -->
+	    <!-- 合伙人奖罚对账单 -->
+	    <action name="partnerStatementOfAwardAdd">
+			<result name="success">partnerStatementOfAwardAdd.jsp</result>
+	    </action>
+	    <action name="queryPartnerStatementOfAwardD" class="partnerStatementOfAwardAction" method="queryPartnerStatementOfAwardD">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <action name="partnerStatementOfAwardSave" class="partnerStatementOfAwardAction" method="partnerStatementOfAwardSave">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    
+	    <!-- 合伙人奖罚对账单管理 -->
+	    <action name="partnerStatementOfAwardEdit">
+			<result name="success">partnerStatementOfAwardEdit.jsp</result>
+	    </action>
+	    <action name="queryPAwardStatement" class="partnerStatementOfAwardMAction" method="queryPAwardStatement">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>  
+	    <action name="queryPAwardStatementDetail" class="partnerStatementOfAwardMAction" method="queryPAwardStatementDetail">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <action name="updateStatusByStatementNo" class="partnerStatementOfAwardMAction" method="updateStatusByStatementNo">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <action name="delPAwardStatementD" class="partnerStatementOfAwardMAction" method="delPAwardStatementD">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <action name="addPAwardStatementD" class="partnerStatementOfAwardMAction" method="addPAwardStatementD">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    
+	    <!--导出合伙人奖罚对账单 -->
+		<action name="pAwardStatementToExcel" class="partnerStatementOfAwardMAction" method="pAwardStatementToExcel">
+			<result name="success" type="stream">
+				<param name="contentType">application/vnd.ms-excel</param>
+				<param name="contentDisposition">attachment;filename="${excelName}.xls"</param>
+				<param name="inputName">inputStream</param>
+				<param name="bufferSize">1024</param>
+			</result>
+		</action>
+		<!--导出合伙人合伙人对账单明细 -->
+		<action name="pAwardStatementDetailToExcel" class="partnerStatementOfAwardMAction" method="pAwardStatementDetailToExcel">
+			<result name="success" type="stream">
+				<param name="contentType">application/vnd.ms-excel</param>
+				<param name="contentDisposition">attachment;filename="${excelName}.xls"</param>
+				<param name="inputName">inputStream</param>
+				<param name="bufferSize">1024</param>
+			</result>
+		</action>
+	    
+
+	    <!-- 制作合伙人付款对账单首页-->
+        <action name="partnerPayStatementAdd">
+			<result name="success">partnerPayStatementAdd.jsp</result>
+	    </action>
+	    <!-- 制作合伙人付款对账单首页GUI-->
+        <action name="partnerPayStatementAdd_include">
+			<result name="success">partnerPayStatementAdd_include.jsp</result>
+	    </action>
+	    <!-- 制作合伙人付款对账单查询 -->
+	    <action name="queryForPartnerPayStatementMake" class="partnerPayStatementMakeAction" method="queryForPartnerPayStatementMake">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    <!-- 保存合伙人付款对账单 -->
+	    <action name="addPartnerPayStatement" class="partnerPayStatementMakeAction" method="addPartnerPayStatement">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	     <!-- 合伙人付款对账单管理首页-->
+        <action name="partnerPayStatementEdit">
+			<result name="success">partnerPayStatementEdit.jsp</result>
+	    </action>
+	    <!-- 合伙人付款对账单管理首页GUI-->
+        <action name="partnerPayStatementEdit_include">
+			<result name="success">partnerPayStatementEdit_include.jsp</result>
+	    </action>
+		<!-- 查询付款对账单 -->
+	    <action name="queryPayStatement" class="partnerPayStatementManagerAction" method="queryStatement">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>	
+	     <!-- 查询付款对账单明细 -->
+	    <action name="queryPayStatementDetailByNumber" class="partnerPayStatementManagerAction" method="queryStatementDetailByNumber">
+	    	<result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>    
+	    
+	     <!-- 付款-->
+	     <action name="toPayment" class="partnerPayStatementManagerAction" method="toPayment">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    
+   	    <!-- 确认、反确认对账单 -->
+	    <action name="partnerConfirmStatement" class="partnerPayStatementManagerAction" method="confirmStatement">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    
+	    <!-- 删除明细 -->
+	    <action name="deletePartnerStatementEntry" class="partnerPayStatementManagerAction" method="deleteStatementEntry">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    
+	    <!-- 批量删除明细 -->
+	    <action name="batchDeleteStatementEntry" class="partnerPayStatementManagerAction" method="batchDeleteStatementEntry">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    
+	     <!-- 查询可添加明细 -->
+	    <action name="queryEntryForAdd" class="partnerPayStatementManagerAction" method="queryEntryForAdd">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	       <!-- 付款对账单管理添加明细 -->
+	    <action name="addPartnerPayStatementDetail" class="partnerPayStatementManagerAction" method="addPartnerPayStatementDetail">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    
+	      <!-- 查询费用承担部门 -->
+	    <action name="getExpenseCenter" class="partnerPayStatementManagerAction" method="queryExpenseCenter">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    
+	    <!-- 导出付款对账单 -->
+	   <action name="partnerPayExportExl" class="partnerPayStatementManagerAction" method="partnerPayExportExl">
+   		  <result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel</param>
+                <param name="contentDisposition">attachment;filename="${excelName}.xls"</param>
+                <param name="inputName">inputStream</param>
+                <param name="bufferSize">1024</param>
+    		</result>
+	    </action>
+	    <!-- 导出付款对账单明细 -->
+	   <action name="partnerPayEntryExportExl" class="partnerPayStatementManagerAction" method="partnerPayEntryExportExl">
+   		  <result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel</param>
+                <param name="contentDisposition">attachment;filename="${excelName}.xls"</param>
+                <param name="inputName">inputStream</param>
+                <param name="bufferSize">1024</param>
+    		</result>
+	    </action>
+	    	<!-- 导出合伙人付款对账单pdf -->
+	   <action name="exportStatementPdf" class="partnerPayStatementManagerAction" method="exportStatementPdf">
+	        <result name="success" type="stream">
+                <param name="contentType">application/pdf;charset=UTF-8</param>
+                <param name="inputName">pdfStream</param>
+                <param name="contentDisposition">attachment;filename="${fileName}.pdf"</param>
+               <param name="bufferSize">1024</param>
+            </result>
+	    </action>
+	</package>
+</struts>

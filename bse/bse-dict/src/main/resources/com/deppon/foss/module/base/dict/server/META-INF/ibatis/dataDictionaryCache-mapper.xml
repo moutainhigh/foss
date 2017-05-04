@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- dataDictionary-mapper.xml -->
+<mapper namespace="foss.bse.bse-dict.dataDictionaryCache" >
+	<!-- 用于数据字典缓存的加载 -->
+	<resultMap id="dataDictionaryAndValueResultMap"
+		type="com.deppon.foss.module.base.dict.api.shared.domain.DataDictionaryEntity">
+		<result property="termsCode" column="DIC_TERMS_CODE" jdbcType="VARCHAR" />
+		<collection property="dataDictionaryValueEntityList"
+			column="DIC_TERMS_CODE"
+			ofType="com.deppon.foss.module.base.dict.api.shared.domain.DataDictionaryValueEntity">
+			<result property="id" column="DIC_ID" jdbcType="VARCHAR" />
+			<result property="virtualCode" column="DIC_VIRTUAL_CODE" jdbcType="VARCHAR" />
+			<result property="termsCode" column="DIC_TERMS_CODE" jdbcType="VARCHAR" />
+			<result property="valueSeq" column="DIC_VALUE_SEQ" jdbcType="VARCHAR" />
+			<result property="valueName" column="DIC_VALUE_NAME" jdbcType="VARCHAR" />
+			<result property="valueCode" column="DIC_VALUE_CODE" jdbcType="VARCHAR" />
+			<result property="language" column="DIC_LANGUAGE" jdbcType="VARCHAR" />
+			<result property="extAttribute1" column="DIC_EXTATTRIBUTE1" jdbcType="VARCHAR" />
+			<result property="extAttribute2" column="DIC_EXTATTRIBUTE2"  jdbcType="VARCHAR" />
+			<result property="noteInfo" column="DIC_NOTE_INFO"
+				jdbcType="VARCHAR" />
+		</collection>
+	</resultMap>
+	
+	<sql id="query_dataDictionaryAndValue_param">
+		DIC.ID AS DIC_ID,
+		DIC.VIRTUAL_CODE AS DIC_VIRTUAL_CODE,
+		DIC.TERMS_CODE AS DIC_TERMS_CODE,
+		DIC.VALUE_SEQ AS DIC_VALUE_SEQ,
+		DIC.VALUE_NAME AS DIC_VALUE_NAME,
+		DIC.VALUE_CODE AS DIC_VALUE_CODE,
+		DIC.LANGUAGE AS DIC_LANGUAGE,
+		DIC.EXTATTRIBUTE1 AS DIC_EXTATTRIBUTE1,
+		DIC.EXTATTRIBUTE2 AS DIC_EXTATTRIBUTE2,
+		DIC.NOTE_INFO AS DIC_NOTE_INFO
+	</sql>
+
+	<!-- 查询所有 数据字典键-值信息 -->
+	<select id="queryDataForCache"
+		parameterType="string"
+		resultMap="dataDictionaryAndValueResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有 数据字典键-值信息  **/
+		]]>
+		<include refid="query_dataDictionaryAndValue_param" />
+		<![CDATA[
+			FROM BSE.T_BAS_DATA_DICTIONARY_VALUE DIC
+		]]>
+		<where>
+			DIC.ACTIVE = #{active,jdbcType=CHAR}
+		</where>
+			ORDER BY DIC.VALUE_SEQ
+	</select>
+	
+	<select id="getLastModifyTime" resultType="Long">
+		<![CDATA[
+			SELECT MAX(VERSION_NO)
+			FROM BSE.T_BAS_DATA_DICTIONARY_VALUE
+		]]>
+	</select>
+	
+	<!-- ****** -->
+	<!-- 通过词条代码，加载数据字典缓存的数据 -->
+	<select id="queryDataForCacheByTermsCode"
+		parameterType="map"
+		resultMap="dataDictionaryAndValueResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:通过词条代码，加载数据字典缓存的数据  **/
+		]]>
+		<include refid="query_dataDictionaryAndValue_param" />
+		<![CDATA[
+			FROM BSE.T_BAS_DATA_DICTIONARY_VALUE DIC
+		]]>
+		<where>
+			<if test="termsCode != null and termsCode != ''">
+				DIC.TERMS_CODE = #{termsCode,jdbcType=CHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND DIC.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+			ORDER BY DIC.VALUE_SEQ
+	</select>
+	
+	<select id="getByLastModifyDate" parameterType="map"
+		resultMap="dataDictionaryAndValueResultMap">
+		<![CDATA[
+			SELECT
+		]]>
+		<include refid="query_dataDictionaryAndValue_param" />
+		<![CDATA[
+			FROM BSE.T_BAS_DATA_DICTIONARY_VALUE DIC
+		]]>
+		<where>
+			<if test="modifyDate != null">
+				AND DIC.CREATE_TIME > (#{modifyDate, jdbcType=TIMESTAMP} - 1/2800)
+			</if>
+			<if test="active != null and active != ''">
+				AND DIC.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+			ORDER BY DIC.VALUE_SEQ
+	</select>
+	<select id="queryDataForCacheByTermsCodes" parameterType="map"
+		resultMap="dataDictionaryAndValueResultMap">
+		<![CDATA[
+			SELECT
+		]]>
+		<include refid="query_dataDictionaryAndValue_param" />
+		<![CDATA[
+			FROM BSE.T_BAS_DATA_DICTIONARY_VALUE DIC
+		]]>
+		<where>
+			<if test="map.termsCodes != null">
+				AND DIC.TERMS_CODE IN 
+				<foreach collection="array" item="map.termsCodes" open="(" separator="," close=")">
+					#{map.termsCodes}
+				</foreach>
+			</if>
+			<if test="active != null and active != ''">
+				AND DIC.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+			ORDER BY DIC.VALUE_SEQ
+	</select>
+	<!-- ****** -->
+</mapper>

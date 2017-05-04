@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.stl.StatementOfAccountEntityDao" >
+  <resultMap id="StatementResultMap" type="com.deppon.foss.module.settlement.pay.api.shared.dto.BillSOAOnlineResultDto" >
+    <result column="COUNT_NUM" property="countNum" jdbcType="INTEGER"/>
+    <result column="COUNT_DETAIL_NUM" property="countDetailNum" jdbcType="INTEGER"/>
+    <result column="STATEMENT_BILL_NO" property="statementBillNo" jdbcType="VARCHAR" />
+    <result column="CREATE_ORG_CODE" property="createOrgCode" jdbcType="VARCHAR" />
+    <result column="CREATE_ORG_NAME" property="createOrgName" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+    <result column="PERIOD_UNVERIFY_REC_AMOUNT" property="periodUnverifyRecAmount" jdbcType="DECIMAL" />
+    <result column="PERIOD_BEGIN_DATE" property="periodBeginDate" jdbcType="TIMESTAMP" />
+    <result column="PERIOD_END_DATE" property="periodEndDate" jdbcType="TIMESTAMP" />
+    <result column="UNPAID_AMOUNT" property="unpaidAmount" jdbcType="DECIMAL" />
+    <result column="PERIOD_AMOUNT" property="periodAmount" jdbcType="DECIMAL" />
+    
+  </resultMap>
+  
+   <resultMap id="CountResultMap" type="com.deppon.foss.module.settlement.pay.api.shared.dto.BillSOAOnlineResultListDto" >
+    <result column="COUNT_NUM" property="countNum" jdbcType="INTEGER"/>
+  </resultMap>
+  <sql id="Statement_Column_List" >
+    C.STATEMENT_BILL_NO, C.CREATE_ORG_CODE, C.CREATE_ORG_NAME, C.CUSTOMER_CODE,
+    C.CUSTOMER_NAME, C.PERIOD_UNVERIFY_REC_AMOUNT/100 PERIOD_UNVERIFY_REC_AMOUNT, 
+    C.PERIOD_BEGIN_DATE, C.PERIOD_END_DATE, C.UNPAID_AMOUNT/100 UNPAID_AMOUNT,
+    C.PERIOD_AMOUNT/100 PERIOD_AMOUNT
+  </sql>
+  <!-- 根据客户编码查询对账单  -->
+  <select id="selectByCustomer" resultMap="StatementResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.StatementOnlineQueryDto" >
+    SELECT /*根据客户编码查询对账单  */
+     <include refid="Statement_Column_List" /> ,D.DETAIL_COUNT COUNT_DETAIL_NUM
+    from STL.T_STL_STATEMENT_OF_ACCOUNT C,
+    (
+    SELECT 
+    A.STATEMENT_BILL_NO STATEMENT_BILL_NO,COUNT(B.ID) DETAIL_COUNT
+    from STL.T_STL_STATEMENT_OF_ACCOUNT A,STL.T_STL_STATEMENT_OF_ACCOUNT_D B
+    WHERE
+     A.STATEMENT_BILL_NO=B.STATEMENT_BILL_NO AND A.CREATE_TIME=B.CREATE_TIME 
+    <if test="beginDate!=null and endDate!=null">
+      AND <![CDATA[A.BUSINESS_DATE>=#{beginDate} AND A.BUSINESS_DATE<#{endDate}]]>
+     </if>
+     AND  A.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+     AND A.CONFIRM_STATUS = #{confirmStatus,jdbcType=VARCHAR} 
+     AND A.UNPAID_AMOUNT >0
+     AND A.PERIOD_UNVERIFY_REC_AMOUNT>0
+     AND B.BILL_PARENT_TYPE=#{parentBillType}
+     AND B.BILL_TYPE IN
+     <foreach collection="billTypeList" item="item" index="index" open="(" separator="," close=")" >
+        #{item}
+     </foreach> 
+     AND B.IS_DELETE=#{deleteFlag}
+     GROUP BY A.STATEMENT_BILL_NO
+     ) D 
+     WHERE C.STATEMENT_BILL_NO=D.STATEMENT_BILL_NO
+     ORDER　BY C.BUSINESS_DATE DESC
+  </select>
+   <!-- 根据客户编码查询对账单（求和）  -->
+  <select id="selectCountByCustomer" resultMap="CountResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.StatementOnlineQueryDto" >
+    SELECT /*根据客户编码查询对账单（求和）*/
+    count(*) countNum
+    from STL.T_STL_STATEMENT_OF_ACCOUNT
+    <where>
+      CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+     <if test="beginDate!=null and endDate!=null">
+      and  <![CDATA[BUSINESS_DATE>=#{beginDate} AND BUSINESS_DATE<#{endDate}]]>
+     </if>
+     and  CONFIRM_STATUS = #{confirmStatus,jdbcType=VARCHAR} 
+     and  UNPAID_AMOUNT >0
+     and  PERIOD_UNVERIFY_REC_AMOUNT>0
+    </where>
+  </select>
+  <!-- 根据对账单号查询对账单  -->
+  <select id="selectByNo" resultMap="StatementResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.StatementOnlineQueryDto" >
+     SELECT /*根据对账单号查询对账单*/
+     <include refid="Statement_Column_List" /> ,D.DETAIL_COUNT COUNT_DETAIL_NUM
+    from STL.T_STL_STATEMENT_OF_ACCOUNT C,
+    (
+    SELECT 
+    A.STATEMENT_BILL_NO STATEMENT_BILL_NO,COUNT(B.ID) DETAIL_COUNT
+    from STL.T_STL_STATEMENT_OF_ACCOUNT A,STL.T_STL_STATEMENT_OF_ACCOUNT_D B
+     WHERE
+     A.STATEMENT_BILL_NO=B.STATEMENT_BILL_NO 
+     AND A.CREATE_TIME=B.CREATE_TIME 
+     AND A.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR} 
+     AND B.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR} 
+     AND A.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+     AND A.CONFIRM_STATUS = #{confirmStatus,jdbcType=VARCHAR} 
+     AND A.UNPAID_AMOUNT >0
+     AND A.PERIOD_UNVERIFY_REC_AMOUNT>0
+     AND B.BILL_PARENT_TYPE=#{parentBillType}
+     AND B.BILL_TYPE IN
+     <foreach collection="billTypeList" item="item" index="index" open="(" separator="," close=")" >
+        #{item}
+     </foreach> 
+     AND B.IS_DELETE=#{deleteFlag}
+     GROUP BY A.STATEMENT_BILL_NO
+     ) D 
+     WHERE C.STATEMENT_BILL_NO=D.STATEMENT_BILL_NO
+  </select>
+  <!-- 锁定对账单 -->
+  <select id="updateForUnlockDate" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.StatementOnlineQueryDto" >
+    UPDATE
+    	 /*锁定对账单*/ 
+    	STL.T_STL_STATEMENT_OF_ACCOUNT
+    SET
+    UNLOCK_TIME = SYSDATE+#{lockTime}/60/24,
+    VERSION_NO=VERSION_NO+1
+    <where>
+    STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR} 
+    AND VERSION_NO = #{versionNo,jdbcType=DECIMAL}
+    </where>
+  </select>
+</mapper>

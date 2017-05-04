@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.callCenterWaybillInfo">
+	<!-- CC催运单信息 -->
+	<resultMap id="callCenterWaybillInfoResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.CallCenterWaybillInfoEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="PRESS_WAYBILL_NO" property="pressWaybillNo" jdbcType="VARCHAR" />
+		<result column="PRESS_MSG" property="pressMsg" jdbcType="VARCHAR" />
+		<result column="DEAL_TIME" property="dealTime" jdbcType="TIMESTAMP" />
+		<result column="PRESS_TIME" property="pressTime" jdbcType="TIMESTAMP" />
+		<result column="PRESS_USER" property="pressUser" jdbcType="VARCHAR" />
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="DEAL_DEPT" property="dealDept" jdbcType="VARCHAR" />
+		<result column="DEAL_DEPT_NAME" property="dealDeptName" jdbcType="VARCHAR" />
+		<result column="DEAL_USER" property="dealUser" jdbcType="VARCHAR" />
+		<result column="DEAL_USER_NAME" property="dealUserName" jdbcType="VARCHAR" />
+		<result column="HAS_DONE" property="hasDone" jdbcType="CHAR" />
+		<result column="CALL_BACK_MSG" property="callBackMsg" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+	</resultMap>
+	<!-- CC催运单信息表数据字段 -->
+	<sql id="callCenter_Column_List">
+		T.ID, 
+		T.PRESS_WAYBILL_NO, 
+		T.PRESS_MSG, 
+		T.DEAL_TIME, 
+		T.PRESS_TIME, 
+		T.PRESS_USER, 
+		T.WAYBILL_NO,
+		T.DEAL_DEPT,
+		T.DEAL_DEPT_NAME, 
+		T.DEAL_USER, 
+		T.DEAL_USER_NAME,
+		T.HAS_DONE,
+		T.CALL_BACK_MSG,
+		T.CREATE_TIME,
+		T.MODIFY_TIME, 
+		T.CREATE_USER_CODE,
+		T.MODIFY_USER_CODE
+	</sql>
+
+	<!-- 插入CC催运单信息表数据字段 -->
+	<sql id="callCenter_Insert_List">
+		ID, 
+		PRESS_WAYBILL_NO, 
+		PRESS_MSG, 
+		DEAL_TIME, 
+		PRESS_TIME, 
+		PRESS_USER, 
+		WAYBILL_NO,
+		DEAL_DEPT,
+		DEAL_DEPT_NAME, 
+		DEAL_USER, 
+		DEAL_USER_NAME,
+		HAS_DONE,
+		CALL_BACK_MSG,
+		CREATE_TIME,
+		MODIFY_TIME, 
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE
+	</sql>
+
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<if test="waybillNo != null and waybillNo != ''">
+				AND T.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+			</if>
+			<if test="pressUser != null and pressUser != ''">
+				AND T.PRESS_USER = #{pressUser,jdbcType=VARCHAR}
+			</if>
+			<if test="dealDept != null and dealDept != ''">
+				AND T.DEAL_DEPT = #{dealDept,jdbcType=VARCHAR}
+			</if>
+			<if test="pressWaybillNo != null and pressWaybillNo != ''">
+				AND T.PRESS_WAYBILL_NO = #{pressWaybillNo,jdbcType=CHAR}
+			</if>
+			<if test="hasDone != null and hasDone != ''">
+				AND T.HAS_DONE = #{hasDone,jdbcType=CHAR}
+			</if> 
+		</where>
+	</sql>
+	<!-- 查询所有催运单基本信息 -->
+	<select id="queryCallCenterInfos"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CallCenterWaybillInfoEntity"
+		resultMap="callCenterWaybillInfoResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有客户基本信息 **/
+		]]>
+		<include refid="callCenter_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CALLCENTER_WAYBILL_INFO T
+		]]>
+		<include refid="queryWhere" />
+	</select>
+
+	<!-- 验证CC催运单信息是否存在 -->
+	<select id="queryCallInfoByCallCenterWaybillNo" parameterType="map"
+		resultMap="callCenterWaybillInfoResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:验证CC催运单信息是否存在**/
+		]]>
+		<include refid="callCenter_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CALLCENTER_WAYBILL_INFO T
+		]]>
+		<where>
+			<if test="pressWaybillNo != null and pressWaybillNo != ''">
+				PRESS_WAYBILL_NO = #{pressWaybillNo,jdbcType=VARCHAR}
+			</if>
+			<if test="hasDone != null and hasDone != ''">
+				HAS_DONE = #{hasDone,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</select>
+
+	<!-- 统计总记录数 -->
+	<select id="queryCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CallCenterWaybillInfoEntity">
+	    <![CDATA[
+	       	select/** 综合:统计总记录数**/ count(*) from BSE.T_BAS_CALLCENTER_WAYBILL_INFO T
+	    ]]>
+		<include refid="queryWhere" />
+
+	</select>
+
+	<!-- 新增CC催运单信息 -->
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CallCenterWaybillInfoEntity">
+		
+		<![CDATA[
+			INSERT/** 综合:新增CC催运单信息**/ INTO BSE.T_BAS_CALLCENTER_WAYBILL_INFO (
+		]]>
+		<include refid="callCenter_Insert_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, 
+		#{pressWaybillNo,jdbcType=VARCHAR},
+		#{pressMsg,jdbcType=VARCHAR},
+		#{dealTime,jdbcType=TIMESTAMP},
+		#{pressTime,jdbcType=TIMESTAMP},
+		#{pressUser,jdbcType=VARCHAR},
+		#{waybillNo,jdbcType=VARCHAR},
+		#{dealDept,jdbcType=VARCHAR},
+		#{dealDeptName,jdbcType=VARCHAR},
+		#{dealUser,jdbcType=VARCHAR},
+		#{dealUserName,jdbcType=VARCHAR}, 
+		#{hasDone,jdbcType=CHAR},
+		#{callBackMsg,jdbcType=VARCHAR}, 
+		#{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+
+	<!-- 修改CC催运单信息 -->
+	<update id="update"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CallCenterWaybillInfoEntity">
+		update/** 综合:修改CC催运单信息**/ BSE.T_BAS_CALLCENTER_WAYBILL_INFO
+		<set>
+				PRESS_WAYBILL_NO = #{pressWaybillNo,jdbcType=VARCHAR},
+				PRESS_MSG = #{pressMsg,jdbcType=VARCHAR},
+				DEAL_TIME = #{dealTime,jdbcType=TIMESTAMP},
+				PRESS_TIME = #{pressTime,jdbcType=TIMESTAMP},
+				PRESS_USER = #{pressUser,jdbcType=VARCHAR},
+				WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR},
+				DEAL_DEPT = #{dealDept,jdbcType=VARCHAR},
+				DEAL_DEPT_NAME = #{dealDeptName,jdbcType=VARCHAR},
+				DEAL_USER = #{dealUser,jdbcType=VARCHAR},
+				DEAL_USER_NAME = #{dealUserName,jdbcType=VARCHAR},
+				HAS_DONE = #{hasDone,jdbcType=CHAR},
+				CALL_BACK_MSG = #{callBackMsg,jdbcType=VARCHAR},
+				CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+				CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR}
+		</set>
+		<where>
+			<if test="pressWaybillNo != null and pressWaybillNo != ''">
+				PRESS_WAYBILL_NO = #{pressWaybillNo,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</update>
+
+</mapper>

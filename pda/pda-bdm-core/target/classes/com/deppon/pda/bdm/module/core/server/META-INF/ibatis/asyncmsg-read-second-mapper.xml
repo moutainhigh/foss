@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.pda.bdm.module.core.server.dao.impl.second.AsyncMsgReadSecondDao" >
+    
+	<!-- 查询未同步的数据 -->
+	<select id="readAsyncMsg"  resultType="com.deppon.pda.bdm.module.core.shared.domain.AsyncMsg">
+		 select * from (
+		 select * from pda.t_pda_asyncmsg where (asyncstatus=0 or (
+		    asyncstatus=3 
+	    	and synccount <![CDATA[<]]> 10
+	    	and syncTime <![CDATA[<]]> sysdate-1/24/60*3*synccount
+	    	)) and opertype in (select OPER_TYPE from pda.T_PDA_JOB_OPER_TYPE where value='1')
+	    )
+	     where rownum <![CDATA[<=]]> #{count,jdbcType=NUMERIC}
+	</select> 
+	
+	<!-- 更改数据状态 -->
+	<update id="updReadStatus" parameterType="string">
+		update pda.t_pda_asyncmsg  set asyncStatus = 1,readTime = SYSTIMESTAMP,queueId=#{queueId,jdbcType=VARCHAR} 
+		<where>
+			<foreach collection="msgList" separator="or" item="msg" index="index" >
+				id=#{msg.id,jdbcType=VARCHAR} 
+			</foreach>
+		</where>
+	</update>
+	<update id="doInitAsyncDataStatus" parameterType="string">
+	    update pda.t_pda_asyncmsg t 
+		set t.asyncstatus= 
+		case  when (synccount = 0) then 0 else 3 end
+		where not exists (select id from pda.t_pda_async_job_active where id=t.queueid) and asyncstatus=1
+	</update>
+</mapper>

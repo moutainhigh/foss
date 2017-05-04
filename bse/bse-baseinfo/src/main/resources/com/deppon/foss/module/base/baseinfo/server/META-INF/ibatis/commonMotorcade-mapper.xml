@@ -1,0 +1,129 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- motorcade motorcade-mapper.xml 车队 -->
+<mapper namespace="foss.bse.bse-baseinfo.commonMotorcade" >
+
+	<resultMap id="motorcadeQueryResultMap"
+   			type="com.deppon.foss.module.base.baseinfo.api.shared.domain.MotorcadeEntity">
+		<result property="id" column="ID"  jdbcType="VARCHAR" />
+		<result property="code" column="CODE"  jdbcType="VARCHAR" />
+		<result property="name" column="NAME"  jdbcType="VARCHAR" />
+		<result property="pinyin" column="PINYIN"  jdbcType="VARCHAR" />
+		<result property="service" column="SERVICE"  jdbcType="CHAR" />
+		<result property="serviceCode" column="SERVICE_CODE"  jdbcType="VARCHAR" />
+		<result property="serviceTeam" column="SERVICE_TEAM"  jdbcType="CHAR" />
+		<result property="parentOrgCode" column="PARENT_ORG_CODE"  jdbcType="VARCHAR" />
+		<result property="transferCenter" column="TRANSFER_CENTER"  jdbcType="VARCHAR" />
+		<result property="createDate" column="CREATE_TIME"  jdbcType="TIMESTAMP" />
+		<result property="modifyDate" column="MODIFY_TIME"  jdbcType="TIMESTAMP" />
+		<result property="active" column="ACTIVE"  jdbcType="CHAR" />
+		<result property="createUser" column="CREATE_USER_CODE"  jdbcType="VARCHAR" />
+		<result property="modifyUser" column="MODIFY_USER_CODE"  jdbcType="VARCHAR" />
+		<result property="dispatchTeam" column="DISPATCH_TEAM"  jdbcType="CHAR" />
+		<result property="fleetType" column="FLEET_TYPE"  jdbcType="CHAR" />
+		<result property="isTopFleet" column="IS_TOP_FLEET"  jdbcType="CHAR" />
+	</resultMap>
+
+
+	<sql id="query_column">
+		A.ID AS ID,		
+		A.CODE AS CODE,	
+		A.NAME AS NAME,
+		A.PINYIN AS PINYIN,		
+		A.SERVICE AS SERVICE,		
+		A.SERVICE_CODE AS SERVICE_CODE,	
+		A.SERVICE_TEAM AS SERVICE_TEAM,		
+		A.PARENT_ORG_CODE AS PARENT_ORG_CODE,	
+		A.TRANSFER_CENTER AS TRANSFER_CENTER,		
+		A.CREATE_TIME AS CREATE_TIME,	
+		A.MODIFY_TIME AS MODIFY_TIME,		
+		A.ACTIVE AS ACTIVE,		
+		A.CREATE_USER_CODE AS CREATE_USER_CODE,		
+		A.MODIFY_USER_CODE AS MODIFY_USER_CODE,	
+		A.DISPATCH_TEAM AS DISPATCH_TEAM,
+		A.FLEET_TYPE AS FLEET_TYPE,
+		A.IS_TOP_FLEET AS IS_TOP_FLEET		
+	</sql>
+
+	<!-- 根据Dto模糊查询,如果属性的值为null或者空白则无效： -->
+	<sql id="query_param">		
+		<where>
+	      	<if test="queryParam!=null and queryParam != ''">
+	        	AND 
+	        	( A.CODE like CONCAT(CONCAT('%', #{queryParam,jdbcType=VARCHAR}), '%') 
+	        	  OR A.NAME like CONCAT(CONCAT('%', #{queryParam,jdbcType=VARCHAR}), '%') 
+	        	  OR A.PINYIN like CONCAT(CONCAT('%', #{queryParam,jdbcType=VARCHAR}), '%') 
+	        	 ) 
+	      	</if> 
+	      	<if test="code!=null and code != ''">
+	        	AND A.code = #{code,jdbcType=VARCHAR}
+	      	</if> 
+	      	<if test="motorcadeCodes != null and  motorcadeCodes.size()>0">
+				  AND  A.code IN
+					<foreach collection="motorcadeCodes" index="index" item="item" open="(" separator="," close=")">
+						#{item}
+					</foreach>
+			</if>
+			<if test="subOrgList != null and  subOrgList.size()>0">
+				  AND  A.code IN
+					<foreach collection="subOrgList" index="index" item="item" open="(" separator="," close=")">
+						#{item}
+					</foreach>
+			</if>
+			<if test="fleetTypes != null and fleetTypes.size>0">
+			        	AND  A.FLEET_TYPE IN
+			        	<foreach collection="fleetTypes" open="(" close=")" separator="," item="fleetType">
+			        	      	#{fleetType} 
+						</foreach>
+	      	      </if>
+	      	<if test="service!=null and service != ''">
+	        	AND A.SERVICE = #{service,jdbcType=CHAR}
+	      	</if>
+	      	<if test="serviceCode!=null and serviceCode != ''">
+	        	AND A.SERVICE_CODE = #{serviceCode,jdbcType=VARCHAR}
+	      	</if>
+	      	<if test="serviceTeam!=null and serviceTeam != ''">
+	        	AND A.SERVICE_TEAM = #{serviceTeam,jdbcType=CHAR}
+	      	</if>
+	      	<if test="parentOrgCode!=null and parentOrgCode != ''">
+	        	AND A.PARENT_ORG_CODE = #{parentOrgCode,jdbcType=VARCHAR}
+	      	</if>
+	      	<if test="transferCenter!=null and transferCenter != ''">
+	        	AND A.TRANSFER_CENTER = #{transferCenter,jdbcType=VARCHAR}
+	      	</if>
+	      	<if test="dispatchTeam!=null and dispatchTeam != ''">
+	        	AND A.DISPATCH_TEAM = #{dispatchTeam,jdbcType=CHAR}
+	      	</if>
+	      	<if test="isTopFleet!=null and isTopFleet != ''">
+	        	AND A.IS_TOP_FLEET = #{isTopFleet,jdbcType=CHAR}
+	      	</if>
+			AND A.ACTIVE= #{active,jdbcType=CHAR}
+		   <![CDATA[ ORDER BY LENGTHB(NAME) ,A.ID ]]>
+		</where>
+	</sql>
+	<!-- 根据实体动态条件模糊查询,如果属性的值为null或者空白则无效： -->
+	<select id="queryMotorcadeByCondition" resultMap="motorcadeQueryResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.CommonMotorcadeDto">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:公共选择器-查询车队 **/
+		]]>
+		<include refid="query_column" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_TRANS_DEPARTMENT A 
+		]]>
+		<include refid="query_param" />
+	</select>
+	<!-- 根据实体动态条件模糊查询总数,如果属性的值为null或者空白则无效： -->
+	<select id="countMotorcadeByCondition" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.CommonMotorcadeDto">
+		<![CDATA[
+			 SELECT /** 综合:公共选择器-查询车队总记录数 **/ COUNT(*) 
+			 FROM BSE.T_BAS_TRANS_DEPARTMENT A 
+		]]>
+		<include refid="query_param" />
+	</select>
+
+</mapper>

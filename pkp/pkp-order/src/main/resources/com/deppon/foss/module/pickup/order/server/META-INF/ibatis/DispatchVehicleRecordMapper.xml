@@ -1,0 +1,467 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper
+	namespace="com.deppon.foss.module.pickup.order.api.shared.domain.DispatchVehicleRecordEntity">
+	<resultMap id="BaseResultMap"
+		type="com.deppon.foss.module.pickup.order.api.shared.domain.DispatchVehicleRecordEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="T_SRV_DISPATCH_ORDER_ID" property="tSrvDispatchOrderId"
+			jdbcType="VARCHAR" />
+		<result column="DRIVER_NAME" property="driverName" jdbcType="VARCHAR" />
+		<result column="DRIVER_CODE" property="driverCode" jdbcType="VARCHAR" />
+		<result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+		<result column="DELIVER_TIME" property="deliverTime" jdbcType="TIMESTAMP" />
+		<result column="PICKUP_REGION_CODE" property="pickupRegionCode"
+			jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="Vehicle_Record_Column">
+		ID, T_SRV_DISPATCH_ORDER_ID, DRIVER_NAME, DRIVER_CODE,
+		VEHICLE_NO, DELIVER_TIME, PICKUP_REGION_CODE
+	</sql>
+	<sql id="queryVehicleRecordBy_Where">
+		<where>
+			<choose>
+				<when test="fleetList != null and fleetList.size() > 0">
+					and B.FLEET_CODE in
+					<foreach collection="fleetList" item="item"
+						index="index" open="(" separator="," close=")">
+						#{item.code}
+					</foreach>
+				</when>
+				<otherwise>
+					and B.SALES_DEPARTMENT_CODE = #{orgCode,jdbcType=VARCHAR}
+				</otherwise>
+			</choose>
+			<if test="deliverBeginTime != null and deliverBeginTime != ''">
+  				<![CDATA[and A.DELIVER_TIME > #{deliverBeginTime,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="deliverEndTime != null and deliverEndTime != ''">
+  				<![CDATA[and A.DELIVER_TIME <= #{deliverEndTime,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="pickupRegionCode != null and pickupRegionCode != ''">
+  				<![CDATA[and A.PICKUP_REGION_CODE like '%' || #{pickupRegionCode,jdbcType=VARCHAR} || '%']]>
+			</if>
+			<if test="districtList != null and districtList.size() > 0">
+  				and B.PICKUP_COUNTY_CODE in
+				<foreach collection="districtList" item="item"
+					index="index" open="(" separator="," close=")">
+					#{item}
+				</foreach>
+			</if>
+			<if test="orderSendStatus != null and orderSendStatus != ''">
+  				<![CDATA[and B.ORDER_SEND_STATUS = #{orderSendStatus,jdbcType=VARCHAR}]]>
+			</if>
+			<if test="orderStatus != null and orderStatus != ''">
+  				<![CDATA[and B.ORDER_STATUS = #{orderStatus,jdbcType=VARCHAR}]]>
+			</if>
+			<if test="vehicleNo != null and vehicleNo != ''">
+  				<![CDATA[and A.VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR}]]>
+			</if>
+			<if test="orderNo != null and orderNo != ''">
+  				<![CDATA[and B.ORDER_NO = #{orderNo,jdbcType=VARCHAR}]]>
+			</if>
+			<if test="salesDepartmentCodes != null and salesDepartmentCodes.size() > 0">
+				and B.SALES_DEPARTMENT_CODE IN 
+				<foreach collection="salesDepartmentCodes" item="item"
+						index="index" open="(" separator="," close=")">
+						#{item}
+				</foreach>
+			</if>
+			<!-- 新增查询条件 -->
+			<if test="productCode != null and productCode != ''">
+	        	and b.product_code = #{productCode,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</sql>
+	<select id="queryVehicleRecordBy"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.dto.DispatchOrderVehicleDto"
+		resultType="com.deppon.foss.module.pickup.order.api.shared.dto.DispatchOrderVehicleDto">
+		select * from 
+		(select /*模块：接送货-查询/处理订单任务-查询订单任务*/
+		A.ID as id,
+		A.DRIVER_NAME as driverName,
+		A.VEHICLE_NO as vehicleNo,
+		A.PDA_STATUS as pdaStatus,
+		W.PENDING_TYPE as pendingType,
+		W.BILL_TIME as billTime,
+		A.DELIVER_TIME as deliverTime,
+		RV.REGION_NAME as pickupRegionName,<!--14.7.18 gcl AUTO-182 预处理小区为集中接货小区-->
+		S.REGION_NAME as actualRegionName,
+		A.PROCESS_STATUS as processStatus,
+		B.ORDER_STATUS as orderStatus,
+		B.ID as orderId,
+		B.ORDER_NO as orderNo,
+		B.ORDER_TYPE as orderType,
+		B.ORDER_VEHICLE_ORG_NAME as orderVehicleOrgName,
+		DECODE(B.DELIVERY_CUSTOMER_ADDRESS_NOTE,NULL,B.PICKUP_PROVINCE || B.PICKUP_CITY || B.PICKUP_COUNTY || B.PICKUP_ELSE_ADDRESS,
+		B.PICKUP_PROVINCE || B.PICKUP_CITY || B.PICKUP_COUNTY || B.PICKUP_ELSE_ADDRESS || '(' || B.DELIVERY_CUSTOMER_ADDRESS_NOTE || ')') as pickupAddress,
+		B.ORDER_SEND_STATUS as orderSendStatus,
+		B.ORDER_VEHICLE_TIME as orderVehicleTime,
+		B.ORDER_NOTES as orderNotes,
+		A.DRIVER_MOBILE as driverMobile,
+		B.CUSTOMER_NAME customerName,
+		B.MOBILE mobile,
+		B.TEL tel,
+		B.OPERATE_NOTES operateNotes,
+		B.WEIGHT weight,
+		B.VOLUME volume,
+		B.WEIGHT || '/' || B.VOLUME weightAndVolume,
+		to_char(B.EARLIEST_PICKUP_TIME,'yyyy-MM-dd hh24:mi:ss')|| '至' ||  to_char(B.LATEST_PICKUP_TIME ,'yyyy-MM-dd hh24:mi:ss') usecarTime,
+		B.ACCEPT_STATUS as acceptStatus,
+		row_number() over(partition by A.T_SRV_DISPATCH_ORDER_ID order by W.BILL_TIME ASC,A.DELIVER_TIME DESC) rn
+		from pkp.t_srv_dispatch_vehicle_record A
+		INNER JOIN PKP.T_SRV_DISPATCH_ORDER B
+		ON A.T_SRV_DISPATCH_ORDER_ID = B.ID
+		LEFT JOIN BSE.T_BAS_OWNDRIVER OWNDRIVER ON A.DRIVER_CODE =
+                                                     OWNDRIVER.EMP_CODE
+                                                     AND OWNDRIVER.ACTIVE = #{active,jdbcType=CHAR} 
+         <!-- add 329757 增加外请车信息 --> 
+        LEFT JOIN BSE.T_BAS_LEASED_DRIVER LEASED ON A.VEHICLE_NO =
+                                                     LEASED.VEHICLE_NO
+                                                     AND LEASED.ACTIVE = #{active,jdbcType=CHAR}                                                                                     
+        LEFT JOIN BSE.T_BAS_SERVICE_SMALLZONE RV ON B.SUGGESTED_CODE = RV.REGION_CODE  <!--14.7.29 gcl AUTO-212 预处理小区-->
+                                        AND RV.ACTIVE = 'Y'
+        LEFT JOIN BSE.T_BAS_SERVICE_SMALLZONE S ON B.ACTUAL_CODE = S.REGION_CODE
+                                        AND S.ACTIVE = 'Y'
+        LEFT JOIN PKP.T_SRV_WAYBILL W ON B.ORDER_NO = W.ORDER_NO
+        								AND W.PENDING_TYPE IN('PDA_ACTIVE','PC_ACTIVE','PDA_PENDING')
+		<include refid="queryVehicleRecordBy_Where" /> )
+		where rn = 1
+	</select>
+	<!-- 
+	<update id="updateVehicleRecordByOrderId" parameterType="com.deppon.foss.module.pickup.order.api.shared.dto.DispatchOrderVehicleDto">
+		<![CDATA[
+			update /*模块：接送货-查询/处理订单任务-更新订单任务*/PKP.T_SRV_DISPATCH_VEHICLE_RECORD
+			set ORDER_STATUS = #{orderStatus,jdbcType=VARCHAR}
+			where ID = 
+			(
+			select ID from 
+			(
+			select ID,row_number() over(order by DELIVER_TIME DESC) rn from PKP.T_SRV_DISPATCH_VEHICLE_RECORD
+			where T_SRV_DISPATCH_ORDER_ID = #{orderId,jdbcType=VARCHAR}
+			)
+			where rn = 1
+			)
+		]]>
+	</update>
+	-->
+	<update id="updateVehicleRecordByOrderId" parameterType="com.deppon.foss.module.pickup.order.api.shared.dto.DispatchOrderVehicleDto">
+		update /*模块：接送货-查询/处理订单任务-更新订单任务*/PKP.T_SRV_DISPATCH_VEHICLE_RECORD
+	    <set >
+	      <if test="orderStatus != null" >
+	        ORDER_STATUS = #{orderStatus,jdbcType=VARCHAR},
+	      </if>
+	      <if test="driverCode != null" >
+	        DRIVER_CODE = #{driverCode,jdbcType=VARCHAR},
+	      </if>
+	      <if test="driverName != null" >
+	        DRIVER_NAME = #{driverName,jdbcType=VARCHAR},
+	      </if>
+	    </set>
+	    where ID = <![CDATA[
+	    	(
+			select ID from 
+			(
+			select ID,row_number() over(order by DELIVER_TIME DESC) rn from PKP.T_SRV_DISPATCH_VEHICLE_RECORD
+			where T_SRV_DISPATCH_ORDER_ID = #{orderId,jdbcType=VARCHAR}
+			)
+			where rn = 1
+			)
+	    ]]>
+	</update>
+
+	<select id="getVehicleRecordByCount"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.dto.DispatchOrderVehicleDto"
+		resultType="Long">
+		select
+		/*模块：接送货-查询/处理订单任务-查询派车记录*/
+		COUNT(distinct A.T_SRV_DISPATCH_ORDER_ID)
+		from pkp.t_srv_dispatch_vehicle_record A
+		INNER JOIN PKP.T_SRV_DISPATCH_ORDER B
+		ON A.T_SRV_DISPATCH_ORDER_ID = B.ID
+		<include refid="queryVehicleRecordBy_Where" />
+	</select>
+
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap"
+		parameterType="java.lang.String">
+		select
+		<include refid="Vehicle_Record_Column" />
+		from PKP.T_SRV_DISPATCH_VEHICLE_RECORD
+		where ID = #{id,jdbcType=VARCHAR}
+	</select>
+	<delete id="deleteByPrimaryKey" parameterType="java.lang.String">
+		delete from PKP.T_SRV_DISPATCH_VEHICLE_RECORD
+		where ID = #{id,jdbcType=VARCHAR}
+	</delete>
+	
+	<!-- 单条插入派车记录 -->
+	<insert id="addDispatchVehicleRecord"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.domain.DispatchVehicleRecordEntity">
+		insert into /*模块：接送货-处理订单-新增派车记录*/PKP.T_SRV_DISPATCH_VEHICLE_RECORD
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				ID,
+			</if>
+			<if test="tSrvDispatchOrderId != null">
+				T_SRV_DISPATCH_ORDER_ID,
+			</if>
+			<if test="driverName != null">
+				DRIVER_NAME,
+			</if>
+			<if test="driverCode != null">
+				DRIVER_CODE,
+			</if>
+			<if test="driverMobile != null">
+				DRIVER_MOBILE,
+			</if>
+			<if test="vehicleNo != null">
+				VEHICLE_NO,
+			</if>
+			<if test="deliverTime != null">
+				DELIVER_TIME,
+			</if>
+			<if test="pdaStatus != null">
+				PDA_STATUS,
+			</if>
+			<if test="pickupRegionCode != null">
+				PICKUP_REGION_CODE,
+			</if>
+			<if test="pickupRegionName != null">
+				PICKUP_REGION_NAME,
+			</if>
+			<if test="processStatus != null">
+				PROCESS_STATUS,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id,jdbcType=VARCHAR},
+			</if>
+			<if test="tSrvDispatchOrderId != null">
+				#{tSrvDispatchOrderId,jdbcType=VARCHAR},
+			</if>
+			<if test="driverName != null">
+				#{driverName,jdbcType=VARCHAR},
+			</if>
+			<if test="driverCode != null">
+				#{driverCode,jdbcType=VARCHAR},
+			</if>
+			<if test="driverMobile != null">
+				#{driverMobile,jdbcType=VARCHAR},
+			</if>
+			<if test="vehicleNo != null">
+				#{vehicleNo,jdbcType=VARCHAR},
+			</if>
+			<if test="deliverTime != null">
+				#{deliverTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="pdaStatus != null">
+				#{pdaStatus,jdbcType=VARCHAR},
+			</if>
+			<if test="pickupRegionCode != null">
+				#{pickupRegionCode,jdbcType=VARCHAR},
+			</if>
+			<if test="pickupRegionName != null">
+				#{pickupRegionName,jdbcType=VARCHAR},
+			</if>
+			<if test="processStatus != null">
+				#{processStatus,jdbcType=VARCHAR},
+			</if>
+		</trim>
+	</insert>
+	<sql id="updateSet">
+		<set>
+			<if test="tSrvDispatchOrderId != null">
+				T_SRV_DISPATCH_ORDER_ID = #{tSrvDispatchOrderId,jdbcType=VARCHAR},
+			</if>
+			<if test="driverName != null">
+				DRIVER_NAME = #{driverName,jdbcType=VARCHAR},
+			</if>
+			<if test="driverCode != null">
+				DRIVER_CODE = #{driverCode,jdbcType=VARCHAR},
+			</if>
+			<if test="vehicleNo != null">
+				VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR},
+			</if>
+			<if test="deliverTime != null">
+				DELIVER_TIME = #{deliverTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="pickupRegionCode != null">
+				PICKUP_REGION_CODE = #{pickupRegionCode,jdbcType=VARCHAR},
+			</if>
+			<if test="pdaStatus != null">
+				PDA_STATUS = #{pdaStatus,jdbcType=VARCHAR},
+			</if>
+		</set>
+	</sql>
+	<update id="updateByPrimaryKeySelective"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.domain.DispatchVehicleRecordEntity">
+		update PKP.T_SRV_DISPATCH_VEHICLE_RECORD
+		<include refid="updateSet" />
+		where ID = #{id,jdbcType=VARCHAR}
+	</update>
+	<update id="updateByPrimaryKey"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.domain.DispatchVehicleRecordEntity">
+		update PKP.T_SRV_DISPATCH_VEHICLE_RECORD
+		set T_SRV_DISPATCH_ORDER_ID = #{tSrvDispatchOrderId,jdbcType=VARCHAR},
+		DRIVER_NAME = #{driverName,jdbcType=VARCHAR},
+		DRIVER_CODE = #{driverCode,jdbcType=VARCHAR},
+		VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR},
+		STATUS = #{status,jdbcType=VARCHAR},
+		DELIVER_TIME = #{deliverTime,jdbcType=TIMESTAMP},
+		PICKUP_REGION_CODE = #{pickupRegionCode,jdbcType=VARCHAR}
+		where ID = #{id,jdbcType=VARCHAR}
+	</update>
+
+	<!-- 批量插入派车记录 -->
+	<insert id="batchAddDispatchVehicleRecord">
+		BEGIN
+		<foreach collection="list" item="item" separator=";">
+			insert into PKP.T_SRV_DISPATCH_VEHICLE_RECORD(
+			<include refid="Vehicle_Record_Column" />
+			) values (
+			#{item.id,jdbcType=VARCHAR},
+			#{item.tSrvDispatchOrderId,jdbcType=VARCHAR},
+			#{item.driverName,jdbcType=VARCHAR},
+			#{item.driverCode,jdbcType=VARCHAR},
+			#{item.vehicleNo,jdbcType=VARCHAR},
+			#{item.deliverTime,jdbcType=TIMESTAMP},
+			#{item.pickupRegionCode,jdbcType=VARCHAR}
+			)
+		</foreach>
+		;END;
+	</insert>
+	<sql id="queryExpressVehicleRecordBy_Where">
+		<where>
+			<if test="deliverBeginTime != null and deliverBeginTime != ''">
+  				<![CDATA[and A.DELIVER_TIME > #{deliverBeginTime,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="deliverEndTime != null and deliverEndTime != ''">
+  				<![CDATA[and A.DELIVER_TIME <= #{deliverEndTime,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="orderVehicleBeginTime != null and orderVehicleBeginTime != ''">
+  				<![CDATA[and B.ORDER_VEHICLE_TIME > #{orderVehicleBeginTime,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="orderVehicleEndTime != null and orderVehicleEndTime != ''">
+  				<![CDATA[and B.ORDER_VEHICLE_TIME <= #{orderVehicleEndTime,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="expressOrderNewCountyCodes != null and expressOrderNewCountyCodes.size() > 0">
+  				and (B.PICKUP_COUNTY_CODE in
+				<foreach collection="expressOrderNewCountyCodes" item="item"
+					index="index" open="(" separator="," close=")">
+					#{item}
+				</foreach>
+				<if test="expressOrderCityCodes != null and expressOrderCityCodes.size() > 0">
+					or (B.Pickup_City_Code in
+					<foreach collection="expressOrderCityCodes" item="item" index="index"
+						open="(" separator="," close=")">
+						#{item}
+					</foreach>
+					 and B.Pickup_County_Code is null)
+				</if>
+				)
+			</if>
+			<if test="expressOrderNewCountyCodes == null or expressOrderNewCountyCodes.size() == 0">
+				<if test="expressOrderCountyCodes != null and expressOrderCountyCodes.size() > 0"><!-- 14.9.12 gcl 上级机构所关联区域 本市和所有县的数据 -->
+					and (B.PICKUP_COUNTY_CODE in
+					<foreach collection="expressOrderCountyCodes" item="item"
+						index="index" open="(" separator="," close=")">
+						#{item}
+					</foreach>
+					<if test="expressOrderCityCodes != null and expressOrderCityCodes.size() > 0">
+						or (B.Pickup_City_Code in
+						<foreach collection="expressOrderCityCodes" item="item" index="index"
+							open="(" separator="," close=")">
+							#{item}
+						</foreach>
+						 and B.Pickup_County_Code is null)
+					</if>
+					)
+				</if>
+				<if test="expressOrderCountyCodes == null or expressOrderCountyCodes.size() == 0">
+					<if test="expressOrderCityCodes != null and expressOrderCityCodes.size() > 0">
+						and B.Pickup_City_Code in
+						<foreach collection="expressOrderCityCodes" item="item" index="index"
+							open="(" separator="," close=")">
+							#{item}
+						</foreach>
+					</if>
+				</if>
+			</if>
+			<if test="orderSendStatus != null and orderSendStatus != ''">
+  				<![CDATA[and B.ORDER_SEND_STATUS = #{orderSendStatus,jdbcType=VARCHAR}]]>
+			</if>
+			<if test="orderStatus != null and orderStatus != ''">
+  				<![CDATA[and B.ORDER_STATUS = #{orderStatus,jdbcType=VARCHAR}]]>
+			</if>
+			<if test="vehicleNo != null and vehicleNo != ''">
+  				<![CDATA[and A.VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR}]]>
+			</if>
+			<if test="orderNo != null and orderNo != ''">
+  				<![CDATA[and B.ORDER_NO = #{orderNo,jdbcType=VARCHAR}]]>
+			</if>
+			<if test="driverCode != null and driverCode != ''">
+  				<![CDATA[and A.DRIVER_CODE = #{driverCode,jdbcType=VARCHAR}]]>
+			</if>
+<!-- 			<if test="productCode != null and productCode != ''">
+				and B.PRODUCT_CODE = #{productCode,jdbcType=VARCHAR}
+			</if> -->
+			<!-- 查询运输性质为快递的记录 -->
+			<if test="productCodes!=null and productCodes.size()>0">
+				and  B.PRODUCT_CODE in
+				<foreach collection="productCodes" item="item" index="index" open="(" separator="," close=")">
+					#{item}
+				</foreach>
+			</if>
+		</where>
+	</sql>
+	<select id="getExpressVehicleRecordByCount"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.dto.DispatchOrderVehicleDto"
+		resultType="Long">
+		select
+		/*模块：接送货-查询/小件处理订单任务-查询派车记录*/
+		COUNT(distinct A.T_SRV_DISPATCH_ORDER_ID)
+		from pkp.t_srv_dispatch_vehicle_record A
+		INNER JOIN PKP.T_SRV_DISPATCH_ORDER B
+		ON A.T_SRV_DISPATCH_ORDER_ID = B.ID
+		<include refid="queryExpressVehicleRecordBy_Where" />
+	</select>
+	<select id="queryExpressVehicleRecordBy"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.dto.DispatchOrderVehicleDto"
+		resultType="com.deppon.foss.module.pickup.order.api.shared.dto.DispatchOrderVehicleDto">
+		select * from 
+		(select /*模块：接送货-查询/处理订单任务-查询订单任务*/
+		A.ID as id,
+		A.DRIVER_NAME as driverName,
+		A.VEHICLE_NO as vehicleNo,
+		A.PDA_STATUS as pdaStatus,
+		A.DELIVER_TIME as deliverTime,
+		A.PROCESS_STATUS as processStatus,
+		B.ORDER_STATUS as orderStatus,
+		B.ID as orderId,
+		B.ORDER_NO as orderNo,
+		B.ORDER_TYPE as orderType,
+		B.ORDER_VEHICLE_ORG_NAME as orderVehicleOrgName,
+		DECODE(B.DELIVERY_CUSTOMER_ADDRESS_NOTE,NULL,B.PICKUP_PROVINCE || B.PICKUP_CITY || B.PICKUP_COUNTY || B.PICKUP_ELSE_ADDRESS,
+		B.PICKUP_PROVINCE || B.PICKUP_CITY || B.PICKUP_COUNTY || B.PICKUP_ELSE_ADDRESS || '(' || B.DELIVERY_CUSTOMER_ADDRESS_NOTE || ')') as pickupAddress,
+		B.ORDER_SEND_STATUS as orderSendStatus,
+		B.ORDER_VEHICLE_TIME as orderVehicleTime,
+		B.ORDER_NOTES as orderNotes,
+		EV.MOBILE_PHONE as driverMobile,
+		B.CUSTOMER_NAME customerName,
+		B.MOBILE mobile,
+		B.ACCEPT_STATUS as acceptStatus,<!--2014-11-15 cdl DMANA-6209快递派车记录界面增加分配方式 -->
+		B.OPERATE_TIME operateTime,
+		B.TEL tel,
+		B.OPERATE_NOTES operateNotes,
+		row_number() over(partition by A.T_SRV_DISPATCH_ORDER_ID order by A.DELIVER_TIME DESC) rn
+		from pkp.t_srv_dispatch_vehicle_record A
+		INNER JOIN PKP.T_SRV_DISPATCH_ORDER B
+		ON A.T_SRV_DISPATCH_ORDER_ID = B.ID
+		LEFT JOIN BSE.T_BAS_EXPRESS_VEHICLE EV ON A.DRIVER_CODE = EV.EMP_CODE
+              AND A.VEHICLE_NO = EV.VEHICLE_NO
+              AND EV.ACTIVE = #{active,jdbcType=CHAR}
+		<include refid="queryExpressVehicleRecordBy_Where" /> )
+		where rn = 1
+	</select>
+</mapper>

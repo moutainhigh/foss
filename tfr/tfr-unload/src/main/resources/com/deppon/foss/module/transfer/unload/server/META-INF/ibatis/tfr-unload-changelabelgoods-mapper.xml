@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.unload.changelabelgoods" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.transfer.unload.api.shared.domain.ChangeLabelGoodsEntity" >
+    <id column="id" property="id" />
+    <result column="billNo" property="billNo" />
+    <result column="waybillNo" property="waybillNo" />
+    <result column="serialNo" property="serialNo" />
+    <result column="changeReason" property="changeReason" />
+    <result column="discoverTime" property="discoverTime" />
+    <result column="discoverTache" property="discoverTache" />
+    <result column="handleStatus" property="handleStatus" />
+    <result column="handleTime" property="handleTime" />
+    <result column="handlerCode" property="handlerCode" />
+    <result column="handlerName" property="handlerName" />
+    <result column="orgName" property="orgName" />
+    <result column="orgCode" property="orgCode" />
+  </resultMap>
+  <resultMap id="ChangeLabelGoodsDtoResultMap" type="com.deppon.foss.module.transfer.unload.api.shared.dto.ChangeLabelGoodsDto" extends="BaseResultMap">
+    <result column="stockStatus" property="stockStatus" />
+  </resultMap>
+  <select id="queryChangeLabelGoodsUnload" resultMap="ChangeLabelGoodsDtoResultMap" parameterType="com.deppon.foss.module.transfer.unload.api.shared.dto.ChangeLabelGoodsDto">
+  	<![CDATA[
+  		select 
+		changelabel.bill_no billNo, changelabel.waybill_no waybillno, changelabel.serial_no serialno, changelabel.change_reason changereason,
+		changelabel.discover_time discovertime, changelabel.discover_tache discoverTache, changelabel.handle_status handlestatus, 
+		changelabel.handle_time handletime, changelabel.handler_name handlername,
+		decode((select count(stock.waybill_no) from tfr.t_opt_stock stock where stock.waybill_no = changelabel.waybill_no), 0, '已出库', '库存中') stockStatus
+		from 
+		tfr.t_opt_changelabel_goods changelabel
+  	]]>
+  	<include refid="queryChangeLabelGoodsUnloadWhere"/>
+  </select>
+  <select id="getTotCountUnload" parameterType="com.deppon.foss.module.transfer.unload.api.shared.dto.ChangeLabelGoodsDto" resultType="Long">
+	<![CDATA[
+		select 
+		count(changelabel.bill_no)
+		from 
+		tfr.t_opt_changelabel_goods changelabel
+    ]]>
+    <include refid="queryChangeLabelGoodsUnloadWhere"/>
+  </select>
+  <sql id="queryChangeLabelGoodsUnloadWhere">
+	<where>
+		<if test="orgCode !=null and orgCode != '' ">	
+			and changelabel.org_code = #{orgCode}
+		</if>
+		<if test="waybillNo !=null and waybillNo != '' ">	
+			and changelabel.waybill_no = #{waybillNo}
+		</if>
+		<if test="billNo !=null and billNo != '' ">	
+			and changelabel.bill_no = #{billNo}
+		</if>
+		<if test="handleStatus !=null and handleStatus != '' and handleStatus != 'ALL' ">	
+			and changelabel.handle_status = #{handleStatus}
+		</if>
+		and changelabel.discover_tache = 'UNLOAD'
+		<if test="stockStatus !=null and stockStatus != '' and stockStatus != 'ALL' ">
+			<if test="stockStatus == 'STOCKING'">
+				<![CDATA[and exists (select stock.waybill_no from tfr.t_opt_stock stock where stock.waybill_no = changelabel.waybill_no)]]>
+			</if>
+			<if test="stockStatus == 'UNSTOCKING'">
+				<![CDATA[and not exists (select stock.waybill_no from tfr.t_opt_stock stock where stock.waybill_no = changelabel.waybill_no)]]>
+			</if>
+		</if>
+		<if test="beginDate!=null and beginDate!=''">
+			<![CDATA[and changelabel.discover_time >= to_date(#{beginDate}, 'yyyy-mm-dd hh24:mi:ss')]]>
+		</if>
+		<if test="endDate!=null and endDate!=''">
+			<![CDATA[and changelabel.discover_time <= to_date(#{endDate}, 'yyyy-mm-dd hh24:mi:ss')]]>
+		</if>
+	</where>
+  </sql>
+  <select id="queryChangeLabelGoodsStock" resultMap="ChangeLabelGoodsDtoResultMap" parameterType="com.deppon.foss.module.transfer.unload.api.shared.dto.ChangeLabelGoodsDto">
+  	<![CDATA[
+  		select 
+		changelabel.bill_no billNo, changelabel.waybill_no waybillno, changelabel.serial_no serialno, changelabel.change_reason changereason,
+		changelabel.discover_time discovertime, changelabel.discover_tache discoverTache, changelabel.handle_status handlestatus, 
+		changelabel.handle_time handletime, changelabel.handler_name handlername,
+		decode((select count(stock.waybill_no) from tfr.T_OPT_STOCK stock where stock.waybill_no = changelabel.waybill_no), 0, '已出库', '库存中') stockStatus
+		from 
+		tfr.t_opt_changelabel_goods changelabel
+		left join tfr.t_opt_st_task sttask
+		on changelabel.bill_no = sttask.task_no
+  	]]>
+  	<include refid="queryChangeLabelGoodsStockWhere"/>
+  </select>
+  <select id="getTotCountStock" parameterType="com.deppon.foss.module.transfer.unload.api.shared.dto.ChangeLabelGoodsDto" resultType="Long">
+	<![CDATA[
+		select 
+		count(changelabel.bill_no)
+		from 
+		tfr.t_opt_changelabel_goods changelabel
+		left join tfr.t_opt_st_task sttask
+		on changelabel.bill_no = sttask.task_no
+    ]]>
+    <include refid="queryChangeLabelGoodsStockWhere"/>
+  </select>
+  <sql id="queryChangeLabelGoodsStockWhere">
+	<where>
+		<if test="orgCode !=null and orgCode != '' ">	
+			and changelabel.org_code = #{orgCode}
+		</if>
+		<if test="waybillNo !=null and waybillNo != '' ">	
+			and changelabel.waybill_no = #{waybillNo}
+		</if>
+		<if test="billNo !=null and billNo != '' ">	
+			and changelabel.bill_no = #{billNo}
+		</if>
+		and changelabel.discover_tache = 'STOCK_CHECKING'
+		<if test="goodsAreaCode !=null and goodsAreaCode != '' ">	
+			and sttask.Goodsareacode = #{goodsAreaCode}
+		</if>
+		<if test="handleStatus !=null and handleStatus != '' and handleStatus != 'ALL' ">	
+			and changelabel.handle_status = #{handleStatus}
+		</if>
+		<if test="stockStatus !=null and stockStatus != '' and stockStatus != 'ALL' ">
+			<if test="stockStatus == 'STOCKING'">
+				<![CDATA[and exists (select stock.waybill_no from tfr.t_opt_stock stock where stock.waybill_no = changelabel.waybill_no)]]>
+			</if>
+			<if test="stockStatus == 'UNSTOCKING'">
+				<![CDATA[and not exists (select stock.waybill_no from tfr.t_opt_stock stock where stock.waybill_no = changelabel.waybill_no)]]>
+			</if>
+		</if>
+		<if test="beginDate!=null and beginDate!=''">
+			<![CDATA[and changelabel.discover_time >= to_date(#{beginDate}, 'yyyy-mm-dd hh24:mi:ss')]]>
+		</if>
+		<if test="endDate!=null and endDate!=''">
+			<![CDATA[and changelabel.discover_time <= to_date(#{endDate}, 'yyyy-mm-dd hh24:mi:ss')]]>
+		</if>
+	</where>
+  </sql>
+  <sql id="Base_Column_List" >
+    ID, BILL_NO, WAYBILL_NO, SERIAL_NO, CHANGE_REASON, DISCOVER_TIME, DISCOVER_TACHE, 
+    HANDLE_STATUS, HANDLE_TIME, HANDLER_CODE, HANDLER_NAME, ORG_NAME, ORG_CODE
+  </sql>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.String" >
+    select 
+    <include refid="Base_Column_List" />
+    from TFR.T_OPT_CHANGELABEL_GOODS
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String" >
+    delete from TFR.T_OPT_CHANGELABEL_GOODS
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  <insert id="insert" parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.ChangeLabelGoodsEntity" >
+    insert into TFR.T_OPT_CHANGELABEL_GOODS (ID, BILL_NO, WAYBILL_NO, 
+      SERIAL_NO, CHANGE_REASON, DISCOVER_TIME, 
+      DISCOVER_TACHE, HANDLE_STATUS, HANDLE_TIME, 
+      HANDLER_CODE, HANDLER_NAME, ORG_NAME, 
+      ORG_CODE)
+    values (#{id,jdbcType=VARCHAR}, #{billNo,jdbcType=VARCHAR}, #{waybillNo,jdbcType=VARCHAR}, 
+      #{serialNo,jdbcType=VARCHAR}, #{changeReason,jdbcType=VARCHAR}, #{discoverTime,jdbcType=VARCHAR}, 
+      #{discoverTache,jdbcType=VARCHAR}, #{handleStatus,jdbcType=VARCHAR}, #{handleTime,jdbcType=TIMESTAMP}, 
+      #{handlerCode,jdbcType=VARCHAR}, #{handlerName,jdbcType=VARCHAR}, #{orgName,jdbcType=VARCHAR}, 
+      #{orgCode,jdbcType=VARCHAR})
+  </insert>
+  <insert id="insertSelective" parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.ChangeLabelGoodsEntity" >
+    insert into TFR.T_OPT_CHANGELABEL_GOODS
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="billNo != null" >
+        BILL_NO,
+      </if>
+      <if test="waybillNo != null" >
+        WAYBILL_NO,
+      </if>
+      <if test="serialNo != null" >
+        SERIAL_NO,
+      </if>
+      <if test="changeReason != null" >
+        CHANGE_REASON,
+      </if>
+      <if test="discoverTime != null" >
+        DISCOVER_TIME,
+      </if>
+      <if test="discoverTache != null" >
+        DISCOVER_TACHE,
+      </if>
+      <if test="handleStatus != null" >
+        HANDLE_STATUS,
+      </if>
+      <if test="handleTime != null" >
+        HANDLE_TIME,
+      </if>
+      <if test="handlerCode != null" >
+        HANDLER_CODE,
+      </if>
+      <if test="handlerName != null" >
+        HANDLER_NAME,
+      </if>
+      <if test="orgName != null" >
+        ORG_NAME,
+      </if>
+      <if test="orgCode != null" >
+        ORG_CODE,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="billNo != null" >
+        #{billNo,jdbcType=VARCHAR},
+      </if>
+      <if test="waybillNo != null" >
+        #{waybillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="serialNo != null" >
+        #{serialNo,jdbcType=VARCHAR},
+      </if>
+      <if test="changeReason != null" >
+        #{changeReason,jdbcType=VARCHAR},
+      </if>
+      <if test="discoverTime != null" >
+        #{discoverTime,jdbcType=VARCHAR},
+      </if>
+      <if test="discoverTache != null" >
+        #{discoverTache,jdbcType=VARCHAR},
+      </if>
+      <if test="handleStatus != null" >
+        #{handleStatus,jdbcType=VARCHAR},
+      </if>
+      <if test="handleTime != null" >
+        #{handleTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="handlerCode != null" >
+        #{handlerCode,jdbcType=VARCHAR},
+      </if>
+      <if test="handlerName != null" >
+        #{handlerName,jdbcType=VARCHAR},
+      </if>
+      <if test="orgName != null" >
+        #{orgName,jdbcType=VARCHAR},
+      </if>
+      <if test="orgCode != null" >
+        #{orgCode,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.ChangeLabelGoodsEntity" >
+    update TFR.T_OPT_CHANGELABEL_GOODS
+    <set >
+      <if test="billNo != null" >
+        BILL_NO = #{billNo,jdbcType=VARCHAR},
+      </if>
+      <if test="waybillNo != null" >
+        WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="serialNo != null" >
+        SERIAL_NO = #{serialNo,jdbcType=VARCHAR},
+      </if>
+      <if test="changeReason != null" >
+        CHANGE_REASON = #{changeReason,jdbcType=VARCHAR},
+      </if>
+      <if test="discoverTime != null" >
+        DISCOVER_TIME = #{discoverTime,jdbcType=VARCHAR},
+      </if>
+      <if test="discoverTache != null" >
+        DISCOVER_TACHE = #{discoverTache,jdbcType=VARCHAR},
+      </if>
+      <if test="handleStatus != null" >
+        HANDLE_STATUS = #{handleStatus,jdbcType=VARCHAR},
+      </if>
+      <if test="handleTime != null" >
+        HANDLE_TIME = #{handleTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="handlerCode != null" >
+        HANDLER_CODE = #{handlerCode,jdbcType=VARCHAR},
+      </if>
+      <if test="handlerName != null" >
+        HANDLER_NAME = #{handlerName,jdbcType=VARCHAR},
+      </if>
+      <if test="orgName != null" >
+        ORG_NAME = #{orgName,jdbcType=VARCHAR},
+      </if>
+      <if test="orgCode != null" >
+        ORG_CODE = #{orgCode,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.ChangeLabelGoodsEntity" >
+    update TFR.T_OPT_CHANGELABEL_GOODS
+    set BILL_NO = #{billNo,jdbcType=VARCHAR},
+      WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR},
+      SERIAL_NO = #{serialNo,jdbcType=VARCHAR},
+      CHANGE_REASON = #{changeReason,jdbcType=VARCHAR},
+      DISCOVER_TIME = #{discoverTime,jdbcType=VARCHAR},
+      DISCOVER_TACHE = #{discoverTache,jdbcType=VARCHAR},
+      HANDLE_STATUS = #{handleStatus,jdbcType=VARCHAR},
+      HANDLE_TIME = #{handleTime,jdbcType=TIMESTAMP},
+      HANDLER_CODE = #{handlerCode,jdbcType=VARCHAR},
+      HANDLER_NAME = #{handlerName,jdbcType=VARCHAR},
+      ORG_NAME = #{orgName,jdbcType=VARCHAR},
+      ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  <update id="updateChangeLabelGoods" parameterType="com.deppon.foss.module.transfer.unload.api.shared.dto.ChangeLabelGoodsDto" >
+    update TFR.T_OPT_CHANGELABEL_GOODS
+    set HANDLE_STATUS = #{handleStatus},
+    HANDLER_CODE = #{handlerCode},
+    HANDLER_NAME = #{handlerName},
+    HANDLE_TIME = #{handleTime}
+    where BILL_NO = #{billNo}
+    	and WAYBILL_NO = #{waybillNo}
+    	and SERIAL_NO = #{serialNo}
+  </update>
+</mapper>

@@ -1,0 +1,148 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.electronicTicketEntity" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.domain.ElectronicTicketEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="WAYBILLNO" property="wayBillNo" jdbcType="VARCHAR" />
+    <result column="IMAGE_URL" property="imageUrl" jdbcType="VARCHAR" />
+    <result column="SERIALNO" property="serialNo" jdbcType="VARCHAR" />
+    <result column="CARD_MONEY" property="cardMoney" jdbcType="DECIMAL" />
+    <result column="CARD_TIME" property="cardTime" jdbcType="TIMESTAMP" />
+   
+    <result column="CREATE_USER_CODE" property="createuser" jdbcType="VARCHAR" />
+    <result column="MODIFY_USER_CODE" property="modifyuser" jdbcType="VARCHAR" />
+   
+   <result property="active" column="ACTIVE" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+   
+  </resultMap>
+  
+  <sql id="Base_Column_List" >
+    ID, WAYBILLNO, IMAGE_URL, SERIALNO, CARD_MONEY/100 CARD_MONEY, CARD_TIME, CREATE_USER_CODE, MODIFY_USER_CODE, 
+    CREATE_TIME, MODIFY_TIME, ACTIVE
+  </sql>
+  
+  <sql id="Base_Column_SelectOne" >
+    ID, WAYBILLNO, IMAGE_URL, SERIALNO,CARD_MONEY, CARD_TIME, CREATE_USER_CODE, MODIFY_USER_CODE, 
+    CREATE_TIME, MODIFY_TIME, ACTIVE
+  </sql>
+  
+  <!-- 批量插入刷卡电子小票地址信息 -->
+	<insert id="addElectronicTicket" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ElectronicTicketEntity">
+		insert into /*刷卡电子小票地址*/ BSE.T_BAS_ELECTRONIC_TICKET (ID, WAYBILLNO, IMAGE_URL, SERIALNO, CARD_MONEY, CARD_TIME, CREATE_USER_CODE, MODIFY_USER_CODE, 
+    CREATE_TIME, MODIFY_TIME, ACTIVE)
+		(
+		<foreach collection="list" index="index" item="electronicTicketEntity" separator="union">
+		SELECT
+			#{electronicTicketEntity.id,jdbcType=VARCHAR}, 
+			#{electronicTicketEntity.wayBillNo,jdbcType=VARCHAR}, 
+			#{electronicTicketEntity.imageUrl,jdbcType=VARCHAR}, 
+			#{electronicTicketEntity.serialNo,jdbcType=VARCHAR}, 
+			#{electronicTicketEntity.cardMoney,jdbcType=DECIMAL}*100,
+      		#{electronicTicketEntity.cardTime,jdbcType=TIMESTAMP}, 
+      		#{electronicTicketEntity.createuser,jdbcType=VARCHAR}, 
+      		#{electronicTicketEntity.modifyuser,jdbcType=VARCHAR}, 
+      		#{electronicTicketEntity.createTime,jdbcType=TIMESTAMP},
+  		 	#{electronicTicketEntity.modifyTime,jdbcType=TIMESTAMP},
+  		 	#{electronicTicketEntity.active,jdbcType=VARCHAR}  FROM DUAL
+		</foreach>
+		)
+	</insert>
+  <!-- 根据交易流水号删除 -->
+  
+  <update id="deletebyWayBillNoorSerialNo" parameterType="map">
+   update /*刷卡电子小票地址*/ BSE.T_BAS_ELECTRONIC_TICKET A
+	   	<set>
+	    <if test="createuser != null" > 
+	      	A.CREATE_USER_CODE = #{electronicTicketEntity.createuser,jdbcType=VARCHAR},
+	     </if>
+	    <if test="modifyuser != null" > 
+	      	A.MODIFY_USER_CODE = #{electronicTicketEntity.modifyuser,jdbcType=VARCHAR},
+	     </if>
+	     <if test="createTime != null" > 
+	      	A.CREATE_TIME = #{electronicTicketEntity.createTime,jdbcType=TIMESTAMP},
+	     </if>
+	     <if test="modifyTime != null" > 
+	      	A.MODIFY_TIME = #{electronicTicketEntity.modifyTime,jdbcType=TIMESTAMP},
+	     </if>
+	    <if test="active != null" > 
+	      	A.ACTIVE = #{electronicTicketEntity.active,jdbcType=CHAR},
+	     </if>
+	     </set>
+    <where>
+		 A.SERIALNO = #{electronicTicketEntity.serialNo,jdbcType=VARCHAR}
+		 AND A.WAYBILLNO=#{electronicTicketEntity.wayBillNo,jdbcType=VARCHAR}
+		AND A.ACTIVE= #{active,jdbcType=CHAR}
+    </where>
+  </update>
+  <!-- 根据运单号或交易流水号精确查询： -->
+	<select id="queryElectronicTicketListNumber" resultMap="BaseResultMap"
+		parameterType="java.util.Map">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据 WAYBILLNO 精确查询数据  **/
+		]]>
+		<include refid="Base_Column_List" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_ELECTRONIC_TICKET A 
+		]]>
+		<where>
+			<if test="wayBillNos!=null and wayBillNos.size() > 0">
+                A.WAYBILLNO in
+                <foreach collection="wayBillNos"  index="index" item="wayBillNo"  open="(" separator="," close=")">  
+	            #{wayBillNo,jdbcType=VARCHAR} 
+	            </foreach>
+            </if> 
+			<if test="serialNos!=null and serialNos.size() > 0">
+                A.SERIALNO in
+                <foreach collection="serialNos"  index="index" item="serialNo"  open="(" separator="," close=")">  
+	            #{serialNo,jdbcType=VARCHAR} 
+	            </foreach>
+            </if> 
+			AND A.ACTIVE= #{active,jdbcType=CHAR}
+		</where>
+	</select>
+	
+	<!-- 根据实体动态条件精确查询,如果属性的值为null或者空白则无效： -->
+	<select id="queryByEntityCount" resultType="Long"
+		parameterType="java.util.Map">
+		<![CDATA[
+			 SELECT/** 综合:根据实体动态条件模糊查询总数,如果属性的值为null或者空白则无效  **/ count(*) 
+			 FROM BSE.T_BAS_ELECTRONIC_TICKET A 
+		]]>
+		<where>
+			<if test="wayBillNos!=null and wayBillNos.size() > 0">
+                A.WAYBILLNO in
+                <foreach collection="wayBillNos"  index="index" item="wayBillNo"  open="(" separator="," close=")">  
+	            #{wayBillNo,jdbcType=VARCHAR} 
+	            </foreach>
+            </if> 
+			<if test="serialNos!=null and serialNos.size() > 0">
+                A.SERIALNO in
+                <foreach collection="serialNos"  index="index" item="serialNo"  open="(" separator="," close=")">  
+	            #{serialNo,jdbcType=VARCHAR} 
+	            </foreach>
+            </if> 
+			AND A.ACTIVE= #{active,jdbcType=CHAR}
+		</where>
+	</select>
+	<!--根据交易流水号精确查询-->
+	<select id="queryElectronicTicketBySerialNo" resultMap="BaseResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ElectronicTicketEntity">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据 WAYBILLNO 精确查询数据  **/
+		]]>
+		<include refid="Base_Column_SelectOne" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_ELECTRONIC_TICKET A 
+		]]>
+		<where>
+			A.SERIALNO= #{serialNo}
+			AND A.WAYBILLNO=#{wayBillNo,jdbcType=VARCHAR}
+			AND A.ACTIVE= #{active,jdbcType=CHAR}
+		</where>
+	</select>
+	
+</mapper>

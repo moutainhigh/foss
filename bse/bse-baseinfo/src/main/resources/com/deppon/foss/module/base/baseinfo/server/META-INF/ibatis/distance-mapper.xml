@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.distance" >
+
+	<resultMap id="distanceMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.DistanceEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="storage_virtual_code" property="storageVirtualCode" jdbcType="VARCHAR" />
+		<result column="platform_virtual_code" property="platformVirtualCode" jdbcType="VARCHAR" />
+		<result column="PLAT_STORAGE_DISTANCE" property="distance" jdbcType="NUMERIC" />
+		<result column="active" property="active" jdbcType="CHAR" />
+		<result column="create_time" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="modify_time" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<sql id="columns">
+		ID,
+		PLATFORM_VIRTUAL_CODE,
+		STORAGE_VIRTUAL_CODE,
+		PLAT_STORAGE_DISTANCE,
+		CREATE_TIME,
+		MODIFY_TIME,
+		ACTIVE,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE
+	</sql>
+	
+	<sql id="values">
+		#{id,jdbcType=VARCHAR},
+		#{platformVirtualCode,jdbcType=VARCHAR}, 
+		#{storageVirtualCode,jdbcType=VARCHAR}, 
+		#{distance, jdbcType=NUMERIC},
+		#{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=CHAR},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR} 
+	</sql>
+
+	<insert id="addDistance" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.DistanceEntity">
+		insert into BSE.T_BAS_DIS_PLAT_STORAGE (
+		<include refid="columns"/>
+		) values ( 
+		<include refid="values"/>
+		)
+	</insert>
+
+	<delete id="deleteDistance" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.DistanceEntity">
+		delete from BSE.T_BAS_DIS_PLAT_STORAGE 
+		where storage_virtual_code = #{storageVirtualCode, jdbcType=VARCHAR} 
+		and platform_virtual_code = #{platformVirtualCode, jdbcType=VARCHAR}
+	</delete>
+
+	<delete id="deleteDistanceByStorage" parameterType="java.lang.String">
+		delete from BSE.T_BAS_DIS_PLAT_STORAGE 
+		where storage_virtual_code = #{storageVirtualCode, jdbcType=VARCHAR} 
+	</delete>
+
+	<delete id="deleteDistanceByPlatform" parameterType="java.lang.String">
+		delete from BSE.T_BAS_DIS_PLAT_STORAGE 
+		where platform_virtual_code = #{platformVirtualCode, jdbcType=VARCHAR} 
+	</delete>
+
+	<update id="updateDistance" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.DistanceEntity">
+		update BSE.T_BAS_DIS_PLAT_STORAGE set 
+		modify_time = #{modifyDate,jdbcType=TIMESTAMP}, 
+		modify_user_code = #{modifyUser,jdbcType=VARCHAR}, 
+		PLAT_STORAGE_DISTANCE = #{distance, jdbcType=NUMERIC},
+		active = #{active,jdbcType=CHAR} 
+		where storage_virtual_code = #{storageVirtualCode, jdbcType=VARCHAR}
+		and platform_virtual_code = #{platformVirtualCode, jdbcType=VARCHAR}
+	</update>
+
+	<select id="queryDistanceByStorage" resultMap="distanceMap" parameterType="java.lang.String">
+		select 
+		<include refid="columns"/>
+		 from BSE.T_BAS_DIS_PLAT_STORAGE where storage_virtual_code = #{storageVirtualCode, jdbcType=VARCHAR}
+	</select>
+
+	<select id="queryDistanceByPlatform" resultMap="distanceMap" parameterType="java.lang.String">
+		select 
+		<include refid="columns"/>
+		from BSE.T_BAS_DIS_PLAT_STORAGE where platform_virtual_code = #{platformVirtualCode, jdbcType=VARCHAR}
+	</select>
+
+	<select id="queryDistanceListByOrganizationCode" resultMap="distanceMap" parameterType="java.lang.String">
+		SELECT 
+		<include refid="columns"/>
+		FROM BSE.T_BAS_DIS_PLAT_STORAGE 
+		WHERE PLATFORM_VIRTUAL_CODE IN 
+			( SELECT DISTINCT VIRTUAL_CODE 
+			FROM BSE.T_BAS_PLATFORM
+			WHERE ORG_CODE = #{organizationCode, jdbcType=VARCHAR} 
+			AND ACTIVE = 'Y' )
+		AND STORAGE_VIRTUAL_CODE IN
+			( SELECT DISTINCT VIRTUAL_CODE 
+			FROM BSE.T_BAS_STORAGE
+			WHERE ORG_CODE = #{organizationCode, jdbcType=VARCHAR} 
+			AND ACTIVE = 'Y' )
+		AND ACTIVE = 'Y'
+	</select>
+
+
+</mapper>

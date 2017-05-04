@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stv.OrcciEntityMapper" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.closing.api.shared.domain.MvrOrccIEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="PERIOD" property="period" jdbcType="VARCHAR" />
+    <result column="PRODUCT_CODE" property="productCode" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+    <result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+    <result column="ORG_NAME" property="orgName" jdbcType="VARCHAR" />
+    <result column="ORG_TYPE" property="orgType" jdbcType="CHAR" />
+    <result column="ORG_UNIFIED_CODE" property="orgUnifiedCode" jdbcType="VARCHAR" />
+    <result column="VOUCHER_BEGIN_TIME" property="voucherBeginTime" jdbcType="TIMESTAMP" />
+    <result column="VOUCHER_END_TIME" property="voucherEndTime" jdbcType="TIMESTAMP" />
+    <result column="CUSTOMER_TYPE" property="customerType" jdbcType="VARCHAR" />
+    <result column="INVOICE_MARK" property="invoiceMark" jdbcType="VARCHAR" />
+    <result column="DEST_PAY_TAIL" property="destPayTail" jdbcType="DECIMAL" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    ID, PERIOD, PRODUCT_CODE, CUSTOMER_CODE, CUSTOMER_NAME, ORG_CODE, ORG_NAME, ORG_TYPE, 
+    ORG_UNIFIED_CODE, VOUCHER_BEGIN_TIME, VOUCHER_END_TIME, CUSTOMER_TYPE, INVOICE_MARK, 
+    DEST_PAY_TAIL/100 DEST_PAY_TAIL
+  </sql>
+  
+  <select id="selectByConditions"
+ parameterType="com.deppon.foss.module.settlement.closing.api.shared.dto.MvrOrcciQueryDto" resultMap="BaseResultMap">
+SELECT <include refid="Base_Column_List"/> FROM 
+STV.T_STL_MVR_ORCCI CC
+<where>
+ <if test="period !=null and period != ''">
+ AND CC.PERIOD = #{period,jdbcType=VARCHAR}
+ </if> 
+ <if test="deptCode!=null and deptCode != ''">
+ AND CC.ORG_CODE = #{deptCode,jdbcType=VARCHAR}
+ </if>
+ <if test="orgType !=null and orgType != ''">
+  AND	CC.Org_Type = #{orgType,jdbcType=VARCHAR}
+ </if>
+</where>
+</select>
+
+<select id="selectByConditionsToltal"
+ parameterType="com.deppon.foss.module.settlement.closing.api.shared.dto.MvrOrcciQueryDto" resultType="long">
+SELECT count(CC.ID) FROM 
+STV.T_STL_MVR_ORCCI CC
+<where>
+ <if test="period !=null and period !='' ">
+ AND CC.PERIOD = #{period,jdbcType=VARCHAR}
+ </if> 
+ <if test="deptCode!=null and deptCode != ''">
+  AND CC.ORG_CODE = #{deptCode,jdbcType=VARCHAR}
+ </if>
+ <if test="orgType !=null and orgType !='' ">
+ AND CC.Org_Type = #{orgType,jdbcType=VARCHAR}
+ </if>
+</where>
+</select>
+</mapper>

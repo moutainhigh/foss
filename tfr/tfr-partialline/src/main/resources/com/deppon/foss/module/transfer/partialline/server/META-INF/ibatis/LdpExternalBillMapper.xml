@@ -1,0 +1,684 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.partialline.ldpExternalBillMapper" >
+	<!-- 已录入落地配外发查询结果集 -->
+	<resultMap id="LdpExternalBillResultMap" type="com.deppon.foss.module.transfer.partialline.api.shared.dto.LdpExternalBillDto" >
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="HANDOVER_NO" property="handoverNo" jdbcType="VARCHAR" />
+		<result column="EXTERNAL_BILL_NO" property="externalBillNo" jdbcType="VARCHAR" />
+		<result column="EXTERNAL_USER_CODE" property="externalUserCode" jdbcType="VARCHAR" />
+		<result column="EXTERNAL_USER_NAME" property="externalUserName" jdbcType="VARCHAR" />
+		<result column="EXTERNAL_ORG_CODE" property="externalOrgCode" jdbcType="VARCHAR" />
+		<result column="EXTERNAL_ORG_NAME" property="externalOrgName" jdbcType="VARCHAR" />
+		<result column="AGENT_COMPANY_CODE" property="agentCompanyCode" jdbcType="VARCHAR" />
+		<result column="AGENT_COMPANY_NAME" property="agentCompanyName" jdbcType="VARCHAR" /> 
+		<result column="AGENT_ORG_CODE" property="agentOrgCode" jdbcType="VARCHAR" />
+		<result column="AGENT_ORG_NAME" property="agentOrgName" jdbcType="VARCHAR" /> 
+		<result column="RETURN_TYPE" property="returnType" jdbcType="VARCHAR" /> 
+		<result column="FREIGHT_FEE" property="freightFee" jdbcType="DECIMAL" />
+		<result column="COD_AGENCY_FEE" property="codAgencyFee" jdbcType="DECIMAL" />
+		<result column="AGENCY_RETURN_FEE" property="agencyReturnFee" jdbcType="DECIMAL" />
+		<result column="PAY_DP_FEE" property="payDpFee" jdbcType="DECIMAL" />
+		<result column="EXTERNAL_INSURANCE_FEE" property="externalInsuranceFee" jdbcType="DECIMAL" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+		<result column="AUDIT_STATUS" property="auditStatus" jdbcType="VARCHAR" />
+		<result column="REGISTER_TIME" property="registerTime" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_USER_CODE" property="modifyUserCode" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_NAME" property="modifyUserName" jdbcType="VARCHAR" />
+		<result column="IS_TRANSFER_EXTERNAL" property="transferExternal" jdbcType="VARCHAR" /> 
+		<result column="SEND_STATUS" property="sendStatus" jdbcType="VARCHAR" />
+		<result column="CURRENCY_CODE" property="currencyCode" jdbcType="VARCHAR" /> 
+		<result column="COD_AMOUNT" property="codAmount" jdbcType="DECIMAL" />
+		<result column="BILL_RECEIVABLE" property="billReceiveable" jdbcType="DECIMAL" />
+		<result column="TO_PAY_FEE" property="toPayFee" jdbcType="DECIMAL" />
+		<result column="BILL_PAYABLE" property="billPayable" jdbcType="DECIMAL" />
+		<result column="TO_PAY_AMOUNT" property="toPayAmount" jdbcType="VARCHAR" /> 
+		<result column="RECEIVE_METHOD" property="beAutoDelivery" jdbcType="VARCHAR" /> 
+		<result column="AGENT_WAYBILL_NO" property="agencyWaybillNo" jdbcType="VARCHAR" />
+		<result column="SERIAL_NO" property="serialNo" jdbcType="VARCHAR" />
+	</resultMap>
+	  
+	<!--运单信息查询结果集-->
+	<resultMap id="ExternalWaybillResultMap" type="com.deppon.foss.module.transfer.partialline.api.shared.dto.ExternalBillWayBillInfoDto" >
+		<id column="ID" property="id" jdbcType="VARCHAR" />      
+		<result column="PAID_METHOD" property="paidMethod" jdbcType="VARCHAR" />
+		<result column="TO_PAY_AMOUNT" property="toPayAmount" jdbcType="VARCHAR" />
+		<result column="TARGET_ORG_CODE" property="targetOrgCode" jdbcType="VARCHAR" />
+		<result column="HANDGOODSTIME" property="handGoodsTime" jdbcType="VARCHAR" />
+		<result column="CREATE_ORG_CODE" property="createOrgCode" jdbcType="VARCHAR" />
+		<result column="GOODS_WEIGHT_TOTAL" property="goodsWeightTotal" jdbcType="VARCHAR" />
+		<result column="GOODS_VOLUME_TOTAL" property="goodsVolumeTotal" jdbcType="VARCHAR" />
+		<result column="GOODS_QTY_TOTAL" property="goodsQtyTotal" jdbcType="VARCHAR" />
+		<result column="TRANSPORT_FEE" property="transportFee" jdbcType="VARCHAR" />
+		<result column="GOODS_NAME" property="goodsName" jdbcType="VARCHAR" />
+		<result column="INSURANCE__FEE" property="insuranceFee" jdbcType="VARCHAR" />
+		<result column="GOODS_PACKAGE" property="goodsPackage" jdbcType="VARCHAR" />
+		<result column="DELIVERY_CUSTOMER_NAME" property="deliveryCustomerName" jdbcType="VARCHAR" />
+		<result column="INSURANCE_AMOUNT" property="insuranceAmount" jdbcType="VARCHAR" />
+		<result column="YUNSHUSHIXIANG" property="yunshushixiang" jdbcType="VARCHAR" />
+		<result column="TOTAL_FEE" property="totalFee" jdbcType="VARCHAR" />
+		<result column="COD_AMOUNT" property="codAmount" jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_NAME" property="receiveCustomerName" jdbcType="VARCHAR" />	    
+		<result column="RECEIVE_METHOD" property="beAutoDelivery" jdbcType="VARCHAR" />	    
+		<result column="CUSTOMER_PICKUP_ORG_CODE" property="customerPickupOrgCode" jdbcType="VARCHAR" />	    
+		<result column="CURRENCY_CODE" property="currencyCode" jdbcType="VARCHAR" />	    
+	</resultMap>
+  
+	<!-- 落地配where条件 -->
+	<sql id="ExternalBill_Where_Clause" >
+		<where >
+			<if test="waybillNo!=null and waybillNo!=''">
+				EBILL.WAYBILL_NO = #{waybillNo}
+			</if>
+			<if test="externalBillNo!=null and externalBillNo!=''">
+				and EBILL.EXTERNAL_BILL_NO =#{externalBillNo}
+			</if>
+			<if test="externalUserName!=null and externalUserName!=''">
+				and EBILL.EXTERNAL_USER_NAME =#{externalUserName}
+			</if>
+			<if test="externalUserCode!=null and externalUserCode!=''">
+				and EBILL.EXTERNAL_USER_CODE = #{externalUserCode,jdbcType=VARCHAR} 
+			</if>
+			<if test="agentCompanyCode!=null and agentCompanyCode!=''">
+				and EBILL.AGENT_COMPANY_CODE = #{agentCompanyCode}  
+			</if>
+			<if test="registerTimeFrom!=null and registerTimeFrom!=''">
+			<![CDATA[ and EBILL.REGISTER_TIME > to_date(#{registerTimeFrom,jdbcType=VARCHAR}, 'YYYY-MM-DD HH24:MI:SS')]]>  
+			</if>
+			<if test="registerTimeTo!=null and registerTimeTo!=''">
+			<![CDATA[ and EBILL.REGISTER_TIME < to_date(#{registerTimeTo,jdbcType=VARCHAR}, 'YYYY-MM-DD HH24:MI:SS') ]]>  
+				
+			</if>
+			<if test="auditStatus!=null and auditStatus!=''">
+				and EBILL.AUDIT_STATUS = #{auditStatus,jdbcType=VARCHAR}
+			</if>			
+			<if test="filterOrgCode!=null and filterOrgCode!=''">
+				and EBILL.EXTERNAL_ORG_CODE = #{filterOrgCode,jdbcType=VARCHAR}
+			</if>			
+		</where>
+	</sql>
+  
+	<!-- 已做交接但未录入落地配外发where条件 -->
+	<sql id="Uninput_Waybill_Where_Clause" >
+		<where >
+	      not exists
+		  (select HBILL.WAYBILL_NO
+		           from tfr.T_OPT_LDP_EXTERNAL_BILL EBILL
+		          where HBILL.WAYBILL_NO = EBILL.WAYBILL_NO 
+		          and HBILL.HANDOVER_NO= EBILL.HANDOVER_NO
+		          and EBILL.AUDIT_STATUS in
+					<foreach collection="list" item="item" index="index" open=" ("  separator="," close=")">                  
+					    #{item,jdbcType=VARCHAR} 
+					</foreach>
+					)
+			<if test="waybillNo!=null and waybillNo!=''">
+				and HBILL.WAYBILL_NO=#{waybillNo}
+			</if>  				
+		</where>
+	</sql>
+  
+	<!--落地配表查询字段  -->
+	<sql id="ExternalBill_Column_List" >
+   	   EBILL.ID,
+       EBILL.WAYBILL_NO,
+       EBILL.HANDOVER_NO,
+       EBILL.SERIAL_NO,
+       EBILL.EXTERNAL_BILL_NO,
+       EBILL.EXTERNAL_USER_CODE,
+       EBILL.EXTERNAL_USER_NAME,
+       EBILL.EXTERNAL_ORG_CODE,
+       EBILL.EXTERNAL_ORG_NAME,
+       EBILL.AGENT_COMPANY_CODE,
+       EBILL.AGENT_COMPANY_NAME,
+       EBILL.AGENT_ORG_CODE,
+       EBILL.AGENT_ORG_NAME,
+       EBILL.RETURN_TYPE,
+       EBILL.FREIGHT_FEE,
+       EBILL.COD_AGENCY_FEE,
+       EBILL.AGENCY_RETURN_FEE,
+       EBILL.PAY_DP_FEE,
+       EBILL.EXTERNAL_INSURANCE_FEE,
+       EBILL.NOTES,
+       EBILL.AUDIT_STATUS,
+       EBILL.REGISTER_TIME,
+       EBILL.MODIFY_TIME,
+       EBILL.MODIFY_USER_CODE,
+       EBILL.MODIFY_USER_NAME,
+       EBILL.IS_TRANSFER_EXTERNAL,
+       EBILL.SEND_STATUS,
+       EBILL.CURRENCY_CODE,
+       EBILL.COD_AMOUNT,
+       EBILL.BILL_RECEIVABLE,
+       EBILL.BILL_PAYABLE,
+       EBILL.TO_PAY_FEE
+	</sql>
+  
+	<!--运单表通用字段  -->
+	<sql id="Waybill_Column_List" >
+   	 WAYBILL.PAID_METHOD , /**付款方式**/
+	 WAYBILL.TO_PAY_AMOUNT , /**到付金额(运单)**/
+	 WAYBILL.TARGET_ORG_CODE , /**目的站**/
+	 WAYBILL.CREATE_TIME HANDGOODSTIME, /**收货日期//开单时间**/
+	 WAYBILL.CREATE_ORG_CODE , /**收货部门//开单组织**/
+	 WAYBILL.GOODS_WEIGHT_TOTAL , /**重量//货物总重量**/
+	 WAYBILL.GOODS_VOLUME_TOTAL , /**体积//货物总体积**/
+	 WAYBILL.GOODS_QTY_TOTAL , /**件数//货物总件数**/
+	 WAYBILL.TRANSPORT_FEE , /**运费//公布价运费**/
+	 WAYBILL.GOODS_NAME , /**货物名称//货物名称**/
+	 WAYBILL.INSURANCE_FEE , /**保险费//保价费**/
+	 WAYBILL.GOODS_PACKAGE , /**包装//货物包装**/
+	 WAYBILL.DELIVERY_CUSTOMER_NAME , /**托运人姓名//发货客户名称**/
+	 WAYBILL.INSURANCE_AMOUNT , /**保险价值//保价声明价值**/
+	 WAYBILL.INNER_NOTES || ',' || WAYBILL.OUTER_NOTES YUNSHUSHIXIANG, /**运输事项//对内备注,对外备注合体**/
+	 WAYBILL.TOTAL_FEE , /**开单金额//总费用**/
+	 WAYBILL.COD_AMOUNT , /**代收货款//代收货款**/
+	 WAYBILL.RECEIVE_CUSTOMER_NAME , /**收货客户//收货客户名称**/
+	 WAYBILL.RECEIVE_METHOD,  /**提货方式**/
+	 WAYBILL.CURRENCY_CODE  /**币种**/
+	</sql>
+  
+  <!-- 按照运单号查找外发单号和外发公司  zwd 200968 2016-2-24 -->
+  <select id="queryLdpExternalBillNoList" resultMap="LdpExternalBillResultMap" parameterType="java.util.List" >
+  select EBILL.Waybill_No,
+      max(tpa.agent_waybill_no) EXTERNAL_BILL_NO,
+      max(EBILL.AGENT_COMPANY_CODE) AGENT_COMPANY_CODE,
+      max(EBILL.Agent_Company_Name) Agent_Company_Name,
+      max(EBILL.Modify_Time) Modify_Time
+  from TFR.T_OPT_LDP_EXTERNAL_BILL EBILL
+  left join PKP.T_SRV_WAYBILL WAYBILL
+    on WAYBILL.WAYBILL_NO = EBILL.WAYBILL_NO
+   and WAYBILL.ACTIVE = 'Y'
+   and EBILL.Audit_Status != 'INVALID'
+  left join tfr.t_opt_print_agentwaybill tpa
+    on WAYBILL.Waybill_No = tpa.waybill_no
+   and tpa.active = 'Y'
+  <where>
+		EBILL.Waybill_No in
+		 <foreach collection="list" item="item" index="index" open=" ("  separator="," close=")">                  
+		    #{item,jdbcType=VARCHAR} 
+		 </foreach>  
+  </where>
+  group by EBILL.Waybill_No
+  </select>
+  
+  
+	<!-- 按照条件查询落地配外发单list -->
+	<select id="selectLdpExternalBillList" resultMap="LdpExternalBillResultMap" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.LdpExternalBillDto" >
+     select
+     	AGENTWAYBILL.AGENT_WAYBILL_NO,
+		<include refid="ExternalBill_Column_List" />
+	      from TFR.T_OPT_LDP_EXTERNAL_BILL EBILL
+   	      join PKP.T_SRV_WAYBILL WAYBILL
+   		 on WAYBILL.WAYBILL_NO = EBILL.WAYBILL_NO and WAYBILL.ACTIVE=#{active}
+   		 left join TFR.T_OPT_PRINT_AGENTWAYBILL AGENTWAYBILL
+   		 on AGENTWAYBILL.WAYBILL_NO = EBILL.WAYBILL_NO and AGENTWAYBILL.Serial_No = EBILL.Serial_No and AGENTWAYBILL.ACTIVE='Y'
+		<where >
+			<if test="waybillNo!=null and waybillNo!=''">
+				EBILL.WAYBILL_NO = #{waybillNo}
+			</if>
+			<!--一票多件，一个运单产生多个外发代理单号；一个流水号对应一个外发代理单号-->
+			<if test="serialNo!=null and serialNo!=''">
+				and EBILL.SERIAL_NO = #{serialNo,jdbcType=VARCHAR}
+			</if>
+			<if test="agencyWaybillNo!=null and agencyWaybillNo!=''">
+				and AGENTWAYBILL.AGENT_WAYBILL_NO = #{agencyWaybillNo}
+			</if>
+			<if test="handoverNo!=null and handoverNo!=''">
+				and EBILL.HANDOVER_NO = #{handoverNo}
+			</if>
+			<if test="externalBillNo!=null and externalBillNo!=''">
+				and EBILL.EXTERNAL_BILL_NO =#{externalBillNo}
+			</if>
+			<if test="externalUserName!=null and externalUserName!=''">
+				and EBILL.EXTERNAL_USER_NAME =#{externalUserName}
+			</if>
+			<if test="externalUserCode!=null and externalUserCode!=''">
+				and EBILL.EXTERNAL_USER_CODE = #{externalUserCode,jdbcType=VARCHAR} 
+			</if>
+			<if test="externalOrgCode!=null and externalOrgCode!=''">
+				and EBILL.EXTERNAL_ORG_CODE = #{externalOrgCode,jdbcType=VARCHAR} 
+			</if>
+			<if test="externalOrgCodeList!=null and externalOrgCodeList!=''">
+				and EBILL.EXTERNAL_ORG_CODE in 
+				<foreach collection="externalOrgCodeList" item="externalOrgCodeListItem" index="externalOrgCodeListIndex" open=" ("  separator="," close=")">                  
+				    #{externalOrgCodeListItem,jdbcType=VARCHAR} 
+				 </foreach>  
+			</if>
+			<if test="agentCompanyCode!=null and agentCompanyCode!=''">
+				and EBILL.AGENT_COMPANY_CODE = #{agentCompanyCode}  
+			</if>
+			<if test="modifyUserCode != null and modifyUserCode != ''">
+				and EBILL.MODIFY_USER_CODE = #{modifyUserCode}  
+			</if>
+			<if test="registerTimeFrom!=null and registerTimeFrom!=''">
+			<![CDATA[ and EBILL.REGISTER_TIME > to_date(#{registerTimeFrom,jdbcType=VARCHAR}, 'YYYY-MM-DD HH24:MI:SS')]]>  
+			</if>
+			<if test="registerTimeTo!=null and registerTimeTo!=''">
+			<![CDATA[ and EBILL.REGISTER_TIME < to_date(#{registerTimeTo,jdbcType=VARCHAR}, 'YYYY-MM-DD HH24:MI:SS') ]]>  
+			</if>
+			<if test="transferExternal!=null and transferExternal!=''">
+				and EBILL.IS_TRANSFER_EXTERNAL = #{transferExternal,jdbcType=CHAR}
+			</if>
+			<if test="auditStatus!=null and auditStatus!=''">
+				and EBILL.AUDIT_STATUS = #{auditStatus,jdbcType=VARCHAR}
+			</if>		
+			<if test="list!=null and list!=''">
+				and EBILL.AUDIT_STATUS in
+				 <foreach collection="list" item="item" index="index" open=" ("  separator="," close=")">                  
+				    #{item,jdbcType=VARCHAR} 
+				 </foreach>  
+			</if>			
+		</where>
+     order by EBILL.REGISTER_TIME DESC
+	</select>
+  
+	<!-- 按照ID主键查询落地配外发单 -->
+	<select id="selectByPrimaryKey" resultMap="LdpExternalBillResultMap" parameterType="String"  >
+     select
+          	AGENTWAYBILL.AGENT_WAYBILL_NO,
+		<include refid="ExternalBill_Column_List" />
+   	 from TFR.T_OPT_LDP_EXTERNAL_BILL EBILL
+   	  left join TFR.T_OPT_PRINT_AGENTWAYBILL AGENTWAYBILL
+   		 on AGENTWAYBILL.WAYBILL_NO = EBILL.WAYBILL_NO 
+   		and AGENTWAYBILL.SERIAL_NO = EBILL.SERIAL_NO
+   		and AGENTWAYBILL.ACTIVE='Y'
+   	 where EBILL.ID = #{id}
+	</select>  
+  
+	<!--  查询已交接单未做录入的运单-->
+	<select id="selectHandedUninputWaybill" resultType="Long" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.LdpExternalBillDto" >
+     select
+		count(HBILL.id) 		
+   	 from  TFR.T_OPT_HANDOVERBILL_DETAIL HBILL
+   	 join  TFR.T_OPT_HANDOVERBILL HANDBILL 
+   	  on  HBILL.HANDOVER_NO=HANDBILL.HANDOVER_NO 
+   	  and HANDBILL.HANDOVERBILL_STATE in
+			<foreach collection="billStatuslist" item="item" index="index" open=" ("   separator="," close=")">                  
+	            #{item,jdbcType=DECIMAL} 
+			</foreach>	  
+	 where
+	  not exists
+	  (select HBILL.WAYBILL_NO
+		   from tfr.T_OPT_LDP_EXTERNAL_BILL EBILL
+		  where HBILL.WAYBILL_NO = EBILL.WAYBILL_NO 
+		  and HBILL.HANDOVER_NO= EBILL.HANDOVER_NO
+		  and EBILL.AUDIT_STATUS in
+			<foreach collection="list" item="item" index="index" open=" ("  separator="," close=")">                  
+				#{item,jdbcType=VARCHAR} 
+			</foreach>
+	 )			
+	 and HBILL.WAYBILL_NO=#{waybillNo}
+	 and HBILL.HANDOVER_TYPE = #{handoverType}	
+	</select>
+  
+	<!-- 根据条件统计符合条件的落地配外发单条数 -->
+	<select id="getCount" resultType="Long"	parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.LdpExternalBillDto">
+		<![CDATA[
+			select count(*)
+			from TFR.T_OPT_LDP_EXTERNAL_BILL EBILL
+		]]>
+		<where >
+			<if test="waybillNo!=null and waybillNo!=''">
+				EBILL.WAYBILL_NO = #{waybillNo}
+			</if>
+			<!--一票多件，一个运单产生多个外发代理单号；一个流水号对应一个外发代理单号-->
+			<if test="serialNo!=null and serialNo!=''">
+				and EBILL.SERIAL_NO = #{serialNo,jdbcType=VARCHAR}
+			</if>
+			<if test="externalBillNo!=null and externalBillNo!=''">
+				and EBILL.EXTERNAL_BILL_NO =#{externalBillNo}
+			</if>
+			<if test="externalUserName!=null and externalUserName!=''">
+				and EBILL.EXTERNAL_USER_NAME =#{externalUserName}
+			</if>
+			<if test="externalUserCode!=null and externalUserCode!=''">
+				and EBILL.EXTERNAL_USER_CODE = #{externalUserCode,jdbcType=VARCHAR} 
+			</if>
+			<if test="externalOrgCode!=null and externalOrgCode!=''">
+				and EBILL.EXTERNAL_ORG_CODE = #{externalOrgCode,jdbcType=VARCHAR} 
+			</if>
+			<if test="externalOrgCodeList!=null and externalOrgCodeList!=''">
+				and EBILL.EXTERNAL_ORG_CODE in 
+				<foreach collection="externalOrgCodeList" item="externalOrgCodeListItem" index="externalOrgCodeListIndex" open=" ("  separator="," close=")">                  
+				    #{externalOrgCodeListItem,jdbcType=VARCHAR} 
+				 </foreach>  
+			</if>
+			<if test="agentCompanyCode!=null and agentCompanyCode!=''">
+				and EBILL.AGENT_COMPANY_CODE = #{agentCompanyCode}  
+			</if>
+			<if test="registerTimeFrom!=null and registerTimeFrom!=''">
+			<![CDATA[ and EBILL.REGISTER_TIME > to_date(#{registerTimeFrom,jdbcType=VARCHAR}, 'YYYY-MM-DD HH24:MI:SS')]]>  
+			</if>
+			<if test="registerTimeTo!=null and registerTimeTo!=''">
+			<![CDATA[ and EBILL.REGISTER_TIME < to_date(#{registerTimeTo,jdbcType=VARCHAR}, 'YYYY-MM-DD HH24:MI:SS') ]]>  
+			</if>
+			<if test="transferExternal!=null and transferExternal!=''">
+				and EBILL.IS_TRANSFER_EXTERNAL = #{transferExternal,jdbcType=CHAR}
+			</if>
+			<if test="auditStatus!=null and auditStatus!=''">
+				and EBILL.AUDIT_STATUS = #{auditStatus,jdbcType=VARCHAR}
+			</if>
+			<if test="list!=null and list!=''">
+				and EBILL.AUDIT_STATUS in
+				 <foreach collection="list" item="item" index="index" open=" ("  separator="," close=")">                  
+				    #{item,jdbcType=VARCHAR} 
+				 </foreach>  
+			</if>			
+		</where>	    
+	</select>
+	
+	
+	<!-- 通过运单号和流水号,查询是否存在(1.落地配 2.已经做过交接)的外发单交接单明细(未包含3.未录入落地配外发） -->
+	<select id="queryWaybillNoHasHanded" resultType="Long"
+		parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.LdpExternalBillDto">		
+			select COUNT(HDETAIL.WAYBILL_NO)
+			  from TFR.T_OPT_HANDOVERBILL_DETAIL HDETAIL
+			  join  TFR.T_OPT_HANDOVERBILL HANDBILL 
+		   	  on  HDETAIL.HANDOVER_NO=HANDBILL.HANDOVER_NO 
+		   	  and HANDBILL.HANDOVERBILL_STATE in
+					<foreach collection="billStatuslist" item="item" index="index" open=" ("   separator="," close=")">                  
+			            #{item,jdbcType=DECIMAL} 
+					</foreach>	
+			<!--连接 交接单运单流水号明细表-->
+			 join TFR.T_OPT_HANDOVERBILL_SERIALNO SERIALNO
+	 		 on   SERIALNO.WAYBILL_NO=HDETAIL.WAYBILL_NO 
+	 		 and  SERIALNO.HANDOVERBILL_NO=HDETAIL.HANDOVER_NO
+			 where HDETAIL.HANDOVER_TYPE = #{handoverType,jdbcType=VARCHAR}
+			   and HDETAIL.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+			   and HDETAIL.HANDOVER_NO = #{handoverNo,jdbcType=VARCHAR}
+			   <!--查询条件发生变化，新增条件流水号-->	
+			   and SERIALNO.SERIAL_NO= #{serialNo,jdbcType=VARCHAR}  		
+		          
+	</select>	
+	
+	<!-- 根据外发单号及落地配代理编号 查询,非作废 的外发单列表-->
+	<select id="queryByExternalBillNo" resultMap="LdpExternalBillResultMap"
+		parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.LdpExternalBillDto">
+		select 
+		<include refid="ExternalBill_Column_List" />
+		from TFR.T_OPT_LDP_EXTERNAL_BILL EBILL 
+		where EBILL.EXTERNAL_BILL_NO= #{externalBillNo}
+		and EBILL.AGENT_COMPANY_CODE= #{agentCompanyCode}
+		and EBILL.AUDIT_STATUS in 
+		<foreach collection="list" item="item" index="index" open=" ("  separator="," close=")">                  
+		    #{item,jdbcType=VARCHAR} 
+		 </foreach>       
+	</select>
+	
+	<!-- 根据运单号查询,被录入的外发单列表 -->
+	<!-- 一票多件时,根据运单号和流水号查询,被录入的外发单列表 -->
+	<select id="queryByWaybillNo" resultMap="LdpExternalBillResultMap"
+		parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.LdpExternalBillDto">	
+		select 
+		<include refid="ExternalBill_Column_List" />
+		from TFR.T_OPT_LDP_EXTERNAL_BILL EBILL
+		 where EBILL.WAYBILL_NO= #{waybillNo,jdbcType=VARCHAR}
+		 <!--追加查询条件流水号-->
+		 <if test="serialNo!=null and serialNo!=''">
+		 	and EBILL.SERIAL_NO= #{serialNo,jdbcType=VARCHAR}
+		 </if>
+		 and EBILL.AUDIT_STATUS in
+		 <foreach collection="list" item="item" index="index" open=" ("  separator="," close=")">                  
+		    #{item,jdbcType=VARCHAR} 
+		 </foreach> 
+		 ORDER BY EBILL.REGISTER_TIME DESC      
+	</select>
+	
+	<!-- 根据运单号查询,特定时间之后的被录入的外发单列表 -->
+	<select id="queryByWaybillNoAndRegisterTime" resultType="Long"
+		parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.LdpExternalBillDto">	
+		
+			select 
+			count(EBILL.WAYBILL_NO)
+			from TFR.T_OPT_LDP_EXTERNAL_BILL EBILL
+			 where EBILL.WAYBILL_NO= #{waybillNo,jdbcType=VARCHAR}
+			 and EBILL.AUDIT_STATUS in
+				<foreach collection="list" item="item" index="index" open=" ("  separator="," close=")">                  
+				    #{item,jdbcType=VARCHAR} 
+				 </foreach> 
+			 <![CDATA[and EBILL.REGISTER_TIME>#{registerTime} ]]>	
+		 	          
+	</select>
+	
+
+	<!-- 插入落地配外发单 -->
+	<insert id="insert" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.LdpExternalBillDto" >
+    insert into TFR.T_OPT_LDP_EXTERNAL_BILL (
+    	 ID, WAYBILL_NO, HANDOVER_NO, EXTERNAL_BILL_NO, EXTERNAL_USER_CODE, EXTERNAL_USER_NAME,
+		 EXTERNAL_ORG_CODE, EXTERNAL_ORG_NAME, AGENT_COMPANY_CODE, AGENT_COMPANY_NAME, AGENT_ORG_CODE, AGENT_ORG_NAME,
+		 RETURN_TYPE, FREIGHT_FEE, COD_AGENCY_FEE,AGENCY_RETURN_FEE, PAY_DP_FEE, EXTERNAL_INSURANCE_FEE,
+		 NOTES, AUDIT_STATUS,REGISTER_TIME, MODIFY_TIME, MODIFY_USER_CODE, MODIFY_USER_NAME, 
+		 IS_TRANSFER_EXTERNAL, SEND_STATUS,CURRENCY_CODE, COD_AMOUNT, BILL_RECEIVABLE, BILL_PAYABLE,TO_PAY_FEE,SERIAL_NO)
+    values (#{id,jdbcType=VARCHAR}, #{waybillNo,jdbcType=VARCHAR},#{handoverNo,jdbcType=VARCHAR},
+    	#{externalBillNo,jdbcType=VARCHAR}, #{externalUserCode,jdbcType=VARCHAR}, #{externalUserName,jdbcType=VARCHAR}, 
+    	#{externalOrgCode,jdbcType=VARCHAR},#{externalOrgName,jdbcType=VARCHAR}, #{agentCompanyCode,jdbcType=VARCHAR}, 
+    	#{agentCompanyName,jdbcType=VARCHAR},#{agentOrgCode,jdbcType=VARCHAR}, #{agentOrgName,jdbcType=VARCHAR},
+      	#{returnType,jdbcType=VARCHAR},#{freightFee,jdbcType=DECIMAL}*100,#{codAgencyFee,jdbcType=DECIMAL}*100,#{agencyReturnFee,jdbcType=DECIMAL}*100,#{payDpFee,jdbcType=DECIMAL}*100, 
+      	#{externalInsuranceFee,jdbcType=DECIMAL}*100,#{notes,jdbcType=VARCHAR},#{auditStatus,jdbcType=VARCHAR},
+      	#{registerTime,jdbcType=TIMESTAMP},#{modifyTime,jdbcType=TIMESTAMP},#{modifyUserCode,jdbcType=VARCHAR},
+      	#{modifyUserName,jdbcType=VARCHAR},#{transferExternal,jdbcType=CHAR},#{sendStatus,jdbcType=CHAR},
+      	#{currencyCode,jdbcType=VARCHAR},#{codAmount,jdbcType=DECIMAL}*100,#{billReceiveable,jdbcType=DECIMAL}*100,
+      	#{billPayable,jdbcType=DECIMAL}*100,#{toPayFee,jdbcType=DECIMAL}*100,#{serialNo,jdbcType=VARCHAR})
+	</insert>	
+  
+	<!-- 更新落地配外发单 -->
+	<update id="updateExternalBill" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.LdpExternalBillDto" >
+    update TFR.T_OPT_LDP_EXTERNAL_BILL
+    set 
+      IS_TRANSFER_EXTERNAL = #{transferExternal,jdbcType=CHAR},
+      COD_AGENCY_FEE = #{codAgencyFee,jdbcType=DECIMAL}*100,
+      AGENCY_RETURN_FEE = #{agencyReturnFee,jdbcType=DECIMAL}*100,
+      EXTERNAL_INSURANCE_FEE = #{externalInsuranceFee,jdbcType=DECIMAL}*100,
+      FREIGHT_FEE = #{freightFee,jdbcType=DECIMAL}*100,
+      TO_PAY_FEE = #{toPayFee,jdbcType=DECIMAL}*100,
+      BILL_RECEIVABLE = #{billReceiveable,jdbcType=DECIMAL}*100,
+      BILL_PAYABLE = #{billPayable,jdbcType=DECIMAL}*100,
+      PAY_DP_FEE = #{payDpFee,jdbcType=DECIMAL}*100,
+      COD_AMOUNT = #{codAmount,jdbcType=DECIMAL}*100,
+      NOTES = #{notes,jdbcType=VARCHAR},
+      MODIFY_USER_CODE = #{modifyUserCode,jdbcType=VARCHAR},
+      MODIFY_USER_NAME = #{modifyUserName,jdbcType=VARCHAR},
+      MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP}
+    where ID = #{id}
+	</update>
+  
+	<!--更新审核状态-->
+	<update id="updateAuditStatusByPrimaryKey" parameterType="java.util.Map" > 
+        update 
+            TFR.T_OPT_LDP_EXTERNAL_BILL 
+        set 
+			AUDIT_STATUS = #{auditStatus,jdbcType=VARCHAR},
+			MODIFY_TIME = sysdate
+		where ID in 
+		<foreach collection="list" item="item" index="index" open="("   separator=" , " close=")">                  
+                   #{item,jdbcType=VARCHAR} 
+		</foreach> 
+       
+	</update> 
+  
+  	<!-- 按照ID主键查询落地配外发单列表 -->
+	<select id="selectExternalBillByPrimaryKeys" resultMap="LdpExternalBillResultMap" parameterType="java.util.List"  >
+	     select
+			<include refid="ExternalBill_Column_List" />  		
+	   	 from TFR.T_OPT_LDP_EXTERNAL_BILL EBILL
+	   	 where EBILL.ID in
+	   	 <foreach collection="list" item="item" index="index" open="("   separator=" , " close=")">                  
+	                   #{item,jdbcType=VARCHAR} 
+		 </foreach> 
+	</select>  
+  
+  	<!-- 按照运单号查询运单-->
+	<select id="selectWayBillByWaybillNo" resultMap="ExternalWaybillResultMap" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.LdpExternalBillDto"  >
+	     select
+			<include refid="Waybill_Column_List" />
+			,WAYBILL.WAYBILL_NO  
+			,WAYBILL.CUSTOMER_PICKUP_ORG_CODE 		
+	   	  from PKP.T_SRV_WAYBILL WAYBILL
+	   	 where  WAYBILL.Waybill_No=#{waybillNo,jdbcType=VARCHAR} and WAYBILL.ACTIVE=#{active}
+	</select>  
+	
+	<!-- 按照运单号、已审核的状态、中转外发查询外发单 -->
+	<select id="queryExternalBillByWaybillNo" resultMap="LdpExternalBillResultMap" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.LdpExternalBillDto">
+	     select
+			<include refid="ExternalBill_Column_List" />  		
+	   	 from TFR.T_OPT_LDP_EXTERNAL_BILL EBILL
+	   	 where 	   	 
+	   	 EBILL.WAYBILL_NO=#{waybillNo,jdbcType=VARCHAR}
+	   	 and EBILL.AUDIT_STATUS=#{auditStatus,jdbcType=VARCHAR} 
+	   	 and EBILL.IS_TRANSFER_EXTERNAL = #{transferExternal,jdbcType=CHAR}
+	   	 <!--一票多件，一个运单产生多个外发代理单号；一个流水号对应一个外发代理单号-->
+		<if test="serialNo!=null and serialNo!=''">
+			and	EBILL.SERIAL_NO = #{serialNo,jdbcType=VARCHAR}
+		</if>
+	</select>  
+	
+	<!-- 按照运单号、审核状态、中转外发 查询外发单,为更改单 -->
+	<select id="queryExternalBillByWaybillNoForChange" resultMap="LdpExternalBillResultMap" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.LdpExternalBillDto">
+	     select
+			<include refid="ExternalBill_Column_List" />  		
+	   	 from TFR.T_OPT_LDP_EXTERNAL_BILL EBILL
+	   	 where 	   	 
+	   	 EBILL.WAYBILL_NO=#{waybillNo,jdbcType=VARCHAR}
+	   	 and EBILL.AUDIT_STATUS in 
+	   	 <foreach collection="list" item="item" index="index" open=" ("  separator="," close=")">                  
+					    #{item,jdbcType=VARCHAR} 
+		</foreach>
+	   	 and EBILL.IS_TRANSFER_EXTERNAL = #{transferExternal,jdbcType=CHAR}
+	   	 <!--一票多件，一个运单产生多个外发代理单号；一个流水号对应一个外发代理单号-->
+		<if test="serialNo!=null and serialNo!=''">
+		 and EBILL.SERIAL_NO = #{serialNo,jdbcType=VARCHAR}
+		</if>
+	</select>  
+	
+	<!-- 一票多件时，按照运单号和流水号、审核状态、中转外发 查询外发单,为更改单 -->
+	<select id="queryExternalBillByWaybillNoSerialNoForChange" resultMap="LdpExternalBillResultMap" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.LdpExternalBillDto">
+	     select
+			<include refid="ExternalBill_Column_List" />  		
+	   	 from TFR.T_OPT_LDP_EXTERNAL_BILL EBILL
+	   	 where 	   	 
+	   	 EBILL.WAYBILL_NO=#{waybillNo,jdbcType=VARCHAR}
+	   	 and EBILL.SERIAL_NO=#{serialNo,jdbcType=VARCHAR}
+	   	 and EBILL.AUDIT_STATUS in 
+	   	 <foreach collection="list" item="item" index="index" open=" ("  separator="," close=")">                  
+					    #{item,jdbcType=VARCHAR} 
+		</foreach>
+	   	 and EBILL.IS_TRANSFER_EXTERNAL = #{transferExternal,jdbcType=CHAR}
+	   	 <!--一票多件，一个运单产生多个外发代理单号；一个流水号对应一个外发代理单号-->
+		<if test="serialNo!=null and serialNo!=''">
+		 and EBILL.SERIAL_NO = #{serialNo,jdbcType=VARCHAR}
+		</if>
+	</select> 
+	 
+	<select id="queryLdpExternalBillCountByWaybillNo" resultType="Long" parameterType="map">
+		select count(*)
+		  from TFR.T_OPT_LDP_EXTERNAL_BILL
+		  where IS_TRANSFER_EXTERNAL = #{notTransferExternal}
+		    and WAYBILL_NO=#{waybillNo}
+		    and AUDIT_STATUS != #{auditStatus}
+		    <!--一票多件，一个运单产生多个外发代理单号；一个流水号对应一个外发代理单号-->
+			<if test="serialNo!=null and serialNo!=''">
+			and SERIAL_NO = #{serialNo,jdbcType=VARCHAR}
+			</if>
+	</select>
+	<select id="queryCountIfExistValidLdpExternalBillForStl" resultType="Long" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.LdpExternalBillDto">
+		select count(*)
+		  from TFR.T_OPT_LDP_EXTERNAL_BILL
+		  where IS_TRANSFER_EXTERNAL = #{transferExternal}
+		    and AUDIT_STATUS != #{auditStatus}
+		    <if test="waybillNo!=null and waybillNo!=''">
+				AND WAYBILL_NO = #{waybillNo}
+			</if>
+			<if test="agentCompanyCode!=null and agentCompanyCode!=''">
+				and AGENT_COMPANY_CODE = #{agentCompanyCode}  
+			</if>
+			<!--一票多件，一个运单产生多个外发代理单号；一个流水号对应一个外发代理单号-->
+			<if test="serialNo!=null and serialNo!=''">
+			and	SERIAL_NO = #{serialNo,jdbcType=VARCHAR}
+			</if>
+	</select>
+	
+	<select id="queryCountHasAuditedLdpExternalBill" resultType="Long" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.LdpExternalBillDto">
+		select count(*)
+		  from TFR.T_OPT_LDP_EXTERNAL_BILL
+		  where IS_TRANSFER_EXTERNAL = #{transferExternal,jdbcType=CHAR}
+		   and AUDIT_STATUS = #{auditStatus,jdbcType=VARCHAR}
+		   and WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+		   and AGENT_COMPANY_CODE = #{agentCompanyCode,jdbcType=VARCHAR}  
+	</select>
+	
+	<select id="queryExternalBillListForLdpSign" resultMap="LdpExternalBillResultMap" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.LdpExternalBillDto" >
+     select * from TFR.T_OPT_LDP_EXTERNAL_BILL EBILL
+   	   where EBILL.WAYBILL_NO = #{waybillNo}
+		 and EBILL.IS_TRANSFER_EXTERNAL = #{transferExternal,jdbcType=CHAR}
+		 and EBILL.AUDIT_STATUS in ('WAITINGAUDIT','HASAUDITED','BACKAUDIT')
+		 <!--一票多件，一个运单产生多个外发代理单号；一个流水号对应一个外发代理单号-->
+		<if test="serialNo!=null and serialNo!=''">
+		and	EBILL.SERIAL_NO = #{serialNo,jdbcType=VARCHAR}
+		</if>
+	</select>
+	
+	 <!-- 通过运单号查询外发单信息列表 zwd 200968 2015-04-24  waybillNo -->
+	<select id="queryExternalBillListByWaybillNo" resultMap="LdpExternalBillResultMap" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.LdpExternalBillDto" >
+     select * from TFR.T_OPT_LDP_EXTERNAL_BILL EBILL
+   	   where EBILL.WAYBILL_NO = #{waybillNo}
+	</select>
+	
+	<!-- 	更新上报OA状态 -->
+	<update id="updateReportOAByPrimaryKey" parameterType="java.util.Map">
+		UPDATE tfr.t_opt_ldp_external_bill eb
+		SET eb.report_oa = #{isReport,jdbcType=VARCHAR}
+		where eb.id = #{billId,jdbcType=VARCHAR}
+	</update>
+	<!-- 保存未录入快递代理外发单的运单号 -->
+	<insert id="addUnInputWaybillNo" parameterType="java.util.Map">
+		insert into tfr.t_opt_ldp_external_bill_unique(id,waybill_no,serial_no,create_time,update_time)
+   		values( #{id,jdbcType=VARCHAR},
+   				#{waybillNo,jdbcType=VARCHAR},
+   				#{serialNo,jdbcType=VARCHAR},
+   				sysdate,
+   				sysdate)
+	</insert>
+	
+	<!-- 更新未录入快递代理外发单状态 -->
+	<update id="updateUnInputWaybillNo" parameterType="java.util.Map">
+		update tfr.t_opt_ldp_external_bill_unique u
+		set u.isadd = 'Y',
+			u.update_time = sysdate
+		where u.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+			and u.serial_no = #{serialNo,jdbcType=VARCHAR}
+			and u.isadd = 'N'
+	</update>
+	
+	<update id="updateIsAdd" parameterType="java.util.Map">
+		update tfr.t_opt_ldp_external_bill_unique u
+		set u.isadd = 'N',
+			u.update_time = sysdate
+		where u.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+			and u.serial_no = #{serialNo,jdbcType=VARCHAR}
+	</update>
+	<!-- 生成外发单号 -->
+	<select id="createExternalBillNo" resultType="String" parameterType="HashMap" >
+     	select 
+		       case
+		         when instr(max(e.external_bill_no), 'WF') > 0 then
+		          'WF' || (substr(max(e.external_bill_no), 3) + 1)
+		         else
+		          'WF' || #{waybillNo,jdbcType=VARCHAR}||#{serialNo,jdbcType=VARCHAR} || '001'
+		       end
+		  from tfr.t_opt_ldp_external_bill e where e.waybill_no =#{waybillNo,jdbcType=VARCHAR}
+
+	</select>
+	
+	
+	<!--根据运单号查询流水号表 获得第一个流水号-->
+	<select id="queryFirstSerialNoByWayBill" resultMap="LdpExternalBillResultMap"
+		parameterType="String">	
+		select 
+		s.serial_no
+		from tfr.t_opt_handoverbill_serialno s
+		 where s.WAYBILL_NO= #{waybillNo,jdbcType=VARCHAR}
+		 order by s.serial_no asc      
+	</select>
+	</mapper>

@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+                    
+<mapper namespace="foss.bse.bse-baseinfo.centerAndDeliveryArea" >
+	<resultMap id="centerAndDeliveryBigRegionAreaDtoMap" type="com.deppon.foss.module.base.baseinfo.api.shared.dto.CenterAndDeliveryBigRegionAreaDto">
+		<result property="bigRegionName" column="bigRegionName"  jdbcType="VARCHAR" />
+		<result property="bigRegionCode" column="bigRegionCode"  jdbcType="VARCHAR" />
+		<result property="bigVehicleNo" column="bigVehicleNo"  jdbcType="VARCHAR" />
+		<result property="virtualCode" column="virtualCode"   jdbcType="VARCHAR" />
+		<collection property="bigVehicleNos" javaType="ArrayList" column="virtualCode" select="smallVehicleNo"/>
+	</resultMap>	
+	<resultMap id="centerAndDeliverySamlleRegionAreaDtoMap" type="com.deppon.foss.module.base.baseinfo.api.shared.dto.CenterAndDeliverySamlleRegionAreaDto">
+		<result property="smallRegionCode" column="smallRegionCode"  jdbcType="VARCHAR" />
+		<result property="smallRegionName" column="smallRegionName"  jdbcType="VARCHAR" />
+		<result property="bigZoneCode" column="bigZoneCode"  jdbcType="VARCHAR" />
+		<!-- <result property="smallVehicleNo" column="smallVehicleNo"  jdbcType="VARCHAR" /> -->
+		<result property="gisId" column="gisId"   jdbcType="VARCHAR" />
+		<collection property="smallVehicleNos" javaType="ArrayList" column="smallRegionCode" select="smallVehicleNo"/>
+	</resultMap>
+	
+	<!--查询车队信息-->
+	<select id="queryVehicleInfo" 
+			resultType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CenterAndDeliveryAreaEntity"
+			parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.CenterAndDeliveryAreaDto">
+		 select 
+			 t.id as id, 
+			 t.vehicledept as manageMentName, 
+			 t.vehicledeptname as manageMentCode, 
+			 t.gisid as gisId
+		 from bse.t_bas_centeranddeliveryarea t
+		 where t.vehicledept = #{manageMent,jdbcType=VARCHAR}
+		       and t.active='Y'
+		   <!-- and t.vehicledeptname = #{vehicledeptname,jdbcType=VARCHAR} -->
+	</select>
+	<!--修改-->
+<!--大区 , V.VEHICLENO as bigVehicleNo-->
+	<select id="big" 
+			resultMap="centerAndDeliveryBigRegionAreaDtoMap"
+			parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.CenterAndDeliveryAreaDto">
+			
+			SELECT T.REGION_NAME as bigRegionName,t.region_code as bigRegionCode,t.virtual_code as virtualCode
+			FROM BSE.T_BAS_SERVICE_BIGZONE T
+			  <!--
+			  JOIN (SELECT *
+			          FROM (SELECT T.REGION_NAME AS REGIONNAME,
+			                       T.REGION_CODE AS REGIONCODE,
+			                       T.VEHICLE_NO AS VEHICLENO,
+			                       ROW_NUMBER() OVER(PARTITION BY T.REGION_NAME ORDER BY T.CREATE_TIME DESC) LEV
+			                  FROM BSE.T_BAS_REGION_VEHICLE T
+			                 WHERE T.ACTIVE = 'Y'
+			                   AND T.REGION_NATURE = 'BQ')
+			         WHERE LEV = 1) V
+			    ON t.VIRTUAL_CODE = V.REGIONCODE AND t.active='Y' and t.type='PK'-->
+			  <where>
+			  	  t.active = 'Y'
+   				  and t.type = 'PK'
+			     <if test="manageMent!=null and manageMent!=''">
+			      and t.management= #{manageMent,jdbcType=VARCHAR}
+			     </if>
+			     <if test="bigRegionCode!=null and bigRegionCode!=''">
+			      and  t.region_code=#{bigRegionCode,jdbcType=VARCHAR}
+			     </if>
+			     <if test="virtualCode!=null and virtualCode!=''">
+			      and  t.virtual_code=#{virtualCode,jdbcType=VARCHAR}
+			     </if>
+			  </where>
+				 
+			ORDER BY T.REGION_NAME
+	</select>
+<!--小区  /**V.VEHICLENO as smallVehicleNo,**/-->
+	<select id="small" 
+				resultMap="centerAndDeliverySamlleRegionAreaDtoMap"
+				parameterType="java.lang.String">
+				SELECT  S.REGION_NAME as smallRegionName, S.GISID as gisId,s.virtual_code as smallRegionCode,s.bigzonecode as bigZoneCode
+				FROM BSE.T_BAS_SERVICE_SMALLZONE S  
+				<!--
+				JOIN (SELECT *
+				          FROM (SELECT T.REGION_NAME AS REGIONNAME,
+				                       T.REGION_CODE AS REGIONCODE,
+				                       T.VEHICLE_NO AS VEHICLENO,
+				                       ROW_NUMBER() OVER(PARTITION BY T.REGION_NAME ORDER BY T.CREATE_TIME DESC) LEV
+				                  FROM BSE.T_BAS_REGION_VEHICLE T
+				                 WHERE T.ACTIVE = 'Y'
+				                   AND T.REGION_NATURE = 'SQ')
+				         WHERE LEV = 1) V
+				    ON S.VIRTUAL_CODE = V.REGIONCODE AND 
+				   --> 
+				WHERE  s.bigzonecode= #{bigzonecode,jdbcType=VARCHAR} and s.active='Y' and s.region_type='PK'
+				ORDER BY s.REGION_NAME
+	</select>
+	
+<!--查询小区的车牌号-->	
+	<select id="smallVehicleNo" 
+				resultType="java.lang.String"
+				parameterType="java.lang.String">
+				 SELECT T.VEHICLE_NO
+				 FROM BSE.T_BAS_REGION_VEHICLE T
+				 WHERE 
+				  T.REGION_CODE = #{smallRegionCode,jdbcType=VARCHAR} 
+				  AND T.ACTIVE = 'Y'
+	</select>
+	
+ 
+
+	
+<!-- 通过车队编码、小区编码查询 -->	
+<select id="byManageMentAnd" 
+				resultMap="centerAndDeliverySamlleRegionAreaDtoMap"
+				parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.CenterAndDeliveryAreaDto">
+				SELECT  S.REGION_NAME as smallRegionName, S.GISID as gisId,s.virtual_code as smallRegionCode,s.bigzonecode as bigZoneCode
+				FROM BSE.T_BAS_SERVICE_SMALLZONE S  
+				left JOIN (SELECT *
+				          FROM (SELECT T.REGION_NAME AS REGIONNAME,
+				                       T.REGION_CODE AS REGIONCODE,
+				                       T.VEHICLE_NO AS VEHICLENO,
+				                       T.ACTIVE AS ACTIVE,
+				                       ROW_NUMBER() OVER(PARTITION BY T.REGION_NAME ORDER BY T.CREATE_TIME DESC) LEV
+				                  FROM BSE.T_BAS_REGION_VEHICLE T
+				                 <where>
+				                   T.ACTIVE = 'Y'
+				                   AND T.REGION_TYPE='PK'
+				                   AND T.REGION_NATURE = 'SQ'
+				                   <if test="vehicleNo!=null and vehicleNo!=''">
+				                 	  and t.vehicle_no=#{vehicleNo,jdbcType=VARCHAR}
+				                   </if>
+				                 </where>  
+				                  )
+				         WHERE LEV = 1) V
+				    ON S.VIRTUAL_CODE = V.REGIONCODE  and s.region_type='PK'
+				<where>
+					AND V.ACTIVE='Y'
+				  <if test="smallRegionCode!=null and smallRegionCode!=''">
+				   and s.region_code = #{smallRegionCode,jdbcType=VARCHAR}  
+				  </if>
+				  <if test="manageMent!=null and manageMent!=''">
+         		   and  s.management = #{manageMent,jdbcType=VARCHAR}  
+				  </if>
+				</where>				 
+				ORDER BY s.REGION_NAME
+	</select>	
+	
+	<!--根据用户编码和部门编码查询resultType="Long"-->
+	<select id="queryDataPermissions" parameterType="java.util.Map"
+		resultType="Long">
+		
+		select 
+			count(*)
+		from BSE.MV_BAS_USER_ORG_AUTH_VIEW k
+			join bse.t_bas_org t
+			on t.code = k.org_code
+			<!--and t.express_part = 'Y'-->
+			and t.active = 'Y'
+			<where>
+			 <if test="empCode != null and empCode != ''">
+			     k.emp_code =#{empCode,jdbcType=VARCHAR}
+			 </if>
+			 <if test="deptCode != null and deptCode != ''">
+			     and  k.org_code=#{deptCode,jdbcType=VARCHAR}
+			 </if>
+			</where>
+	</select>
+	<!-- 新增顶级车队信息 -->
+	<insert id="addVehicleInfo" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CenterAndDeliveryAreaEntity">
+		insert into bse.t_bas_centeranddeliveryarea
+		(ID,
+		 vehicledeptname,
+		 vehicledept,
+		 gisid,
+		 gis_area,
+		 active
+		 )values
+	    ( 
+		 #{id,jdbcType=VARCHAR},
+		 #{manageMentName,jdbcType=VARCHAR}, 
+		 #{manageMentCode,jdbcType=VARCHAR}, 
+		 #{gisId,jdbcType=VARCHAR}, 
+		 #{gisArea,jdbcType=VARCHAR}, 
+		 #{active,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	
+	<!-- 更新顶级车队信息 -->
+	<update id="updateVehicleInfo" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CenterAndDeliveryAreaEntity">
+		update bse.t_bas_centeranddeliveryarea t
+		   set  t.gis_area = #{gisArea, jdbcType=NUMERIC}
+		where t.active = 'Y'
+		   and t.vehicledept = #{manageMentCode,jdbcType=VARCHAR}
+	</update>
+	
+	<!-- 删除顶级车队信息 -->
+	<update id="deleteVehicleInfo" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CenterAndDeliveryAreaEntity">
+		update bse.t_bas_centeranddeliveryarea t
+		set 
+		t.gis_area = null,
+		t.gisid    = null,
+		t.active = 'N'
+		where t.vehicledept = #{manageMentCode,jdbcType=VARCHAR}
+	</update>
+	
+	<!-- 角色权限 -->
+	<select id="queryRolePermissions" parameterType="java.util.Map"
+		resultType="java.lang.String">
+		
+		select distinct  l.code
+		  from bse.t_bas_user t
+		  join bse.t_bas_user_org_role r
+		    on t.emp_code = r.emp_code
+		   and r.active = 'Y'
+		  join bse.t_bas_role l
+		    on r.role_code = l.code
+		   and l.active = 'Y'
+		 where t.active = 'Y'
+		   and t.emp_code = #{empCode,jdbcType=VARCHAR}
+		   and l.code in
+		       ('TFR_TRUCK_SCHEDULINGER', 
+		       'TFR_TRUCK_HIGHEST_RESPONSE_PERSON')
+	</select>
+	
+</mapper>

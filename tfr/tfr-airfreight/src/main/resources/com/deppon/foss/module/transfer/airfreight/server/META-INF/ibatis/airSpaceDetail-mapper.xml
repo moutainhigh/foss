@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.airfreight.airspace" >
+  <resultMap id="AirSpaceDetailResultMap" type="com.deppon.foss.module.transfer.airfreight.api.shared.domain.AirSpaceDetailEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="AIRSPACE_ID" property="airspaceId" jdbcType="VARCHAR" />
+    <result column="FLIGHT_TYPE" property="flightType" jdbcType="VARCHAR" />
+    <result column="SPACE_TOTAL" property="spaceTotal" jdbcType="DECIMAL" />
+  </resultMap>
+
+  <!-- 舱位明细列表字段 -->
+  <sql id="AirSpaceDetail_Column_List" >
+    DETAIL.ID, 
+    DETAIL.AIRSPACE_ID, 
+    DETAIL.FLIGHT_TYPE, 
+    DETAIL.SPACE_TOTAL
+  </sql>
+  
+  <!-- 插入航空公司明细 -->
+  <insert id="insertAirSpaceDetail" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.domain.AirSpaceDetailEntity" >
+    insert into TFR.T_OPT_AIR_SPACE_DETAIL (
+    ID, 
+    AIRSPACE_ID, 
+    FLIGHT_TYPE, 
+    SPACE_TOTAL
+    )
+    values 
+    (
+    #{id,jdbcType=VARCHAR}, 
+    #{airspaceId,jdbcType=VARCHAR}, 
+    #{flightType,jdbcType=VARCHAR}, 
+    #{spaceTotal,jdbcType=DECIMAL}
+    )
+  </insert>
+ 
+  <!-- 更新航空舱位明细信息 -->
+  <update id="updateAirSpaceDetail" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.domain.AirSpaceDetailEntity" >
+    update TFR.T_OPT_AIR_SPACE_DETAIL
+    <set>
+      <if test="flightType != null" >
+        FLIGHT_TYPE = #{flightType,jdbcType=VARCHAR},
+      </if>
+      <if test="spaceTotal != null" >
+        SPACE_TOTAL = #{spaceTotal,jdbcType=DECIMAL},
+      </if>
+    </set>
+    where AIRSPACE_ID = #{airspaceId,jdbcType=VARCHAR}
+  </update>
+  
+  <!-- 删除航空舱位明细信息    -->
+  <delete id="deleteAirSpaceDetail" parameterType="java.lang.String" >
+    delete from TFR.T_OPT_AIR_SPACE_DETAIL
+    where AIRSPACE_ID = #{airSpaceId,jdbcType=VARCHAR}
+  </delete>
+  
+  <!-- 根据ID查询舱位类型总数 -->
+  <select id="queryFlightCountById" resultType="Long" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirSpaceDto">
+  	select count(AIRSPACE_ID) from tfr.t_opt_air_space_detail where AIRSPACE_ID = #{id,jdbcType=VARCHAR}
+  </select>
+  
+  <!-- 删除单条航班舱位 -->
+  <delete id="deleteSingleSpace" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirSpaceDto">
+  	delete TFR.T_OPT_AIR_SPACE_DETAIL 
+  	where AIRSPACE_ID = #{id,jdbcType=VARCHAR} and FLIGHT_TYPE = #{flightType,jdbcType=VARCHAR}
+  </delete>
+  
+</mapper>

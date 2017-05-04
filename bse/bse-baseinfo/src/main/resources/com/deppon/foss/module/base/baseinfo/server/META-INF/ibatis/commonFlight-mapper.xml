@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.commonFlight"> 
+	<resultMap id="flightResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.FlightEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="FLIGHT_SORT" property="flightSort" jdbcType="VARCHAR" />
+		<result column="FLIGHT_NO" property="flightNo" jdbcType="VARCHAR" />
+		<result column="AIRLINES" property="airlines" jdbcType="VARCHAR" />
+		<result column="DEPARTURE_AIRPORT" property="departureAirport" jdbcType="VARCHAR" />
+		<result column="DESTINATION_AIRPORT" property="destinationAirport" jdbcType="VARCHAR" />
+		<result column="PLAN_LEAVE_TIME" property="planLeaveTime" jdbcType="TIMESTAMP" />
+		<result column="PLAN_ARRIVE_TIME" property="planArriveTime" jdbcType="TIMESTAMP" />
+		<result column="AIRCRAFT_TYPE" property="aircraftType" jdbcType="VARCHAR" />
+		<result column="ORIG_CODE" property="origCode" jdbcType="VARCHAR" />
+		<result column="FLY_TIME" property="flyTime" jdbcType="DECIMAL" />
+		<result column="FLY_ON_MONDAY" property="flyOnMonday" jdbcType="CHAR" />
+		<result column="FLY_ON_TUESDAY" property="flyOnTuesday" jdbcType="CHAR" />
+		<result column="FLY_ON_WEDNESDAY" property="flyOnWednesday" jdbcType="CHAR" />
+		<result column="FLY_ON_THURSDAY" property="flyOnThursday" jdbcType="CHAR" />
+		<result column="FLY_ON_FRIDAY" property="flyOnFriday" jdbcType="CHAR" />
+		<result column="FLY_ON_SATURDAY" property="flyOnSaturday" jdbcType="CHAR" />
+		<result column="FLY_ON_SUNDAY" property="flyOnSunday" jdbcType="CHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="TARGET_CODE" property="targetCode" jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="flight_Column_List">
+		ID, FLIGHT_SORT, FLIGHT_NO, AIRLINES, DEPARTURE_AIRPORT,
+		DESTINATION_AIRPORT, PLAN_LEAVE_TIME,
+		PLAN_ARRIVE_TIME, AIRCRAFT_TYPE, ORIG_CODE, FLY_TIME, FLY_ON_MONDAY, FLY_ON_TUESDAY,
+		FLY_ON_WEDNESDAY, FLY_ON_THURSDAY, FLY_ON_FRIDAY, FLY_ON_SATURDAY,
+		FLY_ON_SUNDAY,
+		CREATE_TIME, MODIFY_TIME, ACTIVE, CREATE_USER_CODE, MODIFY_USER_CODE,
+		TARGET_CODE
+	</sql>  
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">  
+		<where>
+			<if test="flightNo != null and flightNo != ''">
+				AND FLIGHT_NO  LIKE CONCAT(CONCAT('%',#{flightNo,jdbcType=VARCHAR}),'%')
+			</if>
+			<if test="flightSort != null and flightSort != ''">
+				AND FLIGHT_SORT = #{flightSort,jdbcType=VARCHAR}
+			</if>
+			<if test="airlines != null and airlines != ''"> 
+				AND AIRLINES  LIKE CONCAT(CONCAT('%',#{airlines,jdbcType=VARCHAR}),'%') 
+			</if>
+			<if test="aircraftType != null and aircraftType != ''">
+				AND AIRCRAFT_TYPE = #{aircraftType,jdbcType=VARCHAR}
+			</if>
+			<if test="origCode != null and origCode != ''">
+				AND ORIG_CODE = #{origCode,jdbcType=VARCHAR}
+			</if> 
+			<if test="targetCode != null and targetCode != ''">
+				AND TARGET_CODE = #{targetCode,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND ACTIVE = #{active,jdbcType=CHAR}
+			</if> 
+			<if test="isAgreementFlight != null and isAgreementFlight != ''">
+				AND isAgreementFlight = #{isAgreementFlight,jdbcType=CHAR}
+				<if test="airDispatchCodes != null and airDispatchCodes.size>0"> 
+				AND belongsAirFreightDispatch IN 
+				<foreach collection="airDispatchCodes" index="index" item="item" open="(" separator="," close=")">
+					#{item}
+				</foreach>
+				</if>
+			</if> 
+			<if test="origCodes != null and origCodes.size >0">
+				AND ORIG_CODE IN
+				<foreach collection="origCodes" index="index" item="item" open="(" separator="," close=")">
+					#{item}
+				</foreach>
+			</if> 
+			<if test="targetCodes != null and targetCodes.size >0">
+				AND TARGET_CODE IN
+				<foreach collection="targetCodes" index="index" item="item" open="(" separator="," close=")">
+					#{item}
+				</foreach>
+			</if>
+		</where>
+	</sql>
+	<!-- 分页查询所有航空公司信息 -->
+	<select id="queryFlightListByCondition"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.FlightDto"
+		resultMap="flightResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:分页查询所有航空公司信息 **/
+		]]>
+		<include refid="flight_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_FLIGHT T 
+		]]>
+		<include refid="queryWhere" />
+	</select>
+
+	<!-- 统计总记录数 -->
+	<select id="countFlightListByCondition" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.FlightDto">
+	    <![CDATA[
+	       	select/** 综合:统计总记录数 **/ count(*) from BSE.T_BAS_FLIGHT T
+	    ]]>
+		<include refid="queryWhere" />
+	</select>
+</mapper>

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!-- 代收货款操作日志Dao -->
+<mapper namespace="foss.stl.CodLogEntityDao">
+
+	<resultMap id="BaseResultMap"
+		type="com.deppon.foss.module.settlement.consumer.api.shared.domain.CODLogEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="COD_ID" property="codId" jdbcType="VARCHAR" />
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="BUSINESS_DATE" property="businessDate"
+			jdbcType="TIMESTAMP" />
+		<result column="OPERATE_TIME" property="operateTime" jdbcType="TIMESTAMP" />
+		<result column="OPERATE_BILL_NO" property="operateBillNo"
+			jdbcType="VARCHAR" />
+		<result column="OPERATE_BILL_TYPE" property="operateBillType"
+			jdbcType="VARCHAR" />
+		<result column="OPERATE_CONTENT" property="operateContent"
+			jdbcType="VARCHAR" />
+		<result column="OPERATE_ACTIONTYPE" property="operateActiontype"
+			jdbcType="VARCHAR" />
+		<result column="OPERATOR_CODE" property="operatorCode"
+			jdbcType="VARCHAR" />
+		<result column="OPERATOR_NAME" property="operatorName"
+			jdbcType="VARCHAR" />
+		<result column="OPERATE_ORG_CODE" property="operateOrgCode"
+			jdbcType="VARCHAR" />
+		<result column="OPERATE_ORG_NAME" property="operateOrgName"
+			jdbcType="VARCHAR" />
+		<result column="OPERATOR_IP" property="operatorIp" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+	</resultMap>
+
+
+	<sql id="Base_Column_List">
+		ID, COD_ID, WAYBILL_NO, BUSINESS_DATE, OPERATE_TIME,
+		OPERATE_BILL_NO,
+		OPERATE_BILL_TYPE,
+		OPERATE_CONTENT, OPERATE_ACTIONTYPE,
+		OPERATOR_CODE, OPERATOR_NAME, OPERATE_ORG_CODE,
+		OPERATE_ORG_NAME,
+		OPERATOR_IP, ACTIVE
+	</sql>
+
+	<!-- 按运单号查询代收货款日志 -->
+	<select id="queryByWaybill" resultMap="BaseResultMap"
+		parameterType="java.lang.String">
+		select/*结算-客户管理-按运单号查询代收货款日志   */
+		<include refid="Base_Column_List" />
+		from STL.T_STL_COD_LOG
+		<!-- 查询条件运单单号 -->
+		where WAYBILL_NO = #{waybillNumber,jdbcType=VARCHAR} 
+		<!-- 按日期降序 -->
+		order by BUSINESS_DATE desc
+	</select>
+	
+	<select id="queryAuditLogByWaybill" resultType="com.deppon.foss.module.settlement.consumer.api.shared.domain.CODLogEntity" 
+		parameterType="java.lang.String">
+		select 
+		al.ID					id, 
+		al.AUDIT_COD_ID			codId,
+		al.WAYBILL_NO			waybillNo, 
+      	al.OPERATE_CONTENT		operateContent,
+        al.OPERATE_TIME			operateTime,
+        al.OPERATE_USER_CODE	operatorCode, 
+        al.OPERATE_USER_NAME	operatorName,
+        al.OPERATE_DEPTCODE		operateOrgCode, 
+        al.OPERATE_DEPTNAME		operateOrgName, 
+        al.CREATE_DATE			businessDate,
+        al.MODIFY_DATE			operateTime
+		from STL.T_STL_COD_AUDIT_LOG  al
+		where al.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+		order by al.CREATE_DATE desc
+	</select>
+
+
+	<!-- 插入日志 -->
+	<insert id="addCodLog"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.domain.CODLogEntity">
+		insert /*结算-客户管理-插入日志  */into STL.T_STL_COD_LOG (ID, COD_ID, WAYBILL_NO,
+		BUSINESS_DATE, OPERATE_TIME, OPERATE_BILL_NO,
+		OPERATE_BILL_TYPE,
+		OPERATE_CONTENT, OPERATE_ACTIONTYPE,
+		OPERATOR_CODE, OPERATOR_NAME,
+		OPERATE_ORG_CODE,
+		OPERATE_ORG_NAME, OPERATOR_IP, ACTIVE
+		)
+		values
+		(#{id,jdbcType=VARCHAR}, #{codId,jdbcType=VARCHAR},
+		#{waybillNo,jdbcType=VARCHAR},
+		#{businessDate,jdbcType=TIMESTAMP},
+		#{operateTime,jdbcType=TIMESTAMP}, #{operateBillNo,jdbcType=VARCHAR},
+		#{operateBillType,jdbcType=VARCHAR},
+		#{operateContent,jdbcType=VARCHAR},
+		#{operateActiontype,jdbcType=VARCHAR},
+		#{operatorCode,jdbcType=VARCHAR}, #{operatorName,jdbcType=VARCHAR},
+		#{operateOrgCode,jdbcType=VARCHAR},
+		#{operateOrgName,jdbcType=VARCHAR}, #{operatorIp,jdbcType=VARCHAR},
+		#{active,jdbcType=CHAR}
+		)
+	</insert>
+
+
+</mapper>

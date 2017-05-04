@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://www.springframework.org/schema/jee 
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+			http://www.springframework.org/schema/aop 
+			http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">
+
+	<!-- 数据源 -->
+	<bean id="dataSource"
+		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver" />
+		<property name="url" value="jdbc:oracle:thin:@192.168.10.111:1521/FOSSDBSB" />
+		<property name="username" value="pkp" />
+		<property name="password" value="fosssit" />
+	</bean>
+
+	<!-- JDBC模版 -->
+	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+		<constructor-arg ref="dataSource" />
+	</bean>
+
+	<!-- 数据连接管理 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<!-- 事务注解支持 -->
+	<tx:annotation-driven transaction-manager="transactionManager" />
+	<aop:config proxy-target-class="true"></aop:config>
+
+	<!-- myBatis文件 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="configLocation"
+			value="/com/deppon/foss/module/pickup/waybill/server/META-INF/mybatis.xml" />
+		<!-- 正式测试环境路径 -->
+		<property name="mapperLocations"
+			value="classpath*:com/deppon/**/META-INF/ibatis/*.xml" />
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<bean id="laterSpreadDao" class="com.deppon.foss.module.pickup.waybill.server.dao.impl.LaterSpreadDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>	
+	
+	<bean id="customerCouponDao" class="com.deppon.foss.module.pickup.waybill.server.dao.impl.CustomerCouponDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>	
+	
+	<bean id="customerCouponService" class="com.deppon.foss.module.pickup.waybill.server.service.impl.CustomerCouponService">
+		<property name="customerCouponDao" ref="customerCouponDao"/>
+	</bean>
+	<bean id="waybillRelateDetailEntityDao" class="com.deppon.foss.module.pickup.waybill.server.dao.impl.WaybillRelateDetailEntityDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+	<bean id="waybillRelateDetailEntityService"
+		class="com.deppon.foss.module.pickup.waybill.server.service.impl.WaybillRelateDetailEntityService">
+		<property name="waybillRelateDetailEntityDao" ref="waybillRelateDetailEntityDao"></property>
+	</bean>	
+	
+	<!-- 异步接口 -->
+	<bean id="waybillInfoToPtpService" 
+		  class="com.deppon.foss.module.pickup.waybill.server.service.impl.WaybillInfoToPtpService"></bean>
+	
+   <bean id="partnerWaybillInfoResultCallBack" class="com.deppon.foss.module.pickup.waybill.server.process.PartnerWaybillInfoResultCallBack"></bean>
+	
+	<!-- 合伙人 运单信息 保存 -->
+	<bean id="partnersWaybillDao" class="com.deppon.foss.module.pickup.waybill.server.dao.impl.PartnersWaybillDao" >
+	  <property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+	
+    <bean id="partnersWaybillService" class="com.deppon.foss.module.pickup.waybill.server.service.impl.PartnersWaybillService" >
+        <property name="partnersWaybillDao" ref="partnersWaybillDao"></property>
+    </bean>
+	
+</beans>

@@ -1,0 +1,415 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.BillCashCashierConfirmDao">
+
+	<resultMap id="billCashCashierConfirmDtoResultMap" type="com.deppon.foss.module.settlement.pay.api.shared.dto.BillCashCashierConfirmDto" >
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="BILL_NO" property="billNo" jdbcType="VARCHAR" />
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="SOURCE_BILL_NO" property="sourceBillNo" jdbcType="VARCHAR" />
+		<result column="ACCOUNT_DATE" property="accountDate" jdbcType="TIMESTAMP" />
+		<result column="BUSINESS_DATE" property="businessDate" jdbcType="TIMESTAMP" />
+		<result column="AMOUNT" property="amount" jdbcType="VARCHAR" />
+		<result column="PAYMENT_TYPE" property="paymentType" jdbcType="VARCHAR" />
+		<result column="BILL_TYPE" property="billType" jdbcType="VARCHAR" />
+		<result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+		<result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+		<result column="CREATE_USER_CODE" property="createUserCode" jdbcType="VARCHAR" />
+		<result column="CREATE_USER_NAME" property="createUserName" jdbcType="VARCHAR" />
+		<result column="VERSION_NO" property="versionNo" jdbcType="VARCHAR" />
+		<result column="STATUS" property="status" jdbcType="VARCHAR" />
+		<result column="CASH_CONFIRM_USER_CODE" property="cashConfirmUserCode" jdbcType="VARCHAR" />
+		<result column="CASH_CONFIRM_USER_NAME" property="cashConfirmUserName" jdbcType="VARCHAR" />
+		<result column="CASH_CONFIRM_TIME" property="cashConfirmTime" jdbcType="TIMESTAMP" />
+		<result column="COLLECTION_ORG_CODE" property="collectionOrgCode" jdbcType="VARCHAR" />
+		<result column="COLLECTION_ORG_NAME" property="collectionOrgName" jdbcType="VARCHAR" />
+		<result column="GENERATING_ORG_CODE" property="generatingOrgCode" jdbcType="VARCHAR" />
+		<result column="GENERATING_ORG_NAME" property="generatingOrgName" jdbcType="VARCHAR" />
+		<result column="end_waybill_no" property="endWaybillNo" jdbcType="VARCHAR" />
+		<result column="repayment_no" property="repaymentNo" jdbcType="VARCHAR" />
+		<result column="begin_no" property="beginNo" jdbcType="VARCHAR" />
+		<result column="writeoff_Type" property="writeoffType" jdbcType="VARCHAR" />
+		<result column="POS_SERIAL_NUM" property="posSerialNum" jdbcType="VARCHAR" />
+		<result column="BATCH_NO" property="batchNo" jdbcType="VARCHAR" />
+		<result column="SETTLE_APPROACH" property="settleApproach" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<!-- 确认收银 现金收款单字段  -->
+	<sql id="Cash_Column_List">
+		TC.ID,/*查询现金收款单*/
+		TC.CASH_COLLECTION_NO BILL_NO,
+		TC.WAYBILL_NO,
+		TC.SOURCE_BILL_NO,
+		TC.ACCOUNT_DATE,
+		TC.AMOUNT/100 AMOUNT,
+		TC.PAYMENT_TYPE,
+		'XS' BILL_TYPE,
+		TC.CUSTOMER_CODE,
+		TC.CUSTOMER_NAME,
+		TC.CREATE_USER_CODE,
+		TC.CREATE_USER_NAME,
+		TC.VERSION_NO,
+		TC.STATUS,
+		TC.ACTIVE,
+		TC.COLLECTION_ORG_CODE,
+		TC.COLLECTION_ORG_NAME,
+		TC.GENERATING_ORG_CODE,
+		TC.GENERATING_ORG_NAME,
+		TC.CASH_CONFIRM_USER_CODE,
+		TC.CASH_CONFIRM_USER_NAME,
+		TC.CASH_CONFIRM_TIME,
+		TC.POS_SERIAL_NUM,
+		TC.BATCH_NO,
+		null SETTLE_APPROACH
+	</sql>
+	
+	<!-- 确认收银 还款单字段 -->
+	<sql id="Repayment_Column_List" >
+		TP.ID,/*根据传入的参数，查询还款单id*/
+		TP.REPAYMENT_NO BILL_NO,
+		TP.WAYBILL_NO,
+		TP.SOURCE_BILL_NO,
+		TP.ACCOUNT_DATE,
+		TP.AMOUNT/100 AMOUNT,
+		TP.PAYMENT_TYPE,
+		'HK' BILL_TYPE,
+		TP.CUSTOMER_CODE,
+		TP.CUSTOMER_NAME,
+		TP.CREATE_USER_CODE,
+		TP.CREATE_USER_NAME,
+		TP.VERSION_NO,
+		TP.STATUS,
+		TP.ACTIVE,
+		TP.COLLECTION_ORG_CODE,
+		TP.COLLECTION_ORG_NAME,
+		TP.GENERATING_ORG_CODE,
+		TP.GENERATING_ORG_NAME,
+		TP.CASH_CONFIRM_USER_CODE,
+		TP.CASH_CONFIRM_USER_NAME,
+		TP.CASH_CONFIRM_TIME,
+		TP.POS_SERIAL_NUM,
+		TP.BATCH_NO,
+		TP.SETTLE_APPROACH
+	</sql>
+	
+	<!-- 确认收银 预收单字段  -->
+	<sql id="DepositReceived_Column_List">
+		TD.ID,
+		TD.DEPOSIT_RECEIVED_NO BILL_NO,
+		TD.DEPOSIT_RECEIVED_NO,
+		TD.DEPOSIT_RECEIVED_NO,
+		TD.ACCOUNT_DATE,
+		TD.AMOUNT/100 AMOUNT,
+		TD.PAYMENT_TYPE,
+		'US' BILL_TYPE,
+		TD.CUSTOMER_CODE,
+		TD.CUSTOMER_NAME,
+		TD.CREATE_USER_CODE,
+		TD.CREATE_USER_NAME,
+		TD.VERSION_NO,
+		TD.STATUS,
+		TD.ACTIVE,
+		TD.COLLECTION_ORG_CODE,
+		TD.COLLECTION_ORG_NAME,
+		TD.GENERATING_ORG_CODE,
+		TD.GENERATING_ORG_NAME,
+		TD.CASH_CONFIRM_USER_CODE,
+		TD.CASH_CONFIRM_USER_NAME,
+		TD.CASH_CONFIRM_TIME,
+		null POS_SERIAL_NUM,
+		null BATCH_NO,
+		null SETTLE_APPROACH
+	</sql>
+	
+	<!--确认收银 根据传入的参数，获取未收银确认列表信息 -->
+	<select id="querybillCashCashierConfirmParams" resultMap="billCashCashierConfirmDtoResultMap" parameterType="java.util.Map" >
+	SELECT /*确认收银 根据传入的参数，获取未收银确认列表信息 */
+    <include refid="Cash_Column_List" />
+    FROM STL.T_STL_BILL_CASH_COLLECTION TC WHERE 
+    	<![CDATA[ TC.ACCOUNT_DATE >=#{startBusinessDate} AND   TC.ACCOUNT_DATE < #{endBusinessDate} ]]>
+		<if test="collectionOrgCode!=null and collectionOrgCode!=''"> <!-- 部门编码 -->
+	    	AND TC.COLLECTION_ORG_CODE = #{collectionOrgCode} 
+	    </if>
+	    <if test="paymentType!=null and paymentType!=''"> <!-- 收款方式  -->
+	    	AND TC.PAYMENT_TYPE = #{paymentType} 
+	    </if>
+	    <if test="billNo!=null and billNo!=''">
+			AND TC.CASH_COLLECTION_NO = #{billNo} 
+		</if>
+		<if test="createUserCode!=null and createUserCode!='' ">
+			AND TC.CREATE_USER_CODE = #{createUserCode}
+		</if>
+		<if test="posSerialNum!=null and posSerialNum!='' ">
+			AND TC.POS_SERIAL_NUM = #{posSerialNum}
+		</if>
+        <if test="settleApproach !=null and settleApproach!='' ">
+            AND 1=2
+        </if>
+		AND TC.STATUS = #{status} 
+		UNION ALL 
+	SELECT 
+    <include refid="Repayment_Column_List" />
+    FROM STL.T_STL_BILL_REPAYMENT TP WHERE  /* 确认收银 根据传入的参数，获取未收银确认列表信息 */
+    	<![CDATA[ TP.ACCOUNT_DATE >=#{startBusinessDate} AND   TP.ACCOUNT_DATE < #{endBusinessDate} ]]>
+	    <if test="paymentType!=null and paymentType!=''"> <!-- 收款方式  -->
+	    	AND TP.PAYMENT_TYPE = #{paymentType} 
+	    </if>
+	    <if test="billNo!=null and billNo!=''">
+			AND TP.REPAYMENT_NO = #{billNo} 
+		</if>
+		<if test="createUserCode!=null and createUserCode!='' ">
+			AND TP.CREATE_USER_CODE = #{createUserCode}
+		</if>
+		<if test="collectionOrgCode!=null and collectionOrgCode!=''"> <!-- 部门编码 -->
+	    	AND TP.COLLECTION_ORG_CODE = #{collectionOrgCode} 
+	    </if>
+	    <if test="posSerialNum!=null and posSerialNum!='' ">
+			AND TP.POS_SERIAL_NUM = #{posSerialNum}
+		</if>
+        <if test="settleApproach !=null and settleApproach!='' ">
+            AND TP.SETTLE_APPROACH = #{settleApproach}
+        </if>
+		AND TP.STATUS = #{status} 
+		UNION ALL 
+    SELECT 
+    <include refid="DepositReceived_Column_List" />
+    FROM STL.T_STL_BILL_DEPOSIT_RECEIVED TD WHERE /*确认收银 根据传入的参数，获取未收银确认列表信息 */
+    	<![CDATA[ TD.ACCOUNT_DATE >=#{startBusinessDate} AND   TD.ACCOUNT_DATE < #{endBusinessDate} ]]>
+	    <if test="paymentType!=null and paymentType!=''"> <!-- 收款方式  -->
+	    	AND TD.PAYMENT_TYPE = #{paymentType} 
+	    </if>
+	    <if test="billNo!=null and billNo!=''">
+			AND TD.DEPOSIT_RECEIVED_NO = #{billNo} 
+		</if>
+		<if test="createUserCode!=null and createUserCode!='' ">
+			AND TD.CREATE_USER_CODE = #{createUserCode}
+		</if>
+		<if test="collectionOrgCode!=null and collectionOrgCode!=''"> <!-- 部门编码 -->
+	    	AND TD.COLLECTION_ORG_CODE = #{collectionOrgCode} 
+	    </if>
+	    <if test="posSerialNum!=null and posSerialNum!='' ">
+			AND 1=0  /*此处如果按POS串号查询，则预收单查询结果为空*/
+		</if>
+        <if test="settleApproach !=null and settleApproach!='' ">
+            AND 1=2
+        </if>
+		AND TD.STATUS = #{status}  order by ACCOUNT_DATE desc
+	</select>
+	<!-- 根据传入的多个单号，获取单据列表信息 -->
+	<select id="querybillCashCashierConfirmNos" resultMap="billCashCashierConfirmDtoResultMap" parameterType="java.util.Map" >
+	SELECT /*确认收银   根据传入的多个单号，获取单据列表信息 */
+    <include refid="Cash_Column_List" />
+    FROM STL.T_STL_BILL_CASH_COLLECTION TC  WHERE 
+		 TC.CASH_COLLECTION_NO IN 
+		<foreach collection="billNos"  index="index" item="item"  open="(" separator="," close=")">  
+		        #{item} 
+		</foreach>
+		AND TC.STATUS = #{status}  
+		AND TC.COLLECTION_ORG_CODE = #{collectionOrgCode}  UNION ALL 
+	SELECT /*确认收银   根据传入的多个单号，获取单据列表信息 */
+	    <include refid="Repayment_Column_List" />
+	    FROM STL.T_STL_BILL_REPAYMENT TP  WHERE 
+		 TP.REPAYMENT_NO IN 
+		<foreach collection="billNos"  index="index" item="item"  open="(" separator="," close=")">  
+		        #{item} 
+		</foreach>
+		AND TP.STATUS = #{status}  
+		AND TP.COLLECTION_ORG_CODE = #{collectionOrgCode}  UNION ALL 
+    SELECT /*确认收银   根据传入的多个单号，获取单据列表信息 */
+    	<include refid="DepositReceived_Column_List" />
+    	FROM STL.T_STL_BILL_DEPOSIT_RECEIVED TD WHERE 
+		 TD.DEPOSIT_RECEIVED_NO IN
+		<foreach collection="billNos"  index="index" item="item"  open="(" separator="," close=")">  
+		        #{item} 
+		</foreach>
+		AND TD.STATUS = #{status}  
+		AND TD.COLLECTION_ORG_CODE = #{collectionOrgCode}   order by ACCOUNT_DATE desc
+	</select>
+	
+	<!-- 根据传入的多个来源单号，获取现金收款单、还款单信息 -->
+	<select id="querybillCashCashierConfirmWayBillNos" resultMap="billCashCashierConfirmDtoResultMap" parameterType="java.util.Map" >
+	 SELECT /*确认收银 根据传入的参数，获取现金收款单信息 */
+    <include refid="Cash_Column_List" />
+    FROM STL.T_STL_BILL_CASH_COLLECTION TC  WHERE 
+		 TC.WAYBILL_NO IN 
+		<foreach collection="waybillNos"  index="index" item="item"  open="(" separator="," close=")">  
+		        #{item} 
+		</foreach>
+		AND TC.STATUS = #{status}  
+		AND TC.COLLECTION_ORG_CODE = #{collectionOrgCode}  UNION ALL 
+    SELECT /*确认收银 根据来源单号查询还款单 */
+    <include refid="Repayment_Column_List" />
+    FROM STL.T_STL_BILL_REPAYMENT TP  WHERE 
+		 TP.WAYBILL_NO IN 
+		<foreach collection="waybillNos"  index="index" item="item"  open="(" separator="," close=")">  
+		        #{item} 
+		</foreach>
+		AND TP.STATUS = #{status} 
+		AND TP.COLLECTION_ORG_CODE = #{collectionOrgCode}   order by ACCOUNT_DATE desc
+	</select>
+	<!-- 根据传入的多个id号，获取单据列表信息 -->
+	<select id="querybillCashCashierConfirmIds" resultMap="billCashCashierConfirmDtoResultMap" parameterType="java.util.Map" >
+	SELECT /*确认收银  根据传入的多个id，获取现金收款单*/
+    <include refid="Cash_Column_List" />
+    FROM STL.T_STL_BILL_CASH_COLLECTION TC  WHERE 
+		 TC.ID IN 
+		<foreach collection="billCashCashierConfirmIds"  index="index" item="item"  open="(" separator="," close=")">  
+		        #{item} 
+		</foreach> UNION ALL 
+	SELECT /*确认收银 根据传入的多个id号，获取还款单列表信息 */
+	    <include refid="Repayment_Column_List" />
+	    FROM STL.T_STL_BILL_REPAYMENT TP  WHERE 
+		 TP.ID IN 
+		<foreach collection="billCashCashierConfirmIds"  index="index" item="item"  open="(" separator="," close=")">  
+		        #{item} 
+		</foreach> UNION ALL 
+    SELECT /*确认收银  根据传入的多个id号，获取预收单单据列表信息 */
+    	<include refid="DepositReceived_Column_List" />
+    	FROM STL.T_STL_BILL_DEPOSIT_RECEIVED TD WHERE 
+		 TD.ID IN
+		<foreach collection="billCashCashierConfirmIds"  index="index" item="item"  open="(" separator="," close=")">  
+		        #{item} 
+		</foreach>
+	</select>
+	
+	<!-- 根据传入的参数，获取预收单列表信息 -->
+	<select id="queryDepositReceivedPayParams" resultMap="billCashCashierConfirmDtoResultMap" parameterType="java.util.Map" >
+    SELECT /* 确认收银 根据传入的参数，获取预收单列表信息 */
+    <include refid="DepositReceived_Column_List" />
+    FROM STL.T_STL_BILL_DEPOSIT_RECEIVED TD WHERE 
+    	<![CDATA[ TD.ACCOUNT_DATE >=#{startBusinessDate} AND   TD.ACCOUNT_DATE < #{endBusinessDate} ]]>
+	    <if test="paymentType!=null and paymentType!=''"> <!-- 收款方式  -->
+	    	AND TD.PAYMENT_TYPE = #{paymentType} 
+	    </if>
+	    <if test="billNo!=null and billNo!=''">
+			AND TD.DEPOSIT_RECEIVED_NO = #{billNo} 
+		</if>
+		<if test="createUserCode!=null and createUserCode!='' ">
+			AND TD.CREATE_USER_CODE = #{createUserCode}
+		</if>
+		<if test="collectionOrgCode!=null and collectionOrgCode!=''"> <!-- 部门编码 -->
+	    	AND TD.COLLECTION_ORG_CODE = #{collectionOrgCode} 
+	    </if>
+	    <if test="posSerialNum!=null and posSerialNum!='' ">
+			AND 1=0  /*此处如果按POS串号查询，则预收单查询结果为空*/
+		</if>
+		AND TD.STATUS = #{status}  order by ACCOUNT_DATE desc
+		
+	</select>
+	<!-- 根据传入的参数，获取还款单列表信息 -->
+	<select id="queryRepaymentPayParams" resultMap="billCashCashierConfirmDtoResultMap" parameterType="java.util.Map" >
+    SELECT /*确认收银 根据传入的参数，获取还款单列表信息  */
+    <include refid="Repayment_Column_List" />
+    FROM STL.T_STL_BILL_REPAYMENT TP WHERE 
+    	<![CDATA[ TP.ACCOUNT_DATE >=#{startBusinessDate} AND   TP.ACCOUNT_DATE < #{endBusinessDate} ]]>
+	    <if test="paymentType!=null and paymentType!=''"> <!-- 收款方式  -->
+	    	AND TP.PAYMENT_TYPE = #{paymentType} 
+	    </if>
+	    <if test="billNo!=null and billNo!=''">
+			AND TP.REPAYMENT_NO = #{billNo} 
+		</if>
+		<if test="createUserCode!=null and createUserCode!='' ">
+			AND TP.CREATE_USER_CODE = #{createUserCode}
+		</if>
+		<if test="collectionOrgCode!=null and collectionOrgCode!=''"> <!-- 部门编码 -->
+	    	AND TP.COLLECTION_ORG_CODE = #{collectionOrgCode} 
+	    </if>
+	     <if test="posSerialNum!=null and posSerialNum!='' ">
+			AND TP.POS_SERIAL_NUM = #{posSerialNum}
+		</if>
+	     <if test="settleApproach != null and settleApproach!='' ">
+			AND TP.SETTLE_APPROACH = #{settleApproach}
+		</if>
+		AND TP.STATUS = #{status}  order by ACCOUNT_DATE desc
+	</select>
+	
+	<!-- 根据传入的参数，获取现金收款单列表信息 -->
+	<select id="queryCashCollectionPayParams" resultMap="billCashCashierConfirmDtoResultMap" parameterType="java.util.Map" >
+    SELECT /*确认收银 根据传入的参数，获取现金收款单列表信息  */
+    <include refid="Cash_Column_List" />
+    FROM STL.T_STL_BILL_CASH_COLLECTION TC WHERE 
+    	<![CDATA[ TC.ACCOUNT_DATE >=#{startBusinessDate} AND   TC.ACCOUNT_DATE < #{endBusinessDate} ]]>
+		<if test="collectionOrgCode!=null and collectionOrgCode!=''"> <!-- 部门编码 -->
+	    	AND TC.COLLECTION_ORG_CODE = #{collectionOrgCode} 
+	    </if>
+	    <if test="paymentType!=null and paymentType!=''"> <!-- 收款方式  -->
+	    	AND TC.PAYMENT_TYPE = #{paymentType} 
+	    </if>
+	    <if test="billNo!=null and billNo!=''">
+			AND TC.CASH_COLLECTION_NO = #{billNo} 
+		</if>
+		<if test="createUserCode!=null and createUserCode!='' ">
+			AND TC.CREATE_USER_CODE = #{createUserCode}
+		</if>
+		<if test="posSerialNum!=null and posSerialNum!='' ">
+			AND TC.POS_SERIAL_NUM = #{posSerialNum}
+		</if>
+		AND TC.STATUS = #{status}  order by ACCOUNT_DATE desc
+	</select>
+	
+	<select id="cashCashierConfirmDetailWaybillNo" resultMap="billCashCashierConfirmDtoResultMap" parameterType="java.util.Map" >
+    SELECT /*确认收银 根据传入的参数，获取现金收款单列表信息  */
+    	distinct tw.end_waybill_no 
+    FROM STL.T_STL_BILL_REPAYMENT TR,stl.t_stl_bill_writeoff tw 
+    	where tr.repayment_no = #{billNo}
+    	and tr.repayment_no = tw.begin_no 
+    			and tw.writeoff_type = #{writeoffType}
+	</select>
+	
+	<select id="cashCashierConfirmDetailWaybillNos" resultMap="billCashCashierConfirmDtoResultMap" parameterType="java.util.Map" >
+    SELECT /*确认收银 根据传入的参数，获取现金收款单列表信息  */
+    	distinct tw.end_waybill_no ,tw.begin_no
+    FROM STL.T_STL_BILL_REPAYMENT TR,stl.t_stl_bill_writeoff tw 
+    	where tr.repayment_no in
+    	<foreach collection="billNos"  index="index" item="item"  open="(" separator="," close=")">  
+		        #{item} 
+		</foreach>
+    	and tr.repayment_no = tw.begin_no 
+    			and tw.writeoff_type = #{writeoffType}
+	</select>
+	<!-- 根据传入的多个银联交易流水号，获取单据列表信息 -->
+	<select id="querybillCashCashierConfirmBatchNos" resultMap="billCashCashierConfirmDtoResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillCashCashierConfirmDto" >
+		SELECT /*确认收银   根据传入的多个流水号，获取单据列表信息 */
+	    <include refid="Cash_Column_List" />
+	    FROM STL.T_STL_BILL_CASH_COLLECTION TC  WHERE 
+			 TC.BATCH_NO IN 
+			<foreach collection="batchNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+			</foreach>
+			AND TC.STATUS = #{status}  
+			AND TC.COLLECTION_ORG_CODE = #{collectionOrgCode} 
+	 UNION ALL 
+		SELECT /*确认收银   根据传入的多个流水号，获取单据列表信息 */
+		    <include refid="Repayment_Column_List" />
+		    FROM STL.T_STL_BILL_REPAYMENT TP  WHERE 
+			 TP.BATCH_NO IN 
+			<foreach collection="batchNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+			</foreach>
+			AND TP.STATUS = #{status}  
+			AND TP.COLLECTION_ORG_CODE = #{collectionOrgCode} 
+	</select>
+
+    <select id="queryUnconfirmedCodRelatedBill"
+            parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillCashCashierConfirmDto"
+            resultType="string">
+        SELECT DISTINCT REP.REPAYMENT_NO
+          FROM STL.T_STL_BILL_WRITEOFF WO
+          JOIN STL.T_STL_BILL_RECEIVABLE REC
+            ON REC.RECEIVABLE_NO = WO.END_NO
+           AND REC.ACTIVE = 'Y'
+           AND REC.BILL_TYPE IN ('CR', 'AAC', 'DLC')
+          JOIN STL.T_STL_BILL_REPAYMENT REP
+            ON REP.REPAYMENT_NO = WO.BEGIN_NO
+           AND REP.ACTIVE = 'Y'
+         WHERE WO.ACTIVE = 'Y'
+           AND WO.WRITEOFF_TYPE = 'RR'
+           AND REP.STATUS = 'S'
+           AND WO.ORG_CODE = #{collectionOrgCode}
+           AND (REC.DUNNING_ORG_CODE = #{collectionOrgCode} OR
+                REC.RECEIVABLE_ORG_CODE = #{collectionOrgCode})
+           AND REP.COLLECTION_ORG_CODE = #{collectionOrgCode}
+           AND WO.WRITEOFF_TIME > SYSDATE - 100
+           <![CDATA[AND ROWNUM < 6]]>
+    </select>
+</mapper>

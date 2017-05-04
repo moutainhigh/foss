@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!-- 合伙人奖罚月报mapping -->
+<mapper namespace="foss.stv.MvrSummaryREntityDao">
+	<resultMap id="BaseResultMap"
+		type="com.deppon.foss.module.settlement.closing.api.shared.domain.MvrSummaryREntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="PERIOD" property="period" jdbcType="VARCHAR" />
+		<result column="PRODUCT_CODE" property="productCode" jdbcType="VARCHAR" />
+		<result column="SUB_INCOME_CPMPANY_CODE" property="subIncomeCpmpanyCode"
+			jdbcType="VARCHAR" />
+		<result column="SUB_INCOME_CPMPANY_NAME" property="subIncomeCpmpanyName"
+			jdbcType="VARCHAR" />
+		<result column="SOURCE_DATA" property="sourceData" jdbcType="VARCHAR" />
+		<result column="AMOUNT_FRE" property="amountFre" jdbcType="DECIMAL" />
+		<result column="AMOUNT_FRE_TAX" property="amountFreTax"
+			jdbcType="DECIMAL" />
+		<result column="AMOUNT_FRE_TOTAL" property="amountFreTotal"
+			jdbcType="DECIMAL" />
+		<result column="AMOUNT_TRA" property="amountTra" jdbcType="DECIMAL" />
+		<result column="AMOUNT_TRA_TAX" property="amountTraTax"
+			jdbcType="DECIMAL" />
+		<result column="AMOUNT_TRA_TOTAL" property="amountTraTotal"
+			jdbcType="DECIMAL" />
+	</resultMap>
+
+	<resultMap id="MvrSummaryRDtoResultMap"
+		type="com.deppon.foss.module.settlement.closing.api.shared.dto.MvrSummaryRDto">
+		<result column="COUNT" property="count" jdbcType="DECIMAL" />
+		<result column="AMOUNT_FRE" property="amountFre" jdbcType="DECIMAL" />
+		<result column="AMOUNT_FRE_TAX" property="amountFreTax"
+			jdbcType="DECIMAL" />
+		<result column="AMOUNT_FRE_TOTAL" property="amountFreTotal"
+			jdbcType="DECIMAL" />
+		<result column="AMOUNT_TRA" property="amountTra" jdbcType="DECIMAL" />
+		<result column="AMOUNT_TRA_TAX" property="amountTraTax"
+			jdbcType="DECIMAL" />
+		<result column="AMOUNT_TRA_TOTAL" property="amountTraTotal"
+			jdbcType="DECIMAL" />
+	</resultMap>
+
+	<sql id="Base_Column_List">
+		PERIOD,
+		PRODUCT_CODE,
+		SUB_INCOME_CPMPANY_CODE,
+		SUB_INCOME_CPMPANY_NAME,
+		--SOURCE_DATA,
+		AMOUNT_FRE/100 AMOUNT_FRE,
+		AMOUNT_FRE_TAX/100 AMOUNT_FRE_TAX,
+		AMOUNT_FRE_TOTAL/100
+		AMOUNT_FRE_TOTAL,
+		AMOUNT_TRA/100 AMOUNT_TRA,
+		AMOUNT_TRA_TAX/100
+		AMOUNT_TRA_TAX,
+		AMOUNT_TRA_TOTAL/100 AMOUNT_TRA_TOTAL
+	</sql>
+
+	<sql id="Base_Total_List">
+		COUNT(1) COUNT,
+		SUM(AMOUNT_FRE)/100 AMOUNT_FRE,
+		SUM(AMOUNT_FRE_TAX)/100 AMOUNT_FRE_TAX,
+		SUM(AMOUNT_FRE_TOTAL)/100 AMOUNT_FRE_TOTAL,
+		SUM(AMOUNT_TRA)/100 AMOUNT_TRA,
+		SUM(AMOUNT_TRA_TAX)/100 AMOUNT_TRA_TAX,
+		SUM(AMOUNT_TRA_TOTAL)/100 AMOUNT_TRA_TOTAL
+	</sql>
+	<sql id="condition_expression">
+		<if test="productCode!= null and productCode!=''">
+			and p.PRODUCT_CODE =#{productCode,jdbcType=VARCHAR}
+		</if>
+		<!-- 子公司编码 -->
+		<if test="subIncomeCpmpanyCode!=null">
+			and p.SUB_INCOME_CPMPANY_CODE
+			=#{subIncomeCpmpanyCode,jdbcType=VARCHAR}
+		</if>
+	</sql>
+
+	<select id="selectTotalByConditions" parameterType="java.util.Map"
+		resultMap="MvrSummaryRDtoResultMap">
+		select /*结算-凭证报表-根据条件查询02业务重分类汇总报表总条数，总金额*/
+		<include refid="Base_Total_List" />
+		from STV.V_STL_MVR_SUMMARY_R_VIEW p
+		where p.PERIOD =
+		#{period,jdbcType=VARCHAR}
+		<!-- 引入查询条件 -->
+		<include refid="condition_expression" />
+	</select>
+
+	<select id="selectByConditions" parameterType="java.util.Map"
+		resultMap="BaseResultMap">
+		select /*结算-凭证报表-根据条件查询02业务重分类汇总报表*/
+		<include refid="Base_Column_List" />
+		from STV.V_STL_MVR_SUMMARY_R_VIEW p
+		where p.PERIOD =
+		#{period,jdbcType=VARCHAR}
+		<!-- 引入查询条件 -->
+		<include refid="condition_expression" />
+	</select>
+</mapper>

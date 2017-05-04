@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://www.springframework.org/schema/jee 
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+			http://www.springframework.org/schema/aop 
+			http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">
+	
+	<!-- 数据源 -->
+	<bean id="dataSource"
+		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver" />
+		<property name="url" value="jdbc:oracle:thin:@192.168.10.111:1521:fossdbsb" />
+		<property name="username" value="tfr" />
+		<property name="password" value="tfr" />
+	</bean>
+
+	<!-- JDBC模版 -->
+	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+		<constructor-arg ref="dataSource" />
+	</bean>
+
+	<!-- 数据连接管理 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<!-- 事务注解支持 -->
+	<tx:annotation-driven transaction-manager="transactionManager" />
+	<aop:config proxy-target-class="true"></aop:config>
+
+	<!-- myBatis文件 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="configLocation"
+			value="/com/deppon/foss/module/transfer/load/server/mybatis.xml" />
+		<!-- 正式测试环境路径 -->
+		<property name="mapperLocations"
+			value="classpath*:com/deppon/**/META-INF/ibatis/*-mapper.xml" />
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<context:annotation-config />
+	<tx:annotation-driven/>
+	<context:component-scan base-package="com.deppon.foss.module.transfer.load" />
+	<bean id="truckTaskDao"	class="com.deppon.foss.module.transfer.load.server.dao.impl.TruckTaskDao" >
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+	<!--**************************PDA中转装车接口 Begin*****************************-->
+	<bean id="pdaLoadDao"	class="com.deppon.foss.module.transfer.load.server.dao.impl.PDALoadDao" >
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+		<!-- <property name="batchSaveProcessDao" ref="batchSaveProcessDao"></property> -->
+	</bean>
+	<!--**************************PDA中转装车接口 Begin*****************************-->
+	<bean id="assignLoadTaskDao"	class="com.deppon.foss.module.transfer.load.server.dao.impl.AssignLoadTaskDao" >
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+	<!--**************************PDA中转装车接口 End*****************************-->
+	<!--**************************生成装卸车工作量  Begin*****************************-->
+	<bean id="createLoaderWorkloadDao"	class="com.deppon.foss.module.transfer.load.server.dao.impl.CreateLoaderWorkloadDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+		<!-- <property name="batchSaveProcessDao" ref="batchSaveProcessDao"></property> -->
+	</bean>
+	<bean id="createLoaderWorkloadService" class="com.deppon.foss.module.transfer.load.server.service.impl.CreateLoaderWorkloadService">
+		<property name="createLoaderWorkloadDao" ref="createLoaderWorkloadDao"></property>
+		<property name="createLoaderWorkloadService" ref="createLoaderWorkloadService"></property>
+	</bean>
+	<!--**************************生成装卸车工作量 End*******************************-->
+	<bean id="deliverLoadTaskDao"	class="com.deppon.foss.module.transfer.load.server.dao.impl.DeliverLoadTaskDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+	<bean id="deliverLoadTaskService" class="com.deppon.foss.module.transfer.load.server.service.impl.DeliverLoadTaskService" >	
+		<property name="deliverLoadTaskDao" ref="deliverLoadTaskDao"/>
+	</bean>
+	<bean id="deliverLoadGapReprotDao" class="com.deppon.foss.module.transfer.load.server.dao.impl.DeliverLoadGapReprotDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+	<!--配载单DAO-->
+	<bean id="vehicleAssembleBillDao"	class="com.deppon.foss.module.transfer.load.server.dao.impl.VehicleAssembleBillDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+	<bean id="truckTaskCallESBDao"	class="com.deppon.foss.module.transfer.load.server.dao.impl.TruckTaskCallESBDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+	<!--封签-->
+	<bean id="vehicleSealDao"	class="com.deppon.foss.module.transfer.load.server.dao.impl.VehicleSealDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+	<bean id="vehicleSealService" class="com.deppon.foss.module.transfer.load.server.service.impl.VehicleSealService" >	
+		<property name="vehicleSealDao" ref="vehicleSealDao"/>
+	</bean>
+	<bean id="pdaVehicleSealService" class="com.deppon.foss.module.transfer.load.server.service.impl.VehicleSealService" >	
+		<property name="vehicleSealDao" ref="vehicleSealDao"/>
+	</bean>
+	<!-- 外请费用 -->
+	<bean id="outsideVehicleChargeDao" class="com.deppon.foss.module.transfer.load.server.dao.impl.OutsideVehicleChargeDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+	<bean id="outsideVehicleChargeService" class="com.deppon.foss.module.transfer.load.server.service.impl.OutsideVehicleChargeService">
+		<property name="outsideVehicleChargeDao" ref="outsideVehicleChargeDao"></property>
+	</bean>
+	<bean id="autoGenerateHandOverBillDao" class="com.deppon.foss.module.transfer.load.server.dao.impl.AutoGenerateHandOverBillDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+	<bean id="pdaExpressDeliverLoadDao"	class="com.deppon.foss.module.transfer.load.server.dao.impl.PDAExpressDeliverLoadDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>	
+	<bean id="pdaExpressPackageDao"	class="com.deppon.foss.module.transfer.load.server.dao.impl.PDAExpressPackageDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+	<bean id="pdaComlementDao"	class="com.deppon.foss.module.transfer.load.server.dao.impl.PDAComlementDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+	<!-- <bean id="outsideVehicleChargeService" class="com.deppon.foss.module.transfer.load.server.service.impl.OutsideVehicleChargeService">
+		<property name="outsideVehicleChargeDao" ref="outsideVehicleChargeDao"></property>
+	</bean> -->
+	<!-- 悟空交接单模块 -->
+	<bean id="wktfrBillDao"	class="com.deppon.foss.module.transfer.load.server.dao.impl.WKTfrBillDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+	<bean id="wKTfrBillService" class="com.deppon.foss.module.transfer.load.server.service.impl.WKTfrBillService">
+		<property name="wktfrBillDao" ref="wktfrBillDao"></property>
+	</bean>
+	
+	<bean id="wkLoadTempDao" class="com.deppon.foss.module.transfer.load.server.dao.impl.WKLoadTempDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+	
+	<bean id="wkLoadTempService" class="com.deppon.foss.module.transfer.load.server.service.impl.WKLoadTempService" >
+		<property name="wkLoadTempDao" ref="wkLoadTempDao"></property>
+	</bean>
+	
+
+	<!-- ————————快递补码模块dao、service配置————————-->
+	<bean id="complementDao"	class="com.deppon.foss.module.transfer.load.server.dao.impl.ComplementDao" />
+	<bean id="complementService" class="com.deppon.foss.module.transfer.load.server.service.impl.ComplementService"/>
+	
+	<!--————————包交接单——————————————————-->
+	<bean id="expressHandOverBillDao"	class="com.deppon.foss.module.transfer.load.server.dao.impl.ExpressHandOverBillDao" />
+	<bean id="expressHandOverBillService" class="com.deppon.foss.module.transfer.load.server.service.impl.ExpressHandOverBillService"/>
+	
+	<!-- ————————快递包模块dao、service配置————————-->
+	<bean id="expressPackageDao"	class="com.deppon.foss.module.transfer.load.server.dao.impl.ExpressPackageDao" />
+	<bean id="expressPackageService" class="com.deppon.foss.module.transfer.load.server.service.impl.ExpressPackageService"/>
+    	<!--——————————————————快递直达包—————————————————————————— -->
+	 <!--————————直达包走货路由——————————————————--> 
+<!-- 	<bean id="ExpressThroughPackagePathDao" class="com.deppon.foss.module.transfer.load.server.dao.impl.ExpressThroughPackagePathDao"/>
+	<bean id="expressThroughPackagePathService" class="com.deppon.foss.module.transfer.load.server.service.impl.ExpressThroughPackagePathService"/>
+	
+ -->
+
+</beans>

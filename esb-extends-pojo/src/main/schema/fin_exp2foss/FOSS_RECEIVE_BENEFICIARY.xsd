@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.deppon.com/esb/inteface/domain/payment"
+	xmlns:tns="http://www.deppon.com/esb/inteface/domain/payment"
+	elementFormDefault="qualified">
+
+	<complexType name="PayeeInfoNotificationRequest">
+		<annotation>
+			<documentation>FOSS结算子系统付款等用例需要使用收款方信息，此信息存储在费控系统中，故需要FOSS提供接口，费控系统调用该接口，传入收款方信息
+			</documentation>
+		</annotation>
+		<sequence>
+			<element name="payeeInfo" type="tns:PayeeInfo" minOccurs="1"
+				maxOccurs="unbounded">
+				<annotation>
+					<documentation>收款方信息，是一个列表，可批量处理</documentation>
+				</annotation>
+			</element>
+		</sequence>
+	</complexType>
+
+	<complexType name="PayeeInfo">
+		<sequence>
+			<element name="payeeNo" type="string" minOccurs="1"
+				maxOccurs="1">
+				<annotation>
+					<documentation>收款方编码, 在费控系统使用大概44字节</documentation>
+				</annotation>
+			</element>
+			<element name="operatorId" type="string" minOccurs="1"
+				maxOccurs="1">
+				<annotation>
+					<documentation>录入人工号，符合公司规范的工号</documentation>
+				</annotation>
+			</element>
+			<element name="accountType" type="string" minOccurs="1" maxOccurs="1">
+				<annotation>
+					<documentation>账户性质, 1-德邦子公司账户; 2-收银员卡; 3-内部员工账户; 4-公司外部账户
+					</documentation>
+				</annotation>
+			</element>
+			<element name="beneficiaryName" type="string" minOccurs="1"
+				maxOccurs="1">
+				<annotation>
+					<documentation>开户人姓名， 可能是单位，可能是个人，费控系统保留最大255字节</documentation>
+				</annotation>
+			</element>
+			<element name="accountNo" type="string" minOccurs="1"
+				maxOccurs="1">
+				<annotation>
+					<documentation>银行帐号，各银行长度和格式不一致，费控系统保留44字节</documentation>
+				</annotation>
+			</element>
+			<element name="accountBank" type="string" minOccurs="1"
+				maxOccurs="1">
+				<annotation>
+					<documentation>开户行编码，国家统一规定的</documentation>
+				</annotation>
+			</element>
+			<element name="accountBranchBank" type="string" minOccurs="1"
+				maxOccurs="1">
+				<annotation>
+					<documentation>开户支行编码，费控系统保留44字节</documentation>
+				</annotation>
+			</element>
+			<element name="accountBankCityId" type="string" minOccurs="1"
+				maxOccurs="1">
+				<annotation>
+					<documentation>开户行所在城市编码，国家统一规定的</documentation>
+				</annotation>
+			</element>
+			<element name="accountBankStateId" type="string" minOccurs="1"
+				maxOccurs="1">
+				<annotation>
+					<documentation>开户行所在省份编码，国家统一规定的</documentation>
+				</annotation>
+			</element>
+			<element name="operateCode" type="string" minOccurs="1" maxOccurs="1">
+				<annotation>
+					<documentation>操作类别, 1-新增; 2-修改; 3-禁用 </documentation>
+				</annotation>
+			</element>
+			<element name="accSort" type="string" minOccurs="1" maxOccurs="1">
+				<annotation>
+					<documentation>账户类别 </documentation>
+				</annotation>
+			</element>
+		</sequence>
+	</complexType>
+
+	<complexType name="PayeeInfoNotificationResponse">
+        <annotation>
+        	<documentation>对于批量处理的结果反馈</documentation>
+        </annotation>
+        <sequence>
+			<element name="successCount" type="int" minOccurs="1"
+				maxOccurs="1">
+				<annotation>
+					<documentation>成功总数</documentation>
+				</annotation>
+			</element>
+			<element name="failedCount" type="int" minOccurs="1"
+				maxOccurs="1">
+				<annotation>
+					<documentation>失败总数</documentation>
+				</annotation>
+			</element>
+			<element name="processResult" type="tns:PayeeInfoProcessResult"
+				minOccurs="1" maxOccurs="unbounded">
+				<annotation>
+					<documentation>处理明细</documentation>
+				</annotation>
+			</element>
+		</sequence>
+	</complexType>
+
+	<complexType name="PayeeInfoProcessResult">
+		<sequence>
+			<element name="payeeNo" type="string" minOccurs="1"
+				maxOccurs="1">
+				<annotation>
+					<documentation>收款方编码</documentation>
+				</annotation>
+			</element>
+			<element name="operateCode" type="string" minOccurs="1" maxOccurs="1">
+				<annotation>
+					<documentation>操作类别, 1-新增; 2-修改; 3-禁用</documentation>
+				</annotation>
+			</element>
+			<element name="result" type="boolean" minOccurs="1"
+				maxOccurs="1">
+				<annotation>
+					<documentation>处理结果， 0: 成功 1： 失败</documentation>
+				</annotation>
+			</element>
+			<element name="reason" type="string" minOccurs="0" maxOccurs="1">
+				<annotation>
+					<documentation>失败原因，包括具体的异常信息，最大1024字节</documentation>
+				</annotation>
+			</element>
+		</sequence>
+	</complexType>
+
+	<element name="payeeInfoNotificationRequest" type="tns:PayeeInfoNotificationRequest">
+	</element>
+
+	<element name="payeeInfoNotificationResponse" type="tns:PayeeInfoNotificationResponse">
+	</element>
+
+</schema>

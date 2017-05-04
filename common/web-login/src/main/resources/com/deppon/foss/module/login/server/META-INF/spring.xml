@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://www.springframework.org/schema/jee 
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+			http://www.springframework.org/schema/aop 
+			http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">
+
+	<!-- 登录业务服务层 -->
+	<bean id="Log4jKit" class="com.deppon.dpap.log.log4j.kit.Log4jKit">
+    </bean>
+	<bean id="loginService"
+		class="com.deppon.foss.module.login.server.service.impl.LoginService">
+		<property name="userService" ref="userService" />
+		<property name="resourceService" ref="resourceService" />
+		<property name="orgAdministrativeInfoService" ref="orgAdministrativeInfoService"/>
+		<property name="userMenuService" ref="userMenuService"/>
+		<property name="macWhiteService" ref="macWhiteService"/>
+		<property name="configurationParamsService" ref="configurationParamsService" />
+		<property name="employeeService" ref="employeeService" />
+		<property name="loginValidatorCache" ref="loginValidatorCache"></property>
+	</bean>
+
+	<!-- 登录WEB服务层 -->
+	<bean id="loginAction"
+		class="com.deppon.foss.module.login.server.action.LoginAction"
+		scope="prototype">
+		<property name="loginService" ref="loginService" />
+		<property name="businessMonitorService" ref="businessMonitorService" />
+		<property name="configurationParamsService" ref="configurationParamsService" />
+		<property name="userService" ref="userService" />
+		<property name="loginValidatorCache" ref="loginValidatorCache"></property>
+		<property name="requestCubcLoginAddress">
+			<value>${cubc.login.address}</value>
+		</property>
+	</bean>
+	
+	<!-- 模拟登录WEB服务层 -->
+	<bean id="simulationLoginAction"
+		class="com.deppon.foss.module.login.server.action.SimulationLoginAction"
+		scope="prototype">
+		<property name="loginAction" ref="loginAction" />
+	</bean>
+	
+	<bean id="announcementDao"
+		class="com.deppon.foss.module.login.server.dao.impl.AnnouncementDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory" />
+	</bean>
+	
+	<bean id="announcementService"
+		class="com.deppon.foss.module.login.server.service.impl.AnnouncementService">
+		<property name="announcementDao" ref="announcementDao" />
+	</bean>
+
+	<!-- 主页WEB服务层 -->
+	<bean id="homeAction"
+		class="com.deppon.foss.module.login.server.action.HomeAction"
+		scope="prototype">
+		<property name="userService" ref="userService" />
+		<property name="announcementService" ref="announcementService" />
+		<property name="systemHelpService" ref="systemHelpService"/>
+	</bean>
+	
+	<!-- 登出WEB服务层 -->
+	<bean id="logoutAction"
+		class="com.deppon.foss.module.login.server.action.LogoutAction"
+		scope="prototype">
+		<property name="loginService" ref="loginService" />
+		<property name="businessMonitorService" ref="businessMonitorService" />
+	</bean>
+	
+	<!-- 功能菜单WEB服务层 -->
+	<bean id="menuAction"
+		class="com.deppon.foss.module.login.server.action.MenuAction"
+		scope="prototype">
+		<property name="resourceService" ref="resourceService"/>
+		<property name="userMenuService" ref="userMenuService"/>
+	</bean>
+
+	<bean id="guiMonitorDao"
+		class="com.deppon.foss.module.login.server.dao.impl.GuiMonitorDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory" />
+	</bean>
+	<bean id="resetFossPassword"
+		class="com.deppon.foss.module.login.server.action.ResetFossPasswordAction"
+		scope="prototype">
+		<property name="userService" ref="userService" />
+		<property name="businessLockService" ref="businessLockService" />
+		<property name="checkLoginByOAService" ref="checkLoginByOAService" />
+	</bean>
+	<bean id="loginValidatorCache" class="com.deppon.foss.module.login.server.service.impl.LoginValidatorCache" >
+	  <property name="cacheStorage" ref="storage"></property>
+	  <property name="timeOut" value="120"></property>
+	</bean>
+</beans>

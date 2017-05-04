@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.pickup.predeliver.querygoods" >
+	
+	<!-- 货量查询所需字段 -->
+	<sql id="GoodsInfoVo_column">
+		/*模块：接送货-货量查询-查询详细信息*/
+		W.WAYBILL_NO W_WAYBILL_NO,
+		MAX(W.GOODS_NAME) W_GOODS_NAME,
+		MAX(W.GOODS_WEIGHT_TOTAL) W_GOODS_WEIGHT_TOTAL,
+		MAX(W.GOODS_VOLUME_TOTAL) W_GOODS_VOLUME_TOTAL,
+		MAX(W.GOODS_QTY_TOTAL) W_GOODS_QTY_TOTAL,
+		decode(MAX(W.TO_PAY_AMOUNT), null,0,MAX(W.TO_PAY_AMOUNT/100)) W_TO_PAY_AMOUNT,
+		SUM(decode(TTD.STATUS, 'ONTHEWAY',HBD.HANDOVER_GOODS_QTY,0)) HBD_HANDOVER_GOODS_QTY,
+		decode(MAX(STO.STOCK_GOODS_QTY),null,0,MAX(STO.STOCK_GOODS_QTY)) STO_STOCK_GOODS_QTY,
+		MAX(STO.POSITION_QTY) STO_POSITION_QTY,
+		(SELECT COUNT(*) FROM PKP.T_SRV_EXCEPTION E WHERE E.WAYBILL_NO = W.WAYBILL_NO AND E.STATUS = 'HANDLING') ACT_EXCEPTION_GOODS_QTY,
+		MAX(W.TRANSPORT_TYPE) W_TRANSPORT_TYPE,
+		MAX(W.RECEIVE_CUSTOMER_NAME) W_RECEIVE_CUSTOMER_NAME,
+		MAX(W.RECEIVE_CUSTOMER_MOBILEPHONE) W_RECEIVE_CUSTOMER_MOBILEPHONE,
+		MAX(W.RECEIVE_CUSTOMER_PHONE) W_RECEIVE_CUSTOMER_PHONE,
+		MAX(W.RECEIVE_CUSTOMER_PROV_CODE) W_RECEIVE_CUSTOMER_PROV_CODE,
+		MAX(W.RECEIVE_CUSTOMER_CITY_CODE) W_RECEIVE_CUSTOMER_CITY_CODE,
+		MAX(W.RECEIVE_CUSTOMER_DIST_CODE) W_RECEIVE_CUSTOMER_DIST_CODE,
+		MAX(W.RECEIVE_CUSTOMER_ADDRESS) W_RECEIVE_CUSTOMER_ADDRESS,
+		MAX(ACT.RECEIVE_CUSTOMER_ADDRESS_NOTE) RECEIVE_CUSTOMER_ADDRESS_NOTE,
+		MAX(W.PRE_ARRIVE_TIME) W_PRE_ARRIVE_TIME,
+		MAX(ACT.NOTIFICATION_RESULT) ACT_NOTIFICATION_RESULT,	
+		MAX(W.PRE_CUSTOMER_PICKUP_TIME) W_PRE_CUSTOMER_PICKUP_TIME,
+		MAX(W.RECEIVE_METHOD) W_RECEIVE_METHOD,
+		MAX(ACT.ARRANGE_GOODS_QTY) ACT_ARRANGE_GOODS_QTY
+	</sql>
+	
+	<!-- 货量查询返回resultMap -->
+	<resultMap id="GoodsInfoVoRM" type="com.deppon.foss.module.pickup.predeliver.api.shared.dto.GoodsInfoDto">
+		<result property="waybillNo" column="W_WAYBILL_NO" jdbcType = "VARCHAR" />
+		<result property="goodsName" column="W_GOODS_NAME" jdbcType = "VARCHAR"/>
+		<result property="goodsWeight" column="W_GOODS_WEIGHT_TOTAL" jdbcType = "VARCHAR" />
+		<result property="goodsVolume" column="W_GOODS_VOLUME_TOTAL" jdbcType = "VARCHAR" />
+		<result property="goodsQtyTotal" column="W_GOODS_QTY_TOTAL" jdbcType = "NUMERIC" />
+		<result property="goodsHandoverTotal" column="HBD_HANDOVER_GOODS_QTY" jdbcType = "NUMERIC" />
+		<result property="goodsStoreTotal" column="STO_STOCK_GOODS_QTY" jdbcType = "NUMERIC" />
+		<result property="goodsStoringTotal" column="STO_POSITION_QTY" jdbcType = "NUMERIC" />
+		<result property="exceptionTotal" column="ACT_EXCEPTION_GOODS_QTY" jdbcType = "NUMERIC" />
+		<result property="toPayAmount" column="W_TO_PAY_AMOUNT" jdbcType = "VARCHAR" />
+		<result property="transportType" column="W_TRANSPORT_TYPE" jdbcType = "VARCHAR" />
+		<result property="receiveCustomerName" column="W_RECEIVE_CUSTOMER_NAME" jdbcType = "VARCHAR" />
+		<result property="receiveCustomerMobilephone" column="W_RECEIVE_CUSTOMER_MOBILEPHONE" jdbcType = "VARCHAR" />
+		<result property="receiveCustomerPhone" column="W_RECEIVE_CUSTOMER_PHONE" jdbcType = "VARCHAR" />
+		
+		<result property="receiveCustomerProvCode" column="W_RECEIVE_CUSTOMER_PROV_CODE" jdbcType = "VARCHAR" />
+		<result property="receiveCustomerCityCode" column="W_RECEIVE_CUSTOMER_CITY_CODE" jdbcType = "VARCHAR" />
+		<result property="receiveCustomerDistCode" column="W_RECEIVE_CUSTOMER_DIST_CODE" jdbcType = "VARCHAR" />
+		<result property="receiveCustomerAddressNote" column="RECEIVE_CUSTOMER_ADDRESS_NOTE" jdbcType = "VARCHAR" />
+		<result property="receiveCustomerAddress" column="W_RECEIVE_CUSTOMER_ADDRESS" jdbcType = "VARCHAR" />
+ 		<result property="preArriveTime" column="W_PRE_ARRIVE_TIME" jdbcType = "TIMESTAMP" />
+ 		<result property="notificationResult" column="ACT_NOTIFICATION_RESULT" jdbcType = "VARCHAR" />
+ 		<result property="preCustomerPickupTime" column="W_PRE_CUSTOMER_PICKUP_TIME" jdbcType = "TIMESTAMP" />
+		<result property="receiveMethod" column="W_RECEIVE_METHOD" jdbcType = "VARCHAR" />
+		<result property="arrangementTotal" column="ACT_ARRANGE_GOODS_QTY" jdbcType = "NUMERIC" />
+	</resultMap>
+
+	<!-- 货量查询 -->
+	<select id="queryGoodsInfo"  resultMap="GoodsInfoVoRM">
+		SELECT
+			<include refid="GoodsInfoVo_column"/>
+		FROM PKP.T_SRV_WAYBILL W 
+			JOIN
+				PKP.T_SRV_ACTUAL_FREIGHT ACT
+			ON
+				ACT.WAYBILL_NO = W.WAYBILL_NO	
+			LEFT JOIN 
+				TFR.T_OPT_HANDOVERBILL_DETAIL HBD 
+			ON 
+				HBD.WAYBILL_NO = W.WAYBILL_NO
+		    LEFT JOIN 
+		    	TFR.T_OPT_HANDOVERBILL HB 
+	    	ON 
+	    		HB.HANDOVER_NO = HBD.HANDOVER_NO 
+		    LEFT JOIN 
+		    	TFR.T_OPT_TRUCK_TASK_BILL TTB 
+	    	ON 
+	    		HB.HANDOVER_NO = TTB.BILL_NO
+		    LEFT JOIN 
+		    	TFR.T_OPT_TRUCK_TASK_DETAIL TTD 
+	    	ON 
+	    		TTB.TRUCK_TASK_DETAIL_ID = TTD.ID
+    		JOIN 
+    			TFR.T_OPT_WAYBILL_STOCK STO
+    		ON 
+    			STO.WAYBILL_NO = W.WAYBILL_NO	
+		<where>
+			<include refid="select_stock_area_Where"/>
+			<choose>
+				<when test=" waybillNo != null  and waybillNo != ''  ">
+					<![CDATA[and W.WAYBILL_NO=#{waybillNo,jdbcType=VARCHAR}]]>
+				</when>
+				<otherwise>	
+					<if test=" receiveCustomerName != null  and receiveCustomerName != ''  ">
+					<![CDATA[and W.RECEIVE_CUSTOMER_NAME=#{receiveCustomerName,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" receiveCustomerMobilephone != null  and receiveCustomerMobilephone != ''  ">
+					<![CDATA[and W.RECEIVE_CUSTOMER_MOBILEPHONE=#{receiveCustomerMobilephone,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" receiveCustomerPhone != null  and receiveCustomerPhone != ''  ">
+					<![CDATA[and W.RECEIVE_CUSTOMER_PHONE=#{receiveCustomerPhone,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" receiveMethod != null  and receiveMethod != ''  ">
+					<![CDATA[and W.RECEIVE_METHOD like '%' || #{receiveMethod, jdbcType=VARCHAR} || '%']]>
+					</if>
+					<if test=" productCode != null  and productCode != ''  ">
+					<![CDATA[and W.PRODUCT_CODE=#{productCode,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" regionVehicleCode != null  and regionVehicleCode != ''  ">
+					<![CDATA[and ACT.DELIVER_REGION_CODE=#{regionVehicleCode,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" receiveCustomerCountyCode != null  and receiveCustomerCountyCode != ''  ">
+					<![CDATA[and W.RECEIVE_CUSTOMER_DIST_CODE=#{receiveCustomerCountyCode,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" preArriveTimeBegin != null  and preArriveTimeBegin != ''  ">
+					<![CDATA[and W.PRE_ARRIVE_TIME >= #{preArriveTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" preArriveTimeEnd != null  and preArriveTimeEnd != ''  ">
+					<![CDATA[and W.PRE_ARRIVE_TIME <= #{preArriveTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" planArriveTimeBegin != null  and planArriveTimeBegin != ''  ">
+					<![CDATA[and TTD.PLAN_ARRIVE_TIME >= #{planArriveTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" planArriveTimeEnd != null  and planArriveTimeEnd != ''  ">
+					<![CDATA[and TTD.PLAN_ARRIVE_TIME <= #{planArriveTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" arrangementState == 'DELIVERBILLED'">
+					<![CDATA[and ACT.ARRANGE_GOODS_QTY > 0 ]]>
+					</if>
+					<if test=" arrangementState == 'NO_DELIVERBILL'">
+					<![CDATA[and ACT.ARRANGE_GOODS_QTY = 0 ]]>
+					</if>
+				</otherwise>
+			</choose>
+					<![CDATA[
+						AND W.ACTIVE = #{active,jdbcType=VARCHAR}  
+						AND NOT EXISTS (SELECT 1 FROM PKP.T_SRV_WAYBILLRFC WBR 
+						WHERE WBR.WAYBILL_NO = W.WAYBILL_NO 
+						AND WBR.STATUS != #{wbrStatus,jdbcType=VARCHAR})
+					    GROUP BY W.WAYBILL_NO, W.PRE_ARRIVE_TIME
+						ORDER BY W.PRE_ARRIVE_TIME ASC
+					]]>
+		</where>
+	</select>
+	
+	<!-- 货量查询 -->
+	<select id="queryGoodsInfoCount"  resultType="Long">
+			 SELECT COUNT(DISTINCT(W.WAYBILL_NO))
+		FROM PKP.T_SRV_WAYBILL W 
+			JOIN
+				PKP.T_SRV_ACTUAL_FREIGHT ACT
+			ON
+				ACT.WAYBILL_NO = W.WAYBILL_NO	
+			LEFT JOIN 
+				TFR.T_OPT_HANDOVERBILL_DETAIL HBD 
+			ON 
+				HBD.WAYBILL_NO = W.WAYBILL_NO
+		    LEFT JOIN 
+		    	TFR.T_OPT_HANDOVERBILL HB 
+	    	ON 
+	    		HB.HANDOVER_NO = HBD.HANDOVER_NO 
+		    LEFT JOIN 
+		    	TFR.T_OPT_TRUCK_TASK_BILL TTB 
+	    	ON 
+	    		HB.HANDOVER_NO = TTB.BILL_NO
+		    LEFT JOIN 
+		    	TFR.T_OPT_TRUCK_TASK_DETAIL TTD 
+	    	ON 
+	    		TTB.TRUCK_TASK_DETAIL_ID = TTD.ID
+    		JOIN 
+    			TFR.T_OPT_WAYBILL_STOCK STO
+    		ON 
+    			STO.WAYBILL_NO = W.WAYBILL_NO
+		<where>
+			<include refid="select_stock_area_Where"/>
+			<choose>
+				<when test=" waybillNo != null  and waybillNo != ''  ">
+					<![CDATA[and W.WAYBILL_NO=#{waybillNo,jdbcType=VARCHAR}]]>
+				</when>
+				<otherwise>	
+					<if test=" receiveCustomerName != null  and receiveCustomerName != ''  ">
+					<![CDATA[and W.RECEIVE_CUSTOMER_NAME=#{receiveCustomerName,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" receiveCustomerMobilephone != null  and receiveCustomerMobilephone != ''  ">
+					<![CDATA[and W.RECEIVE_CUSTOMER_MOBILEPHONE=#{receiveCustomerMobilephone,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" receiveCustomerPhone != null  and receiveCustomerPhone != ''  ">
+					<![CDATA[and W.RECEIVE_CUSTOMER_PHONE=#{receiveCustomerPhone,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" receiveMethod != null  and receiveMethod != ''  ">
+					<![CDATA[and W.RECEIVE_METHOD like '%' || #{receiveMethod, jdbcType=VARCHAR} || '%']]>
+					</if>
+					<if test=" productCode != null  and productCode != ''  ">
+					<![CDATA[and W.PRODUCT_CODE=#{productCode,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" regionVehicleCode != null  and regionVehicleCode != ''  ">
+					<![CDATA[and ACT.DELIVER_REGION_CODE=#{regionVehicleCode,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" receiveCustomerCountyCode != null  and receiveCustomerCountyCode != ''  ">
+					<![CDATA[and W.RECEIVE_CUSTOMER_DIST_CODE=#{receiveCustomerCountyCode,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" preArriveTimeBegin != null  and preArriveTimeBegin != ''  ">
+					<![CDATA[and W.PRE_ARRIVE_TIME >= #{preArriveTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" preArriveTimeEnd != null  and preArriveTimeEnd != ''  ">
+					<![CDATA[and W.PRE_ARRIVE_TIME <= #{preArriveTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" planArriveTimeBegin != null  and planArriveTimeBegin != ''  ">
+					<![CDATA[and TTD.PLAN_ARRIVE_TIME >= #{planArriveTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" planArriveTimeEnd != null  and planArriveTimeEnd != ''  ">
+					<![CDATA[and TTD.PLAN_ARRIVE_TIME <= #{planArriveTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" arrangementState == 'DELIVERBILLED'">
+					<![CDATA[and ACT.ARRANGE_GOODS_QTY > 0 ]]>
+					</if>
+					<if test=" arrangementState == 'NO_DELIVERBILL'">
+					<![CDATA[and ACT.ARRANGE_GOODS_QTY = 0 ]]>
+					</if>
+				</otherwise>
+			</choose>		
+					<![CDATA[
+						AND W.ACTIVE = #{active,jdbcType=VARCHAR}  
+						AND NOT EXISTS (SELECT 1 FROM PKP.T_SRV_WAYBILLRFC WBR 
+						WHERE WBR.WAYBILL_NO = W.WAYBILL_NO 
+						AND WBR.STATUS != #{wbrStatus,jdbcType=VARCHAR})
+					]]>
+		</where>
+	</select>
+	
+
+	<sql id="select_stock_area_Where">
+	    <!-- 最后库存code=库存的部门编码 -->
+		<if test="departmentCode != null and departmentCode !=''">	
+			<![CDATA[ and W.LAST_LOAD_ORG_CODE  = #{departmentCode, jdbcType=VARCHAR}]]>
+		</if>
+	</sql>
+
+</mapper>

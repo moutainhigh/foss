@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tfr.load.exception">
+	<resultMap id="loadTaskResultMap"
+		type="com.deppon.foss.module.transfer.load.api.shared.dto.LoadTaskExceptionDto">
+		<result property="id" column="id" />
+		<result property="loadTaskNo" column="loadTaskNo" />
+		<result property="loadTaskStatus" column="loadTaskStatus" />
+		<result property="vehicleNo" column="vehicleNo"/>
+		<result property="submitTotalCount" column="submitTotalCount"/>
+		<result property="loaderName" column="loaderName" />
+		<result property="loadStartTime" column="loadStartTime" />
+		<result property="errorMsg" column="errorMsg" />
+	</resultMap>
+	
+	<resultMap id="loadTaskDtoResultMap" 
+		type="com.deppon.foss.module.transfer.load.api.shared.dto.LoadTaskEntityDto" extends="loadTaskResultMap">
+			<result property="origOrgCode" column="origOrgCode" />
+			<result property="destOrgCode" column="destOrgCode" />
+			<result property="loadTaskType" column="loadTaskType" />
+			<result property="sendType" column="sendType"/>
+			<result property="deviceNo" column="deviceNo"/>
+	</resultMap>
+	
+	<select id="getExceptionList" parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.LoadManagerExceptionEntity" resultMap="loadTaskResultMap">
+		select task.id as id,
+		task.task_no as loadTaskNo,
+		task.task_state as loadTaskStatus,
+		task.vehicle_no as vehicleNo,
+		task.submit_total_count as submitTotalCount,
+		lp.loader_name as loaderName,
+		task.load_start_time as loadStartTime,
+		task.error_msg as errorMsg
+		from tfr.t_opt_load_task task
+		inner join tfr.t_opt_loader_participation lp on task.id = lp.task_id
+		<where>
+			task.orig_org_Code = #{orgCode,jdbcType=VARCHAR}
+			<if test="loadTaskNo != null and loadTaskNo !=''">
+				and task.task_No = #{loadTaskNo,jdbcType=VARCHAR}
+			</if>
+			<if test="taskStatus != null and taskStatus !=''">
+				<if test="taskStatus == 'ALL'">
+					and task.task_state in ('LOADING','FINISHED')
+				</if>
+				<if test="taskStatus != 'ALL'">
+					and task.task_state = #{taskStatus,jdbcType=VARCHAR}
+				</if>
+			</if>
+			<if test="vehicleNo != null and vehicleNo !=''">
+				and task.vehicle_No = #{vehicleNo,jdbcType=VARCHAR}
+			</if>
+			<if test="taskCreateTimeStart != null and taskCreateTimeStart !=''">
+				<![CDATA[and task.load_start_time >= #{taskCreateTimeStart}]]>
+			</if>
+			<if test="taskCreateTimeEnd != null and taskCreateTimeEnd !=''">
+				<![CDATA[and task.load_start_time <=#{taskCreateTimeEnd}]]>
+			</if>
+			<if test="loaderCode != null and loaderCode !=''">
+				and lp.loader_code = #{loaderCode,jdbcType=VARCHAR}
+			</if>
+			and task.error_msg is not null
+		</where>
+ 	</select>
+ 	
+<select id="getExceptionCount" parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.LoadManagerExceptionEntity" resultType="Long">
+		select count(1) from tfr.t_opt_load_task task
+		<if test="loaderCode != null and loaderCode=''">
+			inner join tfr.t_opt_loader_participation lp on task.id = lp.task_id
+		</if>
+		<where>
+			task.orig_org_Code = #{orgCode,jdbcType=VARCHAR}
+			<if test="loadTaskNo != null and loadTaskNo !=''">
+				and task.task_No = #{loadTaskNo,jdbcType=VARCHAR}
+			</if>
+			<if test="taskStatus != null and taskStatus !=''">
+				<if test="taskStatus == 'ALL'">
+					and task.task_state in ('LOADING','FINISHED')
+				</if>
+				<if test="taskStatus != 'ALL'">
+					and task.task_state = #{taskStatus,jdbcType=VARCHAR}
+				</if>
+			</if>
+			<if test="vehicleNo != null and vehicleNo !=''">
+				and task.vehicle_No = #{vehicleNo,jdbcType=VARCHAR}
+			</if>
+			<if test="taskCreateTimeStart != null and taskCreateTimeStart !=''">
+				<![CDATA[and task.load_start_time >=#{taskCreateTimeStart}]]>
+			</if>
+			<if test="taskCreateTimeEnd != null and taskCreateTimeEnd !=''">
+				<![CDATA[and task.load_start_time <= #{taskCreateTimeEnd}]]>
+			</if>
+			<if test="loaderCode != null and loaderCode !=''">
+				and lp.loader_code = #{loaderCode,jdbcType=VARCHAR}
+			</if>
+			and task.error_msg is not null
+		</where>
+ 	</select>
+ 	
+	<select id="queryLoadTaskEntityByTaskNo" parameterType="String" resultMap="loadTaskDtoResultMap">
+		select task.id as id,
+		task.task_no as loadTaskNo,
+		task.vehicle_no as vehicleNo,
+		task.load_end_time as loadEndTime,
+		task.error_msg as errorMsg,
+		task.orig_org_code as origOrgCode,
+		do.dest_org_code as destOrgCode,
+		task.task_type as loadTaskType,
+		lp.loader_code as loaderCode,
+		task.send_type as sendType,
+		task.device_no as deviceNo
+		from tfr.t_opt_load_task task
+		inner join tfr.t_opt_loader_participation lp on task.id = lp.task_id
+		inner join tfr.t_opt_load_dest_org do on task.id = do.load_task_id
+		<where>
+		  task.task_No = #{loadTaskNo,jdbcType=VARCHAR}
+		  and lp.BE_CREATOR='Y'
+		</where>
+ 	</select>
+ 	
+ 	
+ 	 	
+ 	<select id="queryScanQtyCount" parameterType="String" resultType="int">
+ 		select sum(t.scan_qty)
+	from tfr.t_opt_load_waybill_detail t
+ 	inner join tfr.t_opt_load_task lt
+		on t.load_task_id = lt.id
+	where lt.task_no = #{taskNo,jdbcType=VARCHAR} 
+ 	</select>
+		
+</mapper>

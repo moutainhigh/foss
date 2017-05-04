@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.pkp.waybillProcessMapper" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillProcessEntity" >
+    <id column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+    <id column="SECOND_KEY" property="secondKey" jdbcType="VARCHAR" />
+    <result column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="ORDER_NO" property="orderNo" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+    <result column="OPERATE_RESULT" property="operateResult" jdbcType="VARCHAR" />
+    <result column="JOB_ID" property="jobId" jdbcType="VARCHAR" />
+    <result column="PROCESS_COUNT" property="processCount" jdbcType="DECIMAL" />
+    <result column="ACTIVE" property="active" jdbcType="CHAR" />
+    <result column="PROCESS_TYPE" property="processType" jdbcType="VARCHAR" />
+  </resultMap>
+  
+  <sql id="Base_Column_List" >
+    ID,WAYBILL_NO, SECOND_KEY, ORDER_NO, CREATE_TIME, MODIFY_TIME, OPERATE_RESULT, JOB_ID, 
+    PROCESS_COUNT, ACTIVE,PROCESS_TYPE
+  </sql>
+ 
+  <insert id="insert" parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillProcessEntity" >
+    insert into PKP.T_SRV_WAYBILL_PROCESS (ID,WAYBILL_NO, SECOND_KEY, ORDER_NO, 
+      CREATE_TIME, MODIFY_TIME, OPERATE_RESULT, 
+      JOB_ID, PROCESS_COUNT, ACTIVE,PROCESS_TYPE
+      )
+    values (#{id,jdbcType=VARCHAR},#{waybillNo,jdbcType=VARCHAR}, #{secondKey,jdbcType=VARCHAR}, #{orderNo,jdbcType=VARCHAR}, 
+      #{createTime,jdbcType=TIMESTAMP}, #{modifyTime,jdbcType=TIMESTAMP}, #{operateResult,jdbcType=VARCHAR}, 
+      #{jobId,jdbcType=VARCHAR}, #{processCount,jdbcType=DECIMAL}, #{active,jdbcType=CHAR},#{processType,jdbcType=VARCHAR}
+      )
+  </insert>
+
+  
+   <update id="updateWaybillProcess" parameterType="java.util.Map" >
+    update PKP.T_SRV_WAYBILL_PROCESS
+    <set >
+      <if test="orderNo != null" >
+        ORDER_NO = #{orderNo,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null" >
+        CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifyTime != null" >
+        MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="operateResult != null" >
+        OPERATE_RESULT = #{operateResult,jdbcType=VARCHAR},
+      </if>
+      <if test="jobId != null" >
+        JOB_ID = #{jobId,jdbcType=VARCHAR},
+      </if>
+      <if test="processCount != null" >
+        PROCESS_COUNT = #{processCount,jdbcType=DECIMAL},
+      </if>
+      <if test="newSecondKey != null" >
+        SECOND_KEY = #{newSecondKey,jdbcType=VARCHAR},
+      </if>
+      <if test="active != null" >
+        ACTIVE = #{active,jdbcType=CHAR},
+      </if>
+      <if test="processType != null">
+        PROCESS_TYPE = #{processType,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+      and SECOND_KEY = #{oldSecondKey,jdbcType=VARCHAR}
+  </update>
+  
+  
+  <update id="updateWaybillProcessByJobId" parameterType="java.util.Map" >
+    update PKP.T_SRV_WAYBILL_PROCESS
+    <set >
+      <if test="jobId != null" >
+        JOB_ID = #{newJobId,jdbcType=VARCHAR},
+      </if>
+       <if test="modifyTime != null" >
+        MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where JOB_ID = #{oldJobId,jdbcType=VARCHAR}
+  </update>
+  
+  <!-- 根据jobId查询激活job记录 -->
+	<select id="queryWaybillProcessListByJobId" parameterType="java.util.Map"
+		resultMap="BaseResultMap">
+		SELECT
+		<include refid="Base_Column_List" />
+		FROM PKP.T_SRV_WAYBILL_PROCESS
+		<where>
+			<if test="jobId != null and jobId != '' ">
+				AND JOB_ID = #{jobId,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 批量激活线程更新jobid -->
+	<update id="updateForJob" parameterType="java.util.Map">
+		UPDATE PKP.T_SRV_WAYBILL_PROCESS
+		   SET JOB_ID = #{jobId,jdbcType=VARCHAR},
+			   MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP}
+		 WHERE 
+		   JOB_ID = 'N/A'
+		   AND PROCESS_TYPE=#{processType,jdbcType=VARCHAR}
+		   <![CDATA[
+		   AND PROCESS_COUNT < 5
+		   ]]>
+		<if test="rownum != null and rownum != '' ">
+				<![CDATA[	AND ROWNUM <= #{rownum,jdbcType=INTEGER} ]]>
+		</if>
+	</update>
+  
+   <update id="updateWaybillProcessSecondKey" parameterType="java.util.Map">
+   		UPDATE PKP.T_SRV_WAYBILL_PROCESS
+		   SET SECOND_KEY = #{newSecondKey,jdbcType=VARCHAR},
+			   MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP}
+		 WHERE 
+		   	WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+		    AND SECOND_KEY = #{secondKey,jdbcType=VARCHAR}
+   </update>
+  
+   <select id="queryNotFinishedByWaybillNo" parameterType="java.util.Map" resultMap="BaseResultMap">
+   		SELECT <include refid="Base_Column_List" /> FROM PKP.T_SRV_WAYBILL_PROCESS
+   		WHERE 1 = 1 
+   		AND WAYBILL_NO =  #{waybillNo,jdbcType=VARCHAR}
+   		AND SECOND_KEY = #{secondKey,jdbcType=VARCHAR}
+   </select>
+   
+   <update id="unlockedById" parameterType="java.util.Map">
+   		UPDATE PKP.T_SRV_WAYBILL_PROCESS
+		   SET SECOND_KEY = #{newSecondKey,jdbcType=VARCHAR},
+			   MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP}
+		 WHERE 
+		   ID = #{id,jdbcType=VARCHAR}
+		   AND = #{secondKey,jdbcType=VARCHAR}
+	</update>
+</mapper>

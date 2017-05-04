@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.pkp.OrderLockEntityMapper" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.pickup.waybill.shared.domain.OrderLockEntity" >
+    <result column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="DEPT_CODE" property="deptCode" jdbcType="VARCHAR" />
+    <result column="ORDER_COUNT_OVERDUE" property="orderCountOverdue" jdbcType="DECIMAL" />
+    <result column="ORDER_COUNT_UNOVERDUE" property="orderCountUnoverdue" jdbcType="DECIMAL" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+  </resultMap>
+  <insert id="insert" parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.OrderLockEntity" >
+    insert into PKP.T_SRV_ORDER_LOCK (ID, DEPT_CODE, ORDER_COUNT_OVERDUE, 
+      ORDER_COUNT_UNOVERDUE, CREATE_TIME)
+    values (#{id,jdbcType=VARCHAR}, #{deptCode,jdbcType=VARCHAR}, #{orderCountOverdue,jdbcType=DECIMAL}, 
+      #{orderCountUnoverdue,jdbcType=DECIMAL}, SYSDATE)
+  </insert>
+  
+  <insert id="insertOrderLockLog" parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.OrderLockEntity" >
+    insert into PKP.T_SRV_ORDER_LOCK_LOG (ID, DEPT_CODE, ORDER_COUNT_OVERDUE, 
+      ORDER_COUNT_UNOVERDUE, CREATE_TIME)
+    values (#{id,jdbcType=VARCHAR}, #{deptCode,jdbcType=VARCHAR}, #{orderCountOverdue,jdbcType=DECIMAL}, 
+      #{orderCountUnoverdue,jdbcType=DECIMAL},SYSDATE)
+  </insert>
+  
+  
+  
+  <insert id="insertSelective" parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.OrderLockEntity" >
+    insert into PKP.T_SRV_ORDER_LOCK
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="deptCode != null" >
+        DEPT_CODE,
+      </if>
+      <if test="orderCountOverdue != null" >
+        ORDER_COUNT_OVERDUE,
+      </if>
+      <if test="orderCountUnoverdue != null" >
+        ORDER_COUNT_UNOVERDUE,
+      </if>
+      <if test="createTime != null" >
+        CREATE_TIME,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="deptCode != null" >
+        #{deptCode,jdbcType=VARCHAR},
+      </if>
+      <if test="orderCountOverdue != null" >
+        #{orderCountOverdue,jdbcType=DECIMAL},
+      </if>
+      <if test="orderCountUnoverdue != null" >
+        #{orderCountUnoverdue,jdbcType=DECIMAL},
+      </if>
+      <if test="createTime != null" >
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
+
+  <update id="updateOrderLock" parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.OrderLockEntity">
+  	UPDATE PKP.T_SRV_ORDER_LOCK L
+    SET L.ORDER_COUNT_OVERDUE=#{orderCountOverdue,jdbcType=DECIMAL},
+        L.ORDER_COUNT_UNOVERDUE=#{orderCountUnoverdue,jdbcType=DECIMAL},
+        L.CREATE_TIME=SYSDATE
+   WHERE L.DEPT_CODE=#{deptCode,jdbcType=VARCHAR}
+  </update>
+  
+  <select id='queryOrderLockCodeNoCode' parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.OrderLockEntity" resultType="String">
+  	select L.ID from PKP.T_SRV_ORDER_LOCK L
+   WHERE L.DEPT_CODE=#{deptCode,jdbcType=VARCHAR}
+  </select>
+  
+  <select id="queryOrderLockByDeptCode" parameterType="java.util.Map" resultMap="BaseResultMap" >
+  	select ID, DEPT_CODE,ORDER_COUNT_OVERDUE,ORDER_COUNT_UNOVERDUE,CREATE_TIME
+  	from PKP.T_SRV_ORDER_LOCK L where L.DEPT_CODE=#{deptCode,jdbcType=VARCHAR}
+  </select>
+  
+  <select id="queryUnifiedCode" parameterType="java.util.Map" resultType="String">
+  	select O.UNIFIED_CODE
+  		from bse.t_bas_org o
+ 		where o.code =#{code,jdbcType=VARCHAR}
+   		and o.active = 'Y'
+   		and rownum=1
+
+  </select>
+  
+</mapper>

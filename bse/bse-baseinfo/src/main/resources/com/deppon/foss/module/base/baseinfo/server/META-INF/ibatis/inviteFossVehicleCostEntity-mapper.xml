@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="foss.bse.bse-baseinfo.invitefossvehiclecostentity">
+	<resultMap id="inviteFossVehicleCostEntityResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.domain.InviteFossVehicleCostEntity">
+	<id column="ID" property="id" jdbcType="VARCHAR"/>
+	<!--事业部编码  -->
+	<result column="BUSINESS_CODE" property="businessCode" jdbcType="VARCHAR" />
+	<!--事业部名称  -->
+	<result column="BUSINESS_NAME" property="businessName" jdbcType="VARCHAR"/>
+	<!--大区编码 -->
+	<result column="REGIONAL_CODE" property="regionalCode" jdbcType="VARCHAR"/>
+	<!--大区名称  -->
+	<result column="REGIONAL_NAME" property="regionalName" jdbcType="VARCHAR" />
+	<!--单票费用上限  -->
+	<result column="VEHICLE_COST_MAX" property="vehicleCostMax" jdbcType="NUMERIC" />
+	<!-- 是否有效 -->
+	<result column="ACTIVE" property="active" jdbcType="VARCHAR" />
+	<!--创建时间  -->
+	<result column="CREATE_TIME" property="createTime" jdbcType="DATE" />
+	<!--修改时间  -->
+	<result column="UPDATE_TIME" property="updateTime" jdbcType="DATE"/>
+	<!--创建人 -->
+	<result column="CREATE_USER" property="createUser" jdbcType="VARCHAR"/>
+	<!--创建人名称  -->
+	<result column="CREATE_USER_NAME" property="createUserName" jdbcType="VARCHAR" />
+	<!--修改人  -->
+	<result column="UPDATE_USER" property="updateUser" jdbcType="VARCHAR" />
+	<!--修改人名称  -->
+	<result column="UPDATE_USER_NAME" property="updateUserName" jdbcType="VARCHAR" />
+	</resultMap> 
+	
+	<!-- 数据字段 -->
+	<sql id="insert">
+		ID,BUSINESS_CODE,BUSINESS_NAME, REGIONAL_CODE,REGIONAL_NAME,VEHICLE_COST_MAX,ACTIVE,CREATE_TIME,UPDATE_TIME,CREATE_USER,CREATE_USER_NAME
+	</sql>
+	
+	<!--表单回显外请车单票费用总条数为分页准备total  -->
+	<select id="queryTotalByVehicleCost" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.InviteFossVehicleCostQueryDto"
+			resultType="Long">
+			select count(*) from BSE.T_BAS_INVITE_VEHICLE_COST t
+			where t.active='Y'
+			<if test="businessCode!=null and businessCode!=''">
+			   AND t.BUSINESS_CODE = #{businessCode,jdbcType=VARCHAR}
+			</if>
+			<if test="regionalCode!=null and regionalCode!=''">
+			   AND t.REGIONAL_CODE = #{regionalCode,jdbcType=VARCHAR}
+			</if>
+	</select>
+	
+	<!-- 表单回显外请车单票费用信息 -->
+	<select id="queryVehicleDrivingByVehicleCost" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.InviteFossVehicleCostQueryDto"
+			resultMap="inviteFossVehicleCostEntityResultMap">
+		 select t.id ID,
+               t.business_code BUSINESS_CODE,
+               t.business_name BUSINESS_NAME,
+               t.regional_code REGIONAL_CODE,
+               t.regional_name REGIONAL_NAME,
+               t.vehicle_cost_max VEHICLE_COST_MAX,
+               t.active ACTIVE
+          from BSE.T_BAS_INVITE_VEHICLE_COST t
+         where t.active = 'Y' 
+         <if test = "businessCode!=null and businessCode!=''" >
+           AND t.BUSINESS_CODE = #{businessCode,jdbcType=VARCHAR} 
+         </if> 
+         <if test = "regionalCode!=null and regionalCode!=''" >
+           AND t.REGIONAL_CODE = #{regionalCode,jdbcType=VARCHAR} 
+         </if>
+	</select>
+	
+	<!--根据事业部和大区查询零担外请车单票费用  -->
+	<select id="queryTotalByBusinessAndRegional" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.InviteFossVehicleCostEntity"
+			resultType="String">
+			select t.id ID 
+			from BSE.T_BAS_INVITE_VEHICLE_COST t
+			where t.active='Y'
+			<if test="businessCode!=null and businessCode!=''">
+			   AND t.BUSINESS_CODE = #{businessCode,jdbcType=VARCHAR}
+			</if>
+			<if test="regionalCode!=null and regionalCode!=''">
+			   AND t.REGIONAL_CODE = #{regionalCode,jdbcType=VARCHAR}
+			</if>
+	</select>
+	
+	<!-- 新增零担外请车单票费用信息 -->
+	<insert id="insertInviteFossVehicleCost" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.InviteFossVehicleCostEntity">
+		<![CDATA[
+			INSERT/** 综合:新增信息**/ INTO BSE.T_BAS_INVITE_VEHICLE_COST T	(
+		]]>
+		<include refid="insert" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, 
+		#{businessCode,jdbcType=VARCHAR},
+		#{businessName,jdbcType=VARCHAR},
+		#{regionalCode,jdbcType=VARCHAR},
+		#{regionalName,jdbcType=VARCHAR},
+		#{vehicleCostMax},
+		#{active,jdbcType=CHAR},
+		#{createTime,jdbcType=TIMESTAMP}, 
+		#{updateTime,jdbcType=TIMESTAMP},
+		#{createUser,jdbcType=VARCHAR},
+		#{createUserName,jdbcType=VARCHAR}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+	
+	<!-- 修改零担外请车单票费用 -->
+	<update id="updateInviteFossVehicleCost" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.InviteFossVehicleCostEntity">
+		UPDATE/** 综合:修改信息**/ BSE.T_BAS_INVITE_VEHICLE_COST T
+		SET
+		T.VEHICLE_COST_MAX = #{vehicleCostMax},
+		T.UPDATE_TIME = #{updateTime,jdbcType=TIMESTAMP},
+		T.UPDATE_USER = #{updateUser,jdbcType=VARCHAR},
+		T.UPDATE_USER_NAME = #{updateUserName,jdbcType=VARCHAR}
+		WHERE T.ID = #{id,jdbcType=VARCHAR}
+	</update>
+	
+	<!-- 根据大区查询部门费用信息 -->
+	<select id="queryVehicleDrivingByRegionalCode" parameterType="java.lang.String" resultMap="inviteFossVehicleCostEntityResultMap">
+		 select t.id ID,
+               t.business_code BUSINESS_CODE,
+               t.business_name BUSINESS_NAME,
+               t.regional_code REGIONAL_CODE,
+               t.regional_name REGIONAL_NAME,
+               t.vehicle_cost_max VEHICLE_COST_MAX,
+               t.active ACTIVE
+          from BSE.T_BAS_INVITE_VEHICLE_COST t
+         where t.active = 'Y' 
+           AND t.REGIONAL_CODE = #{regionalCode,jdbcType=VARCHAR}
+	</select>
+
+</mapper>

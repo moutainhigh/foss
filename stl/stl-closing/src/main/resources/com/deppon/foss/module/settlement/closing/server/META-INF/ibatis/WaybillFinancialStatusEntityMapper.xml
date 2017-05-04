@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.WaybillFinancialStatusEntityDao" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.closing.api.shared.domain.WaybillFinancialStatusEntity" >
+    <result column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+    <result column="ACCOUNT_DATE" property="accountDate" jdbcType="TIMESTAMP" />
+    <result column="FC_COUNT" property="fcCount" jdbcType="DECIMAL" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    ID, WAYBILL_NO, ACCOUNT_DATE, FC_COUNT
+  </sql>
+  
+  <insert id="insertByBatch" parameterType="com.deppon.foss.module.settlement.closing.api.shared.domain.WaybillFinancialStatusEntity">
+      insert /*结算-财务完结-批量添加财务完结状态*/  into STL.T_STL_WAYBILL_FINANCIAL_STATUS 
+      (
+        ID, 
+        WAYBILL_NO, 
+        ACCOUNT_DATE, 
+        FC_COUNT
+      )
+      values 
+      (
+        #{id,jdbcType=VARCHAR},
+        #{waybillNo,jdbcType=VARCHAR},
+        #{accountDate,jdbcType=TIMESTAMP},
+        #{fcCount,jdbcType=DECIMAL}
+      )
+  </insert>
+  
+  <update id="updateStatusByBatch" parameterType="com.deppon.foss.module.settlement.closing.api.shared.domain.WaybillFinancialStatusEntity">
+      UPDATE /*结算-财务完结-批量更新财务完结状态*/ STL.T_STL_WAYBILL_FINANCIAL_STATUS 
+      SET FC_COUNT = #{fcCount,jdbcType=DECIMAL}
+      WHERE WAYBILL_NO = #{waybillNo}
+  </update>
+  
+  <delete id="deleteByBatch" parameterType="com.deppon.foss.module.settlement.closing.api.shared.domain.WaybillFinancialStatusEntity">
+    DELETE /*结算-财务完结-批量删除财务完结状态*/ FROM STL.T_STL_WAYBILL_FINANCIAL_STATUS
+    WHERE WAYBILL_NO IN
+    <foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+      (#{item.waybillNo})
+	</foreach>
+  </delete>
+  
+  <select id="selectByWaybillNos" resultMap="BaseResultMap" parameterType="java.util.Map" >
+    SELECT /*结算-财务完结-通过运单查询财务完结状态*/
+    <include refid="Base_Column_List" />
+    FROM STL.T_STL_WAYBILL_FINANCIAL_STATUS  
+    WHERE WAYBILL_NO IN
+	<foreach collection="waybillNos" index="index" item="item" open="(" separator="," close=")">  
+	  #{item} 
+	</foreach>	
+  </select>
+  
+</mapper>

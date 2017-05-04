@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.noteStockInDao" >
+  <resultMap id="noteStockInResultMap" type="com.deppon.foss.module.settlement.consumer.api.shared.domain.NoteStockInEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="NOTE_APP_ID" property="noteAppId" jdbcType="VARCHAR" />
+    <result column="BEGIN_NO" property="beginNo" jdbcType="DECIMAL" />
+    <result column="END_NO" property="endNo" jdbcType="DECIMAL" />
+    <result column="ISSUED_TIME" property="issuedTime" jdbcType="TIMESTAMP" />
+    <result column="ISSUED_USER_CODE" property="issuedUserCode" jdbcType="VARCHAR" />
+    <result column="ISSUED_USER_NAME" property="issuedUserName" jdbcType="VARCHAR" />
+    <result column="ISSUED_ORG_CODE" property="issuedOrgCode" jdbcType="VARCHAR" />
+    <result column="ISSUED_ORG_NAME" property="issuedOrgName" jdbcType="VARCHAR" />
+    <result column="ISSUED_TYPE" property="issuedType" jdbcType="VARCHAR" />
+    <result column="EXPRESS_DELIVERY_NUMBER" property="expressDeliveryNumber" jdbcType="VARCHAR" />
+    <result column="ACTIVE" property="active" jdbcType="CHAR" />
+  </resultMap>
+  <sql id="select_param" >
+    ID, NOTE_APP_ID, BEGIN_NO, END_NO, ISSUED_TIME, ISSUED_USER_CODE, ISSUED_USER_NAME, 
+    ISSUED_ORG_CODE, ISSUED_ORG_NAME, ISSUED_TYPE, EXPRESS_DELIVERY_NUMBER, ACTIVE
+  </sql>
+  <insert id="insert" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.domain.NoteStockInEntity" >
+    INSERT INTO STL.T_STL_NOTE_STOCK_IN (ID, NOTE_APP_ID, BEGIN_NO, 
+      END_NO, ISSUED_TIME, ISSUED_USER_CODE, 
+      ISSUED_USER_NAME, ISSUED_ORG_CODE, ISSUED_ORG_NAME, 
+      ISSUED_TYPE, EXPRESS_DELIVERY_NUMBER, ACTIVE
+      )
+    VALUES (#{id,jdbcType=VARCHAR}, #{noteAppId,jdbcType=VARCHAR}, #{beginNo,jdbcType=DECIMAL}, 
+      #{endNo,jdbcType=DECIMAL}, #{issuedTime,jdbcType=TIMESTAMP}, #{issuedUserCode,jdbcType=VARCHAR}, 
+      #{issuedUserName,jdbcType=VARCHAR}, #{issuedOrgCode,jdbcType=VARCHAR}, #{issuedOrgName,jdbcType=VARCHAR}, 
+      #{issuedType,jdbcType=VARCHAR}, #{expressDeliveryNumber,jdbcType=VARCHAR}, #{active,jdbcType=CHAR}
+      )
+  </insert>
+	<!-- 单据下发批量插入 -->
+	<insert id="batchSaveStockIn" parameterType="java.util.List">
+		BEGIN/*结算-客户管理-单据下发批量插入  */ 
+			<foreach  collection="list" item="item"  separator=";">
+				INSERT INTO STL.T_STL_NOTE_STOCK_IN
+				(
+					ID,
+					NOTE_APP_ID,
+					BEGIN_NO,
+					END_NO,
+					ISSUED_TIME,
+					ISSUED_USER_CODE,
+					ISSUED_USER_NAME,
+					ISSUED_ORG_CODE,
+					ISSUED_ORG_NAME,
+					ISSUED_TYPE,
+					EXPRESS_DELIVERY_NUMBER,
+					ACTIVE
+				)
+				  VALUES
+				  (
+					#{item.id,jdbcType=VARCHAR} ,
+					#{item.noteAppId,jdbcType=VARCHAR},
+				    #{item.beginNo,jdbcType=NUMERIC}, 
+				    #{item.endNo,jdbcType=NUMERIC}, 
+					#{item.issuedTime,jdbcType=TIMESTAMP},
+					#{item.issuedUserCode,jdbcType=VARCHAR},
+					#{item.issuedUserName,jdbcType=VARCHAR},
+                    #{item.issuedOrgCode,jdbcType=VARCHAR},
+                    #{item.issuedOrgName,jdbcType=VARCHAR},
+                    #{item.issuedType,jdbcType=VARCHAR},
+                    #{item.expressDeliveryNumber,jdbcType=VARCHAR},
+                    #{item.active,jdbcType=CHAR}
+   				  )
+			</foreach>
+		;END;
+	</insert>
+  
+   <select id="checkBeginWithEndNo" resultMap="noteStockInResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.domain.NoteStockInEntity">
+		<![CDATA[
+		SELECT/*结算-客户管理-根据起始号查询   */ 
+		]]>
+			<include refid="select_param" />
+	    <![CDATA[
+	     FROM STL.T_STL_NOTE_STOCK_IN
+	    WHERE BEGIN_NO >= #{beginNo,jdbcType=VARCHAR}
+	      AND BEGIN_NO < #{endNo,jdbcType=VARCHAR}
+	    UNION
+		SELECT
+		]]>
+			<include refid="select_param" />
+	    <![CDATA[
+	     FROM STL.T_STL_NOTE_STOCK_IN
+	 	WHERE END_NO > #{beginNo,jdbcType=VARCHAR}
+	      AND END_NO <= #{endNo,jdbcType=VARCHAR}
+	    ]]>
+   </select>
+ 	<select id="queryStockInById" resultMap="noteStockInResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.NoteStockInDto">
+		<![CDATA[
+			SELECT/*结算-客户管理-根据id查询  */ 
+		]]>
+		<include refid="select_param" /> 
+	     	FROM STL.T_STL_NOTE_STOCK_IN T 
+	     		WHERE 
+	     			 T.NOTE_APP_ID = #{noteAppId, jdbcType=VARCHAR}  
+	    	ORDER BY BEGIN_NO   
+	</select>
+	
+  	<select id="countStockInById" resultType="long" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.NoteStockInDto">
+		SELECT /*结算-客户管理-根据id计算数量*/ COUNT(1) 
+	     	FROM STL.T_STL_NOTE_STOCK_IN T
+	     		WHERE T.NOTE_APP_ID = #{noteAppId, jdbcType=VARCHAR}
+ 	</select>
+</mapper>

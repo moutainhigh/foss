@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.trackings.taobaoTrackings" >
+  <resultMap id="waybillTrackingsMap" type="com.deppon.foss.module.trackings.api.shared.dto.TaobaoTrackingsRequestDto">
+  	<id column="id" property="id" jdbcType="VARCHAR"/>
+  	<result column="waybillNo" property="waybillNo" jdbcType="VARCHAR"/>
+  	<result column="channelOrder" property="channelOrder" jdbcType="VARCHAR"/>
+  	<result column="operaTime" property="operaTime" jdbcType="TIMESTAMP"/>
+  	<result column="eventType" property="eventType" jdbcType="VARCHAR"/>
+  	<result column="serialNo" property="serialNo" jdbcType="VARCHAR"/>
+  	<result column="orderChannel" property="orderChannel" jdbcType="VARCHAR"/>
+  	<result column="receiveMethod" property="receiveMethod" jdbcType="VARCHAR"/>
+  	<result column="remark" property="remark" jdbcType="VARCHAR"/>
+
+  </resultMap>
+
+  <update id="updateAndGetJobId" parameterType="HashMap">
+	update  /*中转推送轨迹模块-更新推送轨迹jobid*/
+	tfr.t_opt_expresstrack_external et 
+		set et.job_id = #{jobId,jdbcType=VARCHAR},
+			et.modify_time = sysdate 
+		where et.job_id ='N/A'
+	<![CDATA[  and rownum <=  #{limit}
+			   and (CTR_PUSH_N is null or CTR_PUSH_N <= 20)	]]>
+ </update>
+  
+   <update id="resetMsgbyJobId" parameterType="HashMap">
+	update  /*中转推送轨迹模块-重置推送轨迹jobid*/
+	tfr.t_opt_expresstrack_external et 
+		set et.job_id = #{jobId,jdbcType=VARCHAR},
+			et.modify_time = sysdate
+		where et.job_id !='N/A'
+ </update>
+ 
+  <!-- 通过任务车辆明细ID获取车载运单明细 -->
+  <select id="queryTrackingsInfobyJobId" parameterType="java.lang.String"
+  	resultMap="waybillTrackingsMap">
+  	   select /*中转推送轨迹模块-查询待推送给淘宝轨迹信息*/
+		    et.id id,
+		    et.waybill_no waybillNo,
+		    et.CHANNEL_ORDER channelOrder,
+		    nvl(et.operatime, sysdate) operaTime,
+		    et.event_type eventType,
+		    et.SERIAL_NO  serialNo,
+		    et.ORDER_CHANNEL orderChannel,
+		    et.RECEIVE_METHOD receiveMethod,
+		    et.track_info remark
+
+      from tfr.t_opt_expresstrack_external et
+     where et.job_id = #{jobId,jdbcType=VARCHAR}
+  </select>
+  
+  <update id="updateTrackingsMsgs" parameterType="java.util.List" >
+				begin /*中转推送轨迹模块-批量更新没有处理完成数据的jobid为N/A*/
+		<foreach collection="list" item="item" separator=";">
+		     update tfr.t_opt_expresstrack_external et
+			    set et.job_id = 'N/A', et.modify_time = sysdate
+			 where et.id = #{item.id}  
+		</foreach>
+		;end;
+	</update>
+	
+	<delete id="deleteMsgById" parameterType="string">
+		delete /*中转推送轨迹模块-处理成功删除轨迹*/
+		 tfr.t_opt_expresstrack_external et where et.id = #{id}
+	</delete>
+
+	<update id="updateTrackingsMsg" parameterType="string" >
+	     update /*中转推送轨迹模块-更新没有处理完成数据的jobid为N/A*/
+	     	tfr.t_opt_expresstrack_external et
+		    set et.job_id = 'N/A', 
+		    	et.modify_time = sysdate,
+		    	et.CTR_PUSH_N = (select nvl(CTR_PUSH_N,0)+1 from tfr.t_opt_expresstrack_external where id = #{id}) 
+		 where et.id = #{id}  
+	</update>
+	
+	<insert id="insertLoadDestOrg" parameterType="java.util.List" >
+		begin 
+		<foreach collection="list" item="logs" separator=";">
+		/*中转推送轨迹模块-新增轨迹同步结果记录*/
+		insert inot tfr.t_opt_track_external_log
+ 			(ID, WAYBILL_NO,SERIAL_NO, MSGINFO, MSG_TYPE, SYN_RESULT, CREATE_TIME)
+		values(
+		   #{item.id,jdbcType = VARCHAR},
+		   #{item.waybillNo,jdbcType = VARCHAR},		   
+		   #{item.serialNo,jdbcType = VARCHAR},
+		   #{item.msgInfo, jdbcType = VARCHAR},
+		   #{item.msgType,jdbcType = VARCHAR},
+		   #{item.synResult,jdbcType = VARCHAR},
+		   #{item.createDate,jdbcType = TIMESTAMP}
+		   )
+		</foreach>
+		;end;
+	</insert>
+</mapper>

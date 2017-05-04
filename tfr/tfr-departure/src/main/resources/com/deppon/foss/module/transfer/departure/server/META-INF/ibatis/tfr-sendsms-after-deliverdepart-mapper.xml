@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.tfr.departure.sendsmsafterdeliverdepart">
+	<resultMap id="deliverBillDetailMap"
+		type="com.deppon.foss.module.transfer.departure.api.shared.dto.SendSmsAfterDeliverDepartDto">
+		<result column="waybillNo" property="waybillNo" />
+		<result column="deliveryCustomerName" property="deliveryCustomerName" />
+		<result column="receiveCustomerName" property="receiveCustomerName" />
+		<result column="receiveCustomerMobilephone" property="receiveCustomerMobilephone" />
+		<result column="goodsQtyTotal" property="goodsQtyTotal" />
+		<result column="deliverQtyTotal" property="deliverQtyTotal" />
+		<result column="deliverWeight" property="deliverWeight" />
+		<result column="deliverVolume" property="deliverVolume" />
+		<result column="driverName" property="driverName" />
+		<result column="driverCode" property="driverCode" />
+		<result column="driverMobilephone" property="driverMobilephone" />
+		<result column="toPayAmount" property="toPayAmount" />
+		<result column="orgCode" property="orgCode" />
+	</resultMap>
+	
+	<select id="queryDeliverDetailByTruckDepartID" parameterType="java.lang.String"
+		resultMap="deliverBillDetailMap">
+		  select  
+			  /*中转-车辆放行-根据派送车辆放行ID，获取对应的派送单内的运单明细*/
+			  dd.waybill_no waybillNo,
+			  w.delivery_customer_contact deliveryCustomerName,
+			  w.receive_customer_contact receiveCustomerName,
+			  w.receive_customer_mobilephone receiveCustomerMobilephone,
+			  w.goods_qty_total goodsQtyTotal,
+			  dd.arrange_goods_qty deliverQtyTotal,
+			  round(dd.arrange_goods_qty/w.goods_qty_total*w.goods_weight_total,2) deliverWeight,
+			  round(dd.arrange_goods_qty/w.goods_qty_total*w.goods_volume_total,2) deliverVolume,
+			  db.driver_name driverName,
+			  db.driver_code driverCode,
+			  e.mobile_phone driverMobilephone,
+			  w.to_pay_amount/100 toPayAmount,
+			  db.operate_org_code orgCode
+		  from pkp.t_srv_deliverbill db
+			  left join pkp.t_srv_deliverbill_detail dd on db.id = dd.t_srv_deliverbill_id
+			  left join pkp.t_srv_waybill w on dd.waybill_no = w.waybill_no and w.active = 'Y'
+			  left join bse.t_bas_employee e on db.driver_code = e.emp_code and e.active = 'Y'
+		  where db.t_opt_truck_depart_id = #{truckDepartID}
+	</select>
+	
+</mapper>

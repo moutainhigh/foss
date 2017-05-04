@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.load.express.handoverbill">
+	<!--包运单-->
+	<resultMap id="packageWaybillResultMap"
+		type="com.deppon.foss.module.transfer.load.api.shared.domain.HandOverBillDetailEntity">
+		<result property="id" column="id" />
+		<result property="handOverBillNo" column="handOverBillNo" />
+		<result property="waybillNo" column="waybillNo" />
+		<result property="transProperty" column="transProperty" />
+		<result property="transPropertyCode" column="transPropertyCode" />
+		<result property="goodsName" column="goodsName" />
+		<result property="packing" column="packing" />
+		<result property="cubage" column="cubage" />
+		<result property="cubageAc" column="cubageAc" />
+		<result property="weight" column="weight" />
+		<result property="weightAc" column="weightAc" />
+		<result property="note" column="note" />
+		<result property="pieces" column="pieces" />
+		<result property="instorageDate" column="instorageDate" />
+		<result property="arriveDept" column="arriveDept" />
+		<result property="insuranceValue" column="insuranceValue" />
+		<result property="waybillDate" column="waybillDate" />
+		<result property="waybillPieces" column="waybillPieces" />
+		<result property="isPreciousGoods" column="isPreciousGoods" />
+		<result property="waybillNote" column="waybillNote" />
+		<result property="origOrgCode" column="origOrgCode" />
+		<result property="receiveOrgName" column="receiveOrgName" />
+		<result property="consignee" column="consignee" />
+		<result property="destination" column="destination" />
+		<result property="waybillFee" column="waybillFee" />
+		<result property="planArriveTime" column="planArriveTime" />
+		<result property="codAmount" column="codAmount" />
+		<result property="isCarLoad" column="isCarLoad" />
+		<result property="isPriorityGoods" column="isPriorityGoods" />
+		<result property="isJoinCar" column="isJoinCar" />
+		<result property="isFastGoods" column="isFastGoods" />
+		<result property="goodsAreaCode" column="goodsAreaCode" />
+		<result property="goodsAreaType" column="goodsAreaType" />
+		<result property="goodsAreaName" column="goodsAreaName" />
+	</resultMap>
+	
+	<!-- 包流水号 -->
+	<resultMap id="packageSerialNoResultMap"
+		type="com.deppon.foss.module.transfer.load.api.shared.domain.SerialNoStockEntity">
+		<result property="serialNo" column="serialNo" />
+		<result property="waybillNo" column="waybillNo" />
+	</resultMap>
+	
+	<!-- 根据包号查询包中运单信息 -->
+	<select id="queryWaybillListByPackageNo" resultMap="packageWaybillResultMap" 
+		parameterType="java.lang.String">
+		select waybill.waybill_no waybillNo,
+	       waybill.goods_name goodsName,
+	       waybill.goods_package packing,
+	       pro.code transPropertyCode,
+	       pro.name transProperty,
+	       pro.seq seq,
+	       round((waybill.goods_volume_total / waybill.goods_qty_total) *
+	             pa.pieces,
+	             3) cubage,
+	       round((waybill.goods_volume_total / waybill.goods_qty_total) *
+	             pa.pieces,
+	             3) cubageAc,
+	       round((waybill.goods_weight_total / waybill.goods_qty_total) *
+	             pa.pieces,
+	             3) weight,
+	       round((waybill.goods_weight_total / waybill.goods_qty_total) *
+	             pa.pieces,
+	             3) weightAc,
+	       pa.pieces pieces,
+	       waybill.insurance_amount / 100 insuranceValue,
+	       waybill.bill_time waybillDate,
+	       waybill.cod_amount / 100 codAmount,
+	       waybill.IS_WHOLE_VEHICLE isCarLoad,
+	       waybill.goods_qty_total waybillPieces,
+	       waybill.precious_goods isPreciousGoods,
+	       waybill.inner_notes waybillNote,
+	       waybill.Receive_Org_Code origOrgCode,
+	       md.name arriveDept,
+	       mdn.name receiveOrgName,
+	       waybill.Receive_Customer_Name consignee,
+	       waybill.Target_Org_Code destination,
+	       waybill.Total_Fee / 100 waybillFee
+	  from (select pd.waybill_no, count(*) pieces
+	          from tfr.t_opt_package_detail pd
+	         where pd.package_no = #{packageNo,jdbcType=VARCHAR}
+	         and pd.goods_state != 'CANCELED'
+	         group by pd.waybill_no) pa
+	  inner join pkp.t_srv_waybill waybill
+	    on pa.waybill_no = waybill.waybill_no
+	    and waybill.active = 'Y'
+	  left join pkp.t_srv_product pro
+	    on waybill.product_code = pro.code
+	   and pro.levels = 3
+	   and pro.active = 'Y'
+	  left join bse.mv_dest_net md
+	    on waybill.CUSTOMER_PICKUP_ORG_CODE = md.code
+	   and md.active = 'Y'
+	  left join bse.mv_dest_net mdn
+	    on waybill.RECEIVE_ORG_CODE = mdn.code
+	   and mdn.active = 'Y'
+	</select>
+	
+	<!--根据包号、运单号获取流水号list-->
+	<select id="querySerialNoListByPackageNoAndWaybillNo" resultMap="packageSerialNoResultMap" 
+		parameterType="java.util.HashMap">
+		   select pd.serial_no serialNo,
+		   pd.waybill_no waybillNo 
+		   from tfr.t_opt_package_detail pd
+		  <where> 
+			   pd.package_no = #{packageNo,jdbcType=VARCHAR}
+			   and pd.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+			   and pd.goods_state != 'CANCELED'
+		  </where>
+	  	 	order by pd.serial_no
+	</select>
+</mapper>

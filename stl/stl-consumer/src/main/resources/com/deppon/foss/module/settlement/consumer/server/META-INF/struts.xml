@@ -1,0 +1,1045 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE struts PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN" "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="consumer-default"  extends="foss-default">
+		 <interceptors>
+			<interceptor name="myinterceptor" class="com.deppon.foss.module.settlement.common.server.interceptors.StlBampExceptionInterceptor"></interceptor>
+				<interceptor-stack name="consumerStack">
+					<interceptor-ref name="fossStack" />
+					<interceptor-ref name="myinterceptor" />
+				</interceptor-stack>
+			</interceptors>
+		<default-interceptor-ref name="consumerStack" />
+	</package>
+	
+	<package name="consumer" namespace="/consumer" extends="consumer-default">
+
+		<!--发票新增合并运单需求 322906 start-->
+		<!-- 发票合并运单新增 -->
+		<action name="invoiceMergeWaybillAdd">
+			<result name="success">invoiceMergeWaybillAdd.jsp</result>
+		</action>
+		<action name="invoiceMergeWaybillAdd_include">
+			<result name="success">invoiceMergeWaybillAdd_include.jsp</result>
+		</action>
+		<action name="queryCustomerInfoFromCrm" class="waybillAction" method="queryCustomerInfoFromCrm">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="queryWaybillByCondition" class="waybillAction" method="queryWaybillByCondition">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="mergeWaybill" class="waybillAction" method="mergeWaybill">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+
+		<!-- 发票合并运单管理 -->
+		<action name="invoiceMergeWaybillManage">
+			<result name="success">invoiceMergeWaybillManage.jsp</result>
+		</action>
+		<action name="invoiceMergeWaybillAdd_include">
+			<result name="success">invoiceMergeWaybillManage_include.jsp</result>
+		</action>
+		<action name="queryMergeWaybillByConditions" class="mergeWaybillAction" method="queryMergeWaybillByConditions">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="cancelMergeWaybill" class="mergeWaybillAction" method="cancelMergeWaybill">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="queryWaybillDetailByMergeWaybillNo" class="mergeWaybillAction" method="queryWaybillDetailByMergeWaybillNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--发票新增合并运单需求 322906 end-->
+		<!-- 理赔信息界面 -->
+		<action name="billClaim">
+			<result name="success">queryBillClaim.jsp</result>
+		</action>
+		
+		<!-- 理赔信息界面 -->
+		<action name="billClaim_include">
+			<result name="success">queryBillClaim_include.jsp</result>
+		</action>
+		
+		<!-- 理赔信息查询-->
+		<action name="queryBillClaimList" class="billClaimQueryAction"
+			method="queryBillClaim">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!-- 理赔信息退回-->
+		<action name="returnBillClaim" class="billClaimQueryAction"
+			method="returnBillClaim">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+
+		<!-- 服务补救界面 -->
+		<action name="billClaimCP">
+			<result name="success">queryBillClaimCP.jsp</result>
+		</action>
+		
+		<!-- 服务补救信息查询-->
+		<action name="queryBillClaimCPList" class="billClaimQueryAction"
+			method="queryBillClaimCP">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!-- 服务补救界面 -->
+		<action name="billClaimCP_include">
+			<result name="success">queryBillClaimCP_include.jsp</result>
+		</action>
+
+		<!-- 代收货款汇款确认、汇款失败审核界面 -->
+		<action name="codPaid">
+			<result name="success">codPaid.jsp</result>
+		</action>
+
+		<!-- 汇款失败审核查询 -->
+		<action name="queryPayFailed" class="codPayFailedAction"
+			method="queryPayFailed">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+
+		<!-- 汇款失败审核 -->
+		<action name="processPayFailed" class="codPayFailedAction"
+			method="processPayFailed">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+
+		<!-- 代收货款失败审核导出操作 -->
+		<action name="exprotFailedCod" class="codPayFailedAction" method="exprotFailedCod">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel</param>
+                <param name="contentDisposition">attachment;filename="${execlName}.xls"</param>
+                <param name="inputName">inputStream</param>
+                <param name="bufferSize">1024</param>
+    		</result>
+    		<result name="error" type="json">		
+    			<param name="contentType">text/html</param>	
+				<param name="includeProperties">message</param>
+    		</result>
+		</action>
+
+		<!-- 汇款确认查询 -->
+		<action name="queryPayConfirm" class="codPayConfirmAction"
+			method="queryPayConfirm">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+
+		<!-- 确认汇款成功 -->
+		<action name="confirmSuccess" class="codPayConfirmAction"
+			method="confirmSuccess">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+
+		<!-- 确认汇款失败 -->
+		<action name="confirmFailure" class="codPayConfirmAction"
+			method="confirmFailure">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+
+		<!-- 确认反汇款成功 -->
+		<action name="confirmAntiRemittance" class="codPayConfirmAction"
+			method="confirmAntiRemittance">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+
+
+		<!-- noteApply.js 票据申请初始化页面 -->
+		<action name="initApply" class="noteAction" method="initApply">
+			<result name="success">noteApply.jsp</result>
+			<result name="error" type="json" />
+		</action>
+		
+		<!-- 票据申请初始化页面GUI -->
+		<action name="initApply_include" class="noteAction" method="initApply">
+			<result name="success">noteApply_include.jsp</result>
+			<result name="error" type="json" />
+		</action>
+		
+		<!-- 小票申请核销   add by liqin  -->
+		<action name="applyWriteoff" class="noteAction" method="writeoffNote">
+			<result name="success" type="json" />
+			<result name="error" type="json" />
+		</action>
+		
+		<!-- 小票申请反核销   add by liqin  -->
+		<action name="reApplyWriteoff" class="noteAction" method="reWriteoffNote" >
+			<result name="success" type="json" />
+			<result name="error" type="json" />
+		</action>
+		
+		<!-- 查询票据信息 -->
+		<action name="queryApply" class="noteAction" method="queryApplyByCondition">
+			<result name="success" type="json" />
+			<result name="error" type="json" />
+		</action>
+
+		<!-- 查询票据明细信息 -->
+		<action name="queryNoteDetails" class="noteAction" method="queryNoteDetailsById">
+			<result name="success" type="json" />
+			<result name="error" type="json" />
+		</action>
+
+		<!-- 申请票据信息 -->
+		<action name="applyNote" class="noteAction" method="applicationNote">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+
+		<!-- 票据审批初始化页面 -->
+		<action name="initApprove" class="noteAction" method="initApprove">
+			<result name="success">noteApprove.jsp</result>
+			<result name="error" type="json" />
+		</action>
+
+		<!-- 票据入库新增 -->
+		<action name="addStockInNote" class="noteAction" method="createStockInNote">
+			<result name="success" type="json" />
+			<result name="error" type="json" />
+		</action>
+
+		<!--查询入库数据 -->
+		<action name="queryStockIn" class="noteAction" method="queryStockIn">
+			<result name="success" type="json" />
+			<result name="error" type="json" />
+		</action>
+
+		<!-- 票据审批操作 -->
+		<action name="updateApprove" class="noteAction" method="approvalNote">
+			<result name="success" type="json" />
+			<result name="error" type="json" />
+		</action>
+
+		<!-- 票据下发操作 -->
+		<action name="updateIssued" class="noteAction" method="providerNote">
+			<result name="success" type="json" />
+			<result name="error" type="json" />
+		</action>
+
+		<!-- 票据入库操作 -->
+		<action name="updateStorage" class="noteAction" method="storageInNote">
+			<result name="success" type="json" />
+			<result name="error" type="json" />
+		</action>
+
+		<!-- noteWriteoff.js 小票核销页面，小票核销操作 -->
+		<action name="updateWriteoff" class="noteAction" method="writeoffNote">
+			<result name="success" type="json" />
+			<result name="error" type="json" />
+		</action>
+
+
+
+		<!-- 票据核销初始化页面 -->
+		<action name="initWriteoff" class="noteAction" method="initWriteoff">
+			<result name="success">noteWriteoff.jsp</result>
+			<result name="error" type="json" />
+		</action>
+		<!-- 票据入库初始化页面 -->
+		<action name="initStorage" class="noteAction" method="initStorage">
+			<result name="success">noteStorage.jsp</result>
+			<result name="error" type="json" />
+		</action>
+		
+		<!-- 票据入库初始化页面GUI -->
+		<action name="initStorage_include" class="noteAction" method="initStorage">
+			<result name="success">noteStorage_include.jsp</result>
+			<result name="error" type="json" />
+		</action>
+		
+		<!-- 小票新增初始化页面 -->
+		<action name="initAddOtherRevenue" class="otherRevenueAction" method="initAddPage">
+			<result name="success">otherRevenueAdd.jsp</result>
+			<result name="error" type="json" />
+		</action>
+		
+		<!-- 小票新增初始化页面GUI -->
+		<action name="initAddOtherRevenue_include" class="otherRevenueAction" method="initAddPage">
+			<result name="success">otherRevenueAdd_include.jsp</result>
+			<result name="error" type="json" />
+		</action>
+		
+		<!-- 小票查询初始化页面 -->
+		<action name="initQueryRevenuePage" class="otherRevenueAction" method="initQueryRevenuePage">
+			<result name="success">queryOtherRevenue.jsp</result>
+			<result name="error" type="json" />
+		</action>
+		
+		<!-- 小票查询初始化页面GUI -->
+		<action name="initQueryRevenuePage_include" class="otherRevenueAction" method="initQueryRevenuePage">
+			<result name="success">queryOtherRevenue_include.jsp</result>
+			<result name="error" type="json" />
+		</action>
+		
+		<!-- 小票号是否连续 -->
+		<action name="isConsecutive" class="otherRevenueAction" method="consequtive">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!-- 小票新增操作 -->
+		<action name="addOtherRevenue" class="otherRevenueAction" method="addOtherRevenue">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!-- 小票查询操作 -->
+		<action name="queryOtherRevenue" class="otherRevenueAction" method="queryOtherRevenue">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!-- 小票作废操作 -->
+		<action name="cancelOtherRevenue" class="otherRevenueAction" method="cancelOtherRevenue">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!-- 还借支小票作废操作 -->
+		<action name="canxelOtherRevenueOfRB" class="otherRevenueAction" method="canxelOtherRevenueOfRB">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!-- 小票作导出操作 -->
+		<action name="exprotOtherRevenue" class="otherRevenueAction" method="exprotOtherRevenue">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel</param>
+                <param name="contentDisposition">attachment;filename="${execlName}.xls"</param>
+                <param name="inputName">inputStream</param>
+                <param name="bufferSize">1024</param>
+    		</result>
+    		<result name="error" type="json">		
+    			<param name="contentType">text/html</param>	
+				<param name="includeProperties">resultMark,message</param>
+    		</result>
+		</action>
+		
+		<!-- 获取客户信息-->
+		<action name="queryCustomerInfo" class="otherRevenueAction" method="queryCustomerInfo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		
+		<!-- 查询应收单页面 -->
+		<action name="queryReceivableBill">
+			<result name="success">queryReceivableBill.jsp</result>
+		</action>
+		<!-- 查询应收单页面 嵌入GUI -->
+		<action name="queryReceivableBill_include">
+			<result name="success">queryReceivableBill_include.jsp</result>
+		</action>
+		<!-- 通过运单单号查询应收单页面 -->
+		<action name="queryReceivableBillByWayBillNo" class="billReceivableQueryAction"
+			method="queryReceivableBillByWayBillNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 通过来源单号查询应收单页面 -->
+		<action name="queryReceivableBillBySourceBillNo" class="billReceivableQueryAction"
+			method="queryReceivableBillBySourceBillNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 通过Dto查询应收单页面 -->
+		<action name="queryReceivableBillByDate" class="billReceivableQueryAction"
+			method="queryReceivableBillByDate">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!-- 标记应收单   foss-pengzhen -->
+		<action name="stampReceivable" class="billReceivableQueryAction"
+			method="stampReceivable">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="reverseStampReceivable" class="billReceivableQueryAction"
+			method="reverseStampReceivable">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!-- 导出应收单 -->
+		<action name="exportBillReceivable" class="billReceivableQueryAction"
+			method="exportBillReceivable">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel</param>
+                <param name="contentDisposition">attachment;filename="${excelName}.xls"</param>
+                <param name="inputName">inputStream</param>
+                <param name="bufferSize">1024</param>
+    		</result>
+    		<result name="error" type="json">
+    			<param name="contentType">text/html</param>
+				<param name="includeProperties">resultMark</param>
+    		</result>
+		</action>
+
+		<!-- 查询应收应付单页面 -->
+		<action name="queryReceivablePaymentBill">
+			<result name="success">queryReceivablePaymentBill.jsp</result>
+		</action>
+		<!-- 查询应收应付单页面GUI -->
+		<action name="queryReceivablePaymentBill_include">
+			<result name="success">queryReceivablePaymentBill_include.jsp</result>
+		</action>
+		<!-- 查询应收单 -->
+		<action name="queryReceivableBillByBillNo" class="billReceivablePaymentQueryAction"
+			method="queryReceivableBillByBillNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 查询应付单 -->
+		<action name="queryPayableBillByBillNo" class="billReceivablePaymentQueryAction"
+			method="queryPayableBillByBillNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--查询还款单 -->
+		<action name="queryRepaymentBillByBillNo" class="billReceivablePaymentQueryAction"
+			method="queryRepaymentBillByBillNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--查询现金收款单 -->
+		<action name="queryCashCollectionBillByBillNo" class="billReceivablePaymentQueryAction"
+			method="queryCashCollectionBillByBillNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--查询付款单 -->
+		<action name="queryPaymentBillByBillNo" class="billReceivablePaymentQueryAction"
+			method="queryPaymentBillByBillNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--查询核销单 -->
+		<action name="queryWriteoffBillByBillNo" class="billReceivablePaymentQueryAction"
+			method="queryWriteoffBillByBillNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+
+		<!-- 资金管理中心汇款界面 -->
+		<action name="codFundBillPaid">
+			<result name="success">codFundBillPaid.jsp</result>
+		</action>
+
+		<!-- 查询代收货款信息 -->
+		<action name="queryBillPayableCOD" class="fundBillCODPaidAction"
+			method="queryBillPayableCOD">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+
+		<!-- 资金部在线付款，发送付款请求至费控系统 -->
+		<action name="payCODOnline" class="fundBillCODPaidAction"
+			method="payCODOnline">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+
+		<!-- 资金线下付款，导出应付代收货款并核销代收货款应付单 -->
+		<action name="payCODOffline" class="fundBillCODPaidAction"
+			method="payCODOffline">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel</param>
+                <param name="contentDisposition">attachment;filename="${execlName}.xls"</param>
+                <param name="inputName">inputStream</param>
+                <param name="bufferSize">1024</param>
+    		</result>
+    		<result name="error" type="json">
+    			<param name="contentType">text/html</param>
+				<param name="includeProperties">message</param>
+    		</result>
+		</action>
+
+		<!-- 冻结代收货款 -->
+		<action name="freezeCOD" class="fundBillCODPaidAction" method="freezeCOD">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+
+		<!-- 反冻结代收货款 -->
+		<action name="releaseCOD" class="fundBillCODPaidAction" method="releaseCOD">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+
+		<!-- 出纳帐号修改界面 -->
+		<action name="codSalesPay">
+			<result name="success">codSalesPay.jsp</result>
+		</action>
+		<!-- 出纳帐号修改界面 GUI-->
+		<action name="codSalesPay_include">
+			<result name="success">codSalesPay_include.jsp</result>
+		</action>
+		<!-- 代收货款信息 -->
+		<action name="querySalesPayCOD" class="salesPayCODAction"
+			method="querySalesPayCOD">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+
+		<!-- 营业部冻结 -->
+		<action name="freezePayCOD" class="salesPayCODAction" method="freezePayCOD">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+
+		<!-- 出纳审核前判断客户是否存在应收账款-->
+		<action name="queryCODDtoCheckReceivableUnAmount" class="salesPayCODAction"
+			method="queryCODDtoCheckReceivableUnAmount">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+
+		<!-- 出纳审核 -->
+		<action name="cashierAuditAccounts" class="salesPayCODAction"
+			method="cashierAuditAccounts">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+
+		<!-- 修改银行帐号 -->
+		<action name="changeBankAccounts" class="salesPayCODAction"
+			method="changeBankAccounts">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!-- 判断所选账号的银行暂不支持即日退 -->
+		<action name="queryBankIntraDayTypeByBankCode" class="salesPayCODAction"
+			method="queryBankIntraDayTypeByBankCode">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+
+		<!-- 出经理帐号审核界面 -->
+		<action name="codManagerAudit">
+			<result name="success">codManagerAudit.jsp</result>
+		</action>
+		<!-- 出经理帐号审核界面GUI -->
+		<action name="codManagerAudit_include">
+			<result name="success">codManagerAudit_include.jsp</result>
+		</action>
+		<!-- 代收货款信息 -->
+		<action name="queryManagerAuditCOD" class="salesPayCODAction"
+			method="queryManagerAuditCOD">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+
+		<!-- 经理审核同意 -->
+		<action name="agreeChangeAccounts" class="salesPayCODAction"
+			method="agreeChangeAccounts">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+
+		<!-- 经理审核退回 -->
+		<action name="denyChageAccounts" class="salesPayCODAction"
+			method="denyChageAccounts">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+
+		<!-- 到付清查页面 -->
+		<action name="queryFreightToCollectBill">
+			<result name="success">queryFreightToCollectBill.jsp</result>
+		</action>
+		<!-- 到付清查页面 GUI-->
+		<action name="queryFreightToCollectBill_include">
+			<result name="success">queryFreightToCollectBill_include.jsp</result>
+		</action>
+		<!-- 到付清查按日期查询 -->
+		<action name="queryFreightToCollectBillByDate" class="billFreightToCollectQueryAction"
+			method="queryFreightToCollectBillByDate">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!-- 到付清查导出Execl -->
+		<action name="queryFreightToCollectBillExportExecl" class="billFreightToCollectQueryAction"
+			method="queryFreightToCollectBillExportExecl">
+			<result name="success" type="stream">	
+                <param name="contentType">application/vnd.ms-excel</param>				
+                <param name="contentDisposition">attachment;filename="${execlName}.xls"</param>				
+                <param name="inputName">inputStream</param>				
+                <param name="bufferSize">1024</param>				
+    		</result>		
+    		<result name="error" type="json">		
+    			<param name="contentType">text/html</param>	
+				<param name="includeProperties">resultMark,message</param>
+    		</result>
+		</action>
+
+		<!-- 代收货款综合查询服务页面 -->
+		<action name="billPaidCodIndex">
+			<result name="success">codCompositeQuery.jsp</result>
+		</action>
+
+<!-- 代收货款综合查询服务页面 GUI -->
+		<action name="billPaidCodIndex_include">
+			<result name="success">codCompositeQuery_include.jsp</result>
+		</action>
+		
+		<!-- 代收货款综合查询服务 -->
+		<action name="queryBillPaidCod" class="codCompositeQueryAction"
+			method="query">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!-- 代收货款综合查询服务 -->
+		<action name="queryBillCodLog" class="codCompositeQueryAction"
+			method="queryCodLog">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!-- 代收货款综合导出操作 -->
+		<action name="exprotBillPaidCod" class="codCompositeQueryAction" method="exprotBillPaidCod">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel</param>
+                <param name="contentDisposition">attachment;filename="${execlName}.xls"</param>
+                <param name="inputName">inputStream</param>
+                <param name="bufferSize">1024</param>
+    		</result>
+    		<result name="error" type="json">		
+    			<param name="contentType">text/html</param>	
+				<param name="includeProperties">message</param>
+    		</result>
+		</action>
+
+		<!-- 空运代收货款审核 -->
+		<action name="airBillPaidCodIndex">
+			<result name="success">airBillPaidCod.jsp</result>
+		</action>
+		<!-- 空运代收货款审核GUI -->
+		<action name="airBillPaidCodIndex_include">
+			<result name="success">airBillPaidCod_include.jsp</result>
+		</action>
+		<!-- 空运代收货款查询 -->
+		<action name="queryAirBillPaidCod" class="airBillPaidCodAction"
+			method="query">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!-- 审核空运代收货款 -->
+		<action name="auditAirCOD" class="airBillPaidCodAction"
+			method="auditAirCOD">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!-- 反审核空运代收货款 -->
+		<action name="reverseAuditAirCOD" class="airBillPaidCodAction"
+			method="reverseAuditAirCOD">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!-- 快递代理代收货款审核 ISSUE-3389 小件业务 -->
+		<action name="landBillPaidCodIndex">
+			<result name="success">landBillPaidCod.jsp</result>
+		</action>
+		<!-- 快递代理代收货款审核GUI ISSUE-3389 小件业务 -->
+		<action name="landBillPaidCodIndex_include">
+			<result name="success">landBillPaidCod_include.jsp</result>
+		</action>
+		<!-- 快递代理代收货款查询 ISSUE-3389 小件业务 -->
+		<action name="queryLandBillPaidCod" class="landBillPaidCodAction"
+			method="query">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!-- 审核快递代理代收货款 ISSUE-3389 小件业务 -->
+		<action name="auditLandCOD" class="landBillPaidCodAction"
+			method="auditLandCOD">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!-- 反审核快递代理代收货款 ISSUE-3389 小件业务 -->
+		<action name="reverseAuditLandCOD" class="landBillPaidCodAction"
+			method="reverseAuditLandCOD">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+
+		<!-- 查询现金收款单页面 -->
+		<action name="queryCashCollectionBill">
+			<result name="success">queryCashCollectionBill.jsp</result>
+		</action>
+		<!-- 查询现金收款单页面 GUI-->
+		<action name="queryCashCollectionBill_include">
+			<result name="success">queryCashCollectionBill_include.jsp</result>
+		</action>
+		<!-- 通过运单单号查询现金收款单页面 -->
+		<action name="queryCashCollectionBillByWayBillNo" class="billCashCollectionQueryAction"
+			method="queryCashCollectionBillByWayBillNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 通过运单单号查询现金收款单页面 -->
+		<action name="queryCashCollectionBillBySourceBillNo" class="billCashCollectionQueryAction"
+			method="queryCashCollectionBillBySourceBillNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 通过Dto查询现金收款单页面 -->
+		<action name="queryCashCollectionBillByDto" class="billCashCollectionQueryAction"
+			method="queryCashCollectionBillByDto">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 通过银联交易流水号查询现金收款单页面 -->
+		<action name="queryCashCollectionBillByBatchNo" class="billCashCollectionQueryAction"
+			method="queryCashCollectionBillByBatchNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 导出现金收款单 -->
+		<action name="exportBillCashCollection" class="billCashCollectionQueryAction"
+			method="exportBillCashCollection">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel</param>
+                <param name="contentDisposition">attachment;filename="${excelName}.xls"</param>
+                <param name="inputName">inputStream</param>
+                <param name="bufferSize">1024</param>
+    		</result>
+    		<result name="error" type="json">
+    			<param name="contentType">text/html</param>
+				<param name="includeProperties">resultMark</param>
+    		</result>
+		</action>
+		<!-- 现金收入查询报表 -->
+		<action name="queryCashIncomeStatements">
+			<result name="success">cashIncomeStatements.jsp</result>
+		</action>
+		<!-- 现金收入查询报表 -->
+		<action name="queryCashIncomeStatements_include">
+			<result name="success">cashIncomeStatements_include.jsp</result>
+		</action>
+		<!-- 根据查询条件查询各种实收单明细记录 -->
+		<action name="queryCashIncomeStatementsByCondition" class="cashIncomeStatementsQueryAction"
+			method="queryCashIncomeStatementsByCondition">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!-- 实收单据导出明细记录 -->
+		<action name="cashIncomeStatementsExport" class="cashIncomeStatementsExportExeclAction"
+			method="cashIncomeStatementsExportExcel">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel</param>
+                <param name="contentDisposition">attachment;filename="${execlName}.xls"</param>
+                <param name="inputName">inputStream</param>
+                <param name="bufferSize">1024</param>
+    		</result>
+		</action>
+		
+		<!-- 根据客户code查询客户实体信息 -->
+		<action name="queryCustomerInfo" class="otherRevenueAction"
+			method="queryCustomerInfo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!-- 现金支出页面 -->
+		<action name="queryCashPaymentReport">
+			<result name="success">queryCashPaymentReport.jsp</result>
+		</action>
+		<action name="queryCashPaymentReport_include">
+			<result name="success">queryCashPaymentReport_include.jsp</result>
+		</action>
+		
+		<!-- 根据Dto查询现金支出报表信息 -->
+		<action name="queryCashPaymentReportByDto" class="cashPaymentReportQueryAction"
+			method="queryCashPaymentReportByDto">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!-- 导出现金支出报表 -->
+		<action name="exportPaymentReport" class="cashPaymentReportQueryAction" method="exportReport">
+	    	<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel</param>
+                <param name="contentDisposition">attachment;filename="${excelName}.xls"</param>
+                <param name="inputName">inputStream</param>
+                <param name="bufferSize">1024</param>
+    		</result>
+    		<result name="error" type="json"></result>
+	    </action>
+	    
+	    <!-- 查询部门信用额度、账期预警信息 -->
+	    <action name="queryOrgAlarm" class="queryOrgAlarmAction" method="queryOrgAlarm">
+	    	<result name="success" type="json"></result>
+	    	<result name="error" type="json"></result>
+	    </action>
+	    
+	    <!-- 查询运单 -->
+	    <action name="queryWaybill" class="otherRevenueAction" method="queryWaybill">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+	    	    
+	    <!-- 查询发票标记 -->
+	    <action name="queryCustInvoiceMark" class="custInvoiceMarkAction" method="queryCustInvoiceMark">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!-- 定额发票登记页面 -->
+		<action name="invoiceRegister">
+			<result name="success">invoiceRegister.jsp</result>
+		</action>
+		<!-- 定额发票登记页面 GUI -->
+		<action name="invoiceRegister_include">
+			<result name="success">invoiceRegister_include.jsp</result>
+		</action>
+		
+		<!-- 验证及获得发票金额 -->
+	    <action name="validateAndQueryInvoiceAmounts" class="invoiceRegisterAction" method="validateAndQueryInvoiceAmounts">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!-- 定额发票登记保存 -->
+	    <action name="registerDoInvoice" class="invoiceRegisterAction" method="registerDoInvoice">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+        	<!-- 运单关联小票 -->
+	    <action name="queryOtherRevenueNosByWaybillNos" class="invoiceRegisterAction" method="queryOtherRevenueNosByWaybillNos">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+				
+		<!-- 超时装卸费界面 -->
+		<action name="overdueSFPaymentApply">
+			<result name="success">overdueSFPaymentApply.jsp</result>
+		</action>
+
+		<!-- 超时装卸费申请单查询 -->
+		<action name="queryOverdueSFApply" class="overdueSFPaymentApplyAction"
+			method="query">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 超时装卸费申请单申请审批 -->
+		<action name="applyOrAuditOverdueSFApply" class="overdueSFPaymentApplyAction"
+			method="applyOrAudit">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 签收记录页面-->
+		<action name="queryPodInfo">
+			 <result name="success">queryPodInfo.jsp</result>
+		</action>
+		<!--查询签收记录-->
+		<action name="podInfo" class="queryPodInfoAction" method="queryPodInfo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--*************代收货款审核**************-->
+		<action name="codAudit">
+			<result name="success">codAudit.jsp</result>
+		</action>		
+		<!--代收货款资金部审核-->
+		<action name="fundAudit" class="codAuditAction" method="fundAudit">
+		<result name="success" type="json"></result>
+		<result name="error" type="json"></result>
+		</action>
+		<action name="fundLock" class="codAuditAction" method="fundLock">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--代收货款资金部锁定/取消锁定-->
+		<action name="reviewFundLock" class="codAuditAction" method="reviewFundLock">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--审核会计审核-->
+		<action name="reviewFundAudit" class="codAuditAction" method="reviewFundAudit">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--根据条件查询-->
+		<action name="queryByCondition" class="codAuditAction" method="queryByCondition">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--根据运单号查询-->
+		<action name="queryByWaybillNos" class="codAuditAction" method="queryByWaybillNos">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--根据条件导出Excel-->
+		<action name="exprtExcel" class="codAuditAction" method="exprtExcel">
+			<result name="success" type="stream">
+				<param name="contentType">application/vnd.ms-excel</param>
+				<param name="contentDisposition">attachment;filename="${excelName}.xls"</param>
+				<param name="inputName">inputStream</param>
+				<param name="bufferSize">1024</param>
+			</result>
+			<result name="error" type="json"></result>
+		</action>
+
+		<!-- 应收单月结-->
+		<action name="billReceivableMonthlySelect" class="billReceivableMonthlyQueryAction" method="billReceivableMonthlySelect">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="billReceivableMonthlyQuery">
+			<result name="success">billRecivableMonthly.jsp</result>
+		</action>
+		<action name="queryPartnerReceivableBill">
+			<result name="success">queryPartnerReceivableBill.jsp</result>
+		</action>
+		<!-- 导出月结应收单 -->
+		<action name="billRecivableMonthlyToExcel" class="billReceivableMonthlyQueryAction" method="billRecivableMonthlyToExcel">
+			<result name="success" type="stream">
+				<param name="contentType">application/vnd.ms-excel</param>
+				<param name="contentDisposition">attachment;filename="${excelName}.xls"</param>
+				<param name="inputName">inputStream</param>
+				<param name="bufferSize">1024</param>
+			</result>
+		</action>
+		
+		<!-- 通过运单单号查询应收单页面 -->
+		<action name="queryPartnerReceivableBillByWayBillNo" class="billReceivablePartnerQueryAction"
+			method="queryPartnerReceivableBillByWayBillNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 通过来源单号查询应收单页面 -->
+		<action name="queryPartnerReceivableBillBySourceBillNo" class="billReceivablePartnerQueryAction"
+			method="queryPartnerReceivableBillBySourceBillNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 通过Dto查询应收单页面 -->
+		<action name="queryPartnerReceivableBillByDate" class="billReceivablePartnerQueryAction"
+			method="queryPartnerReceivableBillByDate">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!-- 导出应收单 -->
+		<action name="exportPartnerBillReceivable" class="billReceivablePartnerQueryAction"
+			method="exportPartnerBillReceivable">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel</param>
+                <param name="contentDisposition">attachment;filename="${excelName}.xls"</param>
+                <param name="inputName">inputStream</param>
+                <param name="bufferSize">1024</param>
+    		</result>
+    		<result name="error" type="json">
+    			<param name="contentType">text/html</param>
+				<param name="includeProperties">resultMark</param>
+    		</result>
+		</action>
+		
+		<action name="queryReceivableDetail" class="queryReceivableDetailAction" method="queryReceivableDetail">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!--
+			@项目：合伙人项目
+			@功能：定义 “发票对账单新增”的action
+			@author:218371-foss-zhaoyanjun
+			@date:2016-01-27上午09:03
+		 -->
+		<action name="invoiceStatementAdd">
+			<result name="success">invoiceStatementAdd.jsp</result>
+	    </action>
+	    
+	    <!--
+			@项目：合伙人项目
+			@功能：定义 “发票对账单管理”的action
+			@author:218371-foss-zhaoyanjun
+			@date:2016-01-27上午09:03
+		 -->
+		<action name="invoiceStatementManage">
+			<result name="success">invoiceStatementManage.jsp</result>
+	    </action>
+	    
+	    <!-- 
+	   		@项目：合伙人项目
+			@功能：定义 “发票对账单新增”查询的action
+			@author:218371-foss-zhaoyanjun
+			@date:2016-01-27上午09:03
+	    -->
+	    <action name="queryForInvoiceStatementMake" class="invoiceStatementManagerAction" method="queryForStatementMake">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    
+	    <!--
+	    	@项目：合伙人项目
+			@功能：保存对账单action
+			@author:218371-foss-zhaoyanjun
+			@date:2016-01-27上午09:03 
+	     -->
+	    <action name="addStatement" class="invoiceStatementManagerAction" method="addStatement">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    
+	    <!--
+	    	@项目：合伙人项目
+			@功能：保存对账单action
+			@author:218371-foss-zhaoyanjun
+			@date:2016-01-27上午09:03 
+	     -->
+	    <action name="queryStatement" class="invoiceStatementManagerAction" method="queryStatementForIma">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    
+	    <!--
+	    	@项目：合伙人项目
+			@功能：保存对账单action
+			@author:218371-foss-zhaoyanjun
+			@date:2016-01-27上午09:03 
+	     -->
+	    <action name="deleteStatement" class="invoiceStatementManagerAction" method="deleteStatement">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	    
+	    
+	    <!--
+	    	@项目：合伙人项目
+			@功能：按对账单号查询应收单
+			@author:218371-foss-zhaoyanjun
+			@date:2016-01-27上午09:03 
+	     -->
+	    <action name="queryReceivableDetailByStatementNo" class="invoiceStatementManagerAction" method="queryReceivableDetailByStatementNo">
+	        <result name="success" type="json"></result>
+	        <result name="error" type="json"></result>
+	    </action>
+	</package>
+</struts>

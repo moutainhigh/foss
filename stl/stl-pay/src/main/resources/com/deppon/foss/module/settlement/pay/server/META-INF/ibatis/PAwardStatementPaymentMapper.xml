@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.PartnerStatementOfAwardPaymentDao" >
+  
+  <insert id="addBillPaymentD" parameterType="java.util.Map">
+	  INSERT INTO STL.T_STL_BILL_PAYMENT_D
+	      (ID,
+	       PAYMENT_NO,
+	       PAYMENT_ACCOUNT_DATE,
+	       SOURCE_BILL_NO,
+	       WAYBILL_NO,
+	       SOURCE_BILL_TYPE,
+	       SOURCE_ACCOUNT_DATE,
+	       CREATE_TIME,
+	       SRC_SOURCE_BILL_NO,
+	       PAY_AMOUNT)
+	      SELECT SYS_GUID(),
+	             #{paymentNum,JDBCTYPE=VARCHAR},
+	             SYSDATE,
+	             P.PAYABLE_NO,
+	             P.WAYBILL_NO,
+	             'P',
+	             P.ACCOUNT_DATE,
+	             SYSDATE,
+	             P.SOURCE_BILL_NO,
+	             P.UNVERIFY_AMOUNT
+	        FROM STL.T_STL_BILL_PAYABLE P
+	       WHERE P.ACTIVE = 'Y'
+	         AND P.BILL_TYPE IN ('PB', 'PLE')
+	         AND P.UNVERIFY_AMOUNT > 0
+	         AND P.PAYABLE_NO IN
+	             (SELECT PD.SOURCE_BILL_NO
+	                FROM STL.T_STL_STATEMENT_OF_PAWARD_D PD
+	               WHERE PD.STATEMENT_BILL_NO = #{statementBillNo,JDBCTYPE=VARCHAR}
+	                 AND PD.IS_DELETE = 'N'
+	                 AND PD.BILL_PARENT_TYPE = '20.YF')
+	</insert>
+  
+  	<update id="payForBillPayable" parameterType="java.util.Map">
+		UPDATE STL.T_STL_BILL_PAYABLE P
+	   	   SET P.VERSION_NO = VERSION_NO + 1,
+		   	   P.PAY_STATUS = 'Y',
+		       P.PAYMENT_NO= #{paymentNum,jdbcType=VARCHAR},
+		       P.MODIFY_TIME = SYSDATE,
+		       P.MODIFY_USER_CODE = #{modifyUserCode,jdbcType=VARCHAR},
+		       P.MODIFY_USER_NAME = #{modifyUserName,jdbcType=VARCHAR},
+		       P.PAYMENT_NOTES = #{paymentNotes,jdbcType=VARCHAR},
+		       P.PAYMENT_AMOUNT = p.UNVERIFY_AMOUNT
+		 WHERE P.ACTIVE = 'Y'
+		   AND P.BILL_TYPE IN ('PB', 'PLE')
+		   AND P.UNVERIFY_AMOUNT > 0
+		   AND P.PAYABLE_NO IN (SELECT PD.SOURCE_BILL_NO
+		                         FROM STL.T_STL_STATEMENT_OF_PAWARD_D PD
+		                        WHERE PD.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+		                          AND PD.IS_DELETE = 'N'
+		                          AND PD.BILL_PARENT_TYPE = '20.YF')
+	</update>
+  
+  </mapper>

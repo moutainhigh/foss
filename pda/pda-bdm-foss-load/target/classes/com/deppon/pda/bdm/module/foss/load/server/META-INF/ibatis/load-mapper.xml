@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.pda.bdm.module.foss.load.server.dao.impl.LoadDao">
+	<!-- 保存撤销装车扫描信息 -->
+	<insert id="saveLoadCaclScan" parameterType="com.deppon.pda.bdm.module.foss.load.shared.domain.LoadCancelScanEntity">
+		insert into pda.T_PDA_SCANMSG(id,scanUser,scanPdaCode,scanType,scanTime,scanDept,labelCode,taskCode,
+		scanFlag,syncStatus,waybillCode,uploadTime) values(#{id},#{scanUser},#{pdaCode},#{scanType},#{scanTime},#{deptCode},
+		#{labelCode},#{taskCode},#{scanFlag},#{syncStatus},#{wblCode},#{uploadTime})
+	</insert>
+	<!-- 保存完成装车任务信息 -->
+	<insert id="saveFnshLoadTaskScan" parameterType="com.deppon.pda.bdm.module.foss.load.shared.domain.FnshLoadTaskScanEntity">
+		insert into pda.T_PDA_SCANMSG(id,scanUser,scanPdaCode,scanType,scanTime,scanDept,labelCode,taskCode,
+		scanFlag,syncStatus,uploadTime) values(#{id},#{scanUser},#{pdaCode},#{scanType},#{scanTime},#{deptCode},
+		#{taskCode},#{taskCode},#{scanFlag},#{syncStatus},#{uploadTime})
+	</insert>
+	<!-- 保存装车扫描信息 -->
+	<insert id="saveLoadScan" parameterType="com.deppon.pda.bdm.module.foss.load.shared.domain.LoadScanEntity">
+		insert into pda.T_PDA_SCANMSG(id,scanUser,scanPdaCode,scanType,scanTime,scanDept,labelCode,taskCode,
+		scanFlag,syncStatus,scanStatus,waybillCode,uploadTime) values(#{id},#{scanUser},#{pdaCode},#{scanType},#{scanTime},#{deptCode},
+		#{labelCode},#{taskCode},#{scanFlag},#{syncStatus},#{scanStatus},#{wblCode},#{uploadTime})
+	</insert>
+	<!-- 保存录入封签信息 -->
+	<insert id="saveLoadLabelScan" parameterType="com.deppon.pda.bdm.module.foss.load.shared.domain.LoadLabelScanEntity">
+		insert into pda.T_PDA_SCANMSG(id,scanUser,scanPdaCode,scanType,scanDept,
+		scanFlag,scanstatus,syncStatus,uploadTime) values(#{id},#{scanUser},#{pdaCode},#{scanType},#{deptCode},
+		#{scanFlag},#{status},0,SYSTIMESTAMP)
+	</insert>
+	
+	<!-- 保存检查封签信息 -->
+	<insert id="saveCheckSeals" parameterType="com.deppon.pda.bdm.module.foss.load.shared.domain.CheckLoadSeals">
+		insert into pda.T_PDA_SCANMSG(id,scanUser,scanPdaCode,scanType,scanDept,scanTime,syncStatus,uploadTime) 
+		values(#{id},#{scanUser},#{pdaCode},#{scanType},#{deptCode},SYSTIMESTAMP,0,SYSTIMESTAMP)
+	</insert>
+	
+	<insert id="sealDestDetail" parameterType="com.deppon.pda.bdm.module.foss.load.shared.domain.SealDestDetail">
+		insert into pda.T_PDA_SEALS(id,scanId,sealsCode,truckCode,UPLOADTIME,sealType,remark) values (sys_guid(),#{scanId},#{sealNo},#{truckCode},SYSTIMESTAMP,#{checkType},#{remark})
+	</insert>
+	<!-- 保存未装车备注信息 -->
+	<insert id="saveNoLoadScan" parameterType="com.deppon.pda.bdm.module.foss.load.shared.domain.NoLoadRemarkScanEntity">
+		insert into pda.T_PDA_SCANMSG(id,scanUser,scanPdaCode,scanType,scanTime,scanDept,labelCode,taskCode,
+		scanFlag,syncStatus,waybillCode,uploadTime,remark) values(sys_guid(),#{scanUser},#{pdaCode},#{scanType},#{scanTime},#{deptCode},
+		#{labelCode},#{taskCode},'SCANED',#{syncStatus},#{wblCode},SYSTIMESTAMP,#{noLoadReson})
+	</insert>
+	
+	<select id="queryNoSyncScanMsgCount" parameterType="string" resultType="int">
+		SELECT count(*) FROM pda.t_pda_asyncmsg WHERE (asyncStatus <![CDATA[<]]> 2  or (asyncStatus = 3 and synccount <![CDATA[<]]> 3))  and taskCode = #{taskCode}
+	</select>
+	
+	<!-- 快递派送装车 -->
+	<!-- 保存快递装车扫描信息 -->
+	<insert id="saveKdLoadScan" parameterType="com.deppon.pda.bdm.module.foss.load.shared.domain.KdLoadScanEntity">
+		insert into pda.T_PDA_SCANMSG(id,scanUser,scanPdaCode,scanType,scanTime,scanDept,labelCode,taskCode,
+		scanFlag,syncStatus,waybillCode,uploadTime) values(#{id},#{scanUser},#{pdaCode},#{scanType},#{scanTime},#{deptCode},
+		#{labelCode},#{taskCode},#{scanFlag},#{syncStatus},#{wblCode},#{uploadTime})
+	</insert>
+	<!-- 保存快递撤销装车扫描信息 -->
+	<insert id="saveKdLoadCaclScan" parameterType="com.deppon.pda.bdm.module.foss.load.shared.domain.KdLoadCancelScanEntity">
+		insert into pda.T_PDA_SCANMSG(id,scanUser,scanPdaCode,scanType,scanTime,scanDept,labelCode,taskCode,
+		scanFlag,syncStatus,waybillCode,uploadTime) values(#{id},#{scanUser},#{pdaCode},#{scanType},#{scanTime},#{deptCode},
+		#{labelCode},#{taskCode},#{scanFlag},#{syncStatus},#{wblCode},#{uploadTime})
+	</insert>
+	<!-- 保存快递装车扫描出现业务异常信息 -->
+	<insert id="saveKdScanBusinessErrorLog" parameterType="com.deppon.pda.bdm.module.foss.load.shared.domain.KdScanBusinessErrorLog">
+		insert into pda.t_pda_scan_bus_error_log(id,taskCode,waybillCode,labelCode,reason,scanStatus,createtime) values(#{id},#{taskCode},#{waybillCode},#{labelCode},#{reason},#{scanStatus},sysdate)
+	</insert>
+	<!-- 删除快递装车扫描出现业务异常信息 -->
+	<delete id="deleteKdScanBusinessErrorLog" parameterType="java.lang.String">
+		delete from pda.t_pda_scan_bus_error_log
+		<where>
+ 		    taskcode = #{taskCode}
+   		</where>
+	</delete>
+	<!-- 根据任务号查询快递装车扫描出现业务异常信息明细 -->
+	<select id="selectKdScanBusinessErrorLogByTaskCode" parameterType="java.lang.String" resultType="com.deppon.pda.bdm.module.foss.load.shared.domain.KdScanBusinessErrorLog">
+		select taskCode,waybillCode,labelCode,reason from pda.t_pda_scan_bus_error_log
+ 			<where> 
+				taskcode = #{taskCode}
+				and scanstatus=#{scanStatus}
+ 			</where>
+	</select>
+	
+	<insert id="saveLoader" parameterType="com.deppon.pda.bdm.module.foss.load.shared.domain.LoaderAddDelModel">
+		insert into pda.T_PDA_SCANMSG(id,scanUser,scanPdaCode,scanType,scanTime,scanDept,labelCode,taskCode,
+		scanFlag,syncStatus,scanStatus,oldlabelcodes,uploadTime) values(#{id,jdbcType=VARCHAR},#{scanUser,jdbcType=VARCHAR},#{pdaCode,jdbcType=VARCHAR},#{scanType,jdbcType=VARCHAR},#{scanTime},#{deptCode,jdbcType=VARCHAR},
+		#{labelCode,jdbcType=VARCHAR},#{taskCode,jdbcType=VARCHAR},'BY_HAND',0,#{status,jdbcType=VARCHAR},#{wblCode,jdbcType=VARCHAR},#{uploadTime})
+	</insert>
+</mapper>

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stv.MvrHiEntityMapper" >
+    <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.closing.api.shared.domain.MvrHiEntity" >
+        <id column="ID" property="id" jdbcType="VARCHAR" />
+        <result column="PERIOD" property="period" jdbcType="VARCHAR" />
+        <result column="BUSINESS_TYPE" property="businessType" jdbcType="VARCHAR" />
+        <result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+        <result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+       	<result column="VOUCHER_BEGIN_TIME" property="voucher_begin_time" jdbcType="TIMESTAMP" />
+        <result column="VOUCHER_END_TIME" property="voucher_end_time" jdbcType="TIMESTAMP" />
+        <result column="ORIG_ORG_CODE" property="origOrgCode" jdbcType="VARCHAR" />
+        <result column="ORIG_ORG_NAME" property="origOrgName" jdbcType="VARCHAR" />
+        <result column="HI_COST" property="hiCost" jdbcType="DECIMAL" />
+        <result column="HI_RENTRY" property="hiRentry" jdbcType="DECIMAL" />
+        <result column="HI_PWR" property="hiPwr" jdbcType="DECIMAL" />
+        <result column="HI_PR" property="hiPr" jdbcType="DECIMAL" />
+    </resultMap>
+
+    <sql id="Base_Column_List" >
+        ID,
+        PERIOD,
+        BUSINESS_TYPE,
+        CUSTOMER_CODE,
+        CUSTOMER_NAME,
+   <!--      VOUCHER_BEGIN_TIME,
+        VOUCHER_END_TIME, -->
+        ORIG_ORG_CODE,
+        ORIG_ORG_NAME,
+        HI_COST/100 HI_COST,
+        HI_RENTRY/100 HI_RENTRY,
+        HI_PWR/100 HI_PWR,
+        HI_PR/100 HI_PR
+    </sql>
+
+    <!-- 按条件查询列表 -->
+    <select id="selectListByConditions" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.closing.api.shared.dto.MvrHiDto" >
+        SELECT  /*结算-凭证报表-根据条件查询家装月报表*/
+        <include refid="Base_Column_List" />
+        FROM STV.T_STL_MVR_HI T
+        <where>
+            <!-- 期间 -->
+            T.PERIOD = #{period,jdbcType=VARCHAR}
+
+            <!-- 业务类型 -->
+           <!--  <if test="business_type != null and businessType != ''">
+                AND T.BUSINESS_TYPE = #{businessType,jdbcType=VARCHAR}
+            </if> -->
+
+            <!-- 客户 -->
+            <if test="customerCode != null and customerCode != ''">
+                AND T.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+            </if>
+
+            <!-- 始发部门 -->
+            <if test="origOrgCode != null and origOrgCode != ''">
+                AND T.ORIG_ORG_CODE = #{origOrgCode,jdbcType=VARCHAR}
+            </if>
+
+            <!-- 到达部门加入数据权限  -->
+          <!--   <if test="userCode != null and userCode != ''">
+                and exists (select 1
+                from bse.mv_bas_user_org_auth_view uov
+                where uov.emp_code = #{userCode}
+                and uov.Org_Code = t.DEST_ORG_CODE
+                <if test="destOrgCode != null and destOrgCode != '' ">
+                    and uov.Org_Code = #{destOrgCode,jdbcType=VARCHAR}
+                </if>
+                )
+            </if>
+ -->
+        </where>
+    </select>
+
+    <!-- 按条件查询汇总 -->
+    <select id="selectTotalByConditions" resultType="com.deppon.foss.module.settlement.closing.api.shared.dto.MvrHiDto" parameterType="com.deppon.foss.module.settlement.closing.api.shared.dto.MvrHiDto" >
+        SELECT /*结算-凭证报表-根据条件查询家装月报表总条数，总金额*/
+        --总条数
+        COUNT(1) count,
+        SUM(HI_COST/100) hiCost,
+        SUM(HI_RENTRY/100) hiRentry,
+        SUM(HI_PWR/100) hiPwr,
+        SUM(HI_PR/100) hiPr
+        FROM STV.T_STL_MVR_HI T
+        <where>
+            <!-- 期间 -->
+            T.PERIOD = #{period,jdbcType=VARCHAR}
+
+            <!-- 业务类型 -->
+            <!-- <if test="businessType != null and businessType != ''">
+                AND T.BUSINESS_TYPE = #{businessType,jdbcType=VARCHAR}
+            </if> -->
+
+            <!-- 客户 -->
+            <if test="customerCode != null and customerCode != ''">
+                AND T.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+            </if>
+
+            <!-- 始发部门 -->
+            <if test="origOrgCode != null and origOrgCode != ''">
+                AND T.ORIG_ORG_CODE = #{origOrgCode,jdbcType=VARCHAR}
+            </if>
+
+            <!-- 到达部门加入数据权限  -->
+            <!-- <if test="userCode != null and userCode != ''">
+                and exists (select 1
+                from bse.mv_bas_user_org_auth_view uov
+                where uov.emp_code = #{userCode}
+                and uov.Org_Code = t.DEST_ORG_CODE
+                <if test="destOrgCode != null and destOrgCode != '' ">
+                    and uov.Org_Code = #{destOrgCode,jdbcType=VARCHAR}
+                </if>
+                )
+            </if> -->
+        </where>
+    </select>
+</mapper>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.scheduling.InviteVehicleInfo" >
+	<resultMap type="com.deppon.foss.module.transfer.scheduling.api.shared.dto.InviteVehicleInfoDto" id="InviteVehicleInfoResultMap">
+		<result property="inviteCost" column="INVITE_COST" jdbcType="NUMERIC"/>
+		<result property="inviteNo" column="INVITE_NO" jdbcType="VARCHAR"/>
+		<result property="vehicleNo" column="VEHICLE_NO" jdbcType="VARCHAR"/>
+		<result property="applyOrgCode" column="APPLY_ORG_CODE" jdbcType="VARCHAR"/>
+		<result property="applyOrgName" column="APPLY_ORG_NAME" jdbcType="VARCHAR"/>
+	</resultMap>
+	<sql id="RESULT_INVITE_VEHICLE_INFO">
+		trunc(nvl(INVITEAPPLY.INVITE_COST, 0)/100, 2) AS INVITE_COST,
+		INVITEAPPLY.INVITE_NO,
+		INVITEAPPLY.VEHICLE_NO,
+		INVITEVEHICLE.APPLY_ORG_CODE,
+		INVITEVEHICLE.APPLY_ORG_NAME
+	</sql>
+	<!-- 根据车牌号查询外请车使用信息 -->
+	<select id="queryInviteVehicleInfo" parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.InviteVehicleQueryParmEntity" resultMap="InviteVehicleInfoResultMap">
+		SELECT
+			<include refid="RESULT_INVITE_VEHICLE_INFO"/> 
+			 FROM TFR.T_OPT_PASS_INVITE_APPLY INVITEAPPLY, TFR.T_OPT_INVITE_VEHICLE INVITEVEHICLE
+			 WHERE INVITEAPPLY.INVITE_NO = INVITEVEHICLE.INVITE_NO
+			 AND INVITEAPPLY.VEHICLE_NO=#{vehicleNo}
+			 AND INVITEAPPLY.USE_STATUS=#{useStatus}
+			 AND INVITEVEHICLE.STATUS=#{status}
+			 <if test="applyOrgCode != null and applyOrgCode != ''">
+			 	AND INVITEVEHICLE.APPLY_ORG_CODE=#{applyOrgCode}
+			 </if>
+	</select>
+	
+	<update id="editInviteVehicleInfo" parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.InviteVehicleEditParmEntity">
+		UPDATE TFR.T_OPT_PASS_INVITE_APPLY INVITEAPPLY
+				SET
+					USE_STATUS=#{useStatus}
+				WHERE
+					VEHICLE_NO=#{vehicleNo} AND INVITE_NO=#{inviteNo}
+	</update>
+</mapper>

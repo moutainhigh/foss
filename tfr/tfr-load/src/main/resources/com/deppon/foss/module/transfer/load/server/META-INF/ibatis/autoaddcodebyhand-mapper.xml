@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.foss.module.transfer.load.api.shared.domain.AutoAddCodeByHandEntity">
+	
+	<resultMap id="AddCodeByHandEntityResultMap" type="com.deppon.foss.module.transfer.load.api.shared.domain.AutoAddCodeByHandEntity">
+		<id property="id" column="ID" jdbcType="VARCHAR" />
+		<result property="waybillNo" column="WAYBILL_NO" jdbcType="VARCHAR" />
+		<result property="reason" column="REASON" jdbcType="VARCHAR" />
+		<result property="operatorCode" column="OPERATOR_CODE" jdbcType="VARCHAR" />
+		<result property="operatorName" column="OPERATOR_NAME" jdbcType="VARCHAR" />
+		<result property="createTime" column="CREATE_TIME" jdbcType="TIMESTAMP" />
+	</resultMap>
+	
+	<insert id="insertAddCodeByHand" parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.AutoAddCodeByHandEntity">
+		INSERT INTO tfr.t_opt_auto_add_code_byhand
+		/*中转-自动补码-新增一条待人工补码的记录*/
+			(ID,
+			WAYBILL_NO,
+			REASON,
+			OPERATOR_CODE,
+			OPERATOR_NAME,
+			CREATE_TIME)
+		VALUES
+			(#{id,jdbcType=VARCHAR},
+			#{waybillNo,jdbcType=VARCHAR},
+			#{reason,jdbcType=VARCHAR},
+			#{operatorCode,jdbcType=VARCHAR},
+			#{operatorName,jdbcType=VARCHAR},
+			#{createTime,jdbcType=TIMESTAMP})
+	</insert>
+	
+	<update id="deleteAddCodeByHand" parameterType="java.lang.String">
+		delete 
+		/*中转-自动补码-补码后将待人工补码记录删除*/
+		from tfr.t_opt_auto_add_code_byhand h where h.waybill_no = #{waybillNo}
+	</update>
+	
+	<select id="queryAddCodeByHand" parameterType="java.util.HashMap" resultMap="AddCodeByHandEntityResultMap">
+		select a.ID,
+			a.WAYBILL_NO,
+			a.REASON,
+			a.OPERATOR_CODE,
+			a.OPERATOR_NAME,
+			a.CREATE_TIME from tfr.t_opt_auto_add_code_byhand a 
+			where a.waybill_no=#{waybillNo,jdbcType=VARCHAR} 
+			 <if test="reason != null and reason != ''">
+			      and a.reason=#{reason,jdbcType=VARCHAR}
+			  </if>
+			
+	</select>
+	
+	<select id="searchAddCodeByHandByWaybillNo" parameterType="java.lang.String" resultType="java.lang.String">
+		select a.waybill_no from tfr.t_opt_auto_add_code_byhand a 
+			where a.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+	</select>
+	
+	<update id="updateAddCodeByHandByWaybillNo" parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.AutoAddCodeByHandEntity">
+		update tfr.t_opt_auto_add_code_byhand h
+			set h.operator_code = #{operatorCode,jdbcType=VARCHAR},
+	    	h.operator_name = #{operatorName,jdbcType=VARCHAR},
+	    	h.reason = #{reason,jdbcType=VARCHAR},
+	    	h.create_time = #{createTime,jdbcType=TIMESTAMP}
+	    	where h.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+	</update>
+</mapper>

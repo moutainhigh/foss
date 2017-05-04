@@ -1,0 +1,569 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.stl.BillPaymentEntityDao" >
+  
+  <resultMap id="PaymentDetialResultMap" type="com.deppon.foss.module.settlement.pay.api.shared.dto.BillPaymentAddDto" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="PAYMENT_NO" property="paymentNo" jdbcType="VARCHAR" />
+    <result column="PAYABLE_NO" property="payableNo" jdbcType="VARCHAR" />
+    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+
+    <result column="BILL_TYPE" property="billType" jdbcType="VARCHAR" />
+    <result column="SOURCE_BILL_NO" property="sourceBillNo" jdbcType="VARCHAR" />
+    <result column="AMOUNT" property="amount" jdbcType="DECIMAL" />
+    <result column="VERIFY_AMOUNT" property="verifyAmount" jdbcType="DECIMAL" />
+    <result column="UNVERIFY_AMOUNT" property="unverifyAmount" jdbcType="DECIMAL" />
+    <result column="BUSINESS_DATE" property="businessDate" jdbcType="TIMESTAMP" />
+    
+    <result column="NOTES" property="notes" jdbcType="VARCHAR" />
+    
+    <result column="pay_amount" property="currentPaymentAmount" jdbcType="DECIMAL" />
+  </resultMap>
+    
+    <!-- 按输入参数查询付款单 --> 
+    <select id="selectPaymentListByParams" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillPaymentQueryDto" >
+    SELECT /*按输入参数查询付款单*/
+    <include refid="Base_Column_List" />
+    from STL.T_STL_BILL_PAYMENT T
+    <where>
+     	<![CDATA[ ACCOUNT_DATE >=#{startAccountDate} AND ACCOUNT_DATE <#{endAccountDate} ]]>
+     	<if test="active!=null and active!='' ">
+			AND ACTIVE = #{active}
+	 	</if>	
+	 	<if test="isRedBack!=null and isRedBack!='' ">
+			AND IS_RED_BACK = #{isRedBack}
+	 	</if>	
+	 	<if test="paymentOrgCode!=null and paymentOrgCode!='' ">
+			AND PAYMENT_ORG_CODE = #{paymentOrgCode}
+	 	</if>
+	  	<if test="paymentType!=null and paymentType!='' ">
+			AND PAYMENT_TYPE = #{paymentType}
+	 	</if>
+	  	<if test="remitStatus!=null and remitStatus!='' ">
+			AND REMIT_STATUS = #{remitStatus}
+	 	</if>
+	 	<if test="customerCode!=null and customerCode!='' ">
+			AND CUSTOMER_CODE = #{customerCode}
+	 	</if>
+	 	<if test="isInit!=null and isInit!=''">
+			AND IS_INIT = #{isInit}
+		</if>
+	 	AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = T.PAYMENT_ORG_CODE<!-- 登录者部门等于核销单部门过滤 -->
+     			)
+    </where>  
+ 	</select>
+ 	
+ 	
+ 	 <!-- 按输入参数查询付款单总条数、总金额 --> 
+ 	<resultMap id="BillPaymentTotalResultMap" type="com.deppon.foss.module.settlement.pay.api.shared.dto.BillPaymentResultDto" >
+    	<result column="PAYMENT_TOTAL_ROWS" property="paymentTotalRows" jdbcType="DECIMAL" />
+    	<result column="PAYMENT_TOTAL_AMOUNT" property="paymentTotalAmount" jdbcType="DECIMAL" />
+  	</resultMap>
+ 	 
+    <select id="selectPaymentTotalByParams" resultMap="BillPaymentTotalResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillPaymentQueryDto" >
+    SELECT /*按输入参数查询付款单总条数、总金额*/
+    	COUNT(T.ID) AS PAYMENT_TOTAL_ROWS,
+    	SUM(T.AMOUNT)/100 AS PAYMENT_TOTAL_AMOUNT
+    from STL.T_STL_BILL_PAYMENT T
+    <where>
+     	<![CDATA[ T.ACCOUNT_DATE >=#{startAccountDate} AND T.ACCOUNT_DATE <#{endAccountDate} ]]>
+     	<if test="active!=null and active!='' ">
+			AND T.ACTIVE = #{active}
+	 	</if>	
+	 	<if test="isRedBack!=null and isRedBack!='' ">
+			AND T.IS_RED_BACK = #{isRedBack}
+	 	</if>	
+	 	<if test="paymentOrgCode!=null and paymentOrgCode!='' ">
+			AND T.PAYMENT_ORG_CODE = #{paymentOrgCode}
+	 	</if>
+	  	<if test="paymentType!=null and paymentType!='' ">
+			AND T.PAYMENT_TYPE = #{paymentType}
+	 	</if>
+	  	<if test="remitStatus!=null and remitStatus!='' ">
+			AND T.REMIT_STATUS = #{remitStatus}
+	 	</if>
+	 	<if test="customerCode!=null and customerCode!='' ">
+			AND T.CUSTOMER_CODE = #{customerCode}
+	 	</if>
+	 	<if test="isInit!=null and isInit!=''">
+			AND T.IS_INIT = #{isInit}
+		</if>
+	 	AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = T.PAYMENT_ORG_CODE<!-- 登录者部门等于核销单部门过滤 -->
+     			)
+    </where>  
+ 	</select>
+    
+    
+     <!-- 按付款单号查询付款单 --> 
+    <select id="selectPaymentListByPaymentNos" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillPaymentQueryDto" >
+    SELECT /*按付款单号查询付款单*/
+    <include refid="Base_Column_List" />
+    from STL.T_STL_BILL_PAYMENT T
+    <where>
+     		PAYMENT_NO IN
+     		<foreach collection="paymentNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+			</foreach>
+     	<if test="active!=null and active!='' ">
+			AND ACTIVE = #{active}
+	 	</if>	
+	 	<if test="isRedBack!=null and isRedBack!='' ">
+			AND IS_RED_BACK = #{isRedBack}
+	 	</if>	
+	 	<if test="paymentOrgCode!=null and paymentOrgCode!='' ">
+			AND PAYMENT_ORG_CODE = #{paymentOrgCode}
+	 	</if>
+	 	AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = T.PAYMENT_ORG_CODE<!-- 登录者部门等于核销单部门过滤 -->
+     			)
+    </where>  
+ 	</select>
+   
+    <!-- 按运单号查询付款单 --> 
+    <select id="selectPaymentListByWaybillNos" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillPaymentQueryDto" >
+    SELECT /*按运单号查询付款单 -*/
+  		T1.ID, 
+  		T1.PAYMENT_NO, 
+  		T1.CURRENCY_CODE, 
+  		T1.AMOUNT/100 AMOUNT, 
+  		T1.CUSTOMER_CODE, 
+  		T1.CUSTOMER_NAME, 
+  		T1.WORKFLOW_NO,
+  		T1.WORKFLOW_TYPE, 
+  		T1.REMIT_STATUS, 
+  		T1.AUDIT_STATUS, 
+  		T1.SOURCE_BILL_NO, 
+  		T1.SOURCE_BILL_TYPE, 
+  		T1.PAYMENT_ORG_CODE, 
+  		T1.PAYMENT_ORG_NAME, 
+    	T1.PAYMENT_COMPANY_CODE, 
+    	T1.PAYMENT_COMPANY_NAME, 
+    	T1.ACTIVE, 
+    	T1.IS_RED_BACK, 
+    	T1.CREATE_USER_CODE, 
+    	T1.CREATE_USER_NAME, 
+    	T1.AUDIT_USER_CODE, 
+    	T1.AUDIT_USER_NAME, 
+    	T1.MODIFY_USER_CODE, 
+    	T1.MODIFY_USER_NAME, 
+    	T1.DISABLE_USER_CODE, 
+    	T1.DISABLE_USER_NAME, 
+    	T1.BUSINESS_DATE, 
+    	T1.ACCOUNT_DATE, 
+    	T1.CREATE_TIME, 
+    	T1.MODIFY_TIME, 
+    	T1.DISABLE_TIME, 
+    	T1.BILL_TYPE, 
+    	T1.IS_INIT, 
+    	T1.PAYMENT_TYPE, 
+    	T1.MOBILE_PHONE, 
+    	T1.ACCOUNT_NO, 
+    	T1.PAYEE_NAME, 
+    	T1.ACCOUNT_TYPE, 
+    	T1.PROVINCE_CODE, 
+    	T1.CITY_CODE, 
+    	T1.BANK_HQ_NAME, 
+    	T1.BANK_BRANCH_NAME, 
+    	T1.BANK_BRANCH_CODE, 
+    	T1.AUDIT_OPINION, 
+    	T1.DISABLE_OPINION, 
+    	T1.APPLY_WORK_FLOW_NO, 
+    	T1.NOTES, 
+    	T1.VERSION_NO,
+    	T1.PROVINCE_NAME, 
+    	T1.BANK_HQ_CODE, 
+    	T1.CITY_NAME,
+    	T1.CREATE_TYPE
+	FROM (
+           SELECT P1.*
+           FROM STL.T_STL_BILL_PAYMENT P1, STL.T_STL_BILL_PAYABLE A1
+           WHERE P1.PAYMENT_NO = A1.PAYMENT_NO(+)
+                 AND  A1.WAYBILL_NO IN 
+                <foreach collection="waybillNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        	#{item} 
+				</foreach> 
+       UNION           
+           SELECT P2.*
+           FROM STL.T_STL_BILL_PAYMENT P2, STL.T_STL_BILL_PAYMENT_D D2
+           WHERE P2.PAYMENT_NO = D2.PAYMENT_NO
+                 AND  D2.WAYBILL_NO IN 
+                 <foreach collection="waybillNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        	#{item} 
+				 </foreach> 
+	) T1
+    <where>
+    	EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = T1.PAYMENT_ORG_CODE<!-- 登录者部门等于核销单部门过滤 -->
+     			)	
+     	<if test="active!=null and active!='' ">
+			AND T1.ACTIVE = #{active}
+	 	</if>	
+	 	<if test="isRedBack!=null and isRedBack!='' ">
+			AND T1.IS_RED_BACK = #{isRedBack}
+	 	</if>	
+	 	<if test="paymentOrgCode!=null and paymentOrgCode!='' ">
+			AND T1.PAYMENT_ORG_CODE = #{paymentOrgCode}
+	 	</if>
+	 	
+    </where>  
+ 	</select>
+ 	
+ 	 <!-- 根据来源单号集合和部门编码集合，查询付款单信息  -->
+  <select id="selectPaymentListBySourceBillNos" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillPaymentQueryDto" >
+    SELECT /*根据来源单号集合和部门编码集合，查询付款单信息  */
+   		T1.ID, 
+  		T1.PAYMENT_NO, 
+  		T1.CURRENCY_CODE, 
+  		T1.AMOUNT/100 AMOUNT, 
+  		T1.CUSTOMER_CODE, 
+  		T1.CUSTOMER_NAME, 
+  		T1.WORKFLOW_NO,
+  		T1.WORKFLOW_TYPE, 
+  		T1.REMIT_STATUS, 
+  		T1.AUDIT_STATUS, 
+  		T1.SOURCE_BILL_NO, 
+  		T1.SOURCE_BILL_TYPE, 
+  		T1.PAYMENT_ORG_CODE, 
+  		T1.PAYMENT_ORG_NAME, 
+    	T1.PAYMENT_COMPANY_CODE, 
+    	T1.PAYMENT_COMPANY_NAME, 
+    	T1.ACTIVE, 
+    	T1.IS_RED_BACK, 
+    	T1.CREATE_USER_CODE, 
+    	T1.CREATE_USER_NAME, 
+    	T1.AUDIT_USER_CODE, 
+    	T1.AUDIT_USER_NAME, 
+    	T1.MODIFY_USER_CODE, 
+    	T1.MODIFY_USER_NAME, 
+    	T1.DISABLE_USER_CODE, 
+    	T1.DISABLE_USER_NAME, 
+    	T1.BUSINESS_DATE, 
+    	T1.ACCOUNT_DATE, 
+    	T1.CREATE_TIME, 
+    	T1.MODIFY_TIME, 
+    	T1.DISABLE_TIME, 
+    	T1.BILL_TYPE, 
+    	T1.IS_INIT, 
+    	T1.PAYMENT_TYPE, 
+    	T1.MOBILE_PHONE, 
+    	T1.ACCOUNT_NO, 
+    	T1.PAYEE_NAME, 
+    	T1.ACCOUNT_TYPE, 
+    	T1.PROVINCE_CODE, 
+    	T1.CITY_CODE, 
+    	T1.BANK_HQ_NAME, 
+    	T1.BANK_BRANCH_NAME, 
+    	T1.BANK_BRANCH_CODE, 
+    	T1.AUDIT_OPINION, 
+    	T1.DISABLE_OPINION, 
+    	T1.APPLY_WORK_FLOW_NO, 
+    	T1.NOTES, 
+    	T1.VERSION_NO,
+    	T1.PROVINCE_NAME, 
+    	T1.BANK_HQ_CODE, 
+    	T1.CITY_NAME,
+    	T1.CREATE_TYPE
+    FROM (
+         SELECT P1.*
+           FROM STL.T_STL_BILL_PAYMENT P1, STL.T_STL_BILL_DEPOSIT_RECEIVED R1
+           WHERE P1.PAYMENT_NO = R1.PAYMENT_NO(+)
+                 AND R1.DEPOSIT_RECEIVED_NO IN 
+                 <foreach collection="sourceBillNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+       	UNION
+           SELECT P2.*
+           FROM STL.T_STL_BILL_PAYMENT P2, STL.T_STL_BILL_PAYABLE A2
+           WHERE P2.PAYMENT_NO = A2.PAYMENT_NO(+)
+                 AND  A2.PAYABLE_NO IN 
+                 <foreach collection="sourceBillNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+       UNION           
+           SELECT P3.*
+           FROM STL.T_STL_BILL_PAYMENT P3,STL.T_STL_BILL_PAYMENT_D D3
+           WHERE P3.PAYMENT_NO = D3.PAYMENT_NO
+           		AND D3.SOURCE_BILL_NO IN 
+           	<foreach collection="sourceBillNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>   
+       UNION
+           SELECT P4.*
+           FROM STL.T_STL_BILL_PAYMENT P4,STL.T_STL_BILL_PAYMENT_D D4
+           WHERE P4.PAYMENT_NO = D4.PAYMENT_NO
+           		AND D4.SRC_SOURCE_BILL_NO IN 
+           		<foreach collection="sourceBillNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+ 	 ) T1
+    
+    <where>	
+    	EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = T1.PAYMENT_ORG_CODE<!-- 登录者部门等于核销单部门过滤 -->
+     			)
+		<if test="active!=null and active!='' ">
+			AND T1.ACTIVE = #{active}
+	 	</if>	
+	 	<if test="isRedBack!=null and isRedBack!='' ">
+			AND T1.IS_RED_BACK = #{isRedBack}
+	 	</if>	
+	 	<if test="paymentOrgCode!=null and paymentOrgCode!='' ">
+			AND T1.PAYMENT_ORG_CODE = #{paymentOrgCode}
+	 	</if>
+	 		
+    </where>  
+ 	</select>
+
+
+	 <!-- 根据来源单号集合和部门编码集合，查询付款单信息  -->
+  <select id="queryPaymentListBySourceNoAsPayable" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillPaymentQueryDto" >
+    SELECT /*根据来源单号集合和部门编码集合，查询付款单信息  */
+   		T1.ID, 
+  		T1.PAYMENT_NO, 
+  		T1.CURRENCY_CODE, 
+  		T1.AMOUNT/100 AMOUNT, 
+  		T1.CUSTOMER_CODE, 
+  		T1.CUSTOMER_NAME, 
+  		T1.WORKFLOW_NO,
+  		T1.WORKFLOW_TYPE, 
+  		T1.REMIT_STATUS, 
+  		T1.AUDIT_STATUS, 
+  		T1.SOURCE_BILL_NO, 
+  		T1.SOURCE_BILL_TYPE, 
+  		T1.PAYMENT_ORG_CODE, 
+  		T1.PAYMENT_ORG_NAME, 
+    	T1.PAYMENT_COMPANY_CODE, 
+    	T1.PAYMENT_COMPANY_NAME, 
+    	T1.ACTIVE, 
+    	T1.IS_RED_BACK, 
+    	T1.CREATE_USER_CODE, 
+    	T1.CREATE_USER_NAME, 
+    	T1.AUDIT_USER_CODE, 
+    	T1.AUDIT_USER_NAME, 
+    	T1.MODIFY_USER_CODE, 
+    	T1.MODIFY_USER_NAME, 
+    	T1.DISABLE_USER_CODE, 
+    	T1.DISABLE_USER_NAME, 
+    	T1.BUSINESS_DATE, 
+    	T1.ACCOUNT_DATE, 
+    	T1.CREATE_TIME, 
+    	T1.MODIFY_TIME, 
+    	T1.DISABLE_TIME, 
+    	T1.BILL_TYPE, 
+    	T1.IS_INIT, 
+    	T1.PAYMENT_TYPE, 
+    	T1.MOBILE_PHONE, 
+    	T1.ACCOUNT_NO, 
+    	T1.PAYEE_NAME, 
+    	T1.ACCOUNT_TYPE, 
+    	T1.PROVINCE_CODE, 
+    	T1.CITY_CODE, 
+    	T1.BANK_HQ_NAME, 
+    	T1.BANK_BRANCH_NAME, 
+    	T1.BANK_BRANCH_CODE, 
+    	T1.AUDIT_OPINION, 
+    	T1.DISABLE_OPINION, 
+    	T1.APPLY_WORK_FLOW_NO, 
+    	T1.NOTES, 
+    	T1.VERSION_NO,
+    	T1.PROVINCE_NAME, 
+    	T1.BANK_HQ_CODE, 
+    	T1.CITY_NAME,
+    	T1.CREATE_TYPE
+   
+       FROM STL.T_STL_BILL_PAYMENT T1,STL.T_STL_BILL_PAYMENT_D D3
+       WHERE T1.PAYMENT_NO = D3.PAYMENT_NO
+       		AND D3.SOURCE_BILL_NO IN 
+       	<foreach collection="sourceBillNos"  index="index" item="item"  open="(" separator="," close=")">  
+		        #{item} 
+			</foreach>   
+			AND T1.ACTIVE = #{active}
+  
+    
+ 	</select>
+ 	
+  <!-- 根据工作流号，查询付款单信息  -->
+  <select id="selectPaymentListByWorkFlowNos" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillPaymentQueryDto" >
+    SELECT /*根据来源单号集合和部门编码集合，查询付款单信息  */
+   		T1.ID, 
+  		T1.PAYMENT_NO, 
+  		T1.CURRENCY_CODE, 
+  		T1.AMOUNT/100 AMOUNT, 
+  		T1.CUSTOMER_CODE, 
+  		T1.CUSTOMER_NAME, 
+  		T1.WORKFLOW_NO,
+  		T1.WORKFLOW_TYPE, 
+  		T1.REMIT_STATUS, 
+  		T1.AUDIT_STATUS, 
+  		T1.SOURCE_BILL_NO, 
+  		T1.SOURCE_BILL_TYPE, 
+  		T1.PAYMENT_ORG_CODE, 
+  		T1.PAYMENT_ORG_NAME, 
+    	T1.PAYMENT_COMPANY_CODE, 
+    	T1.PAYMENT_COMPANY_NAME, 
+    	T1.ACTIVE, 
+    	T1.IS_RED_BACK, 
+    	T1.CREATE_USER_CODE, 
+    	T1.CREATE_USER_NAME, 
+    	T1.AUDIT_USER_CODE, 
+    	T1.AUDIT_USER_NAME, 
+    	T1.MODIFY_USER_CODE, 
+    	T1.MODIFY_USER_NAME, 
+    	T1.DISABLE_USER_CODE, 
+    	T1.DISABLE_USER_NAME, 
+    	T1.BUSINESS_DATE, 
+    	T1.ACCOUNT_DATE, 
+    	T1.CREATE_TIME, 
+    	T1.MODIFY_TIME, 
+    	T1.DISABLE_TIME, 
+    	T1.BILL_TYPE, 
+    	T1.IS_INIT, 
+    	T1.PAYMENT_TYPE, 
+    	T1.MOBILE_PHONE, 
+    	T1.ACCOUNT_NO, 
+    	T1.PAYEE_NAME, 
+    	T1.ACCOUNT_TYPE, 
+    	T1.PROVINCE_CODE, 
+    	T1.CITY_CODE, 
+    	T1.BANK_HQ_NAME, 
+    	T1.BANK_BRANCH_NAME, 
+    	T1.BANK_BRANCH_CODE, 
+    	T1.AUDIT_OPINION, 
+    	T1.DISABLE_OPINION, 
+    	T1.APPLY_WORK_FLOW_NO, 
+    	T1.NOTES, 
+    	T1.VERSION_NO,
+    	T1.PROVINCE_NAME, 
+    	T1.BANK_HQ_CODE, 
+    	T1.CITY_NAME,
+    	T1.CREATE_TYPE
+    FROM STL.T_STL_BILL_PAYMENT T1
+    WHERE (
+    	T1.WORKFLOW_NO IN 
+    	 	<foreach collection="workFlowNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+		 	</foreach>
+    	OR T1.APPLY_WORK_FLOW_NO IN 
+    		<foreach collection="workFlowNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+		 	</foreach>
+		) 	
+    	AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = T1.PAYMENT_ORG_CODE<!-- 登录者部门等于核销单部门过滤 -->
+     			)
+ 	</select>
+ 	
+ 	<!-- 按条件参数分页查询付款单明细总条数 -->
+	<select id="selectPaymentDetialListByParamsSize"
+		parameterType="java.util.Map" 
+		resultType="long">
+	select
+	(select /*按条件参数分页查询代打木架付款单明细 */
+	count(1)
+	from
+	stl.t_stl_bill_payment pmt
+	left
+	join stl.t_stl_bill_payment_d pmtd on
+	pmt.payment_no = pmtd.payment_no
+	and pmtd.source_bill_type =
+	#{queryPayableDto.sourceBillTypeFkd}
+	and
+	pmt.active = #{dto.active} and
+	pmt.is_red_back = #{dto.isRedBack}
+	join
+	stl.t_stl_bill_payable pay on
+	pmtd.source_bill_no = pay.payable_no
+	and
+	pay.is_red_back =
+	#{queryPayableDto.isRedBack}
+	where pmtd.payment_no =
+	#{queryPayableDto.paymentNo})
+	+
+	(select
+	count(1)
+	from
+	stl.t_stl_bill_payment pmt
+	left join
+	stl.t_stl_bill_payment_d pmtd on
+	pmt.payment_no = pmtd.payment_no
+	and
+	pmtd.source_bill_type =
+	#{queryDepositReceivedDto.sourceBillTypeFkd}
+	and pmt.active =
+	#{dto.active} and pmt.is_red_back = #{dto.isRedBack}
+	join
+	stl.t_stl_bill_deposit_received dpr on
+	pmtd.source_bill_no =
+	dpr.deposit_received_no
+	and dpr.is_red_back =
+	#{queryDepositReceivedDto.isRedBack}
+	where pmtd.payment_no =
+	#{queryDepositReceivedDto.paymentNo})
+	from dual
+ 	</select>
+ 	
+ 	<!-- 按条件参数分页查询付款单明细  -->
+  <select id="selectPaymentDetialListByParams" resultMap="PaymentDetialResultMap" parameterType="java.util.Map" >
+	select/*按条件参数分页查询代打木架付款单明细 */
+	pmt.id,
+	pmt.payment_no,
+	pay.payable_no,
+	pay.bill_type,
+	pay.business_date,
+	pay.amount /100 amount,
+	pay.unverify_amount /100 unverify_amount,
+	pay.verify_amount /100 verify_amount,
+	pay.notes,
+	pay.waybill_no,
+	pay.source_bill_no,
+	pmtd.pay_amount /100 pay_amount
+	from stl.t_stl_bill_payment pmt
+	left join stl.t_stl_bill_payment_d pmtd on
+	pmt.payment_no = pmtd.payment_no
+	and pmtd.source_bill_type = #{queryPayableDto.sourceBillTypeFkd}
+	and pmt.active = #{dto.active} and pmt.is_red_back = #{dto.isRedBack}
+	join stl.t_stl_bill_payable pay on
+	pmtd.source_bill_no = pay.payable_no
+	and pay.is_red_back = #{queryPayableDto.isRedBack}
+	where pmtd.payment_no = #{queryPayableDto.paymentNo}
+	union all
+	select
+	pmt.id,
+	pmt.payment_no,
+	dpr.deposit_received_no as payable_no,
+	dpr.bill_type,
+	dpr.business_date,
+	dpr.amount /100 amount, 
+	dpr.unverify_amount /100 unverify_amount,
+	dpr.verify_amount /100 verify_amount,
+	dpr.notes,
+	'' as waybill_no,
+	'N/A' as source_bill_no,
+	pmtd.pay_amount /100 pay_amount
+	from stl.t_stl_bill_payment pmt
+	left join stl.t_stl_bill_payment_d pmtd on
+	pmt.payment_no = pmtd.payment_no
+	and pmtd.source_bill_type = #{queryDepositReceivedDto.sourceBillTypeFkd}
+	and pmt.active = #{dto.active} and pmt.is_red_back = #{dto.isRedBack}
+	join stl.t_stl_bill_deposit_received dpr on
+	pmtd.source_bill_no = dpr.deposit_received_no
+	and dpr.is_red_back = #{queryDepositReceivedDto.isRedBack}
+	where pmtd.payment_no = #{queryDepositReceivedDto.paymentNo}
+ 	</select>
+</mapper>

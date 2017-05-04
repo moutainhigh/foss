@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.tfr.waybillfromMachine" >
+	<resultMap type="com.deppon.foss.module.transfer.common.api.shared.domain.WaybillFromMachineEntity" id="findMap">
+		<id column="ID" property="id"/>
+		<result column="WAYBILLNO" property="waybillNo"/>
+		<result column="CREATETIME" property="createTime"/>
+		<result column="FINISHTIME" property="finishTime"/>
+		<result column="STATUS" property="status"/>
+		<result column="ISOVERWEIGHT" property="isOverWeight"/>
+	</resultMap>
+	<!-- 根据条件查询所有没有处理的信息 -->
+	<select id="findByCondition" parameterType="HashMap" resultMap="findMap" >
+		select * from tfr.t_opt_waybillfrommachine  wf
+		<where>
+		    wf.finishtime is null
+			<if test="waybillNo!=null and waybillNo!=''">
+			 and wf.waybillno = #{waybillNo,jdbcType=VARCHAR}
+			</if>
+			<if test="status!=null and status!=''">
+				and wf.status = #{status,jdbcType=VARCHAR}
+			</if>
+			<if test="isOverWeight!=null and isOverWeight!=''">
+			    and wf.isoverweight = #{isOverWeight,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</select>
+	<!-- 插入一条信息，有两个字段为空 -->
+	<insert id="adddNewData" parameterType="com.deppon.foss.module.transfer.common.api.shared.domain.WaybillFromMachineEntity">
+	 insert into tfr.t_opt_waybillfrommachine
+	 (id,waybillno,createtime,status) 
+	 values
+	 (
+	 	#{id,jdbcType=VARCHAR},
+	 	#{waybillNo,jdbcType=VARCHAR},
+	 	#{createTime,jdbcType=TIMESTAMP},
+	 	#{status,jdbcType=VARCHAR}
+	 )
+	</insert>
+	<!-- 处理完成，或者不满足上报的条件就更新信息 -->
+	<update id="updateData" parameterType="com.deppon.foss.module.transfer.common.api.shared.domain.WaybillFromMachineEntity">
+		update tfr.T_OPT_WAYBILLFROMMACHINE wf 
+		set 
+		    wf.finishtime=#{finishTime,jdbcType=TIMESTAMP},
+			wf.status=#{status,jdbcType=VARCHAR},
+			wf.isoverweight=#{isOverWeight,jdbcType=VARCHAR} 
+			where wf.waybillno=#{waybillNo,jdbcType=VARCHAR}
+	</update>
+	<!-- 删除一条信息 -->
+	<delete id="deleteByWaybill" parameterType="String">
+	  delete from tfr.T_OPT_WAYBILLFROMMACHINE wf 
+	  where wf.waybillno=#{waybillNo,jdbcType=VARCHAR}
+	</delete>
+</mapper>

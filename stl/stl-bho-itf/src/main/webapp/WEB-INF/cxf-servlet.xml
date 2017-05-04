@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cxf="http://cxf.apache.org/core"
+	xmlns:jaxws="http://cxf.apache.org/jaxws" xmlns:jaxrs="http://cxf.apache.org/jaxrs"
+	xsi:schemaLocation="
+		      http://www.springframework.org/schema/beans
+		      http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		      http://cxf.apache.org/core
+		      http://cxf.apache.org/schemas/core.xsd
+		      http://cxf.apache.org/jaxws
+		      http://cxf.apache.org/schemas/jaxws.xsd
+		      http://cxf.apache.org/jaxrs
+		      http://cxf.apache.org/schemas/jaxrs.xsd"
+	default-autowire="byName">
+
+	<!-- Load CXF modules from cxf.jar -->
+	<import resource="classpath:META-INF/cxf/cxf.xml" />
+	<import resource="classpath:META-INF/cxf/cxf-servlet.xml" />
+
+	<bean id="accountServiceImpl"
+		class="com.deppon.foss.module.settlement.bho.server.ws.AccountServiceImpl">
+		<property name="codCommonService" ref="codCommonService"></property>
+	</bean>
+
+	<bean id="ccmanagerServiceImpl"
+		class="com.deppon.foss.module.settlement.bho.server.ws.CcmanagerServiceImpl">
+		<property name="codCommonService" ref="codCommonService"></property>
+	</bean>
+
+	<!-- web service -->
+	<jaxws:endpoint id="accountService" implementor="#accountServiceImpl"
+		address="/accountService">
+		<jaxws:inInterceptors>
+			<bean
+				class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingInInterceptor" />
+		</jaxws:inInterceptors>
+		<jaxws:outInterceptors>
+			<bean
+				class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingOutInterceptor" />
+		</jaxws:outInterceptors>
+	</jaxws:endpoint>
+
+	<!-- web service -->
+	<jaxws:endpoint id="ccmanagerService" implementor="#ccmanagerServiceImpl"
+		address="/ccmanagerService">
+		<jaxws:inInterceptors>
+			<bean
+				class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingInInterceptor" />
+		</jaxws:inInterceptors>
+		<jaxws:outInterceptors>
+			<bean
+				class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingOutInterceptor" />
+		</jaxws:outInterceptors>
+	</jaxws:endpoint>
+
+	<bean id="dopRepaymentServiceImpl"
+		class="com.deppon.foss.module.settlement.bho.server.ws.DopRepaymentServiceImpl" />
+	<!-- 配置restful方式的web服务 -->
+	<jaxrs:server id="dopRepaymentServiceImplWS" address="/dopRepaymentServiceImpl">
+		<jaxrs:serviceBeans>
+			<ref bean="dopRepaymentServiceImpl" />
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors><!-- 加入消息拦截器 -->
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	<!-- rest end -->
+
+	<!--@author 310970 曹朋 -->
+	<bean id="synGreenHandWrapList" class="com.deppon.foss.module.settlement.bho.server.ws.SynGreenHandWrapList">
+	</bean>
+	<jaxrs:server id="synGreenHandWrapListID" address="/dealFinanceBill">
+		<jaxrs:serviceBeans>
+			<ref bean="synGreenHandWrapList"/>
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+		<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+
+	<!-- 家装应收应付单生成 -->
+	<bean id="dopPayAndRecServiceImpl"
+		class="com.deppon.foss.module.settlement.bho.server.ws.DopPayAndRecServiceImpl"></bean>
+	<!-- 配置Restful方式的服务 -->
+	<jaxrs:server id="dopPayAndRecServiceImplWS"  address="/dopPayAndRecServiceImpl">
+		<!-- 引用的Bean -->
+		<jaxrs:serviceBeans>
+			<ref bean="dopPayAndRecServiceImpl" />
+		</jaxrs:serviceBeans>
+
+		<jaxrs:inInterceptors><!-- 加入消息拦截器 -->
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	
+	<!-- 支付宝网关支付 -->
+	<bean id="gatewayPaymentServiceImpl"
+		  class="com.deppon.foss.module.settlement.bho.server.ws.GatewayPaymentServiceImpl"></bean>
+	<!-- 配置Restful方式的服务 -->
+	<jaxrs:server id="gatewayPaymentServiceImplWS"  address="/v1/foss/gatewayPaymentServiceImpl">
+		<!-- 引用的Bean -->
+		<jaxrs:serviceBeans>
+			<ref bean="gatewayPaymentServiceImpl" />
+		</jaxrs:serviceBeans>
+
+		<jaxrs:inInterceptors><!-- 加入消息拦截器 -->
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	<!--  -->
+	<!-- 根据小票编号返回异常货类型的小票金额 -->
+	<bean id="abnormalBillAmountCalculatedImpl"
+		class="com.deppon.foss.module.settlement.qms.server.rs.impl.AbnormalBillAmountCalculatedImpl" />
+	<jaxrs:server id="abnormalBillAmountCalculatedWS" address="/abnormalBillAmountCalculated">
+		<jaxrs:serviceBeans>
+			<ref bean="abnormalBillAmountCalculatedImpl" />
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors><!-- 加入消息拦截器 -->
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+</beans>

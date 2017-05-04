@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.bse.bse-baseinfo.commonTransferCenter">
+	<!-- 外场 -->
+	<resultMap id="resultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.TransferCenterEntity">
+		<id column="ID" jdbcType="VARCHAR" property="id" />
+		<result column="ORG_CODE" jdbcType="VARCHAR" property="orgCode" />
+		<result column="CODE" jdbcType="VARCHAR" property="code" />
+		<result column="NAME" jdbcType="VARCHAR" property="name" />
+		<result column="PINYIN" jdbcType="VARCHAR" property="pinYin" />
+		<result column="SIMPLE_CODE" jdbcType="VARCHAR" property="simpleCode" />
+		<result column="VEHICLE_ASSEMBLE" jdbcType="TIMESTAMP" property="vehicleAssemble" />
+		<result column="OUT_ASSEMBLE" jdbcType="TIMESTAMP" property="outAssemble" />
+		<result column="PACKING_WOOD" jdbcType="CHAR" property="packingWood" />
+		<result column="TRANSFER" jdbcType="VARCHAR" property="transfer" />
+		<result column="SORTING_MACHINE" jdbcType="VARCHAR" property="sortingMachine" />
+		<result column="GOODS_AREA" jdbcType="VARCHAR" property="goodsArea" />
+		<result column="PLAT_AREA" jdbcType="VARCHAR" property="platArea" /> 
+		<result column="PLAT_TYPE" jdbcType="TIMESTAMP" property="platType" />
+		<result column="PARENT_ORG_ID" jdbcType="TIMESTAMP" property="parentOrgId" />
+		<result column="CREATE_TIME" jdbcType="CHAR" property="createTime" />
+		<result column="MODIFY_TIME" jdbcType="VARCHAR" property="modifyTime" />
+		<result column="ACTIVE" jdbcType="VARCHAR" property="active" />
+		<result column="CREATE_USER_CODE" jdbcType="VARCHAR" property="createUserCode" />
+		<result column="MODIFY_USER_CODE" jdbcType="VARCHAR" property="modifyUserCode" /> 
+		<result column="VERSION_NO" jdbcType="VARCHAR" property="versionNo" />
+		<result column="IS_HAVE_WAITFORAREA" jdbcType="CHAR" property="isHaveWaitforarea" /> 
+	</resultMap>
+	<!-- 数据字段 -->
+	<sql id="query_columns">
+		ID, 
+		ORG_CODE, 
+		CODE, 
+		NAME, 
+		PINYIN,
+		SIMPLE_CODE, 
+		VEHICLE_ASSEMBLE,
+		OUT_ASSEMBLE, 
+		PACKING_WOOD,
+		TRANSFER, 
+		SORTING_MACHINE, 
+		GOODS_AREA, 
+		PLAT_AREA,
+		PLAT_TYPE,
+		PARENT_ORG_ID,
+		CREATE_TIME,
+		MODIFY_TIME,
+		ACTIVE,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE,
+		VERSION_NO,
+		IS_HAVE_WAITFORAREA
+	</sql>
+	<!-- 查询外场条件 -->
+	<sql id="query_params">
+		<where>
+			AND ACTIVE = #{active,jdbcType=CHAR}
+			<if test="queryParam != null and queryParam != ''">
+				AND 
+				( 
+					CODE like CONCAT(CONCAT('%',#{queryParam}),'%')
+				 OR 	
+				 	NAME like CONCAT(CONCAT('%',#{queryParam}),'%')
+				 OR 
+				 	PINYIN	like CONCAT(CONCAT('%',#{queryParam}),'%')
+				 OR 
+				 	SIMPLE_CODE	like CONCAT(CONCAT('%',#{queryParam}),'%')
+				 OR 	
+				 	ORG_CODE like CONCAT(CONCAT('%',#{queryParam}),'%')
+				) 
+			</if> 
+			<if test="name != null and name != ''">
+				AND NAME = #{name,jdbcType=VARCHAR}
+			</if>
+			<if test="code != null and code != ''">
+				AND CODE = #{code,jdbcType=VARCHAR}
+			</if>
+			<if test="orgCode != null and orgCode != ''">
+				AND ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+			</if>
+			<if test="platType != null and platType != ''">
+				AND PLAT_TYPE = #{platType,jdbcType=VARCHAR}
+			</if>
+			<if test="orgCodes != null and  orgCodes.size() >0">
+				 AND ORG_CODE IN
+					<foreach collection="orgCodes" index="index" item="item" open="(" separator="," close=")">
+						#{item}
+					</foreach>
+				</if>
+			<if test="parentOrgId != null and parentOrgId != ''">
+				AND PARENT_ORG_ID = #{parentOrgId,jdbcType=VARCHAR}
+			</if>
+			AND (
+			<choose>
+				<when test="isFlag != null and isFlag != '' ">
+				  1 != 1
+				</when>
+				<otherwise> 
+					1=1
+				</otherwise>
+			</choose>
+	  		<if test="vehicleAssemble != null and vehicleAssemble != ''">
+				OR VEHICLE_ASSEMBLE = #{vehicleAssemble,jdbcType=VARCHAR}
+			</if>
+			<if test="outAssemble != null and outAssemble != ''">
+				OR OUT_ASSEMBLE = #{outAssemble,jdbcType=VARCHAR}
+			</if>
+			<if test="packingWood != null and packingWood != ''">
+				OR PACKING_WOOD = #{packingWood,jdbcType=VARCHAR}
+			</if> 
+			<if test="transfer != null and transfer != ''">
+				OR TRANSFER = #{transfer,jdbcType=VARCHAR}
+			</if>
+			<if test="sortingMachine != null and sortingMachine != ''">
+				OR SORTING_MACHINE = #{sortingMachine,jdbcType=VARCHAR}
+			</if>
+			)
+		</where>
+	</sql>
+	
+	<!-- 分页查询外场 -->
+	<select id="queryTransferCenterByCondition" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.TransferCenterDto" resultMap="resultMap">
+		SELECT
+		/** 综合:分页查询外场 **/
+		<include refid="query_columns" />
+		FROM BSE.T_BAS_TRANSFER_CENTER  
+		<include refid="query_params" />
+	</select>
+ 
+	<!-- 统计外场总记录数 -->
+	<select id="queryRecordCount" resultType="Long" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.TransferCenterDto">
+	 	SELECT/** 综合:统计外场总记录数 **/ COUNT(*) FROM BSE.T_BAS_TRANSFER_CENTER 
+        <include refid="query_params" />
+	</select>
+ 
+</mapper>

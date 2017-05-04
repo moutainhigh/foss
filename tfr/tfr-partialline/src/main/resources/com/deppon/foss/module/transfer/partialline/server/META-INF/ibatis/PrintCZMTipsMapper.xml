@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+	<!--打印提示标签mapper-->
+<mapper namespace="foss.partialline.printCZMTipsMapper" >
+	<resultMap id="PrintCZMTipsMap" type="com.deppon.foss.module.transfer.partialline.api.shared.dto.PrintCZMTipsDto" >
+		<id column="id" property="id" jdbcType="VARCHAR" />      
+		<result column="waybillNo" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="agentWaybillNo" property="agentWaybillNo" jdbcType="VARCHAR" />
+		<result column="serialNo" property="serialNo" jdbcType="VARCHAR" />
+		<result column="isBind" property="isBind" jdbcType="VARCHAR" />
+		<result column="isPicPackage" property="isPicPackage" jdbcType="VARCHAR" />
+		<result column="goodsName" property="goodsName" jdbcType="VARCHAR" />
+		<result column="parentWaybillNo" property="parentWaybillNo" jdbcType="VARCHAR" />
+		<result column="isPrint" property="isPrint" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<!--新增一条打印标签记录-->
+	<insert id="addCZMTips" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.domain.PrintCZMTipsEntity">
+		insert into tfr.t_opt_czm_print_tips(
+		    id,
+			waybill_no,
+			serial_no,
+			agent_waybill_no,
+			parent_waybill_no,
+			goods_name,
+			is_print,
+			print_time,
+			print_num,
+			print_user_code,
+			print_user_name,
+			print_org_code,
+			print_org_name,
+			input_user_code,
+			input_org_code,
+			input_time,
+			update_user_code,
+			update_org_code,
+			update_time
+		)values (
+		 #{id,jdbcType=VARCHAR},#{waybillNo,jdbcType=VARCHAR},#{serialNo,jdbcType=VARCHAR},#{agentWaybillNo,jdbcType=VARCHAR},#{parentWaybillNo,jdbcType=VARCHAR}
+		 ,#{goodsName,jdbcType=VARCHAR},#{isPrint,jdbcType=VARCHAR},sysdate,1,#{printUserCode,jdbcType=VARCHAR}
+		 ,#{printUserName,jdbcType=VARCHAR},#{printOrgCode,jdbcType=VARCHAR},#{printOrgName,jdbcType=VARCHAR},#{inputUserCode,jdbcType=VARCHAR}
+		 ,#{inputOrgcode,jdbcType=VARCHAR},sysdate,#{updateUserCode,jdbcType=VARCHAR},#{updateOrgCode,jdbcType=VARCHAR},#{updateTime,jdbcType=TIMESTAMP}
+		)
+	</insert>
+	<!--更新打印标签-->
+	<update id="updateCZMTips" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.domain.PrintCZMTipsEntity">
+		update tfr.t_opt_czm_print_tips set 
+			 agent_waybill_no = #{agentWaybillNo,jdbcType=VARCHAR},<!--同一运单流水号绑定的代理公司编号可能发生改变，故做更新-->
+			 print_time = sysdate,
+			 print_num = print_num + 1,
+			 print_user_code = #{printUserCode,jdbcType=VARCHAR},
+			 print_user_name = #{printUserName,jdbcType=VARCHAR},
+			 print_org_code = #{printOrgCode,jdbcType=VARCHAR},
+			 print_org_name = #{printOrgName,jdbcType=VARCHAR},
+			 update_user_code = #{updateUserCode,jdbcType=VARCHAR},
+			 update_org_code = #{updateOrgCode,jdbcType=VARCHAR},
+			 update_time = sysdate
+		<where>
+			waybill_no = #{waybillNo,jdbcType=VARCHAR} and serial_no = #{serialNo,jdbcType=VARCHAR}
+		</where> 
+	</update>
+	<!--根据打印标签新增一条打印标签历史-->
+	<insert id="addCZMTipsHis" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.domain.PrintCZMTipsHisEntity">
+		insert into tfr.t_opt_czm_print_tips_his(
+		id                 ,
+		print_tips_id      ,
+		waybill_no         ,
+		serial_no          ,
+		agent_waybill_no   ,
+		parent_waybill_no  ,
+		goods_name         ,
+		print_time         ,
+		print_num          ,
+		print_user_code    ,
+		print_user_name    ,
+		print_org_code     ,
+		print_org_name   )   
+		values (
+		#{id,jdbcType=VARCHAR},#{printTipsId,jdbcType=VARCHAR},#{waybillNo,jdbcType=VARCHAR},#{serialNo,jdbcType=VARCHAR}
+		,#{agentWaybillNo,jdbcType=VARCHAR},#{parentWaybillNo,jdbcType=VARCHAR},#{goodsName,jdbcType=VARCHAR},sysdate
+		,#{printNum,jdbcType=DECIMAL},#{printUserCode,jdbcType=VARCHAR},#{printUserName,jdbcType=VARCHAR},#{printOrgCode,jdbcType=VARCHAR}
+		,#{printOrgName,jdbcType=VARCHAR}
+		)
+	</insert>
+	<!--查询打印记录-->
+	<sql id="select_column_list">
+		p.agent_waybill_no agentWaybillNo,
+		w.waybill_no waybillNo,
+		g.serial_no serialNo,
+		nvl(p.active,'N') isBind,
+		nvl(wd.is_pic_package,'N') isPicPackage,
+		w.goods_name goodsName,
+		wd.parent_waybill_no parentWaybillNo,
+		nvl(t.is_print,'N') isPrint,
+		t.id id
+	</sql>
+	<sql id="where_clause">
+		<where>
+			1=1
+			and h.handoverbill_state in (10,20,30,40,50)
+			and h.handover_type = 'LDP_HANDOVER'
+			<if test="handOverBillList !=null and handOverBillList.size > 0 ">
+				and h.handover_no in 
+				<foreach collection="handOverBillList" item="item" index="index" open=" ("   separator="," close=")">                  
+	           		 #{item,jdbcType=VARCHAR} 
+				</foreach> 
+			</if>
+			<if test="waybillNoList !=null and waybillNoList.size > 0 ">
+				and w.waybill_no in 
+					<foreach collection="waybillNoList" item="item" index="index" open=" ("   separator="," close=")">                  
+		           		 #{item,jdbcType=VARCHAR} 
+					</foreach> 
+			</if>
+			and w.active = 'Y'
+			and g.active = 'Y'
+		</where>
+	</sql>
+	<select id="queryCZMTipsList" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.PrintCZMTipsDto" resultMap="PrintCZMTipsMap">
+		select 
+		<include refid="select_column_list"/>
+		from pkp.t_srv_waybill w
+		inner join pkp.t_srv_labeled_good g 
+		      on w.waybill_no = g.waybill_no
+		inner join pkp.t_srv_waybill_relate_detail wd
+		      on w.waybill_no = wd.waybill_no      
+		inner join tfr.t_opt_handoverbill_detail d
+		      on w.waybill_no = d.waybill_no
+		inner join tfr.t_opt_handoverbill_serialno s
+		      on d.handover_no = s.handoverbill_no
+		      and s.waybill_no = d.waybill_no
+		inner join tfr.t_opt_handoverbill h
+		      on h.handover_no = d.handover_no    
+		left join tfr.t_opt_print_agentwaybill p
+		      on p.waybill_no = w.waybill_no
+		      and p.serial_no = g.serial_no
+		      and p.print_type = 'LDP'
+		      and p.active = 'Y'
+		left join tfr.t_opt_czm_print_tips t
+		     on w.waybill_no = t.waybill_no
+		     and g.serial_no = t.serial_no  
+		<include refid = "where_clause"/>     
+	</select>	
+	<select id="queryCZMTipsListCount" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.PrintCZMTipsDto" resultType="Long">
+		select 
+			count(1)
+		from pkp.t_srv_waybill w
+		inner join pkp.t_srv_labeled_good g 
+		      on w.waybill_no = g.waybill_no
+		inner join pkp.t_srv_waybill_relate_detail wd
+		      on w.waybill_no = wd.waybill_no      
+		inner join tfr.t_opt_handoverbill_detail d
+		      on w.waybill_no = d.waybill_no
+		inner join tfr.t_opt_handoverbill_serialno s
+		      on d.handover_no = s.handoverbill_no
+		      and s.waybill_no = d.waybill_no
+		inner join tfr.t_opt_handoverbill h
+		      on h.handover_no = d.handover_no    
+		left join tfr.t_opt_print_agentwaybill p
+		      on p.waybill_no = w.waybill_no
+		      and p.serial_no = g.serial_no
+		      and p.print_type = 'LDP'
+		      and p.active = 'Y'
+		left join tfr.t_opt_czm_print_tips t
+		     on w.waybill_no = t.waybill_no
+		     and g.serial_no = t.serial_no  
+		<include refid = "where_clause"/>     
+	</select>										
+	<select id="queryCZMTipsIsPrint" parameterType="java.util.HashMap" resultType="string">
+		select p.is_print isPrint from tfr.t_opt_czm_print_tips p 
+		where p.waybill_no=#{waybillNo,jdbctype=VARCHAR} and p.serial_no=#{serialNo,jdbcType=VARCHAR}
+	</select>
+</mapper>

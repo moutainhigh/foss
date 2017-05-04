@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.stl.PosCardManageDao" >
+  	<!-- POS刷卡管理ResultMap -->
+  	<resultMap id="PosCardResultMap" type="com.deppon.foss.module.settlement.common.api.shared.domain.PosCardEntity" >
+    	<id column="ID" property="id" jdbcType="VARCHAR" />
+	    <result column="TRADE_SERIAL_NO" property="tradeSerialNo" jdbcType="VARCHAR" />
+	    <result column="SERIAL_AMOUNT" property="serialAmount" jdbcType="DECIMAL" />
+	    <result column="CARD_DEPT_NAME" property="cardDeptName" jdbcType="VARCHAR" />
+	    <result column="CARD_DEPT_CODE" property="cardDeptCode" jdbcType="VARCHAR" />
+	    <result column="CARD_DEPT_BM_CODE" property="cardDeptBMCode" jdbcType="VARCHAR" />
+	    <result column="USED_AMOUNT" property="usedAmount" jdbcType="DECIMAL" />
+	    <result column="UNUSED_AMOUNT" property="unUsedAmount" jdbcType="DECIMAL" />
+	    <result column="CARDTIME" property="cardTime" jdbcType="TIMESTAMP" />
+	    <result column="BELONG_MODULE" property="belongModule" jdbcType="VARCHAR" />
+	    <result column="BUSINESS_AREA_NAME" property="businessAreaName" jdbcType="VARCHAR" />
+	    <result column="BUSINESS_AREA_CODE" property="businessAreaCode" jdbcType="VARCHAR" />
+	    <result column="BUSINESS_AREA_BM_CODE" property="businessAreaCode" jdbcType="VARCHAR" />
+	    <result column="BELONG_REGION_NAME" property="belongRegionName" jdbcType="VARCHAR" />
+	    <result column="BELONG_REGION_CODE" property="belongRegionCode" jdbcType="VARCHAR" />
+	    <result column="BELONG_REGION_BM_CODE" property="belongRegionBMCode" jdbcType="VARCHAR" />
+	    <result column="BUSINESS_DEPT_NAME" property="businessDeptName" jdbcType="VARCHAR" />
+	    <result column="BUSINESS_DEPT_CODE" property="businessDeptCode" jdbcType="VARCHAR" />
+	    <result column="FINANCE_DEPT_NAME" property="financeDeptName" jdbcType="VARCHAR" />
+	    <result column="FINANCE_DEPT_CODE" property="financeDeptCode" jdbcType="VARCHAR" />
+	    <result column="FINANCE_DEPT_BM_CODE" property="financeDeptBMCode" jdbcType="VARCHAR" />
+	    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+	    <result column="CREATE_USER_NAME" property="createUserName" jdbcType="VARCHAR" />
+	    <result column="CREATE_USER_CODE" property="createUserCode" jdbcType="VARCHAR" />
+	    <result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+	    <result column="MODIFY_USER_NAME" property="modifyUserName" jdbcType="VARCHAR" />
+	    <result column="MODIFY_USER_CODE" property="modifyUserCode" jdbcType="VARCHAR" />
+	    <result column="ACCOUNT_TIME" property="accountDate" jdbcType="TIMESTAMP" />
+	    <result column="NOTES" property="notes" jdbcType="VARCHAR" />
+	    <result column="VERSION" property="version" jdbcType="DECIMAL" />
+	    <result column="INVOICE_TYPE" property="invoiceType" jdbcType="VARCHAR" />
+	    <result column="INVOICE_NO" property="invoiceNo" jdbcType="VARCHAR" />
+	    <result column="AMOUNT" property="amount" jdbcType="DECIMAL" />
+	    <result column="OCCUPATE_AMOUNT" property="occupateAmount" jdbcType="DECIMAL" />
+	    <result column="UNVERIFY_AMOUNT" property="unVerifyAmount" jdbcType="DECIMAL" />
+	    <result column="FROZEN_TIME" property="frozenTime" jdbcType="TIMESTAMP" />
+	    <result column="FROZEN_STATUS" property="frozenStatus" jdbcType="DECIMAL" />
+	    <result column="FROZEN_AMOUNT" property="frozenAmount" jdbcType="DECIMAL" />
+  	</resultMap>
+  	
+  	<!-- 明细 -->
+  	<resultMap id="posCardDetailResultMap" type="com.deppon.foss.module.settlement.common.api.shared.domain.PosCardDetailEntity" >
+    	<id column="ID" property="id" jdbcType="VARCHAR" />
+	    <result column="TRADE_SERIAL_NO" property="tradeSerialNo" jdbcType="VARCHAR" />
+	    <result column="INVOICE_TYPE" property="invoiceType" jdbcType="VARCHAR" />
+	    <result column="INVOICE_NO" property="invoiceNo" jdbcType="VARCHAR" />
+	    <result column="AMOUNT" property="amount" jdbcType="DECIMAL" />
+	    <result column="OCCUPATE_AMOUNT" property="occupateAmount" jdbcType="DECIMAL" />
+	    <result column="UNVERIFY_AMOUNT" property="unVerifyAmount" jdbcType="DECIMAL" />
+  	</resultMap>
+  	
+  	<!-- 根据日期查询POS刷卡管理集合 -->
+  	<select id="queryPosCardEntitys" parameterType="com.deppon.foss.module.settlement.common.api.shared.dto.PosCardManageDto" resultMap="PosCardResultMap">
+  		select /*根据日期查询POS刷卡管理集合*/
+         <!--  pc.ID ID,    -->               
+	      pc.TRADE_SERIAL_NO TRADE_SERIAL_NO,     
+	      pc.SERIAL_AMOUNT/100 SERIAL_AMOUNT,       
+	      pc.CARD_DEPT_NAME CARD_DEPT_NAME,     
+	      pc.USED_AMOUNT/100 USED_AMOUNT,         
+	      pc.UNUSED_AMOUNT/100 UNUSED_AMOUNT,       
+	      pc.CARDTIME CARDTIME,            
+	      pc.BELONG_MODULE BELONG_MODULE,        
+	      pc.BUSINESS_AREA_NAME BUSINESS_AREA_NAME,  
+	      pc.BELONG_REGION_NAME BELONG_REGION_NAME,  
+	      pc.FINANCE_DEPT_NAME FINANCE_DEPT_NAME, 
+ 	      pc.FROZEN_STATUS FROZEN_STATUS, 
+ 		  pc.FROZEN_TIME FROZEN_TIME, 
+ 		  pc.FROZEN_AMOUNT/100 FROZEN_AMOUNT 
+	      from stl.t_stl_pos_card pc 
+          <where> 
+            <if test="periodBeginDate !=null">
+                  <![CDATA[ pc.account_time >= #{periodBeginDate,jdbcType=TIMESTAMP}]]>
+            </if>
+            <if test="periodEndDate !=null">
+                   <![CDATA[ AND pc.account_time < #{periodEndDate,jdbcType=TIMESTAMP}]]>
+            </if>
+            AND pc.active = 'Y' /*查询有效的数据*/
+            <if test="belongMoudleCode !=null and belongMoudleCode != '' ">
+                    AND pc.BELONG_MODULE = #{belongMoudleCode,jdbcType=VARCHAR}
+            </if>
+            <if test="tradeSerialNo !=null and tradeSerialNo !='' ">
+                    and pc.TRADE_SERIAL_NO = #{tradeSerialNo,jdbcType=VARCHAR}
+            </if>
+            <if test="unUsedAmount !=null and unUsedAmount !='' and unUsedAmount == 'true'">
+                    and pc.UNUSED_AMOUNT =0
+            </if>
+            <if test="unUsedAmount !=null and unUsedAmount !='' and unUsedAmount == 'false'">
+                    and pc.UNUSED_AMOUNT != 0
+            </if>
+            <choose>
+            	<when test="deptCodes != null and deptCodes.size >0">
+            		and pc.BUSINESS_DEPT_CODE in 
+	           		<foreach collection="deptCodes" item="item" index="index" open="(" close=")" separator=",">
+	           		   #{item,jdbcType=VARCHAR}
+	           		</foreach>
+            	</when>
+            	<otherwise>
+            		and pc.BUSINESS_DEPT_CODE = null
+            	</otherwise>
+            </choose>
+            <!-- 导出时限定条件 -->
+            <if test="isExport != null and isExport == 'true'">
+               	    and pc.UNUSED_AMOUNT>0
+            </if>
+            AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V --当前用户可以操作的营业部信息
+   				WHERE V.EMP_CODE = #{empCode,jdbcType=VARCHAR}--登录者员工编码等于配置表编码
+   				 AND V.ORG_CODE = pc.BUSINESS_DEPT_CODE
+     			)
+           </where>
+  	</select>
+  	
+  	<!-- 根据日期去获取总行数 -->
+  	<select id="getCountByDate" parameterType="com.deppon.foss.module.settlement.common.api.shared.dto.PosCardManageDto" resultType="int">
+  		select count(1) from (
+  			select /*根据日期查询POS刷卡管理集合*/
+	      pc.TRADE_SERIAL_NO TRADE_SERIAL_NO,     
+	      pc.SERIAL_AMOUNT/100 SERIAL_AMOUNT,       
+	      pc.CARD_DEPT_NAME CARD_DEPT_NAME,     
+	      pc.USED_AMOUNT/100 USED_AMOUNT,         
+	      pc.UNUSED_AMOUNT/100 UNUSED_AMOUNT,       
+	      pc.CARDTIME CARDTIME,            
+	      pc.BELONG_MODULE BELONG_MODULE,        
+	      pc.BUSINESS_AREA_NAME BUSINESS_AREA_NAME,  
+	      pc.BELONG_REGION_NAME BELONG_REGION_NAME,  
+	      pc.FINANCE_DEPT_NAME FINANCE_DEPT_NAME
+	      from stl.t_stl_pos_card pc 
+	      where 
+           <if test="periodBeginDate !=null">
+                  <![CDATA[ pc.account_time >= #{periodBeginDate,jdbcType=TIMESTAMP}]]>
+           </if>
+           <if test="periodEndDate !=null">
+                    <![CDATA[ AND pc.account_time < #{periodEndDate,jdbcType=TIMESTAMP}]]>
+            </if>
+            AND pc.active = 'Y' /*查询有效的数据*/
+            <if test="belongMoudleCode !=null and belongMoudleCode != '' ">
+                    AND pc.BELONG_MODULE = #{belongMoudleCode,jdbcType=VARCHAR}
+            </if>
+            <if test="tradeSerialNo !=null and tradeSerialNo !='' ">
+                    and pc.TRADE_SERIAL_NO = #{tradeSerialNo,jdbcType=VARCHAR}
+            </if>
+           <if test="unUsedAmount !=null and unUsedAmount !='' and unUsedAmount == 'true'">
+                    and pc.UNUSED_AMOUNT =0
+           </if>
+           <if test="unUsedAmount !=null and unUsedAmount !='' and unUsedAmount == 'false'">
+                    and pc.UNUSED_AMOUNT != 0
+           </if>
+           <choose>
+            	<when test="deptCodes != null and deptCodes.size >0">
+            		and pc.BUSINESS_DEPT_CODE in 
+	           		<foreach collection="deptCodes" item="item" index="index" open="(" close=")" separator=",">
+	           		   #{item,jdbcType=VARCHAR}
+	           		</foreach>
+            	</when>
+            	<otherwise>
+            		and pc.BUSINESS_DEPT_CODE = null
+            	</otherwise>
+            </choose>
+          AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V /**当前用户可以操作的营业部信息**/
+   				WHERE V.EMP_CODE = #{empCode,jdbcType=VARCHAR}/**登录者员工编码等于配置表编码**/
+   				 AND V.ORG_CODE = pc.BUSINESS_DEPT_CODE
+     			)
+     	)
+  	</select>
+  	
+  	<!-- 根据流水号去查询明细 -->
+  	<select id="queryPosCardDetail" parameterType ="com.deppon.foss.module.settlement.common.api.shared.dto.PosCardManageDto" resultMap="posCardDetailResultMap">
+  		select /*根据流水号去查询明细*/
+			  d.TRADE_SERIAL_NO TRADE_SERIAL_NO,  
+			  d.INVOICE_TYPE INVOICE_TYPE,     
+			  d.INVOICE_NO INVOICE_NO,       
+			  d.AMOUNT /100 AMOUNT,           
+			  d.OCCUPATE_AMOUNT/100 OCCUPATE_AMOUNT,  
+			  d.UNVERIFY_AMOUNT/100 UNVERIFY_AMOUNT
+  			  from stl.T_STL_POS_CARD_DETAIL d 
+  			  where d.ISDELETE = 'N' /*未被删除的数据*/
+  			  and d.TRADE_SERIAL_NO = 
+		  	  <if test="tradeSerialNo !=null and tradeSerialNo !='' ">
+                    #{tradeSerialNo,jdbcType=VARCHAR}
+              </if>
+  	</select>
+  	
+  	<!-- 根据流水号查询POS刷卡管理集合-->
+  	<select id="queryPosCardBySerialNos" parameterType="java.util.List" resultMap="PosCardResultMap">
+  		select /*根据流水号查询POS刷卡管理集合***/
+	          PC.ID ID,
+		      PC.TRADE_SERIAL_NO TRADE_SERIAL_NO,     
+		      PC.SERIAL_AMOUNT/100 SERIAL_AMOUNT,      
+		      PC.CARD_DEPT_NAME CARD_DEPT_NAME,    
+		      PC.USED_AMOUNT/100 USED_AMOUNT,   
+		      PC.UNUSED_AMOUNT/100 UNUSED_AMOUNT,     
+		      PC.CARDTIME CARDTIME,     
+		      PC.BELONG_MODULE BELONG_MODULE,      
+		      PC.BUSINESS_AREA_NAME BUSINESS_AREA_NAME,  
+		      PC.BELONG_REGION_NAME BELONG_REGION_NAME,
+		      PC.BUSINESS_DEPT_NAME BUSINESS_DEPT_NAME, 
+		      PC.FINANCE_DEPT_NAME FINANCE_DEPT_NAME,
+		      PC.VERSION VERSION ,
+		      pc.FROZEN_STATUS FROZEN_STATUS,
+		      pc.FROZEN_TIME FROZEN_TIME,
+		      pc.FROZEN_AMOUNT/100 FROZEN_AMOUNT
+		      from stl.t_stl_pos_card PC
+		      where PC.active = 'Y' 
+		      AND PC.TRADE_SERIAL_NO in 
+		      <foreach collection="list" item="item" open="(" close=")" separator=",">
+		     	   #{item,jdbcType=VARCHAR}
+		      </foreach>
+  	</select>
+  	
+  	<!-- 根据交易流水号查询导出的数据 集合-->
+  	<select id="queryExportData" parameterType="java.util.List" resultMap="PosCardResultMap">
+  		select /**根据交易流水号查询导出的数据集合*/
+	      PC.ID ID,
+	      PC.TRADE_SERIAL_NO,     
+	      PC.SERIAL_AMOUNT/100 SERIAL_AMOUNT,      
+	      PC.CARD_DEPT_NAME CARD_DEPT_NAME,    
+	      PC.USED_AMOUNT/100 USED_AMOUNT,   
+	      PC.UNUSED_AMOUNT/100 UNUSED_AMOUNT,     
+	      PC.CARDTIME CARDTIME,     
+	      PC.BELONG_MODULE BELONG_MODULE,      
+	      PC.BUSINESS_AREA_NAME BUSINESS_AREA_NAME,  
+	      PC.BELONG_REGION_NAME BELONG_REGION_NAME,
+	      PC.BUSINESS_DEPT_NAME BUSINESS_DEPT_NAME, 
+	      PC.FINANCE_DEPT_NAME FINANCE_DEPT_NAME,
+	      decode(CD.INVOICE_TYPE,'W1','运单','W2','运单','W3','运单','US','预收单','DZ','对账单','XP','小票') INVOICE_TYPE,     
+	      CD.INVOICE_NO INVOICE_NO,       
+	      CD.AMOUNT/100 AMOUNT,           
+	      CD.OCCUPATE_AMOUNT/100 OCCUPATE_AMOUNT,  
+	      CD.UNVERIFY_AMOUNT/100 UNVERIFY_AMOUNT
+	    from stl.t_Stl_Pos_Card PC 
+	    left join stl.t_Stl_Pos_Card_Detail CD
+	    ON cd.trade_serial_no = pc.trade_serial_no and CD.ISDELETE = 'N'
+		WHERE PC.active = 'Y'
+		AND PC.trade_serial_no in 
+		<foreach collection="list" item="item" open="(" close=")" separator=",">
+	     	   #{item,jdbcType=VARCHAR}
+	    </foreach>
+  	</select>
+  	
+  	<!-- 根据单号号去查询POS刷卡管理集合 -->
+  	<select id="queryPosCardByNumbers" parameterType="java.util.Map" resultMap="PosCardResultMap">
+  		select /*根据流水号查询POS刷卡管理集合*/
+          pc.ID ID,                  
+	      pc.TRADE_SERIAL_NO TRADE_SERIAL_NO,     
+	      pc.SERIAL_AMOUNT/100 SERIAL_AMOUNT,    
+	      pc.CARD_DEPT_NAME CARD_DEPT_NAME,     
+	      pc.USED_AMOUNT/100 USED_AMOUNT,         
+	      pc.UNUSED_AMOUNT/100 UNUSED_AMOUNT,       
+	      pc.CARDTIME CARDTIME,            
+	      pc.BELONG_MODULE BELONG_MODULE,        
+	      pc.BUSINESS_AREA_NAME BUSINESS_AREA_NAME,  
+	      pc.BELONG_REGION_NAME BELONG_REGION_NAME,   
+	      pc.FINANCE_DEPT_NAME FINANCE_DEPT_NAME, 
+ 	      pc.FROZEN_STATUS FROZEN_STATUS, 
+ 		  pc.FROZEN_TIME FROZEN_TIME, 
+ 		  pc.FROZEN_AMOUNT/100 FROZEN_AMOUNT 
+	      from stl.t_stl_pos_card pc
+	      where pc.active = 'Y'
+	      AND pc.TRADE_SERIAL_NO in(
+	      select d.TRADE_SERIAL_NO   
+  			  from stl.T_STL_POS_CARD_DETAIL d 
+  			  where d.ISDELETE = 'N'
+  			  AND d.INVOICE_NO in /*单据号*/
+              <foreach collection="list" item="item" open="(" close=")" separator=",">
+	     	   	#{item,jdbcType=VARCHAR}
+	          </foreach>
+	          group by d.TRADE_SERIAL_NO
+	       )
+	       AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V /**当前用户可以操作的营业部信息**/
+   				WHERE V.EMP_CODE = #{empCode,jdbcType=VARCHAR}/**登录者员工编码等于配置表编码**/
+   				 AND V.ORG_CODE = pc.BUSINESS_DEPT_CODE
+     	   )
+  	</select>
+  	
+  	
+  	<!-- 根据单号号去查询POS刷卡管理集合 -->
+  	<select id="queryPosCardBySerialNosAndEmpCode" parameterType="java.util.Map" resultMap="PosCardResultMap">
+  		select /*根据流水号查询POS刷卡管理集合*/
+          pc.ID ID,                  
+	      pc.TRADE_SERIAL_NO TRADE_SERIAL_NO,     
+	      pc.SERIAL_AMOUNT/100 SERIAL_AMOUNT,    
+	      pc.CARD_DEPT_NAME CARD_DEPT_NAME,     
+	      pc.USED_AMOUNT/100 USED_AMOUNT,         
+	      pc.UNUSED_AMOUNT/100 UNUSED_AMOUNT,       
+	      pc.CARDTIME CARDTIME,            
+	      pc.BELONG_MODULE BELONG_MODULE,        
+	      pc.BUSINESS_AREA_NAME BUSINESS_AREA_NAME,  
+	      pc.BELONG_REGION_NAME BELONG_REGION_NAME,   
+	      pc.FINANCE_DEPT_NAME FINANCE_DEPT_NAME, 
+ 	      pc.FROZEN_STATUS FROZEN_STATUS, 
+ 		  pc.FROZEN_TIME FROZEN_TIME, 
+ 		  pc.FROZEN_AMOUNT/100 FROZEN_AMOUNT 
+	      from stl.t_stl_pos_card pc
+	      where pc.active = 'Y'
+	      AND pc.TRADE_SERIAL_NO in /*交易流水号*/
+	      <foreach collection="list" item="item" open="(" close=")" separator=",">
+	          #{item,jdbcType=VARCHAR}
+	      </foreach>
+	      AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V /**当前用户可以操作的营业部信息**/
+   			   WHERE V.EMP_CODE = #{empCode,jdbcType=VARCHAR}/**登录者员工编码等于配置表编码**/
+   				 AND V.ORG_CODE = pc.BUSINESS_DEPT_CODE
+     	   )
+  	</select>
+</mapper>

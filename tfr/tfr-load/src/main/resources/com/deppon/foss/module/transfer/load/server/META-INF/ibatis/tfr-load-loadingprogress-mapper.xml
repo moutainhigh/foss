@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.load.loadingprogress">
+	<resultMap id="queryLoadingProgressResultMap"
+		type="com.deppon.foss.module.transfer.load.api.shared.dto.QueryLoadingProgressResultDto">
+		<result property="id" column="id" />
+		<result property="taskNumber" column="taskNumber" />
+		<result property="createTaskDate" column="createTaskDate" />
+		<result property="loadedVolume" column="loadedVolume" />
+		<result property="loadedWeight" column="loadedWeight" />
+		<result property="completeDate" column="completeDate" />
+		<result property="arrivedDate" column="arrivedDate" />
+		<result property="lineInfo" column="lineInfo" />
+		<result property="taskType" column="taskType" />
+		<result property="vehicleNumber" column="vehicleNumber" />
+		<result property="tallyMember" column="tallyMember" />
+		<result property="ratedVolume" column="ratedVolume" />
+		<result property="ratedWeight" column="ratedWeight" />
+		<result property="leftWeight" column="leftWeight" />
+		<result property="leftVolume" column="leftVolume" />
+		<result property="arrivedDept" column="arrivedDept" />
+		<result property="platform" column="platform" />
+		<result property="loadMember" column="loadMember" />
+		<result property="taskState" column="taskState" />
+		<result property="planDepartDate" column="planDepartDate" />
+		<result property="volumeProgress" column="volumeProgress" />
+		<result property="weightProgress" column="weightProgress" />
+	</resultMap>
+	
+	<!-- 发车计划结果 -->
+	<resultMap id="queryDeparturePlanMap"
+		type="com.deppon.foss.module.transfer.load.api.shared.dto.QueryDeparturePlanDto">
+		<result property="ratedVolume" column="ratedVolume" />
+		<result property="ratedWeight" column="ratedWeight" />
+		<result property="planDepartDate" column="planDepartDate" />
+	</resultMap>
+	
+		<!--查询装车进度-->
+	<select id="queryLoadingProgress" 
+		parameterType="com.deppon.foss.module.transfer.load.api.shared.dto.QueryLoadingProgressConditionDto" 
+	resultMap="queryLoadingProgressResultMap">
+select load.task_id             id,
+       max(load.taskNumber)     taskNumber,
+       max(load.vehicleNumber)  vehicleNumber,
+       max(load.platform)       platform,
+       max(load.createTaskDate) createTaskDate,
+       max(load.completeDate)   completeDate,
+       max(load.taskState)      taskState,
+       max(load.taskType) taskType,
+       max(load.lineInfo)       lineInfo,
+       max(load.tallyMember)    tallyMember,
+       max(load.arrivedDept)    arrivedDept,
+       max(load.loadedWeight)   loadedWeight,
+       max(load.loadedVolume)   loadedVolume,
+       max(load.loadMember) loadMember,
+       sum(planDetail.TRUCK_VOLUME) ratedVolume,
+       sum(planDetail.MAX_LOAD_WEIGHT) ratedWeight,
+       sum(planDetail.TRUCK_VOLUME) - max(load.loadedVolume) leftVolume,
+       sum(planDetail.MAX_LOAD_WEIGHT) - max(load.loadedWeight) leftWeight,
+       max(planDetail.PLAN_DEPART_TIME) planDepartDate
+  from (select task.id task_id,
+                       max(task.task_no) taskNumber,
+                       max(task.vehicle_no) vehicleNumber,
+                       max(task.platform_no) platform,
+                       max(task.load_start_time) createTaskDate,
+                       max(task.load_end_time) completeDate,
+                       max(task.task_state) taskState,
+                       max(task.task_type) taskType,
+                       max(task.line) lineInfo,
+                       max(task.LOADER_QTY) loader_qty,
+                       max(task.LOAD_ORG_NAMES) arrivedDept,
+                       sum(detail.LOAD_WEIGHT_TOTAL/1000) loadedWeight,
+                       sum(detail.LOAD_VOLUME_TOTAL) loadedVolume,
+                       MAX(PA.LOADER_NAME) loadMember,
+                       MAX(TASK.LOADER_QTY) tallyMember
+                  from tfr.t_Opt_Load_Task task
+                  <if test="arrivedDept!=null and arrivedDept!='' ">                                    
+	          		 left join tfr.t_opt_load_dest_org dest on task.id=dest.LOAD_TASK_ID
+	                   	and dest.DEST_ORG_CODE=#{arrivedDept} 
+         		 </if>
+                 left join tfr.t_Opt_Load_Waybill_Detail detail on task.id =
+                                                                    detail.load_task_id
+                  left join tfr.T_OPT_LOADER_PARTICIPATION pa on pa.task_id =
+                                                         task.Id
+                                                         and pa.be_creator='Y'   
+                  <include refid="select_Where_loadingProgress"/>
+                 <if test="arrivedDept!=null and arrivedDept!='' ">                                    
+                       and dest.DEST_ORG_CODE=#{arrivedDept} 
+         		 </if>
+                 group by task.id) load
+  left join tfr.T_OPT_LOAD_DEST_ORG destOrg on destOrg.LOAD_TASK_ID =
+                                               LOAD.task_id
+  left join tfr.T_OPT_TRUCK_DEPART_PLAN_DETAIL planDetail on destOrg.TRUCKDEPARTPLANDETAIL_ID =
+                                                             planDetail.id                                                             
+ group by load.task_id
+ 			<include refid="select_having_loadingProgress"/>
+  			<include refid="select_Orderby_loadingProgress"/>
+	</select>
+	
+	
+	<!-- 查询条件 -->
+	<sql id="select_Where_loadingProgress">
+		<where>
+			<if test="deptCode!=null and deptCode!='' ">	
+					AND task.ORIG_ORG_CODE = #{deptCode}
+			</if>
+						
+			<if test="taskNumber!=null and taskNumber!='' ">	
+					AND task.task_no = #{taskNumber}
+			</if>
+			<if test="createTaskDateFrom!=null and createTaskDateTo!=null ">	
+					AND task.load_start_time between #{createTaskDateFrom} and #{createTaskDateTo}
+			</if>
+			<if test="vehicleNumber!=null and vehicleNumber!='' ">	
+					AND task.vehicle_no = #{vehicleNumber}
+			</if>
+			<if test="taskState!=null and taskState!='' ">	
+					AND task.task_state = #{taskState}
+			</if>
+			<if test="taskType!=null and taskType!='' ">	
+					AND task.task_type = #{taskType}
+			</if>
+		</where>
+	</sql>
+	<!-- 排序条件 -->
+	<sql id="select_Orderby_loadingProgress">
+		<choose>
+			<when test="sortRule=='ORDER_BY_CREATETASKDATE_DESC'"> <!-- 按建立任务时间降序 -->
+				order by createTaskDate DESC
+			</when>	
+			<when test="sortRule=='ORDER_BY_CREATETASKDATE_ASC' "><!-- 按建立任务时间升序 -->
+				order by createTaskDate ASC
+			</when>	
+			<when test="sortRule=='ORDER_BY_PLANDEPARTDATE_DESC'"><!-- 按计划发车时间降序 -->
+				order by planDepartDate DESC
+			</when>	
+			<when test="sortRule=='ORDER_BY_PLANDEPARTDATE_ASC'"><!-- 按计划发车时间升序 -->
+				order by planDepartDate ASC
+			</when>	
+			<when test="sortRule=='ORDER_BY_LEFTWEIGHT_DESC'"><!-- 按已装重量升序，剩余重量降序 -->
+				order by leftWeight DESC
+			</when>	
+			<when test="sortRule=='ORDER_BY_LEFTWEIGHT_ASC'"><!-- 按已装重量降序，剩余重量升序 -->
+				order by leftWeight ASC
+			</when>	
+			<when test="sortRule=='ORDER_BY_LEFTVOLUME_DESC'"><!-- 按已装体积升序，剩余体积降序 -->
+				order by leftVolume DESC
+			</when>	
+			<when test="sortRule=='ORDER_BY_LEFTVOLUME_ASC'"><!-- 按已装体积降序，剩余体积升序 -->
+				order by leftVolume ASC
+			</when>	
+			<otherwise>
+            	order by createTaskDate DESC
+        	</otherwise>
+		</choose>
+	</sql> 
+	
+	<!-- 是否超时 -->
+	<sql id="select_having_loadingProgress">
+		<choose>
+			<when test="timeOver=='TIME_OUT'"><!-- 超时 -->
+				having 
+				(max(planDetail.PLAN_DEPART_TIME) <![CDATA[ < ]]> #{currentDate}
+ 					and max(load.taskState)='LOADING' )
+ 				or (max(load.createTaskDate) <![CDATA[ > ]]>  max(planDetail.PLAN_DEPART_TIME) 
+ 					and max(load.taskState)='FINISHED')
+			</when>	
+			<when test="timeOver=='NO_TIME_OUT'"><!-- 未超时 -->
+				having 
+				(max(planDetail.PLAN_DEPART_TIME) <![CDATA[ > ]]> #{currentDate}
+ 					and max(load.taskState)='LOADING' )
+ 				or (max(load.createTaskDate) <![CDATA[ < ]]>  max(planDetail.PLAN_DEPART_TIME) 
+ 					and max(load.taskState)='FINISHED')
+			</when>	
+		</choose>
+	</sql> 
+	
+	<!-- 根据id查询发车计划 -->
+	<select id="queryDeparturePlan" parameterType="String"
+	 resultMap="queryDeparturePlanMap">
+		 select sum(planDetail.TRUCK_VOLUME),
+                sum(planDetail.MAX_LOAD_WEIGHT),
+                max(planDetail.PLAN_DEPART_TIME)
+           from tfr.t_Opt_Load_Task task
+           left join tfr.T_OPT_LOAD_DEST_ORG destOrg on destOrg.LOAD_TASK_ID =
+                                                        task.id
+           left join tfr.T_OPT_TRUCK_DEPART_PLAN_DETAIL planDetail on destOrg.TRUCKDEPARTPLANDETAIL_ID =
+                                                                      planDetail.id
+          where task.id = #{taskId}
+          group by task.id
+	</select>
+	
+</mapper>
+
+

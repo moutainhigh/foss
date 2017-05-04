@@ -1,0 +1,375 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!-- 空运代收货款审核 -->
+<mapper namespace="foss.stl.AirBillPaidCODQueryDao">
+	<!-- 返回结果定义 -->
+	<resultMap id="AirBillPaidResultMap"
+		type="com.deppon.foss.module.settlement.consumer.api.shared.dto.AirBillPaidCODGridDto">
+		<!-- 主键 -->
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<!-- 运单号 -->
+		<id column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		
+		<!-- 代收货款类型 -->
+		<id column="COD_TYPE" property="codType" jdbcType="VARCHAR" />
+		
+		<!-- 代收货款状态 -->
+		<id column="AIR_STATUS" property="airStatus" jdbcType="VARCHAR" />
+		
+		<!-- 空运代收货款审核人编码 -->
+		<id column="AIR_ORG_AUDIT_USER_CODE" property="airOrgAuditUserCode"
+			jdbcType="VARCHAR" />
+			
+		<!-- 空运代收货款审核人名称 -->
+		<id column="AIR_ORG_AUDIT_USER_NAME" property="airOrgAuditUserName"
+			jdbcType="VARCHAR" />
+			
+		<!-- 空运代收货款审核时间 -->
+		<id column="AIR_ORG_AUDIT_TIME" property="airAuditTime" jdbcType="TIMESTAMP" />
+		
+		<!-- 应付组织名称 -->
+		<id column="PAYABLE_ORG_NAME" property="payableOrgName" jdbcType="VARCHAR" />
+		
+		<!-- 应付组织编码 -->
+		<id column="PAYABLE_ORG_Code" property="payableOrgCode" jdbcType="VARCHAR" />
+
+		<!-- 发货人编码 -->
+		<id column="customer_code" property="customerCode" jdbcType="VARCHAR" />
+		
+		<!-- 发货人名称 -->
+		<id column="customer_name" property="customerName" jdbcType="VARCHAR" />
+
+		<!-- 签收人 -->
+		<id column="DELIVERYMAN_NAME" property="signer" jdbcType="VARCHAR" />
+		
+		<!--代理编码 -->
+		<id column="agency_Name" property="agencyName" jdbcType="VARCHAR" />
+		
+		<!--代理名称 -->
+		<id column="agency_Code" property="agencyCode" jdbcType="VARCHAR" />
+
+		<!-- 目的站 -->
+		<id column="destination" property="destination" jdbcType="VARCHAR" />
+
+		<!-- 代收货款金额 -->
+		<id column="cod_Amount" property="codAmount" jdbcType="VARCHAR" />
+		
+		<!-- 签收时间 -->
+		<id column="sign_date" property="signDate" jdbcType="TIMESTAMP" />
+		
+		<!-- 产品名称 -->
+		<id column="PRODUCT_CODE" property="productType" jdbcType="VARCHAR" />
+		
+		<!-- 到达部门名称 -->
+		<id column="DEST_ORG_CODE" property="destDeptCode" jdbcType="VARCHAR" />
+		
+		<!-- 到达部门编码 -->
+		<id column="DEST_ORG_NAME" property="destDeptName" jdbcType="VARCHAR" />
+
+		<!-- 收货人名称 -->
+		<id column="ARRIVE_CUSTOMER" property="arriveCustomer" jdbcType="VARCHAR" />
+
+		<result column="Total_Count" property="totalCount" jdbcType="DECIMAL" />
+    	<result column="Total_Amount" property="totalAmount" jdbcType="DECIMAL" />
+	</resultMap>
+
+	<!-- 公用查询语句 -->
+	<sql id="airBillPaidCOD_Column_List">
+		COD.ID,
+		COD.WAYBILL_NO,
+		COD.COD_TYPE,
+		COD.AIR_STATUS,
+		COD.AIR_ORG_AUDIT_USER_CODE,
+		COD.AIR_ORG_AUDIT_USER_NAME,
+		COD.AIR_ORG_AUDIT_TIME,
+		COD.PAYABLE_ORG_CODE,
+		COD.PAYABLE_ORG_NAME,
+		COD.CUSTOMER_NAME,
+		COD.CUSTOMER_CODE,
+		SIGN.DELIVERYMAN_NAME,
+		SIGN.AGENT_CODE as agency_code,
+		outer.AGENT_DEPT_NAME as agency_name,
+		REC.TARGET_ORG_CODE AS DESTINATION,
+		COD.COD_AMOUNT /100 as cod_amount,
+		payable.sign_date as signDate,
+		REC.PRODUCT_CODE,
+		REC.DEST_ORG_CODE AS DEST_ORG_CODE,
+		REC.DEST_ORG_NAME AS DEST_ORG_NAME,
+		REC.RECEIVE_CUSTOMER_NAME AS  ARRIVE_CUSTOMER  <!-- 收货客户（签收人收货客户） -->
+	</sql>
+
+	<!-- 查询条件 -->
+	<sql id="condition_expression">
+		<!-- 已经核销金额 等于0 -->
+		and payable.verify_amount = #{verifyAmount, jdbcType=DECIMAL}
+		
+		<!-- 应付的对方组织 
+		and payable.dest_org_code = #{destOrgCode, jdbcType=VARCHAR} 
+		
+	    <if test="destOrgCodeList != null">
+	    and payable.dest_org_code in
+			<foreach collection="destOrgCodeList" item="destOrgCodeOne" open="(" close=")"
+				separator=",">
+				#{destOrgCodeOne,jdbcType=VARCHAR}
+			</foreach>
+	    </if>
+	    -->
+	    
+	    <!-- 加入数据权限 -->
+		<if test="userCode != null and userCode != ''">
+			and exists (select 1
+	          from bse.mv_bas_user_org_auth_view uov
+	         where uov.emp_code = #{userCode}
+	           and uov.Org_Code = payable.dest_org_code)
+		</if>
+		
+		<!-- 有效的代收货款应收单 -->
+		and cod.active = #{active,jdbcType=VARCHAR}
+		
+		<!-- 产品类型-->
+		and REC.PRODUCT_CODE = #{productCode,jdbcType=VARCHAR}
+		
+		<!--只关联有效版本的代收货款货款应收单-->
+		AND REC.BILL_TYPE IN
+		<foreach collection="billReceivableTypes" item="billtype" open="(" close=")"
+				separator=",">
+				#{billtype,jdbcType=VARCHAR}
+	   </foreach>
+	</sql>
+
+
+	<!-- 按运单单号进行查询 （分页查询） -->
+	<select id="queryByWaybillNos"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.AirBillPaidCODQueryDto"
+		resultMap="AirBillPaidResultMap">
+		select/*结算-客户管理-按运单单号进行查询*/ 
+		<include refid="airBillPaidCOD_Column_List" />
+		from
+		STL.T_STL_COD cod
+		<!-- 连接应付单 -->
+		inner join STL.t_stl_bill_payable payable on payable.waybill_No =
+		cod.waybill_No
+		<!-- 只关联有效版本的代收货款应付单 -->
+		and PAYABLE.bill_type = #{billPayableType,jdbcType=VARCHAR}
+		AND  PAYABLE.ACTIVE= #{active,jdbcType=VARCHAR}
+		<!-- 连接代收货款应收单 -->
+		inner join STL.t_stl_bill_receivable rec on rec.waybill_No =
+		cod.waybill_No  AND REC.ACTIVE =#{active,jdbcType=VARCHAR}
+		
+		<!-- 连接接送货的运单签收联 -->
+		inner join pkp.t_srv_waybill_sign_result sign on sign.waybill_no
+		= cod.waybill_No
+		<!--只关联有效版本的运单签收记录 -->
+		AND SIGN.ACTIVE = #{active,jdbcType=VARCHAR}
+		<!-- 连接综合的外部网点包括空运代理和偏线代理-->
+		left join bse.t_bas_outer_branch outer on outer.AGENT_DEPT_CODE
+		= sign.AGENT_CODE
+		<!-- 只关联网点类型 KY:空运代理网点  -->
+		and outer.BRANCHTYPE = #{externalNodeType,jdbc=VARCHAR}
+		<!-- 只关联有效版本的外部网点空运代理记录 -->
+		AND outer.ACTIVE = #{active,jdbcType=VARCHAR}
+		where
+		<!-- 按运单号查询 -->
+		cod.waybill_no in
+		<foreach collection="waybillNoSet" index="index" item="item"
+			open="(" close=")" separator=",">
+			#{item,jdbcType=VARCHAR}
+		</foreach>
+		and payable.sign_date is not null<!-- 签收日期不能为空   -->
+		
+		<!-- 引入查询条件 -->
+		<include refid="condition_expression" />
+		
+	</select>
+
+
+	<!--按签收日期查询总行数 -->
+	<select id="queryTotalRowsBySignDate"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.AirBillPaidCODQueryDto"
+		resultMap="AirBillPaidResultMap">
+		select/*结算-客户管理-按签收日期查询总行数*/
+		count(1) as Total_Count,
+		sum(cod.COD_AMOUNT) / 100 as Total_Amount 
+		from
+		STL.T_STL_COD cod
+		<!-- 连接应付单 -->
+		inner join STL.t_stl_bill_payable payable on payable.waybill_No =
+		cod.waybill_No
+		<!-- 只关联有效版本的代收货款应付单 -->
+		and PAYABLE.bill_type = #{billPayableType,jdbcType=VARCHAR}
+		AND
+		PAYABLE.ACTIVE
+		= #{active,jdbcType=VARCHAR}
+		<!-- 连接代收货款应收单 -->
+		inner join STL.t_stl_bill_receivable rec on rec.waybill_No =
+		cod.waybill_No
+		AND REC.ACTIVE =
+		#{active,jdbcType=VARCHAR}
+		<!-- 连接接送货的运单签收联 -->
+		inner join pkp.t_srv_waybill_sign_result sign on sign.waybill_no
+		= cod.waybill_No
+		<!--只关联有效版本的运单签收记录 -->
+		AND SIGN.ACTIVE = #{active,jdbcType=VARCHAR}
+		where
+		<!-- 签收日期 -->
+		<![CDATA[	
+			payable.sign_date >= #{inceptSignDate,jdbcType=DATE}
+			and payable.sign_date < #{endSignDate,jdbcType=DATE}	
+		]]>
+		<!-- 空运审核状态 -->
+		<if test="airStatus != null and airStatus != ''">
+			and cod.air_Status = #{airStatus,jdbcType=VARCHAR}
+		</if>
+		<!-- 代收货款类别 -->
+		<if test="codType != null and codType != ''">
+			and cod.cod_type = #{codType,jdbcType=VARCHAR}
+		</if>
+		<!-- 引入查询条件 -->
+		<include refid="condition_expression" />
+	</select>
+
+	<!--按签收日期分页查询 -->
+	<select id="queryBySignDate"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.AirBillPaidCODQueryDto"
+		resultMap="AirBillPaidResultMap">
+		select/*结算-客户管理-按签收日期分页查询*/
+		<include refid="airBillPaidCOD_Column_List" />
+		from
+		STL.T_STL_COD cod
+		<!-- 连接应付单 -->
+		inner join STL.t_stl_bill_payable payable on payable.waybill_No =
+		cod.waybill_No
+		<!-- 只关联有效版本的代收货款应付单 -->
+		and PAYABLE.bill_type = #{billPayableType,jdbcType=VARCHAR}
+		AND
+		PAYABLE.ACTIVE
+		= #{active,jdbcType=VARCHAR}
+		<!-- 连接代收货款应收单 -->
+		inner join STL.t_stl_bill_receivable rec on rec.waybill_No =
+		cod.waybill_No
+		AND REC.ACTIVE =#{active,jdbcType=VARCHAR}
+		<!-- 连接接送货的运单签收联 -->
+		inner join pkp.t_srv_waybill_sign_result sign on sign.waybill_no= cod.waybill_No
+		<!--只关联有效版本的运单签收记录 -->
+		AND SIGN.ACTIVE = #{active,jdbcType=VARCHAR}
+		<!-- 连接综合的外部网点包括空运代理和偏线代理-->
+		left join bse.t_bas_outer_branch outer on outer.AGENT_DEPT_CODE
+		= sign.AGENT_CODE
+		<!-- 只关联网点类型 KY:空运代理网点  -->
+		and outer.BRANCHTYPE = #{externalNodeType,jdbc=VARCHAR}
+		<!-- 只关联有效版本的外部网点空运代理记录 -->
+		AND outer.ACTIVE = #{active,jdbcType=VARCHAR}
+		where
+		<!-- 签收日期 -->
+		<![CDATA[	
+			payable.sign_date >= #{inceptSignDate,jdbcType=DATE}
+			and payable.sign_date < #{endSignDate,jdbcType=DATE}	
+		]]>
+		<!-- 空运审核状态 -->
+		<if test="airStatus != null and airStatus != ''">
+			and cod.air_Status = #{airStatus,jdbcType=VARCHAR}
+		</if>
+		<!-- 代收货款类别 -->
+		<if test="codType != null and codType != ''">
+			and cod.cod_type = #{codType,jdbcType=VARCHAR}
+		</if>
+		<!-- 引入查询条件 -->
+		<include refid="condition_expression" />
+	</select>
+
+	<!--按审核日期查询总行数 -->
+	<select id="queryTotalRowsByAuditDate"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.AirBillPaidCODQueryDto"
+		resultMap="AirBillPaidResultMap">
+		select/*结算-客户管理-按审核日期查询总行数*/
+		count(1) as Total_Count,
+		sum(cod.COD_AMOUNT) / 100 as Total_Amount 
+		from
+		STL.T_STL_COD cod
+		<!-- 连接应付单 -->
+		inner join STL.t_stl_bill_payable payable on payable.waybill_No =
+		cod.waybill_No
+		<!-- 只关联有效版本的代收货款应付单 -->
+		and PAYABLE.bill_type = #{billPayableType,jdbcType=VARCHAR}
+		AND
+		PAYABLE.ACTIVE
+		= #{active,jdbcType=VARCHAR}
+		<!-- 连接代收货款应收单 -->
+		inner join STL.t_stl_bill_receivable rec on rec.waybill_No =
+		cod.waybill_No
+		AND REC.ACTIVE =
+		#{active,jdbcType=VARCHAR}
+		<!-- 连接接送货的运单签收联 -->
+		inner join pkp.t_srv_waybill_sign_result sign on sign.waybill_no
+		= cod.waybill_No
+		<!--只关联有效版本的运单签收记录 -->
+		AND SIGN.ACTIVE = #{active,jdbcType=VARCHAR}
+		where
+		<!-- 审核时间 -->
+		<![CDATA[	
+			cod.AIR_ORG_audit_TIME >= #{inceptAuditDate,jdbcType=DATE}
+			and cod.AIR_ORG_audit_TIME < #{endAuditDate,jdbcType=DATE}
+		]]>
+		<!-- 审核状态 -->
+		and cod.air_Status = #{airStatus,jdbcType=VARCHAR}
+		
+		and payable.sign_date is not null<!-- 签收日期不能为空   -->
+		
+		<!-- 引入查询条件 -->
+		<include refid="condition_expression" />
+	</select>
+
+	<!--按审核日期分页查询 -->
+	<select id="queryByAuditDate"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.AirBillPaidCODQueryDto"
+		resultMap="AirBillPaidResultMap">
+		select/*结算-客户管理-按审核日期分页查询*/
+		<include refid="airBillPaidCOD_Column_List" />
+		from
+		STL.T_STL_COD cod
+		<!-- 连接应付单 -->
+		inner join STL.t_stl_bill_payable payable on payable.waybill_No =
+		cod.waybill_No
+		<!-- 只关联有效版本的代收货款应付单 -->
+		and PAYABLE.bill_type = #{billPayableType,jdbcType=VARCHAR}
+		AND
+		PAYABLE.ACTIVE
+		= #{active,jdbcType=VARCHAR}
+		<!-- 连接代收货款应收单 -->
+		inner join STL.t_stl_bill_receivable rec on rec.waybill_No =
+		cod.waybill_No
+		AND REC.ACTIVE =#{active,jdbcType=VARCHAR}
+		<!-- 连接接送货的运单签收联 -->
+		inner join pkp.t_srv_waybill_sign_result sign on sign.waybill_no
+		= cod.waybill_No
+		<!--只关联有效版本的运单签收记录 -->
+		AND SIGN.ACTIVE = #{active,jdbcType=VARCHAR}
+		<!-- 连接综合的外部网点包括空运代理和偏线代理-->
+		left join bse.t_bas_outer_branch outer on outer.AGENT_DEPT_CODE
+		= sign.AGENT_CODE
+		<!-- 只关联网点类型 KY:空运代理网点  -->
+		and outer.BRANCHTYPE = #{externalNodeType,jdbc=VARCHAR}
+		<!-- 只关联有效版本的外部网点空运代理记录 -->
+		AND outer.ACTIVE = #{active,jdbcType=VARCHAR}		
+		where
+		<!-- 审核时间 -->
+		<![CDATA[	
+			cod.AIR_ORG_audit_TIME >= #{inceptAuditDate,jdbcType=DATE}
+			and cod.AIR_ORG_audit_TIME < #{endAuditDate,jdbcType=DATE}	
+		]]>
+		
+		and payable.sign_date is not null<!-- 签收日期不能为空   -->
+		
+		<!-- 空运审核状态 -->
+		<if test="airStatus != null and airStatus != ''">
+			and cod.air_Status = #{airStatus,jdbcType=VARCHAR}
+		</if>
+		<!-- 代收货款类别 -->
+		<if test="codType != null and codType != ''">
+			and cod.cod_type = #{codType,jdbcType=VARCHAR}
+		</if>
+		
+		<!-- 引入查询条件 -->
+		<include refid="condition_expression" />
+	</select>
+</mapper>

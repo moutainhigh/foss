@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper
+	namespace="com.deppon.foss.module.pickup.order.api.shared.domain.OrderReportEntity">
+	<resultMap id="BaseResultMap"
+		type="com.deppon.foss.module.pickup.order.api.shared.domain.OrderReportEntity">
+		<result column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="DISPATCH_ORDER_ID" property="dispatchOrderId"
+			jdbcType="VARCHAR" />
+		<result column="ORDER_NO" property="orderNo" jdbcType="VARCHAR" />
+		<result column="PICKUP_ADDRESS" property="pickupAddress"
+			jdbcType="VARCHAR" />
+		<result column="EXPRESS_DRIVER_CODE" property="expressDriverCode"
+			jdbcType="VARCHAR" />
+		<result column="EXPRESS_DRIVER_NAME" property="expressDriverName"
+			jdbcType="VARCHAR" />
+		<result column="EXPRESS_DRIVER_PHONE" property="expressDriverPhone"
+			jdbcType="VARCHAR" />
+		<result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+		<result column="PICKUP_REGION_CODE" property="pickupRegionCode"
+			jdbcType="VARCHAR" />
+		<result column="PICKUP_REGION_NAME" property="pickupRegionName"
+			jdbcType="VARCHAR" />
+		<result column="CREATE_DATE" property="createDate" jdbcType="TIMESTAMP" />
+	</resultMap>
+
+	<insert id="insertOrderReport"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.domain.OrderReportEntity">
+		insert into PKP.T_SRV_ORDER_REPORT
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				ID,
+			</if>
+			<if test="dispatchOrderId != null">
+				DISPATCH_ORDER_ID,
+			</if>
+			<if test="orderNo != null">
+				ORDER_NO,
+			</if>
+			<if test="pickupAddress != null">
+				PICKUP_ADDRESS,
+			</if>
+			<if test="expressDriverCode != null">
+				EXPRESS_DRIVER_CODE,
+			</if>
+			<if test="expressDriverName != null">
+				EXPRESS_DRIVER_NAME,
+			</if>
+			<if test="expressDriverPhone != null">
+				EXPRESS_DRIVER_PHONE,
+			</if>
+			<if test="vehicleNo != null">
+				VEHICLE_NO,
+			</if>
+			<if test="pickupRegionCode != null">
+				PICKUP_REGION_CODE,
+			</if>
+			<if test="pickupRegionName != null">
+				PICKUP_REGION_NAME,
+			</if>
+			<if test="createDate != null">
+				CREATE_DATE,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id,jdbcType=VARCHAR},
+			</if>
+			<if test="dispatchOrderId != null">
+				#{dispatchOrderId,jdbcType=VARCHAR},
+			</if>
+			<if test="orderNo != null">
+				#{orderNo,jdbcType=VARCHAR},
+			</if>
+			<if test="pickupAddress != null">
+				#{pickupAddress,jdbcType=VARCHAR},
+			</if>
+			<if test="expressDriverCode != null">
+				#{expressDriverCode,jdbcType=VARCHAR},
+			</if>
+			<if test="expressDriverName != null">
+				#{expressDriverName,jdbcType=VARCHAR},
+			</if>
+			<if test="expressDriverPhone != null">
+				#{expressDriverPhone,jdbcType=VARCHAR},
+			</if>
+			<if test="vehicleNo != null">
+				#{vehicleNo,jdbcType=VARCHAR},
+			</if>
+			<if test="pickupRegionCode != null">
+				#{pickupRegionCode,jdbcType=VARCHAR},
+			</if>
+			<if test="pickupRegionName != null">
+				#{pickupRegionName,jdbcType=VARCHAR},
+			</if>
+			<if test="createDate != null">
+				#{createDate,jdbcType=TIMESTAMP},
+			</if>
+		</trim>
+	</insert>
+
+	<sql id="Base_Column_List">
+		o.ID, o.DISPATCH_ORDER_ID, o.ORDER_NO, o.PICKUP_ADDRESS, o.EXPRESS_DRIVER_CODE, o.EXPRESS_DRIVER_NAME, o.EXPRESS_DRIVER_PHONE, o.VEHICLE_NO, o.PICKUP_REGION_CODE, o.PICKUP_REGION_NAME, o.CREATE_DATE
+	</sql>
+
+	<select id="selectOrderReportByAddress" resultMap="BaseResultMap"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.domain.OrderReportEntity">
+		select * from (select 
+		   <include refid="Base_Column_List" /> 
+		   from PKP.T_SRV_ORDER_REPORT O 
+		      where 1=1 
+		       <if test="pickupAddress != null and pickupAddress != ''">
+				and O.PICKUP_ADDRESS = #{pickupAddress,jdbcType=VARCHAR}
+			   </if>
+			   <![CDATA[ AND CREATE_DATE >= TRUNC(SYSDATE)+3/24 ]]>
+			   <![CDATA[ AND CREATE_DATE < TRUNC(SYSDATE+1)+3/24 ]]>
+			   order by O.CREATE_DATE DESC ) o,pkp.t_srv_employeeWorkStatus emp
+		<where>
+			and o.express_driver_code = emp.emp_code
+            and emp.WORK_STATUS = 'OPEN' and emp.active = 'Y' /*AUTO-120 gcl 14.7.8 快递员为已暂停状态 不能再次分配*/
+		    and ROWNUM = 1
+		</where><!--14.7.26 gcl sql优化-->
+	</select>
+	<select id="selectOrderReportByAddressDriverCode" resultMap="BaseResultMap"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.domain.OrderReportEntity">
+		select * from 
+			(select
+			<include refid="Base_Column_List" />
+			from PKP.T_SRV_ORDER_REPORT O
+			<where>
+				<if test="pickupAddress != null and pickupAddress != ''">
+					and O.PICKUP_ADDRESS = #{pickupAddress,jdbcType=VARCHAR}
+				</if>
+				<![CDATA[ AND CREATE_DATE >= TRUNC(SYSDATE)+3/24 ]]>
+				<![CDATA[ AND CREATE_DATE < TRUNC(SYSDATE+1)+3/24]]>
+				<if test="expressDriverCode != null and expressDriverCode != ''">
+					and O.express_Driver_Code = #{expressDriverCode,jdbcType=VARCHAR}
+				</if>
+			</where>
+			order by o.CREATE_DATE DESC) 
+		where ROWNUM = 1 
+	</select>
+	<select id="queryMinReceiveOrderDriver" resultType="String">
+		select t.emp_code
+  			from (select emp.EMP_CODE, nvl(ot.fcount,0)
+          from pkp.t_srv_employeeWorkStatus emp left join (select OT.Express_Driver_Code, count(1) FCOUNT from pkp.T_SRV_ORDER_REPORT OT 
+         where OT.Express_Driver_Code in
+               <foreach collection="list" item="item" index="index" open="("
+						separator="," close=")">
+					#{item}
+				</foreach><!--14.7.26 gcl sql优化-->
+				<![CDATA[ AND CREATE_DATE >= TRUNC(SYSDATE)+3/24 ]]>
+		       <![CDATA[ AND CREATE_DATE < TRUNC(SYSDATE+1)+3/24]]>
+          		group by  OT.Express_Driver_Code
+    		) ot
+          on  emp.EMP_CODE = OT.Express_Driver_Code 
+        where emp.WORK_STATUS='OPEN' and emp.active='Y'
+        AND emp.EMP_CODE in
+               <foreach collection="list" item="item" index="index" open="("
+						separator="," close=")">
+					#{item}
+				</foreach>
+         order by nvl(ot.fcount,0) ) t
+ 		where ROWNUM = 1
+	</select>
+	<!--14.7.30 gcl 查询 快递员当天接收订单数 AUTO-212-->
+	<select id="queryReceiveCountOrderDriver" resultType="java.lang.Long"  >
+		SELECT COUNT(1)
+  		 FROM PKP.T_SRV_ORDER_REPORT OT 
+         WHERE OT.Express_Driver_Code = #{driverCode,jdbcType=VARCHAR}
+	</select>
+	<delete id="deleteOrderReport"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.domain.OrderReportEntity">
+		delete
+		from PKP.T_SRV_ORDER_REPORT
+		where 1=1 
+		<![CDATA[ AND CREATE_DATE >=TRUNC(SYSDATE-1)+3/24]]>
+		<![CDATA[ AND CREATE_DATE < TRUNC(SYSDATE)+3/24]]>
+	</delete>
+
+</mapper>

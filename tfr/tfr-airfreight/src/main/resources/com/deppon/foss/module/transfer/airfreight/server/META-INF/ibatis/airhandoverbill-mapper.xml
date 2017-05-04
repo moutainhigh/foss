@@ -1,0 +1,786 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.airfreight.airHandoverBill" >
+  <!-- 正单交接单 -->
+  <resultMap id="airHandOverBillMap" type="com.deppon.foss.module.transfer.airfreight.api.shared.domain.AirHandOverBillEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+    <result column="ORG_NAME" property="orgName" jdbcType="VARCHAR" />
+    <result column="AIR_HANDOVER_NO" property="airHandoverNo" jdbcType="VARCHAR" />
+    <result column="FLIGHT_DATE" property="flightDate" jdbcType="TIMESTAMP" />
+    <result column="FLIGHT_NO" property="flightNo" jdbcType="VARCHAR" />
+    <result column="TAKE_OFF_TIME" property="takeOffTime" />
+    <result column="BOOKING_NO" property="bookingNo" jdbcType="VARCHAR" />
+    <result column="SPACE_WEIGHT" property="spaceWeight" jdbcType="DECIMAL" />
+    <result column="HANDOVER_ORG" property="handoverOrg" jdbcType="VARCHAR" />
+    <result column="HANDOVER_EMP" property="handoverEmp" jdbcType="VARCHAR" />
+    <result column="NOTES" property="notes" jdbcType="VARCHAR" />
+    <result column="CREATE_USER_NAME" property="createUserName" jdbcType="VARCHAR" />
+    <result column="CREATE_USER_CODE" property="createUserCode" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="MODIFY_USER_CODE" property="modifyUserCode" jdbcType="VARCHAR" />
+    <result column="MODIFY_USER_NAME" property="modifyUserName" jdbcType="VARCHAR" />
+    <result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+    <result column="WAYBILL_QTY_TOTAL" property="waybillQtyTotal" jdbcType="DECIMAL" />
+    <result column="GOODS_QTY_TOTAL" property="goodsQtyTotal" jdbcType="DECIMAL" />
+    <result column="GROSS_WEIGHT_TOTAL" property="grossWeightTotal" jdbcType="DECIMAL" />
+    <result column="BILLING_WEIGHT_TOTAL" property="billingWeightTotal" jdbcType="DECIMAL" />
+    <result column="AIR_WAYBILL_STOCK_STATE" property="airWaybillStockState" jdbcType="VARCHAR" />
+    <result column="AIR_WAYBILL_STOCK_STATE" property="airWaybillStockState" jdbcType="VARCHAR" />
+    <result column="air_handovertype" property="airHandOverType" jdbcType="VARCHAR" />
+    <result column="handover_volume_total" property="handoverVolumeTotal" jdbcType="DECIMAL" />
+    <result column="express_unload_status" property="expressUnloadStatus" jdbcType="VARCHAR" />
+    <result column="express_arrive_code" property="expressArriveCode" jdbcType="VARCHAR" />
+    <result column="express_arrive_name" property="expressArriveName" jdbcType="VARCHAR" />
+    <result column="express_assign_status" property="expressAssignStatus" jdbcType="VARCHAR" />
+    
+  </resultMap>
+  <!-- 查询参数 -->
+  <resultMap id="airHandoverBillResult" type="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirHandOverBillDto">
+  	<result property="orgName"/>
+  	<result property="flightNo"/>
+  	<result property="flightDate"/>
+  	<result property="airHandoverNo"/>
+  	<result property="waybillNo"/>
+  	<result property="airWaybillNo"/>
+  </resultMap>
+  <!-- 运单号、流水号 -->
+  <resultMap id="airHandoverBillGetSerialNoResult" type="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirHandOverBillGetSerialNoDto">
+  	<result column="WAYBILL_NO" property="wayBillNo" jdbcType="VARCHAR" />
+  	<result column="SERIAL_NO" property="serialNo" jdbcType="VARCHAR" />
+  </resultMap>
+  <!-- 正单明细 -->
+  <resultMap id="AirWaybillMap" type="com.deppon.foss.module.transfer.airfreight.api.shared.domain.AirHandOverBillDetailEntity" >
+    <!-- <result column="ID" property="id" jdbcType="VARCHAR" /> -->
+    <result column="ID" property="toid" jdbcType="VARCHAR" />  <!-- 实际为正单ID -->
+    <result column="AIR_HANDOVERBILL_ID" property="airHandoverbillId" jdbcType="VARCHAR" />
+    <result column="AIR_LINE_CODE" property="airLineCode" jdbcType="VARCHAR" />
+    <result column="AIR_LINE_NAME" property="airLineName" jdbcType="VARCHAR" />
+    <result column="AIR_WAYBILL_NO" property="airWaybillNo" jdbcType="VARCHAR" />
+    <result column="GOODS_QTY" property="goodsQty" jdbcType="DECIMAL" />
+    <result column="GROSS_WEIGHT" property="grossWeight" jdbcType="DECIMAL" />
+    <result column="BILLING_WEIGHT" property="billingWeight" jdbcType="DECIMAL" />
+    <result column="DEPT_REGION_NAME" property="deptRegionName" jdbcType="VARCHAR" />
+    <result column="ARRV_REGION_NAME" property="arrvRegionName" jdbcType="VARCHAR" />
+    <result column="DEPT_REGION_CODE" property="deptRegionCode" jdbcType="VARCHAR" />
+    <result column="ARRV_REGION_CODE" property="arrvRegionCode" jdbcType="VARCHAR" />
+    <result column="GOODS_NAME" property="goodsName" jdbcType="VARCHAR" />
+    <result column="PACKAGE_STRUCTION" property="packageStruction" jdbcType="VARCHAR" />
+    <result column="CURRENCY_CODE" property="currencyCode" jdbcType="VARCHAR" />
+    <result column="FEE_TOTAL" property="feeTotal" jdbcType="DECIMAL" /> 
+    <result column="FEE_PLAIN" property="notes" jdbcType="VARCHAR" /> <!-- 正单明细没有备注字段，暂时用费用明细 -->
+    <result column="volume" property="goodsVolume" jdbcType="DECIMAL" /> 
+    <result column="transporttype" property="transportType" jdbcType="VARCHAR" />
+    
+  </resultMap>
+  
+  <!-- 交接单明细 -->
+  <resultMap id="AirHandOverBillDetailMap" type="com.deppon.foss.module.transfer.airfreight.api.shared.domain.AirHandOverBillDetailEntity" >
+    <result column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="T_O_ID" property="toid" jdbcType="VARCHAR" />  
+    <result column="AIR_HANDOVERBILL_ID" property="airHandoverbillId" jdbcType="VARCHAR" />
+    <result column="AIR_LINE_CODE" property="airLineCode" jdbcType="VARCHAR" />
+    <result column="AIR_LINE_NAME" property="airLineName" jdbcType="VARCHAR" />
+    <result column="AIR_WAYBILL_NO" property="airWaybillNo" jdbcType="VARCHAR" />
+    <result column="GOODS_QTY" property="goodsQty" jdbcType="DECIMAL" />
+    <result column="GROSS_WEIGHT" property="grossWeight" jdbcType="DECIMAL" />
+    <result column="BILLING_WEIGHT" property="billingWeight" jdbcType="DECIMAL" />
+    <result column="DEPT_REGION_NAME" property="deptRegionName" jdbcType="VARCHAR" />
+    <result column="ARRV_REGION_NAME" property="arrvRegionName" jdbcType="VARCHAR" />
+    <result column="DEPT_REGION_CODE" property="deptRegionCode" jdbcType="VARCHAR" />
+    <result column="ARRV_REGION_CODE" property="arrvRegionCode" jdbcType="VARCHAR" />
+    <result column="GOODS_NAME" property="goodsName" jdbcType="VARCHAR" />
+    <result column="PACKAGE_STRUCTION" property="packageStruction" jdbcType="VARCHAR" />
+    <result column="CURRENCY_CODE" property="currencyCode" jdbcType="VARCHAR" />
+    <result column="FEE_TOTAL" property="feeTotal" jdbcType="DECIMAL" /> 
+    <result column="NOTES" property="notes" jdbcType="VARCHAR" /> 
+    <result column="AIR_FEE" property="airFee" jdbcType="DECIMAL" /> 
+    <result column="goods_volume" property="goodsVolume" jdbcType="DECIMAL" />
+    
+  </resultMap>
+  <!-- 接送货接口，根据运单号查询交接情况 -->
+  <resultMap type="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirHandOverStateDto" id="AirHandOverStateMap">
+  	<result column="CREATE_TIME" property="createTime" jdbcType="VARCHAR" />
+  	<result column="AIR_HANDOVER_NO" property="airHandoverNo" jdbcType="VARCHAR" />
+  	<result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+  	<result column="ORG_NAME" property="orgName" jdbcType="VARCHAR" />
+  	<result column="TAKE_OFF_TIME" property="leaveTime" jdbcType="TIMESTAMP" />
+  	<result column="ARRIVE_TIME" property="arriveTime" jdbcType="TIMESTAMP" />
+  	<result column="ARRV_REGION_CODE" property="arrvRegionCode" jdbcType="VARCHAR" />
+  	<result column="ARRV_REGION_NAME" property="arrvRegionName" jdbcType="VARCHAR" />
+  	<result column="GOODS_QTY_TOTAL" property="goodsQty" jdbcType="VARCHAR" />
+  </resultMap>
+  <!-- 航空正单交接单表列 -->
+  <sql id="Airhandoverbill_Column_List" >
+    distinct(TOAH.ID), TOAH.ORG_CODE, TOAH.ORG_NAME, TOAH.AIR_HANDOVER_NO, TOAH.FLIGHT_DATE, TOAH.FLIGHT_NO, TOAH.TAKE_OFF_TIME, TOAH.BOOKING_NO, TOAH.SPACE_WEIGHT, 
+    TOAH.NOTES, TOAH.CREATE_USER_NAME, TOAH.CREATE_USER_CODE, TOAH.CREATE_TIME, 
+    TOAH.MODIFY_USER_CODE, TOAH.MODIFY_USER_NAME, TOAH.MODIFY_TIME, TOAH.WAYBILL_QTY_TOTAL, TOAH.GOODS_QTY_TOTAL, 
+    TOAH.GROSS_WEIGHT_TOTAL, TOAH.BILLING_WEIGHT_TOTAL, TOAH.AIR_WAYBILL_STOCK_STATE, BMDN.NAME AS HANDOVER_ORG, EMPLOYEE.EMP_NAME AS HANDOVER_EMP,AIRLEVEL,
+    DECODE(TOAH.air_handovertype,NULL,'PRECISION_HANDOVER',TOAH.air_handovertype) as air_handovertype
+  </sql>
+  <!-- 根据ID查询航空正单交接单表列 -->
+  <sql id="Airhandoverbill_Column_List_For_Id" >
+    TOAH.ID, TOAH.ORG_CODE, TOAH.ORG_NAME, TOAH.AIR_HANDOVER_NO, TOAH.FLIGHT_DATE, TOAH.FLIGHT_NO, TOAH.TAKE_OFF_TIME, TOAH.BOOKING_NO, TOAH.SPACE_WEIGHT, 
+    TOAH.HANDOVER_EMP, TOAH.HANDOVER_ORG ,TOAH.NOTES, TOAH.CREATE_USER_NAME, TOAH.CREATE_USER_CODE, TOAH.CREATE_TIME, 
+    TOAH.MODIFY_USER_CODE, TOAH.MODIFY_USER_NAME, TOAH.MODIFY_TIME, TOAH.WAYBILL_QTY_TOTAL, TOAH.GOODS_QTY_TOTAL, 
+    TOAH.GROSS_WEIGHT_TOTAL, TOAH.BILLING_WEIGHT_TOTAL, TOAH.AIR_WAYBILL_STOCK_STATE,TOAH.AIRLEVEL,
+    toah.handover_volume_total,
+    DECODE(TOAH.air_handovertype,NULL,'PRECISION_HANDOVER',TOAH.air_handovertype) as air_handovertype,
+    express_unload_status,
+    express_arrive_code,
+    express_arrive_name,
+    express_assign_status
+  </sql>
+  <!-- 航空正单交接单明细表列 -->
+  <sql id="AirhandoverbillDetail_Column_List">
+	ID, T_O_ID, AIR_HANDOVERBILL_ID, AIR_LINE_CODE, AIR_LINE_NAME,
+	AIR_WAYBILL_NO, GOODS_QTY, GROSS_WEIGHT, BILLING_WEIGHT,
+	DEPT_REGION_NAME, ARRV_REGION_NAME, DEPT_REGION_CODE, ARRV_REGION_CODE,
+	GOODS_NAME, PACKAGE_STRUCTION, CURRENCY_CODE, FEE_TOTAL, NOTES,
+	goods_volume,
+	decode(transporttype,NULL,'PRECISION_AIR',transporttype) transportType
+  </sql>
+  <!-- 航空正单交接单明细表列 for print-->
+  <sql id="AirhandoverbillDetail_Column_List_print">
+	   handDetail.ID,
+	   handDetail.T_O_ID,
+       handDetail.AIR_HANDOVERBILL_ID,
+       handDetail.AIR_LINE_CODE,
+       handDetail.AIR_LINE_NAME,
+       handDetail.AIR_WAYBILL_NO,
+       handDetail.GOODS_QTY,
+       handDetail.GROSS_WEIGHT,
+       handDetail. BILLING_WEIGHT,
+       handDetail.DEPT_REGION_NAME,
+       handDetail.ARRV_REGION_NAME,
+       handDetail.DEPT_REGION_CODE,
+       handDetail.ARRV_REGION_CODE,
+       handDetail.GOODS_NAME,
+       handDetail.PACKAGE_STRUCTION,
+       handDetail.CURRENCY_CODE,
+       handDetail.FEE_TOTAL/100 FEE_TOTAL,
+       handDetail.NOTES,
+       airWay.AIR_FEE/100 AIR_FEE
+  </sql>
+  
+  <!-- 航空正单表列 -->
+  <sql id="Airwaybill_Column_List" >
+	TOAW.ID, TOAW.AIR_LINE_TWOLETTER, TOAW.AIR_WAYBILL_NO, TOAW.DEPT_REGION_CODE,
+	TOAW.DEPT_REGION_NAME, TOAW.ARRV_REGION_CODE, TOAW.ARRV_REGION_NAME,
+	TOAW.AIR_ASSEMBLE_TYPE, TOAW.DEST_ORG_CODE, TOAW.DEDT_ORG_NAME, TOAW.RECEIVER_CODE,
+	TOAW.RECEIVER_NAME, TOAW.RECEIVER_CONTACT_PHONE, TOAW.ACCOUNT_ITEM, TOAW.BILLING_AGENCY,
+	TOAW.RECEIVER_ADDRESS, TOAW.STORAGE_ITEM, TOAW.FLIGHT_NO, TOAW.FLIGHT_DATE, TOAW.TAKE_OFF_TIME,
+	TOAW.ARRIVE_TIME, TOAW.RATE_CLASS, TOAW.PAYMENT_TYPE, TOAW.GROSS_WEIGHT, TOAW.BILLING_WEIGHT,
+	TOAW.FEE, TOAW.AGENCT_CODE, TOAW.AGENCY_NAME, TOAW.DECLARE_VALUE, TOAW.ITEM_CODE, TOAW.GOODS_QTY,
+	TOAW.VOLUME, TOAW.AIR_FEE, TOAW.EXTRA_FEE, TOAW.GOODS_NAME, TOAW.PACKAGE_STRUCTION, TOAW.GROUND_FEE,
+	TOAW.FUEL_SURCHARGE, TOAW.TRANSPORT_INSURANCE, TOAW.INSERANCE_FEE, TOAW.FEE_TOTAL,
+	TOAW.FEE_PLAIN, TOAW.BILLING_FEE, TOAW.SHIPPER_CODE, TOAW.SHIPPER_NAME, TOAW.SHIPPER_ADDRESS,
+	TOAW.SHIPPER_CONTACT_PHONE, TOAW.PICKUP_TYPE, TOAW.CREATE_ORG_CODE, TOAW.CREATE_ORG_NAME,
+	TOAW.CREATE_USER_CODE, TOAW.CREATE_USER_NAME, TOAW.CREATE_TIME, TOAW.MODIFY_USER_CODE,
+	TOAW.MODIFY_USER_NAME, TOAW.MODIFY_TIME, TOAW.HANDOVER_STATE, TOAW.CURRENCY_CODE,
+	TOAW.IS_NOT_PAYMENT, TOAW.JOINT_TICKET_NO, TOAW.ACTUAL_TAKE_OFF_TIME,
+	TOAW.ACTUAL_ARRIVE_TIME, TOAW.TRACK_STATE,
+	decode(TOAW.transporttype,NULL,'PRECISION_AIR',TOAW.transporttype) transporttype
+  </sql>
+  <!-- 查询正单交接单where条件 -->
+  <sql id="where">
+		<where>
+		    
+			<choose>
+				<!-- 如果交接单号不为空，则忽略其他查询条件 -->
+				<when test="airHandoverNo != null and airHandoverNo!=''">
+					TOAH.AIR_HANDOVER_NO LIKE '%'|| #{airHandoverNo,jdbcType=VARCHAR} ||'%'
+				</when>
+				<!-- 如果正单号不为空且交接单号为空，则忽略其他查询条件 -->
+				<when test="airWaybillNo != null and airWaybillNo!='' and (airHandoverNo == null or airHandoverNo=='')">
+					TOAW.AIR_WAYBILL_NO LIKE '%'|| #{airWaybillNo,jdbcType=VARCHAR} ||'%'
+				</when>
+				<!-- 如果运单号不为空且交接单号和正单号为空，则忽略其他查询条件 -->
+				<when test="waybillNo != null and waybillNo!='' and (airHandoverNo == null or airHandoverNo=='') and (airWaybillNo == null or airWaybillNo=='')">
+					TOAWD.WAYBILL_NO LIKE '%'|| #{waybillNo,jdbcType=VARCHAR} ||'%'
+				</when>
+				<otherwise>
+					<if test="flightNo!=null and flightNo!=''">
+						TOAH.FLIGHT_NO LIKE  '%'|| #{flightNo,jdbcType=VARCHAR} ||'%' 
+					</if>
+					<if test="flightDate!=null and flightDate!=''">
+						<![CDATA[AND TOAH.FLIGHT_DATE = to_date(#{flightDate,jdbcType=VARCHAR},'yyyy-MM-dd')]]>
+					</if>
+					<if test="orgCode!=null and orgCode!=''">
+						AND TOAH.ORG_CODE LIKE '%'|| #{orgCode,jdbcType=VARCHAR} ||'%' 
+					</if>
+				</otherwise>
+			</choose>
+			<if test="airHandOverType!=null and airHandOverType!='ALL' and airHandOverType!=''">
+			     and  TOAH.air_handovertype=#{airHandOverType}
+			</if>
+		</where>
+	</sql>
+  <!-- 查询全部数据 -->
+  <select id="queryAirHandOverBill" resultMap="airHandOverBillMap" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirHandOverBillDto">
+  	select
+  	<include refid="Airhandoverbill_Column_List"/> 
+	from tfr.T_OPT_AIR_HANDOVERBILL TOAH 
+	inner join tfr.T_OPT_AIR_HANDOVERBILL_DETAIL TOAHD on TOAH.id = TOAHD.AIR_HANDOVERBILL_ID
+	left join tfr.T_OPT_AIR_WAYBILL TOAW on TOAHD.T_O_ID = TOAW.ID
+	left join tfr.T_OPT_AIR_WAYBILL_DETAIL TOAWD on TOAW.ID = TOAWD.AIR_WAYBILL_ID
+	join BSE.MV_DEST_NET BMDN on TOAH.HANDOVER_ORG  = BMDN.CODE
+	join BSE.T_BAS_EMPLOYEE EMPLOYEE on TOAH.HANDOVER_EMP = EMPLOYEE.EMP_CODE
+	<include refid="where"/>
+  	order by TOAH.CREATE_TIME DESC
+  </select>
+  
+  <!-- 查询运单号和流水号 -->
+  <select id="queryWaybillNoAndSerialNo" resultMap="airHandoverBillGetSerialNoResult" parameterType="java.lang.String">
+  	select TOAWD.WAYBILL_NO,TOAWS.SERIAL_NO from tfr.T_OPT_AIR_HANDOVERBILL TOAH 
+    inner join tfr.T_OPT_AIR_HANDOVERBILL_DETAIL TOAHD on TOAH.ID = TOAHD.AIR_HANDOVERBILL_ID
+    inner join tfr.T_OPT_AIR_WAYBILL TOAW on TOAHD.T_O_ID = TOAW.ID
+    inner join tfr.T_OPT_AIR_WAYBILL_DETAIL TOAWD on TOAW.ID = TOAWD.AIR_WAYBILL_ID
+    inner join tfr.T_OPT_AIR_WAYBILL_SERIALNO TOAWS on TOAWD.ID = TOAWS.AIR_WAYBILL_DETAIL_ID
+    where TOAH.ID = #{id,jdbcType=VARCHAR} group by TOAWD.WAYBILL_NO,TOAWS.SERIAL_NO
+  </select>
+  
+  <!-- 获取记录总条数 -->
+  <select id="getCount" resultType="Long" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirHandOverBillDto">
+  	select count(distinct(TOAH.ID)) from tfr.T_OPT_AIR_HANDOVERBILL TOAH 
+	inner join tfr.T_OPT_AIR_HANDOVERBILL_DETAIL TOAHD on TOAH.id = TOAHD.AIR_HANDOVERBILL_ID
+	left join tfr.T_OPT_AIR_WAYBILL TOAW on TOAHD.T_O_ID = TOAW.ID
+	left join tfr.T_OPT_AIR_WAYBILL_DETAIL TOAWD on TOAW.ID = TOAWD.AIR_WAYBILL_ID
+	join BSE.MV_DEST_NET BMDN on TOAH.HANDOVER_ORG  = BMDN.CODE
+	<include refid="where"/>
+  </select>
+  
+  <!-- 查询当前交接单中运单号+流水号是否存在于库存表中 -->
+  <select id="queryStock" resultType="Long" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirHandOverBillGetSerialNoDto">
+  	select count(t.ID) from tfr.T_OPT_STOCK t where t.WAYBILL_NO = #{wayBillNo,jdbcType=VARCHAR} and t.SERIAL_NO = #{serialNo,jdbcType=VARCHAR}
+  	and t.GOODS_AREA_CODE = #{goodsAreaCode,jdbcType=VARCHAR} and t.ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+  </select>
+  
+  <!-- 查询当前交接单中运单号+流水号是否存在于出库日志表中 --> 
+  <select id="queryOutStock" resultType="Long" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirHandOverBillGetSerialNoDto">
+  	select count(t.ID) from tfr.T_OPT_OUT_STOCK t where t.WAYBILL_NO = #{wayBillNo,jdbcType=VARCHAR} and t.SERIAL_NO = #{serialNo,jdbcType=VARCHAR}
+  	and t.GOODS_AREA_CODE = #{goodsAreaCode,jdbcType=VARCHAR} and t.ORG_CODE = #{orgCode,jdbcType=VARCHAR} and t.IS_VALID = #{isValid,jdbcType=VARCHAR}
+  </select>
+  
+  <!-- 出库操作 -->
+  <update id="outStock" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirHandOverBillDto">
+  	update tfr.T_OPT_AIR_HANDOVERBILL TOAH 
+  	set TOAH.AIR_WAYBILL_STOCK_STATE = #{stockStatus,jdbcType=VARCHAR}
+  	where TOAH.ID = #{id,jdbcType=VARCHAR}
+  </update>
+  <!-- 查询正单明细条件 -->
+  <sql id="detailWhere">
+  	<where>
+  		<if test="flightNo!=null and flightNo!=''">
+			TOAW.FLIGHT_NO = #{flightNo,jdbcType=VARCHAR}
+		</if>
+		<if test="flightDate!=null and flightDate!=''">
+			<![CDATA[AND TOAW.FLIGHT_DATE = to_date(#{flightDate,jdbcType=VARCHAR},'yyyy-MM-dd')]]>
+		</if>
+  	</where>
+  </sql>
+  
+  <!-- 查询正单明细 -->
+  <select id="queryAirHandOverBillDetail" resultMap="AirWaybillMap" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirHandOverBillDto">
+  	select 
+	<include refid="Airwaybill_Column_List"/>,BTBA.CODE AS AIR_LINE_CODE ,BTBA.NAME AS AIR_LINE_NAME
+	from TFR.T_OPT_AIR_WAYBILL TOAW
+	inner join BSE.T_BAS_AIRLINES BTBA on TOAW.AIR_LINE_TWOLETTER = BTBA.CODE
+  	<include refid="detailWhere"/>
+  </select>
+  
+  <!-- 查询起飞时间 -->
+  <select id="queryTakeOffTime" resultType="java.lang.String" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirHandOverBillDto">
+  	select
+  	TOAW.TAKE_OFF_TIME
+	from tfr.T_OPT_AIR_WAYBILL TOAW
+	inner join BSE.T_BAS_AIRLINES BTBA on TOAW.AIR_LINE_TWOLETTER = BTBA.CODE
+  	<include refid="detailWhere"/>
+  	 <![CDATA[and rownum = 1]]>
+  </select>
+  
+  <!-- 查询正单明细条件 -->
+  <sql id="singleAirWayBillWhere">
+  	<where>
+  		<if test="airLineTwoletter!=null and airLineTwoletter!=''">
+			TOAW.AIR_LINE_TWOLETTER = #{airLineTwoletter,jdbcType=VARCHAR}
+		</if>
+		<if test="airWaybillNo!=null and airWaybillNo!=''">
+			 AND TOAW.AIR_WAYBILL_NO = #{airWaybillNo,jdbcType=VARCHAR}
+		</if>
+  	</where>
+  </sql>
+  
+  <!-- 根据正单号单个添加正单明细 -->
+  <select id="querySingleAirWaybill" resultMap="AirWaybillMap" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirHandOverBillDto">
+  	select
+  	<include refid="Airwaybill_Column_List"/> ,BTBA.CODE AS AIR_LINE_CODE ,BTBA.NAME AS AIR_LINE_NAME
+	from tfr.T_OPT_AIR_WAYBILL TOAW
+	inner join BSE.T_BAS_AIRLINES BTBA on TOAW.AIR_LINE_TWOLETTER = BTBA.CODE
+  	<include refid="singleAirWayBillWhere"/>
+  </select>
+  
+  <!-- 根据交接单ID查询正单交接单 -->
+  <select id="queryAirHandOverBillById" resultMap="airHandOverBillMap" parameterType="java.lang.String">
+  	select
+  	<include refid="Airhandoverbill_Column_List_For_Id"/>  
+	from tfr.T_OPT_AIR_HANDOVERBILL TOAH 
+	where TOAH.id = #{id,jdbcType=VARCHAR}
+  </select>
+  
+  <!-- 根据交接单ID查询正单交接单提供给打印 -->
+  <select id="queryAirHandOverBillByIdForPrint" resultMap="airHandOverBillMap" parameterType="java.lang.String">
+  	select
+  	<include refid="Airhandoverbill_Column_List"/>  
+	from tfr.T_OPT_AIR_HANDOVERBILL TOAH 
+	join BSE.MV_DEST_NET BMDN on TOAH.HANDOVER_ORG  = BMDN.CODE
+	join BSE.T_BAS_EMPLOYEE EMPLOYEE on TOAH.HANDOVER_EMP = EMPLOYEE.EMP_CODE
+	where TOAH.id = #{id,jdbcType=VARCHAR}
+  </select>
+  
+  <!-- 根据 交接单ID查询正单交接单明细-->
+  <select id="queryAirHandOverBillDetailByHandOverBillId" resultMap="AirHandOverBillDetailMap" parameterType="java.lang.String">
+	select 
+	<include refid="AirhandoverbillDetail_Column_List"/>
+	from tfr.T_OPT_AIR_HANDOVERBILL_DETAIL where AIR_HANDOVERBILL_ID = #{id,jdbcType=VARCHAR}
+  </select>
+  
+  <!-- 根据 交接单ID查询正单交接单明细 for print-->
+  <select id="queryAirHandOverBillDetailForPrintByHandOverBillId" resultMap="AirHandOverBillDetailMap" parameterType="java.lang.String">
+	select 
+	<include refid="AirhandoverbillDetail_Column_List_print"/>
+	from tfr.T_OPT_AIR_HANDOVERBILL_DETAIL handDetail
+	left join tfr.t_opt_air_waybill airWay
+    	on handDetail.Air_Waybill_No = airWay.Air_Waybill_No
+	where handDetail.t_o_id = #{id,jdbcType=VARCHAR}
+  </select>
+  
+  <!-- 根据交接单ID删除正单明细 -->
+  <delete id="deleteAirHandOverBillDetailByHandOverBillId" parameterType="java.lang.String">
+  	delete from tfr.T_OPT_AIR_HANDOVERBILL_DETAIL where AIR_HANDOVERBILL_ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  
+  <!-- 根据正单号查询交接单明细表判断是否做过交接 -->
+  <select id="validateIsHandoverByWaybillNo" resultType="Long" parameterType="java.lang.String">
+  	select count(TOAHD.ID) from tfr.T_OPT_AIR_HANDOVERBILL_DETAIL TOAHD where TOAHD.AIR_WAYBILL_NO = #{airWaybillNo,jdbcType=VARCHAR}
+  </select>
+  
+  <!-- 根据航班日期和航班号判断是否做过交接 -->
+  <select id="validateIsHandoverByFlight" resultType="Long" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirHandOverBillDto">
+  	select count(TOAH.ID) from tfr.T_OPT_AIR_HANDOVERBILL TOAH where 
+  		<![CDATA[TOAH.FLIGHT_DATE = to_date(#{flightDate,jdbcType=VARCHAR},'yyyy-MM-dd')]]>
+  		and TOAH.FLIGHT_NO = #{flightNo,jdbcType=VARCHAR}
+  </select>
+  
+  <!-- 接送货接口，根据运单号查询交接情况 -->
+  <select id="queryAirHandOverBillInfo" resultMap="AirHandOverStateMap" parameterType="java.lang.String">
+  	select TOAH.CREATE_TIME,TOAH.AIR_HANDOVER_NO,TOAH.ORG_CODE,TOAH.ORG_NAME,TOAW.TAKE_OFF_TIME,TOAW.ARRIVE_TIME,
+	TOAW.ARRV_REGION_CODE,TOAW.ARRV_REGION_NAME,TOAH.GOODS_QTY_TOTAL
+	  from tfr.T_OPT_AIR_HANDOVERBILL        TOAH,
+	       tfr.T_OPT_AIR_HANDOVERBILL_DETAIL TOAHD,
+	       tfr.T_OPT_AIR_WAYBILL             TOAW,
+	       tfr.T_OPT_AIR_WAYBILL_DETAIL      TOAWD
+	 where TOAH.ID = TOAHD.AIR_HANDOVERBILL_ID
+	   and TOAHD.T_O_ID = TOAW.ID
+	   and TOAW.ID = TOAWD.AIR_WAYBILL_ID
+	   and TOAWD.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+  </select>
+  
+  <insert id="addAirHandOverBill" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.domain.AirHandOverBillEntity" >
+    insert into tfr.T_OPT_AIR_HANDOVERBILL
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="orgCode != null" >
+        ORG_CODE,
+      </if>
+      <if test="orgName != null" >
+        ORG_NAME,
+      </if>
+      <if test="airHandoverNo != null">
+      	AIR_HANDOVER_NO,
+      </if>
+      <if test="flightDate != null" >
+        FLIGHT_DATE,
+      </if>
+      <if test="flightNo != null" >
+        FLIGHT_NO,
+      </if>
+      <if test="takeOffTime != null" >
+        TAKE_OFF_TIME,
+      </if>
+      <if test="bookingNo != null" >
+        BOOKING_NO,
+      </if>
+      <if test="spaceWeight != null" >
+        SPACE_WEIGHT,
+      </if>
+      <if test="handoverOrg != null" >
+        HANDOVER_ORG,
+      </if>
+      <if test="handoverEmp != null" >
+        HANDOVER_EMP,
+      </if>
+      <if test="notes != null" >
+        NOTES,
+      </if>
+      <if test="createUserName != null" >
+        CREATE_USER_NAME,
+      </if>
+      <if test="createUserCode != null" >
+        CREATE_USER_CODE,
+      </if>
+      <if test="createTime != null" >
+        CREATE_TIME,
+      </if>
+      <if test="modifyUserCode != null" >
+        MODIFY_USER_CODE,
+      </if>
+      <if test="modifyUserName != null" >
+        MODIFY_USER_NAME,
+      </if>
+      <if test="modifyTime != null" >
+        MODIFY_TIME,
+      </if>
+      <if test="waybillQtyTotal != null" >
+        WAYBILL_QTY_TOTAL,
+      </if>
+      <if test="goodsQtyTotal != null" >
+        GOODS_QTY_TOTAL,
+      </if>
+      <if test="grossWeightTotal != null" >
+        GROSS_WEIGHT_TOTAL,
+      </if>
+      <if test="billingWeightTotal != null" >
+        BILLING_WEIGHT_TOTAL,
+      </if>
+      <if test="airWaybillStockState != null" >
+        AIR_WAYBILL_STOCK_STATE,
+      </if>
+      <if test="airLevel != null" >
+        airLevel,
+      </if>
+      <if test="handoverVolumeTotal != null" >
+        handover_volume_total,
+      </if>
+      <if test="airHandOverType != null" >
+        air_handovertype,
+      </if>
+       <if test="expressUnloadStatus != null" >
+        express_unload_status,
+      </if>
+      <if test="expressArriveCode != null" >
+        express_arrive_code,
+      </if>
+      <if test="expressArriveName != null" >
+        express_arrive_name,
+      </if>
+      <if test="expressAssignStatus != null" >
+        express_assign_status,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="orgCode != null" >
+        #{orgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="orgName != null" >
+        #{orgName,jdbcType=VARCHAR},
+      </if>
+      <if test="airHandoverNo != null">
+      	#{airHandoverNo,jdbcType=DECIMAL},
+      </if>
+      <if test="flightDate != null" >
+        #{flightDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="flightNo != null" >
+        #{flightNo,jdbcType=VARCHAR},
+      </if>
+      <if test="takeOffTime != null" >
+        #{takeOffTime},
+      </if>
+      <if test="bookingNo != null" >
+        #{bookingNo,jdbcType=VARCHAR},
+      </if>
+      <if test="spaceWeight != null" >
+        #{spaceWeight,jdbcType=DECIMAL},
+      </if>
+      <if test="handoverOrg != null" >
+        #{handoverOrg,jdbcType=VARCHAR},
+      </if>
+      <if test="handoverEmp != null" >
+        #{handoverEmp,jdbcType=VARCHAR},
+      </if>
+      <if test="notes != null" >
+        #{notes,jdbcType=VARCHAR},
+      </if>
+      <if test="createUserName != null" >
+        #{createUserName,jdbcType=VARCHAR},
+      </if>
+      <if test="createUserCode != null" >
+        #{createUserCode,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null" >
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifyUserCode != null" >
+        #{modifyUserCode,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyUserName != null" >
+        #{modifyUserName,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyTime != null" >
+        #{modifyTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="waybillQtyTotal != null" >
+        #{waybillQtyTotal,jdbcType=DECIMAL},
+      </if>
+      <if test="goodsQtyTotal != null" >
+        #{goodsQtyTotal,jdbcType=DECIMAL},
+      </if>
+      <if test="grossWeightTotal != null" >
+        #{grossWeightTotal,jdbcType=DECIMAL},
+      </if>
+      <if test="billingWeightTotal != null" >
+        #{billingWeightTotal,jdbcType=DECIMAL},
+      </if>
+      <if test="airWaybillStockState != null" >
+        #{airWaybillStockState,jdbcType=VARCHAR},
+      </if>
+      <if test="airLevel != null" >
+        #{airLevel,jdbcType=VARCHAR},
+      </if>
+      <if test="handoverVolumeTotal != null" >
+        #{handoverVolumeTotal,jdbcType=DECIMAL},
+      </if>
+       <if test="airHandOverType != null" >
+        #{airHandOverType,jdbcType=VARCHAR},
+      </if>
+      <if test="expressUnloadStatus != null" >
+        #{expressUnloadStatus,jdbcType=VARCHAR},
+      </if>
+      <if test="expressArriveCode != null" >
+        #{expressArriveCode,jdbcType=VARCHAR},
+      </if>
+      <if test="expressArriveName != null" >
+        #{expressArriveName,jdbcType=VARCHAR},
+      </if>
+       <if test="expressAssignStatus != null" >
+        #{expressAssignStatus,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  
+  <update id="updateAirHandOverBill" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.domain.AirHandOverBillEntity" >
+    update tfr.T_OPT_AIR_HANDOVERBILL
+    <set >
+      <if test="orgCode != null" >
+        ORG_CODE = #{orgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="orgName != null" >
+        ORG_NAME = #{orgName,jdbcType=VARCHAR},
+      </if>
+      <if test="airHandoverNo != null">
+      	AIR_HANDOVER_NO = #{airHandoverNo,jdbcType=DECIMAL},
+      </if>
+      <if test="flightDate != null" >
+        FLIGHT_DATE = #{flightDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="flightNo != null" >
+        FLIGHT_NO = #{flightNo,jdbcType=VARCHAR},
+      </if>
+      <if test="takeOffTime != null" >
+        TAKE_OFF_TIME = #{takeOffTime},
+      </if>
+      <if test="bookingNo != null" >
+        BOOKING_NO = #{bookingNo,jdbcType=VARCHAR},
+      </if>
+      <if test="spaceWeight != null" >
+        SPACE_WEIGHT = #{spaceWeight,jdbcType=DECIMAL},
+      </if>
+      <if test="handoverOrg != null" >
+        HANDOVER_ORG = #{handoverOrg,jdbcType=VARCHAR},
+      </if>
+      <if test="handoverEmp != null" >
+        HANDOVER_EMP = #{handoverEmp,jdbcType=VARCHAR},
+      </if>
+      <if test="notes != null" >
+        NOTES = #{notes,jdbcType=VARCHAR},
+      </if>
+      <if test="createUserName != null" >
+        CREATE_USER_NAME = #{createUserName,jdbcType=VARCHAR},
+      </if>
+      <if test="createUserCode != null" >
+        CREATE_USER_CODE = #{createUserCode,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null" >
+        CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifyUserCode != null" >
+        MODIFY_USER_CODE = #{modifyUserCode,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyUserName != null" >
+        MODIFY_USER_NAME = #{modifyUserName,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyTime != null" >
+        MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="waybillQtyTotal != null" >
+        WAYBILL_QTY_TOTAL = #{waybillQtyTotal,jdbcType=DECIMAL},
+      </if>
+      <if test="goodsQtyTotal != null" >
+        GOODS_QTY_TOTAL = #{goodsQtyTotal,jdbcType=DECIMAL},
+      </if>
+      <if test="grossWeightTotal != null" >
+        GROSS_WEIGHT_TOTAL = #{grossWeightTotal,jdbcType=DECIMAL},
+      </if>
+      <if test="billingWeightTotal != null" >
+        BILLING_WEIGHT_TOTAL = #{billingWeightTotal,jdbcType=DECIMAL},
+      </if>
+      <if test="airWaybillStockState != null" >
+        AIR_WAYBILL_STOCK_STATE = #{airWaybillStockState,jdbcType=VARCHAR},
+      </if>
+      <if test="airLevel != null" >
+        airLevel = #{airLevel,jdbcType=VARCHAR},
+      </if>
+      <if test="handoverVolumeTotal != null" >
+        handover_volume_total= #{handoverVolumeTotal,jdbcType=DECIMAL},
+      </if>
+       <if test="airHandOverType != null" >
+       air_handovertype=#{airHandOverType,jdbcType=DECIMAL},
+      </if>
+      <if test="expressArriveCode != null" >
+        express_arrive_code = #{expressArriveCode,jdbcType=VARCHAR},
+      </if>
+      <if test="expressArriveName != null" >
+        express_arrive_name = #{expressArriveName,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  
+  <insert id="addAirHandOverBillDetail" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.domain.AirHandOverBillDetailEntity" >
+    insert into tfr.T_OPT_AIR_HANDOVERBILL_DETAIL (ID, T_O_ID, AIR_HANDOVERBILL_ID, 
+      AIR_LINE_CODE, AIR_LINE_NAME, AIR_WAYBILL_NO, 
+      GOODS_QTY, GROSS_WEIGHT, BILLING_WEIGHT, 
+      DEPT_REGION_NAME, ARRV_REGION_NAME, DEPT_REGION_CODE, 
+      ARRV_REGION_CODE, GOODS_NAME, PACKAGE_STRUCTION, 
+      CURRENCY_CODE, FEE_TOTAL, NOTES,
+      goods_volume,
+      transporttype
+      )
+    values (#{id,jdbcType=VARCHAR}, #{toid,jdbcType=VARCHAR}, #{airHandoverbillId,jdbcType=VARCHAR}, 
+      #{airLineCode,jdbcType=VARCHAR}, #{airLineName,jdbcType=VARCHAR}, #{airWaybillNo,jdbcType=VARCHAR}, 
+      #{goodsQty,jdbcType=DECIMAL}, #{grossWeight,jdbcType=DECIMAL}, #{billingWeight,jdbcType=DECIMAL}, 
+      #{deptRegionName,jdbcType=VARCHAR}, #{arrvRegionName,jdbcType=VARCHAR}, #{deptRegionCode,jdbcType=VARCHAR}, 
+      #{arrvRegionCode,jdbcType=VARCHAR}, #{goodsName,jdbcType=VARCHAR}, #{packageStruction,jdbcType=VARCHAR}, 
+      #{currencyCode,jdbcType=VARCHAR}, #{feeTotal,jdbcType=DECIMAL}, #{notes,jdbcType=VARCHAR},
+      #{goodsVolume,jdbcType=DECIMAL},
+      #{transportType,jdbcType=VARCHAR}
+      )
+  </insert>
+  
+  <!-- 更改已做交接的正单的交接状态-->
+  <update id="updateAirWaybillNoState" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirHandOverBillDto">
+  	update tfr.T_OPT_AIR_WAYBILL TOAW 
+  	set TOAW.HANDOVER_STATE = #{handOverState,jdbcType=VARCHAR}
+  	where TOAW.AIR_WAYBILL_NO = #{airWaybillNo,jdbcType=VARCHAR}
+  </update>
+  
+  <!-- 修改走货路径状态 -->
+  <update id="updatePathDetailStatus" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirHandOverBillDto">
+  	update tfr.t_opt_path_detail t set t.arrive_or_leave = #{leave,jdbcType=VARCHAR} where t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+	and t.goods_no = #{serialNo,jdbcType=VARCHAR}
+	and t.objective_org_code = #{orgCode,jdbcType=VARCHAR}
+  </update>
+  
+  <!-- 运单号、流水号 -->
+  <resultMap id="airUnshippedSerialNoMap" type="com.deppon.foss.module.transfer.airfreight.api.shared.domain.AirUnshippedSerialNoEntity">
+  	<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+  	<result column="SERIAL_NO" property="serialNo" jdbcType="VARCHAR" />
+  </resultMap>
+  
+  <!-- 根据正单号查找流水号和运单号 -->
+  <select id="querySerialNoByAirWaybillNo" resultMap="airUnshippedSerialNoMap" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirHandOverBillDto">
+  	select TOAWD.WAYBILL_NO,TOAWS.SERIAL_NO
+	from
+	TFR.T_OPT_AIR_WAYBILL TOAW,TFR.T_OPT_AIR_WAYBILL_DETAIL TOAWD,TFR.T_OPT_AIR_WAYBILL_SERIALNO TOAWS
+	where TOAW.ID = TOAWD.AIR_WAYBILL_ID and TOAWD.ID = TOAWS.AIR_WAYBILL_DETAIL_ID
+	and TOAW.AIR_WAYBILL_NO = #{airWaybillNo,jdbcType=VARCHAR} and TOAWD.IS_LOADING = #{isLoading,jdbcType=VARCHAR}
+	group by TOAWD.WAYBILL_NO,TOAWS.SERIAL_NO
+  </select>
+  
+  <!--  -->
+  <select id="queryAirHandoverIdByWaybillNoAndSerialNo" resultMap="airHandOverBillMap" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirHandOverBillGetSerialNoDto" >
+  	select TOAH.ID from tfr.T_OPT_AIR_HANDOVERBILL TOAH 
+    inner join tfr.T_OPT_AIR_HANDOVERBILL_DETAIL TOAHD on TOAH.ID = TOAHD.AIR_HANDOVERBILL_ID
+    inner join tfr.T_OPT_AIR_WAYBILL TOAW on TOAHD.T_O_ID = TOAW.ID
+    inner join tfr.T_OPT_AIR_WAYBILL_DETAIL TOAWD on TOAW.ID = TOAWD.AIR_WAYBILL_ID
+    inner join tfr.T_OPT_AIR_WAYBILL_SERIALNO TOAWS on TOAWD.ID = TOAWS.AIR_WAYBILL_DETAIL_ID
+    where TOAWS.Waybill_No = #{wayBillNo,jdbcType=VARCHAR} and toaws.serial_no = #{serialNo,jdbcType=VARCHAR}
+    group by TOAH.ID
+  </select>
+  
+  <!-- 根据正单id，查询该正单下面的所有运单流水号明细 -->
+  <select id="queryWaybillSerialNoByAirWaybillId" resultMap="airUnshippedSerialNoMap" parameterType="map">
+	  SELECT /*根据正单id，查询该正单下面的所有运单流水号明细*/
+		 wd.waybill_no, ws.serial_no
+		  FROM tfr.t_opt_air_waybill aw
+		  JOIN tfr.t_opt_air_waybill_detail wd
+		    ON aw.id = wd.air_waybill_id
+		  JOIN tfr.t_opt_air_waybill_serialno ws
+		    ON wd.id = ws.air_waybill_detail_id
+		 WHERE  aw.id in (
+			    	<foreach collection="airWaybillIdList" item="item" separator=",">
+								  		#{item,jdbcType=VARCHAR}
+					</foreach>
+			    )
+		 GROUP BY wd.waybill_no, ws.serial_no
+  </select> 
+  
+ <!-- 根据正单id，查询该正单下面的所有库存中运单流水号明细 -->
+ <select id="queryStockSerialNoByAirWaybillId" resultMap="airUnshippedSerialNoMap" parameterType="Map">
+	 SELECT /*根据正单id，查询该正单下面的所有库存中运单流水号明细*/
+	 wd.waybill_no, ws.serial_no
+	  FROM tfr.t_opt_air_waybill aw
+	  JOIN tfr.t_opt_air_waybill_detail wd
+	    ON aw.id = wd.air_waybill_id
+	  JOIN tfr.t_opt_air_waybill_serialno ws
+	    ON wd.id = ws.air_waybill_detail_id
+	  JOIN tfr.t_opt_stock s
+	    ON s.waybill_no = wd.waybill_no
+	   AND s.serial_no = ws.serial_no
+	 WHERE 
+	   aw.id in (
+		    	<foreach collection="airWaybillIdList" item="item" separator=",">
+							  		#{item,jdbcType=VARCHAR}
+				</foreach>
+			 )
+	   AND s.org_code =#{orgCode}
+	   AND s.goods_area_code =#{goodsAreaCode}
+	 GROUP BY wd.waybill_no, ws.serial_no
+ </select>
+ 
+ 
+ <!-- 更改正单交接单的卸车状态-->
+  <update id="updateAirWaybillUnloadStatus" parameterType="java.util.List">
+  	 begin
+		<foreach collection="list" item="item" separator=";">
+			update
+			tfr.T_OPT_AIR_HANDOVERBILL t
+			<set>
+				  t.EXPRESS_UNLOAD_STATUS = #{item.expressUnloadStatus,jdbcType=VARCHAR},
+				  t.Air_Waybill_Stock_State = #{item.expressUnloadStatus,jdbcType=VARCHAR},
+				  t.modify_time=sysdate
+			</set>
+			<where>
+				t.Air_Handover_No = #{item.airHandoverNo,jdbcType=VARCHAR} 
+			</where>
+		</foreach>
+		;end;
+  </update>
+  
+</mapper>

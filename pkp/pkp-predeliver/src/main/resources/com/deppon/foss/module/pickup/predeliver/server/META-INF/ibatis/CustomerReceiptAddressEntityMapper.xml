@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.foss.module.pickup.predeliver.api.shared.domain.CustomerReceiptAddressEntityMapper">
+	
+	<resultMap id="customerReceiptAddressEntityMapper" type="com.deppon.foss.module.pickup.predeliver.api.shared.domain.CustomerReceiptAddressEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR"/>
+		<result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR"/>
+		<result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR"/>
+		<result column="CUSTOMER_MOBILEPHONE" property="customerMobilePhone" jdbcType="VARCHAR"/>
+		<result column="CUSTOMER_PHONE" property="customerPhone" jdbcType="VARCHAR"/>
+		<result column="CUSTOMER_CONTACT_NAME" property="customerContactName" jdbcType="VARCHAR"/>
+		<result column="RECEIVE_PROV_CODE" property="receiveProvCode" jdbcType="VARCHAR"/>
+		<result column="RECEIVE_CITY_CODE" property="receiveCityCode" jdbcType="VARCHAR"/>
+		<result column="RECEIVE_DIST_CODE" property="receiveDistCode" jdbcType="VARCHAR"/>
+		<result column="RECEIVE_STREET" property="receiveStreet" jdbcType="VARCHAR"/>
+		<result column="RECEIVE_ADDRESS_DETAILS" property="receiveAddressDetails" jdbcType="VARCHAR"/>
+		<result column="MODIFY_USER_NAME" property="modifyUserName" jdbcType="VARCHAR"/>
+		<result column="CREATER_NAME" property="createrName" jdbcType="VARCHAR"/>
+		<result column="MODIFY_USER_CODE" property="modifyUserCode" jdbcType="VARCHAR"/>
+		<result column="CREATER_CODE" property="createrCode" jdbcType="VARCHAR"/>
+		<result column="MODIFY_DATE" property="modifyDate" jdbcType="TIMESTAMP"/>
+		<result column="CREATE_DATE" property="createDate" jdbcType="TIMESTAMP"/>
+		<result column="CREATE_ORG_CODE" property="createOrgCode" jdbcType="VARCHAR"/>
+		<result column="CREATE_ORG_NAME" property="createOrgName" jdbcType="VARCHAR"/>
+	</resultMap>
+	
+	<resultMap id="customerReceiptAddressVoMapper" type="com.deppon.foss.module.pickup.predeliver.api.shared.vo.CustomerReceiptAddressVo" extends="customerReceiptAddressEntityMapper">
+		<result column="RECEIVE_PROV_NAME" property="receiveProvName" jdbcType="VARCHAR"/>
+		<result column="RECEIVE_CITY_NAME" property="receiveCityName" jdbcType="VARCHAR"/>
+		<result column="RECEIVE_DIST_NAME" property="receiveDistName" jdbcType="VARCHAR"/>
+	</resultMap>
+
+	<sql id="customerReceiptAddressColumns">
+		ID, CUSTOMER_CODE, CUSTOMER_NAME, CUSTOMER_MOBILEPHONE, CUSTOMER_PHONE, CUSTOMER_CONTACT_NAME,
+		RECEIVE_PROV_CODE, RECEIVE_CITY_CODE, RECEIVE_DIST_CODE, RECEIVE_STREET, RECEIVE_ADDRESS_DETAILS,
+  		MODIFY_USER_CODE, MODIFY_USER_NAME, MODIFY_DATE, CREATER_CODE, CREATER_NAME, CREATE_DATE,
+  		CREATE_ORG_CODE, CREATE_ORG_NAME
+	</sql>
+	
+	<insert id="insertOne" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.domain.CustomerReceiptAddressEntity">
+		MERGE INTO /*结算：添加历史收货地址*/ PKP.T_SRV_CUSTOMERRECEIPTADDRESS cra
+		USING (SELECT #{customerCode} as customerCode, #{customerName} as customerName,
+					  #{customerMobilePhone} as customerMobilePhone,
+					  #{customerPhone} as customerPhone,
+					  #{receiveStreet} as receiveStreet,
+					  #{receiveAddressDetails} as receiveAddressDetails,
+					  #{customerContactName} as customerContactName, #{createOrgCode} as createOrgCode,
+					  #{receiveProvCode} as receiveProvCode, #{receiveCityCode} as receiveCityCode,
+					  #{receiveDistCode} as receiveDistCode FROM DUAL) newCra
+		ON (cra.CUSTOMER_NAME = newCra.customerName 
+			<choose>
+				<when test="customerMobilePhone != null and customerMobilePhone != ''">
+					AND cra.CUSTOMER_MOBILEPHONE = newCra.customerMobilePhone
+				</when>
+				<otherwise>
+					AND cra.CUSTOMER_MOBILEPHONE IS NULL
+				</otherwise>
+			</choose>
+			<choose>
+				<when test="customerPhone != null and customerPhone != ''">
+					AND cra.CUSTOMER_PHONE = newCra.customerPhone 
+				</when>
+				<otherwise>
+					AND cra.CUSTOMER_PHONE IS NULL
+				</otherwise>
+			</choose>
+			<choose>
+				<when test="receiveStreet != null and receiveStreet != ''">
+					AND cra.RECEIVE_STREET =  newCra.receiveStreet
+				</when>
+				<otherwise>
+					AND cra.RECEIVE_STREET IS NULL
+				</otherwise>
+			</choose>
+			<choose>
+				<when test="receiveAddressDetails != null and receiveAddressDetails != ''">
+					AND cra.RECEIVE_ADDRESS_DETAILS = newCra.receiveAddressDetails
+				</when>
+				<otherwise>
+					AND cra.RECEIVE_ADDRESS_DETAILS IS NULL
+				</otherwise>
+			</choose>
+			AND cra.CUSTOMER_CONTACT_NAME = newCra.customerContactName
+			AND cra.CREATE_ORG_CODE = newCra.createOrgCode 
+			AND cra.CUSTOMER_CODE = newCra.customerCode
+			AND cra.RECEIVE_PROV_CODE = newCra.receiveProvCode
+			AND cra.RECEIVE_CITY_CODE = newCra.receiveCityCode
+			AND cra.RECEIVE_DIST_CODE = newCra.receiveDistCode)
+		WHEN not matched THEN
+			INSERT (
+				<include refid="customerReceiptAddressColumns" />
+			) VALUES (
+				#{id, jdbcType=VARCHAR},
+				#{customerCode, jdbcType=VARCHAR},
+				#{customerName, jdbcType=VARCHAR},
+				#{customerMobilePhone, jdbcType=VARCHAR},
+				#{customerPhone, jdbcType=VARCHAR},
+				#{customerContactName, jdbcType=VARCHAR},
+				#{receiveProvCode, jdbcType=VARCHAR},
+				#{receiveCityCode, jdbcType=VARCHAR},
+				#{receiveDistCode, jdbcType=VARCHAR},
+				#{receiveStreet, jdbcType=VARCHAR},
+				#{receiveAddressDetails, jdbcType=VARCHAR},
+				#{modifyUserCode, jdbcType=VARCHAR},
+				#{modifyUserName, jdbcType=VARCHAR},
+				#{modifyDate, jdbcType=TIMESTAMP},
+				#{createrCode, jdbcType=VARCHAR},
+				#{createrName, jdbcType=VARCHAR},
+				#{createDate, jdbcType=TIMESTAMP},
+				#{createOrgCode, jdbcType=VARCHAR},
+				#{createOrgName, jdbcType=VARCHAR}
+			)
+	</insert>
+	
+	<delete id="deleteByPrimaryKey" parameterType="java.util.Map">
+		DELETE /*结算：删除历史收货地址*/ FROM PKP.T_SRV_CUSTOMERRECEIPTADDRESS WHERE ID = #{id, jdbcType=VARCHAR} AND CREATE_ORG_CODE = #{orgCode, jdbcType=VARCHAR}
+	</delete>
+	
+	<select id="selectListByParam" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.domain.CustomerReceiptAddressEntity" resultMap="customerReceiptAddressVoMapper">
+		SELECT  /*结算:查询历史收货地址*/
+			ID, CUSTOMER_CODE, CUSTOMER_NAME, nvl(CUSTOMER_MOBILEPHONE,' - ') AS CUSTOMER_MOBILEPHONE, nvl(CUSTOMER_PHONE,' - ') AS CUSTOMER_PHONE, CUSTOMER_CONTACT_NAME,
+			RECEIVE_PROV_CODE, RECEIVE_CITY_CODE, RECEIVE_DIST_CODE, RECEIVE_STREET, RECEIVE_ADDRESS_DETAILS,
+			(SELECT NAME FROM BSE.T_BAS_DISTRICT district WHERE district.CODE = RECEIVE_PROV_CODE AND district.ACTIVE = 'Y') AS RECEIVE_PROV_NAME,
+			(SELECT NAME FROM BSE.T_BAS_DISTRICT district WHERE district.CODE = RECEIVE_CITY_CODE AND district.ACTIVE = 'Y') AS RECEIVE_CITY_NAME,
+			(SELECT NAME FROM BSE.T_BAS_DISTRICT district WHERE district.CODE = RECEIVE_DIST_CODE AND district.ACTIVE = 'Y') AS RECEIVE_DIST_NAME
+		FROM PKP.T_SRV_CUSTOMERRECEIPTADDRESS 
+		
+		<where>
+			CREATE_ORG_CODE = #{createOrgCode, jdbcType=VARCHAR}
+			<if test="customerCode != null and customerCode != ''">
+				AND CUSTOMER_CODE = #{customerCode, jdbcType=VARCHAR}
+			</if>
+			<if test="customerName != null and customerName != ''">
+				AND CUSTOMER_NAME = #{customerName, jdbcType=VARCHAR}
+			</if>
+			<if test="customerMobilePhone != null and customerMobilePhone != ''">
+				AND CUSTOMER_MOBILEPHONE = #{customerMobilePhone, jdbcType=VARCHAR}
+			</if>
+			<if test="customerPhone != null and customerPhone != ''">
+				AND CUSTOMER_PHONE = #{customerPhone, jdbcType=VARCHAR}
+			</if>
+			<if test="customerContactName != null and customerContactName != ''">
+				AND CUSTOMER_CONTACT_NAME = #{customerContactName, jdbcType=VARCHAR}
+			</if>
+			ORDER BY MODIFY_DATE DESC
+		</where>
+	</select>
+	
+	
+</mapper>

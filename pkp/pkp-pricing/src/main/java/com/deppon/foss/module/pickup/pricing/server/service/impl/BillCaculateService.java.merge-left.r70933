@@ -1,0 +1,4131 @@
+/**
+ *  initial comments.
+ *  
+ *  BillCaculateService 是开单计算价格、增值服务、折扣、优惠活动的实现类
+ *  计算运费分别为：FRT
+ *  汽运  - t_srv_pice_plan价格表 字段 TRANSPORT_FLAG = 0
+ *  空运 - t_srv_pice_plan价格表  字段 TRANSPORT_FLAG = 1
+ *  
+ *  计算增值服务：  VAS
+ *  
+ *  保费 - BF
+ *  
+ *  代收货款 - HK
+ *  
+ *  送货费 - SH
+ *  
+ *  接货费 - JH
+ *  
+ *  签收回单 -QS
+ *  
+ *  保管费 - CCF
+ *  
+ *  综合信息费 -ZHXX
+ *  
+ *  燃油附加费 - RYFJ
+ *  
+ *  中转费 - ZZ
+ *     
+ *  接货差额补差 -JHCEBC
+ *  
+ *  电子优惠券 - DZYHQ
+ *  
+ *  其他费用 -QT
+ *  
+ *  包装费 -BZ
+ *  
+ *  送货上楼费 -SHSL
+ *  
+ *  超远派送费 -CY
+ *  
+ *  送货进仓费 -SHJCF
+ *  
+ *  更改费 -GGF
+ *  
+ *  以上服务相关代码进行不同维度计算。
+ *  
+ *  可支绑定如产品、区域 等等进行价格、折扣、优惠计算
+ */
+/*******************************************************************************
+ * Copyright 2013 BSE TEAM
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
+ * PROJECT NAME	: pkp-pricing
+ * 
+ * FILE PATH        	: src/main/java/com/deppon/foss/module/pickup/pricing/server/service/impl/BillCaculateService.java
+ * 
+ * FILE NAME        	: BillCaculateService.java
+ * 
+ * AUTHOR			: FOSS综合管理开发组
+ * 
+ * HOME PAGE		:  http://www.deppon.com
+ * 
+ * COPYRIGHT		: Copyright (c) 2013  Deppon All Rights Reserved.
+ ******************************************************************************/
+package com.deppon.foss.module.pickup.pricing.server.service.impl;
+
+import java.math.BigDecimal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
+import com.deppon.foss.framework.shared.util.string.StringUtil;
+import com.deppon.foss.module.base.baseinfo.api.server.service.IOrgAdministrativeInfoService;
+import com.deppon.foss.module.base.baseinfo.api.server.service.IPreferentialService;
+import com.deppon.foss.module.base.baseinfo.api.shared.domain.OrgAdministrativeInfoEntity;
+import com.deppon.foss.module.base.baseinfo.api.shared.dto.PreferentialInfoDto;
+import com.deppon.foss.module.base.dict.api.server.service.IConfigurationParamsService;
+import com.deppon.foss.module.base.dict.api.server.service.IDataDictionaryValueService;
+import com.deppon.foss.module.base.dict.api.shared.define.ConfigurationParamsConstants;
+import com.deppon.foss.module.base.dict.api.shared.define.DictionaryConstants;
+import com.deppon.foss.module.base.dict.api.shared.define.DictionaryValueConstants;
+import com.deppon.foss.module.base.dict.api.shared.domain.ConfigurationParamsEntity;
+import com.deppon.foss.module.pickup.pricing.api.server.dao.IPriceEntryDao;
+import com.deppon.foss.module.pickup.pricing.api.server.service.DiscountTypeInterface;
+import com.deppon.foss.module.pickup.pricing.api.server.service.IBillCaculateService;
+import com.deppon.foss.module.pickup.pricing.api.server.service.ICityMarketPlanService;
+import com.deppon.foss.module.pickup.pricing.api.server.service.IDiscountPriorityService;
+import com.deppon.foss.module.pickup.pricing.api.server.service.IEffectiveExpressPlanDetailService;
+import com.deppon.foss.module.pickup.pricing.api.server.service.IEffectivePlanDetailService;
+import com.deppon.foss.module.pickup.pricing.api.server.service.IExpressPriceValuationService;
+import com.deppon.foss.module.pickup.pricing.api.server.service.IExpressPricingValueAddedService;
+import com.deppon.foss.module.pickup.pricing.api.server.service.IGoodsTypeService;
+import com.deppon.foss.module.pickup.pricing.api.server.service.IMinFeePlanService;
+import com.deppon.foss.module.pickup.pricing.api.server.service.IOuterPriceCaculateService;
+import com.deppon.foss.module.pickup.pricing.api.server.service.IPriceEntryService;
+import com.deppon.foss.module.pickup.pricing.api.server.service.IPriceValuationService;
+import com.deppon.foss.module.pickup.pricing.api.server.service.IPricingValueAddedService;
+import com.deppon.foss.module.pickup.pricing.api.server.service.IProductService;
+import com.deppon.foss.module.pickup.pricing.api.server.service.IRegionAirService;
+import com.deppon.foss.module.pickup.pricing.api.server.service.IRegionArriveService;
+import com.deppon.foss.module.pickup.pricing.api.server.service.IRegionExpressService;
+import com.deppon.foss.module.pickup.pricing.api.server.service.IRegionService;
+import com.deppon.foss.module.pickup.pricing.api.server.service.IRegionValueAddService;
+import com.deppon.foss.module.pickup.pricing.api.server.util.PriceUtil;
+import com.deppon.foss.module.pickup.pricing.api.shared.define.PricingConstants;
+import com.deppon.foss.module.pickup.pricing.api.shared.define.PricingConstants.DiscountTypeConstants;
+import com.deppon.foss.module.pickup.pricing.api.shared.define.PricingConstants.GoodsTypeEntityConstants;
+import com.deppon.foss.module.pickup.pricing.api.shared.define.PricingConstants.PriceEntityConstants;
+import com.deppon.foss.module.pickup.pricing.api.shared.define.PricingConstants.ProductEntityConstants;
+import com.deppon.foss.module.pickup.pricing.api.shared.domain.CityMarketPlanEntity;
+import com.deppon.foss.module.pickup.pricing.api.shared.domain.DiscountPriorityEntity;
+import com.deppon.foss.module.pickup.pricing.api.shared.domain.GoodsTypeEntity;
+import com.deppon.foss.module.pickup.pricing.api.shared.domain.MinFeePlanEntity;
+import com.deppon.foss.module.pickup.pricing.api.shared.domain.PriceEntity;
+import com.deppon.foss.module.pickup.pricing.api.shared.domain.ProductEntity;
+import com.deppon.foss.module.pickup.pricing.api.shared.dto.DiscountParmDto;
+import com.deppon.foss.module.pickup.pricing.api.shared.dto.DiscountResultDto;
+import com.deppon.foss.module.pickup.pricing.api.shared.dto.EffectiveExpressPlanDto;
+import com.deppon.foss.module.pickup.pricing.api.shared.dto.EffectivePlanDto;
+import com.deppon.foss.module.pickup.pricing.api.shared.dto.ProductPriceDto;
+import com.deppon.foss.module.pickup.pricing.api.shared.dto.QueryBillCacilateDto;
+import com.deppon.foss.module.pickup.pricing.api.shared.dto.QueryBillCacilateValueAddDto;
+import com.deppon.foss.module.pickup.pricing.api.shared.dto.QueryOuterPriceCaccilateDto;
+import com.deppon.foss.module.pickup.pricing.api.shared.dto.QueryProductPriceDto;
+import com.deppon.foss.module.pickup.pricing.api.shared.dto.ResultOuterPriceCaccilateDto;
+import com.deppon.foss.module.pickup.pricing.api.shared.dto.ResultProductPriceDto;
+import com.deppon.foss.module.pickup.pricing.api.shared.dto.ValueAddDto;
+import com.deppon.foss.module.pickup.pricing.api.shared.exception.BillCaculateServiceException;
+import com.deppon.foss.module.pickup.pricing.api.shared.exception.OuterPriceCaculateServiceException;
+import com.deppon.foss.util.CollectionUtils;
+import com.deppon.foss.util.define.FossConstants;
+import com.google.inject.Inject;
+
+// TODO: Auto-generated Javadoc
+/**
+ * The Class BillCaculateService.
+ *
+ * @Description:
+ * BillCaculateService.java Create on 2013-3-17 下午5:50:48
+ * Company:IBM
+ * @author FOSSDP-Administrator
+ * Copyright (c) 2013 Company,Inc. All Rights Reserved
+ * @version V1.0
+ */
+public class BillCaculateService implements IBillCaculateService {
+	
+	/** 日志信息. */
+	private static final Logger log = Logger.getLogger(BillCaculateService.class);
+	
+	/** 计费规则 Service. */
+	@Inject
+	private IPriceValuationService priceValuationService;
+	
+	/** 快递计费规则 Service. */
+	@Inject
+	private IExpressPriceValuationService expressPriceValuationService;
+	
+
+	public void setExpressPriceValuationService(
+			IExpressPriceValuationService expressPriceValuationService) {
+		this.expressPriceValuationService = expressPriceValuationService;
+	}
+
+	/** 计价明细 Service. */
+	@Inject
+	private IEffectivePlanDetailService effectivePlanDetailService;
+
+	/** 出发区域 Service. */
+	@Inject
+	private IRegionService regionService;
+	
+	/** 到达区域Service. */
+	@Inject
+	private IRegionArriveService regionArriveService;	
+	
+	/** 空运区域 Service. */
+	@Inject
+	private IRegionAirService regionAirService;	
+	
+	/**
+	 * 偏线计费服务
+	 */
+	@Inject
+	IOuterPriceCaculateService outerPriceCaculateService;
+	
+	/**
+	 * 数据字典
+	 */
+	@Inject
+	IDataDictionaryValueService dataDictionaryValueService;
+	
+	
+	/**
+	 * 快递时效
+	 */
+	@Inject
+	private IEffectiveExpressPlanDetailService effectiveExpressPlanDetailService;
+	
+	/**
+	 * 区域 Service
+	 */
+	@Inject
+	private IRegionExpressService regionExpressService;
+	/**
+	 * 大礼包service
+	 */
+	private ICityMarketPlanService cityMarketPlanService;
+	
+	public void setDataDictionaryValueService(
+			IDataDictionaryValueService dataDictionaryValueService) {
+		this.dataDictionaryValueService = dataDictionaryValueService;
+	}
+
+	public void setOuterPriceCaculateService(
+			IOuterPriceCaculateService outerPriceCaculateService) {
+		this.outerPriceCaculateService = outerPriceCaculateService;
+	}
+
+	/**
+	 * Sets the region arrive service.
+	 *
+	 * @param regionArriveService the new region arrive service
+	 */
+	public void setRegionArriveService(IRegionArriveService regionArriveService) {
+		this.regionArriveService = regionArriveService;
+	}
+	
+	/**
+	 * Sets the region value add service.
+	 *
+	 * @param regionValueAddService the new region value add service
+	 */
+	public void setRegionValueAddService(
+			IRegionValueAddService regionValueAddService) {
+		this.regionValueAddService = regionValueAddService;
+	}
+
+	/** 增值区域. */
+	@Inject
+	private IRegionValueAddService regionValueAddService;
+
+	/** 计价规则 Service. */
+	@Inject
+	private IPricingValueAddedService pricingValueAddedService;
+	
+	/** 快递计价规则 Service. */
+	@Inject
+	private IExpressPricingValueAddedService expressPricingValueAddedService;
+	
+	public void setExpressPricingValueAddedService(
+			IExpressPricingValueAddedService expressPricingValueAddedService) {
+		this.expressPricingValueAddedService = expressPricingValueAddedService;
+	}
+
+	/** 产品 Service. */
+	@Inject
+	private IProductService productService;
+
+	/** 货物 Service. */
+	@Inject
+	private IGoodsTypeService goodsTypeService;
+
+	/** 计价条目DAO. */
+	@Inject
+	IPriceEntryDao priceEntryDao;
+	
+	/** 计价条目Service. */
+	@Inject
+	IPriceEntryService priceEntryService;
+	
+	/** 系统参数Service. */
+	@Inject
+	private IConfigurationParamsService configurationParamsService;
+	
+	/** 经济自提件. */
+	private IMinFeePlanService minFeePlanService;
+	
+	/** 折扣类型工厂类. */
+	@Inject
+	DiscountTypeFactory discountTypeFactory;
+	
+	/**
+	 * Sets the min fee plan service.
+	 *
+	 * @param minFeePlanService the new min fee plan service
+	 */
+	public void setMinFeePlanService(IMinFeePlanService minFeePlanService) {
+		this.minFeePlanService = minFeePlanService;
+	}
+
+	/** 折扣优先级 SERVICE. */
+	@Inject
+	private IDiscountPriorityService discountPriorityService;
+	
+	/** 部门管理 SERVICE. */
+	@Inject
+	private IOrgAdministrativeInfoService orgAdministrativeInfoService;
+	/**
+	 * 获取 折扣类型工厂类.
+	 *
+	 * @return the 折扣类型工厂类
+	 */
+	public DiscountTypeFactory getDiscountTypeFactory() {
+	    return discountTypeFactory;
+	}
+	/**
+	 * 设置 折扣类型工厂类.
+	 *
+	 * @param discountTypeFactory the new 折扣类型工厂类
+	 */
+	public void setDiscountTypeFactory(DiscountTypeFactory discountTypeFactory) {
+	    this.discountTypeFactory = discountTypeFactory;
+	}
+	/**
+	 * 设置 计价条目DAO.
+	 *
+	 * @param priceEntryDao the new 计价条目DAO
+	 */
+	public void setPriceEntryDao(IPriceEntryDao priceEntryDao) {
+	    this.priceEntryDao = priceEntryDao;
+	}
+	/**
+	 * 设置 系统参数Service.
+	 *
+	 * @param configurationParamsService the new 系统参数Service
+	 */
+	public void setConfigurationParamsService(
+		IConfigurationParamsService configurationParamsService) {
+	    this.configurationParamsService = configurationParamsService;
+	}
+
+	/**
+	 * 
+	 * 设置 货物 Service.
+	 *
+	 * @param goodsTypeService the new 货物 Service
+	 */
+	public void setGoodsTypeService(IGoodsTypeService goodsTypeService) {
+	    this.goodsTypeService = goodsTypeService;
+	}
+	/**
+	 * 
+	 * 
+	 * 设置 产品 Service.
+	 *
+	 * @param productService the new 产品 Service
+	 */
+	public void setProductService(IProductService productService) {
+	    this.productService = productService;
+	}
+	/**
+	 * 设置 计价规则 Service.
+	 *
+	 * @param pricingValueAddedService the new 计价规则 Service
+	 */
+	public void setPricingValueAddedService(
+		IPricingValueAddedService pricingValueAddedService) {
+	    this.pricingValueAddedService = pricingValueAddedService;
+	}
+
+	/**
+	 * 
+	 * 
+	 * 获取 区域 Service.
+	 *
+	 * @return the 区域 Service
+	 */
+	public IRegionService getRegionService() {
+		return regionService;
+	}
+	/**
+	 * 设置 区域 Service.
+	 *
+	 * @param regionService the new 区域 Service
+	 */
+	public void setRegionService(IRegionService regionService) {
+		this.regionService = regionService;
+	}
+
+	/**
+	 * 
+	 * 
+	 * 设置 计费规则 Service.
+	 *
+	 * @param priceValuationService the new 计费规则 Service
+	 */
+	public void setPriceValuationService(
+			IPriceValuationService priceValuationService) {
+		this.priceValuationService = priceValuationService;
+	}
+	/**
+	 * 
+	 * 
+	 * 设置 计价明细 Service.
+	 *
+	 * @param effectivePlanDetailService the new 计价明细 Service
+	 */
+	public void setEffectivePlanDetailService(
+			IEffectivePlanDetailService effectivePlanDetailService) {
+		this.effectivePlanDetailService = effectivePlanDetailService;
+	}
+	
+	/**
+	 * 
+	 * 
+	 * 设置 折扣优先级 SERVICE.
+	 *
+	 * @param discountPriorityService the new 折扣优先级 SERVICE
+	 */
+	public void setDiscountPriorityService(
+			IDiscountPriorityService discountPriorityService) {
+		this.discountPriorityService = discountPriorityService;
+	}
+	/**
+	 * 
+	 * 
+	 * 设置 部门管理 SERVICE.
+	 *
+	 * @param orgAdministrativeInfoService the new 部门管理 SERVICE
+	 */
+	public void setOrgAdministrativeInfoService(
+			IOrgAdministrativeInfoService orgAdministrativeInfoService) {
+		this.orgAdministrativeInfoService = orgAdministrativeInfoService;
+	}
+	/**
+	 * 
+	 * 
+	 * 设置 计价条目Service.
+	 *
+	 * @param priceEntryService the new 计价条目Service
+	 */
+	public void setPriceEntryService(IPriceEntryService priceEntryService) {
+		this.priceEntryService = priceEntryService;
+	}
+	/**
+	 * 
+	 * 
+	 * 设置 区域 Service.
+	 *
+	 * @param regionAirService the new 区域 Service
+	 */
+	public void setRegionAirService(IRegionAirService regionAirService) {
+		this.regionAirService = regionAirService;
+	}
+	
+	/**
+	 * <p>
+	 * Description: 查询产品时效 <br />
+	 * </p>.
+	 *
+	 * @param originalOrgCode 出发部门
+	 * @param destinationOrgCode 到达部门
+	 * @param productCode 产品code
+	 * @param billDate the bill date
+	 * @return the list
+	 * @throws BillCaculateServiceException the bill caculate service exception
+	 * @author DP-Foss-YueHongJie
+	 * @version 0.1 2012-10-25
+	 * @parm  billDate 开单日期 可空 ，默认为当前时间
+	 * List<EffectivePlanDto>
+	 */
+	@Override
+	public List<EffectivePlanDto> searchEffectivePlanDetailList(String originalOrgCode, 
+			String destinationOrgCode, String productCode,Date billDate) throws BillCaculateServiceException{
+		return effectivePlanDetailService.queryEffectivePlanDetailListByOrgCode(originalOrgCode, destinationOrgCode, productCode,billDate);
+		 
+	}
+	
+	/** 客户优惠信息Service接口. */
+	@Inject
+    private IPreferentialService preferentialService;
+    
+    /**
+     * Check preferentia time.
+     *
+     * @param queryBillCacilateDto the query bill cacilate dto
+     */
+    private void checkPreferentiaTime (QueryBillCacilateDto queryBillCacilateDto){
+    	if(StringUtil.isNotEmpty(queryBillCacilateDto.getCustomerCode())){
+			PreferentialInfoDto preferentialInfoDto = preferentialService.queryPriceVersionInfo(queryBillCacilateDto.getCustomerCode(), queryBillCacilateDto.getReceiveDate());
+			if(null!=preferentialInfoDto){
+				Date preferentiaTime =  preferentialInfoDto.getPriceVersionDate();
+				if(null!=preferentiaTime){
+					queryBillCacilateDto.setIsMonthlyDate(FossConstants.YES);
+					queryBillCacilateDto.setReceiveDate(preferentiaTime);
+				}
+			}
+		}
+    }
+    
+	/**
+	 * <p>
+	 * 
+	 * Description:计算运费<br />
+	 * 
+	 * </p>.
+	 *
+	 * @param queryBillCacilateDto the query bill cacilate dto
+	 * @return the list
+	 * @throws BillCaculateServiceException the bill caculate service exception
+	 * @author DP-Foss-YueHongJie
+	 * @version 0.1 2012-10-25
+	 * @parm  queryBillCacilateDto 计算运费dto
+	 * List<ProductPriceDto>
+	 */
+	@Override  
+	public List<ProductPriceDto> searchProductPriceList(QueryBillCacilateDto queryBillCacilateDto) throws BillCaculateServiceException{
+    		/**1.1 根据始发部门code 获取始发区域IDT_SRV_PRICE_PLAN
+        	 * 1.2 根据达到部门code 获取到达区域ID
+        	 * 2.1 根据始发区域ID,到达区域ID, 营业部收货日期, 是否接货查询计费规则和计价方式明细列表，以ProductPriceDto对象返回；
+        	 */
+		log.debug("FRT start calcuate>>"+new Date());
+		
+	
+		// 数据检验
+		PriceUtil.checkQueryBillCacilateDtoDate(queryBillCacilateDto);
+		//业务时间
+		Date discountReceiveDate = queryBillCacilateDto.getReceiveDate();
+		//如果客户编码存在, 查询合同优惠信息,取出对应的价格版本日期作为当前查询价格信息。 
+		checkPreferentiaTime(queryBillCacilateDto);
+		// 如果当前货物为NULL,设置货物编码为通用状态
+		if (StringUtil.isEmpty(queryBillCacilateDto.getGoodsCode())) {
+			queryBillCacilateDto.setGoodsCode(GoodsTypeEntityConstants.GOODSTYPE_GENERAL_H00001);
+		}
+		String int_productCode = queryBillCacilateDto.getProductCode();
+		//获得当前传入的产品、始发部门、到达部门、业务日期、币种、货物类别，是否接货
+		String productCode = queryBillCacilateDto.getProductCode();
+		String partialLineCode = null;
+		if(PricingConstants.ProductEntityConstants.PRICING_PRODUCT_PARTIAL_LINE.equals(productCode)){
+			partialLineCode  = queryBillCacilateDto.getDestinationOrgCode();
+			queryBillCacilateDto.setDestinationOrgCode(queryBillCacilateDto.getLastOrgCode());
+		}
+		
+		String originalOrgCode = queryBillCacilateDto.getOriginalOrgCode();
+		String destinationOrgCode = queryBillCacilateDto.getDestinationOrgCode();
+		Date receiveDate = queryBillCacilateDto.getReceiveDate();
+		String currencyCode = queryBillCacilateDto.getCurrencyCdoe();
+		String flightShift = queryBillCacilateDto.getFlightShift();
+		String goodsCode = queryBillCacilateDto.getGoodsCode();
+		String combBillTypeCode = queryBillCacilateDto.getCombBillTypeCode();				//zxy 20140507 MANA-1253 新增
+		String isReceiveGoods = queryBillCacilateDto.getIsReceiveGoods();
+		//默认是否接货为否
+		if (StringUtil.isEmpty(isReceiveGoods)) {
+			isReceiveGoods = FossConstants.NO;
+		}
+		//重货
+		BigDecimal weight = queryBillCacilateDto.getWeight();
+		//轻货
+		BigDecimal volume = queryBillCacilateDto.getVolume();
+		//查询出发区域ID
+		String originalId = queryBillCacilateDto.getDeptRegionId();
+//		if (StringUtil.isEmpty(originalId)) {
+			if (StringUtils.equals(productCode, ProductEntityConstants.PRICING_PRODUCT_AIR_FREIGHT)
+					|| StringUtils.equals(productCode, ProductEntityConstants.PRICING_PRODUCT_C2_C20004)) {
+				originalId = regionAirService.findRegionOrgByDeptNo(originalOrgCode, queryBillCacilateDto.getReceiveDate(), null,
+						PricingConstants.PRICING_REGION);
+			} else {
+				originalId = regionService.findRegionOrgByDeptNo(originalOrgCode, queryBillCacilateDto.getReceiveDate(), null,
+						PricingConstants.PRICING_REGION);
+			}
+//			if (StringUtil.isEmpty(originalId)) {
+//				return null;
+//			}
+//		}
+		// 查询目的地区域ID
+		String destinationId = queryBillCacilateDto.getArrvRegionId();
+//		if (StringUtil.isEmpty(destinationId) && StringUtil.isNotBlank(destinationOrgCode)) {
+			if (StringUtils.equals(productCode, ProductEntityConstants.PRICING_PRODUCT_AIR_FREIGHT)
+					|| StringUtils.equals(productCode, ProductEntityConstants.PRICING_PRODUCT_C2_C20004)) {
+				destinationId = regionAirService.findRegionOrgByDeptNo(destinationOrgCode, queryBillCacilateDto.getReceiveDate(), null,
+						PricingConstants.PRICING_REGION);
+			} else {
+				destinationId = regionArriveService.findRegionOrgByDeptNo(destinationOrgCode, queryBillCacilateDto.getReceiveDate(), null,
+						PricingConstants.ARRIVE_REGION);
+			}
+//			if (StringUtil.isEmpty(destinationId)) {
+//				return null;
+//			}
+//		}
+		
+			
+		//如果当前是客户版本日期没有定位到区域。则以业务时间为准找区域
+		if (StringUtil.isEmpty(originalId) && FossConstants.YES.equals(queryBillCacilateDto.getIsMonthlyDate())) {
+			if (StringUtils.equals(productCode, ProductEntityConstants.PRICING_PRODUCT_AIR_FREIGHT)
+					|| StringUtils.equals(productCode, ProductEntityConstants.PRICING_PRODUCT_C2_C20004)) {
+				originalId = regionAirService.findRegionOrgByDeptNo(originalOrgCode, discountReceiveDate, null,
+						PricingConstants.PRICING_REGION);
+			} else {
+				originalId = regionService.findRegionOrgByDeptNo(originalOrgCode, discountReceiveDate, null,
+						PricingConstants.PRICING_REGION);
+			}
+			if (StringUtil.isEmpty(originalId)) {
+				return null;
+			}
+		}
+		
+		//如果当前是客户版本日期没有定位到区域。则以业务时间为准找区域
+		if (StringUtil.isEmpty(destinationId) &&  StringUtil.isNotBlank(destinationOrgCode) && FossConstants.YES.equals(queryBillCacilateDto.getIsMonthlyDate())) {
+			if (StringUtils.equals(productCode, ProductEntityConstants.PRICING_PRODUCT_AIR_FREIGHT)
+					|| StringUtils.equals(productCode, ProductEntityConstants.PRICING_PRODUCT_C2_C20004)) {
+				destinationId = regionAirService.findRegionOrgByDeptNo(destinationOrgCode,discountReceiveDate , null,
+						PricingConstants.PRICING_REGION);
+			} else {
+				destinationId = regionArriveService.findRegionOrgByDeptNo(destinationOrgCode,discountReceiveDate , null,
+						PricingConstants.ARRIVE_REGION);
+			}
+			if (StringUtil.isEmpty(destinationId)) {
+				return null;
+			}
+		}
+		
+			
+		//运费查询Bean
+		QueryProductPriceDto queryProductPriceDto = new QueryProductPriceDto();
+		if (null == currencyCode) {
+			currencyCode = FossConstants.CURRENCY_CODE_RMB;
+		}
+		ProductEntity productEntity = productService.getProductByCache(productCode, discountReceiveDate);
+		if (productEntity == null) {
+			return null;
+		}
+		//根据客户端传入的三级产品得到二级产品
+		productCode = productEntity.getParentCode();
+		GoodsTypeEntity goodsTypeEntity = goodsTypeService.getGoodsTypeByCache(goodsCode, receiveDate);
+		queryProductPriceDto.setProductCode(productCode);
+		//设置货币、始发区域、到达区域、航班类别、货物、是否接货、计费规则类型、状态
+		queryProductPriceDto.setCurrencyCode(currencyCode);
+		queryProductPriceDto.setOriginalOrgId(originalId);
+		queryProductPriceDto.setDestinationId(destinationId);
+		queryProductPriceDto.setFlightShift(flightShift);
+		queryProductPriceDto.setGoodsTypeCode(goodsCode);
+		queryProductPriceDto.setReceiveDate(receiveDate);
+		queryProductPriceDto.setIsReceiveGoods(isReceiveGoods);
+		queryProductPriceDto.setType(PricingConstants.VALUATION_TYPE_PRICING);//价格定义 
+		queryProductPriceDto.setActive(FossConstants.ACTIVE); 
+		//zxy 20140522 DEFECT-2949 MANA-1253 start 新增
+		if (StringUtils.equals(queryProductPriceDto.getProductCode(), ProductEntityConstants.PRICING_PRODUCT_AIR_FREIGHT)
+				|| StringUtils.equals(queryProductPriceDto.getProductCode(), ProductEntityConstants.PRICING_PRODUCT_C2_C20004)) 
+			queryProductPriceDto.setCombBillTypeCode(combBillTypeCode);	//zxy 20140507 MANA-1253 新增
+		//zxy 20140522 DEFECT-2949 MANA-1253 end 新增
+		//计费条目
+		PriceEntity priceEntity = priceEntryService.getPriceEntryByCache(PriceEntityConstants.PRICING_CODE_FRT, discountReceiveDate);
+		if (priceEntity == null) {
+			return null;
+		}
+		// 根据三级产品查询计算费用
+		List<ResultProductPriceDto> resultList = priceValuationService.queryPriceValuationByCalculaCondition(queryProductPriceDto);
+		List<ProductPriceDto> caculateresultList = new ArrayList<ProductPriceDto>();
+		if (StringUtil.equalsIgnoreCase(productCode, ProductEntityConstants.PRICING_PRODUCT_C2_C20004)) {
+			//zxy 20140520 DEFECT-2913 MANA-1253 start 新增:如果未配置单独开单的方案，则取合大票
+			if((resultList == null || resultList.size() <= 0) && ProductEntityConstants.PRICING_PRODUCT_FREIGNT_DDKD.equals(combBillTypeCode)){
+				queryProductPriceDto.setCombBillTypeCode(ProductEntityConstants.PRICING_PRODUCT_FREIGNT_HDP);
+				resultList = priceValuationService.queryPriceValuationByCalculaCondition(queryProductPriceDto);
+				queryProductPriceDto.setCombBillTypeCode(combBillTypeCode);	//还原参数
+			}
+			//zxy 20140520 DEFECT-2913 MANA-1253 end 新增:如果未配置单独开单的方案，则取合大票
+			// 计算空运的价格
+			caculateresultList = PriceUtil.calculateAirCostServices(weight, volume, resultList, receiveDate,
+					productEntity, goodsTypeEntity, priceEntity);
+		} else {
+			// 其他运输方式价格
+			caculateresultList = PriceUtil.calculateCostServices(weight, volume, resultList, receiveDate,
+					productEntity, goodsTypeEntity, priceEntity);
+		}
+		//如果当前是算月结客户 
+		if(StringUtils.equals(FossConstants.YES,queryBillCacilateDto.getIsMonthlyDate())){
+			// 根据三级产品查询计算费用
+			queryProductPriceDto.setReceiveDate(discountReceiveDate);
+			List<ResultProductPriceDto> monthlyResultList = priceValuationService.queryPriceValuationByCalculaCondition(queryProductPriceDto);
+			if (CollectionUtils.isEmpty(caculateresultList)) {
+				if (StringUtil.equalsIgnoreCase(productCode, ProductEntityConstants.PRICING_PRODUCT_C2_C20004)) {
+					//zxy 20140520 DEFECT-2913 MANA-1253 start 新增:如果未配置单独开单的方案，则取合大票
+					if((monthlyResultList == null || monthlyResultList.size() <= 0) && ProductEntityConstants.PRICING_PRODUCT_FREIGNT_DDKD.equals(combBillTypeCode)){
+						queryProductPriceDto.setCombBillTypeCode(ProductEntityConstants.PRICING_PRODUCT_FREIGNT_HDP);
+						monthlyResultList = priceValuationService.queryPriceValuationByCalculaCondition(queryProductPriceDto);
+						queryProductPriceDto.setCombBillTypeCode(combBillTypeCode);	//还原参数
+					}
+					//zxy 20140520 DEFECT-2913 MANA-1253 end 新增:如果未配置单独开单的方案，则取合大票
+					// 计算空运的价格
+					caculateresultList = PriceUtil.calculateAirCostServices(weight, volume, monthlyResultList, discountReceiveDate,
+							productEntity, goodsTypeEntity, priceEntity);
+				} else {
+					// 其他运输方式价格
+					caculateresultList = PriceUtil.calculateCostServices(weight, volume, monthlyResultList, discountReceiveDate,
+							productEntity, goodsTypeEntity, priceEntity);
+				}
+			}
+		}
+		
+		//只有在没有找到价格的情况下才走这个方法   MANA-1242：偏线更改读取价格版本规则更新
+		//@author 张兴旺  2014-5-13 08:59:57
+		if(PricingConstants.ProductEntityConstants.PRICING_PRODUCT_PARTIAL_LINE.equals(queryBillCacilateDto.getProductCode())
+									&& CollectionUtils.isEmpty(caculateresultList)){
+			//重新赋予新值为当前时间以便得到新的计算方式
+			queryBillCacilateDto.setReceiveDate(new Date());
+			//时间重新赋值
+			discountReceiveDate = queryBillCacilateDto.getReceiveDate();
+			//重新计算价格
+			caculateresultList = reCalateTranferForOuterprice(queryBillCacilateDto);
+		}
+		
+		if (CollectionUtils.isEmpty(caculateresultList)) {
+			return null;
+		}
+		
+		//是否经济自提件赋值最低一票 
+		assignEconomyMentMinFee(queryBillCacilateDto,caculateresultList,discountReceiveDate);
+		//如果到达部门不为空、则在价格计算完成后的基础上接着计算折扣、否则不计费算折扣、直接返回价格
+		if (StringUtil.isNotBlank(destinationOrgCode)) {
+			/**
+			 * 计算折扣
+			 */
+			List<ProductPriceDto> list = doFRTDiscount(originalOrgCode, destinationOrgCode, discountReceiveDate, weight,
+					volume, originalId, destinationId, caculateresultList, queryBillCacilateDto);
+			calateOuterPrice(partialLineCode,int_productCode,queryBillCacilateDto,discountReceiveDate,caculateresultList);
+			log.debug("FRT end calcuate>>"+new Date());
+			return list;
+		} else {
+			calateOuterPrice(partialLineCode,int_productCode,queryBillCacilateDto,discountReceiveDate,caculateresultList);
+			return caculateresultList;
+		}
+		/**  BillCaculateService 是开单计算价格、增值服务、折扣、优惠活动的实现类
+		 *  计算运费分别为：FRT
+		 *  
+		 *  
+		 *  汽运  - t_srv_pice_plan价格表 字段 TRANSPORT_FLAG = 0
+		 *  
+		 *  空运 - t_srv_pice_plan价格表  字段 TRANSPORT_FLAG = 1
+		 *  
+		 *  计算增值服务：  VAS
+		 *  
+		 *  保费 - BF
+		 *  
+		 *  代收货款 - HK
+		 *  
+		 *  送货费 - SH
+		 *  
+		 *  接货费 - JH
+		 *  
+		 *  签收回单 -QS
+		 *  
+		 *  保管费 - CCF
+		 *  
+		 *  综合信息费 -ZHXX
+		 *  
+		 *  燃油附加费 - RYFJ
+		 *  
+		 *  中转费 - ZZ
+		 *  
+		 *  接货差额补差 -JHCEBC
+		 *  
+		 *  电子优惠券 - DZYHQ
+		 *  
+		 *  其他费用 -QT
+		 *  
+		 *  包装费 -BZ
+		 *  
+		 *  送货上楼费 -SHSL
+		 *  
+		 *  超远派送费 -CY
+		 *  
+		 *  送货进仓费 -SHJCF
+		 *  
+		 *  更改费 -GGF
+		 *  
+		 *  以上服务相关代码进行不同维度计算。
+		 *  
+		 *  可支绑定如产品、区域 等等进行价格、折扣、优惠计算
+		 */
+		
+	}
+	
+	/**
+	 * 重新计算偏线货物在自有网点中转价格数据
+	 * @author Foss-105888-Zhangxingwang
+	 * @date 2014-5-6 16:32:19
+	 * @param queryBillCacilateDto
+	 * @param caculateresultList 
+	 */
+	private List<ProductPriceDto> reCalateTranferForOuterprice(QueryBillCacilateDto queryBillCacilateDto) {
+		// 如果当前货物为NULL,设置货物编码为通用状态
+		if (StringUtil.isEmpty(queryBillCacilateDto.getGoodsCode())) {
+			queryBillCacilateDto.setGoodsCode(GoodsTypeEntityConstants.GOODSTYPE_GENERAL_H00001);
+		}
+		//业务时间
+		Date discountReceiveDate = queryBillCacilateDto.getReceiveDate();
+		//获得当前传入的产品、始发部门、到达部门、业务日期、币种、货物类别，是否接货
+		String productCode = queryBillCacilateDto.getProductCode();
+		String originalOrgCode = queryBillCacilateDto.getOriginalOrgCode();
+		String destinationOrgCode = queryBillCacilateDto.getDestinationOrgCode();
+		Date receiveDate = queryBillCacilateDto.getReceiveDate();
+		String currencyCode = queryBillCacilateDto.getCurrencyCdoe();
+		String flightShift = queryBillCacilateDto.getFlightShift();
+		String goodsCode = queryBillCacilateDto.getGoodsCode();
+		String isReceiveGoods = queryBillCacilateDto.getIsReceiveGoods();
+		//默认是否接货为否
+		if (StringUtil.isEmpty(isReceiveGoods)) {
+			isReceiveGoods = FossConstants.NO;
+		}
+		//重货
+		BigDecimal weight = queryBillCacilateDto.getWeight();
+		//轻货
+		BigDecimal volume = queryBillCacilateDto.getVolume();
+		//查询出发区域ID
+		String originalId = regionService.findRegionOrgByDeptNo(originalOrgCode, queryBillCacilateDto.getReceiveDate(), null,
+				PricingConstants.PRICING_REGION);
+		//如果出发区域ID为空，不需要再查
+		if(StringUtils.isEmpty(originalId)){
+			return null;
+		}
+		// 查询目的地区域ID
+		String destinationId = regionArriveService.findRegionOrgByDeptNo(destinationOrgCode, queryBillCacilateDto.getReceiveDate(), null,
+				PricingConstants.ARRIVE_REGION);
+
+		//如果出发区域ID为空，不需要再查
+		if(StringUtils.isEmpty(destinationId)){
+			return null;
+		}	
+			
+		//运费查询Bean
+		QueryProductPriceDto queryProductPriceDto = new QueryProductPriceDto();
+		if (null == currencyCode) {
+			currencyCode = FossConstants.CURRENCY_CODE_RMB;
+		}
+		//查询产品类型
+		ProductEntity productEntity = productService.getProductByCache(productCode, discountReceiveDate);
+		if (productEntity == null) {
+			return null;
+		}
+		//根据客户端传入的三级产品得到二级产品
+		productCode = productEntity.getParentCode();
+		GoodsTypeEntity goodsTypeEntity = goodsTypeService.getGoodsTypeByCache(goodsCode, receiveDate);
+		queryProductPriceDto.setProductCode(productCode);
+		//设置货币、始发区域、到达区域、航班类别、货物、是否接货、计费规则类型、状态
+		queryProductPriceDto.setCurrencyCode(currencyCode);
+		queryProductPriceDto.setOriginalOrgId(originalId);
+		queryProductPriceDto.setDestinationId(destinationId);
+		queryProductPriceDto.setFlightShift(flightShift);
+		queryProductPriceDto.setGoodsTypeCode(goodsCode);
+		queryProductPriceDto.setReceiveDate(receiveDate);
+		queryProductPriceDto.setIsReceiveGoods(isReceiveGoods);
+		queryProductPriceDto.setType(PricingConstants.VALUATION_TYPE_PRICING);//价格定义 
+		queryProductPriceDto.setActive(FossConstants.ACTIVE); 
+		//计费条目
+		PriceEntity priceEntity = priceEntryService.getPriceEntryByCache(PriceEntityConstants.PRICING_CODE_FRT, discountReceiveDate);
+		if (priceEntity == null) {
+			return null;
+		}
+		// 根据三级产品查询计算费用
+		List<ResultProductPriceDto> resultList = priceValuationService.queryPriceValuationByCalculaCondition(queryProductPriceDto);
+		// 其他运输方式价格
+		return PriceUtil.calculateCostServices(weight, volume, resultList, receiveDate,
+				productEntity, goodsTypeEntity, priceEntity);				
+	}
+
+	private void calateOuterPrice(String partialLineCode,String productCode,QueryBillCacilateDto queryBillCacilateDto,Date billTime, List<ProductPriceDto> caculateresultList){
+		//如果当前是偏线产品
+		if(StringUtils.equals(productCode, ProductEntityConstants.PRICING_PRODUCT_PARTIAL_LINE)){
+			ConfigurationParamsEntity entity = configurationParamsService.queryConfigurationParamsOneByCode(PricingConstants.OUTER_PRICE_DEFAULT_TIME);
+			if(StringUtils.isNotEmpty(entity.getConfValue())){
+				SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+				Date outPriceDate = null;
+				try {
+					outPriceDate = sdf.parse(entity.getConfValue());
+				} catch (ParseException e) {
+					e.printStackTrace();
+				}
+				//如果在指定日期之后才按照新的偏线计算
+				if(billTime.after(outPriceDate)){
+					QueryOuterPriceCaccilateDto queryOuterPriceCaccilateDto = new QueryOuterPriceCaccilateDto();
+					queryOuterPriceCaccilateDto.setCurrencyCdoe(queryBillCacilateDto.getCurrencyCdoe());
+					queryOuterPriceCaccilateDto.setOutFieldCode(queryBillCacilateDto.getLastOrgCode());
+					queryOuterPriceCaccilateDto.setPartialLineCode(partialLineCode);
+					queryOuterPriceCaccilateDto.setReceiveDate(billTime);
+					queryOuterPriceCaccilateDto.setVolume(queryBillCacilateDto.getVolume());
+					queryOuterPriceCaccilateDto.setWeight(queryBillCacilateDto.getWeight());
+					queryOuterPriceCaccilateDto.setProductCode(productCode);
+					ResultOuterPriceCaccilateDto result = null;
+					//根据开单时间去查询偏线价格，如果查询不到，则使用当前时间去查询，如果当前时间查询不到，则需要抛出异常
+					try{
+						result = outerPriceCaculateService.calulateOuterPrice(queryOuterPriceCaccilateDto);
+					}catch (OuterPriceCaculateServiceException e) {
+						queryOuterPriceCaccilateDto.setReceiveDate(new Date());
+						//再查询不到，需要抛出异常，否则偏线的价格没有添加，这是很严重的事情
+						result = outerPriceCaculateService.calulateOuterPrice(queryOuterPriceCaccilateDto);
+					}
+					if(null!=result){
+						if(CollectionUtils.isNotEmpty(caculateresultList)){
+							List<ProductPriceDto> guiResultBillCalculates = null;
+							for (ProductPriceDto billCalculate : caculateresultList) {
+								guiResultBillCalculates = new ArrayList<ProductPriceDto>();
+								//公布价费 + 偏线费
+								billCalculate.setCaculateFee(billCalculate.getCaculateFee().add(result.getCalateFee()));
+								//公布价费率  + 偏线费率
+								billCalculate.setActualFeeRate(billCalculate.getActualFeeRate().add(result.getRateFee()));
+								//设置偏线费率信息
+								billCalculate.setResultOuterPriceCaccilateDto(result);
+								//存储新的数据
+								guiResultBillCalculates.add(billCalculate);
+							}
+							//替换新的数据
+							caculateresultList = guiResultBillCalculates;
+						}
+					}
+				}
+			}
+		}
+	}
+	 
+	/**
+	 * 赋值经济自提件最低一票.
+	 *
+	 * @param queryBillCacilateDto the query bill cacilate dto
+	 * @param caculateresultList the caculateresult list
+	 * @param discountReceiveDate the discount receive date
+	 */
+	private void  assignEconomyMentMinFee(QueryBillCacilateDto queryBillCacilateDto,List<ProductPriceDto> caculateresultList,Date discountReceiveDate){
+		if(FossConstants.YES.equals(queryBillCacilateDto.getEconomySince())){
+			MinFeePlanEntity minFeePlanEntity = minFeePlanService.getMinFeePlanByChannelCodeAndProductCodeAndSpecifiedDate(queryBillCacilateDto.getChannelCode(), queryBillCacilateDto.getProductCode(), discountReceiveDate);
+			if(null != minFeePlanEntity){
+				if(null!=minFeePlanEntity.getMinFee()){
+					log.info("经济自提件");
+					for (ProductPriceDto productPriceDto : caculateresultList) {
+						//计算重货
+						BigDecimal weight = BigDecimal.valueOf(productPriceDto.getHeavyFeeRate().doubleValue()).multiply(queryBillCacilateDto.getWeight());
+						//计算轻货
+						BigDecimal volume = BigDecimal.valueOf(productPriceDto.getLightFeeRate().doubleValue()).multiply(queryBillCacilateDto.getVolume());
+						//如果重货价格大于轻货则以轻为主
+						if(weight.compareTo(volume)==1){
+							productPriceDto.setActualFeeRate(productPriceDto.getHeavyFeeRate());
+							productPriceDto.setCaculateFee(weight);
+						}else{
+							productPriceDto.setActualFeeRate(productPriceDto.getLightFeeRate());
+							productPriceDto.setCaculateFee(volume);
+						} 
+						//设置经济自提件最低一票
+						productPriceDto.setMinFee(BigDecimal.valueOf(minFeePlanEntity.getMinFee()));
+						//如果计算的经济自提件比经济自提件最低一票还低则以经济自提件最低为准
+						if(productPriceDto.getCaculateFee().compareTo(BigDecimal.valueOf(minFeePlanEntity.getMinFee()))==-1){
+							productPriceDto.setCaculateFee(BigDecimal.valueOf(minFeePlanEntity.getMinFee()));
+						} 
+					}
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Sets the preferential service.
+	 *
+	 * @param preferentialService the new preferential service
+	 */
+	public void setPreferentialService(IPreferentialService preferentialService) {
+		this.preferentialService = preferentialService;
+	}
+	
+	/**
+	 * 运费折扣计算.
+	 *
+	 * @param originalOrgCode the original org code
+	 * @param destinationOrgCode the destination org code
+	 * @param receiveDate the receive date
+	 * @param weight the weight
+	 * @param volume the volume
+	 * @param originalId the original id
+	 * @param destinationId the destination id
+	 * @param caculateresultList the caculateresult list
+	 * @param queryBillCacilateDto the query bill cacilate dto
+	 * @return the list
+	 * @author zhangdongping
+	 * @date 2012-12-25 下午3:32:38
+	 * @see
+	 * 
+	 * 计算规则：
+	 * 
+	 * 折扣根据价格计算的方式（体积、重量）来选择适用哪种方式的折扣。
+	 * 
+	 * 例如，如果价格以体积进行计算，则折扣也需要以体积折扣计算。同时，再选择直接费用折扣 计算（如果有的情况下）。
+	 * 
+	 * 比较二者打折后，选取优惠幅度更高的作为最终折扣。
+	 * 
+	 * 注意，在普通客户合同、渠道、产品折扣的情况下，最终计算出的价格不能低于价格最低一票。
+	 */
+	@Override
+	public List<ProductPriceDto> doFRTDiscount(String originalOrgCode,
+		String destinationOrgCode, Date receiveDate, BigDecimal weight,
+		BigDecimal volume, String originalId, String destinationId,
+		List<ProductPriceDto> caculateresultList,QueryBillCacilateDto queryBillCacilateDto) {
+		
+	    List<ProductPriceDto> discountResultList = new ArrayList<ProductPriceDto>();
+	    //获取折扣优先级
+	    List<DiscountPriorityEntity> discountPriorityEntities = discountPriorityService.getDiscountPriorityByCache();
+	    if(CollectionUtils.isNotEmpty(caculateresultList)) {
+	    	boolean flag = false;
+	    	for (int i = 0; i < caculateresultList.size(); i++) {
+	    		flag = false;
+	    		ProductPriceDto productPriceDto = caculateresultList.get(i);
+	    		//是否按照优先级处理
+	    		if(CollectionUtils.isNotEmpty(discountPriorityEntities)) {
+	    			DiscountParmDto discountParmDto = new DiscountParmDto();
+	    		    //出发部门
+	    		    OrgAdministrativeInfoEntity deptOrgAdministrativeInfoEntity = orgAdministrativeInfoService.queryOrgAdministrativeInfoByCode(originalOrgCode);
+	    		    //到达部门
+	    		    OrgAdministrativeInfoEntity arrvOrgAdministrativeInfoEntity = orgAdministrativeInfoService.queryOrgAdministrativeInfoByCode(destinationOrgCode);
+	    		    //匹配出发、到达折扣的城市信息
+	    		    if(deptOrgAdministrativeInfoEntity != null && StringUtil.isNotBlank(deptOrgAdministrativeInfoEntity.getCityCode())) {
+	    		    	 discountParmDto.setDeptCityCode(deptOrgAdministrativeInfoEntity.getCityCode());
+	    		    }
+	    		    if(arrvOrgAdministrativeInfoEntity != null && StringUtil.isNotBlank(arrvOrgAdministrativeInfoEntity.getCityCode())) {
+	    		    	discountParmDto.setArrvCityCode(arrvOrgAdministrativeInfoEntity.getCityCode());
+	    		    }
+	    		    //依次设置折扣信息的出发区域、到达区域、始发部门、到达部门、计价条目信息、
+	    		    //产品、货物、业务日期、重货、轻货、原始费用、计费类别
+	    		    discountParmDto.setCriteriaDetailId(productPriceDto.getId());
+	    		    discountParmDto.setDeptRegionId(originalId);
+	    		    discountParmDto.setArrvRegionId(destinationId);
+	    		    discountParmDto.setOriginalOrgCode(originalOrgCode);
+	    		    discountParmDto.setDestinationOrgCode(destinationOrgCode);
+	    		    discountParmDto.setPricingEntryCode(productPriceDto.getPriceEntityCode());
+	    		    discountParmDto.setPricingEntryName(productPriceDto.getPriceEntityName());
+	    		    discountParmDto.setProductCode(productPriceDto.getProductCode());
+	    		    discountParmDto.setGoodsTypeCode(productPriceDto.getGoodsTypeCode());
+	    		    discountParmDto.setReceiveDate(receiveDate);
+	    		    discountParmDto.setWeight(weight);
+	    		    discountParmDto.setVolume(volume);
+	    		    //计算后的价格
+	    		    discountParmDto.setOriginnalCost(productPriceDto.getCaculateFee());
+	    		    discountParmDto.setCustomCode(queryBillCacilateDto.getCustomerCode());
+					discountParmDto.setIndustryCode(queryBillCacilateDto.getIndustrulCode());
+					discountParmDto.setMinFee(productPriceDto.getMinFee());
+					discountParmDto.setMaxFee(productPriceDto.getMaxFee());
+					//计费类型 体积 、重量、费用
+					discountParmDto.setCaculateType(productPriceDto.getCaculateType());
+					discountParmDto.setSaleChannelCode(queryBillCacilateDto.getChannelCode());
+	    		    DiscountResultDto discountResult=null;
+	    		    //对于合同客户优先打折计算
+	    			for (int j = 0; j < discountPriorityEntities.size(); j++) {
+	    				DiscountPriorityEntity entity = discountPriorityEntities.get(j);
+	    				if(entity != null && entity.getCode() != null) {
+	    					if(StringUtil.equals(DiscountTypeConstants.DISCOUNT_TYPE__CUSTOMER_CONTRACT, entity.getCode())) {
+    							DiscountTypeInterface discountExe = discountTypeFactory.getDiscountTypeImpl(entity.getCode());
+        						if(discountExe != null) {
+        							//获取客户折扣操作类
+        							discountResult = discountExe.doDiscount(discountParmDto);
+        							//折扣存在,切折扣率不等于1
+        							if(discountResult != null ) {
+        								//计算折扣
+        								DiscountResultDto discountResultDto = PriceUtil.calculateCustomDiscountClientData(discountResult, discountParmDto);
+        								//将折扣价格赋值原计算后价格
+        								productPriceDto.setCaculateFee(discountResultDto.getDiscountValue());
+        								//将折扣价格赋值折扣价格
+        								productPriceDto.setDiscountFee(discountResultDto.getDiscountValue());
+        								//保留计价明细ID
+        								productPriceDto.setId(discountResultDto.getId());
+        								//折扣费率
+	    								BigDecimal actualFeeRate = productPriceDto.getActualFeeRate();
+	    								productPriceDto.setActualFeeRate(discountResultDto.getDiscountRate().multiply(actualFeeRate));
+        								//保留折扣相关信息
+        								productPriceDto.setDiscountPrograms(discountResultDto.getDiscountPrograms());
+        								discountResultList.add(productPriceDto);
+    									flag = true;
+    									break;
+        							} else {
+        								continue;
+        							}
+        						} else {
+        							continue;
+        						}
+    						} else {
+    							DiscountTypeInterface discountExe = discountTypeFactory.getDiscountTypeImpl(entity.getCode());
+    	    					if(discountExe != null) {
+    	    						try {
+    	    							//获取渠道或是产品折扣操作类
+    	    							discountResult =discountExe.doDiscount(discountParmDto);
+    	    						} catch (Exception e) {
+    	    							continue;
+    	    						}
+    	    						//折扣存在,切折扣率不等于100
+    	    						if(discountResult!=null) {
+    	    							//计算折扣
+    	    							DiscountResultDto discountResultDto = PriceUtil.calculatePriceDiscountClientData(discountResult, discountParmDto);
+    	    							if(discountResultDto != null && discountResultDto.getId() != null) {
+    	    								//将折扣价格赋值原计算后价格
+    	    								productPriceDto.setCaculateFee(discountResultDto.getDiscountValue());
+    	    								//将折扣价格赋值折扣价格
+    	    								productPriceDto.setDiscountFee(discountResultDto.getDiscountValue());
+    	    								//保留计价明细ID
+    	    								productPriceDto.setId(discountResultDto.getId());
+    	    								//折扣费率
+    	    								BigDecimal actualFeeRate = productPriceDto.getActualFeeRate();
+    	    								productPriceDto.setActualFeeRate(discountResultDto.getDiscountRate().multiply(actualFeeRate));
+    	    								//保留折扣相关信息
+    	    								productPriceDto.setDiscountPrograms(discountResultDto.getDiscountPrograms());
+    	    								discountResultList.add(productPriceDto);
+    	    								flag = true;
+    	    								break;
+    	    							} else {
+    	    								continue;
+    	    							}
+    	    						} else {
+    	    							continue;
+    	    						}
+    	    					} else {
+    	    						continue;
+    	    					}
+    						}
+	    				} else {
+	    					continue;
+	    				}
+	    			}
+	    			if(!flag) {
+		    			discountResultList.add(productPriceDto);
+		    		}
+	    		} else {
+	    			discountResultList.add(productPriceDto);
+	    		}
+	    	} 
+	    }
+	    return discountResultList;
+	    /**  BillCaculateService 是开单计算价格、增值服务、折扣、优惠活动的实现类
+	     * 
+		 *  计算运费分别为：FRT
+		 *  
+		 *  汽运  - t_srv_pice_plan价格表 字段 TRANSPORT_FLAG = 0
+		 *  
+		 *  空运 - t_srv_pice_plan价格表  字段 TRANSPORT_FLAG = 1
+		 *  
+		 *  
+		 *  计算增值服务：  VAS
+		 *  
+		 *  保费 - BF
+		 *  
+		 *  代收货款 - HK
+		 *  
+		 *  送货费 - SH
+		 *  
+		 *  接货费 - JH
+		 *  
+		 *  签收回单 -QS
+		 *  
+		 *  保管费 - CCF
+		 *  
+		 *  综合信息费 -ZHXX
+		 *  
+		 *  燃油附加费 - RYFJ
+		 *  
+		 *  中转费 - ZZ
+		 *  
+		 *  接货差额补差 -JHCEBC
+		 *  
+		 *  电子优惠券 - DZYHQ
+		 *  
+		 *  其他费用 -QT
+		 *  
+		 *  包装费 -BZ
+		 *  
+		 *  送货上楼费 -SHSL
+		 *  
+		 *  超远派送费 -CY
+		 *  
+		 *  送货进仓费 -SHJCF
+		 *  
+		 *  更改费 -GGF
+		 *  
+		 *  以上服务相关代码进行不同维度计算。
+		 *  
+		 *  可支绑定如产品、区域 等等进行价格、折扣、优惠计算
+		 */
+	}
+
+	
+	/**
+	 * 运费折扣计算.
+	 *
+	 * @param originalOrgCode the original org code
+	 * @param destinationOrgCode the destination org code
+	 * @param receiveDate the receive date
+	 * @param weight the weight
+	 * @param volume the volume
+	 * @param originalId the original id
+	 * @param destinationId the destination id
+	 * @param caculateresultList the caculateresult list
+	 * @param queryBillCacilateDto the query bill cacilate dto
+	 * @return the list
+	 * @author zhangdongping
+	 * @date 2012-12-25 下午3:32:38
+	 * @see
+	 * 
+	 * 计算规则：
+	 * 
+	 * 折扣根据价格计算的方式（体积、重量）来选择适用哪种方式的折扣。
+	 * 
+	 * 例如，如果价格以体积进行计算，则折扣也需要以体积折扣计算。同时，再选择直接费用折扣 计算（如果有的情况下）。
+	 * 
+	 * 比较二者打折后，选取优惠幅度更高的作为最终折扣。
+	 * 
+	 * 注意，在普通客户合同、渠道、产品折扣的情况下，最终计算出的价格不能低于价格最低一票。
+	 */
+	@Override
+	public List<ProductPriceDto> doExpressFRTDiscount(String originalOrgCode,
+		String destinationOrgCode, Date receiveDate, BigDecimal weight,
+		BigDecimal volume, String originalId, String destinationId,
+		List<ProductPriceDto> caculateresultList,QueryBillCacilateDto queryBillCacilateDto) {
+		
+	    List<ProductPriceDto> discountResultList = new ArrayList<ProductPriceDto>();
+	    //获取折扣优先级
+	    List<DiscountPriorityEntity> discountPriorityEntities = discountPriorityService.getDiscountPriorityByCache();
+	    if(CollectionUtils.isNotEmpty(caculateresultList)) {
+	    	boolean flag = false;
+	    	for (int i = 0; i < caculateresultList.size(); i++) {
+	    		flag = false;
+	    		ProductPriceDto productPriceDto = caculateresultList.get(i);
+	    		//是否按照优先级处理
+	    		if(CollectionUtils.isNotEmpty(discountPriorityEntities)) {
+	    			DiscountParmDto discountParmDto = new DiscountParmDto();
+	    		    //出发部门
+	    		    OrgAdministrativeInfoEntity deptOrgAdministrativeInfoEntity = orgAdministrativeInfoService.queryOrgAdministrativeInfoByCode(originalOrgCode);
+	    		    //到达部门
+	    		    OrgAdministrativeInfoEntity arrvOrgAdministrativeInfoEntity = orgAdministrativeInfoService.queryOrgAdministrativeInfoByCode(destinationOrgCode);
+	    		    //匹配出发、到达折扣的城市信息
+	    		    if(deptOrgAdministrativeInfoEntity != null && StringUtil.isNotBlank(deptOrgAdministrativeInfoEntity.getCityCode())) {
+	    		    	 discountParmDto.setDeptCityCode(deptOrgAdministrativeInfoEntity.getCityCode());
+	    		    }
+	    		    if(arrvOrgAdministrativeInfoEntity != null && StringUtil.isNotBlank(arrvOrgAdministrativeInfoEntity.getCityCode())) {
+	    		    	discountParmDto.setArrvCityCode(arrvOrgAdministrativeInfoEntity.getCityCode());
+	    		    }
+	    		    //依次设置折扣信息的出发区域、到达区域、始发部门、到达部门、计价条目信息、
+	    		    //产品、货物、业务日期、重货、轻货、原始费用、计费类别
+	    		    discountParmDto.setCriteriaDetailId(productPriceDto.getId());
+	    		    discountParmDto.setDeptRegionId(originalId);
+	    		    discountParmDto.setArrvRegionId(destinationId);
+	    		    discountParmDto.setOriginalOrgCode(originalOrgCode);
+	    		    discountParmDto.setDestinationOrgCode(destinationOrgCode);
+	    		    discountParmDto.setPricingEntryCode(productPriceDto.getPriceEntityCode());
+	    		    discountParmDto.setPricingEntryName(productPriceDto.getPriceEntityName());
+	    		    discountParmDto.setProductCode(productPriceDto.getProductCode());
+	    		    discountParmDto.setGoodsTypeCode(productPriceDto.getGoodsTypeCode());
+	    		    discountParmDto.setReceiveDate(receiveDate);
+	    		    discountParmDto.setWeight(weight);
+	    		    discountParmDto.setVolume(volume);
+	    		    //计算后的价格
+	    		    discountParmDto.setOriginnalCost(productPriceDto.getCaculateFee());
+	    		    discountParmDto.setCustomCode(queryBillCacilateDto.getCustomerCode());
+					discountParmDto.setIndustryCode(queryBillCacilateDto.getIndustrulCode());
+					discountParmDto.setMinFee(productPriceDto.getMinFee());
+					discountParmDto.setMaxFee(productPriceDto.getMaxFee());
+					//计费类型 体积 、重量、费用
+					discountParmDto.setCaculateType(productPriceDto.getCaculateType());
+					discountParmDto.setSaleChannelCode(queryBillCacilateDto.getChannelCode());
+	    		    DiscountResultDto discountResult=null;
+	    		    //对于合同客户优先打折计算
+	    			for (int j = 0; j < discountPriorityEntities.size(); j++) {
+	    				DiscountPriorityEntity entity = discountPriorityEntities.get(j);
+	    				if(entity != null && entity.getCode() != null) {
+	    					if(StringUtil.equals(DiscountTypeConstants.DISCOUNT_TYPE__CUSTOMER_CONTRACT, entity.getCode())) {
+    							DiscountTypeInterface discountExe = discountTypeFactory.getDiscountTypeImpl(entity.getCode());
+        						if(discountExe != null) {
+        							//获取客户折扣操作类(快递)
+        							discountResult = discountExe.doExpressDiscount(discountParmDto);
+        							//折扣存在,切折扣率不等于1
+        							if(discountResult != null ) {
+        								//计算折扣
+        								DiscountResultDto discountResultDto = PriceUtil.calculateCustomDiscountClientData(discountResult, discountParmDto);
+        								//将折扣价格赋值原计算后价格
+        								productPriceDto.setCaculateFee(discountResultDto.getDiscountValue());
+        								//将折扣价格赋值折扣价格
+        								productPriceDto.setDiscountFee(discountResultDto.getDiscountValue());
+        								//保留计价明细ID
+        								productPriceDto.setId(discountResultDto.getId());
+        								//折扣费率
+	    								BigDecimal actualFeeRate = productPriceDto.getActualFeeRate();
+	    								productPriceDto.setActualFeeRate(discountResultDto.getDiscountRate().multiply(actualFeeRate));
+        								//保留折扣相关信息
+        								productPriceDto.setDiscountPrograms(discountResultDto.getDiscountPrograms());
+        								discountResultList.add(productPriceDto);
+    									flag = true;
+    									break;
+        							} else {
+        								continue;
+        							}
+        						} else {
+        							continue;
+        						}
+    						} else {
+    							DiscountTypeInterface discountExe = discountTypeFactory.getDiscountTypeImpl(entity.getCode());
+    	    					if(discountExe != null) {
+    	    						try {
+    	    							//获取渠道或是产品折扣操作类
+    	    							discountResult =discountExe.doExpressDiscount(discountParmDto);
+    	    						} catch (Exception e) {
+    	    							continue;
+    	    						}
+    	    						//折扣存在,切折扣率不等于100
+    	    						if(discountResult!=null) {
+    	    							//计算折扣
+    	    							DiscountResultDto discountResultDto = PriceUtil.calculatePriceDiscountClientData(discountResult, discountParmDto);
+    	    							if(discountResultDto != null && discountResultDto.getId() != null) {
+    	    								//将折扣价格赋值原计算后价格
+    	    								productPriceDto.setCaculateFee(discountResultDto.getDiscountValue());
+    	    								//将折扣价格赋值折扣价格
+    	    								productPriceDto.setDiscountFee(discountResultDto.getDiscountValue());
+    	    								//保留计价明细ID
+    	    								productPriceDto.setId(discountResultDto.getId());
+    	    								//折扣费率
+    	    								BigDecimal actualFeeRate = productPriceDto.getActualFeeRate();
+    	    								productPriceDto.setActualFeeRate(discountResultDto.getDiscountRate().multiply(actualFeeRate));
+    	    								//保留折扣相关信息
+    	    								productPriceDto.setDiscountPrograms(discountResultDto.getDiscountPrograms());
+    	    								discountResultList.add(productPriceDto);
+    	    								flag = true;
+    	    								break;
+    	    							} else {
+    	    								continue;
+    	    							}
+    	    						} else {
+    	    							continue;
+    	    						}
+    	    					} else {
+    	    						continue;
+    	    					}
+    						}
+	    				} else {
+	    					continue;
+	    				}
+	    			}
+	    			if(!flag) {
+		    			discountResultList.add(productPriceDto);
+		    		}
+	    		} else {
+	    			discountResultList.add(productPriceDto);
+	    		}
+	    	} 
+	    }
+	    return discountResultList;
+	    /**  BillCaculateService 是开单计算价格、增值服务、折扣、优惠活动的实现类
+	     * 
+		 *  计算运费分别为：FRT
+		 *  
+		 *  汽运  - t_srv_pice_plan价格表 字段 TRANSPORT_FLAG = 0
+		 *  
+		 *  空运 - t_srv_pice_plan价格表  字段 TRANSPORT_FLAG = 1
+		 *  
+		 *  
+		 *  计算增值服务：  VAS
+		 *  
+		 *  保费 - BF
+		 *  
+		 *  代收货款 - HK
+		 *  
+		 *  送货费 - SH
+		 *  
+		 *  接货费 - JH
+		 *  
+		 *  签收回单 -QS
+		 *  
+		 *  保管费 - CCF
+		 *  
+		 *  综合信息费 -ZHXX
+		 *  
+		 *  燃油附加费 - RYFJ
+		 *  
+		 *  中转费 - ZZ
+		 *  
+		 *  接货差额补差 -JHCEBC
+		 *  
+		 *  电子优惠券 - DZYHQ
+		 *  
+		 *  其他费用 -QT
+		 *  
+		 *  包装费 -BZ
+		 *  
+		 *  送货上楼费 -SHSL
+		 *  
+		 *  超远派送费 -CY
+		 *  
+		 *  送货进仓费 -SHJCF
+		 *  
+		 *  更改费 -GGF
+		 *  
+		 *  以上服务相关代码进行不同维度计算。
+		 *  
+		 *  可支绑定如产品、区域 等等进行价格、折扣、优惠计算
+		 */
+	}
+	
+	/**
+	 * 即日退增值服务折扣计算.
+	 *
+	 * @param originalOrgCode the original org code
+	 * @param destinationOrgCode the destination org code
+	 * @param receiveDate the receive date
+	 * @param weight the weight
+	 * @param volume the volume
+	 * @param originalId the original id
+	 * @param destinationId the destination id
+	 * @param caculateresultList the caculateresult list
+	 * @param queryBillCacilateDto the query bill cacilate dto
+	 * @return the list
+	 * @author zhangdongping
+	 * @date 2012-12-25 下午3:32:38
+	 * @see
+	 * 
+	 * 计算规则：
+	 * 
+	 * 折扣根据价格计算的方式（体积、重量）来选择适用哪种方式的折扣。
+	 * 
+	 * 例如，如果价格以体积进行计算，则折扣也需要以体积折扣计算。同时，再选择直接费用折扣 计算（如果有的情况下）。
+	 * 
+	 * 比较二者打折后，选取优惠幅度更高的作为最终折扣。
+	 * 
+	 * 注意，在普通客户合同、渠道、产品折扣的情况下，最终计算出的价格不能低于价格最低一票。
+	 */
+	@Override
+	public List<ValueAddDto> doZZFRTDiscount(String originalOrgCode,
+		String destinationOrgCode, Date receiveDate, BigDecimal weight,
+		BigDecimal volume, String originalId, String destinationId,
+		List<ValueAddDto> caculateresultList,QueryBillCacilateValueAddDto queryBillCacilateDto) {
+		
+	    List<ValueAddDto> discountResultList = new ArrayList<ValueAddDto>();
+	    //获取折扣优先级
+	    List<DiscountPriorityEntity> discountPriorityEntities = discountPriorityService.getDiscountPriorityByCache();
+	    if(CollectionUtils.isNotEmpty(caculateresultList)) {
+	    	boolean flag = false;
+	    	for (int i = 0; i < caculateresultList.size(); i++) {
+	    		flag = false;
+	    		ValueAddDto valueAddDto = caculateresultList.get(i);
+	    		//是否按照优先级处理
+	    		if(CollectionUtils.isNotEmpty(discountPriorityEntities)) {
+	    			DiscountParmDto discountParmDto = new DiscountParmDto();
+	    		    //出发部门
+	    		    OrgAdministrativeInfoEntity deptOrgAdministrativeInfoEntity = orgAdministrativeInfoService.queryOrgAdministrativeInfoByCode(originalOrgCode);
+	    		    //到达部门
+	    		    OrgAdministrativeInfoEntity arrvOrgAdministrativeInfoEntity = orgAdministrativeInfoService.queryOrgAdministrativeInfoByCode(destinationOrgCode);
+	    		    //匹配出发、到达折扣的城市信息
+	    		    if(deptOrgAdministrativeInfoEntity != null && StringUtil.isNotBlank(deptOrgAdministrativeInfoEntity.getCityCode())) {
+	    		    	 discountParmDto.setDeptCityCode(deptOrgAdministrativeInfoEntity.getCityCode());
+	    		    }
+	    		    if(arrvOrgAdministrativeInfoEntity != null && StringUtil.isNotBlank(arrvOrgAdministrativeInfoEntity.getCityCode())) {
+	    		    	discountParmDto.setArrvCityCode(arrvOrgAdministrativeInfoEntity.getCityCode());
+	    		    }
+	    		    //依次设置折扣信息的出发区域、到达区域、始发部门、到达部门、计价条目信息、
+	    		    //产品、货物、业务日期、重货、轻货、原始费用、计费类别
+	    		    discountParmDto.setCriteriaDetailId(valueAddDto.getId());
+	    		    discountParmDto.setDeptRegionId(originalId);
+	    		    discountParmDto.setArrvRegionId(destinationId);
+	    		    discountParmDto.setOriginalOrgCode(originalOrgCode);
+	    		    discountParmDto.setDestinationOrgCode(destinationOrgCode);
+	    		    discountParmDto.setPricingEntryCode(valueAddDto.getPriceEntityCode());
+	    		    discountParmDto.setPricingEntryName(valueAddDto.getPriceEntityName());
+	    		    discountParmDto.setProductCode(valueAddDto.getProductCode());
+	    		    discountParmDto.setGoodsTypeCode(valueAddDto.getGoodsTypeCode());
+	    		    discountParmDto.setReceiveDate(receiveDate);
+	    		    discountParmDto.setWeight(weight);
+	    		    discountParmDto.setVolume(volume);
+	    		    //计算后的价格
+	    		    discountParmDto.setOriginnalCost(valueAddDto.getCaculateFee());
+	    		    discountParmDto.setCustomCode(queryBillCacilateDto.getCustomerCode());
+					discountParmDto.setIndustryCode(queryBillCacilateDto.getIndustrulCode());
+					discountParmDto.setMinFee(valueAddDto.getMinFee());
+					discountParmDto.setMaxFee(valueAddDto.getMaxFee());
+					//计费类型 体积 、重量、费用
+					discountParmDto.setCaculateType(valueAddDto.getCaculateType());
+					discountParmDto.setSaleChannelCode(queryBillCacilateDto.getChannelCode());
+	    		    DiscountResultDto discountResult=null;
+	    		    //对于合同客户优先打折计算
+	    			for (int j = 0; j < discountPriorityEntities.size(); j++) {
+	    				DiscountPriorityEntity entity = discountPriorityEntities.get(j);
+	    				if(entity != null && entity.getCode() != null) {
+	    					if(StringUtil.equals(DiscountTypeConstants.DISCOUNT_TYPE__CUSTOMER_CONTRACT, entity.getCode())) {
+    							DiscountTypeInterface discountExe = discountTypeFactory.getDiscountTypeImpl(entity.getCode());
+        						if(discountExe != null) {
+        							//获取客户折扣操作类
+        							discountResult = discountExe.doExpressDiscount(discountParmDto);
+        							//折扣存在,切折扣率不等于1
+        							if(discountResult != null ) {
+        								//计算折扣
+        								DiscountResultDto discountResultDto = PriceUtil.calculateCustomDiscountClientData(discountResult, discountParmDto);
+        								//将折扣价格赋值原计算后价格
+        								valueAddDto.setCaculateFee(discountResultDto.getDiscountValue());
+        								//将折扣价格赋值折扣价格
+        								valueAddDto.setDiscountFee(discountResultDto.getDiscountValue());
+        								//保留计价明细ID
+        								valueAddDto.setId(discountResultDto.getId());
+        								//折扣费率
+	    								BigDecimal actualFeeRate = valueAddDto.getActualFeeRate();
+	    								valueAddDto.setActualFeeRate(discountResultDto.getDiscountRate().multiply(actualFeeRate));
+        								//保留折扣相关信息
+        								valueAddDto.setDiscountPrograms(discountResultDto.getDiscountPrograms());
+        								discountResultList.add(valueAddDto);
+    									flag = true;
+    									break;
+        							} else {
+        								continue;
+        							}
+        						} else {
+        							continue;
+        						}
+    						} 
+	    				} else {
+	    					continue;
+	    				}
+	    			}
+	    			if(!flag) {
+		    			discountResultList.add(valueAddDto);
+		    		}
+	    		} else {
+	    			discountResultList.add(valueAddDto);
+	    		}
+	    	} 
+	    }
+	    return discountResultList;
+	    /**  BillCaculateService 是开单计算价格、增值服务、折扣、优惠活动的实现类
+	     * 
+		 *  计算运费分别为：FRT
+		 *  
+		 *  汽运  - t_srv_pice_plan价格表 字段 TRANSPORT_FLAG = 0
+		 *  
+		 *  空运 - t_srv_pice_plan价格表  字段 TRANSPORT_FLAG = 1
+		 *  
+		 *  
+		 *  计算增值服务：  VAS
+		 *  
+		 *  保费 - BF
+		 *  
+		 *  代收货款 - HK
+		 *  
+		 *  送货费 - SH
+		 *  
+		 *  接货费 - JH
+		 *  
+		 *  签收回单 -QS
+		 *  
+		 *  保管费 - CCF
+		 *  
+		 *  综合信息费 -ZHXX
+		 *  
+		 *  燃油附加费 - RYFJ
+		 *  
+		 *  中转费 - ZZ
+		 *  
+		 *  接货差额补差 -JHCEBC
+		 *  
+		 *  电子优惠券 - DZYHQ
+		 *  
+		 *  其他费用 -QT
+		 *  
+		 *  包装费 -BZ
+		 *  
+		 *  送货上楼费 -SHSL
+		 *  
+		 *  超远派送费 -CY
+		 *  
+		 *  送货进仓费 -SHJCF
+		 *  
+		 *  更改费 -GGF
+		 *  
+		 *  以上服务相关代码进行不同维度计算。
+		 *  
+		 *  可支绑定如产品、区域 等等进行价格、折扣、优惠计算
+		 */
+	}
+		
+	
+	/**
+	 * 获取整车的保费相关信息
+	 * @param queryBillCacilateValueAddDto
+	 * @return
+	 * @throws BillCaculateServiceException
+	 */
+	@Override
+	public ValueAddDto getProductPriceDtoOfWVHAndBF(QueryBillCacilateValueAddDto queryBillCacilateValueAddDto)
+			throws BillCaculateServiceException {
+		// 如果是整车+保费
+		if(StringUtil.equals(queryBillCacilateValueAddDto.getProductCode(),
+				PricingConstants.ProductEntityConstants.PRICING_PRODUCT_FULL_VEHICLE)
+				&& StringUtil.equals(queryBillCacilateValueAddDto.getPricingEntryCode(),
+						PriceEntityConstants.PRICING_CODE_BF)){
+			/* 
+			 * 查询时使用searchValueAddPriceList原有逻辑，
+			 * 计算费用时则用GUI端传过来的feeRate覆盖searchValueAddPriceList查询
+			 * 到的feeRate
+			 */
+			queryBillCacilateValueAddDto.setFeeRate(null);
+			List<ValueAddDto> list =  this.searchValueAddPriceList(queryBillCacilateValueAddDto);
+			if(CollectionUtils.isNotEmpty(list)){
+				for(ValueAddDto dto : list){
+					if(PriceEntityConstants.PRICING_CODE_BF.equals(dto.getPriceEntityCode())){
+						return dto;
+					}
+				}
+			}			
+		}
+		return null;
+	}
+	
+	/**
+	 * <p>计算增值服务费</p>.
+	 *
+	 * @param queryBillCacilateValueAddDto the query bill cacilate value add dto
+	 * @return the list
+	 * @throws BillCaculateServiceException the bill caculate service exception
+	 * @author DP-Foss-YueHongJie
+	 * @date 2012-10-29 下午3:41:05
+	 * @see
+	 * 
+	 * 计算规则：
+	 * 
+	 * （1）查询基础增值服务费率进行价格计算，如果未查询到，则直接返回空。
+	 * 
+	 * （2）查询区域或是产品增值服务费率进行价格计算，区域优先于产品，即当查询到区域增值服务费率之后，将不再查询产品。
+	 * 
+	 * （3）如果符合增值优惠的条件，对基础增值服务计算出的价格进行打折。
+	 * 
+	 * （4）将折扣后的价格与以区域或是产品增值服务费率计算出的价格进行比较，选取优惠幅度最大的作为最终价格。
+	 * 
+	 * （5）在普通客户合同、渠道、产品折扣的情况下，最终计算出的价格不能低于价格最低一票。
+	 */
+	@Override
+	public List<ValueAddDto> searchValueAddPriceList(QueryBillCacilateValueAddDto queryBillCacilateValueAddDto)throws BillCaculateServiceException {
+	    /**
+	     *   1 根据始发部门code 获取始发区域ID 
+	     *   
+	     *   
+	    *  2  根据到达部门code 获取到达区域ID 
+	    *  
+	    *  
+	    *  3 查询各种增值服务的费率，计算费用
+	    *  
+	    *  
+	    *  3.1 查询区域增值服务   
+	    *  
+	    *  
+	    *  
+	    *  3.2 查询产品增值服务 去掉第一步已经查到的增值服务信息
+	    *  
+	    *  
+	    *  
+	    *  3.3 查询基础增值服务 去掉第二步和第一步已经查到的增值服务
+	    *  
+	    *  
+	    *  
+	    *  
+	    *  根据传入的重量，体积，费用等 计算结果
+	     */
+		log.debug("value add start calcuate>>"+new Date());
+		if (queryBillCacilateValueAddDto == null) {
+			return null;
+		}
+	    BigDecimal originnalCost = queryBillCacilateValueAddDto.getOriginnalCost();
+	    //校验输入参数	 
+	    PriceUtil.checkQueryBillCacilateValueAddDtoDate(queryBillCacilateValueAddDto); 
+	    //field
+	    String originalOrgCode = queryBillCacilateValueAddDto.getOriginalOrgCode();
+	    String destinationOrgCode = queryBillCacilateValueAddDto.getDestinationOrgCode();
+	    Date receiveDate = queryBillCacilateValueAddDto.getReceiveDate();
+	    String productCode = queryBillCacilateValueAddDto.getProductCode();
+	    queryBillCacilateValueAddDto.setActive(FossConstants.ACTIVE);
+	    
+		if (StringUtil.isEmpty(queryBillCacilateValueAddDto.getGoodsTypeCode())) {
+			queryBillCacilateValueAddDto
+					.setGoodsTypeCode(GoodsTypeEntityConstants.GOODSTYPE_GENERAL_H00001);
+		} else {
+			queryBillCacilateValueAddDto
+					.setGoodsTypeCode(queryBillCacilateValueAddDto
+							.getGoodsTypeCode());
+		}
+		String goodsTypeCode = queryBillCacilateValueAddDto.getGoodsTypeCode();
+	    //处理客户端以元为单位的原始费用化成分
+	    if(originnalCost!=null)
+	    {
+		originnalCost= new BigDecimal(String.valueOf(originnalCost.doubleValue() * PricingConstants.YUTOFEN ));
+		 queryBillCacilateValueAddDto.setOriginnalCost(originnalCost) ;
+	    }
+	    //保费特殊处理保费默认值问题
+		if (null == originnalCost
+				&& StringUtil.equalsIgnoreCase(queryBillCacilateValueAddDto.getPricingEntryCode(),
+						PriceEntityConstants.PRICING_CODE_BF)) {
+			ConfigurationParamsEntity entity = configurationParamsService.queryConfigurationParamsByOrgCode(
+					DictionaryConstants.SYSTEM_CONFIG_PARM__PKP,
+					ConfigurationParamsConstants.PKP_PARM__DEFAULT_INSURANCE_AMOUNT, originalOrgCode);
+			if (entity != null) {
+				String parmValue = entity.getConfValue();
+				try {
+					originnalCost = new BigDecimal(String.valueOf(new Double(
+							parmValue) * PricingConstants.YUTOFEN));
+					queryBillCacilateValueAddDto.setOriginnalCost(originnalCost);
+
+				} catch (BillCaculateServiceException e) {
+				    throw new BillCaculateServiceException("很抱歉，查询出发部门对应的默认保费时出现异常信息",e.getMessage());
+				}
+			}else{
+			    throw new BillCaculateServiceException("很抱歉，因开单时你没有传入保费的声明价值费用,并且出发部门也没有对应的默认声明价值费用，我们不能为你计算出最后的保费");
+			}
+		}
+		if(originnalCost==null){
+		    originnalCost = new BigDecimal(PricingConstants.ZERO);
+		}
+		/* 出发部门 code 定位增值区域信息 */
+		String originalId = null;
+		originalId = regionValueAddService.findRegionOrgByDeptNo(originalOrgCode, receiveDate, null,PricingConstants.VALUEADD_REGION);
+		if (StringUtil.isEmpty(originalId)) {
+				return null;
+		}
+		/* 到达部门 code 定位增值区域信息 */
+		String destinationId = null;
+		destinationId = regionValueAddService.findRegionOrgByDeptNo(destinationOrgCode, receiveDate, productCode,PricingConstants.VALUEADD_REGION);
+	 
+	    queryBillCacilateValueAddDto.setDeptRegionId(originalId);
+	    queryBillCacilateValueAddDto.setArrvRegionId(destinationId);
+	    //如果客户端没有长短途,则系统根据始发部门与到达部门CODE来定位
+	    String longOrShort = queryBillCacilateValueAddDto.getLongOrShort();
+		if (StringUtil.isEmpty(longOrShort) && StringUtil.isNotEmpty(destinationOrgCode)) {
+			longOrShort = getLongOrShort(originalOrgCode,
+					destinationOrgCode, productCode, receiveDate);/* 查询长短途 */
+			if (StringUtil.isEmpty(longOrShort)) {
+				queryBillCacilateValueAddDto.setLongOrShort(PricingConstants.ALL);
+			} else {
+				queryBillCacilateValueAddDto.setLongOrShort(longOrShort);
+			}
+		}
+	    /* 筛选计费规则下的计费明细 */
+		Map<String, List<ResultProductPriceDto>> resultMap = pricingValueAddedService.siftValueAddRuleService(queryBillCacilateValueAddDto);
+		List<ResultProductPriceDto> resultProductPriceDtoList = resultMap.get("base");
+		List<ResultProductPriceDto> resultOtherProductPriceDtoList = resultMap.get("other");
+		
+		if (CollectionUtils.isEmpty(resultProductPriceDtoList) && CollectionUtils.isEmpty(resultOtherProductPriceDtoList)) {
+			return null;
+		}
+		// 如果是整车计算保价费的话，需要使用GUI端传入的feeRate覆盖查询出来的feeRate
+		if(StringUtil.equals(queryBillCacilateValueAddDto.getProductCode(),
+				PricingConstants.ProductEntityConstants.PRICING_PRODUCT_FULL_VEHICLE)
+				&& StringUtil.equals(queryBillCacilateValueAddDto.getPricingEntryCode(),
+						PriceEntityConstants.PRICING_CODE_BF)){
+			if(queryBillCacilateValueAddDto.getFeeRate() != null){
+				coverFeeRateOfBF(resultProductPriceDtoList, queryBillCacilateValueAddDto.getFeeRate());
+				coverFeeRateOfBF(resultOtherProductPriceDtoList, queryBillCacilateValueAddDto.getFeeRate());
+			}			
+		}
+		
+		BigDecimal weight = queryBillCacilateValueAddDto.getWeight();
+		if (weight == null) {
+			weight = BigDecimal.ZERO;
+		}
+		BigDecimal volume = queryBillCacilateValueAddDto.getVolume();
+		if (volume == null) {
+			volume = BigDecimal.ZERO;
+		}
+		
+		BigDecimal kilom = queryBillCacilateValueAddDto.getKilom();
+		if (kilom == null) {
+		    kilom = BigDecimal.ZERO;
+		}
+		//根据基础增值服务计算
+		List<ValueAddDto> resultList = PriceUtil.calculateValueAddedServices(originnalCost, weight, volume,kilom,
+				resultProductPriceDtoList, receiveDate, queryBillCacilateValueAddDto.getPricingEntryCode());
+		//根据区域或是产品增值服务计算
+		List<ValueAddDto> resultOtherList = null;
+		if(CollectionUtils.isNotEmpty(resultOtherProductPriceDtoList)) {
+			resultOtherList = PriceUtil.calculateValueAddedServices(originnalCost, weight, volume,kilom,
+					resultOtherProductPriceDtoList, receiveDate, queryBillCacilateValueAddDto.getPricingEntryCode());
+		}
+		if (CollectionUtils.isNotEmpty(resultOtherList)) {
+			for (int loop = 0; loop < resultOtherList.size(); loop++) { 
+				ValueAddDto vo = resultOtherList.get(loop);
+				PriceEntity priceEntity = priceEntryService.getPriceEntryByCache(vo.getPriceEntityCode(), receiveDate);
+				String priceEntryName = null;
+				if (priceEntity != null && priceEntity.getName() != null) {
+					priceEntryName = priceEntity.getName();
+				}
+				vo.setPriceEntityName(priceEntryName);
+				if(StringUtils.equals(PriceEntityConstants.PRICING_CODE_QT, vo.getPriceEntityCode())) {
+					PriceEntity PriceEntitySub = priceEntryService.getPriceEntryByCache(vo.getSubType(), receiveDate);
+					if(PriceEntitySub != null) {
+						// 抓取计价条目编码与名称
+						vo.setSubTypeName(PriceEntitySub.getName());
+					}
+				}
+			}
+		}
+		PriceEntity priceEntity = priceEntryService.getPriceEntryByCache(queryBillCacilateValueAddDto.getPricingEntryCode(), receiveDate);
+		String priceEntryName = null;
+		if (priceEntity != null && priceEntity.getName() != null) {
+			priceEntryName = priceEntity.getName();
+		}
+		ProductEntity productEntity = productService.getProductByCache(
+				productCode, receiveDate);
+		
+		GoodsTypeEntity goodsTypeEntity = goodsTypeService
+				.getGoodsTypeByCache(goodsTypeCode, receiveDate);
+
+		if (CollectionUtils.isNotEmpty(resultList)) {
+			for (int loop = 0; loop < resultList.size(); loop++) { 
+				ValueAddDto vo = resultList.get(loop);
+				vo.setPriceEntityCode(queryBillCacilateValueAddDto
+						.getPricingEntryCode());
+				vo.setPriceEntityName(priceEntryName);
+				if (null != productEntity) {
+					vo.setProductCode(productEntity.getCode());
+					vo.setProductName(productEntity.getName());
+				}
+				if (null != goodsTypeEntity) {
+					vo.setGoodsTypeName(goodsTypeEntity.getName());
+					vo.setGoodsTypeCode(goodsTypeEntity.getCode());
+				}
+		    
+				if (PriceEntityConstants.PRICING_CODE_QT.equals(vo
+						.getPriceEntityCode())) {
+					priceEntity = priceEntryService.getPriceEntryByCache(vo.getSubType(), receiveDate);
+					if(priceEntity != null) {
+						// 抓取计价条目编码与名称
+						vo.setSubTypeName(priceEntity.getName());
+						
+						// 抓取计价条目归集类别编码与归集类别名称
+						PriceEntity blongPriceEntity = priceEntryService.getPriceEntryByCache(
+								priceEntity.getBlongPricingCode(), receiveDate);
+						if(blongPriceEntity != null) {
+							vo.setBelongToPriceEntityCode(blongPriceEntity
+									.getCode());// 归集类别CODE
+							vo.setBelongToPriceEntityName(blongPriceEntity
+									.getName());// 归集类别名称
+						}
+					}
+				} 
+			}
+		}
+		List<ValueAddDto> result = null;
+		if (StringUtil.isNotBlank(destinationOrgCode)) {
+			log.debug("value add end calcuate>>"+new Date());
+			//增值优惠计算
+			List<ValueAddDto> list = doValueAddDiscount(originalOrgCode, destinationOrgCode,
+					receiveDate, originalId, destinationId, weight, volume,
+					resultList, queryBillCacilateValueAddDto);
+			boolean flag = false;
+			if(CollectionUtils.isNotEmpty(list)) {
+				for (int i = 0; i < list.size(); i++) {
+					ValueAddDto addDto = list.get(i);
+//					/**
+//					* 时间：2014-02-27
+//					* 内容：MANA-257接货费优化
+//					* 作者：026123
+//					*/
+//					//若增值服务费的类型是接货，则直接跳过
+//					if(PriceEntityConstants.PRICING_CODE_JH.equals(addDto.getPriceEntityCode())){
+//						continue;
+//					}
+					
+					if(addDto.getDiscountFee() != null) {
+						flag = true;
+						break;
+					}
+				}
+			}
+			if(flag) {
+				result =  compareDiscountAndRegionList(list, resultOtherList);
+			} else {
+				if(CollectionUtils.isNotEmpty(resultOtherList)) {
+					result = resultOtherList;
+				} else {
+					result = list;
+				}
+			}
+		} else {
+			result = resultList;
+		}
+		
+		//从数据字典查询8-30日期
+		ConfigurationParamsEntity entity = configurationParamsService.queryConfigurationParamsOneByCode(PricingConstants.OUTER_PRICE_DEFAULT_TIME);
+		if(null!=entity){
+			if(StringUtils.isNotEmpty(entity.getConfValue())){
+				SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+				Date outPriceDate = null;
+				try {
+					outPriceDate = sdf.parse(entity.getConfValue());
+				} catch (ParseException e) {
+					e.printStackTrace();
+				}
+				if(queryBillCacilateValueAddDto.getReceiveDate().after(outPriceDate)){
+					if(CollectionUtils.isNotEmpty(result)){
+						for (int i = 0; i < result.size(); i++) {
+							//如果存在偏线中转费
+							if(PriceEntityConstants.PRICING_CODE_PXZZF.equals(result.get(i).getSubType())){
+								result.remove(i);
+							}
+						}
+					}
+				}
+			}
+		}
+		return result;
+		/**  BillCaculateService 是开单计算价格、增值服务、折扣、优惠活动的实现类
+		 * 
+		 * 
+		 *  计算运费分别为：FRT
+		 *  
+		 *  
+		 *  
+		 *  汽运  - t_srv_pice_plan价格表 字段 TRANSPORT_FLAG = 0
+		 *  
+		 *  
+		 *  空运 - t_srv_pice_plan价格表  字段 TRANSPORT_FLAG = 1
+		 *  
+		 *  计算增值服务：  VAS
+		 *  
+		 *  保费 - BF
+		 *  
+		 *  代收货款 - HK
+		 *  
+		 *  送货费 - SH
+		 *  
+		 *  接货费 - JH
+		 *  
+		 *  签收回单 -QS
+		 *  
+		 *  保管费 - CCF
+		 *  
+		 *  综合信息费 -ZHXX
+		 *  
+		 *  燃油附加费 - RYFJ
+		 *  
+		 *  中转费 - ZZ
+		 *  
+		 *  接货差额补差 -JHCEBC
+		 *  
+		 *  电子优惠券 - DZYHQ
+		 *  
+		 *  其他费用 -QT
+		 *  
+		 *  包装费 -BZ
+		 *  
+		 *  送货上楼费 -SHSL
+		 *  
+		 *  超远派送费 -CY
+		 *  
+		 *  送货进仓费 -SHJCF
+		 *  
+		 *  更改费 -GGF
+		 *  
+		 *  以上服务相关代码进行不同维度计算。
+		 *  
+		 *  可支绑定如产品、区域 等等进行价格、折扣、优惠计算
+		 */
+	}
+	
+	/**
+	 * 计算增值服务折扣.
+	 *
+	 * @param originalOrgCode the original org code
+	 * @param destinationOrgCode the destination org code
+	 * @param receiveDate the receive date
+	 * @param originalId the original id
+	 * @param destinationId the destination id
+	 * @param weight the weight
+	 * @param volume the volume
+	 * @param resultList the result list
+	 * @param queryBillCacilateValueAddDto the query bill cacilate value add dto
+	 * @return the list
+	 * @author zhangdongping
+	 * @date 2012-12-25 下午3:27:04
+	 * @see
+	 */
+	@Override
+	public List<ValueAddDto> doValueAddDiscount(String originalOrgCode,
+		String destinationOrgCode, Date receiveDate, String originalId,
+		String destinationId, BigDecimal weight, BigDecimal volume,
+		List<ValueAddDto> resultList, QueryBillCacilateValueAddDto queryBillCacilateValueAddDto) {
+	    /**
+	     * 计算增值服务折扣，
+	     * 通过增值服计算接口算出实际的请求所
+	     * 需要的增值服务费率
+	     * 再进行折扣计算。折扣计算步骤
+	     * 1、先看是否为客户合同的客户信息。如果是则优先按照客户合同规则进行计算
+	     * 2、如果不是客户合同类型的客户请求。则按照渠道优先
+	     * 3、如果渠道折扣没有则按照产品折扣计算
+	     *
+	     */
+	    List<ValueAddDto> discountResultList = new ArrayList<ValueAddDto>();
+	    List<DiscountPriorityEntity> discountPriorityEntities = discountPriorityService.getDiscountPriorityByCache();
+    	if(CollectionUtils.isNotEmpty(resultList)) {
+    		boolean flag = false;
+    		for (int i = 0; i < resultList.size(); i++) {
+    			flag = false;
+    			ValueAddDto productPriceDto = resultList.get(i);
+    			if(CollectionUtils.isNotEmpty(discountPriorityEntities)) {
+    				DiscountParmDto discountParmDto = new DiscountParmDto();
+    			    OrgAdministrativeInfoEntity deptOrgAdministrativeInfoEntity = orgAdministrativeInfoService.queryOrgAdministrativeInfoByCode(originalOrgCode);
+    			    OrgAdministrativeInfoEntity arrvOrgAdministrativeInfoEntity = orgAdministrativeInfoService.queryOrgAdministrativeInfoByCode(destinationOrgCode);
+    			    if(deptOrgAdministrativeInfoEntity != null && StringUtil.isNotBlank(deptOrgAdministrativeInfoEntity.getCityCode())) {
+	    		    	 discountParmDto.setDeptCityCode(deptOrgAdministrativeInfoEntity.getCityCode());
+	    		    }
+	    		    if(arrvOrgAdministrativeInfoEntity != null && StringUtil.isNotBlank(arrvOrgAdministrativeInfoEntity.getCityCode())) {
+	    		    	discountParmDto.setArrvCityCode(arrvOrgAdministrativeInfoEntity.getCityCode());
+	    		    }
+	    		    //依次设置折扣信息的出发区域、到达区域、始发部门、到达部门、计价条目信息、
+	    		    //产品、货物、业务日期、重货、轻货、原始费用、计费类别
+    			    discountParmDto.setDeptRegionId(originalId);
+    			    discountParmDto.setArrvRegionId(destinationId);
+    			    discountParmDto.setOriginalOrgCode(originalOrgCode);
+    			    discountParmDto.setDestinationOrgCode(destinationOrgCode);
+    			    discountParmDto.setPricingEntryCode(productPriceDto.getPriceEntityCode());
+    			    
+    			    if(StringUtil.isNotEmpty(productPriceDto.getSubTypeName())){
+    			    	discountParmDto.setPricingEntryName(productPriceDto.getPriceEntityName()+"("+productPriceDto.getSubTypeName()+")");
+    			    }else{
+    			    	discountParmDto.setPricingEntryName(productPriceDto.getPriceEntityName());
+    			    }
+    			    discountParmDto.setProductCode(productPriceDto.getProductCode());
+    			    discountParmDto.setGoodsTypeCode(productPriceDto.getGoodsTypeCode());
+    			    discountParmDto.setReceiveDate(receiveDate);
+    			    discountParmDto.setWeight(weight);
+    			    discountParmDto.setVolume(volume);
+    			    discountParmDto.setMinFee(productPriceDto.getMinFee());
+    			    discountParmDto.setMaxFee(productPriceDto.getMaxFee());
+    			    discountParmDto.setOriginnalCost(productPriceDto.getCaculateFee());
+    			    discountParmDto.setCustomCode(queryBillCacilateValueAddDto.getCustomerCode());
+					discountParmDto.setIndustryCode("ALL");
+					discountParmDto.setSaleChannelCode(queryBillCacilateValueAddDto.getChannelCode());
+    			    DiscountResultDto discountResult=null;
+    			    
+    			    if(StringUtils.equals(PriceEntityConstants.PRICING_CODE_QT, productPriceDto.getPriceEntityCode())) {
+    			    	discountParmDto.setSubType(productPriceDto.getSubType());
+    			    }
+    			    //对于合同客户优先折扣计算
+    				for (int j = 0; j < discountPriorityEntities.size(); j++) {
+    					DiscountPriorityEntity entity = discountPriorityEntities.get(j);
+    					if(entity != null && entity.getCode() != null) {
+    						if(StringUtil.equals(DiscountTypeConstants.DISCOUNT_TYPE__CUSTOMER_CONTRACT, entity.getCode())) {
+    							DiscountTypeInterface discountExe = discountTypeFactory.getDiscountTypeImpl(entity.getCode());
+        						if(discountExe != null) {
+        							//获取客户折扣操作类
+        							discountResult =discountExe.doDiscount(discountParmDto);
+        							//折扣存在,切折扣率不等于1
+        							if(discountResult != null) {
+        								discountResult.setContractType(null);
+        								//计算折扣
+        								DiscountResultDto discountResultDto = PriceUtil.calculateCustomDiscountClientData(discountResult, discountParmDto);
+        								//将折扣价格赋值原计算后价格
+        								productPriceDto.setCaculateFee(discountResultDto.getDiscountValue());
+        								
+        								/**
+        								* 设置fee值，前台通过该值来判断是否有客户固定接货费
+        								* 时间：2014-03-04
+        								* 内容：MANA-257接货费优化
+        								* 作者：026123
+        								*/
+        								if(PriceEntityConstants.PRICING_CODE_JH.equals(productPriceDto.getPriceEntityCode())){
+        									productPriceDto.setFee(discountResultDto.getDiscountValue());
+        								}
+        								
+        								//将折扣价格赋值折扣价格
+        								productPriceDto.setDiscountFee(discountResultDto.getDiscountValue());
+        								//保留计价明细ID
+        								productPriceDto.setId(discountResultDto.getId());
+        								//保留折扣相关信息
+        								productPriceDto.setDiscountPrograms(discountResultDto.getDiscountPrograms());
+    									discountResultList.add(productPriceDto);
+    									flag = true;
+    									break;
+        							} else {
+        								continue;
+        							}
+        						} else {
+        							continue;
+        						}
+    						} else {
+    							DiscountTypeInterface discountExe = discountTypeFactory.getDiscountTypeImpl(entity.getCode());
+        						if(discountExe != null) {
+        							//获取渠道或是产品折扣操作类
+        							discountResult =discountExe.doDiscount(discountParmDto);
+        							//折扣存在,切折扣率不等于1
+        							if(discountResult!=null ) {
+        								//计算折扣
+        								DiscountResultDto discountResultDto = PriceUtil.calculatePriceDiscountClientData(discountResult, discountParmDto);
+        								if(discountResultDto != null && discountResultDto.getId() != null) {
+        									//将折扣价格赋值原计算后价格
+        									productPriceDto.setCaculateFee(discountResultDto.getDiscountValue());
+        									//将折扣价格赋值折扣价格
+        									productPriceDto.setDiscountFee(discountResultDto.getDiscountValue());
+        									//保留计价明细ID
+        									productPriceDto.setId(discountResultDto.getId());
+        									//保留折扣相关信息
+        									productPriceDto.setDiscountPrograms(discountResultDto.getDiscountPrograms());
+        									discountResultList.add(productPriceDto);
+        									flag = true;
+        									break;
+        								} else {
+        									continue;
+        								}
+        							} else {
+        								continue;
+        							}
+        						} else {
+        							continue;
+        						}
+    						}
+    					} else {
+    						continue;
+    					}
+    				}
+    				if(!flag) {
+    	    			discountResultList.add(productPriceDto);
+    	    		} 
+    			} else {
+	    			discountResultList.add(productPriceDto);
+	    		}
+    		}
+    	}
+		return discountResultList;
+		/**  BillCaculateService 是开单计算价格、增值服务、折扣、优惠活动的实现类
+		 *  计算运费分别为：FRT
+		 *  汽运  - t_srv_pice_plan价格表 字段 TRANSPORT_FLAG = 0
+		 *  空运 - t_srv_pice_plan价格表  字段 TRANSPORT_FLAG = 1
+		 *  
+		 *  计算增值服务：  VAS
+		 *  
+		 *  保费 - BF
+		 *  
+		 *  代收货款 - HK
+		 *  
+		 *  送货费 - SH
+		 *  
+		 *  接货费 - JH
+		 *  
+		 *  签收回单 -QS
+		 *  
+		 *  保管费 - CCF
+		 *  
+		 *  综合信息费 -ZHXX
+		 *  
+		 *  燃油附加费 - RYFJ
+		 *  
+		 *  中转费 - ZZ
+		 *  
+		 *  接货差额补差 -JHCEBC
+		 *  
+		 *  电子优惠券 - DZYHQ
+		 *  
+		 *  其他费用 -QT
+		 *  
+		 *  包装费 -BZ
+		 *  
+		 *  送货上楼费 -SHSL
+		 *  
+		 *  超远派送费 -CY
+		 *  
+		 *  送货进仓费 -SHJCF
+		 *  
+		 *  更改费 -GGF
+		 *  
+		 *  以上服务相关代码进行不同维度计算。
+		 *  
+		 *  可支绑定如产品、区域 等等进行价格、折扣、优惠计算
+		 */
+	}
+	
+	/**
+	 * 根据出发始发区域ID,目的地区域ID,产品编码,营业日期,确定获得唯一时效明细信息返回长短途标识.
+	 *
+	 * @param originalOrgCode the original org code
+	 * @param destinationOrgCode the destination org code
+	 * @param productCode 产品编码
+	 * @param receiveDate 收货日期
+	 * @return the long or short
+	 * @author DP-Foss-YueHongJie
+	 * @date 2012-11-9 下午2:37:08
+	 */
+	private String getLongOrShort(String originalOrgCode, String destinationOrgCode,String productCode,Date receiveDate){
+	    List<EffectivePlanDto> effPlanDetailList = effectivePlanDetailService.queryEffectivePlanDetailListByOrgCode(originalOrgCode, destinationOrgCode, productCode,receiveDate);
+	    if(CollectionUtils.isNotEmpty(effPlanDetailList)){
+	    	return effPlanDetailList.get(0).getLongOrShort();    
+	    }
+	    return null;
+	    /**  BillCaculateService 是开单计算价格、增值服务、折扣、优惠活动的实现类
+		 *  计算运费分别为：FRT
+		 *  汽运  - t_srv_pice_plan价格表 字段 TRANSPORT_FLAG = 0
+		 *  空运 - t_srv_pice_plan价格表  字段 TRANSPORT_FLAG = 1
+		 *  
+		 *  计算增值服务：  VAS
+		 *  
+		 *  保费 - BF
+		 *  
+		 *  代收货款 - HK
+		 *  
+		 *  送货费 - SH
+		 *  
+		 *  接货费 - JH
+		 *  
+		 *  签收回单 -QS
+		 *  
+		 *  保管费 - CCF
+		 *  
+		 *  综合信息费 -ZHXX
+		 *  
+		 *  燃油附加费 - RYFJ
+		 *  
+		 *  中转费 - ZZ
+		 *  
+		 *  接货差额补差 -JHCEBC
+		 *  
+		 *  电子优惠券 - DZYHQ
+		 *  
+		 *  其他费用 -QT
+		 *  
+		 *  包装费 -BZ
+		 *  
+		 *  送货上楼费 -SHSL
+		 *  
+		 *  超远派送费 -CY
+		 *  
+		 *  送货进仓费 -SHJCF
+		 *  
+		 *  更改费 -GGF
+		 *  
+		 *  以上服务相关代码进行不同维度计算。
+		 *  
+		 *  可支绑定如产品、区域 等等进行价格、折扣、优惠计算
+		 */
+	}
+	
+	/**
+	 * 用新的feeRate覆盖查询到的feeRate
+	 * (即使用GUI端操作员录入或默认的feeRate)
+	 * @param list
+	 * @param feeRate
+	 * @return
+	 */
+	private List<ResultProductPriceDto> coverFeeRateOfBF(List<ResultProductPriceDto> list, BigDecimal feeRate){
+		if(CollectionUtils.isNotEmpty(list)){
+			for(ResultProductPriceDto dto : list){
+				dto.setFeeRate(feeRate);
+			}
+		}		
+		return list;
+	}
+	
+	/**
+	 * Compare discount and region list.
+	 *
+	 * @param discountList the discount list
+	 * @param regionList the region list
+	 * @return the list
+	 * @Description: 比较优惠与折扣
+	 * @author FOSSDP-sz
+	 * @date 2013-3-27 上午10:11:23
+	 * @version V1.0
+	 */
+	private List<ValueAddDto> compareDiscountAndRegionList(List<ValueAddDto> discountList, List<ValueAddDto> regionList) {
+		if(CollectionUtils.isNotEmpty(regionList)) {
+			List<ValueAddDto> result = new ArrayList<ValueAddDto>();
+			for (int i = 0; i < regionList.size(); i++) {
+				ValueAddDto valueAddDtoRegion = regionList.get(i);
+				if(StringUtils.equals(valueAddDtoRegion.getPriceEntityCode(), PriceEntityConstants.PRICING_CODE_QT)) {
+					for (int j = 0; j < discountList.size(); j++) {
+						ValueAddDto valueAddDtoDiscount = discountList.get(j);
+						if(StringUtils.equals(valueAddDtoDiscount.getSubType(), valueAddDtoRegion.getSubType())) {
+							if(valueAddDtoDiscount.getDiscountFee() != null) {
+								if(valueAddDtoDiscount.getCaculateFee().doubleValue() <= valueAddDtoRegion.getCaculateFee().doubleValue()) {
+									result.add(valueAddDtoDiscount);
+								} else {
+									result.add(valueAddDtoRegion);
+								}
+								break;
+							} else {
+								result.add(valueAddDtoRegion);
+							}
+						}
+					}
+				} else {
+					for (int j = 0; j < discountList.size(); j++) {
+						ValueAddDto valueAddDtoDiscount = discountList.get(j);
+						if(StringUtils.equals(valueAddDtoRegion.getPriceEntityCode(), valueAddDtoDiscount.getPriceEntityCode())) {
+							//若增值服务费的类型是接货，则直接跳过
+							if(PriceEntityConstants.PRICING_CODE_JH.equals(valueAddDtoDiscount.getPriceEntityCode())){
+								result.add(valueAddDtoDiscount);
+							}else{
+								if(valueAddDtoDiscount.getDiscountFee() != null) {
+									if(valueAddDtoDiscount.getCaculateFee().doubleValue() <= valueAddDtoRegion.getCaculateFee().doubleValue()) {
+										result.add(valueAddDtoDiscount);
+									} else {
+										result.add(valueAddDtoRegion);
+									}
+								} else {
+									result.add(valueAddDtoRegion);
+								}
+							}
+						}
+					}
+				}
+			}
+			return result;
+		} else {
+			return discountList;
+		}
+	}
+		
+		/**
+		 * 
+		 * <p>
+		 * Description: 查询快递产品时效 <br />
+		 * </p>
+		 * 
+		 * @author DP-Foss-YueHongJie
+		 * 
+		 * @version 0.1 2012-10-25
+		 * 
+		 * @param originalOrgCode 出发部门
+		 * 
+		 * @param destinationOrgCode 到达部门
+		 * 
+		 * @param productCode 产品code
+		 * 
+		 * @parm  billDate 开单日期 可空 ，默认为当前时间
+		 * 
+		 * @return
+		 * 
+		 * List<EffectivePlanDto>
+		 */
+		@Override
+		public List<EffectiveExpressPlanDto> searchExpressEffectivePlanDetailList(String originalOrgCode, 
+				String destinationOrgCode, String productCode,Date billDate) throws BillCaculateServiceException{
+			return effectiveExpressPlanDetailService.queryEffectiveExpressPlanDetailListByOrgCode(originalOrgCode, destinationOrgCode, productCode, billDate);			
+			 
+		} 
+	 
+	/**
+	 * 
+	 * <p>
+	 * 
+	 * Description:计算快递产品运费<br />
+	 * 
+	 * </p>
+	 * 
+	 * @author zdp
+	 * 
+	 * @version 0.1 2013-7-26
+	 * 
+	 * @parm queryBillCacilateDto 计算运费dto
+	 * 
+	 * @return
+	 * 
+	 *         List<ProductPriceDto>
+	 * 
+	 */
+	@Override
+	public List<ProductPriceDto> searchExpressProductPriceList(
+			QueryBillCacilateDto queryBillCacilateDto)
+			throws BillCaculateServiceException {
+		/**
+		 * 1.1 根据始发部门code 获取始发区域IDT_SRV_PRICE_PLAN 1.2 根据达到部门code 获取到达区域ID 2.1
+		 * 根据始发区域ID,到达区域ID, 营业部收货日期, 是否接货查询计费规则和计价方式明细列表，以ProductPriceDto对象返回；
+		 */
+		log.debug("FRT start calcuate>>" + new Date());
+		// 数据检验
+		PriceUtil.checkExpressQueryBillCacilateDtoData(queryBillCacilateDto);
+
+		// 如果当前货物为NULL,设置货物编码为通用状态
+		if (StringUtil.isEmpty(queryBillCacilateDto.getGoodsCode())) {
+			queryBillCacilateDto
+					.setGoodsCode(GoodsTypeEntityConstants.GOODSTYPE_GENERAL_H00001);
+		}
+		// 获得当前传入的产品、始发部门、到达部门、业务日期、币种、货物类别，是否接货
+		String productCode = queryBillCacilateDto.getProductCode();
+		String originalOrgCode = queryBillCacilateDto.getOriginalOrgCode();
+		String destinationOrgCode = queryBillCacilateDto
+				.getDestinationOrgCode();
+		Date receiveDate = queryBillCacilateDto.getReceiveDate();
+		String currencyCode = queryBillCacilateDto.getCurrencyCdoe();
+		String goodsCode = queryBillCacilateDto.getGoodsCode();
+		String isSelfPickUp = queryBillCacilateDto.getIsSelfPickUp();
+		// 默认是否接货为否
+		if (StringUtil.isEmpty(isSelfPickUp)) {
+			isSelfPickUp = FossConstants.NO;
+		}
+		// 自提减的钱
+		double selfPickUpSubStract = 0;
+
+		if (FossConstants.YES.equalsIgnoreCase(isSelfPickUp)) {
+			ConfigurationParamsEntity entity = configurationParamsService
+					.queryConfigurationParamsByOrgCode(
+							DictionaryConstants.SYSTEM_CONFIG_PARM__BAS,
+							ConfigurationParamsConstants.BAS_PARM__EXPRESS_SELF_PICKUP_SUBSTRACT,
+							originalOrgCode);
+			if (entity != null) {
+				String parmValue = entity.getConfValue();
+				try {
+					selfPickUpSubStract = Double.valueOf(parmValue);
+				} catch (BillCaculateServiceException e) {
+					throw new BillCaculateServiceException("很抱歉，查询快递自提减免费用出错",
+							e.getMessage());
+				}
+			} else {
+				throw new BillCaculateServiceException(
+						"很抱歉，因为开单时选择了自提，但是没有查询到自提直接减免的费用，我们不能为你计算出最后的费用");
+			}
+		}
+
+		// 重货
+		BigDecimal weight = queryBillCacilateDto.getWeight();
+		// 轻货
+		BigDecimal volume = queryBillCacilateDto.getVolume();
+		// 查询出发区域ID
+		String originalId = queryBillCacilateDto.getDeptRegionId();
+		if (StringUtil.isEmpty(originalId)) {
+
+			originalId = regionExpressService.findRegionOrgByDeptNo(
+					originalOrgCode, receiveDate, null,
+					PricingConstants.PRICING_REGION);
+			if (StringUtil.isEmpty(originalId)) {
+				return null;
+			}
+		}
+		// 查询目的地区域ID
+		String destinationId = queryBillCacilateDto.getArrvRegionId();
+		if (StringUtil.isEmpty(destinationId)
+				&& StringUtil.isNotBlank(destinationOrgCode)) {
+			destinationId = regionExpressService.findRegionOrgByDeptNo(
+					destinationOrgCode, receiveDate, null,
+					PricingConstants.PRICING_REGION);
+			if (StringUtil.isEmpty(destinationId)) {
+				return null;
+			}
+		}
+		// 运费查询Bean
+		QueryProductPriceDto queryProductPriceDto = new QueryProductPriceDto();
+		if (null == currencyCode) {
+			currencyCode = FossConstants.CURRENCY_CODE_RMB;
+		}
+		ProductEntity productEntity = productService.getProductByCache(
+				productCode, receiveDate);
+		if (productEntity == null) {
+			return null;
+		}
+		// 根据客户端传入的三级产品得到二级产品
+		productCode = productEntity.getParentCode();
+		GoodsTypeEntity goodsTypeEntity = goodsTypeService.getGoodsTypeByCache(
+				goodsCode, receiveDate);
+		queryProductPriceDto.setProductCode(productCode);
+		// 设置货币、始发区域、到达区域、航班类别、货物、是否接货、计费规则类型、状态
+		queryProductPriceDto.setCurrencyCode(currencyCode);
+		queryProductPriceDto.setOriginalOrgId(originalId);
+		queryProductPriceDto.setDestinationId(destinationId);
+		queryProductPriceDto.setGoodsTypeCode(goodsCode);
+		queryProductPriceDto.setReceiveDate(receiveDate);
+		queryProductPriceDto.setIsSelfPickUp(isSelfPickUp);
+		queryProductPriceDto.setType(PricingConstants.VALUATION_TYPE_PRICING);// 价格定义
+		queryProductPriceDto.setActive(FossConstants.ACTIVE);
+		// 计费条目
+		PriceEntity priceEntity = priceEntryService.getPriceEntryByCache(
+				PriceEntityConstants.PRICING_CODE_FRT, receiveDate);
+		if (priceEntity == null) {
+			return null;
+		}
+		// 根据三级产品查询计算费用
+		List<ResultProductPriceDto> resultList = expressPriceValuationService
+				.queryPriceValuationByCalculaCondition(queryProductPriceDto);
+		
+		if(CollectionUtils.isEmpty(resultList)){
+			return null;
+		}
+		
+		List<ProductPriceDto> caculateresultList = new ArrayList<ProductPriceDto>();
+	
+		// 其他运输方式价格
+		caculateresultList = PriceUtil.calculateExpressCostServices(weight,
+				volume, resultList, receiveDate, productEntity,
+				goodsTypeEntity, priceEntity, selfPickUpSubStract);
+
+		// 直接返回价格
+		
+		
+		
+		
+		// 如果当前是算月结客户
+		if (StringUtils.equals(FossConstants.YES, queryBillCacilateDto.getIsMonthlyDate())) {
+			// 根据三级产品查询计算费用
+			queryProductPriceDto.setReceiveDate(receiveDate);
+			List<ResultProductPriceDto> monthlyResultList = expressPriceValuationService.queryPriceValuationByCalculaCondition(queryProductPriceDto);
+			if (CollectionUtils.isEmpty(caculateresultList)) {
+
+				// 其他运输方式价格
+				caculateresultList = PriceUtil.calculateCostServices(weight, volume, monthlyResultList, receiveDate, productEntity, goodsTypeEntity, priceEntity);
+
+			}
+		}
+		if (CollectionUtils.isEmpty(caculateresultList)) {
+			return null;
+		}
+
+		//20140418 如果大礼包新折扣方法
+		if (StringUtil.isNotEmpty(queryBillCacilateDto.getCityMarketCode())){
+			String dLBType =queryBillCacilateDto.getCityMarketCode();//大礼包
+			List<ProductPriceDto> list =doExpressDLBDiscount(originalOrgCode, destinationOrgCode, receiveDate, weight, volume, originalId, destinationId, caculateresultList,
+					queryBillCacilateDto,dLBType);
+			caculateresultList = list;
+		}else{
+			// 如果到达部门不为空、则在价格计算完成后的基础上接着计算折扣、否则不计费算折扣、直接返回价格
+			if (StringUtil.isNotBlank(destinationOrgCode)) {
+				/**
+				 * 计算快递折扣
+				 */
+				List<ProductPriceDto> list = doExpressFRTDiscount(originalOrgCode, destinationOrgCode, receiveDate, weight, volume, originalId, destinationId, caculateresultList,
+						queryBillCacilateDto);
+				log.debug("FRT end calcuate>>" + new Date());
+				return list;
+			} else {
+				return caculateresultList;
+			}
+		}
+		return caculateresultList;
+	}
+			
+	//大礼包运费折扣			
+	private List<ProductPriceDto> doExpressDLBDiscount(String originalOrgCode,
+			String destinationOrgCode, Date receiveDate, BigDecimal weight,
+			BigDecimal volume, String originalId, String destinationId,
+			List<ProductPriceDto> caculateresultList,
+			QueryBillCacilateDto queryBillCacilateDto,String dLBCode) {
+	    List<ProductPriceDto> discountResultList = new ArrayList<ProductPriceDto>();
+	    if(CollectionUtils.isNotEmpty(caculateresultList)) {
+	    	//获取运费折扣
+	    	CityMarketPlanEntity cityMarketPlanEntity = cityMarketPlanService.getCityMarketPlanEntityCode(dLBCode, originalOrgCode, receiveDate);
+	    	for (int i = 0; i < caculateresultList.size(); i++) {
+	    		ProductPriceDto productPriceDto = caculateresultList.get(i);
+    			DiscountParmDto discountParmDto = new DiscountParmDto();
+    		    //出发部门
+    		    OrgAdministrativeInfoEntity deptOrgAdministrativeInfoEntity = orgAdministrativeInfoService.queryOrgAdministrativeInfoByCode(originalOrgCode);
+    		    //到达部门
+    		    OrgAdministrativeInfoEntity arrvOrgAdministrativeInfoEntity = orgAdministrativeInfoService.queryOrgAdministrativeInfoByCode(destinationOrgCode);
+    		    //匹配出发、到达折扣的城市信息
+    		    if(deptOrgAdministrativeInfoEntity != null && StringUtil.isNotBlank(deptOrgAdministrativeInfoEntity.getCityCode())) {
+    		    	 discountParmDto.setDeptCityCode(deptOrgAdministrativeInfoEntity.getCityCode());
+    		    }
+    		    if(arrvOrgAdministrativeInfoEntity != null && StringUtil.isNotBlank(arrvOrgAdministrativeInfoEntity.getCityCode())) {
+    		    	discountParmDto.setArrvCityCode(arrvOrgAdministrativeInfoEntity.getCityCode());
+    		    }
+    		    //依次设置折扣信息的出发区域、到达区域、始发部门、到达部门、计价条目信息、
+    		    //产品、货物、业务日期、重货、轻货、原始费用、计费类别
+    		    discountParmDto.setCriteriaDetailId(productPriceDto.getId());
+    		    discountParmDto.setDeptRegionId(originalId);
+    		    discountParmDto.setArrvRegionId(destinationId);
+    		    discountParmDto.setOriginalOrgCode(originalOrgCode);
+    		    discountParmDto.setDestinationOrgCode(destinationOrgCode);
+    		    discountParmDto.setPricingEntryCode(productPriceDto.getPriceEntityCode());
+    		    discountParmDto.setPricingEntryName(productPriceDto.getPriceEntityName());
+    		    discountParmDto.setProductCode(productPriceDto.getProductCode());
+    		    discountParmDto.setGoodsTypeCode(productPriceDto.getGoodsTypeCode());
+    		    discountParmDto.setReceiveDate(receiveDate);
+    		    discountParmDto.setWeight(weight);
+    		    discountParmDto.setVolume(volume);
+    		    //计算后的价格
+    		    discountParmDto.setOriginnalCost(productPriceDto.getCaculateFee());
+    		    discountParmDto.setCustomCode(queryBillCacilateDto.getCustomerCode());
+				discountParmDto.setIndustryCode(queryBillCacilateDto.getIndustrulCode());
+				discountParmDto.setMinFee(productPriceDto.getMinFee());
+				discountParmDto.setMaxFee(productPriceDto.getMaxFee());
+				//计费类型 体积 、重量、费用
+				discountParmDto.setCaculateType(productPriceDto.getCaculateType());
+				discountParmDto.setSaleChannelCode(queryBillCacilateDto.getChannelCode());
+				//计算折扣
+				DiscountResultDto discountResultDto = PriceUtil.calculateDLBDiscountClientData(cityMarketPlanEntity, discountParmDto);
+				//将折扣价格赋值原计算后价格
+				productPriceDto.setCaculateFee(discountResultDto.getDiscountValue());
+				//将折扣价格赋值折扣价格
+				productPriceDto.setDiscountFee(discountResultDto.getDiscountValue());
+				//保留计价明细ID
+				productPriceDto.setId(discountResultDto.getId());
+				//折扣费率
+				BigDecimal actualFeeRate = productPriceDto.getActualFeeRate();
+				productPriceDto.setActualFeeRate(discountResultDto.getDiscountRate().multiply(actualFeeRate));
+				//保留折扣相关信息
+				productPriceDto.setDiscountPrograms(discountResultDto.getDiscountPrograms());
+				discountResultList.add(productPriceDto);
+	    	} 
+	    }
+	    return discountResultList;
+	}
+
+	/**
+	 * <p>
+	 * 计算增快递产品值服务费
+	 * </p>
+	 * 
+	 * @author DP-Foss-zdp
+	 * 
+	 * @date 2013-7-26 下午3:41:05
+	 * 
+	 * @param originalOrgCode
+	 *            出发部门
+	 * 
+	 * @return
+	 * 
+	 * @see 计算规则：
+	 * 
+	 *      （1）查询基础增值服务费率进行价格计算，如果未查询到，则直接返回空。
+	 * 
+	 *      （2）查询区域或是产品增值服务费率进行价格计算，区域优先于产品，即当查询到区域增值服务费率之后，将不再查询产品。
+	 * 
+	 *      （3）如果符合增值优惠的条件，对基础增值服务计算出的价格进行打折。
+	 * 
+	 *      （4）将折扣后的价格与以区域或是产品增值服务费率计算出的价格进行比较，选取优惠幅度最大的作为最终价格。
+	 * 
+	 *      （5）在普通客户合同、渠道、产品折扣的情况下，最终计算出的价格不能低于价格最低一票。
+	 * 
+	 */
+	@Override
+	public List<ValueAddDto> searchExpressValueAddPriceList(
+			QueryBillCacilateValueAddDto queryBillCacilateValueAddDto)
+			throws BillCaculateServiceException {
+		/**
+		 * 1 根据始发部门code 获取始发区域ID
+		 * 
+		 * 
+		 * 2 根据到达部门code 获取到达区域ID
+		 * 
+		 * 
+		 * 3 查询各种增值服务的费率，计算费用
+		 * 
+		 * 
+		 * 3.1 查询区域增值服务
+		 * 
+		 * 
+		 * 
+		 * 3.2 查询产品增值服务 去掉第一步已经查到的增值服务信息
+		 * 
+		 * 
+		 * 
+		 * 3.3 查询基础增值服务 去掉第二步和第一步已经查到的增值服务
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 根据传入的重量，体积，费用等 计算结果
+		 */
+		//20140418		
+		//如果是保费和代收货款此处插入大礼包增值服务计价searchDLBValueAddPriceList(queryBillCacilateValueAddDto);	
+		if (StringUtil.isNotEmpty(queryBillCacilateValueAddDto.getCityMarketCode())&&(
+					 StringUtil.equalsIgnoreCase(
+								queryBillCacilateValueAddDto.getPricingEntryCode(),
+								PriceEntityConstants.PRICING_CODE_BF)
+								|| StringUtil.equalsIgnoreCase(	queryBillCacilateValueAddDto.getPricingEntryCode(),
+										PriceEntityConstants.PRICING_CODE_HK))) {
+			List<ValueAddDto> resultDLBList = searchDLBValueAddPriceList(queryBillCacilateValueAddDto);
+			return resultDLBList;
+		}
+		if (queryBillCacilateValueAddDto == null) {
+			return null;
+		}
+		BigDecimal originnalCost = queryBillCacilateValueAddDto
+				.getOriginnalCost();
+		// 校验输入参数
+		PriceUtil
+				.checkExpressQueryBillCacilateValueAddDtoDate(queryBillCacilateValueAddDto);
+		// field
+		String originalOrgCode = queryBillCacilateValueAddDto
+				.getOriginalOrgCode();
+		String destinationOrgCode = queryBillCacilateValueAddDto
+				.getDestinationOrgCode();
+		Date receiveDate = queryBillCacilateValueAddDto.getReceiveDate();
+		String productCode = queryBillCacilateValueAddDto.getProductCode();
+		queryBillCacilateValueAddDto.setActive(FossConstants.ACTIVE);
+		if (StringUtil.isEmpty(queryBillCacilateValueAddDto.getGoodsTypeCode())) {
+			queryBillCacilateValueAddDto
+					.setGoodsTypeCode(GoodsTypeEntityConstants.GOODSTYPE_GENERAL_H00001);
+		} else {
+			queryBillCacilateValueAddDto
+					.setGoodsTypeCode(queryBillCacilateValueAddDto
+							.getGoodsTypeCode());
+		}
+		String goodsTypeCode = queryBillCacilateValueAddDto.getGoodsTypeCode();
+		// String priceEntityCode =
+		// queryBillCacilateValueAddDto.getPriceEntityCode();
+		// 处理客户端以元为单位的原始费用化成分
+		if (originnalCost != null) {
+			originnalCost = new BigDecimal(String.valueOf(originnalCost
+					.doubleValue() * PricingConstants.YUTOFEN));
+			queryBillCacilateValueAddDto.setOriginnalCost(originnalCost);
+		}
+		// 保费特殊处理保费默认值问题
+		if (null == originnalCost
+				&& StringUtil.equalsIgnoreCase(
+						queryBillCacilateValueAddDto.getPricingEntryCode(),
+						PriceEntityConstants.PRICING_CODE_BF)) {
+			ConfigurationParamsEntity entity = configurationParamsService
+					.queryConfigurationParamsByOrgCode(
+							DictionaryConstants.SYSTEM_CONFIG_PARM__PKP,
+							ConfigurationParamsConstants.PKP_PARM__DEFAULT_INSURANCE_AMOUNT,
+							originalOrgCode);
+			if (entity != null) {
+				String parmValue = entity.getConfValue();
+				try {
+					originnalCost = new BigDecimal(String.valueOf(new Double(
+							parmValue) * PricingConstants.YUTOFEN));
+					queryBillCacilateValueAddDto
+							.setOriginnalCost(originnalCost);
+
+				} catch (BillCaculateServiceException e) {
+					throw new BillCaculateServiceException(
+							"很抱歉，查询出发部门对应的默认保费时出现异常信息", e.getMessage());
+				}
+			} else {
+				throw new BillCaculateServiceException(
+						"很抱歉，因开单时你没有传入保费的声明价值费用,并且出发部门也没有对应的默认声明价值费用，我们不能为你计算出最后的保费");
+			}
+		}
+		if (originnalCost == null) {
+			originnalCost = new BigDecimal(PricingConstants.ZERO);
+		}
+		/* 始发部门code 定位价格区域信息 */
+		String originalId = queryBillCacilateValueAddDto.getDeptRegionId();
+		if (StringUtil.isEmpty(originalId)) {
+
+			originalId = regionExpressService.findRegionOrgByDeptNo(
+					originalOrgCode, receiveDate, null,
+					PricingConstants.PRICING_REGION);
+		}
+		if (StringUtil.isEmpty(originalId)) {
+			return null;
+		}
+
+		/* 到达部门 code 定位价格区域信息 */
+		String destinationId = queryBillCacilateValueAddDto.getArrvRegionId();
+		if (StringUtil.isEmpty(destinationId)
+				&& StringUtil.isNotBlank(destinationOrgCode)) {
+			destinationId = regionExpressService.findRegionOrgByDeptNo(
+					destinationOrgCode, receiveDate, productCode,
+					PricingConstants.PRICING_REGION);
+		}
+		queryBillCacilateValueAddDto.setDeptRegionId(originalId);
+		queryBillCacilateValueAddDto.setArrvRegionId(destinationId);
+		// 如果客户端没有长短途,则系统根据始发部门与到达部门CODE来定位
+		String longOrShort = queryBillCacilateValueAddDto.getLongOrShort();
+		if (StringUtil.isEmpty(longOrShort)
+				&& StringUtil.isNotEmpty(destinationOrgCode)) {
+			queryBillCacilateValueAddDto.setLongOrShort(PricingConstants.ALL);
+		}
+		/* 筛选计费规则下的计费明细 */
+		Map<String, List<ResultProductPriceDto>> resultMap = expressPricingValueAddedService
+				.siftValueAddRuleService(queryBillCacilateValueAddDto);
+		List<ResultProductPriceDto> resultProductPriceDtoList = resultMap
+				.get("base");
+		List<ResultProductPriceDto> resultOtherProductPriceDtoList = resultMap
+				.get("other");
+
+		if (CollectionUtils.isEmpty(resultProductPriceDtoList)
+				&& CollectionUtils.isEmpty(resultOtherProductPriceDtoList)) {
+			return null;
+		}
+		BigDecimal weight = queryBillCacilateValueAddDto.getWeight();
+		if (weight == null) {
+			weight = BigDecimal.ZERO;
+		}
+		BigDecimal volume = queryBillCacilateValueAddDto.getVolume();
+		if (volume == null) {
+			volume = BigDecimal.ZERO;
+		}
+
+		BigDecimal kilom = queryBillCacilateValueAddDto.getKilom();
+		if (kilom == null) {
+			kilom = BigDecimal.ZERO;
+		}
+
+		BigDecimal volumeWeight = volume.multiply(
+				FossConstants.VOLUME_TO_WEIGHT).setScale(2,
+				BigDecimal.ROUND_HALF_UP);
+		weight = weight.setScale(2, BigDecimal.ROUND_HALF_UP);
+		if (volumeWeight.compareTo(weight) > 0) {
+			weight = volumeWeight;
+		}
+
+		// 根据基础增值服务计算
+		List<ValueAddDto> resultList = PriceUtil.calculateExpressValueAddedServices(
+				originnalCost, weight, volume, kilom,
+				resultProductPriceDtoList, receiveDate,
+				queryBillCacilateValueAddDto.getPricingEntryCode());
+		// 根据区域或是产品增值服务计算
+		List<ValueAddDto> resultOtherList = null;
+		if (CollectionUtils.isNotEmpty(resultOtherProductPriceDtoList)) {
+			resultOtherList = PriceUtil.calculateValueAddedServices(
+					originnalCost, weight, volume, kilom,
+					resultOtherProductPriceDtoList, receiveDate,
+					queryBillCacilateValueAddDto.getPricingEntryCode());
+		}
+		if (CollectionUtils.isNotEmpty(resultOtherList)) {
+			for (int loop = 0; loop < resultOtherList.size(); loop++) {
+				ValueAddDto vo = resultOtherList.get(loop);
+				PriceEntity priceEntity = priceEntryService
+						.getPriceEntryByCache(vo.getPriceEntityCode(),
+								receiveDate);
+				String priceEntryName = null;
+				if (priceEntity != null && priceEntity.getName() != null) {
+					priceEntryName = priceEntity.getName();
+				}
+				vo.setPriceEntityName(priceEntryName);
+				if (StringUtils.equals(PriceEntityConstants.PRICING_CODE_QT,
+						vo.getPriceEntityCode())) {
+					PriceEntity PriceEntitySub = priceEntryService
+							.getPriceEntryByCache(vo.getSubType(), receiveDate);
+					if (PriceEntitySub != null) {
+						// 抓取计价条目编码与名称
+						vo.setSubTypeName(PriceEntitySub.getName());
+					}
+				}
+			}
+			
+//		   若 即日退或保价费，有折扣
+			if((StringUtil.equals(DictionaryValueConstants.COD__COD_TYPE__RETURN_1_DAY,queryBillCacilateValueAddDto.getSubType())
+						&&StringUtil.equals(PricingConstants.PriceEntityConstants.PRICING_CODE_HK,queryBillCacilateValueAddDto.getPricingEntryCode()))
+					||StringUtil.equals(PricingConstants.PriceEntityConstants.PRICING_CODE_BF,queryBillCacilateValueAddDto.getPricingEntryCode())){
+				resultOtherList = doZZFRTDiscount(originalOrgCode,destinationOrgCode,receiveDate,weight,volume, originalId, destinationId,
+						resultOtherList,queryBillCacilateValueAddDto);	
+			}
+		}
+		PriceEntity priceEntity = priceEntryService
+				.getPriceEntryByCache(
+						queryBillCacilateValueAddDto.getPricingEntryCode(),
+						receiveDate);
+		String priceEntryName = null;
+		if (priceEntity != null && priceEntity.getName() != null) {
+			priceEntryName = priceEntity.getName();
+		}
+		ProductEntity productEntity = productService.getProductByCache(
+				productCode, receiveDate);
+
+		GoodsTypeEntity goodsTypeEntity = goodsTypeService.getGoodsTypeByCache(
+				goodsTypeCode, receiveDate);
+
+		if (CollectionUtils.isNotEmpty(resultList)) {
+			for (int loop = 0; loop < resultList.size(); loop++) {
+				ValueAddDto vo = resultList.get(loop);
+				vo.setPriceEntityCode(queryBillCacilateValueAddDto
+						.getPricingEntryCode());
+				vo.setPriceEntityName(priceEntryName);
+				if (null != productEntity) {
+					vo.setProductCode(productEntity.getCode());
+					vo.setProductName(productEntity.getName());
+				}
+				if (null != goodsTypeEntity) {
+					vo.setGoodsTypeName(goodsTypeEntity.getName());
+					vo.setGoodsTypeCode(goodsTypeEntity.getCode());
+				}
+
+				if (PriceEntityConstants.PRICING_CODE_QT.equals(vo
+						.getPriceEntityCode())) {
+					priceEntity = priceEntryService.getPriceEntryByCache(
+							vo.getSubType(), receiveDate);
+					if (priceEntity != null) {
+						// 抓取计价条目编码与名称
+						vo.setSubTypeName(priceEntity.getName());
+
+						// 抓取计价条目归集类别编码与归集类别名称
+						PriceEntity blongPriceEntity = priceEntryService
+								.getPriceEntryByCache(
+										priceEntity.getBlongPricingCode(),
+										receiveDate);
+						if (blongPriceEntity != null) {
+							vo.setBelongToPriceEntityCode(blongPriceEntity
+									.getCode());// 归集类别CODE
+							vo.setBelongToPriceEntityName(blongPriceEntity
+									.getName());// 归集类别名称
+						}
+					}
+				}
+
+			}
+//			   若 即日退或保价费，有折扣
+			if((StringUtil.equals(DictionaryValueConstants.COD__COD_TYPE__RETURN_1_DAY,queryBillCacilateValueAddDto.getSubType())
+					&&StringUtil.equals(PricingConstants.PriceEntityConstants.PRICING_CODE_HK,queryBillCacilateValueAddDto.getPricingEntryCode()))
+				||StringUtil.equals(PricingConstants.PriceEntityConstants.PRICING_CODE_BF,queryBillCacilateValueAddDto.getPricingEntryCode())){
+				resultList=doZZFRTDiscount(originalOrgCode,destinationOrgCode,receiveDate,weight,volume, originalId, destinationId,
+								resultList,queryBillCacilateValueAddDto);	
+			}	
+		}
+
+		if (StringUtil.isNotBlank(destinationOrgCode)) {
+			log.debug("value add end calcuate>>" + new Date());
+			// 增值优惠计算
+			List<ValueAddDto> list = resultList;
+			boolean flag = false;
+			if (CollectionUtils.isNotEmpty(list)) {
+				for (int i = 0; i < list.size(); i++) {
+					ValueAddDto addDto = list.get(i);
+					if (addDto.getDiscountFee() != null) {
+						flag = true;
+						break;
+					}
+				}
+			}
+			if (flag) {
+				return compareDiscountAndRegionList(list, resultOtherList);
+			} else {
+				if (CollectionUtils.isNotEmpty(resultOtherList)) {
+					return resultOtherList;
+				} else {
+					return list;
+				}
+			}
+		} else {
+			return resultList;
+		}
+		/**
+		 * BillCaculateService 是开单计算价格、增值服务、折扣、优惠活动的实现类
+		 * 
+		 * 
+		 * 计算运费分别为：FRT
+		 * 
+		 * 
+		 * 
+		 * 汽运 - t_srv_pice_plan价格表 字段 TRANSPORT_FLAG = 0
+		 * 
+		 * 
+		 * 空运 - t_srv_pice_plan价格表 字段 TRANSPORT_FLAG = 1
+		 * 
+		 * 计算增值服务： VAS
+		 * 
+		 * 保费 - BF
+		 * 
+		 * 代收货款 - HK
+		 * 
+		 * 送货费 - SH
+		 * 
+		 * 接货费 - JH
+		 * 
+		 * 签收回单 -QS
+		 * 
+		 * 保管费 - CCF
+		 * 
+		 * 综合信息费 -ZHXX
+		 * 
+		 * 燃油附加费 - RYFJ
+		 * 
+		 * 中转费 - ZZ
+		 * 
+		 * 接货差额补差 -JHCEBC
+		 * 
+		 * 电子优惠券 - DZYHQ
+		 * 
+		 * 其他费用 -QT
+		 * 
+		 * 包装费 -BZ
+		 * 
+		 * 送货上楼费 -SHSL
+		 * 
+		 * 超远派送费 -CY
+		 * 
+		 * 送货进仓费 -SHJCF
+		 * 
+		 * 更改费 -GGF
+		 * 
+		 * 以上服务相关代码进行不同维度计算。
+		 * 
+		 * 可支绑定如产品、区域 等等进行价格、折扣、优惠计算
+		 */
+	}
+			
+		private List<ValueAddDto> searchDLBValueAddPriceList(
+		QueryBillCacilateValueAddDto queryBillCacilateValueAddDto) {
+			log.debug("value add start searchDLBValueAddPriceList>>" + new Date());
+			if (queryBillCacilateValueAddDto == null) {
+				return null;
+			}
+			BigDecimal originnalCost = queryBillCacilateValueAddDto
+					.getOriginnalCost();
+			// 校验输入参数
+			PriceUtil
+					.checkExpressQueryBillCacilateValueAddDtoDate(queryBillCacilateValueAddDto);
+			// field
+			String originalOrgCode = queryBillCacilateValueAddDto
+					.getOriginalOrgCode();
+			String destinationOrgCode = queryBillCacilateValueAddDto
+					.getDestinationOrgCode();
+			Date receiveDate = queryBillCacilateValueAddDto.getReceiveDate();
+			String productCode = queryBillCacilateValueAddDto.getProductCode();
+			queryBillCacilateValueAddDto.setActive(FossConstants.ACTIVE);
+			if (StringUtil.isEmpty(queryBillCacilateValueAddDto.getGoodsTypeCode())) {
+				queryBillCacilateValueAddDto
+						.setGoodsTypeCode(GoodsTypeEntityConstants.GOODSTYPE_GENERAL_H00001);
+			} else {
+				queryBillCacilateValueAddDto
+						.setGoodsTypeCode(queryBillCacilateValueAddDto
+								.getGoodsTypeCode());
+			}
+			String goodsTypeCode = queryBillCacilateValueAddDto.getGoodsTypeCode();
+			// String priceEntityCode =
+			// queryBillCacilateValueAddDto.getPriceEntityCode();
+			// 处理客户端以元为单位的原始费用化成分
+			if (originnalCost != null) {
+				originnalCost = new BigDecimal(String.valueOf(originnalCost
+						.doubleValue() * PricingConstants.YUTOFEN));
+				queryBillCacilateValueAddDto.setOriginnalCost(originnalCost);
+			}
+			// 保费特殊处理保费默认值问题
+			if (null == originnalCost
+					&& StringUtil.equalsIgnoreCase(
+							queryBillCacilateValueAddDto.getPricingEntryCode(),
+							PriceEntityConstants.PRICING_CODE_BF)) {
+				ConfigurationParamsEntity entity = configurationParamsService
+						.queryConfigurationParamsByOrgCode(
+								DictionaryConstants.SYSTEM_CONFIG_PARM__PKP,
+								ConfigurationParamsConstants.PKP_PARM__DEFAULT_INSURANCE_AMOUNT,
+								originalOrgCode);
+				if (entity != null) {
+					String parmValue = entity.getConfValue();
+					try {
+						originnalCost = new BigDecimal(String.valueOf(new Double(
+								parmValue) * PricingConstants.YUTOFEN));
+						queryBillCacilateValueAddDto
+								.setOriginnalCost(originnalCost);
+
+					} catch (BillCaculateServiceException e) {
+						throw new BillCaculateServiceException(
+								"很抱歉，查询出发部门对应的默认保费时出现异常信息", e.getMessage());
+					}
+				} else {
+					throw new BillCaculateServiceException(
+							"很抱歉，因开单时你没有传入保费的声明价值费用,并且出发部门也没有对应的默认声明价值费用，我们不能为你计算出最后的保费");
+				}
+			}
+			if (originnalCost == null) {
+				originnalCost = new BigDecimal(PricingConstants.ZERO);
+			}
+			/* 始发部门code 定位价格区域信息 */
+			String originalId = queryBillCacilateValueAddDto.getDeptRegionId();
+			if (StringUtil.isEmpty(originalId)) {
+
+				originalId = regionExpressService.findRegionOrgByDeptNo(
+						originalOrgCode, receiveDate, null,
+						PricingConstants.PRICING_REGION);
+			}
+			if (StringUtil.isEmpty(originalId)) {
+				return null;
+			}
+
+			/* 到达部门 code 定位价格区域信息 */
+			String destinationId = queryBillCacilateValueAddDto.getArrvRegionId();
+			if (StringUtil.isEmpty(destinationId)
+					&& StringUtil.isNotBlank(destinationOrgCode)) {
+				destinationId = regionExpressService.findRegionOrgByDeptNo(
+						destinationOrgCode, receiveDate, productCode,
+						PricingConstants.PRICING_REGION);
+			}
+			queryBillCacilateValueAddDto.setDeptRegionId(originalId);
+			queryBillCacilateValueAddDto.setArrvRegionId(destinationId);
+			// 如果客户端没有长短途,则系统根据始发部门与到达部门CODE来定位
+			String longOrShort = queryBillCacilateValueAddDto.getLongOrShort();
+			if (StringUtil.isEmpty(longOrShort)
+					&& StringUtil.isNotEmpty(destinationOrgCode)) {
+				queryBillCacilateValueAddDto.setLongOrShort(PricingConstants.ALL);
+			}
+			/* 筛选计费规则下的计费明细 */
+//			Map<String, List<ResultProductPriceDto>> resultMap = expressPricingValueAddedService
+//					.siftValueAddRuleService(queryBillCacilateValueAddDto);
+//			List<ResultProductPriceDto> resultProductPriceDtoList = resultMap
+//					.get("base");
+			BigDecimal weight = queryBillCacilateValueAddDto.getWeight();
+			if (weight == null) {
+				weight = BigDecimal.ZERO;
+			}
+			BigDecimal volume = queryBillCacilateValueAddDto.getVolume();
+			if (volume == null) {
+				volume = BigDecimal.ZERO;
+			}
+
+			BigDecimal kilom = queryBillCacilateValueAddDto.getKilom();
+			if (kilom == null) {
+				kilom = BigDecimal.ZERO;
+			}
+
+			BigDecimal volumeWeight = volume.multiply(
+					FossConstants.VOLUME_TO_WEIGHT).setScale(2,
+					BigDecimal.ROUND_HALF_UP);
+			weight = weight.setScale(2, BigDecimal.ROUND_HALF_UP);
+			if (volumeWeight.compareTo(weight) > 0) {
+				weight = volumeWeight;
+			}
+
+			String code = queryBillCacilateValueAddDto.getCityMarketCode();
+			String deptcode = queryBillCacilateValueAddDto.getOriginalOrgCode();
+			Date billDate=queryBillCacilateValueAddDto.getReceiveDate();
+			if(null == billDate){
+				billDate = new Date();
+			}
+			CityMarketPlanEntity cityMarketPlanEntity = cityMarketPlanService.getCityMarketPlanEntityCode(code, deptcode, billDate);
+			// 根据基础增值服务计算
+			List<ValueAddDto> resultList = PriceUtil.calculateDLBValueAddedServices(
+					originnalCost, cityMarketPlanEntity,queryBillCacilateValueAddDto);
+			PriceEntity priceEntity = priceEntryService
+					.getPriceEntryByCache(
+							queryBillCacilateValueAddDto.getPricingEntryCode(),
+							receiveDate);
+			String priceEntryName = null;
+			if (priceEntity != null && priceEntity.getName() != null) {
+				priceEntryName = priceEntity.getName();
+			}		
+			ProductEntity productEntity = productService.getProductByCache(
+					productCode, receiveDate);
+
+			GoodsTypeEntity goodsTypeEntity = goodsTypeService.getGoodsTypeByCache(
+					goodsTypeCode, receiveDate);
+			if (CollectionUtils.isNotEmpty(resultList)) {
+				for (int loop = 0; loop < resultList.size(); loop++) {
+					ValueAddDto vo = resultList.get(loop);
+					vo.setPriceEntityCode(queryBillCacilateValueAddDto
+							.getPricingEntryCode());
+					vo.setPriceEntityName(priceEntryName);
+					if (null != productEntity) {
+						vo.setProductCode(productEntity.getCode());
+						vo.setProductName(productEntity.getName());
+					}
+					if (null != goodsTypeEntity) {
+						vo.setGoodsTypeName(goodsTypeEntity.getName());
+						vo.setGoodsTypeCode(goodsTypeEntity.getCode());
+					}
+				}
+			}
+			return resultList;
+		}
+
+		public void setEffectiveExpressPlanDetailService(
+			IEffectiveExpressPlanDetailService effectiveExpressPlanDetailService) {
+		    this.effectiveExpressPlanDetailService = effectiveExpressPlanDetailService;
+		}
+		
+		public void setRegionExpressService(IRegionExpressService regionExpressService) {
+		    this.regionExpressService = regionExpressService;
+		}
+
+		public void setCityMarketPlanService(
+				ICityMarketPlanService cityMarketPlanService) {
+			this.cityMarketPlanService = cityMarketPlanService;
+		}
+			
+			
+			
+			
+	
+	/**
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	
+//	private List<ValueAddDto> compareDiscountAndRegionList(List<ValueAddDto> discountList, List<ValueAddDto> regionList) {
+//		if(CollectionUtils.isNotEmpty(regionList)) {
+//			List<ValueAddDto> result = new ArrayList<ValueAddDto>();
+//			for (int i = 0; i < discountList.size(); i++) {
+//				ValueAddDto valueAddDtoDiscount = discountList.get(i);
+//				if(StringUtils.equals(valueAddDtoDiscount.getPriceEntityCode(), PriceEntityConstants.PRICING_CODE_QT)) {
+//					for (int j = 0; j < regionList.size(); j++) {
+//						ValueAddDto valueAddDtoRegion = regionList.get(j);
+//						if(StringUtils.equals(valueAddDtoDiscount.getSubType(), valueAddDtoRegion.getSubType())) {
+//							if(valueAddDtoDiscount.getCaculateFee().doubleValue() <= valueAddDtoRegion.getCaculateFee().doubleValue()) {
+//								result.add(valueAddDtoDiscount);
+//							} else {
+//								result.add(valueAddDtoRegion);
+//							}
+//							break;
+//						}
+//					}
+//				} else {
+//					for (int j = 0; j < regionList.size(); j++) {
+//						ValueAddDto valueAddDtoRegion = regionList.get(j);
+//						if(StringUtils.equals(valueAddDtoRegion.getPriceEntityCode(), valueAddDtoDiscount.getPriceEntityCode())) {
+//							if(valueAddDtoDiscount.getCaculateFee().doubleValue() <= valueAddDtoRegion.getCaculateFee().doubleValue()) {
+//								result.add(valueAddDtoDiscount);
+//							} else {
+//								result.add(valueAddDtoRegion);
+//							}
+//						}
+//					}
+//				}
+//			}
+//			return result;
+//		} else {
+//			return discountList;
+//		}
+//	}
+	/**
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 */
+}

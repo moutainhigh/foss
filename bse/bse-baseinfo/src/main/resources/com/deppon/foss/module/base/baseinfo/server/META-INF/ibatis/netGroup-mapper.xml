@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.netGroup" >
+
+	<resultMap id="netGroupResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.NetGroupEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="virtual_code" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="freight_route_virtual_code" property="freightRouteVirtualCode" jdbcType="VARCHAR" />
+		<result column="net_group_name" property="netGroupName" jdbcType="VARCHAR" />
+		<result column="SOURCE_ORG_CODE" property="sourceOrganizationCode" jdbcType="VARCHAR" />
+		<result column="TARGET_ORG_CODE" property="targetOrganizationCode" jdbcType="VARCHAR" />
+		<result column="active" property="active" jdbcType="CHAR" />
+		<result column="create_time" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="modify_time" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="VERSION_NO" property="version" jdbcType="NUMERIC" />
+	</resultMap>
+
+	<sql id="columns">
+		ID,
+		NET_GROUP_NAME,
+		TARGET_ORG_CODE,
+		SOURCE_ORG_CODE,
+		CREATE_TIME,
+		MODIFY_TIME,
+		ACTIVE,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE,
+		VIRTUAL_CODE,
+		FREIGHT_ROUTE_VIRTUAL_CODE,
+		VERSION_NO
+	</sql>
+
+	<sql id="values">
+		#{id,jdbcType=VARCHAR},
+		#{netGroupName,jdbcType=VARCHAR}, 
+		#{targetOrganizationCode,jdbcType=VARCHAR}, 
+		#{sourceOrganizationCode,jdbcType=VARCHAR}, 
+		#{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=CHAR}, 
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR}, 
+		#{virtualCode, jdbcType=VARCHAR}, 
+		#{freightRouteVirtualCode,jdbcType=VARCHAR}, 
+		#{version, jdbcType=NUMERIC}
+	</sql>
+
+	<insert id="addNetGroup" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.NetGroupEntity">
+		insert into BSE.T_BAS_NET_GROUP (
+		<include refid="columns"/>
+		) values ( 
+		<include refid="values"/>
+		)
+	</insert>
+
+	<update id="deleteNetGroup" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.NetGroupEntity">
+		update BSE.T_BAS_NET_GROUP 
+		set active = #{active, jdbcType=CHAR} 
+		, modify_time = #{modifyDate,jdbcType=TIMESTAMP} 
+		, VERSION_NO = #{version, jdbcType=NUMERIC}
+		, modify_user_code = #{modifyUser,jdbcType=VARCHAR} 
+		where id = #{id,jdbcType=VARCHAR}
+	</update>
+
+	<update id="deleteNetGroupByName" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.NetGroupEntity">
+		update BSE.T_BAS_NET_GROUP 
+		set active = #{active, jdbcType=CHAR} 
+		, modify_time = #{modifyDate,jdbcType=TIMESTAMP} 
+		, VERSION_NO = #{version, jdbcType=NUMERIC}
+		, modify_user_code = #{modifyUser,jdbcType=VARCHAR} 
+		where net_group_name = #{netGroupName,jdbcType=VARCHAR}
+	</update>
+
+	<update id="deleteNetGroupByFreightRoute" parameterType="map">
+		update BSE.T_BAS_NET_GROUP 
+		set active = #{inactive, jdbcType=CHAR} 
+		, modify_time = #{modifyDate,jdbcType=TIMESTAMP} 
+		, VERSION_NO = #{version, jdbcType=NUMERIC}
+		, modify_user_code = #{modifyUser,jdbcType=VARCHAR} 
+		where freight_route_virtual_code = #{freightRouteVirtualCode}
+		and active = #{active, jdbcType=CHAR} 
+	</update>
+
+
+
+	<select id="queryNetGroupById" resultMap="netGroupResultMap" parameterType="java.lang.String">
+		select 
+		<include refid="columns"/>
+		 from BSE.T_BAS_NET_GROUP where id = #{id,jdbcType=VARCHAR}
+	</select>
+
+	<select id="queryNetGroupByName" resultMap="netGroupResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.NetGroupEntity">
+		select * from BSE.T_BAS_NET_GROUP 
+		where active = #{active, jdbcType=CHAR} 
+		and net_group_name = #{netGroupName,jdbcType=VARCHAR}
+	</select>
+
+	<select id="queryNetGroupByFreightRoute" resultMap="netGroupResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.NetGroupEntity">
+		select 
+		<include refid="columns"/>
+		 from BSE.T_BAS_NET_GROUP 
+		where active = #{active, jdbcType=CHAR} 
+		and freight_route_virtual_code = #{freightRouteVirtualCode,jdbcType=VARCHAR}
+	</select>
+
+	<select id="queryNetGroupBySourceTargetFreightRoute" resultMap="netGroupResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.NetGroupEntity" >
+		select  
+		<include refid="columns"/>
+		from BSE.T_BAS_NET_GROUP 
+		where SOURCE_ORG_CODE = #{sourceOrganizationCode,jdbcType=VARCHAR}
+		and TARGET_ORG_CODE = #{targetOrganizationCode,jdbcType=VARCHAR}
+		and freight_route_virtual_code = #{freightRouteVirtualCode,jdbcType=VARCHAR}
+		and active = #{active, jdbcType=CHAR} 
+	</select>
+
+	<select id="queryNetGroupBySourceTarget" resultMap="netGroupResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.NetGroupEntity" >
+		select  
+		<include refid="columns"/>
+		from BSE.T_BAS_NET_GROUP 
+		where SOURCE_ORG_CODE = #{sourceOrganizationCode,jdbcType=VARCHAR}
+		and TARGET_ORG_CODE = #{targetOrganizationCode,jdbcType=VARCHAR}
+		and active = #{active, jdbcType=CHAR} 
+		order by version_no DESC
+	</select>
+
+	<select id="queryNetGroupListForDownload" resultMap="netGroupResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.NetGroupEntity">
+		select  
+		<include refid="columns"/>
+		from BSE.T_BAS_NET_GROUP
+		<where>
+			<if test="sourceOrganizationCode != null and sourceOrganizationCode != ''">
+				AND SOURCE_ORG_CODE = #{sourceOrganizationCode,jdbcType=VARCHAR}
+			</if>
+			<if test="version != null">
+				<![CDATA[ AND version_no > #{version, jdbcType=NUMERIC} ]]>
+			</if>
+		</where>
+		order by version_no ASC
+	</select>
+
+	<!-- 以下为 cache 使用 -->
+
+	<select id="queryLastVersion" resultType="long">
+		<![CDATA[
+			SELECT MAX(VERSION_NO)
+			FROM BSE.T_BAS_NET_GROUP
+		]]>
+	</select>
+	
+	<select id="queryNetGroupListForCache" resultMap="netGroupResultMap" parameterType="string">
+		select 
+		<include refid="columns"/>
+		FROM BSE.T_BAS_NET_GROUP
+		where active = #{active,jdbcType=CHAR}
+		order by version_no ASC
+	</select>
+
+
+</mapper>

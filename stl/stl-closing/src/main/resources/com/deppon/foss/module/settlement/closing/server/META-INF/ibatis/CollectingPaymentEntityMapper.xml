@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.deppon.foss.module.settlement.closing.api.server.dao.ICollectingPaymentDao" >
+	
+  <sql id="query_CollectingPayment_List" >
+  		d.COD_AMOUNT/100 codAmount,
+  		d.STATUS paymentStatus,
+  		w.COD_FEE/100 codFee,
+  	 	to_char(w.bill_time,'yyyy-mm-dd hh24:mi:ss.ff') billTime,
+  		w.WAYBILL_NO waybillNo,
+  		t1.name customerProvName,
+  		t2.name customerCityName,
+  		t3.name customerDistName,
+  		t4.name || w.RECEIVE_CUSTOMER_ADDRESS customerAddress,
+  		w.DELIVERY_CUSTOMER_CONTACT deliverCustomer,
+  		w.RECEIVE_CUSTOMER_PHONE receiverHomePhone,
+  		w.RECEIVE_CUSTOMER_MOBILEPHONE receiverPersonTel,
+  		w.REFUND_TYPE refundType,
+  		w.RECEIVE_CUSTOMER_NAME receiveCompany
+  </sql>
+  <!-- 根据CRM传入的条件查询 -->
+  <select id="queryCollectingPayment" 
+  			resultType="com.deppon.foss.module.settlement.closing.api.shared.domain.ReturnCollectingPaymentEntity" 
+  		parameterType="com.deppon.foss.module.settlement.closing.api.shared.domain.QueryCollectingPaymentEntity" >
+   
+    select /*结算-代收货款清单restful接口-供CRM调用*/
+    <include refid="query_CollectingPayment_List" />
+		From pkp.t_srv_waybill w 
+  		 Left Join stl.t_stl_cod d On w.waybill_no=d.waybill_no And d.active = 'Y'
+ 		 Left Join bse.t_bas_district t1 On w.receive_customer_prov_code = t1.code And t1.active='Y'
+ 		 Left Join bse.t_bas_district t2 On w.receive_customer_city_code = t2.code And t2.active='Y'
+		 Left Join bse.t_bas_district t3 On w.receive_customer_dist_code = t3.code And t3.active='Y'
+		 inner join pkp.t_srv_actual_freight fre on fre.waybill_no = w.waybill_no
+	     left join bse.t_bas_district t4 on t4.code=fre.RECEIVE_CUSTOMER_VILLAGE_CODE
+	<include refid="queryWhere" />
+  </select>
+  
+    <!-- 查询分页总条数 -->
+  <select id="queryCollectingPaymentTotalItems" 
+  			resultType="Long" 
+  		parameterType="com.deppon.foss.module.settlement.closing.api.shared.domain.QueryCollectingPaymentEntity" >
+  	
+    select /*结算分页总条数查询-代收货款清单restful接口-供CRM调用*/
+    	count(*)
+		From pkp.t_srv_waybill w 
+  		 Left Join stl.t_stl_cod d On w.waybill_no=d.waybill_no And d.active = 'Y'
+ 		 Left Join bse.t_bas_district t1 On w.receive_customer_prov_code = t1.code And t1.active='Y'
+ 		 Left Join bse.t_bas_district t2 On w.receive_customer_city_code = t2.code And t2.active='Y'
+		 Left Join bse.t_bas_district t3 On w.receive_customer_dist_code = t3.code And t3.active='Y'
+		 inner join pkp.t_srv_actual_freight fre on fre.waybill_no = w.waybill_no
+	     left join bse.t_bas_district t4 on t4.code=fre.RECEIVE_CUSTOMER_VILLAGE_CODE
+	<include refid="queryWhere" />
+  </select>
+	
+	<!-- 代收货款清单查询接口查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<if test="customerCode != null and customerCode != ''">
+				d.customer_code = #{customerCode,jdbcType=VARCHAR}
+			</if>
+			<if test="beginTime != null and beginTime != ''">
+				<![CDATA[ and w.bill_time  >=  ]]>
+				#{beginTime,jdbcType=TIMESTAMP}
+			</if>
+			<if test="endTime != null and endTime != ''">
+				<![CDATA[ and w.bill_time  <  ]]>
+				#{endTime,jdbcType=TIMESTAMP}
+			</if>
+			AND w.active='Y'
+		</where>
+	</sql>
+	
+  <!-- 根据运单号获取List<ReturnCollectingPaymentEntity>集合 -->
+  <select id="queryWaybillInfoByNos" resultType="com.deppon.foss.module.settlement.closing.api.shared.domain.ReturnCollectingPaymentEntity" 
+  		parameterType="com.deppon.foss.module.settlement.common.api.shared.dto.CodDO">
+  		select
+	  		w.WAYBILL_NO waybillNo,
+	  		t1.name customerProvName,
+	  		t2.name customerCityName,
+	  		t3.name customerDistName,
+	  		t4.name || w.RECEIVE_CUSTOMER_ADDRESS customerAddress,
+	  		w.DELIVERY_CUSTOMER_CONTACT deliverCustomer,
+	  		w.RECEIVE_CUSTOMER_PHONE receiverHomePhone,
+	  		w.RECEIVE_CUSTOMER_MOBILEPHONE receiverPersonTel
+  		From pkp.t_srv_waybill w 
+ 		 Left Join bse.t_bas_district t1 On w.receive_customer_prov_code = t1.code And t1.active='Y'
+ 		 Left Join bse.t_bas_district t2 On w.receive_customer_city_code = t2.code And t2.active='Y'
+		 Left Join bse.t_bas_district t3 On w.receive_customer_dist_code = t3.code And t3.active='Y'
+		 inner join pkp.t_srv_actual_freight fre on fre.waybill_no = w.waybill_no
+	     left join bse.t_bas_district t4 on t4.code=fre.RECEIVE_CUSTOMER_VILLAGE_CODE
+  		<where>
+  			w.WAYBILL_NO in 
+  			<foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+		      (#{item.waybillNo})
+			</foreach>
+  			AND w.active='Y'
+  		</where>	
+  </select>
+
+</mapper>

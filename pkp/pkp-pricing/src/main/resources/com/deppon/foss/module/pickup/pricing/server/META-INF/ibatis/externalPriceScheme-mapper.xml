@@ -1,0 +1,464 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.pkp.pkp-pricing.externalPriceScheme">
+	<resultMap type="com.deppon.foss.module.pickup.pricing.api.shared.domain.ExternalPriceSchemeEntity" id="externalPriceSchemeEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="SCHEMENAME" property="schemeName" jdbcType="VARCHAR" />
+		<result column="AGENTDEPTNAME" property="agentDeptName" jdbcType="VARCHAR" />
+		<result column="AGENTDEPTCODE" property="agentDeptCode" jdbcType="VARCHAR" />
+		<result column="PROVCODE" property="provCode" jdbcType="VARCHAR" />
+		<result column="PROVNAME" property="provName" jdbcType="VARCHAR" />
+		<result column="CITYCODE" property="cityCode" jdbcType="VARCHAR" />
+		<result column="CITYNAME" property="cityName" jdbcType="VARCHAR" />
+		<result column="COUNTYCODE" property="countyCode" jdbcType="VARCHAR" />
+		<result column="COUNTYNAME" property="countyName" jdbcType="VARCHAR" />
+		<result column="TRANSPORTTYPE" property="transportType" jdbcType="VARCHAR" />
+		<result column="EXTERNALORGNAME" property="externalOrgName" jdbcType="VARCHAR" />
+		<result column="EXTERNALORGCODE" property="externalOrgCode" jdbcType="VARCHAR" />
+		<result column="BEGINTIME" property="beginTime" jdbcType="TIMESTAMP" />
+		<result column="ENDTIME" property="endTime" jdbcType="TIMESTAMP" />
+		<result column="HEAVYPRICE" property="heavyPrice" jdbcType="DECIMAL" />
+		<result column="LIGHTPRICE" property="lightPrice" jdbcType="DECIMAL" />
+		<result column="LOWESTPRICE" property="lowestPrice" jdbcType="INTEGER" />
+		<result column="ACTIVE" property="active" jdbcType="VARCHAR" />
+		<result column="VERSIONNO" property="versionNo" jdbcType="DECIMAL" />
+		<result column="CREATEDATE" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="CREATEUSER" property="createUser" jdbcType="VARCHAR" />
+		<result column="UPDATEDATE" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="UPDATEUSER" property="modifyUser" jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="External_PriceScheme_Column_List">
+		ID,SCHEMENAME,AGENTDEPTNAME,AGENTDEPTCODE,PROVCODE,PROVNAME,CITYCODE,
+		CITYNAME,COUNTYCODE,COUNTYNAME,TRANSPORTTYPE,EXTERNALORGNAME,EXTERNALORGCODE,
+		BEGINTIME,ENDTIME,HEAVYPRICE,LIGHTPRICE,LOWESTPRICE,ACTIVE,
+		VERSIONNO,CREATEDATE,CREATEUSER,UPDATEDATE,UPDATEUSER
+	</sql>
+	<sql id="Query_By_Params">
+		<where>
+			<if test="agentDeptCode != null and agentDeptCode != ''">
+				AGENTDEPTCODE = #{agentDeptCode,jdbcType=VARCHAR}
+			</if>
+			<if test="externalOrgCode != null and externalOrgCode != ''">
+				and EXTERNALORGCODE = #{externalOrgCode,jdbcType=VARCHAR}
+			</if>
+			<if test="transportType != null and transportType != ''">
+				and TRANSPORTTYPE = #{transportType,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				and ACTIVE = #{active,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</sql>
+
+	<!-- 	根据参数查询偏线外发价格方案-->
+	<select id="queryExternalPriceSchemeByParam" parameterType="map" resultMap="externalPriceSchemeEntity">
+	SELECT /** 接送货-价格:根据参数查询偏线外发价格方案  **/
+       T.ID ID,
+       T.SCHEMENAME SCHEMENAME,
+       BRANCH.AGENT_DEPT_NAME AGENTDEPTNAME,
+       T.AGENTDEPTCODE AGENTDEPTCODE,
+       T.PROVCODE PROVCODE,
+       T.PROVNAME PROVNAME,
+       T.CITYCODE CITYCODE,
+       T.CITYNAME CITYNAME,
+       T.COUNTYCODE COUNTYCODE,
+       T.COUNTYNAME COUNTYNAME,
+       T.TRANSPORTTYPE TRANSPORTTYPE,
+       CENTER.NAME EXTERNALORGNAME,
+       T.EXTERNALORGCODE EXTERNALORGCODE,
+       T.BEGINTIME BEGINTIME,
+       T.ENDTIME ENDTIME,
+       T.HEAVYPRICE HEAVYPRICE,
+       T.LIGHTPRICE LIGHTPRICE,
+       T.LOWESTPRICE LOWESTPRICE,
+       T.ACTIVE ACTIVE,
+       T.VERSIONNO VERSIONNO,
+       T.CREATEDATE CREATEDATE,
+       T.CREATEUSER CREATEUSER,
+       T.UPDATEDATE UPDATEDATE,
+       T.UPDATEUSER UPDATEUSER
+         FROM PKP.T_SRV_EXTERNALPRICE_SCHEME T
+			LEFT JOIN BSE.T_BAS_OUTER_BRANCH BRANCH
+            ON BRANCH.AGENT_DEPT_CODE = T.AGENTDEPTCODE
+            LEFT JOIN BSE.T_BAS_TRANSFER_CENTER CENTER
+            ON CENTER.ORG_CODE = T.EXTERNALORGCODE
+          WHERE BRANCH.ACTIVE = 'Y' AND CENTER.ACTIVE = 'Y' 
+           <if test="agentDeptCode != null and agentDeptCode != ''">
+				AND T.AGENTDEPTCODE = #{agentDeptCode,jdbcType=VARCHAR}
+			</if>
+			<if test="externalOrgCode != null and externalOrgCode != ''">
+				and T.EXTERNALORGCODE = #{externalOrgCode,jdbcType=VARCHAR}
+			</if>
+			<if test="transportType != null and transportType != ''">
+				and T.TRANSPORTTYPE = #{transportType,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				and T.ACTIVE = #{active,jdbcType=VARCHAR}
+			</if>
+	</select>
+	
+<!-- 	根据参数查询偏线外发价格方案总量 	-->
+	<select id="queryRecordCount" parameterType="map" resultType="long">
+		SELECT /*接送货-价格-查询偏线价格方案总数*/ 
+         COUNT(1)
+      FROM PKP.T_SRV_EXTERNALPRICE_SCHEME T
+			LEFT JOIN BSE.T_BAS_OUTER_BRANCH BRANCH
+            ON BRANCH.AGENT_DEPT_CODE = T.AGENTDEPTCODE
+            LEFT JOIN BSE.T_BAS_TRANSFER_CENTER CENTER
+            ON CENTER.ORG_CODE = T.EXTERNALORGCODE
+           WHERE BRANCH.ACTIVE = 'Y' AND CENTER.ACTIVE = 'Y' 
+            <if test="agentDeptCode != null and agentDeptCode != ''">
+				 AND T.AGENTDEPTCODE = #{agentDeptCode,jdbcType=VARCHAR}
+			</if>
+			<if test="externalOrgCode != null and externalOrgCode != ''">
+				and T.EXTERNALORGCODE = #{externalOrgCode,jdbcType=VARCHAR}
+			</if>
+			<if test="transportType != null and transportType != ''">
+				and T.TRANSPORTTYPE = #{transportType,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				and T.ACTIVE = #{active,jdbcType=VARCHAR}
+			</if>
+	</select>
+	
+<!-- 	根据ID查询偏线外发价格方案
+	<select id="queryExternalePriceSchemeById" parameterType="string" resultMap="externalPriceSchemeEntity">
+		<![CDATA[
+			SELECT
+			/** 接送货-价格:根据参数查询偏线外发价格方案  **/
+		]]>
+		<include refid="External_PriceScheme_Column_List" />
+		<![CDATA[
+			FROM PKP.T_SRV_EXTERNALPRICE_SCHEME T
+		]]>
+		<where>
+			ID = #{schemeId,jdbcType=VARCHAR}
+		</where>
+	</select> -->
+	<!-- 	根据ID查询偏线外发价格方案-->
+	<select id="queryExternalePriceSchemeById" parameterType="string" resultMap="externalPriceSchemeEntity">
+		SELECT /** 接送货-价格:根据参数查询偏线外发价格方案  **/
+       T.ID ID,
+       T.SCHEMENAME SCHEMENAME,
+       BRANCH.AGENT_DEPT_NAME AGENTDEPTNAME,
+       T.AGENTDEPTCODE AGENTDEPTCODE,
+       T.PROVCODE PROVCODE,
+       T.PROVNAME PROVNAME,
+       T.CITYCODE CITYCODE,
+       T.CITYNAME CITYNAME,
+       T.COUNTYCODE COUNTYCODE,
+       T.COUNTYNAME COUNTYNAME,
+       T.TRANSPORTTYPE TRANSPORTTYPE,
+       CENTER.NAME EXTERNALORGNAME,
+       T.EXTERNALORGCODE EXTERNALORGCODE,
+       T.BEGINTIME BEGINTIME,
+       T.ENDTIME ENDTIME,
+       T.HEAVYPRICE HEAVYPRICE,
+       T.LIGHTPRICE LIGHTPRICE,
+       T.LOWESTPRICE LOWESTPRICE,
+       T.ACTIVE ACTIVE,
+       T.VERSIONNO VERSIONNO,
+       T.CREATEDATE CREATEDATE,
+       T.CREATEUSER CREATEUSER,
+       T.UPDATEDATE UPDATEDATE,
+       T.UPDATEUSER UPDATEUSER
+         FROM PKP.T_SRV_EXTERNALPRICE_SCHEME T
+			LEFT JOIN BSE.T_BAS_OUTER_BRANCH BRANCH
+            ON BRANCH.AGENT_DEPT_CODE = T.AGENTDEPTCODE
+            LEFT JOIN BSE.T_BAS_TRANSFER_CENTER CENTER
+            ON CENTER.ORG_CODE = T.EXTERNALORGCODE      
+		<where>
+			T.ID = #{schemeId,jdbcType=VARCHAR} AND BRANCH.ACTIVE = 'Y' AND CENTER.ACTIVE = 'Y' 
+		</where>
+	</select>
+	
+	
+<!-- 	新增偏线外发价格方案 -->
+	<insert id="addExternalPriceScheme" parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.ExternalPriceSchemeEntity">
+		<![CDATA[
+			INSERT/** 接送货-价格:新增偏线外发价格方案  **/ INTO PKP.T_SRV_EXTERNALPRICE_SCHEME T	(
+		]]>
+		<include refid="External_PriceScheme_Column_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR},
+		#{schemeName,jdbcType=VARCHAR},
+		#{agentDeptName,jdbcType=VARCHAR},
+		#{agentDeptCode,jdbcType=VARCHAR},
+		#{provCode,jdbcType=VARCHAR},
+		#{provName,jdbcType=VARCHAR},
+		#{cityCode,jdbcType=VARCHAR},
+		#{cityName,jdbcType=VARCHAR},
+		#{countyCode,jdbcType=VARCHAR},
+		#{countyName,jdbcType=VARCHAR},
+		#{transportType,jdbcType=VARCHAR},
+		#{externalOrgName,jdbcType=VARCHAR},
+		#{externalOrgCode,jdbcType=VARCHAR},
+		#{beginTime,jdbcType=TIMESTAMP},
+		#{endTime,jdbcType=TIMESTAMP},
+		#{heavyPrice,jdbcType=DECIMAL},
+		#{lightPrice,jdbcType=DECIMAL},
+		#{lowestPrice,jdbcType=INTEGER},
+		#{active,jdbcType=VARCHAR},
+		#{versionNo,jdbcType=DECIMAL},
+		#{createDate,jdbcType=TIMESTAMP},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{modifyUser,jdbcType=VARCHAR}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+<!-- 	根据方案名称查询偏线外发价格方案 -->
+	<select id="queryExternalePriceSchemeByName" parameterType="string" resultMap="externalPriceSchemeEntity">
+		<![CDATA[
+			SELECT
+			/** 接送货-价格:根据方案名称查询偏线外发价格方案  **/
+		]]>
+		<include refid="External_PriceScheme_Column_List" />
+		<![CDATA[
+			FROM PKP.T_SRV_EXTERNALPRICE_SCHEME T
+		]]>
+		<where>
+			SCHEMENAME = #{schemeName,jdbcType=VARCHAR}
+		</where>
+	</select>
+<!-- 	修改偏线外发价格方案 -->
+	<update id="updateExternalPriceScheme" parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.ExternalPriceSchemeEntity">
+		<![CDATA[
+			UPDATE/** 接送货-价格:更新偏线代理送货费方案  **/ PKP.T_SRV_EXTERNALPRICE_SCHEME T
+		]]>
+		<set >
+			<if test="schemeName != null and schemeName != ''">
+				SCHEMENAME = #{schemeName,jdbcType=VARCHAR },
+			</if>
+			<if test="agentDeptName != null and agentDeptName != ''">
+				AGENTDEPTNAME = #{agentDeptName,jdbcType=VARCHAR },
+			</if>
+			<if test="agentDeptCode != null and agentDeptCode != ''">
+				AGENTDEPTCODE = #{agentDeptCode,jdbcType=VARCHAR },
+			</if>
+			<if test="provCode != null and provCode != ''">
+				PROVCODE = #{provCode,jdbcType=VARCHAR },
+			</if>
+			<if test="provName != null and provName != ''">
+				PROVNAME = #{provName,jdbcType=VARCHAR },
+			</if>
+			<if test="cityCode != null and cityCode != ''">
+				CITYCODE = #{cityCode,jdbcType=VARCHAR },
+			</if>
+			<if test="cityName != null and cityName != ''">
+				CITYNAME = #{cityName,jdbcType=VARCHAR },
+			</if>
+			<if test="countyCode != null and countyCode != ''">
+				COUNTYCODE = #{countyCode,jdbcType=VARCHAR },
+			</if>
+			<if test="countyName != null and countyName != ''">
+				COUNTYNAME = #{countyName,jdbcType=VARCHAR },
+			</if>
+			<if test="transportType != null and transportType != ''">
+				TRANSPORTTYPE = #{transportType,jdbcType=VARCHAR },
+			</if>
+			<if test="externalOrgName != null and externalOrgName != ''">
+				EXTERNALORGNAME = #{externalOrgName,jdbcType=VARCHAR },
+			</if>
+			<if test="externalOrgCode != null and externalOrgCode != ''">
+				EXTERNALORGCODE = #{externalOrgCode,jdbcType=VARCHAR },
+			</if>
+			<if test="beginTime != null">
+				BEGINTIME = #{beginTime,jdbcType=TIMESTAMP },
+			</if>
+			<if test="endTime != null">
+				ENDTIME = #{endTime,jdbcType=TIMESTAMP },
+			</if>
+			<if test="heavyPrice != null">
+				HEAVYPRICE = #{heavyPrice,jdbcType=DECIMAL },
+			</if>
+			<if test="lightPrice != null">
+				LIGHTPRICE = #{lightPrice,jdbcType=DECIMAL },
+			</if>
+			<if test="lowestPrice != null">
+				LOWESTPRICE = #{lowestPrice,jdbcType=INTEGER },
+			</if>
+			<if test="versionNo != null and versionNo != 0">
+				VERSIONNO = #{versionNo,jdbcType=DECIMAL },
+			</if>
+			<if test="modifyDate != null">
+				UPDATEDATE = #{modifyDate,jdbcType=TIMESTAMP },
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+			UPDATEUSER = #{modifyUser,jdbcType=VARCHAR }
+			</if>
+      	</set>
+      	<where>
+      		<if test="id != null and id != ''">
+				ID = #{id,jdbcType=VARCHAR}
+			</if>
+      	</where>
+	</update>
+<!-- 	删除偏线外发价格方案 -->
+	<delete id="deleteExternalPriceSchemeById" parameterType="map">
+		<![CDATA[
+			DELETE /** 接送货-价格:删除偏线外发价格方案  **/ FROM PKP.T_SRV_EXTERNALPRICE_SCHEME T
+		]]>
+		<where>
+			<if test="idList != null and idList.size != 0">
+				ID in
+				<foreach collection="idList" index="index" item="id" open="("
+					separator="," close=")">
+					#{id,jdbcType=VARCHAR}
+				</foreach>
+			</if>
+		</where>
+	</delete>
+<!-- 	更新偏线外发价格方案状态（激活、中止） -->
+	<update id="updateSchemeStateById" parameterType="map">
+		<![CDATA[
+			UPDATE/** 接送货-价格:更新偏线代理送货费方案  **/ PKP.T_SRV_EXTERNALPRICE_SCHEME T
+		]]>
+		<set>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=VARCHAR},
+			</if>
+			<if test="beginTime != null">
+				BEGINTIME = #{beginTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="endTime != null">
+				ENDTIME = #{endTime,jdbcType=TIMESTAMP},
+			</if>
+      	</set>
+      	<where>
+      		<if test="id != null and id != ''">
+				ID = #{id,jdbcType=VARCHAR}
+			</if>
+      	</where>
+	</update>
+<!-- 	根据ID和状态查询偏线外发价格方案 -->
+	<select id="queryExternalPriceSchemeByIdAndState" parameterType="map" resultType="long">
+		<![CDATA[
+			SELECT
+			/** 接送货-价格:根据ID和状态查询偏线外发价格方案  **/
+			COUNT(1)
+			FROM PKP.T_SRV_EXTERNALPRICE_SCHEME T
+		]]>
+		<where>
+			<if test="idList != null and idList.size != 0">
+				ID in
+				<foreach collection="idList" index="index" item="id" open="("
+					separator="," close=")">
+					#{id,jdbcType=VARCHAR}
+				</foreach>
+			</if>
+			<if test="active != null and active != ''">
+				and ACTIVE = #{active,jdbcType=VARCHAR }
+			</if>
+		</where>
+	</select>
+<!-- 	复制偏线外发价格方案 -->
+	<insert id="copyExternalPriceScheme" parameterType="map">
+		INSERT INTO PKP.T_SRV_EXTERNALPRICE_SCHEME
+		  SELECT
+				#{entity.id,jdbcType=VARCHAR},
+				SCHEMENAME,AGENTDEPTNAME,AGENTDEPTCODE,PROVCODE,PROVNAME,
+				CITYCODE,CITYNAME,COUNTYCODE,COUNTYNAME,TRANSPORTTYPE,EXTERNALORGNAME,
+				EXTERNALORGCODE,BEGINTIME,ENDTIME,HEAVYPRICE,LIGHTPRICE,LOWESTPRICE,
+				#{entity.active,jdbcType=VARCHAR},
+				#{entity.versionNo,jdbcType=DECIMAL},
+				#{entity.createDate,jdbcType=TIMESTAMP},
+				#{entity.createUser,jdbcType=VARCHAR},
+				#{entity.modifyDate,jdbcType=TIMESTAMP},
+				#{entity.modifyUser,jdbcType=VARCHAR}
+		    FROM PKP.T_SRV_EXTERNALPRICE_SCHEME
+		   WHERE ID = #{copyId,jdbcType=VARCHAR}
+	</insert>
+<!-- 	更新偏线外发价格方案截止日期 -->
+	<update id="updateExternalPriceSchemeEndTime" parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.ExternalPriceSchemeEntity">
+		<![CDATA[
+			UPDATE/** 接送货-价格:偏线价格方案截止时间  **/ PKP.T_SRV_EXTERNALPRICE_SCHEME T
+		]]>
+		<set>
+			<if test="endTime != null">
+				ENDTIME = #{endTime,jdbcType=TIMESTAMP }
+			</if>
+		</set>
+		<where>
+			<if test="agentDeptCode != null and agentDeptCode != ''">
+				AGENTDEPTCODE = #{agentDeptCode,jdbcType=VARCHAR}
+			</if>
+			<if test="externalOrgCode != null and externalOrgCode != ''">
+				and EXTERNALORGCODE = #{externalOrgCode,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				and ACTIVE = #{active,jdbcType=VARCHAR}
+			</if>
+			<if test="endTime != null">
+				and ENDTIME <![CDATA[ >= ]]> #{endTime,jdbcType=TIMESTAMP}
+			</if>
+		</where>
+	</update>
+<!-- 	批量新增偏线外发价格方案 -->
+	<insert id="batchAddExternalPriceScheme" parameterType="map">
+		<![CDATA[
+			INSERT/** 接送货-价格:批量新增偏线外发价格方案  **/ INTO PKP.T_SRV_EXTERNALPRICE_SCHEME T	(
+		]]>
+		<include refid="External_PriceScheme_Column_List" />
+		<![CDATA[
+		)
+		]]>
+		<foreach collection="entityList" item="entity" index="index" separator="union all">
+		select
+		#{entity.id,jdbcType=VARCHAR},
+		#{entity.schemeName,jdbcType=VARCHAR},
+		#{entity.agentDeptName,jdbcType=VARCHAR},
+		#{entity.agentDeptCode,jdbcType=VARCHAR},
+		#{entity.provCode,jdbcType=VARCHAR},
+		#{entity.provName,jdbcType=VARCHAR},
+		#{entity.cityCode,jdbcType=VARCHAR},
+		#{entity.cityName,jdbcType=VARCHAR},
+		#{entity.countyCode,jdbcType=VARCHAR},
+		#{entity.countyName,jdbcType=VARCHAR},
+		#{entity.transportType,jdbcType=VARCHAR},
+		#{entity.externalOrgName,jdbcType=VARCHAR},
+		#{entity.externalOrgCode,jdbcType=VARCHAR},
+		#{entity.beginTime,jdbcType=TIMESTAMP},
+		#{entity.endTime,jdbcType=TIMESTAMP},
+		#{entity.heavyPrice,jdbcType=DECIMAL},
+		#{entity.lightPrice,jdbcType=DECIMAL},
+		#{entity.lowestPrice,jdbcType=INTEGER},
+		#{entity.active,jdbcType=VARCHAR},
+		#{entity.versionNo,jdbcType=DECIMAL},
+		#{entity.createDate,jdbcType=TIMESTAMP},
+		#{entity.createUser,jdbcType=VARCHAR},
+		#{entity.modifyDate,jdbcType=TIMESTAMP},
+		#{entity.modifyUser,jdbcType=VARCHAR}
+		from dual
+		</foreach>
+	</insert>
+<!-- 	根据目的站，外发外场，运输类型，外发单生成时间 查询偏线外发价格方案 -->
+	<select id="queryAgentOutPriceInfo" parameterType="map" resultMap="externalPriceSchemeEntity">
+		<![CDATA[
+			SELECT
+			/** 接送货-价格:根据方案名称查询偏线外发价格方案  **/
+		]]>
+		<include refid="External_PriceScheme_Column_List" />
+		<![CDATA[
+			FROM PKP.T_SRV_EXTERNALPRICE_SCHEME T
+		]]>
+		<where>
+				AGENTDEPTCODE =#{targetOrgCode,jdbcType=VARCHAR}
+			AND
+				EXTERNALORGCODE =#{outOrgCode,jdbcType=VARCHAR}
+			AND
+				TRANSPORTTYPE =#{transportType,jdbcType=VARCHAR}
+			AND 
+				#{externalBillCreateTime,jdbcType=TIMESTAMP}
+			BETWEEN
+				BEGINTIME
+			AND
+				ENDTIME
+			AND
+				ACTIVE ='Y'
+		</where>
+	</select>
+</mapper>

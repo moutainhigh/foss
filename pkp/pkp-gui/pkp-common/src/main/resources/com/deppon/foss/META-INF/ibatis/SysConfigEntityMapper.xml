@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="pkp.sysConfigEntityMapper" >
+	
+  <resultMap id="sysConfigResultMap" type="com.deppon.foss.module.base.dict.api.shared.domain.ConfigurationParamsEntity" >
+        <result property="id" column="ID"  jdbcType="VARCHAR" />
+		<result property="code" column="CODE"  jdbcType="VARCHAR" />
+		<result property="confName" column="CONF_NAME"  jdbcType="VARCHAR" />
+		<result property="confValue" column="CONF_VALUE"  jdbcType="VARCHAR" />
+		<result property="unit" column="UNIT"  jdbcType="VARCHAR" />
+		<result property="notes" column="NOTES"  jdbcType="VARCHAR" />
+		<result property="versionNo" column="VERSION_NO"  jdbcType="NUMERIC" />
+		<result property="active" column="ACTIVE"  jdbcType="CHAR" />
+		<result property="createDate" column="CREATE_TIME"  jdbcType="TIMESTAMP" />
+		<result property="modifyDate" column="MODIFY_TIME"  jdbcType="TIMESTAMP" />
+		<result property="createUser" column="CREATE_USER_CODE"  jdbcType="VARCHAR" />
+		<result property="modifyUser" column="MODIFY_USER_CODE"  jdbcType="VARCHAR" />
+		<result property="orgCode" column="ORG_CODE"  jdbcType="VARCHAR" />
+		<result property="confType" column="CONF_TYPE"  jdbcType="VARCHAR" />
+		<result property="dataType" column="DATA_TYPE"  jdbcType="VARCHAR" />
+		<result property="virtualCode" column="VIRTUAL_CODE"  jdbcType="VARCHAR" />
+    
+  </resultMap>
+  
+  <sql id="sysConfig_Column_List" >
+    ID, CODE, CONF_NAME, CONF_VALUE, UNIT, NOTES, ACTIVE, CREATE_TIME, MODIFY_TIME, CREATE_USER_CODE, 
+    MODIFY_USER_CODE, ORG_CODE, CONF_TYPE, DATA_TYPE, VIRTUAL_CODE
+  </sql>
+  
+  <select id="selectSysConfigByPrimaryKey" resultMap="sysConfigResultMap" parameterType="java.lang.String" >
+    select 
+    <include refid="sysConfig_Column_List" />
+    from BSE.T_BAS_SYS_CONFIG
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+  
+  <select id="selectSysConfigByConfCode" resultMap="sysConfigResultMap" 
+  parameterType="com.deppon.foss.module.pickup.common.client.dto.SysConfigDto">
+		select
+		<include refid="sysConfig_Column_List" />
+		from BSE.T_BAS_SYS_CONFIG
+		where ACTIVE = #{active,jdbcType=VARCHAR}
+			and CODE = #{confCode,jdbcType=VARCHAR}
+			<if test="orgCode != null">
+ 				and ORG_CODE IN (${orgCode})
+			</if>
+			<if test="confType != null">
+ 				and CONF_TYPE = #{confType,jdbcType=VARCHAR}
+			</if>
+  </select>
+  
+  <select id="selectSysConfigByConfCodeArray" resultMap="sysConfigResultMap" 
+  parameterType="com.deppon.foss.module.pickup.common.client.dto.SysConfigDto">
+		select
+		<include refid="sysConfig_Column_List" />
+		from BSE.T_BAS_SYS_CONFIG
+		where ACTIVE = #{active,jdbcType=VARCHAR}
+			<if test="orgCode != null">
+ 				and ORG_CODE IN ( ${orgCode} )
+			</if>
+			<if test="confType != null">
+ 				and CONF_TYPE = #{confType,jdbcType=VARCHAR}	
+			</if>
+			and CODE in 
+			<foreach item="item" index="index" collection="confCodes" 
+                   open="(" separator="," close=")">
+            	#{item}
+            </foreach>
+  </select>
+  
+  <delete id="deleteSysConfigByPrimaryKey" parameterType="java.lang.String" >
+    delete from BSE.T_BAS_SYS_CONFIG
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  
+  <insert id="insertSysConfig" parameterType="com.deppon.foss.module.base.dict.api.shared.domain.ConfigurationParamsEntity" >
+   INSERT INTO BSE.T_BAS_SYS_CONFIG(
+		ID,
+		CODE,
+		CONF_NAME,
+		CONF_VALUE,
+		UNIT,
+		NOTES,
+		VERSION_NO,
+		ACTIVE,
+		CREATE_TIME,
+		MODIFY_TIME,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE,
+		ORG_CODE,
+		CONF_TYPE,
+		DATA_TYPE,
+		VIRTUAL_CODE) VALUES	
+	(
+		#{id, jdbcType=VARCHAR},
+		#{code, jdbcType=VARCHAR},
+		#{confName, jdbcType=VARCHAR},
+		#{confValue, jdbcType=VARCHAR},
+		#{unit, jdbcType=VARCHAR},
+		#{notes, jdbcType=VARCHAR},
+		#{versionNo, jdbcType=NUMERIC},
+		#{active, jdbcType=CHAR},
+		#{createDate, jdbcType=TIMESTAMP},
+		#{modifyDate, jdbcType=TIMESTAMP},
+		#{createUser, jdbcType=VARCHAR},
+		#{modifyUser, jdbcType=VARCHAR},
+		#{orgCode, jdbcType=VARCHAR},
+		#{confType, jdbcType=VARCHAR},
+		#{dataType, jdbcType=VARCHAR},
+		#{virtualCode, jdbcType=VARCHAR}
+	)
+  </insert>
+  
+  <insert id="insertSysConfigSelective" parameterType="com.deppon.foss.module.base.dict.api.shared.domain.ConfigurationParamsEntity" >
+    insert into BSE.T_BAS_SYS_CONFIG
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="code != null" >
+        CODE,
+      </if>
+      <if test="confName != null" >
+        CONF_NAME,
+      </if>
+      <if test="confValue != null" >
+        CONF_VALUE,
+      </if>
+      <if test="unit != null" >
+        UNIT,
+      </if>
+      <if test="notes != null" >
+        NOTES,
+      </if>
+      <if test="active != null" >
+        ACTIVE,
+      </if>
+      <if test="createDate != null" >
+        CREATE_TIME,
+      </if>
+      <if test="modifyDate != null" >
+        MODIFY_TIME,
+      </if>
+      <if test="createUser != null" >
+        CREATE_USER_CODE,
+      </if>
+      <if test="modifyUser != null" >
+        MODIFY_USER_CODE,
+      </if>
+      <if test="orgCode != null" >
+        ORG_CODE,
+      </if>
+      <if test="confType != null" >
+        CONF_TYPE,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="code != null" >
+        #{code,jdbcType=VARCHAR},
+      </if>
+      <if test="confName != null" >
+        #{confName,jdbcType=VARCHAR},
+      </if>
+      <if test="confValue != null" >
+        #{confValue,jdbcType=VARCHAR},
+      </if>
+      <if test="unit != null" >
+        #{unit,jdbcType=VARCHAR},
+      </if>
+      <if test="notes != null" >
+        #{notes,jdbcType=VARCHAR},
+      </if>
+      <if test="active != null" >
+        #{active,jdbcType=CHAR},
+      </if>
+      <if test="createDate != null" >
+        #{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifyDate != null" >
+        #{modifyDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="createUser != null" >
+        #{createUser,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyUser != null" >
+        #{modifyUser,jdbcType=VARCHAR},
+      </if>
+      <if test="orgCode != null" >
+        #{orgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="confType != null" >
+        #{confType,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  
+  <update id="updateSysConfigByPrimaryKeySelective" parameterType="com.deppon.foss.module.base.dict.api.shared.domain.ConfigurationParamsEntity" >
+    update BSE.T_BAS_SYS_CONFIG
+    <set >
+      <if test="code != null" >
+        CODE = #{code,jdbcType=VARCHAR},
+      </if>
+      <if test="confName != null" >
+        CONF_NAME = #{confName,jdbcType=VARCHAR},
+      </if>
+      <if test="confValue != null" >
+        CONF_VALUE = #{confValue,jdbcType=VARCHAR},
+      </if>
+      <if test="unit != null" >
+        UNIT = #{unit,jdbcType=VARCHAR},
+      </if>
+      <if test="notes != null" >
+        NOTES = #{notes,jdbcType=VARCHAR},
+      </if>
+      <if test="active != null" >
+        ACTIVE = #{active,jdbcType=CHAR},
+      </if>
+      <if test="createDate != null" >
+        CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifyDate != null" >
+        MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="createUser != null" >
+        CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyUser != null" >
+        MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+      </if>
+      <if test="orgCode != null" >
+        ORG_CODE = #{orgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="confType != null" >
+        CONF_TYPE = #{confType,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  
+  <update id="updateSysConfigByPrimaryKey" parameterType="com.deppon.foss.module.base.dict.api.shared.domain.ConfigurationParamsEntity" >
+    UPDATE BSE.T_BAS_SYS_CONFIG A SET 
+		A.ID = #{id, jdbcType=VARCHAR},
+		A.CODE = #{code, jdbcType=VARCHAR},
+		A.CONF_NAME = #{confName, jdbcType=VARCHAR},
+		A.CONF_VALUE = #{confValue, jdbcType=VARCHAR},
+		A.UNIT = #{unit, jdbcType=VARCHAR},
+		A.NOTES = #{notes, jdbcType=VARCHAR},
+		A.ACTIVE = #{active, jdbcType=CHAR},
+		A.VERSION_NO=#{versionNo,jdbcType=NUMERIC},
+		A.CREATE_TIME = #{createDate, jdbcType=TIMESTAMP},
+		A.MODIFY_TIME = #{modifyDate, jdbcType=TIMESTAMP},
+		A.CREATE_USER_CODE = #{createUser, jdbcType=VARCHAR},
+		A.MODIFY_USER_CODE = #{modifyUser, jdbcType=VARCHAR},
+		A.ORG_CODE = #{orgCode, jdbcType=VARCHAR},
+		A.CONF_TYPE = #{confType, jdbcType=VARCHAR},
+		A.DATA_TYPE = #{dataType, jdbcType=VARCHAR},
+		A.VIRTUAL_CODE = #{virtualCode, jdbcType=VARCHAR}
+	<where>
+		ID = #{id,jdbcType=VARCHAR}
+	</where>
+  </update>
+  
+  <select id="selectById" resultType="String"
+		parameterType="java.util.Map">
+		<![CDATA[
+		SELECT 
+	        ID
+	    	FROM BSE.T_BAS_SYS_CONFIG
+		]]>
+		<where>
+			ID = #{id,jdbcType=VARCHAR}	
+		</where>
+	</select>
+	
+	<delete id="delete" 
+	parameterType="com.deppon.foss.module.base.dict.api.shared.domain.ConfigurationParamsEntity">
+		delete from BSE.T_BAS_SYS_CONFIG where ID =  #{id,jdbcType=VARCHAR}	
+	</delete>
+	
+  
+</mapper>

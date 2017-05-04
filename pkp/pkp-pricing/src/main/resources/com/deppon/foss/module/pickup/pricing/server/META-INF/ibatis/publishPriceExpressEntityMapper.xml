@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.pricing.publishPriceExpressEntityMapper" >
+  <!-- 查询价格区域  resultMap -->
+  <resultMap id="baseResultMap" type="com.deppon.foss.module.pickup.pricing.api.shared.dto.PublishPriceExpressDto" >
+    <result column="PRODUCT_CODE" property="productCode" jdbcType="VARCHAR" /><!-- 产品CODE-->
+    <result column="PRODUCT_NAME" property="productName" jdbcType="VARCHAR" /><!-- 产品NAME-->
+    <result column="GOODSTYPE_CODE" property="goodsTypeCode" jdbcType="VARCHAR" /> <!-- 货物类型CODE-->
+    <result column="DEPT_REGION_ID" property="deptRegionId" jdbcType="VARCHAR" /><!-- 出发区域ID-->
+    <result column="ARRV_REGION_ID" property="arrvRegionId" jdbcType="VARCHAR" /><!-- 目的区域ID-->
+    <result column="PRICING_VALUATION_ID" property="pricingValuationId" jdbcType="VARCHAR" /><!-- 计费规则ID-->
+    
+	<collection property="publishPriceExpressDetail" column="PRICING_VALUATION_ID"
+		ofType="com.deppon.foss.module.pickup.pricing.api.shared.dto.PublishPriceExpressDetailDto">
+		 <result column="FIRSTWEIGTH" property="firstWeight" jdbcType="DECIMAL" /> <!--首重-->
+	    <result column="WEIGHTONLINE" property="weightOnline" jdbcType="DECIMAL" /><!--重量上线-->
+	    <result column="WEIGHTOFFLINE" property="weightOffline" jdbcType="DECIMAL" /><!--重量下线-->
+	 	<result column="FEE_RATE" property="feeRate" jdbcType="DECIMAL" /><!-- 费率或者单价 -->
+	</collection>
+    
+  </resultMap>
+  
+	
+  <!-- 查询公布价价格区域 Query Column sz at 2012-12-3 add --> 
+  <sql id="Combination_Column_List" >  
+	va.PRODUCT_CODE AS PRODUCT_CODE,            <!-- 产品CODE-->
+	pro.NAME 		AS PRODUCT_NAME,			<!-- 产品NAME-->
+	va.GOODS_TYPE_CODE AS GOODSTYPE_CODE,       <!-- 货物类型CODE-->
+	va.DEPT_REGION_ID AS DEPT_REGION_ID,	    <!-- 出发区域ID-->
+	va.ARRV_REGION_ID AS ARRV_REGION_ID, 		<!-- 目的区域ID-->
+	va.ID AS PRICING_VALUATION_ID, 				<!-- 计费规则ID-->
+	
+	detail.FEE/100 AS FIRSTWEIGTH,  			<!--首重-->
+	detail.RIGHTRANGE AS WEIGHTONLINE, 			<!--重量上线-->
+	detail.LEFTRANGE AS WEIGHTOFFLINE, 			<!--重量下线-->
+	detail.FEE_RATE/100  AS FEE_RATE				<!-- 费率或者单价 -->
+
+  </sql>
+  
+  <!--  查询公布价价格区域  sz at 2012-11-29 add -->
+  <select id="findPublishPriceByCodition" resultMap="baseResultMap" parameterType="com.deppon.foss.module.pickup.pricing.api.shared.dto.PublishPriceExpressDto" >
+     SELECT  /** 综合-价格-根据综合条件查询公布价价格方面明细 **/
+    	<include refid="Combination_Column_List" />
+    	FROM 
+    	PKP.T_SRV_PRICE_PLAN pla 
+    	INNER JOIN PKP.T_SRV_PRICING_VALUATION va ON pla.id = va.PRICE_PLAN_ID
+    	INNER JOIN PKP.T_SRV_PRICING_CRITERIA_DETAIL detail ON va.ID = detail.PRICING_VALUATION_ID
+    	LEFT  JOIN pkp.t_srv_product pro ON pro.CODE = VA.PRODUCT_CODE and   pro.active='Y' 
+    	WHERE va.DEPT_REGION_ID = #{deptRegionId ,jdbcType=VARCHAR} <!--出发地区域-->
+    	AND va.ARRV_REGION_ID = #{arrvRegionId ,jdbcType=VARCHAR} <!--目的地区域-->
+    	AND va.TYPE = #{valuationType ,jdbcType=VARCHAR}         <!-- 规则类型 -->
+    	AND pla.ACTIVE = #{active ,jdbcType=VARCHAR}              <!--激活有效数据-->
+    	AND  <![CDATA[ pla.BEGIN_TIME <= ]]> #{receiveDate,jdbcType=TIMESTAMP}
+    	AND  <![CDATA[ pla.END_TIME > ]]> #{receiveDate,jdbcType=TIMESTAMP}
+    	AND pla.CUSTOMER_CODE IS NULL
+    	ORDER BY detail.RIGHTRANGE
+  </select>
+  
+  <select id="findPublishPriceByRegionIds" resultMap="baseResultMap" parameterType="map" >
+     SELECT  /** 综合-价格-根据始发和到达区域集合查询公布价价格方面明细 **/
+    	<include refid="Combination_Column_List" />
+    	FROM 
+    	PKP.T_SRV_PRICE_PLAN pla 
+    	INNER JOIN PKP.T_SRV_PRICING_VALUATION va ON pla.id = va.PRICE_PLAN_ID
+    	INNER JOIN PKP.T_SRV_PRICING_CRITERIA_DETAIL detail ON va.ID = detail.PRICING_VALUATION_ID
+    	LEFT  JOIN pkp.t_srv_product pro ON pro.CODE = VA.PRODUCT_CODE and   pro.active='Y' 
+    	WHERE va.TYPE = #{type ,jdbcType=VARCHAR}         <!-- 规则类型 -->
+    	AND pla.ACTIVE = #{active ,jdbcType=VARCHAR}              <!--激活有效数据-->
+    	AND  <![CDATA[ pla.BEGIN_TIME <= ]]> #{billDate,jdbcType=TIMESTAMP}
+    	AND  <![CDATA[ pla.END_TIME > ]]> #{billDate,jdbcType=TIMESTAMP}
+    	<![CDATA[AND pla.T_SRV_PRICE_REGION_ID in ]]>    
+    	 <!--出发地区域-->
+		<foreach collection="deptRegionIds" open="(" close=")" separator=","
+				item="id">
+		<![CDATA[	#{id}  ]]>
+		</foreach>
+    	
+    	<![CDATA[AND va.ARRV_REGION_ID in ]]>                     <!--目的地区域-->
+		<foreach collection="arrvRegionIds" open="(" close=")" separator=","
+				item="id">
+		<![CDATA[	#{id}  ]]>
+		</foreach>
+		and pla.CUSTOMER_CODE IS NULL
+		ORDER BY detail.RIGHTRANGE ASC
+  </select>
+</mapper>

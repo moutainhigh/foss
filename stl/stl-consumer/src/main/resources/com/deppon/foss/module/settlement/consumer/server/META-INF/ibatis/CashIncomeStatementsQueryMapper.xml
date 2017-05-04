@@ -1,0 +1,837 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.CashIncomeStatementsEntityDao">
+
+	<resultMap id="cashIncomeStatementsResultMap" type="com.deppon.foss.module.settlement.consumer.api.shared.dto.CashIncomeStatementsDto" >
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="BILL_NO" property="billNo" jdbcType="VARCHAR" />
+		<result column="PRODUCT_CODE" property="productCode" jdbcType="VARCHAR" />
+		<result column="ACCOUNT_DATE" property="accountDate" jdbcType="TIMESTAMP" />
+		<result column="COLLECTION_ORG_CODE" property="collectionOrgCode" jdbcType="VARCHAR" />
+		<result column="COLLECTION_ORG_NAME" property="collectionOrgName" jdbcType="VARCHAR" />
+		<result column="GENERATING_ORG_CODE" property="generatingOrgCode" jdbcType="VARCHAR" />
+		<result column="GENERATING_ORG_NAME" property="generatingOrgName" jdbcType="VARCHAR" />
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="BILL_TYPE" property="billType" jdbcType="VARCHAR" />
+		<result column="STATUS" property="status" jdbcType="VARCHAR" />
+		<result column="PAYMENT_TYPE" property="paymentType" jdbcType="VARCHAR" />
+		<result column="AMOUNT" property="amount" jdbcType="VARCHAR" />
+		<result column="CASH_CONFIRM_USER_CODE" property="cashConfirmUserCode" jdbcType="VARCHAR" />
+		<result column="CASH_CONFIRM_USER_NAME" property="cashConfirmUserName" jdbcType="VARCHAR" />
+		<result column="CASH_CONFIRM_TIME" property="cashConfirmTime" jdbcType="TIMESTAMP" />
+	</resultMap>
+
+	<!-- 现金收款单字段  -->
+	<sql id="Cash_Column_List">
+		TC.ID,
+		TC.ACCOUNT_DATE,
+		TC.PRODUCT_CODE,
+		TC.COLLECTION_ORG_CODE,
+		TC.COLLECTION_ORG_NAME,
+		TC.GENERATING_ORG_CODE,
+		TC.GENERATING_ORG_NAME,
+		TC.CASH_COLLECTION_NO BILL_NO,
+		TC.SOURCE_BILL_NO WAYBILL_NO,
+		TC.STATUS,
+		TC.PAYMENT_TYPE,
+		TC.AMOUNT/100 AMOUNT,
+		TC.CASH_CONFIRM_USER_CODE,
+		TC.CASH_CONFIRM_USER_NAME,
+		TC.CASH_CONFIRM_TIME
+	</sql>
+	
+	<!-- 还款单字段 -->
+	<sql id="Repayment_Column_List" >
+		TP.ID,
+		TP.ACCOUNT_DATE,
+		'' as PRODUCT_CODE,
+		TP.COLLECTION_ORG_CODE,
+		TP.COLLECTION_ORG_NAME,
+		TP.GENERATING_ORG_CODE,
+		TP.GENERATING_ORG_NAME,
+		TP.REPAYMENT_NO BILL_NO,
+		TP.WAYBILL_NO WAYBILL_NO, <!-- 只有实收货款时，存在运单号信息  -->
+		TP.STATUS,
+		TP.PAYMENT_TYPE,
+		TP.AMOUNT/100 AMOUNT,
+		TP.CASH_CONFIRM_USER_CODE,
+		TP.CASH_CONFIRM_USER_NAME,
+		TP.CASH_CONFIRM_TIME
+	</sql>
+	
+	<!-- 结合对账还款表查询字段  -->
+	<sql id="RepaymentOfSoa_Column_List" >
+		REP.ID,
+		REP.ACCOUNT_DATE,
+		'' as PRODUCT_CODE,
+		REP.COLLECTION_ORG_CODE,
+		REP.COLLECTION_ORG_NAME,
+		REP.GENERATING_ORG_CODE,
+		REP.GENERATING_ORG_NAME,
+		REP.REPAYMENT_NO BILL_NO,
+		'' WAYBILL_NO,
+		REP.STATUS,
+		REP.PAYMENT_TYPE,
+		REP.AMOUNT/100 AMOUNT,
+		REP.CASH_CONFIRM_USER_CODE,
+		REP.CASH_CONFIRM_USER_NAME,
+		REP.CASH_CONFIRM_TIME
+	</sql>
+	
+	<!-- 预收单字段  -->
+	<sql id="DepositReceived_Column_List">
+		TD.ID,
+		TD.ACCOUNT_DATE,
+		'' as PRODUCT_CODE,
+		TD.COLLECTION_ORG_CODE,
+		TD.COLLECTION_ORG_NAME,
+		TD.GENERATING_ORG_CODE,
+		TD.GENERATING_ORG_NAME,
+		TD.DEPOSIT_RECEIVED_NO BILL_NO,
+		'' WAYBILL_NO,
+		TD.STATUS,
+		TD.PAYMENT_TYPE,
+		TD.AMOUNT/100 AMOUNT,
+		TD.CASH_CONFIRM_USER_CODE,
+		TD.CASH_CONFIRM_USER_NAME,
+		TD.CASH_CONFIRM_TIME
+	</sql>
+	
+	<!-- 公共查询条件 -->
+	<sql id="publicSelectCondition">
+		<if test="status!=null and status!='' ">
+			AND STATUS=#{status}
+		</if>
+		<if test="orgCode!=null and orgCode!='' ">
+			AND COLLECTION_ORG_CODE=#{orgCode}
+		</if>
+		<choose>  
+            <when test="collectionOrgCode!=null and collectionOrgCode!='' "><!-- 收款部门编码 -->
+				AND COLLECTION_ORG_CODE=#{collectionOrgCode}
+            </when> 
+            <when test="smallAreaCode!=null and smallAreaCode!='' "><!-- 小区编码不为空时 -->
+                AND EXISTS(	SELECT A.CODE
+				FROM BSE.T_BAS_ORG A,
+			   (SELECT CODE
+					FROM BSE.T_BAS_ORG
+				    WHERE ACTIVE = #{active}
+				    CONNECT BY PRIOR UNIFIED_CODE = PARENT_ORG_UNIFIED_CODE
+									 AND ACTIVE = #{active}
+				    START WITH CODE = #{smallAreaCode} <!-- 小区编码  -->
+        	   ) B
+ 			   WHERE A.CODE = B.CODE
+			   AND A.SALES_DEPARTMENT = #{orgActive}<!-- 是否为小区Y  -->
+			   AND A.ACTIVE = #{active}  <!-- 是否有效Y  -->
+			   AND COLLECTION_ORG_CODE=A.CODE <!-- 收款部门编码和小区编码一直  -->
+			    )
+            </when>
+            <when test="largeAreaCode!=null and largeAreaCode!='' "><!-- 大区编码不为空时，采用综合查询小区下面营业部sql改写，已和综合确认没有问题   -->
+                AND EXISTS(	SELECT A.CODE
+				FROM BSE.T_BAS_ORG A,
+			   (SELECT CODE
+					FROM BSE.T_BAS_ORG
+				    WHERE ACTIVE = #{active}
+				    CONNECT BY PRIOR UNIFIED_CODE = PARENT_ORG_UNIFIED_CODE
+									 AND ACTIVE = #{active}
+				    START WITH CODE = #{largeAreaCode} <!-- 大区编码  -->
+        	   ) B
+ 			   WHERE A.CODE = B.CODE
+			   AND A.SALES_DEPARTMENT = #{orgActive}<!-- 是否为大区Y  -->
+			   AND A.ACTIVE = #{active}  
+			   AND COLLECTION_ORG_CODE=A.CODE <!-- 收款部门编码和查询到的区编码一直  -->
+			  )
+            </when>  
+            <otherwise>  
+                 AND 1=1
+            </otherwise>  
+        </choose>
+		<if test="generatingOrgCode!=null and generatingOrgCode!='' ">
+			AND GENERATING_ORG_CODE=#{generatingOrgCode}
+		</if>
+		<if test="cashConfirmUserCode!=null and cashConfirmUserCode!='' ">
+			AND CASH_CONFIRM_USER_CODE=#{cashConfirmUserCode}
+		</if>
+		
+		AND EXISTS  <!-- 当前操作者数据权限  -->
+		  (SELECT V.ORG_CODE FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V WHERE V.EMP_CODE = #{empCode}
+				AND (COLLECTION_ORG_CODE=V.ORG_CODE
+					OR GENERATING_ORG_CODE=V.ORG_CODE
+				)
+	      )
+	</sql>
+	
+	<!-- 根据查询条件查询所有的（现金收款单、还款单、预收单） -->
+	<select id="selectCashInStByCondition"   resultMap="cashIncomeStatementsResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CashIncomeStatementsQueryDto">
+		<!-- 查询现金收款单部分  -->
+		SELECT /*结算-客户管理- 根据查询条件查询所有的（现金收款单、还款单、预收单） */
+		 <include refid="Cash_Column_List" />,#{cashBillType}  BILL_TYPE
+		 FROM STL.T_STL_BILL_CASH_COLLECTION  TC
+		 WHERE  		
+		<!-- accountStartDate,cashConfirmStartDate有一项必填 -->
+		<choose>
+			<when test="accountStartDate!=null  and  accountEndDate!=null " >
+				<![CDATA[  TC.ACCOUNT_DATE>=#{accountStartDate,jdbcType=TIMESTAMP}  AND     TC.ACCOUNT_DATE<#{accountEndDate,jdbcType=TIMESTAMP} ]]>
+			</when>
+			<when test="cashConfirmStartDate!=null  and  cashConfirmEndDate!=null ">
+				<![CDATA[  TC.CASH_CONFIRM_TIME>=#{cashConfirmStartDate,jdbcType=TIMESTAMP}  AND TC.CASH_CONFIRM_TIME<#{cashConfirmEndDate,jdbcType=TIMESTAMP} ]]>
+			</when>
+			<otherwise>
+				1 = 0
+			</otherwise>
+		</choose>
+		AND TC.PAYMENT_TYPE IN 
+		 <if test="paymentTypes!=null">
+			<foreach collection="paymentTypes"  index="index" item="item"  open="(" separator="," close=")">  
+				#{item} 
+			</foreach>
+		</if>
+		<include refid="publicSelectCondition"/>
+		<!-- pb con end -->
+		
+		 UNION ALL
+		 
+		 <!-- 还款单部分   -->
+		 SELECT  <include refid="Repayment_Column_List" />,#{repaymentBillType} BILL_TYPE
+		 FROM STL.T_STL_BILL_REPAYMENT TP
+		 WHERE
+		<!-- accountStartDate,cashConfirmStartDate有一项必填 -->
+		<choose>
+			<when test="accountStartDate!=null  and  accountEndDate!=null ">
+				<![CDATA[  TP.ACCOUNT_DATE>=#{accountStartDate,jdbcType=TIMESTAMP}  AND    TP.ACCOUNT_DATE<#{accountEndDate,jdbcType=TIMESTAMP} ]]>
+			</when>
+			<when test="cashConfirmStartDate!=null  and  cashConfirmEndDate!=null ">
+				<![CDATA[  TP.CASH_CONFIRM_TIME>=#{cashConfirmStartDate,jdbcType=TIMESTAMP}  AND TP.CASH_CONFIRM_TIME<#{cashConfirmEndDate,jdbcType=TIMESTAMP} ]]>
+			</when>
+			<otherwise>
+				1 = 0
+			</otherwise>
+		</choose>
+		
+	     AND TP.PAYMENT_TYPE IN 
+	     <if test="paymentTypes!=null">
+			<foreach collection="paymentTypes"  index="index" item="item"  open="(" separator="," close=")">  
+				#{item} 
+			</foreach>
+		</if>
+		<include refid="publicSelectCondition"/>
+		<!-- pb con end -->
+		
+		UNION ALL
+		 <!-- 预收单部分   -->
+		SELECT  <include refid="DepositReceived_Column_List" />
+		, #{depositReceivedBillType} BILL_TYPE
+		FROM STL.T_STL_BILL_DEPOSIT_RECEIVED TD
+		WHERE 
+		<!-- accountStartDate,cashConfirmStartDate有一项必填 -->
+		<choose>
+			<when test="accountStartDate!=null  and  accountEndDate!=null ">
+				<![CDATA[  TD.ACCOUNT_DATE>=#{accountStartDate,jdbcType=TIMESTAMP}  AND TD.ACCOUNT_DATE<#{accountEndDate,jdbcType=TIMESTAMP} ]]>
+			</when>
+			<when test="cashConfirmStartDate!=null  and  cashConfirmEndDate!=null ">
+				<![CDATA[  TD.CASH_CONFIRM_TIME>=#{cashConfirmStartDate,jdbcType=TIMESTAMP}  AND TD.CASH_CONFIRM_TIME<#{cashConfirmEndDate,jdbcType=TIMESTAMP} ]]>
+			</when>
+			<otherwise>
+				1 = 0
+			</otherwise>
+		</choose>
+			AND TD.PAYMENT_TYPE IN 
+		 <if test="paymentTypes!=null">
+			<foreach collection="paymentTypes"  index="index" item="item"  open="(" separator="," close=")">  
+				#{item} 
+			</foreach>
+		</if>
+		<include refid="publicSelectCondition"/>
+		<!-- pb con end -->
+	</select>
+	
+	<!-- 按条件查询统计总行数   -->
+	<select id="selectCashInStTotalCountByCondition"  resultType="long" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CashIncomeStatementsQueryDto">
+		SELECT /*结算-客户管理- 按条件查询统计总行数 */ ( <!--  现金收款单   -->
+			SELECT COUNT(1) FROM STL.T_STL_BILL_CASH_COLLECTION TC
+			 WHERE  
+		<!-- pb con  -->
+			<!-- accountStartDate,cashConfirmStartDate有一项必填 -->
+			<choose>
+				<when test="accountStartDate!=null  and  accountEndDate!=null ">
+				<![CDATA[  TC.ACCOUNT_DATE>=#{accountStartDate,jdbcType=TIMESTAMP}  AND  TC.ACCOUNT_DATE<#{accountEndDate,jdbcType=TIMESTAMP} ]]>
+				</when>
+				<when test="cashConfirmStartDate!=null  and  cashConfirmEndDate!=null ">
+					<![CDATA[  TC.CASH_CONFIRM_TIME>=#{cashConfirmStartDate,jdbcType=TIMESTAMP}  AND TC.CASH_CONFIRM_TIME<#{cashConfirmEndDate,jdbcType=TIMESTAMP} ]]>
+				</when>
+				<otherwise>
+					1 = 0
+				</otherwise>
+			</choose>
+			AND TC.PAYMENT_TYPE IN 
+			 <if test="paymentTypes!=null">
+				<foreach collection="paymentTypes"  index="index" item="item"  open="(" separator="," close=")">  
+					#{item} 
+				</foreach>
+			</if>
+			<include refid="publicSelectCondition"/>
+			 )
+		<!-- pb con end -->
+		
+		+( <!-- 还款单 -->
+			SELECT COUNT(1) FROM  STL.T_STL_BILL_REPAYMENT TP
+			WHERE  
+		<!-- pb con  -->
+		<!-- accountStartDate,cashConfirmStartDate有一项必填 -->
+			<choose>
+				<when test="accountStartDate!=null  and  accountEndDate!=null ">
+				<![CDATA[  TP.ACCOUNT_DATE>=#{accountStartDate,jdbcType=TIMESTAMP}  AND TP.ACCOUNT_DATE<#{accountEndDate,jdbcType=TIMESTAMP} ]]>
+				</when>
+				<when test="cashConfirmStartDate!=null  and  cashConfirmEndDate!=null ">
+					<![CDATA[  TP.CASH_CONFIRM_TIME>=#{cashConfirmStartDate,jdbcType=TIMESTAMP}  AND TP.CASH_CONFIRM_TIME<#{cashConfirmEndDate,jdbcType=TIMESTAMP} ]]>
+				</when>
+				<otherwise>
+					1 = 0
+				</otherwise>
+			</choose>
+			
+		     AND TP.PAYMENT_TYPE IN 
+		     <if test="paymentTypes!=null">
+				<foreach collection="paymentTypes"  index="index" item="item"  open="(" separator="," close=")">  
+					#{item} 
+				</foreach>
+			</if>
+			<include refid="publicSelectCondition"/>
+			
+		<!-- pb con end -->
+		)+( <!-- 预收单 -->
+			SELECT  COUNT(1) FROM STL.T_STL_BILL_DEPOSIT_RECEIVED  TD
+			WHERE  
+		<!-- pb con  -->
+		<!-- accountStartDate,cashConfirmStartDate有一项必填 -->
+			<choose>
+				<when test="accountStartDate!=null  and  accountEndDate!=null ">
+				<![CDATA[  TD.ACCOUNT_DATE>=#{accountStartDate,jdbcType=TIMESTAMP}  AND TD.ACCOUNT_DATE<#{accountEndDate,jdbcType=TIMESTAMP} ]]>
+				</when>
+				<when test="cashConfirmStartDate!=null  and  cashConfirmEndDate!=null ">
+					<![CDATA[  TD.CASH_CONFIRM_TIME>=#{cashConfirmStartDate,jdbcType=TIMESTAMP}  AND TD.CASH_CONFIRM_TIME<#{cashConfirmEndDate,jdbcType=TIMESTAMP} ]]>
+				</when>
+				<otherwise>
+					1 = 0
+				</otherwise>
+			</choose>
+			AND TD.PAYMENT_TYPE IN 
+			 <if test="paymentTypes!=null">
+				<foreach collection="paymentTypes"  index="index" item="item"  open="(" separator="," close=")">  
+					#{item} 
+				</foreach>
+			</if>
+			<include refid="publicSelectCondition"/>
+		<!-- pb con end -->
+		) COUNTS  FROM DUAL
+		
+	</select>
+	
+	
+	<!-- 按照查询条件统计总金额 -->
+	<select id="selectTotalAmountByCondition"  resultMap="cashIncomeStatementsResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CashIncomeStatementsQueryDto">
+		SELECT /*结算-客户管理- 按照查询条件统计总金额 */SUM(TC.AMOUNT)/100 AMOUNT,TC.PAYMENT_TYPE FROM STL.T_STL_BILL_CASH_COLLECTION TC
+			 WHERE  
+			 <!-- accountStartDate,cashConfirmStartDate有一项必填 -->
+			<choose>
+				<when test="accountStartDate!=null  and  accountEndDate!=null ">
+					<![CDATA[  TC.ACCOUNT_DATE>=#{accountStartDate,jdbcType=TIMESTAMP}  AND TC.ACCOUNT_DATE<#{accountEndDate,jdbcType=TIMESTAMP} ]]>
+				</when>
+				<when test="cashConfirmStartDate!=null  and  cashConfirmEndDate!=null ">
+					<![CDATA[  TC.CASH_CONFIRM_TIME>=#{cashConfirmStartDate,jdbcType=TIMESTAMP}  AND TC.CASH_CONFIRM_TIME<#{cashConfirmEndDate,jdbcType=TIMESTAMP} ]]>
+				</when>
+				<otherwise>
+					1 = 0
+				</otherwise>
+			</choose>
+			  AND TC.PAYMENT_TYPE IN 
+		     <if test="paymentTypes!=null">
+				<foreach collection="paymentTypes"  index="index" item="item"  open="(" separator="," close=")">  
+					#{item} 
+				</foreach>
+			</if>
+			<include refid="publicSelectCondition"/>
+			GROUP BY TC.PAYMENT_TYPE
+			
+			UNION ALL
+			
+			SELECT SUM(TP.AMOUNT)/100 AMOUNT,TP.PAYMENT_TYPE FROM  STL.T_STL_BILL_REPAYMENT TP
+			WHERE  
+		<!-- pb con  -->
+		 <!-- accountStartDate,cashConfirmStartDate有一项必填 -->
+			<choose>
+				<when test="accountStartDate!=null  and  accountEndDate!=null ">
+					<![CDATA[  TP.ACCOUNT_DATE>=#{accountStartDate,jdbcType=TIMESTAMP}  AND TP.ACCOUNT_DATE<#{accountEndDate,jdbcType=TIMESTAMP} ]]>
+				</when>
+				<when test="cashConfirmStartDate!=null  and  cashConfirmEndDate!=null ">
+					<![CDATA[  TP.CASH_CONFIRM_TIME>=#{cashConfirmStartDate,jdbcType=TIMESTAMP}  AND TP.CASH_CONFIRM_TIME<#{cashConfirmEndDate,jdbcType=TIMESTAMP} ]]>
+				</when>
+				<otherwise>
+					1 = 0
+				</otherwise>
+			</choose>
+			
+		     AND TP.PAYMENT_TYPE IN 
+		     <if test="paymentTypes!=null">
+				<foreach collection="paymentTypes"  index="index" item="item"  open="(" separator="," close=")">  
+					#{item} 
+				</foreach>
+			</if>
+			<include refid="publicSelectCondition"/>
+			GROUP BY TP.PAYMENT_TYPE
+		<!-- pb con end -->
+		
+			UNION ALL
+			SELECT  SUM(TD.AMOUNT)/100 AMOUNT,TD.PAYMENT_TYPE FROM STL.T_STL_BILL_DEPOSIT_RECEIVED TD
+			WHERE  
+		<!-- pb con  -->
+			<!-- accountStartDate,cashConfirmStartDate有一项必填 -->
+			<choose>
+				<when test="accountStartDate!=null  and  accountEndDate!=null ">
+					<![CDATA[  TD.ACCOUNT_DATE>=#{accountStartDate,jdbcType=TIMESTAMP}  AND TD.ACCOUNT_DATE<#{accountEndDate,jdbcType=TIMESTAMP} ]]>
+				</when>
+				<when test="cashConfirmStartDate!=null  and  cashConfirmEndDate!=null ">
+					<![CDATA[  TD.CASH_CONFIRM_TIME>=#{cashConfirmStartDate,jdbcType=TIMESTAMP}  AND TD.CASH_CONFIRM_TIME<#{cashConfirmEndDate,jdbcType=TIMESTAMP} ]]>
+				</when>
+				<otherwise>
+					1 = 0
+				</otherwise>
+			</choose>
+			  AND TD.PAYMENT_TYPE IN 
+		     <if test="paymentTypes!=null">
+				<foreach collection="paymentTypes"  index="index" item="item"  open="(" separator="," close=")">  
+					#{item} 
+				</foreach>
+			</if>
+			<include refid="publicSelectCondition"/>
+			GROUP BY TD.PAYMENT_TYPE
+	</select> 
+
+<!-- 现金收款单部分 **************************************************************** -->	
+	
+	<!-- 按照(单据类型为：现金收款单)查询条件，查询现金收款单  -->
+	<select id="selectBillCashByCondition" resultMap="cashIncomeStatementsResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CashIncomeStatementsQueryDto">
+		SELECT /*结算-客户管理- 按照(单据类型为：现金收款单)查询条件，查询现金收款单*/
+		 <include refid="Cash_Column_List" />,#{cashBillType}  BILL_TYPE
+		 FROM STL.T_STL_BILL_CASH_COLLECTION  TC
+		 WHERE 
+		 <!-- pb con  -->
+		<!-- accountStartDate,cashConfirmStartDate有一项必填 -->
+		<choose>
+			<when test="accountStartDate!=null  and  accountEndDate!=null ">
+				<![CDATA[  TC.ACCOUNT_DATE>=#{accountStartDate,jdbcType=TIMESTAMP}  AND TC.ACCOUNT_DATE<#{accountEndDate,jdbcType=TIMESTAMP} ]]>
+			</when>
+			<when test="cashConfirmStartDate!=null  and  cashConfirmEndDate!=null ">
+				<![CDATA[  TC.CASH_CONFIRM_TIME>=#{cashConfirmStartDate,jdbcType=TIMESTAMP}  AND TC.CASH_CONFIRM_TIME<#{cashConfirmEndDate,jdbcType=TIMESTAMP} ]]>
+			</when>
+			<otherwise>
+				1 = 0
+			</otherwise>
+		</choose> 
+			
+		<include refid="publicSelectCondition"/>
+		<!-- pb con end -->
+	</select>
+	
+	<!-- 根据(单据类型为：现金收款单)查询条件查询现金收款单的总行数 -->
+	<select id="selectBillCashTotalCountByCondition" resultType="long"  parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CashIncomeStatementsQueryDto">
+		SELECT /*结算-客户管理- 根据(单据类型为：现金收款单)查询条件查询现金收款单的总行数 */COUNT(1) FROM STL.T_STL_BILL_CASH_COLLECTION TC
+	    WHERE  
+		 <!-- pb con  -->
+		<!-- accountStartDate,cashConfirmStartDate有一项必填 -->
+		<choose>
+			<when test="accountStartDate!=null  and  accountEndDate!=null ">
+				<![CDATA[  TC.ACCOUNT_DATE>=#{accountStartDate,jdbcType=TIMESTAMP}  AND TC.ACCOUNT_DATE<#{accountEndDate,jdbcType=TIMESTAMP} ]]>
+			</when>
+			<when test="cashConfirmStartDate!=null  and  cashConfirmEndDate!=null ">
+				<![CDATA[  TC.CASH_CONFIRM_TIME>=#{cashConfirmStartDate,jdbcType=TIMESTAMP}  AND TC.CASH_CONFIRM_TIME<#{cashConfirmEndDate,jdbcType=TIMESTAMP} ]]>
+			</when>
+			<otherwise>
+				1 = 0
+			</otherwise>
+		</choose>
+		
+		<include refid="publicSelectCondition"/>
+			<!-- pb con end -->		 
+	</select>
+	
+	<!-- 统计现金收款单的总金额   -->
+	<select id="selectBillCashTotalAmountByCondition"  resultMap="cashIncomeStatementsResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CashIncomeStatementsQueryDto">
+		SELECT /*结算-客户管理- 统计现金收款单的总金额  */SUM(TC.AMOUNT)/100 AMOUNT,TC.PAYMENT_TYPE FROM STL.T_STL_BILL_CASH_COLLECTION TC
+			 WHERE  
+			 <!-- accountStartDate,cashConfirmStartDate有一项必填 -->
+			<choose>
+				<when test="accountStartDate!=null  and  accountEndDate!=null ">
+					<![CDATA[  TC.ACCOUNT_DATE>=#{accountStartDate,jdbcType=TIMESTAMP}  AND TC.ACCOUNT_DATE<#{accountEndDate,jdbcType=TIMESTAMP} ]]>
+				</when>
+				<when test="cashConfirmStartDate!=null  and  cashConfirmEndDate!=null ">
+					<![CDATA[  TC.CASH_CONFIRM_TIME>=#{cashConfirmStartDate,jdbcType=TIMESTAMP}  AND TC.CASH_CONFIRM_TIME<#{cashConfirmEndDate,jdbcType=TIMESTAMP} ]]>
+				</when>
+				<otherwise>
+					1 = 0
+				</otherwise>
+			</choose>
+			
+			<include refid="publicSelectCondition"/>
+			GROUP BY TC.PAYMENT_TYPE
+	</select>
+	
+	<!-- 根据运单号集合，查询现金收款单信息  -->
+	<select id="selectBillCashByWaybillNOs" resultMap="cashIncomeStatementsResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CashIncomeStatementsQueryDto">
+		SELECT  /*结算-客户管理-根据运单号集合，查询现金收款单信息 */
+		 <include refid="Cash_Column_List" />,#{cashBillType}  BILL_TYPE
+		 FROM STL.T_STL_BILL_CASH_COLLECTION  TC
+		 WHERE  TC.SOURCE_BILL_NO  IN 
+			<foreach collection="waybillNos"  index="index" item="item"  open="(" separator="," close=")">  
+				#{item} 
+			</foreach>
+		AND EXISTS  <!-- 当前操作者数据权限  -->
+		  (SELECT V.ORG_CODE FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V WHERE V.EMP_CODE = #{empCode}
+				AND (COLLECTION_ORG_CODE=V.ORG_CODE
+					OR GENERATING_ORG_CODE=V.ORG_CODE
+				))
+		union all
+		( <!-- 还款单 -->
+			 SELECT  <include refid="Repayment_Column_List" />,#{repaymentBillType} BILL_TYPE
+		  FROM  STL.T_STL_BILL_REPAYMENT TP
+			WHERE  TP.REPAYMENT_NO  IN  (
+							SELECT TWF.BEGIN_NO
+                     		FROM STL.T_STL_BILL_WRITEOFF TWF
+                    		WHERE TWF.WRITEOFF_TYPE IN 
+                    			<foreach collection="writeoffType" item="item" index="index" open="(" separator="," close=")"> 
+   									#{item}
+   								</foreach>
+                      		AND TWF.END_WAYBILL_NO IN 
+								<foreach collection="waybillNos"  index="index" item="item"  open="(" separator="," close=")">  
+									#{item} 
+								</foreach>
+		    				)
+		AND EXISTS  <!-- 当前操作者数据权限  -->
+		  (SELECT V.ORG_CODE FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V WHERE V.EMP_CODE = #{empCode}
+				AND (COLLECTION_ORG_CODE=V.ORG_CODE
+					OR GENERATING_ORG_CODE=V.ORG_CODE)
+				)		
+	      )
+	</select>
+	
+	<!-- 根据运单号集合，统计所有的现金收款单的总金额 -->
+	<select id="selectTotalAmountByWaybillNos" resultMap="cashIncomeStatementsResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CashIncomeStatementsQueryDto">
+		SELECT /*结算-客户管理-根据运单号集合，统计所有的现金收款单的总金额  */SUM(CASH.AMOUNT)/100 AMOUNT,CASH.PAYMENT_TYPE FROM STL.T_STL_BILL_CASH_COLLECTION CASH
+		 WHERE  CASH.SOURCE_BILL_NO  IN 
+		  <if test="waybillNos!=null">
+			<foreach collection="waybillNos"  index="index" item="item"  open="(" separator="," close=")">  
+				#{item} 
+			</foreach>
+		</if>
+		
+		AND EXISTS  <!-- 当前操作者数据权限  -->
+		  (SELECT V.ORG_CODE FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V WHERE V.EMP_CODE = #{empCode}
+				AND (CASH.COLLECTION_ORG_CODE=V.ORG_CODE
+					OR CASH.GENERATING_ORG_CODE=V.ORG_CODE
+				)
+	      )
+		GROUP BY CASH.PAYMENT_TYPE
+	</select>
+
+
+<!-- 还款单部分 **************************************************************** -->	
+	<!-- 按照(单据类型为：还款单)查询条件查询还款单  -->
+	<select id="selectBillRepaymentByCondition" resultMap="cashIncomeStatementsResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CashIncomeStatementsQueryDto">
+		 <!-- 还款单部分   -->
+		 SELECT /*结算-客户管理-按照(单据类型为：还款单)查询条件查询还款单 */ <include refid="Repayment_Column_List" />,#{repaymentBillType} BILL_TYPE
+		 FROM STL.T_STL_BILL_REPAYMENT TP
+		 WHERE  
+		<!-- pb con  -->
+		<!-- accountStartDate,cashConfirmStartDate有一项必填 -->
+		<choose>
+			<when test="accountStartDate!=null  and  accountEndDate!=null ">
+					<![CDATA[  TP.ACCOUNT_DATE>=#{accountStartDate,jdbcType=TIMESTAMP}  AND TP.ACCOUNT_DATE<#{accountEndDate,jdbcType=TIMESTAMP} ]]>
+			</when>
+			<when test="cashConfirmStartDate!=null  and  cashConfirmEndDate!=null ">
+				<![CDATA[  TP.CASH_CONFIRM_TIME>=#{cashConfirmStartDate,jdbcType=TIMESTAMP}  AND TP.CASH_CONFIRM_TIME<#{cashConfirmEndDate,jdbcType=TIMESTAMP} ]]>
+			</when>
+			<otherwise>
+					1 = 0
+			</otherwise>
+		</choose>
+		
+	     AND TP.PAYMENT_TYPE IN 
+	     <if test="paymentTypes!=null">
+			<foreach collection="paymentTypes"  index="index" item="item"  open="(" separator="," close=")">  
+				#{item} 
+			</foreach>
+		</if>
+		<include refid="publicSelectCondition"/>
+		<!-- pb con end -->
+	</select>
+	
+	<!-- 按照(单据类型为：还款单)查询条件统计还款单的总行数  -->
+	<select id="selectBillRepaymentTotalCountByCondition" resultType="long" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CashIncomeStatementsQueryDto">
+		SELECT/*结算-客户管理-按照(单据类型为：还款单)查询条件统计还款单的总行数 */ COUNT(1) FROM  STL.T_STL_BILL_REPAYMENT TP
+		 WHERE  
+			<!-- pb con  -->
+			<!-- accountStartDate,cashConfirmStartDate有一项必填 -->
+			<choose>
+				<when test="accountStartDate!=null  and  accountEndDate!=null ">
+					<![CDATA[  TP.ACCOUNT_DATE>=#{accountStartDate,jdbcType=TIMESTAMP}  AND TP.ACCOUNT_DATE<#{accountEndDate,jdbcType=TIMESTAMP} ]]>
+				</when>
+				<when test="cashConfirmStartDate!=null  and  cashConfirmEndDate!=null ">
+					<![CDATA[  TP.CASH_CONFIRM_TIME>=#{cashConfirmStartDate,jdbcType=TIMESTAMP}  AND TP.CASH_CONFIRM_TIME<#{cashConfirmEndDate,jdbcType=TIMESTAMP} ]]>
+				</when>
+				<otherwise>
+						1 = 0
+				</otherwise>
+			</choose>
+			
+		     AND TP.PAYMENT_TYPE IN 
+		     <if test="paymentTypes!=null">
+				<foreach collection="paymentTypes"  index="index" item="item"  open="(" separator="," close=")">  
+					#{item} 
+				</foreach>
+			</if>
+			<include refid="publicSelectCondition"/>
+	</select>
+	
+	<!-- 按照(单据类型为：还款单)查询条件统计还款单的总金额  -->
+	<select id="selectBillRepaymentTotalAmountByCondition" resultMap="cashIncomeStatementsResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CashIncomeStatementsQueryDto">
+		SELECT/*结算-客户管理-按照(单据类型为：还款单)查询条件统计还款单的总金额 */ SUM(TP.AMOUNT)/100 AMOUNT,TP.PAYMENT_TYPE FROM  STL.T_STL_BILL_REPAYMENT TP
+		 WHERE  
+			<!-- pb con  -->
+			<!-- accountStartDate,cashConfirmStartDate有一项必填 -->
+			<choose>
+				<when test="accountStartDate!=null  and  accountEndDate!=null ">
+					<![CDATA[  TP.ACCOUNT_DATE>=#{accountStartDate,jdbcType=TIMESTAMP}  AND TP.ACCOUNT_DATE<#{accountEndDate,jdbcType=TIMESTAMP} ]]>
+				</when>
+				<when test="cashConfirmStartDate!=null  and  cashConfirmEndDate!=null ">
+					<![CDATA[  TP.CASH_CONFIRM_TIME>=#{cashConfirmStartDate,jdbcType=TIMESTAMP}  AND TP.CASH_CONFIRM_TIME<#{cashConfirmEndDate,jdbcType=TIMESTAMP} ]]>
+				</when>
+				<otherwise>
+						1 = 0
+				</otherwise>
+			</choose>
+			
+		     AND TP.PAYMENT_TYPE IN 
+		     <if test="paymentTypes!=null">
+				<foreach collection="paymentTypes"  index="index" item="item"  open="(" separator="," close=")">  
+					#{item} 
+				</foreach>
+			</if>
+			<include refid="publicSelectCondition"/>
+		GROUP BY TP.PAYMENT_TYPE
+	</select>
+	
+	<!-- 根据对账单号查询对应的还款单记录  -->
+	<select id="selectBillRepaymentByStatementBillNOs" resultMap="cashIncomeStatementsResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CashIncomeStatementsQueryDto">
+
+		 SELECT /*结算-客户管理-根据对账单号查询对应的还款单记录 */ <include refid="RepaymentOfSoa_Column_List" />,#{repaymentBillType} BILL_TYPE
+		 FROM STL.T_STL_BILL_REPAYMENT  REP
+		 , STL.T_STL_SOA_REPAYMENT SRT --- 对账还款表
+		 WHERE REP.REPAYMENT_NO=SRT.REPAYMENT_NO
+		 AND  SRT.STATEMENT_BILL_NO IN
+		 <if test="statementBillNos!=null">
+			<foreach collection="statementBillNos"  index="index" item="item"  open="(" separator="," close=")">  
+				#{item} 
+			</foreach>
+		</if>
+		
+	     AND REP.PAYMENT_TYPE IN 
+	     <if test="paymentTypes!=null">
+			<foreach collection="paymentTypes"  index="index" item="item"  open="(" separator="," close=")">  
+				#{item} 
+			</foreach>
+		</if>
+		AND EXISTS  <!-- 当前操作者数据权限  -->
+		  (SELECT V.ORG_CODE FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V WHERE V.EMP_CODE = #{empCode}
+				AND (REP.COLLECTION_ORG_CODE=V.ORG_CODE
+					OR REP.GENERATING_ORG_CODE=V.ORG_CODE
+				)
+	      )
+	</select>
+	
+	<!-- 根据对账单号集合，统计还款单金额信息  -->
+	<select id="selectBillRepaymentTotalAmountByStatementBillNOs" resultMap="cashIncomeStatementsResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CashIncomeStatementsQueryDto">
+		 SELECT /*结算-客户管理-根据对账单号集合，统计还款单金额信息*/ SUM(REP.AMOUNT)/100 AMOUNT,REP.PAYMENT_TYPE
+		 FROM STL.T_STL_BILL_REPAYMENT  REP
+		 , STL.T_STL_SOA_REPAYMENT SRT 
+		 WHERE REP.REPAYMENT_NO=SRT.REPAYMENT_NO
+		 AND SRT.STATEMENT_BILL_NO IN
+		 <if test="statementBillNos!=null">
+			<foreach collection="statementBillNos"  index="index" item="item"  open="(" separator="," close=")">  
+				#{item} 
+			</foreach>
+		</if>
+		
+	     AND REP.PAYMENT_TYPE IN 
+	     <if test="paymentTypes!=null">
+			<foreach collection="paymentTypes"  index="index" item="item"  open="(" separator="," close=")">  
+				#{item} 
+			</foreach>
+		</if>
+		AND EXISTS  <!-- 当前操作者数据权限  -->
+		  (SELECT V.ORG_CODE FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V WHERE V.EMP_CODE = #{empCode}
+				AND (REP.COLLECTION_ORG_CODE=V.ORG_CODE
+					OR REP.GENERATING_ORG_CODE=V.ORG_CODE
+				)
+	      )
+		GROUP BY REP.PAYMENT_TYPE
+	</select>
+	
+	<!-- 根据还款单号查询还款单  -->
+	<select id="selectBillRepaymentByNOs" resultMap="cashIncomeStatementsResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CashIncomeStatementsQueryDto" >
+		SELECT /*结算-客户管理-根据还款单号查询还款单 */ <include refid="Repayment_Column_List" />,#{repaymentBillType} BILL_TYPE
+		 FROM STL.T_STL_BILL_REPAYMENT TP
+		 WHERE TP.REPAYMENT_NO IN
+		 <if test="repaymentNos!=null">
+			<foreach collection="repaymentNos"  index="index" item="item"  open="(" separator="," close=")">  
+				#{item} 
+			</foreach>
+		</if>
+		
+	     AND TP.PAYMENT_TYPE IN 
+	     <if test="paymentTypes!=null">
+			<foreach collection="paymentTypes"  index="index" item="item"  open="(" separator="," close=")">  
+				#{item} 
+			</foreach>
+		</if>
+		AND EXISTS  <!-- 当前操作者数据权限  -->
+		  (SELECT V.ORG_CODE FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V WHERE V.EMP_CODE = #{empCode}
+				AND (TP.COLLECTION_ORG_CODE=V.ORG_CODE
+					OR TP.GENERATING_ORG_CODE=V.ORG_CODE
+				)
+	      )
+	</select>
+	
+	<!-- 根据还款单号查询还款单  -->
+	<select id="selectBillRepaymentTotalAmountByNOs" resultMap="cashIncomeStatementsResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CashIncomeStatementsQueryDto" >
+		SELECT /*结算-客户管理-根据还款单号查询还款单 */ SUM(REPAY.AMOUNT)/100 AMOUNT,REPAY.PAYMENT_TYPE
+		 FROM STL.T_STL_BILL_REPAYMENT REPAY
+		 WHERE REPAY.REPAYMENT_NO IN
+		 <if test="repaymentNos!=null">
+			<foreach collection="repaymentNos"  index="index" item="item"  open="(" separator="," close=")">  
+				#{item} 
+			</foreach>
+		</if>
+	     AND REPAY.PAYMENT_TYPE IN 
+	     <if test="paymentTypes!=null">
+			<foreach collection="paymentTypes"  index="index" item="item"  open="(" separator="," close=")">  
+				#{item} 
+			</foreach>
+		</if>
+		AND EXISTS  <!-- 当前操作者数据权限  -->
+		  (SELECT V.ORG_CODE FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V WHERE V.EMP_CODE = #{empCode}
+				AND (REPAY.COLLECTION_ORG_CODE=V.ORG_CODE
+					OR REPAY.GENERATING_ORG_CODE=V.ORG_CODE
+				)
+	      )
+		GROUP BY REPAY.PAYMENT_TYPE
+	</select>
+
+
+<!-- 预收单部分********************************* -->
+	<!-- 根据（单据类型：预收单）查询条件查询预收单  -->
+	<select id="selectBillDepositReceivedByCondition" resultMap="cashIncomeStatementsResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CashIncomeStatementsQueryDto" >
+		SELECT /*结算-客户管理-根据（单据类型：预收单）查询条件查询预收单*/ <include refid="DepositReceived_Column_List" />
+		 ,#{depositReceivedBillType} BILL_TYPE
+		FROM STL.T_STL_BILL_DEPOSIT_RECEIVED TD
+		WHERE  
+		<!-- pb con  -->
+		 <!-- accountStartDate,cashConfirmStartDate有一项必填 -->
+		<choose>
+			<when test="accountStartDate!=null  and  accountEndDate!=null ">
+					<![CDATA[  TD.ACCOUNT_DATE>=#{accountStartDate,jdbcType=TIMESTAMP}  AND TD.ACCOUNT_DATE<#{accountEndDate,jdbcType=TIMESTAMP} ]]>
+			</when>
+			<when test="cashConfirmStartDate!=null  and  cashConfirmEndDate!=null ">
+				<![CDATA[  TD.CASH_CONFIRM_TIME>=#{cashConfirmStartDate,jdbcType=TIMESTAMP}  AND TD.CASH_CONFIRM_TIME<#{cashConfirmEndDate,jdbcType=TIMESTAMP} ]]>
+			</when>
+			<otherwise>
+					1 = 0
+			</otherwise>
+		</choose>
+		<include refid="publicSelectCondition"/>
+		<!-- pb con end -->
+	</select>
+	
+	
+	<!-- 根据（单据类型：预收单）查询条件统计总行数  -->
+	<select id="selectBillDepositReceivedTotalCountByCondition" resultType="long" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CashIncomeStatementsQueryDto" >
+		SELECT /*结算-客户管理- 根据（单据类型：预收单）查询条件统计总行数 */COUNT(1)
+		FROM STL.T_STL_BILL_DEPOSIT_RECEIVED TD
+		WHERE  
+		<!-- pb con  -->
+	   <!-- accountStartDate,cashConfirmStartDate有一项必填 -->
+		<choose>
+			<when test="accountStartDate!=null  and  accountEndDate!=null ">
+					<![CDATA[  TD.ACCOUNT_DATE>=#{accountStartDate,jdbcType=TIMESTAMP}  AND TD.ACCOUNT_DATE<#{accountEndDate,jdbcType=TIMESTAMP} ]]>
+			</when>
+			<when test="cashConfirmStartDate!=null  and  cashConfirmEndDate!=null ">
+				<![CDATA[  TD.CASH_CONFIRM_TIME>=#{cashConfirmStartDate,jdbcType=TIMESTAMP}  AND TD.CASH_CONFIRM_TIME<#{cashConfirmEndDate,jdbcType=TIMESTAMP} ]]>
+			</when>
+			<otherwise>
+					1 = 0
+			</otherwise>
+		</choose>
+		<include refid="publicSelectCondition"/>
+		<!-- pb con end -->
+	</select>
+	
+	<!-- 根据（单据类型：预收单）查询条件统计总金额  -->
+	<select id="selectBillDepositReceivedTotalAmountByCondition" resultMap="cashIncomeStatementsResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CashIncomeStatementsQueryDto" >
+		SELECT /*结算-客户管理-根据（单据类型：预收单）查询条件统计总金额 */ SUM(TD.AMOUNT)/100 AMOUNT,TD.PAYMENT_TYPE
+		FROM STL.T_STL_BILL_DEPOSIT_RECEIVED  TD
+		WHERE  
+		<!-- pb con  -->
+		<!-- accountStartDate,cashConfirmStartDate有一项必填 -->
+		<choose>
+			<when test="accountStartDate!=null  and  accountEndDate!=null ">
+					<![CDATA[  TD.ACCOUNT_DATE>=#{accountStartDate,jdbcType=TIMESTAMP}  AND TD.ACCOUNT_DATE<#{accountEndDate,jdbcType=TIMESTAMP} ]]>
+			</when>
+			<when test="cashConfirmStartDate!=null  and  cashConfirmEndDate!=null ">
+				<![CDATA[  TD.CASH_CONFIRM_TIME>=#{cashConfirmStartDate,jdbcType=TIMESTAMP}  AND TD.CASH_CONFIRM_TIME<#{cashConfirmEndDate,jdbcType=TIMESTAMP} ]]>
+			</when>
+			<otherwise>
+					1 = 0
+			</otherwise>
+		</choose>
+		<include refid="publicSelectCondition"/>
+		GROUP BY TD.PAYMENT_TYPE
+		<!-- pb con end -->
+	</select>
+	
+	<!-- 按照预收单号，查询预收单集合  -->
+	<select id="selectBillDepositReceivedByNOs" resultMap="cashIncomeStatementsResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CashIncomeStatementsQueryDto" >
+		SELECT  /*结算-客户管理-按照预收单号，查询预收单集合 */ <include refid="DepositReceived_Column_List" />
+		, #{depositReceivedBillType} BILL_TYPE
+		FROM STL.T_STL_BILL_DEPOSIT_RECEIVED TD
+		WHERE TD.DEPOSIT_RECEIVED_NO IN
+		<if test="depositReceivedNos!=null">
+			<foreach collection="depositReceivedNos"  index="index" item="item"  open="(" separator="," close=")">  
+				#{item} 
+			</foreach>
+		</if>
+		AND EXISTS  <!-- 当前操作者数据权限  -->
+		  (SELECT V.ORG_CODE FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V WHERE V.EMP_CODE = #{empCode}
+				AND (TD.COLLECTION_ORG_CODE=V.ORG_CODE
+					OR TD.GENERATING_ORG_CODE=V.ORG_CODE
+				)
+	      )
+	</select>
+	
+	<!-- 按照预收单号，查询预收单集合  -->
+	<select id="selectBillDepositReceivedTotalAmountByNOs" resultMap="cashIncomeStatementsResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CashIncomeStatementsQueryDto" >
+		SELECT  /*结算-客户管理-按照预收单号，查询预收单集合 */ SUM(DERED.AMOUNT)/100 AMOUNT,DERED.PAYMENT_TYPE
+		FROM STL.T_STL_BILL_DEPOSIT_RECEIVED  DERED
+		WHERE DERED.DEPOSIT_RECEIVED_NO IN
+		<if test="depositReceivedNos!=null">
+			<foreach collection="depositReceivedNos"  index="index" item="item"  open="(" separator="," close=")">  
+				#{item} 
+			</foreach>
+		</if>
+		AND EXISTS  <!-- 当前操作者数据权限  -->
+		  (SELECT V.ORG_CODE FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V WHERE V.EMP_CODE = #{empCode}
+				AND (DERED.COLLECTION_ORG_CODE=V.ORG_CODE
+					OR DERED.GENERATING_ORG_CODE=V.ORG_CODE
+				)
+	      )
+		GROUP BY DERED.PAYMENT_TYPE
+	</select>
+	
+</mapper>

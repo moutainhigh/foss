@@ -1,0 +1,413 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.SettlementInfoQueryDao">
+	<resultMap id="waybillSettlementInfoResultMap"
+		type="com.deppon.foss.module.settlement.consumer.api.shared.dto.WaybillSettlementInfoDto">
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="TO_PAY_TOTAL_AMOUNT" property="toPayTotalAmount"
+			jdbcType="DECIMAL" />
+		<result column="TO_PAY_FEE" property="toPayFee" jdbcType="DECIMAL" />
+		<result column="PAYMENT-TYPE" property="paymentType" jdbcType="VARCHAR" />
+		<result column="ACCOUNT_DATE" property="accountDate" jdbcType="DECIMAL" />
+		<result column="COD_FEE" property="codFee" jdbcType="DECIMAL" />
+		<result column="PAYABLE_AMOUNT" property="payableAmount"
+			jdbcType="DECIMAL" />
+		<result column="WRITEOFF_AMOUNT" property="writeoffAmount"
+			jdbcType="DECIMAL" />
+		<result column="RETREAT_AMOUNT" property="retreatAmount"
+			jdbcType="DECIMAL" />
+		<result column="COD_REFUND_STATUS" property="codRefundStatus"
+			jdbcType="VARCHAR" />
+		<result column="COD_REFUND_NOTES" property="codRefundNotes"
+			jdbcType="VARCHAR" />
+		<result column="SF_REFUND_TYPE" property="sfRefundType"
+			jdbcType="VARCHAR" />
+		<result column="SF_REFUND_AMOUNT" property="sfRefundAmount"
+			jdbcType="DECIMAL" />
+		<result column="SF_REFUND_STATUS" property="sfRecundStatus"
+			jdbcType="VARCHAR" />
+		<result column="SF_REFUND_NOTES" property="sfRefundNotes"
+			jdbcType="VARCHAR" />
+		<result column="ORIG_INVOICE_AMOUNT" property="origInvoiceAmount"
+			jdbcType="DECIMAL" />
+		<result column="DEST_INVOICE_AMOUNT" property="destInvoiceAmount"
+			jdbcType="DECIMAL" />
+		<result column="BILL_TYPE" property="billType" jdbcType="VARCHAR" />
+		<result column="AMOUNT" property="amount" jdbcType="DECIMAL" />
+		<result column="VERIFY_AMOUNT" property="verifyAmount"
+			jdbcType="DECIMAL" />
+		<result column="UNVERIFY_AMOUNT" property="unverifyAmount"
+			jdbcType="DECIMAL" />
+		<result column="STATUS" property="status" jdbcType="VARCHAR" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+		<result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+		<result column="ORG_NAME" property="orgName" jdbcType="VARCHAR" />
+	</resultMap>
+
+
+	<resultMap id="orgSettlementInfoResultMap"
+		type="com.deppon.foss.module.settlement.consumer.api.shared.dto.OrgSettlementInfoDto">
+		<result column="TYPE" property="type" jdbcType="VARCHAR" />
+		<result column="AMOUNT" property="amount" jdbcType="DECIMAL" />
+	</resultMap>
+	
+	<!-- 查询运单的代收货款信息 -->
+	<select id="queryCodFeeByWaybillNo" resultMap="waybillSettlementInfoResultMap"
+		parameterType="java.util.Map">
+		<!-- 查询代收货款应收单信息 -->
+		SELECT /*结算-客户管理-查询运单的代收货款信息*/RE.BILL_TYPE,
+		'' STATUS,
+		'' NOTES,
+		RE.VERIFY_AMOUNT/100 AMOUNT, <!-- 
+			已核销金额 -->
+		0 VERIFY_AMOUNT, <!-- 占位符 -->
+		0 UNVERIFY_AMOUNT <!-- 占位符 -->
+		FROM STL.T_STL_BILL_RECEIVABLE RE <!-- 查询应收单信息 -->
+		WHERE RE.WAYBILL_NO=#{waybillNo}
+		<![CDATA[  AND  RE.ACCOUNT_DATE>=#{startDate,jdbcType=TIMESTAMP} AND  RE.ACCOUNT_DATE<=#{endDate,jdbcType=TIMESTAMP}  ]]><!-- 
+			大于等于开单业务日期 -->
+		AND RE.BILL_TYPE IN
+		<foreach collection="receivableBillTypes"  index="index" item="item"  open="(" separator="," close=")">  
+		        #{item} 
+	   </foreach>
+		AND  RE.ACTIVE = #{active}
+		AND  RE.IS_RED_BACK = #{isRedBack}
+
+		<!-- 查询代收货款应付单信息 -->
+		UNION ALL
+		SELECT PE.BILL_TYPE,
+		PMT.REMIT_STATUS STATUS,<!-- 汇款状态 -->
+		PMT.NOTES,<!-- 付款说明 -->
+		PE.AMOUNT/100 AMOUNT, <!-- 应付金额 -->
+		PE.VERIFY_AMOUNT/100 VERIFY_AMOUNT,<!-- 已核销金额 -->
+		PE.UNVERIFY_AMOUNT/100 UNVERIFY_AMOUNT <!-- 未核销金额 -->
+
+		FROM STL.T_STL_BILL_PAYABLE PE,
+		STL.T_STL_BILL_PAYMENT PMT
+		WHERE
+		PE.WAYBILL_NO = #{waybillNo}
+		<![CDATA[ AND PE.ACCOUNT_DATE >=#{startDate,jdbcType=TIMESTAMP}   AND PE.ACCOUNT_DATE <=#{endDate,jdbcType=TIMESTAMP}  ]]>
+		<!-- 大于等于开单业务日期 -->
+
+		AND PE.PAYMENT_NO=PMT.PAYMENT_NO  <!-- 应付单的运单号和代收货款运单号相同 -->
+		AND PMT.ACTIVE=#{active}
+		AND PMT.IS_RED_BACK = #{isRedBack}
+		AND
+		PE.BILL_TYPE = #{payableBillType}
+		AND PE.ACTIVE = #{active} AND
+		PE.IS_RED_BACK = #{isRedBack}
+	</select>
+
+	<!-- 查询运单的装卸费信息 -->
+	<select id="queryServiceFeeByWaybillNo" resultMap="waybillSettlementInfoResultMap"
+		parameterType="java.util.Map">
+		SELECT /*结算-客户管理-查询运单的装卸费信息*/PE.VERIFY_AMOUNT/100 SF_REFUND_AMOUNT, <!-- 应付单的已核销金额 -->
+		PMT.PAYMENT_TYPE SF_REFUND_TYPE,<!-- 付款单的付款方式 -->
+		PMT.REMIT_STATUS SF_REFUND_STATUS , <!-- 汇款状态 -->
+		PMT.NOTES SF_REFUND_NOTES <!-- 付款描述 -->
+		FROM STL.T_STL_BILL_PAYABLE PE, STL.T_STL_BILL_PAYMENT PMT
+		WHERE
+		PE.WAYBILL_NO = #{waybillNo}
+	    <![CDATA[  AND PE.ACCOUNT_DATE >=#{startDate,jdbcType=TIMESTAMP}  AND PE.ACCOUNT_DATE <=#{endDate,jdbcType=TIMESTAMP}  ]]>
+		AND PE.BILL_TYPE = #{payableBillType}
+		AND PE.PAYMENT_NO =
+		PMT.PAYMENT_NO
+		AND PE.ACTIVE = #{active}
+		AND PE.IS_RED_BACK =
+		#{isRedBack}
+		AND PMT.ACTIVE = #{active}
+		AND PMT.IS_RED_BACK =
+		#{isRedBack}
+
+	</select>
+
+	<!-- 查询运单发票信息 -->
+	<select id="queryInvoiceByWaybillNo" resultMap="waybillSettlementInfoResultMap"
+		parameterType="java.util.Map">
+		SELECT /*结算-客户管理-查询运单发票信息*/SIE.ALREADY_OPEN_AMOUNT/100 AMOUNT,
+		SIE.ORG_CODE,
+		SIE.ORG_NAME
+		FROM STL.T_STL_INVOICE SIE
+		WHERE SIE.SOURCE_BILL_NO = #{waybillNo}
+		AND
+		SIE.SOURCE_BILL_TYPE = #{sourceBillType} <!-- 运单 -->
+		<![CDATA[  AND SIE.BUSINESS_DATE >= #{startDate,jdbcType=TIMESTAMP} AND SIE.BUSINESS_DATE <= #{endDate,jdbcType=TIMESTAMP} ]]>
+		AND SIE.ACTIVE=#{active}
+	</select>
+
+	<!-- 根据部门编码和部门创建日期查找该部门的应收、应付、预收、预付未核销的金额信息 -->
+	<select id="selectOrgSettlementInfo" resultMap="orgSettlementInfoResultMap"
+		parameterType="java.util.Map">
+		<!-- 统计部门应收单未核销金额  -->
+		SELECT /*结算-客户管理-根据部门编码和部门创建日期查找该部门的应收、应付、预收、预付未核销的金额信息*/SUM(T.UNVERIFY_AMOUNT)/100 AMOUNT, #{receivableBill} TYPE
+		FROM STL.T_STL_BILL_RECEIVABLE 
+		T
+		WHERE T.RECEIVABLE_ORG_CODE = #{orgCode}
+		<![CDATA[  AND T.ACCOUNT_DATE >= #{orgCreateTime,jdbcType=TIMESTAMP} ]]>
+		AND T.UNVERIFY_AMOUNT>0 
+		AND T.ACTIVE = #{active}
+		AND T.IS_RED_BACK = #{isRedBack}
+		
+		UNION ALL
+        <!-- 统计部门应付单未核销金额  -->
+		SELECT 
+			SUM(T.UNVERIFY_AMOUNT)/100 AMOUNT, 
+			#{payableBill} TYPE
+		FROM STL.T_STL_BILL_PAYABLE
+		T
+		WHERE T.PAYABLE_ORG_CODE = #{orgCode}
+		<![CDATA[  AND T.ACCOUNT_DATE >= #{orgCreateTime,jdbcType=TIMESTAMP} ]]>
+		AND T.UNVERIFY_AMOUNT>0 
+		AND T.ACTIVE = #{active}
+		AND T.IS_RED_BACK = #{isRedBack}
+		
+		UNION ALL
+	<!-- 统计部门预收单未核销金额  -->
+		SELECT SUM(T.UNVERIFY_AMOUNT)/100 AMOUNT, #{depositBill} TYPE
+		FROM STL.T_STL_BILL_DEPOSIT_RECEIVED 
+		T
+		WHERE T.CREATE_ORG_CODE = #{orgCode}
+		<![CDATA[  AND T.ACCOUNT_DATE >= #{orgCreateTime,jdbcType=TIMESTAMP} ]]>
+		AND T.UNVERIFY_AMOUNT>0 
+		AND T.ACTIVE = #{active}
+		AND T.IS_RED_BACK = #{isRedBack}
+
+		UNION ALL
+		<!-- 统计部门预付单未核销金额  -->
+		SELECT SUM(T.UNVERIFY_AMOUNT)/100 AMOUNT, #{adpaymentBill} TYPE
+		FROM STL.T_STL_BILL_ADVANCED_PAYMENT 
+		T
+		WHERE T.PAYMENT_ORG_CODE = #{orgCode}
+		<![CDATA[  AND T.ACCOUNT_DATE >= #{orgCreateTime,jdbcType=TIMESTAMP} ]]>
+		AND T.UNVERIFY_AMOUNT>0 
+		AND T.ACTIVE = #{active}
+		AND T.IS_RED_BACK = #{isRedBack}
+	</select>
+	
+	<!-- ********************************************************** -->
+	<resultMap type="com.deppon.foss.module.settlement.consumer.api.shared.dto.OrigFeeInfo" id="OrigFeeInfoMap">
+		<result property="paymentType" column="PAYMENTTYPE" jdbcType="VARCHAR"/>
+		<result property="receivedAmount" column="RECEIVEDAMOUNT" jdbcType="DECIMAL"/>
+		<result property="receivedDate" column="RECEIVEDDATE" jdbcType="TIMESTAMP"/>
+	</resultMap>
+	
+	<resultMap type="com.deppon.foss.module.settlement.consumer.api.shared.dto.DestFeeDetailInfo" id="DestFeeDetailInfoMap">
+		<result property="amount" column="AMOUNT" jdbcType="DECIMAL"/>
+		<result property="sourceBillType" column="SOURCE_BILL_TYPE" jdbcType="VARCHAR"/>
+		<result property="paymentType" column="PAYMENT_TYPE" jdbcType="VARCHAR"/>
+		<result property="accountDate" column="ACCOUNT_DATE" jdbcType="TIMESTAMP"/>
+	</resultMap>
+	
+	<resultMap type="com.deppon.foss.module.settlement.consumer.api.shared.dto.CODFeeInfo" id="CODFeeInfoMap">
+		<result property="codAmount" column="COD_AMOUNT" jdbcType="DECIMAL"/>
+		<result property="paymentType" column="PAYMENT_TYPE" jdbcType="VARCHAR"/>
+		<result property="verifyRcvAmount" column="VERIFY_RCV_AMOUNT" jdbcType="DECIMAL"/>
+		<result property="returnableAmount" column="RETURNABLE_AMOUNT" jdbcType="DECIMAL"/>
+		<result property="paymentStatus" column="PAYMENT_STATUS" jdbcType="VARCHAR"/>
+	</resultMap>
+	
+	<resultMap type="com.deppon.foss.module.settlement.consumer.api.shared.dto.OtherFeeInfo" id="OtherFeeInfoMap">
+		<result property="payableBillType" column="PAYABLE_BILL_TYPE" jdbcType="VARCHAR"/>
+		<result property="amount" column="AMOUNT" jdbcType="DECIMAL"/>
+		<result property="paymentStatus" column="PAYMENT_STATUS" jdbcType="VARCHAR"/>
+		<result property="paymentType" column="PAYMENT_TYPE" jdbcType="VARCHAR"/>
+		<result property="verifyRcvAmount" column="VERIFY_RCV_AMOUNT" jdbcType="DECIMAL"/>
+		<result property="returnableAmount" column="RETURNABLE_AMOUNT" jdbcType="DECIMAL"/>
+	</resultMap>
+	
+	<resultMap type="com.deppon.foss.module.settlement.consumer.api.shared.dto.InvoiceFeeInfo" id="InvoiceFeeInfoMap">
+		<result property="amount" column="AMOUNT" jdbcType="DECIMAL"/>
+		<result property="orgCode" column="ORG_CODE" jdbcType="VARCHAR"/>
+		<result property="orgName" column="ORG_NAME" jdbcType="VARCHAR"/>
+	</resultMap>
+	<!-- ********************************************************** -->
+	
+	<!-- 财务情况——始发运费——查询现金收款 -->
+	<select id="queryOrigFee" parameterType="map" resultMap="OrigFeeInfoMap">
+		SELECT T.PAYMENT_TYPE AS PAYMENTTYPE,T.AMOUNT/100 AS RECEIVEDAMOUNT,T.ACCOUNT_DATE AS RECEIVEDDATE
+			FROM STL.T_STL_BILL_CASH_COLLECTION T
+ 		WHERE T.WAYBILL_NO = #{waybillNo}
+		  AND T.ACTIVE = #{active}
+		  AND T.SOURCE_BILL_TYPE = #{sourceBillType}
+		UNION ALL
+		
+		SELECT T.PAYMENT_TYPE PAYMENTTYPE,
+					 NVL(SUM(WO.AMOUNT), 0)/100 AS RECEIVEDAMOUNT,
+					 MAX(WO.ACCOUNT_DATE) AS RECEIVEDDATE
+			FROM STL.T_STL_BILL_RECEIVABLE T
+			LEFT JOIN STL.T_STL_BILL_WRITEOFF WO
+				ON (WO.BEGIN_NO = T.RECEIVABLE_NO OR WO.END_NO = T.RECEIVABLE_NO)
+					 AND WO.ACTIVE = #{active}
+		 WHERE T.WAYBILL_NO = #{waybillNo}
+					 AND T.BILL_TYPE = #{billType}
+					 AND T.ACTIVE = #{active}
+		 GROUP BY T.PAYMENT_TYPE
+		
+	</select>
+	
+	<!-- 财务情况——到付费用——查询还款单-->
+	<select id="queryDestFee-Repayment" parameterType="map" resultMap="DestFeeDetailInfoMap">
+		SELECT RPMT.SOURCE_BILL_TYPE,
+					 RPMT.AMOUNT/100 AS AMOUNT,
+					 RPMT.PAYMENT_TYPE,
+					 RPMT.ACCOUNT_DATE
+			FROM STL.T_STL_BILL_REPAYMENT RPMT
+		 WHERE RPMT.WAYBILL_NO = #{waybillNo}
+					 AND RPMT.CREATE_TYPE = #{createType}
+					 AND RPMT.ACTIVE = #{active}
+		
+		UNION ALL
+		
+		SELECT RCV.BILL_TYPE AS SOURCE_BILL_TYPE, WO.AMOUNT/100 AS AMOUNT, RPMT.PAYMENT_TYPE, RPMT.ACCOUNT_DATE
+			FROM STL.T_STL_BILL_WRITEOFF WO
+			JOIN STL.T_STL_BILL_REPAYMENT RPMT
+				ON RPMT.REPAYMENT_NO = WO.BEGIN_NO
+					 AND RPMT.ACTIVE = #{active}
+			JOIN STL.T_STL_BILL_RECEIVABLE RCV
+				ON RCV.RECEIVABLE_NO = WO.END_NO
+					 AND RCV.ACTIVE = #{active}
+		 WHERE WO.ACTIVE = #{active}
+					 AND RCV.BILL_TYPE IN ('DP', 'AA','AAC')
+					 AND RCV.WAYBILL_NO = #{waybillNo}    
+	</select>
+	
+	<!-- 财务情况——到付费用——临欠应收单-->
+	<select id="queryDestFee-Receivable" parameterType="map" resultMap="DestFeeDetailInfoMap">
+		SELECT NVL(WO.AMOUNT, 0) / 100 AS AMOUNT, RCV.PAYMENT_TYPE, WO.ACCOUNT_DATE
+		FROM STL.T_STL_BILL_RECEIVABLE RCV
+		LEFT JOIN STL.T_STL_BILL_WRITEOFF WO
+		ON (RCV.RECEIVABLE_NO = WO.BEGIN_NO OR RCV.RECEIVABLE_NO = WO.END_NO)
+		AND WO.ACTIVE = #{active}
+		AND WO.WRITEOFF_TYPE != 'RR'
+		WHERE RCV.ACTIVE = #{active}
+		AND RCV.WAYBILL_NO = #{waybillNo}
+		AND RCV.CUSTOMER_CODE IS NOT NULL
+		AND RCV.PAYMENT_TYPE IN
+		<foreach collection = "paymentTypes" item = "paymentType" open = "(" close= ")" separator = "," >
+			#{paymentType}
+		</foreach>
+		AND RCV.BILL_TYPE = #{billType}
+
+		UNION ALL
+
+		SELECT NVL(WO.AMOUNT, 0) / 100 AS AMOUNT,
+		DECODE(RPMT.PAYMENT_TYPE, 'OL', RPMT.PAYMENT_TYPE, RCV.PAYMENT_TYPE) AS PAYMENT_TYPE,
+		WO.ACCOUNT_DATE
+		FROM STL.T_STL_BILL_RECEIVABLE RCV
+		JOIN STL.T_STL_BILL_WRITEOFF WO
+		ON RCV.RECEIVABLE_NO = WO.END_NO
+		AND WO.ACTIVE = #{active}
+		JOIN STL.T_STL_BILL_REPAYMENT RPMT
+		ON RPMT.REPAYMENT_NO = WO.BEGIN_NO
+		AND RPMT.ACTIVE = #{active}
+		WHERE RCV.ACTIVE = #{active}
+		AND RCV.WAYBILL_NO = #{waybillNo}
+		AND RCV.BILL_TYPE = #{billType}
+
+
+	</select>
+	
+	<!-- 财务情况——代收货款——实收代收货款 -->
+	<select id="queryCODFee-Repayment" parameterType="map" resultMap="CODFeeInfoMap">
+		SELECT T.AMOUNT/100 AS COD_AMOUNT, T.PAYMENT_TYPE AS PAYMENT_TYPE
+			FROM STL.T_STL_BILL_REPAYMENT T
+		 WHERE T.SOURCE_BILL_TYPE = #{sourceBillType}
+					 AND T.CREATE_TYPE = #{createType}
+					 AND T.WAYBILL_NO = #{waybillNo}
+					 AND T.ACTIVE = #{active}
+		
+		UNION ALL
+		
+		SELECT WO.AMOUNT / 100 AS COD_AMOUNT, RPMT.PAYMENT_TYPE
+			FROM STL.T_STL_BILL_WRITEOFF WO
+			JOIN STL.T_STL_BILL_REPAYMENT RPMT
+				ON RPMT.REPAYMENT_NO = WO.BEGIN_NO
+					 AND RPMT.ACTIVE = #{active}
+			JOIN STL.T_STL_BILL_RECEIVABLE RCV
+				ON RCV.RECEIVABLE_NO = WO.END_NO
+					 AND RCV.ACTIVE = #{active}
+		 WHERE RCV.BILL_TYPE = 'AAC'
+					 AND WO.ACTIVE = #{active}
+					 AND RCV.WAYBILL_NO = #{waybillNo}
+	</select>
+	
+	<!-- 财务情况——代收货款——应付代收货款 -->
+	<select id="queryCODFee-Payable" parameterType="map" resultMap="CODFeeInfoMap">
+		SELECT COD.STATUS AS PAYMENT_STATUS, (PAY.AMOUNT - NVL(SUM(WO.AMOUNT), 0))/100 AS RETURNABLE_AMOUNT, NVL(SUM(WO.AMOUNT), 0)/100 AS VERIFY_RCV_AMOUNT
+			FROM STL.T_STL_BILL_PAYABLE PAY
+			JOIN STL.T_STL_COD COD ON COD.WAYBILL_NO = PAY.WAYBILL_NO AND COD.ACTIVE = #{active}
+			LEFT JOIN STL.T_STL_BILL_WRITEOFF WO
+				ON WO.END_NO = PAY.PAYABLE_NO
+					 AND WO.ACTIVE = #{active}
+					 AND WO.WRITEOFF_TYPE = #{writeoffType}
+		 WHERE PAY.WAYBILL_NO = #{waybillNo}
+					 AND PAY.BILL_TYPE = #{billType}
+					 AND PAY.ACTIVE = #{active}
+		 GROUP BY COD.STATUS, PAY.AMOUNT		
+	</select>
+	
+	<!-- 财务情况——其它费用 -->
+	<select id="queryOtherFee" parameterType="map" resultMap="OtherFeeInfoMap">
+		SELECT PAY.BILL_TYPE AS PAYABLE_BILL_TYPE,
+					 PAY.AMOUNT/100 AS AMOUNT,
+					 PMT.REMIT_STATUS AS PAYMENT_STATUS,
+					 PMT.PAYMENT_TYPE AS PAYMENT_TYPE,
+					 NVL(SUM(WO.AMOUNT), 0)/100 AS VERIFY_RCV_AMOUNT,
+					 (PAY.AMOUNT - NVL(SUM(WO.AMOUNT), 0))/100 AS RETURNABLE_AMOUNT
+			FROM STL.T_STL_BILL_PAYABLE PAY
+			LEFT JOIN STL.T_STL_BILL_PAYMENT PMT
+				ON PMT.PAYMENT_NO = PAY.PAYMENT_NO
+					 AND PMT.ACTIVE = #{active}
+			LEFT JOIN STL.T_STL_BILL_WRITEOFF WO
+				ON WO.END_NO = PAY.PAYABLE_NO
+					 AND WO.ACTIVE = #{active}
+					 AND WO.WRITEOFF_TYPE = #{writeoffType}
+		 WHERE 
+		 	PAY.BILL_TYPE IN 
+			<foreach collection="billTypes" item="billType" open="(" close=")" separator=",">
+				#{billType}
+			</foreach>
+			AND  PAY.ACTIVE = #{active}
+			AND PAY.WAYBILL_NO = #{waybillNo}
+		 GROUP BY PAY.BILL_TYPE, PAY.AMOUNT, PMT.REMIT_STATUS, PMT.PAYMENT_TYPE
+	</select>
+	
+	<!-- 财务情况——小票费用 -->
+	<select id="queryInvoiceFee" parameterType="map" resultMap="InvoiceFeeInfoMap">
+		SELECT /*结算-客户管理-查询运单发票信息*/SUM(SIE.ALREADY_OPEN_AMOUNT)/100 AMOUNT,
+		SIE.ORG_CODE
+		FROM STL.T_STL_INVOICE SIE
+		WHERE SIE.SOURCE_BILL_NO in
+		<foreach collection="sourceBills" item="item" index="index" separator="," open="(" close=")">
+			#{item}
+		</foreach>
+		AND SIE.ACTIVE=#{active}
+		GROUP BY SIE.ORG_CODE
+	</select>
+	
+	<select id="queryCODFee-Payment" parameterType="map" resultMap="CODFeeInfoMap">
+		SELECT COD.status AS PAYMENT_STATUS,
+		       NVL(sum(WO.AMOUNT), 0) / 100 AS RETURNABLE_AMOUNT,
+		       (PAY.AMOUNT - NVL(sum(WO.AMOUNT), 0)) / 100 AS VERIFY_RCV_AMOUNT
+		  FROM STL.T_STL_BILL_PAYABLE PAY
+		  JOIN STL.T_STL_COD COD
+		    ON COD.WAYBILL_NO = PAY.WAYBILL_NO
+		   AND COD.ACTIVE = #{active}
+		  LEFT JOIN STL.T_STL_BILL_WRITEOFF WO
+		    ON WO.END_NO = PAY.PAYABLE_NO
+		   AND WO.ACTIVE = #{active}
+		   AND WO.WRITEOFF_TYPE = 'PP'
+		 WHERE PAY.WAYBILL_NO = #{waybillNo}
+		   AND PAY.BILL_TYPE = 'APC'
+		   AND PAY.ACTIVE = #{active}
+		 GROUP BY COD.STATUS, PAY.AMOUNT
+	</select>
+	 
+	<select id="queryCODFee-CODStatus" parameterType="map" resultType="string">
+		 SELECT STATUS
+		   FROM STL.T_STL_COD
+		  WHERE WAYBILL_NO = #{waybillNo}
+		    AND ACTIVE = #{active}
+	</select>
+	
+</mapper>

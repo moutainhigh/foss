@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.storage" >
+
+	<resultMap id="storageResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.StorageEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="org_code" property="organizationCode" jdbcType="VARCHAR" />
+		<result column="storage_code" property="storageCode" jdbcType="VARCHAR" />
+		<result column="virtual_code" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="GOODS_AREA_VIRTUAL_CODE" property="goodsAreaVirtualCode" jdbcType="VARCHAR" />
+		<result column="active" property="active" jdbcType="CHAR" />
+		<result column="notes" property="notes" jdbcType="VARCHAR" />
+		<result column="create_time" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="modify_time" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		
+		<result column="GOODS_AREA_NAME" property="goodsAreaName" jdbcType="VARCHAR" />
+		<result column="GOODS_AREA_CODE" property="goodsAreaCode" jdbcType="VARCHAR" />
+		<result column="STORAGE_LENGTH" property="storageLength" jdbcType="VARCHAR" />
+		<result column="STORAGE_WIDTH" property="storageWidth" jdbcType="VARCHAR" />
+		<result column="STORAGE_ABSCISSA" property="storageAbscissa" jdbcType="VARCHAR" />
+		<result column="STORAGE_ORDINATE" property="storageOrdinate" jdbcType="VARCHAR" />
+		
+	</resultMap>
+	
+	<sql id="columns">
+		ID,
+		ORG_CODE,
+		STORAGE_CODE,
+		VIRTUAL_CODE,
+		CREATE_TIME,
+		MODIFY_TIME,
+		ACTIVE,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE,
+		NOTES,
+		GOODS_AREA_VIRTUAL_CODE,
+				                  
+		GOODS_AREA_CODE,     
+		STORAGE_LENGTH,       
+		STORAGE_WIDTH,     
+		STORAGE_ABSCISSA,    
+		STORAGE_ORDINATE     
+		
+	</sql>
+
+	<sql id="values">
+		#{id,jdbcType=VARCHAR},
+		#{organizationCode,jdbcType=VARCHAR}, 
+		#{storageCode,jdbcType=VARCHAR}, 
+		#{virtualCode, jdbcType=VARCHAR}, 
+		#{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=VARCHAR}, 
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR}, 
+		#{notes,jdbcType=VARCHAR}, 
+		#{goodsAreaVirtualCode, jdbcType=VARCHAR},
+		
+        #{goodsAreaCode,jdbcType=VARCHAR},          
+        #{storageLength,jdbcType=VARCHAR},           
+        #{storageWidth,jdbcType=VARCHAR},             
+        #{storageAbscissa,jdbcType=VARCHAR},       
+        #{storageOrdinate,jdbcType=VARCHAR}       
+		
+	</sql>
+
+	<insert id="addStorage" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.StorageEntity">
+		insert into BSE.T_BAS_STORAGE (
+		<include refid="columns"/>
+		) values (  
+		<include refid="values"/>
+		)
+	</insert>
+
+	<update id="deleteStorage" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.StorageEntity">
+		update BSE.T_BAS_STORAGE 
+		set active = #{active, jdbcType=CHAR} 
+		, modify_time = #{modifyDate,jdbcType=TIMESTAMP} 
+		, modify_user_code = #{modifyUser,jdbcType=VARCHAR} 
+		where id = #{id, jdbcType=VARCHAR}
+	</update>
+
+	<select id="queryStorageById" resultMap="storageResultMap" parameterType="map">
+		select 
+		<include refid="columns"/>
+		from BSE.T_BAS_STORAGE where active = #{active, jdbcType=CHAR} AND id = #{id, jdbcType=VARCHAR}
+	</select>
+
+	<sql id="whereStorageListByCondition">
+		FROM BSE.T_BAS_STORAGE WHERE ACTIVE = #{active, jdbcType=CHAR} 
+		<if test="organizationCode != null and organizationCode != ''">
+			AND org_code = #{organizationCode, jdbcType=VARCHAR} 
+		</if>
+		<if test="orgCodeList != null and orgCodeList.size > 0">
+			AND org_code in 
+			<foreach collection="orgCodeList" open="(" close=")" separator="," item="orgCode">
+				#{orgCode} 
+			</foreach>
+		</if>
+		<if test="storageCode != null and storageCode != ''">
+			AND storage_code = #{storageCode, jdbcType=VARCHAR}  
+		</if>
+		<if test="goodsAreaCode != null and goodsAreaCode != ''">
+			AND GOODS_AREA_CODE = #{goodsAreaCode, jdbcType=VARCHAR}
+		</if>
+		<if test="goodsAreaVirtualCode != null and goodsAreaVirtualCode != ''">
+			AND GOODS_AREA_VIRTUAL_CODE = #{goodsAreaVirtualCode, jdbcType=VARCHAR}
+		</if>
+	</sql>
+
+	<select id="queryStorageListByCondition" resultMap="storageResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.StorageEntity">
+		select 
+		<include refid="columns"/>
+		<include refid="whereStorageListByCondition"/>
+		order by org_code, storage_code
+	</select>
+	
+	<select id="countStorageListByCondition" resultType="long" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.StorageEntity">
+		select count(1) 
+		<include refid="whereStorageListByCondition"/>
+	</select>
+
+	<select id="queryStorageListByOrganizationCode" resultMap="storageResultMap" parameterType="map">
+		select 
+		<include refid="columns"/>
+		from BSE.T_BAS_STORAGE where active = #{active, jdbcType=CHAR} and org_code = #{organizationCode, jdbcType=VARCHAR}
+		order by storage_code
+	</select>
+
+	<update id="deleteStorages" parameterType="map">
+		update BSE.T_BAS_STORAGE 
+		set active = #{inactive, jdbcType=CHAR} 
+		, modify_time = #{modifyDate,jdbcType=TIMESTAMP} 
+		, modify_user_code = #{modifyUser,jdbcType=VARCHAR} 
+		where active = #{active, jdbcType=CHAR}
+		and id in 
+		<foreach collection="ids" open="(" close=")" separator="," item="id">
+			#{id, jdbcType=VARCHAR} 
+		</foreach>
+	</update>
+
+
+	<!-- 以下为 cache 使用 -->
+
+	<select id="queryLastCreateTime" resultType="date">
+		<![CDATA[
+			SELECT MAX(CREATE_TIME)
+			FROM BSE.T_BAS_STORAGE
+		]]>
+	</select>
+
+	<select id="queryLastModifyTime" resultType="date" parameterType="date">
+		<![CDATA[
+			SELECT MAX(MODIFY_TIME)
+			FROM BSE.T_BAS_STORAGE
+			WHERE MODIFY_TIME <= #{now,jdbcType=TIMESTAMP}
+		]]>
+	</select>
+
+	<select id="queryStorageListForCache" resultMap="storageResultMap" parameterType="string">
+		select 
+		<include refid="columns"/>
+		FROM BSE.T_BAS_STORAGE
+		where active = #{active, jdbcType=CHAR}
+		order by storage_code
+	</select>
+
+	<select id="queryStorageListViaDateForCache" resultMap="storageResultMap" parameterType="map">
+		SELECT
+		<include refid="columns"/>
+		<![CDATA[
+		FROM BSE.T_BAS_STORAGE
+		where active = #{active, jdbcType=CHAR}
+		AND (CREATE_TIME > #{now, jdbcType=TIMESTAMP} or MODIFY_TIME > #{now, jdbcType=TIMESTAMP})
+		AND MODIFY_TIME < sysdate + 1
+		]]>
+	</select>
+
+
+</mapper>

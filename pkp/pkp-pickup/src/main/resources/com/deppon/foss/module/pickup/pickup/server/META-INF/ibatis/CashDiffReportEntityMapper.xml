@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.deppon.foss.module.pickup.pickup.api.shared.dto.RtCashDiffReportDto" >
+  
+
+  
+  
+  
+  <select id="queryCashDiffReport" 
+  	resultType="com.deppon.foss.module.pickup.pickup.api.shared.dto.RtCashDiffReportDto">
+    SELECT 
+    	waybill.ID as id,
+    	waybill.WAYBILL_NO  as waybillNo,  --运单号
+    	waybill.DRIVER_CODE||'/'||employee.EMP_NAME as driverNoAndName, --接货司机姓名 工号
+    	org.CODE as driverDepartmentCode,  --司机所属部门CODE
+    	org.NAME as driverDepartmentName,  --司机所属部门NAME
+    	waybill.LICENSE_PLATE_NUM as vehicleNo,  --车牌号
+    	waybill.BILL_TIME as pickupTime,   --接货时间
+    	waybill.RECEIVE_ORG_CODE as receiveOrgCode,   --接货部门CODE
+    	orgreceive.NAME as receiveOrgName,   --接货部门NAME
+    	(waybill.PRE_PAY_AMOUNT )/ 100.0   as  pdaInputAmount,     --PDA录入收款金额   NEED CHANGE TO NEW COLUMN
+    	(payment.AMOUNT   )/ 100.0  as  waybillHandwriteAmount,   --运单手写现付金额
+    	(waybill.TOTAL_FEE - (paymentpda.AMOUNT - waybill.PRE_PAY_AMOUNT  ) )/100.0 as waybillPayAmount,  --as waybillPayAmount
+    	(waybill.PRE_PAY_AMOUNT-payment.AMOUNT)/ 100.0 as  pdaMinusHandwriteAmount,  --PDA录入收款金额 - 运单手写现付金额 TODO
+    	(payment.AMOUNT-  (waybill.TOTAL_FEE - (paymentpda.AMOUNT - waybill.PRE_PAY_AMOUNT ))) / 100.0 as handwriteMinusPayAmount,  --运单手写现付金额与开单应收现付金额之差
+    	waybill.CREATE_USER_CODE as createUserCode,  --制单人code
+    	employeecreate.EMP_NAME as createUserName    --制单人name
+    
+    FROM PKP.T_SRV_WAYBILL waybill LEFT JOIN  PKP.T_SRV_PAYMENT payment ON waybill.WAYBILL_NO = payment.WAYBILL_NO
+    LEFT JOIN  PKP.T_SRV_PAYMENT paymentpda ON waybill.WAYBILL_NO = paymentpda.WAYBILL_NO
+    LEFT JOIN BSE.T_BAS_EMPLOYEE employee ON  waybill.DRIVER_CODE = employee.EMP_CODE  AND employee.Active = 'Y'
+    LEFT JOIN BSE.T_BAS_ORG org ON employee.UNIFIELD_CODE = org.UNIFIED_CODE   AND org.ACTIVE='Y' 
+    LEFT JOIN BSE.T_BAS_ORG orgreceive ON waybill.RECEIVE_ORG_CODE = orgreceive.CODE      AND orgreceive.ACTIVE='Y'
+    LEFT JOIN BSE.T_BAS_EMPLOYEE employeecreate ON waybill.CREATE_USER_CODE = employeecreate.EMP_CODE
+    AND employeecreate.Active = 'Y'
+    WHERE  
+    waybill.ACTIVE='Y' 
+    AND payment.ACTIVE='Y'    
+    and paymentpda.active = 'Y'
+    AND waybill.PENDING_TYPE = 'PDA_ACTIVE' 
+ 	AND payment.TYPE='PAYMENT_REAL_PAY'  --PDA运单手写现付金额 TODO 
+ 	AND paymentpda.TYPE='PAYMENT_PDA_TOTAL_PAY'  
+    
+    <if test=" pickupTimeBegin != null  ">
+		<![CDATA[ AND waybill.BILL_TIME >= #{pickupTimeBegin,jdbcType=TIMESTAMP} ]]>
+	</if>
+    
+    <if test=" pickupTimeEnd != null  ">
+		<![CDATA[ AND waybill.BILL_TIME <= #{pickupTimeEnd,jdbcType=TIMESTAMP} ]]>
+	</if>
+    
+    <if test="createUserCode != null and createUserCode != ''">
+		<![CDATA[ AND waybill.CREATE_USER_CODE =#{createUserCode} ]]>
+	</if>
+    
+    <if test="vehicleNo != null and vehicleNo != ''">
+		<![CDATA[ AND waybill.LICENSE_PLATE_NUM =#{vehicleNo} ]]>
+	</if>
+    
+    <if test="receiveOrgCode != null and receiveOrgCode != ''">
+		<![CDATA[ AND waybill.RECEIVE_ORG_CODE =#{receiveOrgCode} ]]>
+	</if>
+    
+    <if test="driverNo != null and driverNo != ''">
+		<![CDATA[ AND waybill.DRIVER_CODE =#{driverNo} ]]>
+	</if>
+	
+	<if test="driverDepartmentCode != null and driverDepartmentCode != ''">
+		<![CDATA[ AND org.CODE =#{driverDepartmentCode} ]]>
+	</if>
+	
+    ORDER BY waybill.BILL_TIME DESC
+  </select>
+  
+  
+    <select id="queryCashDiffReportTotal" 
+  	resultType="Long"  >
+    SELECT  
+    	COUNT(1)
+    FROM PKP.T_SRV_WAYBILL waybill LEFT JOIN  PKP.T_SRV_PAYMENT payment ON waybill.WAYBILL_NO = payment.WAYBILL_NO
+    LEFT JOIN BSE.T_BAS_EMPLOYEE employee ON  waybill.DRIVER_CODE = employee.EMP_CODE  AND employee.Active = 'Y'
+    LEFT JOIN PKP.T_SRV_PAYMENT paymentpda ON waybill.WAYBILL_NO = paymentpda.WAYBILL_NO
+    LEFT JOIN BSE.T_BAS_ORG org ON employee.UNIFIELD_CODE = org.UNIFIED_CODE  AND org.ACTIVE='Y' 
+    LEFT JOIN BSE.T_BAS_ORG orgreceive ON waybill.RECEIVE_ORG_CODE = orgreceive.CODE      AND orgreceive.ACTIVE='Y'
+    LEFT JOIN BSE.T_BAS_EMPLOYEE employeecreate ON waybill.CREATE_USER_CODE = employeecreate.EMP_CODE
+    AND employeecreate.Active = 'Y'
+    WHERE 
+    waybill.ACTIVE='Y' 
+    AND payment.ACTIVE='Y'  
+    and paymentpda.active = 'Y'
+ 	AND payment.TYPE  ='PAYMENT_REAL_PAY'  
+    AND waybill.PENDING_TYPE = 'PDA_ACTIVE'    
+ 	AND paymentpda.TYPE='PAYMENT_PDA_TOTAL_PAY'  
+    
+    <if test=" pickupTimeBegin != null  ">
+		<![CDATA[ AND waybill.BILL_TIME >= #{pickupTimeBegin,jdbcType=TIMESTAMP} ]]>
+	</if>
+    
+    <if test=" pickupTimeEnd != null  ">
+		<![CDATA[ AND waybill.BILL_TIME <= #{pickupTimeEnd,jdbcType=TIMESTAMP} ]]>
+	</if>
+    
+    <if test="createUserCode != null and createUserCode != ''">
+		<![CDATA[ AND waybill.CREATE_USER_CODE =#{createUserCode} ]]>
+	</if>
+    
+    <if test="vehicleNo != null and vehicleNo != ''">
+		<![CDATA[ AND waybill.LICENSE_PLATE_NUM =#{vehicleNo} ]]>
+	</if>
+    
+    <if test="receiveOrgCode != null and receiveOrgCode != ''">
+		<![CDATA[ AND waybill.RECEIVE_ORG_CODE =#{receiveOrgCode} ]]>
+	</if>
+    
+    <if test="driverNo != null and driverNo != ''">
+		<![CDATA[ AND waybill.DRIVER_CODE =#{driverNo} ]]>
+	</if>
+	
+	<if test="driverDepartmentCode != null and driverDepartmentCode != ''">
+		<![CDATA[ AND org.CODE =#{driverDepartmentCode} ]]>
+	</if>
+	
+  </select>
+  
+
+</mapper>

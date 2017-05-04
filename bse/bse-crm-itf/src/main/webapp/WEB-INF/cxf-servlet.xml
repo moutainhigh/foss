@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cxf="http://cxf.apache.org/core"
+	xmlns:jaxws="http://cxf.apache.org/jaxws" xmlns:jaxrs="http://cxf.apache.org/jaxrs"
+	xsi:schemaLocation="
+		      http://www.springframework.org/schema/beans
+		      http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		      http://cxf.apache.org/core
+		      http://cxf.apache.org/schemas/core.xsd
+		      http://cxf.apache.org/jaxws
+		      http://cxf.apache.org/schemas/jaxws.xsd
+		      http://cxf.apache.org/jaxrs
+		      http://cxf.apache.org/schemas/jaxrs.xsd"
+	default-autowire="byName">
+
+	<!-- Load CXF modules from cxf.jar -->
+    <import resource="classpath:META-INF/cxf/cxf.xml"/>
+    <import resource="classpath:META-INF/cxf/cxf-servlet.xml"/>
+
+	<bean id="synCustomerInfoService" class="com.deppon.foss.module.base.crm.itf.server.service.impl.SynCustomerInfoService">
+	</bean>
+	
+	<!-- CRM传递的特惠组信息restful -->
+	<bean id="syncSpecialdiscountService" class="com.deppon.foss.module.base.crm.itf.server.service.impl.SyncSpecialdiscountService"></bean>
+	<!-- 服务端接口 -->
+	<jaxrs:server id="syncSpecialdiscountServiceRs" address="/specialdiscount">
+		<jaxrs:serviceBeans>
+			<ref bean="syncSpecialdiscountService"/>
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	
+	<!-- restful二期改造接口 -->
+	<bean id="synCustomerInfoRestfulService" class="com.deppon.foss.module.base.crm.itf.server.service.impl.SynCustomerInfoRestfulService"></bean>
+	<!-- 服务端接口 -->
+	<jaxrs:server id="synCustomerInfoRestfulServiceRs" address="/css" >
+		<jaxrs:serviceBeans>
+			<ref bean="synCustomerInfoRestfulService"/>
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	
+	<!-- CC 催单接口 -->
+	<bean id="synCallCenterInfoService" class="com.deppon.foss.module.base.callcenter.itf.server.service.impl.SynCallCenterInfoService">
+		<property name="callCenterWaybillInfoService" ref="callCenterWaybillInfoService"></property>
+		<property name="waybillManagerService" ref="waybillManagerService"></property>
+		<property name="labeledGoodService" ref="labeledGoodService"></property>
+		<property name="stockService" ref="stockService"></property>
+		<property name="orgAdministrativeInfoService" ref="orgAdministrativeInfoService"></property>
+	</bean>
+	
+    <!-- web service 
+	<jaxws:endpoint id="syncDataService" implementor="#synCustomerInfoService" address="/syncDataService">
+		<jaxws:features>
+			<bean class="org.apache.cxf.feature.LoggingFeature"></bean>	
+		</jaxws:features>
+		<jaxws:inInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingInInterceptor"/>
+		</jaxws:inInterceptors>
+		<jaxws:outInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingOutInterceptor"/>
+		</jaxws:outInterceptors>
+	</jaxws:endpoint>
+	-->
+	<!-- CC催单 web service -->
+	<jaxws:endpoint id="synCallCenterDataService" implementor="#synCallCenterInfoService" address="/synCallCenterDataService">
+		<jaxws:features>
+			<bean class="org.apache.cxf.feature.LoggingFeature"></bean>	
+		</jaxws:features>
+		<jaxws:inInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingInInterceptor"/>
+		</jaxws:inInterceptors>
+		<jaxws:outInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingOutInterceptor"/>
+		</jaxws:outInterceptors>
+	</jaxws:endpoint>
+	
+</beans>

@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.BillPayableEntityDao" >
+
+<select id="queryLandBillPayableEntityParams" resultMap="BaseResultMap"
+	parameterType="com.deppon.foss.module.settlement.agency.api.shared.dto.BillPayableAgencyDto">
+	select /*结算-代理管理-按日期条件进行查询*/
+	<include refid="Base_Column_List" />
+	from STL.T_STL_BILL_PAYABLE
+	where ACTIVE = #{active} <!-- 有效 -->
+		AND IS_RED_BACK = #{isRedBack} <!-- 非红单 -->
+		<if test="customerCode!=null and customerCode!=''">
+			AND CUSTOMER_CODE = #{customerCode} <!-- 客户不为空时，根据客户编码过滤 -->
+		</if>
+		<if test="billType!=null and billType!=''">
+			AND BILL_TYPE = #{billType}
+		</if>
+	   	<![CDATA[ AND   ACCOUNT_DATE >=#{startBusinessDate} AND   ACCOUNT_DATE <#{endBusinessDate} 
+	   		AND  ACCOUNT_DATE>=#{startBusinessDate} ]]>
+		<if test="payableOrgCode!=null and payableOrgCode!=''">  <!-- 应付部门编码 -->
+	    	AND PAYABLE_ORG_CODE=#{payableOrgCode}
+	    </if>
+	    <if test="approveStatus!=null and approveStatus!=''">  <!--审核状态-->
+	    	AND APPROVE_STATUS = #{approveStatus} 
+	    </if> 
+</select>
+<select id="queryLandBillPayableEntityParamsCount" resultType="long"
+	parameterType="com.deppon.foss.module.settlement.agency.api.shared.dto.BillPayableAgencyDto">
+	select /*结算-代理管理-按快递代理其他应付时间进行查询总条数*/ 
+	 COUNT(*) from STL.T_STL_BILL_PAYABLE
+	where ACTIVE = #{active} <!-- 有效 -->
+		AND IS_RED_BACK = #{isRedBack} <!-- 非红单 -->
+		<if test="customerCode!=null and customerCode!=''">
+			AND CUSTOMER_CODE = #{customerCode} <!-- 客户不为空时，根据客户编码过滤 -->
+		</if>
+		<if test="billType!=null and billType!=''">
+			AND BILL_TYPE = #{billType}
+		</if>
+	   	<![CDATA[ AND   ACCOUNT_DATE >=#{startBusinessDate} AND   ACCOUNT_DATE <#{endBusinessDate} 
+	   		AND  ACCOUNT_DATE>=#{startBusinessDate} ]]>
+		<if test="payableOrgCode!=null and payableOrgCode!=''">  <!-- 应付部门编码 -->
+	    	AND PAYABLE_ORG_CODE=#{payableOrgCode}
+	    </if>
+	    <if test="approveStatus!=null and approveStatus!=''"> <!--审核状态-->
+	    	AND APPROVE_STATUS = #{approveStatus}
+	    </if>
+</select>
+<!-- 根据应收单号条件查询快递代理其他管理应收单  -->
+  <select id="queryLandByPayableNOs" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.agency.api.shared.dto.BillPayableAgencyDto" >
+    SELECT /*结算-代理管理-按快递代理其他应付单号条件进行查询*/
+    <include refid="Base_Column_List" />
+    FROM STL.T_STL_BILL_PAYABLE 
+    WHERE ACTIVE = #{active} <!-- 有效 -->
+		AND IS_RED_BACK = #{isRedBack} <!-- 非红单 -->
+		AND Payable_NO IN
+		<foreach collection="payableNos"  index="index" item="item"  open="(" separator="," close=")">  
+		        #{item} 
+		</foreach> <!--应付单号-->
+	  	<if test="billType!=null and billType!=''">
+			AND BILL_TYPE = #{billType}
+		</if> 
+		 <if test="payableOrgCode!=null and payableOrgCode!=''"><!-- 应付部门编码 -->
+	    	AND PAYABLE_ORG_CODE=#{payableOrgCode}
+	    </if>
+  </select>
+  <select id="queryLandByPayableNOsCount" resultType="long" parameterType="com.deppon.foss.module.settlement.agency.api.shared.dto.BillPayableAgencyDto" >
+    SELECT /*结算-代理管理-按快递代理其他应付单号条件进行查询总数*/ 
+    COUNT(*) FROM STL.T_STL_BILL_PAYABLE 
+    WHERE ACTIVE = #{active} <!-- 有效 -->
+		AND IS_RED_BACK = #{isRedBack} <!-- 非红单 -->
+		AND Payable_NO IN
+		<foreach collection="payableNos"  index="index" item="item"  open="(" separator="," close=")">  
+		        #{item} 
+		</foreach> <!--应付单号-->
+	  	<if test="billType!=null and billType!=''">
+			AND BILL_TYPE = #{billType} 
+		</if> 
+		 <if test="payableOrgCode!=null and payableOrgCode!=''"><!-- 应付部门编码 -->
+	    	AND PAYABLE_ORG_CODE=#{payableOrgCode}
+	    </if>
+  </select>
+  
+<!-- 根据运单号条件查询快递代理其他管理应收单  -->
+  <select id="queryLandBySourceBillNOs" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.agency.api.shared.dto.BillPayableAgencyDto" >
+    SELECT 
+    /*结算-代理管理-按快递代理其他应付运单号条件进行查询*/  
+    <include refid="Base_Column_List" />
+    FROM STL.T_STL_BILL_PAYABLE 
+    WHERE  
+		ACTIVE = #{active} <!-- 有效 -->
+		AND IS_RED_BACK = #{isRedBack} <!-- 非红单 -->
+		AND SOURCE_BILL_NO IN
+			<foreach collection="sourceBillNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+			</foreach> <!--运单号-->
+	    <if test="billType!=null and billType!=''">
+			AND BILL_TYPE = #{billType} 
+		</if> 
+	    <if test="payableOrgCode!=null and payableOrgCode!=''"><!-- 应付部门编码 -->
+	    	AND PAYABLE_ORG_CODE=#{payableOrgCode}
+	    </if> 
+  </select>
+  <select id="queryLandBySourceBillNOsCount" resultType="long" parameterType="com.deppon.foss.module.settlement.agency.api.shared.dto.BillPayableAgencyDto" >
+    SELECT /*结算-代理管理-按快递代理其他应付运单号条件进行查询总数*/  
+    COUNT(*)
+    FROM STL.T_STL_BILL_PAYABLE 
+    WHERE  
+		ACTIVE = #{active} <!-- 有效 -->
+		AND IS_RED_BACK = #{isRedBack} <!-- 非红单 -->
+		AND SOURCE_BILL_NO IN
+			<foreach collection="sourceBillNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+			</foreach>  <!--运单号-->
+	    <if test="billType!=null and billType!=''">
+			AND BILL_TYPE = #{billType} 
+		</if> 
+	    <if test="payableOrgCode!=null and payableOrgCode!=''"><!-- 应付部门编码 -->
+	    	AND PAYABLE_ORG_CODE=#{payableOrgCode}
+	    </if>
+  </select>
+</mapper>

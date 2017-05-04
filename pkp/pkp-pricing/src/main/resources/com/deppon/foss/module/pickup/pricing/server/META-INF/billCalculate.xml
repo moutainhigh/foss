@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://www.springframework.org/schema/jee 
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+			http://www.springframework.org/schema/aop 
+			
+			http://www.springframework.org/schema/aop/spring-aop-3.0.xsd" default-autowire="byName" default-lazy-init="true">
+		 
+	<!-- 开单计费查询服务 -->
+	<bean id="preBillCaculateService" class="com.deppon.foss.module.pickup.pricing.server.service.impl.BillCaculateService">
+		<property name="clientPyService">
+		<ref bean="clientPyService"/>
+		</property>
+	</bean>
+	
+	<!-- PDA 开单计费查询服务 -->
+	<bean id="pdaBillCaculateService" class="com.deppon.foss.module.pickup.pricing.server.service.impl.PdaBillCaculateService" />
+	
+	<!-- GUI 开单计费查询服务 -->
+	<bean id="preGuiBillCaculateService" class="com.deppon.foss.module.pickup.pricing.server.service.impl.GuiBillCaculateService" />
+	
+	<!-- 快递代理价格计算服务 -->
+	<bean id="partbussPriceCaculateService" class="com.deppon.foss.module.pickup.pricing.server.service.impl.PartbussPriceCaculateService" />
+
+	<bean id="billCaculateOldService" class="com.deppon.foss.module.pickup.pricing.server.calculateservice.service.BillCaculateOldService">
+		 <!-- <property name="pyServiceAddress" value="${pyService.address}"/> -->
+	 </bean>
+	<bean id="guiBillCaculateOldService" class="com.deppon.foss.module.pickup.pricing.server.calculateservice.service.GuiBillCaculateOldService">
+		<property name="billCaculateService"><ref local="billCaculateOldService"></ref></property>
+	</bean>
+	<bean id="bgExecutor" class="com.deppon.foss.module.pickup.pricing.server.calculateservice.executor.impl.BGCalculateOldExecutor"></bean>
+	<bean id="executorFRT" class="com.deppon.foss.module.pickup.pricing.server.calculateservice.executor.impl.BGFrtCalculateOldExecutor"></bean>
+	<bean id="executorValueAdd" class="com.deppon.foss.module.pickup.pricing.server.calculateservice.executor.impl.BGValueAddCalculateOldExecutor"></bean>
+	<bean id="bgControl" class="com.deppon.foss.module.pickup.pricing.server.calculateservice.control.impl.BillCalculateBgControl">
+		<property name="executor">
+			<ref bean="bgExecutor"/>
+		</property>
+	</bean>
+
+
+	<!--精准电商价格计算的Service-->
+	<bean id="ecGoodsBillCalculateService" class="com.deppon.foss.module.pickup.pricing.server.calculateservice.service.EcGoodsBillCalculateService"/>
+
+	<bean id="ecGoodsGuiBillCaculateService" class="com.deppon.foss.module.pickup.pricing.server.calculateservice.service.EcGoodsGuiBillCaculateService">
+		<property name="billCaculateService"><ref local="ecGoodsBillCalculateService"/></property>
+	</bean>
+	<bean id="ecGoodsExecutor" class="com.deppon.foss.module.pickup.pricing.server.calculateservice.executor.impl.EcGoodsCalculateExecutor"/>
+	<bean id="ecGoodsExecutorFRT" class="com.deppon.foss.module.pickup.pricing.server.calculateservice.executor.impl.EcGoodsFrtCalculateExecutor"/>
+	<bean id="ecGoodsExecutorValueAdd" class="com.deppon.foss.module.pickup.pricing.server.calculateservice.executor.impl.EcGoodsValueAddCalculateExecutor"/>
+	<bean id="ecGoodsControl" class="com.deppon.foss.module.pickup.pricing.server.calculateservice.control.impl.BillCalculateEcGoodsControl">
+		<property name="executor">
+			<ref bean="ecGoodsExecutor"/>
+		</property>
+	</bean>
+
+	<bean id="calculateFactory" class="com.deppon.foss.module.pickup.pricing.server.calculateservice.control.factory.impl.BillCalculateControlFactory">
+		<property name="controlMap">
+			<map>
+	    		<entry key="BGCONTROL"><ref bean="bgControl" /></entry>
+				<entry key="ECGOODSCONTROL"><ref bean="ecGoodsControl"></ref></entry>
+	   		</map>
+   		</property>
+	</bean> 
+	<bean id="billCalculateDispatcher" class="com.deppon.foss.module.pickup.pricing.server.calculateservice.dispatcher.impl.BillCalculateDispatcher"></bean>
+	
+	<bean id="guiCalculateSwitchMethodAdvisor" class="com.deppon.foss.module.pickup.pricing.server.calculateservice.advisor.impl.CalculateSwitchMethodAdvisor"></bean>
+	<bean id="guiBillCaculateService" class="org.springframework.aop.framework.ProxyFactoryBean">
+	 <property name="proxyInterfaces">
+	 	<value>com.deppon.foss.module.pickup.pricing.api.server.service.IGuiBillCaculateService</value>
+	 </property>
+	 <property name="target">
+	    <ref local="preGuiBillCaculateService"/>
+	 </property>  
+	 <property name="interceptorNames">
+	    <list>
+	        <value>guiCalculateSwitchMethodAdvisor</value>
+	    </list>
+	  </property> 
+	</bean>
+	<bean id="billCalculateSwitchMethodAdvisor" class="com.deppon.foss.module.pickup.pricing.server.calculateservice.advisor.impl.BillCalculateSwitchMethodAdvisor"></bean>
+	<bean id="billCaculateService" class="org.springframework.aop.framework.ProxyFactoryBean">
+	 <property name="proxyInterfaces">
+	 	<value>com.deppon.foss.module.pickup.pricing.api.server.service.IBillCaculateService</value>
+	 </property>
+	 <property name="target">
+	    <ref local="preBillCaculateService"/>
+	 </property>  
+	 <property name="interceptorNames">
+	    <list>
+	        <value>billCalculateSwitchMethodAdvisor</value>
+	    </list>
+	  </property> 
+	</bean>
+	
+</beans>

@@ -1,0 +1,90 @@
+<?xml version="1.0" ?>
+<!DOCTYPE plugin PUBLIC "-//JPF//Java Plug-in Manifest 1.0" "http://jpf.sourceforge.net/plugin_1_0.dtd">
+<plugin id="com.deppon.foss.module.init" version="0.0.1">
+	<requires>
+		<import plugin-id="com.deppon.foss.module.boot"/>
+		
+	</requires>
+
+	<runtime>
+		<library id="init" type="code" path="classes/">
+			<export prefix="*"/>
+		</library>
+	</runtime>
+	<!--修改引用的类名称即可-->
+	<!-- 数据库升级-->
+	<extension plugin-id="com.deppon.foss.module.boot" point-id="auto-run" id="database-upgrade">
+		<parameter id="class" value="com.deppon.foss.module.init.client.dbupgrade.DBUpgradeAutoRunner"/>
+		<parameter id="order" value="5"/>
+		<parameter id="phase" value="before-login"/>
+		<parameter id="halt-on-error" value="true"/>
+	</extension>
+	
+	<extension-point id="guiceModule">
+		<parameter-def id="className"/>
+	</extension-point>
+	
+	<!--扫描guiceModule-->
+	<extension plugin-id="com.deppon.foss.module.boot" point-id="auto-run" id="Pase">
+		<parameter id="class" value="com.deppon.foss.module.init.client.guice.GuiceModuleScanner"/>
+		<parameter id="order" value="3"/>
+		<parameter id="phase" value="before-login"/>
+		<parameter id="halt-on-error" value="true"/>
+	</extension>
+		<!-- 国际化资源加载-->
+	<extension plugin-id="com.deppon.foss.module.boot" point-id="auto-run" id="i18n-loader">
+		<parameter id="class" value="com.deppon.foss.module.init.client.i18n.I18nResourceLoader"/>
+		<parameter id="order" value="4"/>
+		<parameter id="phase" value="before-login"/>
+		<parameter id="halt-on-error" value="true"/>
+	</extension>
+	<!-- mybatis映射文件扫描-->
+	<extension plugin-id="com.deppon.foss.module.boot" point-id="auto-run" id="mybatis-loader">
+		<parameter id="class" value="com.deppon.foss.module.init.client.mybatis.MyBatisInit"/>
+		<parameter id="order" value="10"/>
+		<parameter id="phase" value="before-login"/>
+		<parameter id="halt-on-error" value="true"/>
+	</extension>
+	
+	<!-- 数据同步-->
+	<extension plugin-id="com.deppon.foss.module.boot" point-id="auto-run" id="database-sync">
+		<parameter id="class" value="com.deppon.foss.module.init.client.sync.DefaultSyncProcessor"/>
+		<parameter id="order" value="15"/>
+		<!--zxy 20140312 MANA-2018 修改 -->
+		<parameter id="phase" value="background-login"/>
+		<parameter id="halt-on-error" value="true"/>
+		
+		<parameter id="cancelable" value="false"/>
+		<parameter id="canRunBackground" value="false"/>
+	</extension>
+
+	
+	<extension plugin-id="com.deppon.foss.module.boot" point-id="plugins-all" id="init">
+	</extension>
+	
+	<!--数据同步向外提供的扩展点 -->
+	
+	<extension-point id="syncDataSaver" extension-multiplicity="any">
+		<parameter-def id="saver-class" multiplicity="one" type="string"/>
+		<parameter-def id="need-org-search" multiplicity="one" type="string"/>
+		<parameter-def id="need-region-search" multiplicity="one" type="string"/>
+		<parameter-def id="pagination" multiplicity="one" type="string"/>
+		<!--zxy 20131010 BUG-55198  新增：开关标志 -->
+		<parameter-def id="switchType" multiplicity="none-or-one" type="string"/>
+	</extension-point>
+	<!--
+	<extension plugin-id="com.deppon.foss.module.init" point-id="syncDataSaver" id="productSaver">
+		<parameter id="saver-class" value="com.deppon.foss.module.init.client.sync.service.ProductSaver" />
+	</extension>
+	<extension plugin-id="com.deppon.foss.module.init" point-id="syncDataSaver" id="truckPriceSaver">
+		<parameter id="saver-class" value="com.deppon.foss.module.init.client.sync.service.TruckPriceSaver" />
+	</extension>
+	-->
+
+	<!--需要在init里预先实例化的类-->
+	<extension plugin-id="com.deppon.foss.module.init" point-id="guiceModule" id="aop-baseLineSyncModule">
+		<parameter id="className" value="com.deppon.foss.module.init.client.sync.guice.SyncModule" />
+	</extension>
+	
+	
+</plugin>

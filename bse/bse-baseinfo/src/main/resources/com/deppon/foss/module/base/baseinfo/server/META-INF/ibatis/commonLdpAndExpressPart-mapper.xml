@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.ldpandorg">
+
+	<!-- 快递代理公司 -->
+	<resultMap id="ldpDeptandExpressPartResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.LdpOuterBranchsAndOrginfoEntity">
+		<id column="DEPTCODE" property="deptCode" jdbcType="VARCHAR" />
+		<result column="DEPTNAME" property="deptName" jdbcType="VARCHAR" />
+		<result column="PROV_CODE" property="proCode" jdbcType="VARCHAR" />
+		<result column="PROV_NAME" property="proName" jdbcType="VARCHAR" />
+		<result column="CITY_CODE" property="cityCode" jdbcType="VARCHAR" />
+		<result column="CITY_NAME" property="cityName" jdbcType="VARCHAR" />
+		<result column="COUNTY_CODE" property="countyCode" jdbcType="VARCHAR" />
+		<result column="COUNTY_NAME" property="countyName" jdbcType="VARCHAR" />
+		<result column="TYPE" property="typeName" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 数据字段 -->
+	<sql id = "org_Column_List">
+	   O.CODE        DEPTCODE,
+       O.NAME        DEPTNAME,
+       O.PROV_CODE   PROV_CODE,
+       T.NAME        PROV_NAME,
+       O.CITY_CODE   CITY_CODE,
+       A.NAME        CITY_NAME,
+       O.COUNTY_CODE COUNTY_CODE,
+       B.NAME        COUNTY_NAME,
+       'ORG'     TYPE_CODE
+	</sql>
+	
+	<sql id = "ldp_Column_List">
+	   BR.AGENT_DEPT_CODE  DEPTCODE,
+       BR.AGENT_DEPT_NAME  DEPTNAME,
+       BR.PROV_CODE        PROV_CODE,
+       M.NAME              PROV_NAME,
+       BR.CITY_CODE        CITY_CODE,
+       D.NAME              CITY_NAME,
+       BR.COUNTY_CODE      COUNTY_CODE,
+       U.NAME              COUNTY_NAME,
+       'LDP'        TYPE_CODE
+	</sql>
+
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<if test="deptName != null and deptName != ''">
+				AND DEPT.DEPTNAME LIKE CONCAT(CONCAT('%', #{deptName,jdbcType=VARCHAR} ),'%')
+			</if>
+			<if test="deptCode != null and deptCode != ''">
+				AND DEPT.DEPTCODE = #{deptCode,jdbcType=VARCHAR}
+			</if>
+			<if test="cityCode != null and cityCode != ''">
+				AND DEPT.CITY_CODE = #{cityCode,jdbcType=VARCHAR}
+			</if>
+			<if test="cityCode != null and cityCode != ''">
+				AND DEPT.CITY_CODE = #{cityCode,jdbcType=VARCHAR}
+			</if>
+			<if test="cityName != null and cityName != ''">
+				AND DEPT.CITY_NAME LIKE CONCAT(CONCAT('%', #{cityName,jdbcType=VARCHAR} ),'%')
+			</if>
+			<if test="type != null">
+				AND DEPT.TYPE_CODE IN 
+				<foreach collection="type" index="index" item="typeCode" open="(" separator="," close=")">
+					#{typeCode}
+				</foreach>
+			</if>
+		</where>
+	</sql>
+
+	<!-- 查询信息 -->
+	<select id="queryLdpAgencyDeptsByCondtion"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.LdpOuterBranchsAndOrginfoEntity"
+		resultMap="ldpDeptandExpressPartResultMap">
+		
+		<![CDATA[
+		    SELECT 
+		    DEPTCODE,
+            DEPTNAME,
+            PROV_CODE,
+            PROV_NAME,
+            CITY_CODE,
+            CITY_NAME,
+            COUNTY_CODE,
+            COUNTY_NAME,
+            DECODE(TYPE_CODE,'ORG','自有网点','LDP','快递代理网点') TYPE
+            FROM (
+			SELECT
+			/** 综合:查询信息 **/
+		]]>
+		<include refid="ldp_Column_List" />
+		<![CDATA[
+			  FROM BSE.T_BAS_OUTER_BRANCH BR
+  			  LEFT JOIN BSE.T_BAS_DISTRICT M ON BR.PROV_CODE = M.CODE
+                                AND BR.ACTIVE = M.ACTIVE
+ 			  LEFT JOIN BSE.T_BAS_DISTRICT D ON BR.CITY_CODE = D.CODE
+                                AND BR.ACTIVE = D.ACTIVE
+  			  LEFT JOIN BSE.T_BAS_DISTRICT U ON BR.COUNTY_CODE = U.CODE
+                                AND BR.ACTIVE = U.ACTIVE
+		]]>
+		<where>
+			  BR.BRANCHTYPE = 'LD'
+		    <if test=" active != null and active != '' ">
+		      AND BR.ACTIVE = #{active,jdbcType=CHAR}
+		    </if>
+		</where>
+		<![CDATA[
+			UNION ALL
+			SELECT
+		]]>
+		<include refid="org_Column_List"/>
+		<![CDATA[
+			FROM BSE.T_BAS_ORG O
+ 		    LEFT JOIN BSE.T_BAS_DISTRICT T ON O.PROV_CODE = T.CODE
+                                AND T.ACTIVE = O.ACTIVE
+ 		    LEFT JOIN BSE.T_BAS_DISTRICT A ON O.CITY_CODE = A.CODE
+                                AND A.ACTIVE = O.ACTIVE
+            LEFT JOIN BSE.T_BAS_DISTRICT B ON O.COUNTY_CODE = B.CODE
+                                AND B.ACTIVE = O.ACTIVE
+            INNER JOIN BSE.T_BAS_SALES_DEPARTMENT DT ON O.CODE = DT.CODE
+                                         AND DT.ACTIVE = 'Y'                   
+		]]>
+		<where>
+			 O.SALES_DEPARTMENT = 'Y'
+             AND (O.EXPRESS_SALES_DEPARTMENT <![CDATA[ <> ]]> 'Y' 
+             OR O.EXPRESS_SALES_DEPARTMENT IS NULL)
+		    <if test=" active != null and active != '' ">
+		     AND  O.ACTIVE = #{active,jdbcType=CHAR}
+		    </if>
+		  	AND DT.CAN_EXPRESS_DELIVERY = 'Y'
+		</where>
+		<![CDATA[
+			) DEPT
+		]]>
+		<include refid="queryWhere" />
+		
+	</select>
+
+
+	<!-- 统计总记录数 -->
+	<select id="countRecordByCondition" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.LdpOuterBranchsAndOrginfoEntity">
+	    <![CDATA[
+		    SELECT COUNT(*)
+            FROM (
+			SELECT
+			/** 综合:查询信息 **/
+		]]>
+		<include refid="ldp_Column_List" />
+		<![CDATA[
+			  FROM BSE.T_BAS_OUTER_BRANCH BR
+  			  LEFT JOIN BSE.T_BAS_DISTRICT M ON BR.PROV_CODE = M.CODE
+                                AND BR.ACTIVE = M.ACTIVE
+ 			  LEFT JOIN BSE.T_BAS_DISTRICT D ON BR.CITY_CODE = D.CODE
+                                AND BR.ACTIVE = D.ACTIVE
+  			  LEFT JOIN BSE.T_BAS_DISTRICT U ON BR.COUNTY_CODE = U.CODE
+                                AND BR.ACTIVE = U.ACTIVE
+		]]>
+		<where>
+			  BR.BRANCHTYPE = 'LD'
+		    <if test=" active != null and active != '' ">
+		      AND BR.ACTIVE = #{active,jdbcType=CHAR}
+		    </if>
+		</where>
+		<![CDATA[
+			UNION ALL
+			SELECT
+		]]>
+		<include refid="org_Column_List"/>
+		<![CDATA[
+			FROM BSE.T_BAS_ORG O
+ 		    LEFT JOIN BSE.T_BAS_DISTRICT T ON O.PROV_CODE = T.CODE
+                                AND T.ACTIVE = O.ACTIVE
+ 		    LEFT JOIN BSE.T_BAS_DISTRICT A ON O.CITY_CODE = A.CODE
+                                AND A.ACTIVE = O.ACTIVE
+            LEFT JOIN BSE.T_BAS_DISTRICT B ON O.COUNTY_CODE = B.CODE
+                                AND B.ACTIVE = O.ACTIVE
+            INNER JOIN BSE.T_BAS_SALES_DEPARTMENT DT ON O.CODE = DT.CODE
+                                         AND DT.ACTIVE = 'Y'                     
+		]]>
+		<where>
+			 O.SALES_DEPARTMENT = 'Y'
+             AND (O.EXPRESS_SALES_DEPARTMENT <![CDATA[ <> ]]> 'Y' 
+             OR O.EXPRESS_SALES_DEPARTMENT IS NULL)
+		    <if test=" active != null and active != '' ">
+		     AND  O.ACTIVE = #{active,jdbcType=CHAR}
+		    </if>
+		     AND DT.CAN_EXPRESS_DELIVERY = 'Y'
+		</where>
+		<![CDATA[
+			) DEPT
+		]]>
+		<include refid="queryWhere" />
+	</select>
+</mapper>

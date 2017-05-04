@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:jaxws="http://cxf.apache.org/jaxws" 
+	xmlns:jee="http://www.springframework.org/schema/jee" 
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+	http://cxf.apache.org/jaxws http://cxf.apache.org/schemas/jaxws.xsd"
+	default-autowire="byName" default-lazy-init="true">
+	 <!-- 数据访问层 -->
+	 <bean id="expressTrainProgramDao" class="com.deppon.foss.module.base.baseinfo.server.dao.impl.ExpressTrainProgramDao"/>
+	 
+	 <bean id="expressLineScheduleDao" class="com.deppon.foss.module.base.baseinfo.server.dao.impl.ExpressLineScheduleDao"/>
+	<!-- 业务服务层 -->
+	<bean id="expressTrainProgramService" class="com.deppon.foss.module.base.baseinfo.server.service.impl.ExpressTrainProgramService"/>
+	
+	<bean id="expressLineScheduleService" class="com.deppon.foss.module.base.baseinfo.server.service.impl.ExpressLineScheduleService"/>
+	<!-- 向GIS同步方案信息 -->
+	<bean id="syncProgramInfoToGisService" class="com.deppon.foss.module.base.baseinfo.server.service.impl.SyncProgramInfoToGisService">
+		<property name="gisServiceRoute" ref="gisServiceRoute"></property>
+	</bean>
+	<!-- WEB服务ACTION层 -->
+	<bean id="expressTrainScheduleAction" class="com.deppon.foss.module.base.baseinfo.server.action.ExpressTrainScheduleAction" scope="prototype"/>
+	
+	<!-- 向GIS同步方案信息客户端 client -->
+	<jaxws:client id="gisServiceRoute" serviceClass="com.deppon.gis.gisserviceroute.GisServiceRoute" 
+	address="${esb.ws}/foss2gis/expressRoutePlan">
+		<jaxws:inInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingInInterceptor"/>
+		</jaxws:inInterceptors>
+		<jaxws:outInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingOutInterceptor"/>
+		</jaxws:outInterceptors>
+	</jaxws:client>
+</beans> 
+ 

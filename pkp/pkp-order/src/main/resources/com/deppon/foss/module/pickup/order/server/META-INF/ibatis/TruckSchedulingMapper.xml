@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.deppon.foss.module.pickup.order.api.shared.domain.TruckSchedulingEntity">
+	<!--结果映射 -->
+	<resultMap id="TruckSchedulingResultMap"
+		type="com.deppon.foss.module.pickup.order.api.shared.dto.OwnTruckDto">
+		<result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+		<result column="DRIVER_CODE" property="driverCode" jdbcType="VARCHAR" />
+		<result column="DRIVER_NAME" property="driverName" jdbcType="VARCHAR" />
+		<result column="VEHICLE_TYPE" property="vehicleType" jdbcType="VARCHAR" />
+		<result column="DRIVER_Mobile" property="driverMobile" jdbcType="VARCHAR" />
+		<result column="SELF_VOLUME" property="netVolume" jdbcType="VARCHAR" />
+		<result column="SELF_WEIGHT" property="netWeight" jdbcType="VARCHAR" />
+		<result column="REMAINING_WEIGHT" property="remainingWeight" jdbcType="TIMESTAMP" />
+		<result column="REMAINING_VOLUME" property="remainingVolume" jdbcType="VARCHAR" />
+		<result column="ISPDABUNDLE" property="isPdaBundle" jdbcType="VARCHAR" />
+		<result column="REGION_NAME" property="ownedZoneName" jdbcType="VARCHAR" />
+		<result column="REGION_CODE" property="ownedZoneCode" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!--WHERE条件SQL -->
+	<sql id="Truck_Scheduling_Where_Clause">
+		<where>
+			<if test="vehicleNo!=null and vehicleNo!=''">
+				VEHICLE_NO=#{vehicleNo,jdbcType=VARCHAR}
+			</if>
+			<if test="driverCode!=null and driverCode!=''">
+				and DRIVER_CODE=#{driverCode,jdbcType=VARCHAR}
+			</if>
+			<if test="schedulingType!=null and schedulingType!=''">
+				and SCHEDULING_TYPE = #{schedulingType,jdbcType=VARCHAR}
+			</if>
+			<if test="schedulingStatus!=null and schedulingStatus!=''">
+				and SCHEDULING_STATUS =
+				#{schedulingStatus,jdbcType=VARCHAR}
+			</if>
+			<if test="planType!=null and planType!=''">
+				and PLAN_TYPE = #{schedulingPlanType,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</sql>
+
+
+	<!--查询排班表 -->
+	<select id="queryTruckScheduling" resultMap="TruckSchedulingResultMap">
+		select /*模块：接送货-处理订单-查询排班表*/S.DRIVER_CODE,/** 排班司机编码 **/
+		DR.EMP_NAME DRIVER_NAME,/** 司机姓名 **/
+		ST.VEHICLE_NO,/**车牌号**/
+		VL.VEHICLE_LENGTH_NAME VEHICLE_TYPE,/**车型**/
+		DR.EMP_PHONE DRIVER_Mobile,/**司机电话**/
+		TK.SELF_VOLUME,/** 载空 **/
+		TK.SELF_WEIGHT,/** 载重 **/
+		VA.REMAINING_WEIGHT,/** 剩余重量 **/
+		VA.REMAINING_VOLUME,/** 剩余体积 **/
+		'N' ISPDABUNDLE,/** 是否PDA绑定 **/
+		to_char(wm_concat(V.REGION_NAME) over (partition BY ST.VEHICLE_NO))
+		REGION_NAME,/** 接货小区名称 **/
+		to_char(wm_concat(sm.REGION_CODE) over (partition BY ST.VEHICLE_NO)) REGION_CODE/** 接货小区编码 **/
+		from
+		TFR.T_OPT_TRUCK_SCHEDULING S
+		join TFR.T_OPT_TRUCK_SCHEDULING_TASK ST on S.ID = ST.T_OPT_TRUCK_SCHEDULING_ID
+		join
+		BSE.T_BAS_OWNDRIVER DR on S.DRIVER_CODE=DR.EMP_CODE and DR.ACTIVE = #{active,jdbcType=VARCHAR}
+		join
+		BSE.T_BAS_OWN_TRUCK TK on TK.VEHICLE_NO = ST.VEHICLE_NO
+		join bse.t_bas_vehicle_type_length VL on TK.VEHICLE_LENGHT_CODE = VL.VEHICLE_LENGTH_CODE
+		join
+		PKP.T_SRV_VEHICLE_ACTUALSITUATION VA on VA.VEHICLE_NO = ST.VEHICLE_NO
+		left join BSE.T_BAS_REGION_VEHICLE V on V.VEHICLE_NO = ST.VEHICLE_NO
+		and V.REGION_TYPE = #{regionType,jdbcType=VARCHAR} /**'PK'**/
+		and	V.REGION_NATURE = #{regionNature,jdbcType=VARCHAR} /**'SQ'**/
+		and V.ACTIVE = #{active,jdbcType=VARCHAR} /**'Y'**/
+		left join bse.t_bas_service_smallzone sm /*14.7.29 gcl AUTO-212 联合接送货小区表获得小区编码 */
+    	on sm.virtual_code = v.region_code and sm.region_type=v.region_type and sm.ACTIVE = #{active,jdbcType=VARCHAR}
+		where S.SCHEDULING_TYPE = #{schedulingType,jdbcType=VARCHAR}
+		and S.SCHEDULING_STATUS = #{schedulingStatus,jdbcType=VARCHAR}
+		<![CDATA[and S.SCHEDULING_DATE > TRUNC(SYSDATE-1)
+		and S.SCHEDULING_DATE <= TRUNC(SYSDATE)+1-1/86400]]>
+		and ST.TASK_STATUS = #{schedulingStatus,jdbcType=VARCHAR}
+		and S.PLAN_TYPE = #{schedulingPlanType,jdbcType=VARCHAR}
+		and S.SCHEDULING_DEPART_CODE = #{serviceFleetCode,jdbcType=VARCHAR}
+		and TK.ACTIVE = #{active,jdbcType=VARCHAR}
+		and VL.ACTIVE = #{active,jdbcType=VARCHAR}
+	</select>
+	
+	<!-- 根据司机编码查询排班表 -->
+	<select id="queryTruckSchedulingByDriverCode" resultMap="TruckSchedulingResultMap">
+		select /*模块：接送货-处理订单-根据司机编码查询排班表 */S.DRIVER_CODE,/** 司机编码 **/
+			DR.EMP_NAME DRIVER_NAME,/** 司机姓名 **/
+			ST.VEHICLE_NO,/**车牌号**/
+			VL.VEHICLE_LENGTH_NAME VEHICLE_TYPE,/**车型**/
+			DR.EMP_PHONE DRIVER_Mobile,/**司机电话**/
+			TK.SELF_VOLUME,/** 载空 **/
+			TK.SELF_WEIGHT,/** 载重 **/
+			VA.REMAINING_WEIGHT,/** 剩余重量 **/
+			VA.REMAINING_VOLUME,/** 剩余体积 **/
+			'N' ISPDABUNDLE,/** 是否pda绑定 **/
+			to_char(wm_concat(V.REGION_NAME) over (partition BY ST.VEHICLE_NO)) REGION_NAME,/** 接货小区名称 **/
+			to_char(wm_concat(sm.REGION_CODE) over (partition BY ST.VEHICLE_NO)) REGION_CODE/** 接货小区编码 **/
+		from
+			TFR.T_OPT_TRUCK_SCHEDULING S
+			join TFR.T_OPT_TRUCK_SCHEDULING_TASK ST on S.ID = ST.T_OPT_TRUCK_SCHEDULING_ID
+			join
+			BSE.T_BAS_OWNDRIVER DR on S.DRIVER_CODE=DR.EMP_CODE and DR.ACTIVE = #{active,jdbcType=VARCHAR}
+			join
+			BSE.T_BAS_OWN_TRUCK TK on TK.VEHICLE_NO = ST.VEHICLE_NO
+			join bse.t_bas_vehicle_type_length VL on TK.VEHICLE_LENGHT_CODE = VL.VEHICLE_LENGTH_CODE
+			join
+			PKP.T_SRV_VEHICLE_ACTUALSITUATION VA on VA.VEHICLE_NO = ST.VEHICLE_NO
+			left join BSE.T_BAS_REGION_VEHICLE V on V.VEHICLE_NO = ST.VEHICLE_NO
+			and V.REGION_TYPE = #{regionType,jdbcType=VARCHAR} /**'PK'**/
+			and V.REGION_NATURE = #{regionNature,jdbcType=VARCHAR} /**'SQ'**/
+			left join bse.t_bas_service_smallzone sm /*14.7.29 gcl AUTO-212 联合接送货小区表获得小区编码 */
+    		on sm.virtual_code = v.region_code and sm.region_type=v.region_type and sm.ACTIVE = #{active,jdbcType=VARCHAR}
+		where
+			V.ACTIVE = #{active,jdbcType=VARCHAR} /**'1'**/
+			and S.SCHEDULING_TYPE = #{schedulingType,jdbcType=VARCHAR}
+			and ST.TASK_STATUS = #{schedulingStatus,jdbcType=VARCHAR}
+			and S.SCHEDULING_STATUS = #{schedulingStatus,jdbcType=VARCHAR}
+			and S.PLAN_TYPE = #{schedulingPlanType,jdbcType=VARCHAR}
+			and S.SCHEDULING_DEPART_CODE = #{serviceFleetCode,jdbcType=VARCHAR}
+			and TK.ACTIVE = #{active,jdbcType=VARCHAR}
+			and S.DRIVER_CODE = #{driverCode,jdbcType=VARCHAR}
+			and VL.ACTIVE = #{active,jdbcType=VARCHAR}
+	</select>
+	
+	<!-- 根据车牌号查询排班表 -->
+	<select id="queryTruckSchedulingByVehicleNo" parameterType="com.deppon.foss.module.pickup.order.api.shared.dto.OwnTruckConditionDto"
+			resultMap="TruckSchedulingResultMap">
+		select /*模块：接送货-处理订单-根据车牌号查询排班表*/S.DRIVER_CODE,/** 司机编码 **/
+			DR.EMP_NAME DRIVER_NAME,/** 司机姓名 **/
+			ST.VEHICLE_NO,/**车牌号**/
+			VL.VEHICLE_LENGTH_NAME VEHICLE_TYPE,/**车型**/
+			DR.EMP_PHONE DRIVER_Mobile/**司机电话**/
+		from
+			TFR.T_OPT_TRUCK_SCHEDULING S
+			join TFR.T_OPT_TRUCK_SCHEDULING_TASK ST 
+			on S.SCHEDULING_STATUS = ST.TASK_STATUS and S.ID = ST.T_OPT_TRUCK_SCHEDULING_ID
+			join BSE.T_BAS_OWNDRIVER DR on S.DRIVER_CODE=DR.EMP_CODE
+			join BSE.T_BAS_OWN_TRUCK TK on TK.VEHICLE_NO = ST.VEHICLE_NO
+			join bse.t_bas_vehicle_type_length VL on TK.VEHICLE_LENGHT_CODE = VL.VEHICLE_LENGTH_CODE
+		where
+			S.SCHEDULING_TYPE = #{schedulingType,jdbcType=VARCHAR}
+			and S.scheduling_date = TRUNC(SYSDATE)
+			and S.SCHEDULING_STATUS = #{schedulingStatus,jdbcType=VARCHAR}
+			and S.PLAN_TYPE = #{schedulingPlanType,jdbcType=VARCHAR}
+			and ST.VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR}
+			and DR.ACTIVE = #{active,jdbcType=VARCHAR}
+			and TK.ACTIVE = #{active,jdbcType=VARCHAR}
+			and VL.ACTIVE = #{active,jdbcType=VARCHAR}
+	</select>
+</mapper>

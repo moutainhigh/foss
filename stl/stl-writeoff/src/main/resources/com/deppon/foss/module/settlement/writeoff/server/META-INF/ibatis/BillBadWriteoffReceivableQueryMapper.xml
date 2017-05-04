@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.BillReceivableEntityDao">
+	<!-- 根据客户编号查询未核销的应收单 -->
+	<select id="selectBadReceivableByCustomer" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.BillBadAccountQueryDto">
+		SELECT /*结算-核销-根据客户编号查询未核销的应收单*/
+		<include refid="Base_Column_List" />
+		FROM STL.T_STL_BILL_RECEIVABLE R
+		WHERE R.CUSTOMER_CODE=#{customerCode}
+		  AND R.UNVERIFY_AMOUNT> 0 <!-- 已核销金额大于0 -->
+		  <![CDATA[ AND R.ACCOUNT_DATE >=#{beginTime} AND R.ACCOUNT_DATE <#{endTime} 
+		  AND R.ACTIVE=#{active}
+		AND (R.UNLOCK_DATE_TIME IS NULL OR R.UNLOCK_DATE_TIME < SYSDATE)]]>
+		AND (R.BILL_TYPE IN ('OR', 'DR', 'DP', 'DL', 'AA') AND EXISTS(
+	       SELECT 1 FROM PKP.T_SRV_WAYBILL_SIGN_RESULT WS WHERE WS.WAYBILL_NO = R.WAYBILL_NO 
+	       AND WS.ACTIVE='Y'
+       ) OR R.BILL_TYPE NOT IN ('OR', 'DR', 'DP', 'DL', 'AA'))
+	</select>
+	<!-- 根据运单号查询未核销的应收单 -->
+	<select id="selectBadReceivableByWayBillNos" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.BillBadAccountQueryDto">
+		SELECT /*结算-核销-根据运单号查询未核销的应收单*/
+		<include refid="Base_Column_List" />
+		FROM STL.T_STL_BILL_RECEIVABLE R
+		WHERE R.WAYBILL_NO IN
+			<foreach collection="wayBillNum"  index="index" item="item"  open="(" separator="," close=")">  
+		        #{item} 
+			</foreach>
+		  AND R.UNVERIFY_AMOUNT > 0 <!-- 已核销金额大于0 -->
+		  AND R.ACTIVE=#{active}
+		  AND (R.BILL_TYPE IN ('OR', 'DR', 'DP', 'DL', 'AA') AND EXISTS(
+		       SELECT 1 FROM PKP.T_SRV_WAYBILL_SIGN_RESULT WS WHERE WS.WAYBILL_NO = R.WAYBILL_NO 
+		       AND WS.ACTIVE='Y') OR R.BILL_TYPE NOT IN ('OR', 'DR', 'DP', 'DL', 'AA'))
+	</select>
+</mapper>

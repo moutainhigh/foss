@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.platform.stock.saturation.report">
+	<!--仓库饱和度数据监控报表 -->
+	<resultMap id="stockSaturationReportResultMap"
+		type="com.deppon.foss.module.transfer.platform.api.shared.domain.StockSaturationReportEntity">
+		<result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+	    <result column="ORG_NAME" property="orgName" jdbcType="VARCHAR" />
+	    <result column="PULLBACK_MONTH" property="pullbackMonth" jdbcType="DECIMAL" />
+	    <result column="PULLBACK_DAY" property="pullbackDay" jdbcType="DECIMAL" />
+	    <result column="SENDRATE_MONTH" property="sendrateMonth" jdbcType="DECIMAL" />
+	    <result column="SENDRATE_DAY" property="sendrateDay" jdbcType="DECIMAL" />
+	    <result column="RETURNDATE_MOTH" property="returndateMoth" jdbcType="DECIMAL" />
+	    <result column="RETURNDATE_DAY" property="returndateDay" jdbcType="DECIMAL" />
+	    <result column="SATURATION_DAY" property="saturationDay" jdbcType="DECIMAL" />
+	    <result column="SATURATION_MONTH" property="saturationMonth" jdbcType="DECIMAL" />
+	    <result column="DENSITY_DAY" property="densityDay" jdbcType="DECIMAL" />
+	    <result column="DENSITY_MONTH" property="densityMonth" jdbcType="DECIMAL" />
+	    <result column="QUERY_DATE_A" property="queryDateA" jdbcType="VARCHAR" />
+	    <result column="QUERY_DATE_B" property="queryDateB" jdbcType="VARCHAR" />
+	    <result column="BIGDEPT" property="bigdept" jdbcType="VARCHAR" />
+	    <result column="DIVISION" property="division" jdbcType="VARCHAR" />
+	    <result column="BIG_AREA" property="bigArea" jdbcType="VARCHAR" />
+	</resultMap>
+		
+	<!-- 仓库饱和度数据监控报表查询 -->
+	<select id="queryStockSaturationReport" resultMap="stockSaturationReportResultMap" parameterType="map">
+		select a.org_code,a.name org_name
+		,pullbackRate.pullbackMonth pullback_Month
+		,pullbackRate.pullbackDay pullback_Day
+		,sendRate.sendRateMonth sendRate_Month
+		,sendRate.sendRateDay sendRate_Day
+		,returnRate.returnDateMoth returnDate_Moth
+		,returnRate.returnDateDay returnDate_Day
+		,saturationRate.saturation_Day
+		,saturationRate.saturation_Month
+ 		,densityArea.densityDay density_Day
+		,densityArea.densityMonth density_Month
+		 from bse.t_bas_transfer_center a 
+		left join (
+		<!-- 拉回率 -->
+		select tb.org_code,round(decode(tb1.quantity_pullback,null,0,tb1.quantity_pullback)/
+		decode(tb1.quantity_car,null,9999999999999999,tb1.quantity_car),2)*100 pullbackMonth
+		       ,round(decode(tb2.quantity_pullback,null,0,tb2.quantity_pullback)/
+		decode(tb2.quantity_car,null,9999999999999999,tb2.quantity_car),2)*100 pullbackDay
+		       from (
+		      select a.ORG_CODE, a.name
+		                from bse.t_bas_transfer_center a
+		               where a.active = 'Y'
+		      ) tb
+		      left join
+		      (
+		      select k.org_code,sum(k.quantity_car) as quantity_car,sum(k.quantity_pullback) as quantity_pullback
+		       from tfr.t_opt_pullback_rate k
+		       where 
+		       <![CDATA[
+		       k.statistics_time_theory between to_date(#{querydatea} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{querydateb} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+		        group by k.org_code) tb1 on tb.org_code=tb1.org_code
+		        left join tfr.t_opt_pullback_rate tb2 on tb.org_code=tb2.org_code
+		        and tb2.statistics_time_theory between to_date(#{querydateb} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{querydateb} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+		        ]]>  
+		) pullbackRate on a.org_code=pullbackRate.org_code 
+		left join (
+		<!--派送率 -->
+		select tb.org_code,
+		        round(decode(tb1.day_send_volume,null,0,tb1.day_send_volume)/
+		decode((decode(tb3.yesterday_stock_volume,null,0,tb3.yesterday_stock_volume)+
+		decode(tb1.day_stock_volume,null,0,tb1.day_stock_volume)),0,19999999999999999,(
+		decode(tb3.yesterday_stock_volume,null,0,tb3.yesterday_stock_volume)+
+		decode(tb1.day_stock_volume,null,0,tb1.day_stock_volume))),2)*100 sendRateMonth,
+		        round(decode(tb2.day_send_volume,null,0,tb2.day_send_volume)/
+		decode((decode(tb2.yesterday_stock_volume,null,0,tb2.yesterday_stock_volume)+
+		decode(tb2.day_stock_volume,null,0,tb2.day_stock_volume)),0,1,(decode(tb2.yesterday_stock_volume,null,0,tb2.yesterday_stock_volume)+
+		decode(tb2.day_stock_volume,null,0,tb2.day_stock_volume))),2)*100 sendRateDay
+		         from 
+		         (select a.ORG_CODE, a.name
+		                  from bse.t_bas_transfer_center a
+		                 
+		                 where a.active = 'Y'
+		                  ) tb 
+		                  left join 
+		         (
+		        select t.org_code,t.org_name,
+		        sum(t.yesterday_stock_volume) as yesterday_stock_volume,
+		        sum(t.yesterday_stock_weight) as yesterday_stock_weight,
+		        sum(t.yesterday_stock_waybill) as yesterday_stock_waybill,
+		        sum(t.day_stock_volume) as day_stock_volume,
+		        sum(t.day_stock_weight) as day_stock_weight,
+		        sum(t.day_stock_waybill) as day_stock_waybill,
+		        sum(t.day_send_volume) as day_send_volume,
+		        sum(t.day_send_weight) as day_send_weight,
+		        sum(t.day_send_waybill) as day_send_waybill
+		         from tfr.T_OPT_SEND_RATE t 
+		        where 
+		        <![CDATA[
+		        t.statistics_time_theory  between to_date(#{querydatea} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{querydateb} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+		        group by t.org_code,t.org_name order by t.org_code ) tb1 on tb.org_code=tb1.org_code
+		        left join tfr.T_OPT_SEND_RATE tb2 
+		        on tb.org_code=tb2.org_code 
+		        and tb2.statistics_time_theory between to_date(#{querydateb} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{querydateb} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+		         left join tfr.T_OPT_SEND_RATE tb3 
+		        on tb.org_code=tb3.org_code 
+		        and tb3.statistics_time_theory between to_date(#{querydatea} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{querydatea} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+		        ]]>
+		) sendRate on a.org_code=sendRate.org_code 
+		left join (
+		<!--退单率-->
+		SELECT TAB1.ORG_CODE, RETURNDATEDAY, RETURNDATEMOTH
+		  FROM --退单率日统计
+		       (SELECT T.ORG_CODE, AVG(T.RETURN_RATE) RETURNDATEDAY
+		          FROM TFR.T_OPT_RETURN_RATE T
+		         WHERE T.STATISTICS_TIME_THEORY BETWEEN
+		               TO_DATE(#{querydatea} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss') AND
+		               TO_DATE(#{querydateb} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss')
+		         GROUP BY T.ORG_CODE) TAB1
+		  JOIN
+		--退单率月统计
+		 (SELECT T.ORG_CODE, AVG(T.RETURN_RATE) RETURNDATEMOTH
+		    FROM TFR.T_OPT_RETURN_RATE T
+		   WHERE T.STATISTICS_TIME_THEORY BETWEEN
+		         TO_DATE(#{querydateb} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss') AND
+		         TO_DATE(#{querydateb} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss')
+		   GROUP BY T.ORG_CODE) TAB2
+		    ON TAB1.ORG_CODE = TAB2.ORG_CODE
+<!-- 		select tb.org_code
+		,Round((decode(tb1.forecast_waybill,null,0,tb1.forecast_waybill)-
+		decode(tb1.quantity_car_reality,null,0,tb1.quantity_car_reality))/decode(tb1.forecast_waybill,null,9999999999999999,tb1.forecast_waybill),2)*100 returnDateMoth
+		,Round((decode(tb2.forecast_waybill,null,0,tb2.forecast_waybill)-
+		decode(tb2.quantity_car_reality,null,0,tb2.quantity_car_reality))/decode(tb2.forecast_waybill,null,9999999999999999,tb2.forecast_waybill),2)*100 returnDateDay
+		         from (
+		         select a.ORG_CODE, a.name
+		                  from bse.t_bas_transfer_center a             
+		                 where a.active = 'Y'
+		        ) tb
+		        left join
+		         (
+		        select k.org_code
+		        ,sum(k.forecast_waybill) as forecast_waybill,sum(k.quantity_car_reality) as quantity_car_reality,
+		        sum(k.quantity_return) as quantity_return
+		         from tfr.t_opt_return_rate k
+		         where 
+		         <![CDATA[
+		         k.statistics_time_theory  between to_date(#{querydatea} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{querydateb} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+		          group by k.org_code
+		          ) tb1 on tb.org_code=tb1.org_code
+		          left join tfr.t_opt_return_rate tb2 on tb.org_code=tb2.org_code
+		          and tb2.statistics_time_theory between to_date(#{querydateb} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{querydateb} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+		          ]]> -->
+		) returnRate on a.org_code=returnRate.ORG_CODE 
+		left join (
+		<!--饱和度-->
+		select tb1.org_code
+		,tb2.saturation_Day
+		,tb2.saturation_Month
+		 from (
+		      select org_code
+		          from bse.t_bas_transfer_center
+		          where active = 'Y'
+		          ) tb1
+		           left join (
+		      select a.*
+		        from tfr.t_opt_stock_saturation a
+		        <![CDATA[
+		        where a.statistics_time_theory  between to_date(#{querydateb} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{querydateb} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+		             ]]>
+		      ) tb2 on tb2.org_code=tb1.org_code
+		      
+		) saturationRate on a.org_code=saturationRate.org_code 
+		left join (
+		<!--货区密度-->
+		SELECT D.TFR_CTR_CODE   ORG_CODE,
+		       D.PEAK_DENSITY_D*100 DENSITYDAY,
+		       D.PEAK_DENSITY_M*100 DENSITYMONTH
+		  FROM TFR.T_OPT_TFR_CTR_DENSITY_PEAK D
+		 WHERE  D.STA_DATE = to_date(#{querydateb},'yyyy-mm-dd')
+		        ORDER BY D.PEAK_DENSITY_D DESC
+<!--   select tb.org_code,tt1.densityDay,tb2.densityMonth
+    from -->
+   <!--  (select org_code
+              from bse.t_bas_transfer_center
+              where active = 'Y'
+              ) tb
+    left join 
+    (
+    日货区密度
+      select tt1.transfer_center_code
+    ,round((sum(tt1.goods_volume)/
+    decode(sum(tt2.goods_area_volume_last),0,1,sum(tt2.goods_area_volume_last))
+    )*100,2) densityDay
+     from (
+    select b.transfer_center_code,b.goods_area_code
+    ,avg(b.goods_volume) goods_volume 
+    from tfr.t_opt_goods_area_density b
+    where b.statistic_date between to_date(#{querydateb} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{querydateb} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+    and b.goods_volume is not null
+    group by b.transfer_center_code,b.goods_area_code
+    ) tt1 left join (
+    select * from (
+    select a.transfer_center_code,a.goods_area_code
+    ,FIRST_VALUE(a.goods_area_volume)  
+    OVER (PARTITION BY a.transfer_center_code,a.goods_area_code,a.statistic_time_point 
+    ORDER BY a.transfer_center_code,a.goods_area_code,a.statistic_time_point desc ) AS goods_area_volume_last
+    from tfr.t_opt_goods_area_density a 
+    where a.statistic_date between to_date(#{querydateb} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{querydateb} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+    ) tb1 group by tb1.transfer_center_code,tb1.goods_area_code,tb1.goods_area_volume_last
+    ) tt2 on tt1.transfer_center_code= tt2.transfer_center_code and tt1.goods_area_code=tt2.goods_area_code
+    group by tt1.transfer_center_code
+     ) tt1 on tb.org_code=tt1.transfer_center_code
+    left join (
+    月货区密度
+         select tt1.transfer_center_code
+        ,round((tt1.goods_volume/
+        decode(tt2.goods_area_volume,0,1,tt2.goods_area_volume))*100,2) densityMonth
+         from (
+        SELECT transfer_center_code, SUM(goods_volume) goods_volume
+          FROM (SELECT transfer_center_code,
+                       statistic_date,
+                       AVG(goods_volume) goods_volume
+                  FROM (SELECT t.transfer_center_code,
+                               t.statistic_date,
+                               t.statistic_time_point,
+                               SUM(t.goods_volume) goods_volume
+                          FROM tfr.t_opt_goods_area_density t
+                         WHERE 
+                           t.statistic_month = substr(#{querydateb},0,7)
+                           <![CDATA[
+                           and t.statistic_date <=to_date(#{querydateb},'yyyy-mm-dd')
+                           ]]>
+                         GROUP BY t.transfer_center_code,
+                                  t.statistic_date,
+                                  t.statistic_time_point)
+                 GROUP BY transfer_center_code, statistic_date)
+         GROUP BY transfer_center_code
+         ) tt1 left join (
+        SELECT transfer_center_code, SUM(goods_area_volume) goods_area_volume
+          FROM (SELECT transfer_center_code,
+                       statistic_date,
+                       statistic_time_point,
+                       goods_area_volume,
+                       row_number() over(PARTITION BY transfer_center_code, statistic_date ORDER BY statistic_time_point DESC) rn
+                  FROM (SELECT t.transfer_center_code,
+                               t.statistic_date,
+                               t.statistic_time_point,
+                               SUM(t.goods_area_volume) goods_area_volume
+                          FROM tfr.t_opt_goods_area_density t
+                         WHERE 
+                          t.statistic_month = substr(#{querydateb},0,7)
+                          <![CDATA[
+                           and t.statistic_date <=to_date(#{querydateb},'yyyy-mm-dd')
+                           ]]>
+                         GROUP BY t.transfer_center_code,
+                                  t.statistic_date,
+                                  t.statistic_time_point))
+         WHERE rn = 1
+         GROUP BY transfer_center_code
+            )tt2 on tt1.transfer_center_code=tt2.transfer_center_code
+          ) tb2 on tb.org_code=tb2.transfer_center_code
+          -->
+		) densityArea 
+		on a.org_code= densityArea.org_code 
+		--剔除掉快递分部
+		join bse.t_bas_org org
+		 on org.code=a.org_code
+		 and org.active='Y'
+		 and org.express_branch='N'
+		 and org.transfer_center='Y'
+		where a.active='Y' 
+		order by a.org_code
+	</select>
+	
+	<!-- 仓库饱和度总记录数 --><!-- duhao-276198-20151029-剔除快递分部 -->
+	<select id="queryStockSaturationReportCount" resultType="int">
+		select count(0) from bse.t_bas_transfer_center a
+		left join bse.t_bas_org o on o.code = a.org_code and o.active = 'Y'
+		where a.active = 'Y' and o.express_branch = 'N' 
+	</select>
+
+</mapper>

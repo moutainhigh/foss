@@ -1,0 +1,468 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.platform.sendRate" >
+	<!-- 日派送率查询 -->
+	<resultMap id="sendRateResultMap" type="com.deppon.foss.module.transfer.platform.api.shared.domain.SendRateEntity" >
+		<result property="sendRateId" column="send_rate_id"/>
+		<result property="orgCode" column="org_code"/>
+		<result property="orgName" column="org_name"/>
+		<result property="goodsAreaCode" column="goods_area_code"/>
+		<result property="yesterdayStockVolume" column="yesterday_stock_volume"/>
+		<result property="yesterdayStockWeight" column="yesterday_stock_weight"/>
+		<result property="yesterdayStockWaybill" column="yesterday_stock_waybill"/>
+		<result property="dayStockVolume" column="day_stock_volume"/>
+		<result property="dayStockWeight" column="day_stock_weight"/>
+		<result property="dayStockWaybill" column="day_stock_waybill"/>
+		<result property="daySendVolume" column="day_send_volume"/>
+		<result property="daySendWeight" column="day_send_weight"/>
+		<result property="daySendWaybill" column="day_send_waybill"/>
+		<result property="tomorrowStockVolume" column="tomorrow_stock_volume"/>
+		<result property="tomorrowStockWeight" column="tomorrow_stock_weight"/>
+		<result property="tomorrowStockWaybill" column="tomorrow_stock_waybill"/>
+		<result property="statisticsTimeTheory" column="statistics_time_theory"/>
+		<result property="statisticsTimeReality" column="statistics_time_reality"/>
+		<result property="sendRate" column="send_rate"/>
+		<result property="remainDayStockVolume" column="remain_day_stock_volume"/>
+		<result property="remainDayStockWeight" column="remain_day_stock_weight"/>
+		<result property="remainStockWaybill" column="remain_stock_waybill"/>
+		<result property="yesterdayStockVolumeAll" column="yesterday_stock_volume_day" />
+		<result property="dayStockVolumeAll" column="day_stock_volume_day" />
+		<result property="daySendVolumeAll" column="day_send_volume_day" />
+	</resultMap>
+	<select id="querySendRateList" resultMap="sendRateResultMap" parameterType="map">
+	
+				select t.org_code,t.name as org_name,t.goods_area_code,
+		       tb3.yesterday_volume yesterday_stock_volume,
+		       <!-- 昨日的数据已经转换成了吨 -->
+		       tb3.yesterday_weight yesterday_stock_weight,
+		       tb3.yesterday_waybill yesterday_stock_waybill,
+		       tb1.goods_volume day_stock_volume,
+		       round(tb1.goods_weight/1000,2) day_stock_weight,
+		       tb1.waybill_no day_stock_waybill,
+		       round(tb2.goods_weight_sum/1000,2) day_send_weight,
+		       tb2.goods_volume_sum day_send_volume,
+		       tb2.waybill_no_sum day_send_waybill
+		  from (select a.ORG_CODE, a.name, b.goods_area_code, b.goods_area_name
+		          from bse.t_bas_transfer_center a
+		          left join BSE.T_BAS_GOODS_AREA b
+		            on b.org_code = a.ORG_CODE
+		           and b.goods_area_type = 'BSE_GOODSAREA_TYPE_STATION'
+		           and b.active = 'Y'
+		         where a.active = 'Y'
+		           and b.goods_area_type = 'BSE_GOODSAREA_TYPE_STATION'
+		           and b.active = 'Y'
+		           <if test="orgCode!=null and orgCode !='' ">
+		           		and a.org_code=#{orgCode}
+		           </if>
+		           ) t
+		           <![CDATA[
+		  left join (
+		  select f2.goods_area_code,
+       f2.org_code,
+       sum(f2.goods_weight_avg) as goods_weight,
+       sum(f2.goods_volume_avg) as goods_volume,
+       count(distinct(f2.waybill_no)) as waybill_no
+  from (select ff.*, 
+round((decode(h.goods_weight_total,null,0,h.goods_weight_total) / decode(h.goods_qty_total,null,1,h.goods_qty_total)), 2) as goods_weight_avg,
+               round((decode(h.goods_volume_total,null,0,h.goods_volume_total) / decode(h.goods_qty_total,null,1,h.goods_qty_total)), 2) as goods_volume_avg
+   from (               
+select  f.waybill_no,
+               f.serial_no,
+               f.goods_area_code,
+               f.org_code
+       from  tfr.t_opt_in_stock f
+       where  f.in_stock_time between to_date(to_char(sysdate,'yyyy-mm-dd')  || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(to_char(sysdate,'yyyy-mm-dd') || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+               group by f.waybill_no,f.serial_no,f.goods_area_code,f.org_code
+               ) ff left 
+               join pkp.t_srv_waybill h
+            on h.waybill_no = ff.waybill_no
+           and h.active = 'Y'
+               ) f2
+ group by f2.goods_area_code, f2.org_code
+		              ) tb1
+		    on t.org_code = tb1.org_code
+		   and t.goods_area_code = tb1.goods_area_code
+		  left join (
+		            select org_code,goods_area_code,sum(goods_weight_sign) goods_weight_sum,
+sum(goods_volume_sign) goods_volume_sum,count(waybill_no_sign) waybill_no_sum
+from (
+select t.org_code, t.goods_area_code,t.goods_weight_sign,t.goods_volume_sign,t.waybill_no_sign
+		   from (select c.org_code,
+		                c.goods_area_code,
+		                p.sign_goods_qty *
+		                round((decode(h.goods_weight_total,null,0,h.goods_weight_total) / decode(h.goods_qty_total,null,1,h.goods_qty_total)), 2) as goods_weight_sign,
+		                p.sign_goods_qty *
+		                round((decode(h.goods_volume_total,null,0,h.goods_volume_total) / decode(h.goods_qty_total,null,1,h.goods_qty_total)), 2) as goods_volume_sign,
+		                p.waybill_no as waybill_no_sign
+		           from pkp.t_srv_waybill_sign_result p
+		           left join pkp.t_srv_waybill h  
+		             on h.waybill_no = p.waybill_no
+		            and h.active = 'Y'
+		           left join (
+		                select distinct waybill_no,org_code,goods_area_code,out_stock_time
+		                   from tfr.t_opt_out_stock where out_stock_time  between to_date(to_char(sysdate,'yyyy-mm-dd')  || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(to_char(sysdate,'yyyy-mm-dd') || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+		           ) c on c.waybill_no =p.waybill_no 
+		           and c.out_stock_time  between to_date(to_char(sysdate,'yyyy-mm-dd') || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(to_char(sysdate,'yyyy-mm-dd') || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+		          where p.active = 'Y'
+		            and h.active = 'Y'
+		            and p.sign_time between to_date(to_char(sysdate,'yyyy-mm-dd') || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(to_char(sysdate,'yyyy-mm-dd') || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+		          ) t
+		  group by t.org_code, t.goods_area_code,t.goods_weight_sign,t.goods_volume_sign,t.waybill_no_sign
+                               )group by org_code,goods_area_code
+		             ) tb2
+		     on t.org_code = tb2.org_code
+		   and t.goods_area_code = tb2.goods_area_code
+		 left join (
+		              select k.org_code,
+		                     k.goods_area_code,
+		                     sum(k.remain_day_stock_volume) as yesterday_volume,
+		                     sum(k.remain_day_stock_weight) as yesterday_weight,
+		                     sum(k.remain_stock_waybill) as yesterday_waybill
+		               from tfr.t_opt_send_rate k
+		               where k.statistics_time_theory between to_date(to_char(sysdate-1,'yyyy-mm-dd') || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(to_char(sysdate-1,'yyyy-mm-dd') || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+		               group by k.org_code,
+		                     k.goods_area_code) tb3
+		     on t.org_code = tb3.org_code
+		   and t.goods_area_code = tb3.goods_area_code
+		   ]]>
+	</select>
+	<select id="querySendRateListCount" resultType="int" parameterType="map" >
+		select count(0) 
+		  from (select a.ORG_CODE, a.name, b.goods_area_code, b.goods_area_name
+		          from bse.t_bas_transfer_center a
+		          left join BSE.T_BAS_GOODS_AREA b
+		            on b.org_code = a.ORG_CODE
+		           and b.goods_area_type = 'BSE_GOODSAREA_TYPE_STATION'
+		           and b.active = 'Y'
+		         where a.active = 'Y'
+		           and b.goods_area_type = 'BSE_GOODSAREA_TYPE_STATION'
+		           and b.active = 'Y'
+		           <if test="orgCode!=null and orgCode !='' ">
+		           		and a.org_code=#{orgCode}
+		           </if>
+		           ) t
+		 
+	</select>
+	
+	<!-- 累计日派送率查询   begin -->
+		<!-- 按外场查询明细 begin -->
+			<select id="querySendRateLogList" resultMap="sendRateResultMap" parameterType="map">
+			   select b.*,
+			   tb1.yesterday_stock_volume  yesterday_stock_volume_day,
+				sum(b.day_stock_volume) over(order by b.org_code,b.statistics_time_theory) day_stock_volume_day,
+				sum(b.day_send_volume) over(order by b.org_code,b.statistics_time_theory) day_send_volume_day
+				 from tfr.T_OPT_SEND_RATE b
+				 left join tfr.T_OPT_SEND_RATE tb1
+		        on b.org_code=tb1.org_code 
+		        and tb1.statistics_time_theory between to_date(#{beginDate} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{beginDate} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+				 where 
+				  <![CDATA[
+				  b.statistics_time_theory between to_date(#{beginDate} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{endDate} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+				 ]]>
+				 and b.org_code=#{orgCode}
+			</select>
+			<!-- 分页使用 只需要对应的总记录数 正确 即可 -->
+			<select id="querySendRateLogListCount" resultType="int" parameterType="map" >
+			<![CDATA[
+				select count(0) from tfr.T_OPT_SEND_RATE t 
+					where t.statistics_time_theory
+					between to_date(#{beginDate} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{endDate} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+					  ]]>
+					 <if test="orgCode !=null and orgCode !='' ">
+					 	and t.org_code=#{orgCode} 
+					 </if>
+			</select>
+		<!-- 按外场查询明细 end -->
+		<!-- 全国查询合计对应外场的记录 begin -->
+			<select id="querySendRateLogAllList" resultMap="sendRateResultMap" parameterType="map">
+				select tb.org_code,tb.name as org_name,
+				tb2.yesterday_stock_volume,
+				tb2.yesterday_stock_weight,
+				tb2.yesterday_stock_waybill,
+				tb2.day_stock_volume,
+				tb2.day_stock_weight,
+				tb2.day_stock_waybill,
+				tb2.day_send_volume,
+				tb2.day_send_weight,
+				tb2.day_send_waybill,
+				tb3.yesterday_stock_volume as yesterday_stock_volume_day,
+				tb1.day_stock_volume as day_stock_volume_day,
+				tb1.day_send_volume as day_send_volume_day
+				 from 
+				 (select a.ORG_CODE, a.name, b.goods_area_code, b.goods_area_name
+				          from bse.t_bas_transfer_center a
+				          left join BSE.T_BAS_GOODS_AREA b
+				            on b.org_code = a.ORG_CODE
+				           and b.goods_area_type = 'BSE_GOODSAREA_TYPE_STATION'
+				           and b.active = 'Y'
+				         where a.active = 'Y'
+				           and b.goods_area_type = 'BSE_GOODSAREA_TYPE_STATION'
+				           and b.active = 'Y') tb 
+				          left join 
+				 (
+				select t.org_code,t.org_name,
+				sum(t.day_stock_volume) as day_stock_volume,
+				sum(t.day_send_volume) as day_send_volume
+				 from tfr.T_OPT_SEND_RATE t 
+				where 
+				t.statistics_time_theory  between to_date(#{beginDate} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{endDate} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+				group by t.org_code,t.org_name order by t.org_code ) tb1 on tb.org_code=tb1.org_code
+				left join tfr.T_OPT_SEND_RATE tb2 
+				on tb.org_code=tb2.org_code 
+				and tb2.statistics_time_theory between to_date(#{endDate} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{endDate} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+				left join tfr.T_OPT_SEND_RATE tb3 
+				on tb.org_code=tb3.org_code 
+				and tb3.statistics_time_theory between to_date(#{beginDate} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{beginDate} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+			</select>
+			<!-- 分页使用，只需要统计外场记录数即可 -->
+			<select id="querySendRateLogAllListCount" resultType="int" parameterType="map" >
+				select count(0)
+				          from bse.t_bas_transfer_center a
+				          left join BSE.T_BAS_GOODS_AREA b
+				            on b.org_code = a.ORG_CODE
+				           and b.goods_area_type = 'BSE_GOODSAREA_TYPE_STATION'
+				           and b.active = 'Y'
+				         where a.active = 'Y'
+				           and b.goods_area_type = 'BSE_GOODSAREA_TYPE_STATION'
+				           and b.active = 'Y'
+			</select>
+		<!-- 全国查询合计对应外场的记录 end -->
+	<!-- 累计日派送率查询  end -->	
+	
+	
+	<!-- 定时任务   begin -->
+	<insert id="insertSendRatePojo" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.SendRateEntity">
+		insert into tfr.t_opt_send_rate(
+		  send_rate_id,
+		  org_code,
+		  org_name,
+		  yesterday_stock_volume,
+		  yesterday_stock_weight,
+		  yesterday_stock_waybill,
+		  day_stock_volume,
+		  day_stock_weight,
+		  day_stock_waybill,
+		  day_send_volume,
+		  day_send_weight,
+		  day_send_waybill,
+		  statistics_time_theory,
+		  statistics_time_reality,
+		  send_rate,
+		  goods_area_code,
+		  remain_day_stock_volume,
+		  remain_day_stock_weight,
+		  remain_stock_waybill   
+		  )values(
+		  #{sendRateId jdbcType=VARCHAR},
+		  #{orgCode jdbcType=VARCHAR},
+		  #{orgName jdbcType=VARCHAR},
+		  #{yesterdayStockVolume jdbcType=NUMERIC},
+		  #{yesterdayStockWeight jdbcType=NUMERIC},
+		  #{yesterdayStockWaybill jdbcType=NUMERIC},
+		  #{dayStockVolume jdbcType=NUMERIC},
+		  #{dayStockWeight jdbcType=NUMERIC},
+		  #{dayStockWaybill jdbcType=NUMERIC},
+		  #{daySendVolume jdbcType=NUMERIC},
+		  #{daySendWeight jdbcType=NUMERIC},
+		  #{daySendWaybill jdbcType=NUMERIC},
+		  #{statisticsTimeTheory jdbcType=TIMESTAMP},
+		  <![CDATA[sysdate,]]>
+		  #{sendRate jdbcType=NUMERIC},
+		  #{goodsAreaCode jdbcType=VARCHAR},
+		  #{remainDayStockVolume jdbcType=NUMERIC},
+		  #{remainDayStockWeight jdbcType=NUMERIC},
+		  #{remainStockWaybill jdbcType=NUMERIC}
+		  )
+	</insert>
+	
+	<insert id="batchInsertSendRatePojo" parameterType="java.util.List" >
+		begin
+		<foreach collection="list" item="item" separator=";">
+			insert into tfr.t_opt_send_rate(
+		  send_rate_id,
+		  org_code,
+		  org_name,
+		  yesterday_stock_volume,
+		  yesterday_stock_weight,
+		  yesterday_stock_waybill,
+		  day_stock_volume,
+		  day_stock_weight,
+		  day_stock_waybill,
+		  day_send_volume,
+		  day_send_weight,
+		  day_send_waybill,
+		  statistics_time_theory,
+		  statistics_time_reality,
+		  send_rate,
+		  goods_area_code,
+		  remain_day_stock_volume,
+		  remain_day_stock_weight,
+		  remain_stock_waybill   
+		  )values(
+		  #{item.sendRateId jdbcType=VARCHAR},
+		  #{item.orgCode jdbcType=VARCHAR},
+		  #{item.orgName jdbcType=VARCHAR},
+		  #{item.yesterdayStockVolume jdbcType=NUMERIC},
+		  #{item.yesterdayStockWeight jdbcType=NUMERIC},
+		  #{item.yesterdayStockWaybill jdbcType=NUMERIC},
+		  #{item.dayStockVolume jdbcType=NUMERIC},
+		  #{item.dayStockWeight jdbcType=NUMERIC},
+		  #{item.dayStockWaybill jdbcType=NUMERIC},
+		  #{item.daySendVolume jdbcType=NUMERIC},
+		  #{item.daySendWeight jdbcType=NUMERIC},
+		  #{item.daySendWaybill jdbcType=NUMERIC},
+		  #{item.statisticsTimeTheory jdbcType=TIMESTAMP},
+		  <![CDATA[sysdate,]]>
+		  #{item.sendRate jdbcType=NUMERIC},
+		  #{item.goodsAreaCode jdbcType=VARCHAR},
+		  #{item.remainDayStockVolume jdbcType=NUMERIC},
+		  #{item.remainDayStockWeight jdbcType=NUMERIC},
+		  #{item.remainStockWaybill jdbcType=NUMERIC}
+		  )
+		</foreach>
+		;end;
+	</insert>
+	
+	
+		<select id="querySendRateJobList" resultMap="sendRateResultMap" parameterType="map">
+			select t.org_code,t.name as org_name,t.goods_area_code,
+       tb3.yesterday_volume yesterday_stock_volume,
+       tb3.yesterday_weight yesterday_stock_weight,
+       tb3.yesterday_waybill yesterday_stock_waybill,
+       tb1.goods_volume day_stock_volume,
+       round(tb1.goods_weight/1000,2) day_stock_weight,
+       tb1.waybill_no day_stock_waybill,
+       round(tb2.goods_weight_sum/1000,2) day_send_weight,
+       tb2.goods_volume_sum day_send_volume,
+       tb2.waybill_no_sum day_send_waybill,
+       round(tb4.remain_day_stock_weight/1000,2) remain_day_stock_weight,
+       tb4.remain_day_stock_volume,
+       tb4.remain_stock_waybill
+  from (select a.ORG_CODE, a.name, b.goods_area_code, b.goods_area_name
+          from bse.t_bas_transfer_center a
+          left join BSE.T_BAS_GOODS_AREA b
+            on b.org_code = a.ORG_CODE
+           and b.goods_area_type = 'BSE_GOODSAREA_TYPE_STATION'
+           and b.active = 'Y'
+         where a.active = 'Y'
+           and b.goods_area_type = 'BSE_GOODSAREA_TYPE_STATION'
+           and b.active = 'Y'
+           order by a.org_code
+           ) t
+  left join (
+               select f2.goods_area_code,
+       f2.org_code,
+       sum(f2.goods_weight_avg) as goods_weight,
+       sum(f2.goods_volume_avg) as goods_volume,
+       count(distinct(f2.waybill_no)) as waybill_no
+  from (select ff.*,
+round((decode(h.goods_weight_total,null,0,h.goods_weight_total) / decode(h.goods_qty_total,null,1,h.goods_qty_total)), 2) as goods_weight_avg,
+               round((decode(h.goods_volume_total,null,0,h.goods_volume_total) / decode(h.goods_qty_total,null,1,h.goods_qty_total)), 2) as goods_volume_avg
+   from (               
+select  f.waybill_no,
+               f.serial_no,
+               f.goods_area_code,
+               f.org_code
+       from  tfr.t_opt_in_stock f
+       where  f.in_stock_time  between to_date(#{queryDate} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{queryDate} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+               group by f.waybill_no,f.serial_no,f.goods_area_code,f.org_code
+               ) ff left 
+               join pkp.t_srv_waybill h
+            on h.waybill_no = ff.waybill_no
+           and h.active = 'Y'
+               ) f2
+ group by f2.goods_area_code, f2.org_code
+              ) tb1
+    on t.org_code = tb1.org_code
+   and t.goods_area_code = tb1.goods_area_code
+  left join (
+             select org_code,goods_area_code,sum(goods_weight_sign) goods_weight_sum,
+sum(goods_volume_sign) goods_volume_sum,count(waybill_no_sign) waybill_no_sum
+from (
+select t.org_code, t.goods_area_code,t.goods_weight_sign,t.goods_volume_sign,t.waybill_no_sign
+   from (select c.org_code,
+                c.goods_area_code,
+                p.sign_goods_qty *
+                round((decode(h.goods_weight_total,null,0,h.goods_weight_total) / decode(h.goods_qty_total,null,1,h.goods_qty_total)), 2) as goods_weight_sign,
+                p.sign_goods_qty *
+                round((decode(h.goods_volume_total,null,0,h.goods_volume_total) / decode(h.goods_qty_total,null,1,h.goods_qty_total)), 2) as goods_volume_sign,
+                p.waybill_no as waybill_no_sign
+           from pkp.t_srv_waybill_sign_result p
+           left join pkp.t_srv_waybill h  
+             on h.waybill_no = p.waybill_no
+            and h.active = 'Y'
+           left join (
+                select distinct waybill_no,org_code,goods_area_code,out_stock_time
+                   from tfr.t_opt_out_stock where out_stock_time  between to_date(#{queryDate} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{queryDate} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+           ) c on c.waybill_no =p.waybill_no 
+           and c.out_stock_time  between to_date(#{queryDate} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{queryDate} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+          where p.active = 'Y'
+            and h.active = 'Y'
+            and p.sign_time between to_date(#{queryDate} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{queryDate} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+          ) t
+  group by t.org_code, t.goods_area_code,t.goods_weight_sign,t.goods_volume_sign,t.waybill_no_sign
+                               )group by org_code,goods_area_code
+             ) tb2
+     on t.org_code = tb2.org_code
+   and t.goods_area_code = tb2.goods_area_code
+ left join (
+              select k.org_code,
+                     k.goods_area_code,
+                     sum(k.remain_day_stock_volume) as yesterday_volume,
+                     sum(k.remain_day_stock_weight) as yesterday_weight,
+                     sum(k.remain_stock_waybill) as yesterday_waybill
+               from tfr.t_opt_send_rate k
+               where k.statistics_time_theory between to_date(#{queryYesterday} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{queryYesterday} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+               group by k.org_code,
+                     k.goods_area_code) tb3
+     on t.org_code = tb3.org_code
+   and t.goods_area_code = tb3.goods_area_code
+   left join (
+         select k.org_code,k.goods_area_code,
+        sum( round((k1.goods_weight_total / k1.goods_qty_total), 2)) as remain_day_stock_weight,
+            sum(round((k1.goods_volume_total / k1.goods_qty_total), 2)) as remain_day_stock_volume,
+            count(distinct k.waybill_no) as remain_stock_waybill 
+           from tfr.t_opt_stock_pair k left join pkp.t_srv_waybill k1 on
+         k1.waybill_no= k.waybill_no and k1.active='Y' 
+         where  k1.active='Y'
+         and k.in_stock_time between to_date(#{queryDate} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{queryDate} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+         group by k.org_code,k.goods_area_code
+   ) tb4 on t.org_code = tb4.org_code
+    and t.goods_area_code = tb4.goods_area_code
+ 	  where  ORA_HASH(t.org_code, #{threadCount}) = #{threadNo}
+		</select>
+	<!-- 定时任务  end -->
+	<!-- 根据部门and日期 查询当日的预计派送到达货量 -->
+	<select id="queryForeCastDeliverGoodsByDate" resultMap="sendRateResultMap" parameterType="map">
+	  SELECT --根据部门and日期 查询当日的预计派送到达货量
+	   SUM(T.WEIGHT) TOMORROW_STOCK_WEIGHT,
+       SUM(T.VOLUME) TOMORROW_STOCK_VOLUME,
+       T.TFR_CTR_CODE ORG_CODE
+	  FROM TFR.T_OPT_FORECAST_CARGO_DETAIL T
+	 WHERE T.TFR_CTR_CODE = #{orgCode}
+	   AND T.STA_DATE = TO_DATE(#{queryDate}, 'yyyy-mm-dd')
+	   AND T.GOODS_TYPE = 'DEPART_DISPATCH'
+	 GROUP BY T.TFR_CTR_CODE
+	</select>
+	
+	
+</mapper>

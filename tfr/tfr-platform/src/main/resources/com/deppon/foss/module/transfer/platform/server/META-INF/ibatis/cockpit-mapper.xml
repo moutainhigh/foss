@@ -1,0 +1,390 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="com.deppon.foss.module.transfer.platform.api.server.dao.ICockpitDao">
+	
+	<!--场地日承载货量Vo-->
+	<resultMap id="CockpitVoResultMap"
+		type="com.deppon.foss.module.transfer.platform.api.shared.vo.CockpitVo">
+		<result property="tfrCtrCode" column="tfrCtrCode" />
+		<result property="tfrCtrName" column="tfrCtrName" />
+		<result property="dutyCount" column="duty_count" />
+		<result property="absenteeCount" column="absentee_count" />
+		<result property="zxlhCount" column="zxlh_count" />
+		<result property="stockWeight" column="htkcl_count" />
+		<result property="waitUnloadWeight" column="xhl_count" />
+		<result property="lngDisOnTheWayNums" column="long_onway_count" />
+		<result property="shtDisOnTheWayNums" column="short_onway_count" />
+		<result property="lngDisArrivedNums" column="long_notarrive_count" />
+		<result property="shtDisArrivedNums" column="short_notarrive_count" />
+		<result property="loadUnloadProgressAbnormalNums" column="error_count" />
+		<result property="zxdccCount" column="zxdcc_count" />
+		<result property="platformRate" column="platform_rate" />
+		<result property="stockVolume" column="stock_volume" />
+		<result property="returnRate" column="return_rate" />
+		<result property="saturationDay" column="Saturation_Day" />
+	</resultMap>
+	
+	<select id="queryCockpitByOrgCode" parameterType="map" resultMap="CockpitVoResultMap">
+		<if test="orgCode != null" >
+		 select * from tfr.TFR_OPT_VIEW_POILOTHOUSE where tfr.TFR_OPT_POILOTHOUSE_PARAM.set_param(#{orgCode})=#{orgCode}
+		 </if>
+	</select>
+	
+	<select id="onDutyNums" parameterType="java.util.Map" resultType="java.lang.String">
+		<![CDATA[
+		SELECT COUNT(1)
+		  FROM tfr.t_opt_tfr_ctr_on_duty t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.begin_time <= #{currentTime,jdbcType=TIMESTAMP}
+		   AND t.end_time >= #{currentTime,jdbcType=TIMESTAMP}
+		 ]]>  
+	</select>
+	
+	<select id="absenteeNums" parameterType="java.util.Map" resultType="java.lang.String">
+	<![CDATA[
+		SELECT COUNT(1)
+		  FROM tfr.t_opt_tc_absentee_info t
+		 WHERE t.transfer_center_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.absent_begin_date <= #{currentTime,jdbcType=TIMESTAMP}
+		   AND t.absent_end_date >= #{currentTime,jdbcType=TIMESTAMP}
+	]]>  
+	</select>
+	
+	<select id="tallyNums" parameterType="java.util.Map" resultType="java.lang.String">
+	<![CDATA[
+		SELECT load_cnt + unload_cnt
+		  FROM (SELECT COUNT(1) load_cnt
+		          FROM tfr.t_opt_load_task t
+		         WHERE t.orig_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		           AND t.load_start_time >= #{currentTime,jdbcType=TIMESTAMP} - 1
+		           AND t.task_state = 'LOADING'
+		           AND t.load_way = 'PDA') a,
+		       (SELECT COUNT(1) unload_cnt
+		          FROM tfr.t_opt_unload_task t
+		         WHERE t.unload_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		           AND t.unload_start_time >= #{currentTime,jdbcType=TIMESTAMP} - 1 /*业务默认卸车一天内一定把车卸好*/
+		           AND t.task_state = 'UNLOADING'
+		           AND t.unload_way = 'PDA') b
+	]]> 
+	</select>
+	
+	<select id="eForkNums" parameterType="java.util.Map" resultType="java.lang.String">
+	<![CDATA[
+		WITH org AS
+		 (SELECT t.code, t.name
+		    FROM (SELECT o.parent_org_name,
+		                 o.name,
+		                 o.parent_org_code,
+		                 o.code,
+		                 NVL(o.transfer_center, 'N') transfer_center
+		            FROM bse.t_bas_org o
+		           WHERE o.active = 'Y') t
+		   START WITH t.code = #{tfrCtrCode,jdbcType=VARCHAR}
+		  CONNECT BY PRIOR t.code = t.parent_org_code
+		         AND t.transfer_center = 'N'),
+		emp AS
+		 (SELECT e.org_code, e.emp_code, org.name, d.value_name
+		    FROM bse.t_bas_employee e
+		   INNER JOIN org
+		      ON org.code = e.org_code
+		   INNER JOIN bse.t_bas_data_postion_degree d
+		      ON e.title = d.value_code
+		     AND d.value_name IN ('电叉司机', '电叉司机组长')
+		     AND d.active = 'Y'
+		   WHERE e.active = 'Y')
+		SELECT COUNT(1)
+		  FROM pda.t_pda_device_login_detail t
+		 INNER JOIN emp
+		    ON emp.emp_code = t.usercode
+		 WHERE t.lastlogindate <= #{currentTime,jdbcType=TIMESTAMP}
+		   AND t.loginoutdate >= #{currentTime,jdbcType=TIMESTAMP}	
+	]]> 
+	</select>
+	
+	<select id="stockWeight" parameterType="java.util.Map" resultType="java.lang.String">
+	<![CDATA[
+	SELECT NVL(ROUND(MAX(w.goods_weight_total) * COUNT(1) /
+	                 MAX(w.goods_qty_total) / 1000,
+	                 3),
+	           0) stockWeight
+	  FROM tfr.t_opt_stock s
+	 INNER JOIN pkp.t_srv_waybill w
+	    ON w.waybill_no = s.waybill_no
+	   AND w.active = 'Y'
+	 WHERE s.org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+	   AND NOT EXISTS (SELECT 1 /*非正在装车*/
+	          FROM tfr.t_opt_load_task lt
+	         INNER JOIN tfr.t_opt_load_waybill_detail wd
+	            ON wd.load_task_id = lt.id
+	         INNER JOIN tfr.t_opt_load_serialno ls
+	            ON ls.load_waybill_detail_id = wd.id
+	           AND ls.be_loaded = 'Y'
+	         WHERE lt.orig_org_code = s.org_code
+	           AND lt.load_start_time >= #{currentTime,jdbcType=TIMESTAMP} - 1 /*业务默认装车一天内一定把车装好*/
+	           AND lt.task_state = 'LOADING'
+	           AND wd.waybill_no = s.waybill_no
+	           AND ls.serial_no = s.serial_no)
+	]]> 
+	</select>
+	
+	<select id="waitUnloadWeight" parameterType="java.util.Map" resultType="java.lang.String">
+	<![CDATA[
+		SELECT NVL(long_weight,0) + NVL(short_weight, 0)
+		  FROM (SELECT SUM(h.weight_total) long_weight
+		          FROM tfr.t_opt_truck_task_detail td
+		         INNER JOIN tfr.t_opt_truck_task_bill tb
+		            ON tb.truck_task_detail_id = td.id
+		           AND tb.assign_state = 'UNASSIGN'
+		           AND tb.bill_level = 1
+		           AND tb.bill_type = 'VEHICLEASSEMBLE'
+		         INNER JOIN tfr.t_opt_vehicleassemblebill v
+		            ON v.vehicleassemble_no = tb.bill_no
+		         INNER JOIN tfr.t_opt_vehicleassemble_detail vd
+		            ON vd.vehicleassemblebill_id = v.id
+		         INNER JOIN tfr.t_opt_handoverbill h
+		            ON h.handover_no = vd.handover_no
+		           AND h.dest_org_code = td.dest_org_code
+		           AND h.handoverbill_state = 40
+		         WHERE td.dest_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		           AND td.actual_arrive_time >= #{currentTime,jdbcType=TIMESTAMP} - 2 /*业务默认到达两天内一定卸车*/
+		           AND td.status = 'ARRIVED'
+		           AND td.be_car_load = 'N') a,
+		       (SELECT SUM(h.weight_total) short_weight
+		          FROM tfr.t_opt_truck_task_detail td
+		         INNER JOIN tfr.t_opt_truck_task_bill tb
+		            ON tb.truck_task_detail_id = td.id
+		           AND tb.assign_state = 'UNASSIGN'
+		           AND tb.bill_level = 1
+		           AND tb.bill_type = 'HANDOVER'
+		         INNER JOIN tfr.t_opt_handoverbill h
+		            ON h.handover_no = tb.bill_no
+		           AND h.dest_org_code = td.dest_org_code
+		           AND h.handoverbill_state = 40
+		         WHERE td.dest_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		           AND td.actual_arrive_time >= #{currentTime,jdbcType=TIMESTAMP} - 2 /*业务默认到达两天内一定卸车*/
+		           AND td.status = 'ARRIVED'
+		           AND td.be_car_load = 'N') b
+	]]> 
+	</select>
+	
+	<select id="lngDisOnTheWayNums" parameterType="java.util.Map" resultType="java.lang.String">
+	<![CDATA[
+		SELECT COUNT(DISTINCT td.truck_task_id)
+		  FROM tfr.t_opt_truck_task_detail td
+		 INNER JOIN tfr.t_opt_truck_task t
+		    ON t.id = td.truck_task_id
+		   AND t.business_type = 'LONG_DISTANCE'
+		 WHERE td.dest_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND td.actual_depart_time >= #{currentTime,jdbcType=TIMESTAMP} - 7 /*业务默认出发7天一定到达*/
+		   AND td.status = 'ONTHEWAY'
+		   AND td.be_car_load = 'N'
+	]]> 
+	</select>
+	
+	<select id="shtDisOnTheWayNums" parameterType="java.util.Map" resultType="java.lang.String">
+	<![CDATA[
+		SELECT COUNT(DISTINCT td.truck_task_id)
+		  FROM tfr.t_opt_truck_task_detail td
+		 INNER JOIN tfr.t_opt_truck_task t
+		    ON t.id = td.truck_task_id
+		   AND t.business_type = 'SHORT_DISTANCE'
+		 WHERE td.dest_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND td.actual_depart_time >= #{currentTime,jdbcType=TIMESTAMP} - 7 /*业务默认出发7天一定到达*/
+		   AND td.status = 'ONTHEWAY'
+		   AND td.be_car_load = 'N'
+	]]> 
+	</select>
+	
+	<select id="lngDisArrivedNums" parameterType="java.util.Map" resultType="java.lang.String">
+	<![CDATA[
+		SELECT COUNT(DISTINCT td.truck_task_id)
+		  FROM tfr.t_opt_truck_task_detail td
+		 INNER JOIN tfr.t_opt_truck_task t
+		    ON t.id = td.truck_task_id
+		   AND t.business_type = 'LONG_DISTANCE'
+		 INNER JOIN tfr.t_opt_truck_task_bill tb
+		    ON tb.truck_task_detail_id = td.id
+		   AND tb.assign_state = 'UNASSIGN'
+		   AND tb.bill_level = 1
+		 WHERE td.dest_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND td.actual_arrive_time >= #{currentTime,jdbcType=TIMESTAMP} - 2 /*业务默认到达两天内一定卸车*/
+		   AND td.status = 'ARRIVED'
+		   AND td.be_car_load = 'N'
+	]]> 
+	</select>
+	
+	<select id="shtDisArrivedNums" parameterType="java.util.Map" resultType="java.lang.String">
+	<![CDATA[
+		SELECT COUNT(DISTINCT td.truck_task_id)
+		  FROM tfr.t_opt_truck_task_detail td
+		 INNER JOIN tfr.t_opt_truck_task t
+		    ON t.id = td.truck_task_id
+		   AND t.business_type = 'SHORT_DISTANCE'
+		 INNER JOIN tfr.t_opt_truck_task_bill tb
+		    ON tb.truck_task_detail_id = td.id
+		   AND tb.assign_state = 'UNASSIGN'
+		   AND tb.bill_level = 1
+		 WHERE td.dest_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND td.actual_arrive_time >= #{currentTime,jdbcType=TIMESTAMP} - 2 /*业务默认到达两天内一定卸车*/
+		   AND td.status = 'ARRIVED'
+		   AND td.be_car_load = 'N'
+	]]> 
+	</select>
+	
+	<select id="loadUnloadProgressAbnormalNums" parameterType="java.util.Map" resultType="java.lang.String">
+	<![CDATA[
+		SELECT COUNT(1)
+		  FROM (SELECT t.id taskId,
+		               (CAST(#{currentTime,jdbcType=TIMESTAMP} AS DATE) - CAST(MAX(t.load_start_time) AS DATE)) * 24 * 60 costMin,
+		               NVL(SUM(d.load_qty / w.goods_qty_total * w.goods_weight_total) / 1000,
+		                   0) weightDone
+		          FROM tfr.t_opt_load_task t
+		          LEFT JOIN tfr.t_opt_load_waybill_detail d
+		            ON d.load_task_id = t.id
+		          LEFT JOIN pkp.t_srv_waybill w
+		            ON w.waybill_no = d.waybill_no
+		           AND w.active = 'Y'
+		         WHERE t.orig_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		           AND t.load_start_time >= #{currentTime,jdbcType=TIMESTAMP} - 1 /*业务默认装车车开始一天内一定结束装车*/
+		           AND t.task_state = 'LOADING'
+		         GROUP BY t.id
+		        UNION ALL
+		        SELECT t.id taskId,
+		               (CAST(#{currentTime,jdbcType=TIMESTAMP} AS DATE) - CAST(MAX(t.unload_start_time) AS DATE)) * 24 * 60 costMin,
+		               NVL(SUM(d.operation_goods_qty / w.goods_qty_total *
+		                       w.goods_weight_total) / 1000,
+		                   0) weightDone
+		          FROM tfr.t_opt_unload_task t
+		          LEFT JOIN tfr.t_opt_unload_waybill_detail d
+		            ON d.unload_task_id = t.id
+		          LEFT JOIN pkp.t_srv_waybill w
+		            ON w.waybill_no = d.waybill_no
+		           AND w.active = 'Y'
+		         WHERE t.unload_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		           AND t.unload_start_time >= #{currentTime,jdbcType=TIMESTAMP} - 1 /*业务默认卸车开始一天内一定结束卸车*/
+		           AND t.task_state = 'UNLOADING'
+		         GROUP BY t.id)
+		 WHERE weightDone / costMin < 1 / 12
+	]]> 
+	</select>
+	
+	<select id="platformUsageRate" parameterType="java.util.Map" resultType="java.lang.String">
+	<![CDATA[
+		SELECT CASE
+		         WHEN total_cnt IS NULL OR total_cnt = 0 THEN
+		          0 || '%'
+		         ELSE
+		          TO_CHAR(((load_cnt + unload_cnt) * 100 / total_cnt), 'fm999999990.000') || '%'
+		       END
+		  FROM (SELECT COUNT(DISTINCT p.platform_code) load_cnt
+		          FROM tfr.t_opt_load_task t
+		         INNER JOIN bse.t_bas_platform p
+		            ON p.org_code = t.orig_org_code
+		           AND p.platform_code = t.platform_no
+		           AND p.active = 'Y'
+		         WHERE t.orig_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		           AND t.load_start_time >= #{currentTime,jdbcType=TIMESTAMP} - 1 /*业务默认装车车开始一天内一定结束装车*/
+		           AND t.task_state = 'LOADING') a,
+		       (SELECT COUNT(DISTINCT p.platform_code) unload_cnt
+		          FROM tfr.t_opt_unload_task t
+		         INNER JOIN bse.t_bas_platform p
+		            ON p.org_code = t.unload_org_code
+		           AND p.platform_code = t.platform_no
+		           AND p.active = 'Y'
+		         WHERE t.unload_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		           AND t.unload_start_time >= #{currentTime,jdbcType=TIMESTAMP} - 1 /*业务默认卸车开始一天内一定结束卸车*/
+		           AND t.task_state = 'UNLOADING') b,
+		       (SELECT COUNT(1) total_cnt
+		          FROM bse.t_bas_platform p
+		         WHERE p.org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		           AND p.active = 'Y') c
+	]]> 
+	</select>
+	
+	<select id="dispatchStockVolume" parameterType="java.util.Map" resultType="java.lang.String">
+	<![CDATA[
+		SELECT NVL(ROUND(SUM(s.stock_goods_qty / w.goods_qty_total *
+		                     w.goods_volume_total),
+		                 3),
+		           0)
+		  FROM tfr.t_opt_waybill_stock s
+		 INNER JOIN pkp.t_srv_waybill w
+		    ON w.waybill_no = s.waybill_no
+		   AND w.active = 'Y'
+		 WHERE s.org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND s.goods_area_code =
+		       (SELECT a.goods_area_code
+		          FROM bse.t_bas_goods_area a
+		         WHERE a.org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		           AND a.goods_area_type = 'BSE_GOODSAREA_TYPE_STATION'
+		           AND a.active = 'Y'
+		           AND rownum = 1)
+	]]> 
+	</select>
+	
+	<select id="sendBackPct" parameterType="java.util.Map" resultType="java.lang.String">
+	<![CDATA[
+		WITH temp AS
+		 (SELECT d.id, td.waybill_no, td.gap_type
+		    FROM tfr.t_opt_de_load_gaprep t
+		   INNER JOIN pkp.t_srv_deliverbill d
+		      ON d.deliverbill_no = t.deliverbill_no
+		     AND d.status IN ('CONFIRMED', 'PDA_DOWNLOADED', 'SIGNINFO_CONFIRMED')
+		    LEFT JOIN tfr.t_opt_de_load_gaprep_detail td
+		      ON td.de_load_gaprep_id = t.id
+		   WHERE t.orig_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		     AND t.create_time >= TRUNC(#{currentTime,jdbcType=TIMESTAMP})
+		     AND t.be_valid = 'Y'
+		     AND t.gaprep_status = 'AFFIRM'
+		  UNION ALL
+		  SELECT d.id,
+		         td.waybill_no,
+		         decode(td.waybill_no, NULL, NULL, '退回') gap_type
+		    FROM tfr.t_opt_de_load_gaprep t
+		   INNER JOIN pkp.t_srv_deliverbill d
+		      ON d.deliverbill_no = t.deliverbill_no
+		     AND d.status IN ('CONFIRMED', 'PDA_DOWNLOADED', 'SIGNINFO_CONFIRMED')
+		    LEFT JOIN tfr.t_opt_load_waybill_return td
+		      ON td.load_task_no = t.load_task_no
+		   WHERE t.orig_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		     AND t.create_time >= TRUNC(#{currentTime,jdbcType=TIMESTAMP})
+		     AND t.be_valid = 'Y'
+		     AND t.gaprep_status = 'AFFIRM')
+		SELECT CASE
+		         WHEN (a + b - c) = 0 THEN
+		          '0%'
+		         ELSE
+		          TO_CHAR((a * 100 / (a + b - c)), 'fm999999990.000') || '%'
+		       END
+		  FROM (SELECT COUNT(1) a /*退单数*/
+		          FROM (SELECT 1
+		                  FROM temp
+		                 WHERE gap_type IN ('少货', '退回')
+		                 GROUP BY temp.id, temp.waybill_no)),
+		       (SELECT COUNT(1) b /*派送单数*/
+		          FROM (SELECT 1
+		                  FROM temp
+		                 INNER JOIN pkp.t_srv_deliverbill_detail dd
+		                    ON dd.t_srv_deliverbill_id = temp.id
+		                 GROUP BY dd.t_srv_deliverbill_id, dd.waybill_no)),
+		       (SELECT COUNT(1) c /*多货数*/
+		          FROM (SELECT 1
+		                  FROM temp
+		                 WHERE gap_type = '多货'
+		                 GROUP BY id, waybill_no))
+	]]> 
+	</select>
+	
+	<select id="stockSaturation" parameterType="java.util.Map" resultType="java.lang.String">
+	<![CDATA[
+		SELECT t.saturation_day || '%'
+		  FROM tfr.t_opt_stock_saturation t
+		 WHERE t.org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.statistics_time_theory = TRUNC(#{currentTime,jdbcType=TIMESTAMP}) - 1
+	]]> 
+	</select>
+	
+</mapper>

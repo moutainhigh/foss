@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.management.billListCheck">
+
+	<!-- 电子对账单 -->
+	<resultMap id="billListCheckResultMap"
+		type="com.deppon.foss.module.transfer.management.api.shared.dto.BillListCheckDto">
+		<result column="ID" property="id" />
+		<result column="bill_date" property="billDate" />
+		<result column="fuel_fee" property="fuelFee" />
+		<result column="fuel_fee_sell" property="fuelFeeSell" />
+		<result column="fuel_fee_sell_after" property="fuelFeeSellAfter" />
+		<result column="road_toll" property="roadTollFee" />
+		<result column="road_toll_sell" property="roadTollFeeSell" />
+		<result column="road_toll_sell_after" property="roadTollFeeSellAfter" />
+		<result column="division_org_code" property="divisionOrgCode" />
+		<result column="division_org_name" property="divisionOrgName" />
+		<result column="trans_department_code" property="transDepartmentCode" />
+		<result column="trans_department_name" property="transDepartmentName" />
+		<result column="operator_code" property="operatorCode" />
+		<result column="operator_name" property="operatorName" />
+		<result column="operate_date" property="operateDate" />
+	</resultMap>
+
+	<!-- 电子对账单Log -->
+	<resultMap id="billListCheckLogResultMap"
+		type="com.deppon.foss.module.transfer.management.api.shared.dto.BillListCheckDto">
+		<result column="ID" property="id" />
+		<result column="bill_date" property="billDate" />
+		<result column="fuel_fee" property="fuelFee" />
+		<result column="fuel_fee_sell" property="fuelFeeSell" />
+		<result column="road_toll" property="roadTollFee" />
+		<result column="road_toll_sell" property="roadTollFeeSell" />
+		<result column="division_org_code" property="divisionOrgCode" />
+		<result column="division_org_name" property="divisionOrgName" />
+		<result column="trans_department_code" property="transDepartmentCode" />
+		<result column="trans_department_name" property="transDepartmentName" />
+		<result column="operator_code" property="operatorCode" />
+		<result column="operator_name" property="operatorName" />
+		<result column="operate_date" property="operateDate" />
+		<result column="queue_id" property="queueID" />
+	</resultMap>
+
+	<!-- 电子对账单static -->
+	<resultMap id="billListCheckStaticMap"
+		type="com.deppon.foss.module.transfer.management.api.shared.dto.BillListCheckStaDto">
+		<result property="fuelFeeTotal" column="fuel_fee_total" />
+		<result property="fuelFeeSellTotal" column="fuel_fee_sell_total" />
+		<result property="fuelFeeSellAfterTotal" column="fuel_fee_sell_after_total" />
+		<result property="roadTollFeeTotal" column="road_toll_total" />
+		<result property="roadTollFeeSellTotal" column="road_toll_sell_total" />
+		<result property="roadTollFeeSellAfterTotal" column="road_toll_sell_after_total" />
+	</resultMap>
+
+	<!--log电子对账单(共工查询子段) -->
+	<sql id="Log_BillListCheck_List">
+		id, bill_date, fuel_fee, fuel_fee_sell, road_toll, road_toll_sell,
+		division_org_code,
+		division_org_name, trans_department_code, trans_department_name, operator_code,
+		operator_name, operate_date,queue_id
+	</sql>
+
+	<!--Main电子对账单(共工查询子段) -->
+	<sql id="main_BillListCheck_List">
+		id, bill_date, fuel_fee, fuel_fee_sell,fuel_fee_sell_after, road_toll,
+		road_toll_sell,road_toll_sell_after, division_org_code,
+		division_org_name, trans_department_code, trans_department_name,
+		operator_code, operator_name, operate_date
+	</sql>
+
+	<!-- 运单库存查询条件 -->
+	<sql id="billListCheck_Where">
+		where 
+		<![CDATA[
+			a.bill_date>=#{beginDate} 
+				and a.bill_date<=#{endDate} 
+		]]>
+		<if test="divisionOrgCode != null and divisionOrgCode != ''">
+			and a.division_org_code=#{divisionOrgCode}
+		</if>
+		<if test="transDepartmentCode != null and transDepartmentCode != ''">
+			and a.trans_department_code=#{transDepartmentCode}
+		</if>
+	</sql>
+
+	<!-- 插入电子对账单log(批量) -->
+	<insert id="batchInsertBillListCheckLog" parameterType="java.util.List">
+		BEGIN
+		<foreach collection="list" item="item" separator=";">
+			insert into TFR.T_OPT_BILLLISTCHECK_LOG (
+			<include refid="Log_BillListCheck_List" />
+			)
+			values (#{item.id,jdbcType=VARCHAR}, #{item.billDate,jdbcType=DATE},
+			#{item.fuelFee},#{item.fuelFeeSell},
+			#{item.roadTollFee},#{item.roadTollFeeSell},
+			#{item.divisionOrgCode,jdbcType=VARCHAR},
+			#{item.divisionOrgName,jdbcType=VARCHAR},
+			#{item.transDepartmentCode,jdbcType=VARCHAR},
+			#{item.transDepartmentName,jdbcType=VARCHAR},
+			#{item.operatorCode,jdbcType=VARCHAR},
+			#{item.operatorName,jdbcType=VARCHAR},
+			#{item.operateDate,jdbcType=TIMESTAMP},
+			#{item.queueID,jdbcType=VARCHAR}
+			)
+		</foreach>
+		;END;
+	</insert>
+
+	<!-- 插入电子对账单log(单条) -->
+	<insert id="insertBillListCheckLogOne"
+		parameterType="com.deppon.foss.module.transfer.management.api.shared.dto.BillListCheckDto">
+		insert into TFR.T_OPT_BILLLISTCHECK_LOG (
+		<include refid="Log_BillListCheck_List" />
+		)
+		values (#{id,jdbcType=VARCHAR}, #{billDate,jdbcType=DATE},
+		#{fuelFee},#{fuelFeeSell},
+		#{roadTollFee},#{roadTollFeeSell},
+		#{divisionOrgCode,jdbcType=VARCHAR},
+		#{divisionOrgName,jdbcType=VARCHAR},
+		#{transDepartmentCode,jdbcType=VARCHAR},
+		#{transDepartmentName,jdbcType=VARCHAR},
+		#{operatorCode,jdbcType=VARCHAR}, #{operatorName,jdbcType=VARCHAR},
+		#{operateDate,jdbcType=TIMESTAMP},
+		#{queueID,jdbcType=VARCHAR}
+		)
+	</insert>
+
+	<!-- 查询电子对账单group by 日期 所属事业部、所属车队 -->
+	<select id="queryBillListCheckLogGroup" resultMap="billListCheckLogResultMap"
+		parameterType="java.util.Map">
+		select a.bill_date,a.division_org_code,a.trans_department_code,
+		sum(a.fuel_fee) fuel_fee,sum(a.fuel_fee_sell) fuel_fee_sell,
+		sum(a.road_toll) road_toll,sum(a.road_toll_sell) road_toll_sell
+		from T_OPT_BILLLISTCHECK_LOG a
+		where a.queue_id = #{queueID}
+    	group by a.bill_date,a.division_org_code,a.trans_department_code
+	</select>
+
+	<!-- 插入电子对账单Main -->
+	<insert id="insertBillListCheckOne"
+		parameterType="com.deppon.foss.module.transfer.management.api.shared.dto.BillListCheckDto">
+		insert into TFR.T_OPT_BILLLISTCHECK (
+		<include refid="main_BillListCheck_List" />
+		)
+		values (#{id,jdbcType=VARCHAR}, #{billDate,jdbcType=DATE},
+		#{fuelFee},#{fuelFeeSell},#{fuelFeeSellAfter},
+		#{roadTollFee},#{roadTollFeeSell},#{roadTollFeeSellAfter},
+		#{divisionOrgCode,jdbcType=VARCHAR},
+		#{divisionOrgName,jdbcType=VARCHAR},
+		#{transDepartmentCode,jdbcType=VARCHAR},
+		#{transDepartmentName,jdbcType=VARCHAR},
+		#{operatorCode,jdbcType=VARCHAR}, #{operatorName,jdbcType=VARCHAR},
+		#{operateDate,jdbcType=TIMESTAMP}
+		)
+	</insert>
+
+	<!-- 查询电子对账单Main -->
+	<select id="queryBillListCheck" resultMap="billListCheckResultMap"
+		parameterType="java.util.Map">
+  		<![CDATA[
+			SELECT 
+		]]>
+		<include refid="main_BillListCheck_List" />
+		from TFR.T_OPT_BILLLISTCHECK a
+		<include refid="billListCheck_Where" />
+		ORDER BY a.bill_date desc
+	</select>
+	
+	<!-- 查询电子对账单Main -->
+	<select id="queryBillListCheckOne" resultMap="billListCheckResultMap"
+		parameterType="java.util.Map">
+  		<![CDATA[
+			SELECT 
+		]]>
+		<include refid="main_BillListCheck_List" />
+		from TFR.T_OPT_BILLLISTCHECK a
+		where
+		<![CDATA[ a.bill_date=#{billDate} ]]>
+		and a.division_org_code=#{divisionOrgCode} 
+		and a.trans_department_code=#{transDepartmentCode}
+	</select>
+
+	<!-- 查询电子对账单Main(总条数) -->
+	<select id="queryBillListCheckCount" resultType="Long"
+		parameterType="java.util.Map">
+		SELECT count(0) from TFR.T_OPT_BILLLISTCHECK a
+		<include refid="billListCheck_Where" />
+	</select>
+
+	<!-- 查询结果去掉分页统计static -->
+	<select id="queryBillListCheckStatic" resultMap="billListCheckStaticMap"
+		parameterType="java.util.Map">
+		SELECT sum(a.fuel_fee) as fuel_fee_total,
+		sum(a.fuel_fee_sell) fuel_fee_sell_total,
+		sum(a.fuel_fee_sell_after) fuel_fee_sell_after_total,
+		sum(a.road_toll) road_toll_total,
+		sum(a.road_toll_sell) road_toll_sell_total,
+		sum(a.road_toll_sell_after) road_toll_sell_after_total
+		from TFR.T_OPT_BILLLISTCHECK a
+		<include refid="billListCheck_Where" />
+	</select>
+	
+	<!-- 更新电子对账单Main -->
+	<update id="updateBillListCheck"
+		parameterType="com.deppon.foss.module.transfer.management.api.shared.dto.BillListCheckDto">
+		update TFR.T_OPT_BILLLISTCHECK a
+		<set>
+		<if test="billDate != null and billDate != '' ">
+			a.bill_date = #{billDate,jdbcType=DATE},
+		</if>
+		<if test="fuelFee != null">
+			a.fuel_fee = #{fuelFee},
+		</if>
+		<if test="fuelFeeSell != null">
+			a.fuel_fee_sell = #{fuelFeeSell},
+		</if>
+		<if test="fuelFeeSellAfter != null">
+			a.fuel_fee_sell_after = #{fuelFeeSellAfter},
+		</if>
+		<if test="roadTollFee != null">
+			a.road_toll = #{roadTollFee},
+		</if>
+		<if test="roadTollFeeSell != null">
+			a.road_toll_sell = #{roadTollFeeSell},
+		</if>
+		<if test="roadTollFeeSellAfter != null">
+			a.road_toll_sell_after = #{roadTollFeeSellAfter},
+		</if>
+		<if test="divisionOrgCode != null and divisionOrgCode != '' ">
+			a.division_org_code = #{divisionOrgCode,jdbcType=VARCHAR},
+		</if>
+		<if test="divisionOrgName != null and divisionOrgName != '' ">
+			a.division_org_name = #{divisionOrgName,jdbcType=VARCHAR},
+		</if>
+		<if test="transDepartmentCode != null and transDepartmentCode != '' ">
+			a.trans_department_code = #{transDepartmentCode,jdbcType=VARCHAR},
+		</if>
+		<if test="transDepartmentName != null and transDepartmentName != '' ">
+			a.trans_department_name = #{transDepartmentName,jdbcType=VARCHAR},
+		</if>
+		<if test="operatorCode != null and operatorCode != '' ">
+			a.operator_code = #{operatorCode,jdbcType=VARCHAR},
+		</if>
+		<if test="operatorName != null and operatorName != '' ">
+			a.operator_name = #{operatorName,jdbcType=VARCHAR},
+		</if>
+		<if test="operateDate != null and operateDate != '' ">
+			a.operate_date = #{operateDate,jdbcType=TIMESTAMP}
+		</if>
+		</set>
+		where a.id= #{id,jdbcType=VARCHAR}
+	</update>
+</mapper>

@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="pkp.sign" >
+	<resultMap id="StockMap" type="com.deppon.foss.module.pickup.sign.api.shared.dto.StockDto" >
+		<result column="SERIAL_NO" property="serialNo" jdbcType="VARCHAR" />	<!-- 流水号 -->
+	</resultMap>
+	<!-- 子母件Map -->
+	<resultMap id="CzmStockMap" type="com.deppon.foss.module.pickup.sign.api.shared.dto.StockDto" >
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />	<!-- 运单号 -->
+		<result column="SERIAL_NO" property="serialNo" jdbcType="VARCHAR" />	<!-- 流水号 -->
+	</resultMap>
+	<!--查询签收出库流水号  通过运单编号, 运单的最终配载部门=当前登录部门  -->
+	<select id="queryStockByWaybillNo" resultMap="StockMap" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.SignDto" >
+    select /*模块：接送货-签收出库-查询签收出库流水号  */
+    s.serial_no 
+	from pkp.t_srv_waybill w,tfr.t_opt_stock s
+	where w.waybill_no = s.waybill_no
+   		<choose>
+			<when test="waybillNo!=null and waybillNo!=''">
+				and w.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+			</when>
+			<otherwise>
+				and w.WAYBILL_NO = ''
+			</otherwise>
+		</choose> 
+   		<if test="lastLoadOrgCode!=null and lastLoadOrgCode!='' ">
+   			and w.last_load_org_code = #{lastLoadOrgCode,jdbcType=VARCHAR}
+   		</if>
+   		<if test="active!=null and active!=''">
+   			and w.active = #{active,jdbcType=VARCHAR}
+   		</if>
+   		 <!-- 最后库存code=库存的部门编码 -->
+		<if test="endStockOrgCode != null and endStockOrgCode !=''">	
+			<![CDATA[ and s.ORG_CODE  = #{endStockOrgCode, jdbcType=VARCHAR}]]>
+		</if>
+		<!-- 库区-->
+		<!--add by chenjunying DMANA-9499 判断保留之前的条件，新加多库区查询条件-->
+		<if test="goodsAreaCode != null and goodsAreaCode !=''">	
+			<![CDATA[ AND s.GOODS_AREA_CODE = #{goodsAreaCode, jdbcType=VARCHAR}]]>
+		</if>
+		<if test="goodsAreaCodes!= null and goodsAreaCodes.size>0">
+		and s.GOODS_AREA_CODE  in
+		<foreach collection="goodsAreaCodes" open="(" close=")" separator=","
+			item="mgoodsAreaCode">
+       	      #{mgoodsAreaCode,jdbcType=VARCHAR}
+		</foreach>
+    </if>
+		order by s.serial_no
+	</select>
+	<resultMap id="arrivesheetResultMap"
+		type="com.deppon.foss.module.pickup.predeliver.api.shared.dto.SignArriveSheetDto">
+		<id column="ID" jdbcType="VARCHAR" property="id" /><!--id-->
+		<result property="waybillNo" column="WAYBILL_NO" /><!--单号-->
+		<result property="arrivesheetNo" column="ARRIVESHEET_NO" /><!--到达联编号-->
+		<result property="arriveSheetGoodsQty" column="ARRIVE_SHEET_GOODS_QTY" /><!--到达联件数-->
+		<result property="deliverymanName" column="DELIVERYMAN_NAME" /><!--提货人-->
+		<result property="identifyCode" column="IDENTIFY_CODE" /><!--证件号码-->
+		<result column="IDENTIFY_TYPE" jdbcType="VARCHAR" property="identifyType" /><!--证件类型-->
+		<result column="IS_WHOLE_VEHICLE" property="isWholeVehicle"
+			jdbcType="CHAR" /><!--是否整车运单 -->
+		<result column="PRODUCT_CODE" property="productCode" jdbcType="VARCHAR" /><!--运输性质 -->
+		<result property="stockGoodsQty" column="STOCK_GOODS_QTY"
+			jdbcType="DECIMAL" /><!--库存件数 -->
+		<result column="ORDER_NO" property="orderNo" jdbcType="VARCHAR" /><!--订单号-->
+		<result column="SPECIAL_VALUE_ADDED_SERVICE" property="specialValueAddedService" jdbcType="VARCHAR" /><!--特殊增值服务字段 -->
+	</resultMap>
+	<select id="queryArrivesheetListByWaybillWVH"
+		parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.SignDto"
+		resultMap="arrivesheetResultMap">
+		select /*模块：接送货-签收出库-根据运单号查询满足的信息 */
+		arr.id,arr.waybill_no,arr.arrivesheet_no,
+		arr.ARRIVE_SHEET_GOODS_QTY,arr.deliveryman_name,arr.identify_code,
+		arr.IDENTIFY_TYPE,
+		0 AS
+		STOCK_GOODS_QTY,waybill.IS_WHOLE_VEHICLE,waybill.PRODUCT_CODE,waybill.ORDER_NO,
+		actual.SPECIAL_VALUE_ADDED_SERVICE
+		from  pkp.t_SRV_Waybill waybill 
+		inner join pkp.t_Srv_Arrivesheet arr
+		on waybill.waybill_no=arr.waybill_no 
+		<!-- 关联t_srv_actual_freight，用于家装查询特殊增值字段 zhuliangzhi -->
+		inner join pkp.t_srv_actual_freight actual 
+		on arr.waybill_no=actual.waybill_no
+		<include refid="select_Where"/>
+	</select>
+	<sql id="select_Where">
+		<where>
+			<choose>
+				<when test="waybillNo!=null and waybillNo!=''">
+					and waybill.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+				</when>
+				<otherwise>
+					and waybill.WAYBILL_NO = ''
+				</otherwise>
+			</choose>
+			<!-- 到达联状态为派送中,生成的可查出来-->
+			<if test="ArriveSheetstatus !=null and ArriveSheetstatus.length > 0">
+				and arr.STATUS IN
+				<foreach collection="ArriveSheetstatus" index="index" item="statu" open="(" separator="," close=")">
+					#{statu,jdbcType=VARCHAR}
+				</foreach>
+			</if>
+			<if test="active !=null and active !='' ">
+				<![CDATA[and arr.ACTIVE=#{active,jdbcType=VARCHAR}]]>
+					and waybill.ACTIVE  = #{active,jdbcType=VARCHAR}
+			</if>
+			<if test="destroyed != null and destroyed !=''" >
+       		 	and arr.DESTROYED = #{destroyed,jdbcType=CHAR}
+     		 </if>
+     		 and ROWNUM=1
+		</where>
+	</sql>
+	
+	<!--查询签收出库流水号  通过运单编号, 运单的最终配载部门=当前登录部门  -->
+	<select id="queryCzmInStockByWaybillNo" resultMap="CzmStockMap" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.SignDto" >
+    select /*模块：接送货-签收出库-查询签收出库流水号  */
+    w.waybill_No,s.serial_no 
+	from pkp.t_srv_waybill w,tfr.t_opt_stock s
+	where w.waybill_no = s.waybill_no
+		<if test="czmWaybillNoList!=null and czmWaybillNoList!=''">
+			and w.WAYBILL_NO in
+			<foreach collection="czmWaybillNoList" open="(" close=")" separator=","
+			item="waybillNo">
+			 #{waybillNo,jdbcType=VARCHAR}
+			</foreach>
+		</if>
+   		<if test="lastLoadOrgCode!=null and lastLoadOrgCode!='' ">
+   			and w.last_load_org_code = #{lastLoadOrgCode,jdbcType=VARCHAR}
+   		</if>
+   		<if test="active!=null and active!=''">
+   			and w.active = #{active,jdbcType=VARCHAR}
+   		</if>
+   		 <!-- 最后库存code=库存的部门编码 -->
+		<if test="endStockOrgCode != null and endStockOrgCode !=''">	
+			<![CDATA[ and s.ORG_CODE  = #{endStockOrgCode, jdbcType=VARCHAR}]]>
+		</if>
+		<!-- 库区-->
+		<!--add by chenjunying DMANA-9499 判断保留之前的条件，新加多库区查询条件-->
+		<if test="goodsAreaCode != null and goodsAreaCode !=''">	
+			<![CDATA[ AND s.GOODS_AREA_CODE = #{goodsAreaCode, jdbcType=VARCHAR}]]>
+		</if>
+		<if test="goodsAreaCodes!= null and goodsAreaCodes.size>0">
+		and s.GOODS_AREA_CODE  in
+		<foreach collection="goodsAreaCodes" open="(" close=")" separator=","
+			item="mgoodsAreaCode">
+       	      #{mgoodsAreaCode,jdbcType=VARCHAR}
+		</foreach>
+    </if>
+		order by s.serial_no
+	</select>
+</mapper>

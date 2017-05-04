@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context" xmlns:jee="http://www.springframework.org/schema/jee"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:http="http://cxf.apache.org/transports/http/configuration"
+	xmlns:jaxws="http://cxf.apache.org/jaxws" xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-2.5.xsd
+			http://www.springframework.org/schema/jee 
+			http://www.springframework.org/schema/jee/spring-jee-2.5.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
+			http://cxf.apache.org/transports/http/configuration http://cxf.apache.org/schemas/configuration/http-conf.xsd
+			http://cxf.apache.org/jaxws http://cxf.apache.org/schemas/jaxws.xsd
+			http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc-3.0.xsd">
+
+	<bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="locations">
+			<list>
+				<value>classpath:com/deppon/foss/module/base/baseinfo/api/server/jdbc.properties</value>
+			</list>
+		</property>
+	</bean>
+	<!-- 使用Oracle数据库测试 -->
+	<!--
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+		<property name="driverClassName" value="${jdbc.driver}" />
+		<property name="url" value="${jdbc.url}" />
+		<property name="username" value="${jdbc.username}" />
+		<property name="password" value="${jdbc.password}" />
+	</bean>
+	-->
+	
+	<!-- 嵌入式内存中数据库, HSQL -->
+	<jdbc:embedded-database id="dataSource" type="HSQL">
+		<jdbc:script location="classpath*:com/deppon/foss/module/base/baseinfo/api/server/sql/hsql/create.sql"/>
+	</jdbc:embedded-database>
+	
+	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+	<!-- 数据连接管理 -->
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	<bean id="dbunitHelper" class="com.deppon.foss.util.test.DBUnitTestHelper">
+		<!-- 使用Oracle进行测试时，必须注入schema属性的值；使用HSQL进行测试时，必须取消schema属性的值的注入 -->
+		<!-- <property name="schema" value="${jdbc.username}"/> -->
+		<property name="properties">
+			<props>
+				<!-- 使用HSQL进行测试时，需要以下的DataTypeFactory -->
+				<prop key="http://www.dbunit.org/properties/datatypeFactory" >
+					org.dbunit.ext.hsqldb.HsqldbDataTypeFactory
+				</prop>
+				<!-- 使用Oracle进行测试时，需要以下的DataTypeFactory -->
+				<!--
+				<prop key="http://www.dbunit.org/properties/datatypeFactory" >
+					org.dbunit.ext.oracle.Oracle10DataTypeFactory
+				</prop>
+				 -->
+				<!--
+				<prop key="http://www.dbunit.org/properties/metadataHandler" >
+					org.dbunit.database.DefaultMetadataHandler
+				</prop>
+				-->
+			</props>
+		</property>
+		<!-- 配置CSV文件所在目录 -->
+        <property name="csvDirectories">
+        	<list>
+        		<value>com/deppon/foss/module/base/baseinfo/api/server/data</value>
+       		</list>
+        </property>
+        <property name="dataSource" ref="dataSource" />
+	</bean>		
+
+	<tx:annotation-driven transaction-manager="transactionManager" />
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="mapperLocations" value="classpath*:com/deppon/foss/module/base/baseinfo/api/server/mapper/*.xml" />
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<bean id="sampleDao" class="com.deppon.foss.module.base.baseinfo.api.server.sample.dao.SampleDao"></bean>
+</beans>

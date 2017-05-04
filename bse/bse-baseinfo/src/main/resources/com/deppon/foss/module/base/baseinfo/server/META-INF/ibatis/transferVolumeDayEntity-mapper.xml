@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.transferVolumeDayEntityMapper">
+   <resultMap id="TransferVolumeDayEntityMap" type="com.deppon.foss.module.base.baseinfo.api.shared.domain.TransferVolumeDayEntity" >
+   	<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="NAME" property="name" jdbcType="VARCHAR" />
+		<result column="CODE" property="code" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+		<result column="VOLUME_DAY" property="volumeDay" jdbcType="NUMERIC" />
+		<result column="FULL_VALUE" property="fullValue" jdbcType="VARCHAR" />
+		<result column="DANGER_VALUE" property="dangerValue" jdbcType="VARCHAR" />
+		<result column="CREATE_USER_CODE" property="createUserCode" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUserCode" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="VARCHAR" />
+		<result column="VOLUME_MONTH" property="volumeMonth" jdbcType="NUMERIC" />
+   </resultMap>
+	<insert id="addVolumeDay"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.TransferVolumeDayEntity">
+		INSERT/** 综合:插入数据 **/ INTO BSE.T_BAS_TRANSFER_VOLUME_DAY(
+		ID,
+		NAME,
+		CODE,
+		CREATE_TIME,
+		MODIFY_TIME,
+		VOLUME_DAY,
+		FULL_VALUE,
+		DANGER_VALUE,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE,
+		VOLUME_MONTH,
+		ACTIVE) VALUES	
+	(
+		#{id, jdbcType=VARCHAR},
+		#{name, jdbcType=VARCHAR},
+		#{code, jdbcType=VARCHAR},
+		#{createTime, jdbcType=TIMESTAMP},
+		#{modifyTime, jdbcType=TIMESTAMP},
+		#{volumeDay, jdbcType=NUMERIC},
+		#{fullValue, jdbcType=VARCHAR},
+		#{dangerValue, jdbcType=VARCHAR},
+		#{createUserCode, jdbcType=CHAR},
+		#{modifyUserCode, jdbcType=CHAR},
+		#{volumeMonth, jdbcType=NUMERIC},
+		#{active, jdbcType=CHAR}
+	)
+	</insert> 
+	<sql id="volumeDay_ResultMap_Param">
+		A.ID,
+		A.NAME,
+		A.CODE,
+		A.CREATE_TIME,
+		A.MODIFY_TIME,
+		A.VOLUME_DAY,
+		A.FULL_VALUE,
+		A.DANGER_VALUE,
+		A.CREATE_USER_CODE,
+		A.MODIFY_USER_CODE,
+		A.VOLUME_MONTH,
+		A.ACTIVE
+	</sql>
+	
+	<update id="updateVolumeDayUnActive"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.TransferVolumeDayEntity">
+		update BSE.T_BAS_TRANSFER_VOLUME_DAY
+		<set>
+				ACTIVE = 'N',
+			<if test="modifyTime != null">
+				MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyUserCode != null">
+				MODIFY_USER_CODE =#{modifyUserCode,jdbcType=VARCHAR},
+			</if>
+		</set>
+		<where>
+			<if test="code != null">
+				CODE = #{code,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</update>
+	
+	<sql id="query_queryTransferVolumeDayList_condition">		
+		<where>
+			 A.ACTIVE =  #{active,jdbcType=CHAR} 
+	      	<if test="id!=null and id != ''">
+	        	AND A.ID = #{id,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="name and name != ''">
+	        	AND A.NAME = #{name,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="code and code != ''">
+	        	AND A.CODE = #{code,jdbcType=VARCHAR} 
+	      	</if>
+		</where>
+	</sql>
+	
+	
+	<select id="queryTransferVolumeDayList" resultMap="TransferVolumeDayEntityMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.TransferVolumeDayEntity">
+		select
+		<include refid="volumeDay_ResultMap_Param" />
+		from BSE.T_BAS_TRANSFER_VOLUME_DAY A
+		<include refid="query_queryTransferVolumeDayList_condition" />
+	</select>
+	
+	<select id="queryTransferVolumeDayListCount" resultType="java.lang.Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.TransferVolumeDayEntity">
+		<![CDATA[
+			 SELECT/** 综合:根据实体动态条件模糊查询总数,如果属性的值为null或者空白则无效**/ count(*) 
+			 FROM BSE.T_BAS_TRANSFER_VOLUME_DAY A 
+		]]>
+		<include refid="query_queryTransferVolumeDayList_condition" />
+	</select>
+	
+	<!-- 查询给定日期下的场地危险值和预警值查询小于给定时间的其中最大创建时间的数据-->
+	<select id="selectTransferFullAndDangerValue"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.TransferVolumeDayEntity"
+		resultMap="TransferVolumeDayEntityMap">
+		select *
+  from bse.t_bas_transfer_volume_day u
+ where (u.code, u.create_time) in
+		(
+			<![CDATA[
+				SELECT
+				CODE, max(A.create_time)AS CREATE_TIME
+			]]>
+			<![CDATA[
+				FROM BSE.T_BAS_TRANSFER_VOLUME_DAY A
+			]]>
+			<where>
+				A.create_time <![CDATA[ <= ]]> #{queryTime,jdbcType=TIMESTAMP} 
+		      	<if test="code!=null and code != ''">
+		        	AND A.CODE = #{code,jdbcType=VARCHAR} 
+		      	</if>
+			</where>
+			<![CDATA[
+				 group by A.code
+			]]>
+		)
+	</select>
+	
+	<!-- 查询给定日期下的场地危险值和预警值查询小于给定时间的其中最大创建时间的数据-->
+<!-- 	<select id="selectTransferMonthValue" -->
+<!-- 		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.TransferVolumeDayEntity" -->
+<!-- 		resultMap="TransferVolumeDayEntityMap"> -->
+<!-- 		select * -->
+<!--   from bse.t_bas_transfer_volume_day u -->
+<!--  where (u.code, u.create_time) in -->
+<!-- 		( -->
+<!-- 			<![CDATA[ -->
+<!-- 				SELECT -->
+<!-- 				CODE, max(A.create_time)AS CREATE_TIME -->
+<!-- 			]]> -->
+<!-- 			<![CDATA[ -->
+<!-- 				FROM BSE.T_BAS_TRANSFER_VOLUME_DAY A -->
+<!-- 			]]> -->
+<!-- 			<where> -->
+<!-- 				to_char(A.create_time,'yyyy-mm') =  #{queryTime,jdbcType=TIMESTAMP}  -->
+<!-- 		      	<if test="code!=null and code != ''"> -->
+<!-- 		        	AND A.CODE = #{code,jdbcType=VARCHAR}  -->
+<!-- 		      	</if> -->
+<!-- 			</where> -->
+<!-- 			<![CDATA[ -->
+<!-- 				 group by A.code -->
+<!-- 			]]> -->
+<!-- 		) -->
+<!-- 	</select> -->
+</mapper>

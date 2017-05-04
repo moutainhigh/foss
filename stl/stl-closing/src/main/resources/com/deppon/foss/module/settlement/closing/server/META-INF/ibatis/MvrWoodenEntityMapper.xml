@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stv.MvrWoodenEntityMapper" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.closing.api.shared.domain.MvrWoodenEntity" >
+    <result column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="PERIOD" property="period" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+    <result column="ORIG_ORG_CODE" property="origOrgCode" jdbcType="VARCHAR" />
+    <result column="ORIG_ORG_NAME" property="origOrgName" jdbcType="VARCHAR" />
+    <result column="DEST_ORG_CODE" property="destOrgCode" jdbcType="VARCHAR" />
+    <result column="DEST_ORG_NAME" property="destOrgName" jdbcType="VARCHAR" />
+    <result column="WOODEN_COST" property="woodenCost" jdbcType="DECIMAL" />
+    <result column="WR_ENTRY" property="wrEntry" jdbcType="DECIMAL" />
+    <result column="WP_ENTRY" property="wpEntry" jdbcType="DECIMAL" />
+    <result column="W_OTH_PAY_WO_OTH_RC" property="wothPayWoOthRc" jdbcType="DECIMAL" />
+    <result column="WOODEN_ORIG_PAY_TAIL" property="woodenOrigPayTail" jdbcType="DECIMAL" />
+  </resultMap>
+  
+   <sql id="Base_Column_List" >
+	   ID,
+	   PERIOD,
+	   CUSTOMER_CODE,
+	   CUSTOMER_NAME,
+	   ORIG_ORG_CODE,
+	   ORIG_ORG_NAME,
+	   DEST_ORG_CODE,
+	   DEST_ORG_NAME,
+	   VOUCHER_BEGIN_TIME,
+	   VOUCHER_END_TIME,
+	   WOODEN_COST/100 WOODEN_COST,
+	   WR_ENTRY/100 WR_ENTRY,
+	   WP_ENTRY/100 WP_ENTRY,
+	   W_OTH_PAY_WO_OTH_RC/100 W_OTH_PAY_WO_OTH_RC,
+	   WOODEN_ORIG_PAY_TAIL/100 WOODEN_ORIG_PAY_TAIL
+  </sql>
+  
+  <!-- 按条件查询列表 -->
+  <select id="selectByConditions" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.closing.api.shared.dto.MvrWoodenDto" >
+    SELECT  /*结算-凭证报表-根据条件查询始发快递代理月报表*/
+    <include refid="Base_Column_List" />
+    FROM STV.T_STL_MVR_WOODEN T
+    <where>
+    	<!-- 期间 -->
+    	T.PERIOD = #{period,jdbcType=VARCHAR}
+    	<!-- 客户 -->
+    	<if test="customerCode != null and customerCode != ''">
+    		AND T.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+    	</if>
+    	
+    	<!-- 始发部门 -->
+    	<if test="origOrgCode != null and origOrgCode != ''">
+    		AND T.ORIG_ORG_CODE = #{origOrgCode,jdbcType=VARCHAR}
+    	</if>
+        <!-- 到达部门 -->
+    	<if test="destOrgCode != null and destOrgCode != ''">
+    		AND T.DEST_ORG_CODE = #{destOrgCode,jdbcType=VARCHAR}
+    	</if>
+    	<!-- 到达部门加入数据权限  -->
+	    <!-- <if test="userCode != null and userCode != ''">
+		  and exists (select 1
+	         from bse.mv_bas_user_org_auth_view uov
+	        where uov.emp_code = #{userCode}
+	          and uov.Org_Code = t.DEST_ORG_CODE
+		          <if test="destOrgCode != null and destOrgCode != '' ">
+		          and uov.Org_Code = #{destOrgCode,jdbcType=VARCHAR}
+		          </if> 
+	          ) 
+	    </if>
+	     -->
+    </where>
+  </select>
+  
+  <!-- 按条件查询汇总 -->
+  <select id="selectTotalByConditions" resultType="com.deppon.foss.module.settlement.closing.api.shared.dto.MvrWoodenDto" parameterType="com.deppon.foss.module.settlement.closing.api.shared.dto.MvrWoodenDto" >
+    SELECT /*结算-凭证报表-查询代打木架总条数，总金额*/
+    	--总条数
+       COUNT(1) count,
+       SUM(WOODEN_COST/100) woodenCost,
+	   SUM(WR_ENTRY/100) wrEntry,
+	   SUM(WP_ENTRY/100) wpEntry,
+	   SUM(W_OTH_PAY_WO_OTH_RC/100) wothPayWoOthRc,
+	   SUM(WOODEN_ORIG_PAY_TAIL/100) woodenOrigPayTail
+    FROM STV.T_STL_MVR_WOODEN T
+    <where>
+    	<!-- 期间 -->
+    	T.PERIOD = #{period,jdbcType=VARCHAR}
+    	<!-- 客户 -->
+    	<if test="customerCode != null and customerCode != ''">
+    		AND T.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+    	</if>
+    	
+    	<!-- 始发部门 -->
+    	<if test="origOrgCode != null and origOrgCode != ''">
+    		AND T.ORIG_ORG_CODE = #{origOrgCode,jdbcType=VARCHAR}
+    	</if>
+
+        <!-- 到达部门 -->
+    	<if test="destOrgCode != null and destOrgCode != ''">
+    		AND T.DEST_ORG_CODE = #{destOrgCode,jdbcType=VARCHAR}
+    	</if>
+    	<!-- 到达部门加入数据权限  -->
+	    <!-- <if test="userCode != null and userCode != ''">
+		  and exists (select 1
+	         from bse.mv_bas_user_org_auth_view uov
+	        where uov.emp_code = #{userCode}
+	          and uov.Org_Code = t.DEST_ORG_CODE
+		          <if test="destOrgCode != null and destOrgCode != '' ">
+		          and uov.Org_Code = #{destOrgCode,jdbcType=VARCHAR}
+		          </if> 
+	          ) 
+	    </if>
+	     -->
+    </where>
+ </select>
+</mapper>

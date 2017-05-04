@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cxf="http://cxf.apache.org/core"
+	xmlns:jaxws="http://cxf.apache.org/jaxws" xmlns:jaxrs="http://cxf.apache.org/jaxrs"
+	xsi:schemaLocation="
+		      http://www.springframework.org/schema/beans
+		      http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		      http://cxf.apache.org/core
+		      http://cxf.apache.org/schemas/core.xsd
+		      http://cxf.apache.org/jaxws
+		      http://cxf.apache.org/schemas/jaxws.xsd
+		      http://cxf.apache.org/jaxrs
+		      http://cxf.apache.org/schemas/jaxrs.xsd"
+	default-autowire="byName">
+
+	<!-- Load CXF modules from cxf.jar -->
+    <import resource="classpath:META-INF/cxf/cxf.xml"/>
+    <import resource="classpath:META-INF/cxf/cxf-servlet.xml"/>
+	<!--322906 发票合并运单需求start-->
+
+	<bean id="fossSyncWaybillApplyStatusService" class="com.deppon.foss.module.settlement.financeitf.server.rs.impl.FossSyncWaybillApplyStatusService">
+		<property name="waybillApplyStatusService" ref="waybillApplyStatusService"></property>
+	</bean>
+	<!-- restful @author 322906 吴浩2016-07-11 运单发票申请状态信息同步到foss-->
+
+	<jaxrs:server id="invoiceApplyStatusToFoss" address="/fossSysWaybillApplyStatus">
+		<jaxrs:serviceBeans>
+			<ref bean="fossSyncWaybillApplyStatusService"/>
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	<!--发票合并运单需求end-->
+	<bean id="fossFinmanagerService" class="com.deppon.foss.module.settlement.financeitf.server.ws.FossFinmanagerServiceImpl">
+		<property name="invoiceService" ref="invoiceService"></property>
+	</bean>
+	
+	<bean id="fossSyncInvoiceServiceImpl" class="com.deppon.foss.module.settlement.financeitf.server.ws.FossSyncInvoiceServiceImpl">
+		<property name="invoiceRegisterService" ref="invoiceRegisterService"></property>
+	</bean>
+	
+	<!-- restful @author 218392 张永雪 2015-12-08 08:31:10 盘点以及未收银确认在现金盘点时提示用户需求 -->
+	<bean id="synCashCheckConfirm" class="com.deppon.foss.module.settlement.pay.server.service.impl.SynCashCheckConfirm">
+	</bean>
+	<jaxrs:server id="synCashCheckConfirmRs" address="/cashCheckConfirm">
+		<jaxrs:serviceBeans>
+			<ref bean="synCashCheckConfirm"/>
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+		<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>	
+	
+    <!-- web service -->
+	<jaxws:endpoint id="fossFinmanagerServiceWS" implementor="#fossFinmanagerService" address="/fossFinmanagerService">
+		<jaxws:inInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingInInterceptor"/>
+		</jaxws:inInterceptors>
+		<jaxws:outInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingOutInterceptor"/>
+		</jaxws:outInterceptors>
+	</jaxws:endpoint>
+	
+	 <!-- web service -->
+	<jaxws:endpoint id="fossSyncInvoiceServiceImplWS" implementor="#fossSyncInvoiceServiceImpl" address="/fossSyncInvoiceServiceImpl">
+		<jaxws:inInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingInInterceptor"/>
+		</jaxws:inInterceptors>
+		<jaxws:outInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingOutInterceptor"/>
+		</jaxws:outInterceptors>
+	</jaxws:endpoint>
+	
+	<!-- restful @author 218371 赵彦君2016-03-11 09:22:10 合伙人发票状态修改-->
+	<bean id="synHhInvoiceService" class="com.deppon.foss.module.settlement.consumer.server.service.impl.SynHhInvoiceService">
+	</bean>
+	<jaxrs:server id="updateInvoiceStateForHs" address="/synHhInvoiceService">
+		<jaxrs:serviceBeans>
+			<ref bean="synHhInvoiceService"/>
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+		<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>	
+	
+</beans>

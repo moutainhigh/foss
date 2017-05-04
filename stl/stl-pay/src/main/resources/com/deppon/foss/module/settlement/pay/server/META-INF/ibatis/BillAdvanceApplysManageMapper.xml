@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.stl.BillAdvancedPaymentEntityDao" >
+  <!-- 预付单管理 liqin dp 2012 -11-19 -->
+  <!-- 查询预付单字段 -->
+ <sql id="query_AdvancedPaymentApplys" >
+  SELECT /*查询预付单*/
+  	<include refid="Base_Column_List"/>
+  FROM STL.T_STL_BILL_ADVANCED_PAYMENT P
+  </sql>
+  <resultMap id="selectCountBillAdvancePaymentApplysMap" type="com.deppon.foss.module.settlement.pay.api.shared.dto.BillAdvanceResultDto" >
+    <result column="COUNT_NUM" property="countNum" jdbcType="INTEGER"/>
+  </resultMap>
+  <!-- 按日期查询预付单单数据 -->
+  <select id="selectBillAdvancePaymentApplysParams" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillAdvanceDto"
+  resultMap="BaseResultMap">
+     <include refid="query_AdvancedPaymentApplys"/>
+     <where> 
+		 <!-- 业务日期 -->
+    		<![CDATA[ P.BUSINESS_DATE >=#{businessStartDate} AND   P.BUSINESS_DATE <#{businessEndDate} ]]>
+    		AND P.APPLY_ORG_CODE IN
+  			<foreach collection="applyOrgcodeList" index="index" item="item" open="(" separator="," close=")">
+       	   	 	#{item}
+       		</foreach>
+     	 <!-- 申请部门 -->
+     	 <if test="paymentOrgCode!=null and paymentOrgCode!=''">
+     	 	AND P.PAYMENT_ORG_CODE=#{paymentOrgCode}
+     	 </if>
+     	
+		<!-- 客户编码 -->
+		<if test="customerCode!=null and customerCode!=''">
+			AND P.CUSTOMER_CODE=#{customerCode}
+		</if>
+		<!-- 审核状态-->
+		<if test="auditStatus!=null and auditStatus!=''">
+			AND P.AUDIT_STATUS =#{auditStatus}
+		</if> 
+		
+		AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = P.APPLY_ORG_CODE<!-- 登录者部门等于费用付款部门过滤 -->
+     	)	
+     </where>
+  </select>
+  <!-- 查询总条数 -->
+  <select id="selectCountBillAdvancePaymentApplysParams" resultMap="selectCountBillAdvancePaymentApplysMap" 
+  	parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillAdvanceDto">
+  		 SELECT /*查询预付单条数*/
+  		 	COUNT(*) COUNT_NUM 
+  		 FROM 
+  		 	STL.T_STL_BILL_ADVANCED_PAYMENT P
+  		<where> 
+		 <!-- 业务日期 -->
+    		<![CDATA[P.BUSINESS_DATE >=#{businessStartDate} AND   P.BUSINESS_DATE <#{businessEndDate}]]>
+   			AND P.APPLY_ORG_CODE IN
+  			<foreach collection="applyOrgcodeList" index="index" item="item" open="(" separator="," close=")">
+       	   	 	#{item}
+       		</foreach>
+     	 <!-- 申请部门 -->
+     	 <if test="paymentOrgCode!=null and paymentOrgCode!=''">
+     	 	AND P.PAYMENT_ORG_CODE=#{paymentOrgCode}
+     	 </if>
+     	
+		<!-- 客户编码 -->
+		<if test="customerCode!=null and customerCode!=''">
+			AND P.CUSTOMER_CODE=#{customerCode}
+		</if>
+		<!-- 审核状态-->
+		<if test="auditStatus!=null and auditStatus!=''">
+			AND P.AUDIT_STATUS =#{auditStatus}
+		</if> 
+		
+		AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = P.APPLY_ORG_CODE<!-- 登录者部门等于费用付款部门过滤 -->
+     	)	
+		
+     </where>
+  </select>
+
+</mapper>

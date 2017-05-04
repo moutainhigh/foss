@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="com.deppon.foss.module.transfer.platform.dailyLoadVolume">
+	<!--场地日承载货量Entity-->
+	<resultMap id="dailyLoadVolumeEntityResultMap"
+		type="com.deppon.foss.module.transfer.platform.api.shared.domain.DailyLoadVolumeEntity">
+		<result property="id" column="id" />
+		<result property="orgCode" column="orgCode" />
+		<result property="orgName" column="orgName" />
+		<result property="dailyLoadVolume" column="dailyLoadVolume" />
+		<result property="fullValue" column="fullValue" />
+		<result property="dangerValue" column="dangerValue" />
+		<result property="availabilityDate" column="availabilityDate" />
+		<result property="expiryDate" column="expiryDate" />
+		<result property="beNewest" column="beNewest" />
+		<result property="createUserCode" column="createUserCode" />
+		<result property="createUserName" column="createUserName" />
+		<result property="modifyUserCode" column="modifyUserCode" />
+		<result property="modifyUserName" column="modifyUserName" />
+		<result property="createTime" column="createTime" />
+		<result property="modifyTime" column="modifyTime" />
+	</resultMap>
+	
+	<!-- 日承载货量查询select子句 -->
+	<sql id="sql_dailyLoadVolume_select_clause">
+		select 
+			id id,
+			org_code orgCode,
+			org_name orgName,
+			create_time createTime,
+			modify_time modifyTime,
+			daily_load_volume dailyLoadVolume,
+			full_value fullValue,
+			danger_value dangerValue,
+			create_user_code createUserCode,
+			create_user_name createUserName,
+			modify_user_code modifyUserCode,
+			modify_user_name modifyUserName,
+			availability_date availabilityDate,
+			expiry_date expiryDate,
+			be_newest beNewest
+	  FROM tfr.t_opt_daily_load_volume t
+	</sql>
+	
+	<!-- 日承载货量查询where子句 -->
+	<sql id="sql_dailyLoadVolume_where_clause">
+		<where>
+			<if test="orgCode != null and orgCode != ''">
+				t.org_code =
+				#{orgCode,jdbcType=VARCHAR}
+			</if>
+			<if test="beNewest != null and beNewest != ''">
+				 and t.be_newest =
+				#{beNewest,jdbcType=CHAR}
+			</if>
+			<if test='beNewest == "N"'>
+				ORDER BY t.modify_time desc
+		</if>
+		</where>
+	</sql>
+	
+	<!-- 查询日承载货量信息 -->
+	<select id="queryDailyLoadVolumeList"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.DailyLoadVolumeEntity"
+		resultMap="dailyLoadVolumeEntityResultMap">
+		<include refid="sql_dailyLoadVolume_select_clause" />
+		<include refid="sql_dailyLoadVolume_where_clause" />
+	</select>
+	
+	<!-- 查询日承载货量信息的数量 -->
+	<select id="queryDailyLoadVolumeCount"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.DailyLoadVolumeEntity"
+		resultType="long">
+		select count(1) from tfr.t_opt_daily_load_volume t 
+		<include refid="sql_dailyLoadVolume_where_clause" />
+	</select>
+
+	<!-- 插入一条日承载货量信息 -->
+	<insert id="addDailyLoadVolumeEntity" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.DailyLoadVolumeEntity">
+		INSERT INTO tfr.t_opt_daily_load_volume
+		   (id,
+			org_code,
+			org_name,
+			create_time,
+			modify_time,
+			daily_load_volume,
+			full_value,
+			danger_value,
+			create_user_code,
+			create_user_name,
+			modify_user_code,
+			modify_user_name,
+			availability_date,
+			expiry_date,
+			be_newest
+		   ) values(
+			#{id,jdbcType=VARCHAR},
+			#{orgCode,jdbcType=VARCHAR},
+			#{orgName,jdbcType=VARCHAR},
+			#{createTime,jdbcType=TIMESTAMP},
+			#{modifyTime,jdbcType=TIMESTAMP},
+			#{dailyLoadVolume,jdbcType=DECIMAL},
+			#{fullValue,jdbcType=DECIMAL},
+			#{dangerValue,jdbcType=DECIMAL},
+			#{createUserCode,jdbcType=VARCHAR},
+			#{createUserName,jdbcType=VARCHAR},
+			#{modifyUserCode,jdbcType=VARCHAR},
+			#{modifyUserName,jdbcType=VARCHAR},
+			#{availabilityDate,jdbcType=DATE},
+			#{expiryDate,jdbcType=DATE},
+			#{beNewest,jdbcType=CHAR}
+			)
+	</insert>
+	
+	<!-- 更新日承载货量 -->
+	<update id="updateDailyLoadVolumeEntity"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.DailyLoadVolumeEntity">
+		UPDATE tfr.t_opt_daily_load_volume t
+		<set>
+			<if test="orgCode != null and orgCode != ''">
+				t.org_code =
+				#{orgCode,jdbcType=VARCHAR},
+			</if>
+			<if test="orgName != null and orgName != ''">
+					t.org_name =
+					#{orgName,jdbcType=VARCHAR},
+			</if>
+			<if test="createTime != null and createTime != ''">
+					t.create_time =
+					#{createTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyTime != null and modifyTime != ''">
+					t.modify_time =
+					#{modifyTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="dailyLoadVolume != null and dailyLoadVolume != ''">
+					t.daily_load_volume =
+					#{dailyLoadVolume,jdbcType=DECIMAL},
+			</if>
+			<if test="fullValue != null and fullValue != ''">
+					t.full_value =
+					#{fullValue,jdbcType=DECIMAL},
+			</if>
+			<if test="dangerValue != null and dangerValue != ''">
+					t.danger_value =
+					#{dangerValue,jdbcType=DECIMAL},
+			</if>
+			<if test="createUserCode != null and createUserCode != ''">
+					t.create_user_code =
+					#{createUserCode,jdbcType=VARCHAR},
+			</if>
+			<if test="createUserName != null and createUserName != ''">
+					t.create_user_name =
+					#{createUserName,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyUserCode != null and modifyUserCode != ''">
+					t.modify_user_code =
+					#{modifyUserCode,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyUserName != null and modifyUserName != ''">
+					t.modify_user_name =
+					#{modifyUserName,jdbcType=VARCHAR},
+			</if>
+			<if test="availabilityDate != null and availabilityDate != ''">
+					t.availability_date =
+					#{availabilityDate,jdbcType=DATE},
+			</if>
+			<if test="expiryDate != null and expiryDate != ''">
+					t.expiry_date =
+					#{expiryDate,jdbcType=DATE},
+			</if>
+			<if test="beNewest != null and beNewest != ''">
+					t.be_newest =
+					#{beNewest,jdbcType=CHAR},
+			</if>
+		</set>
+		WHERE t.id = #{id, jdbcType=VARCHAR}
+	</update>
+	
+	<!-- 根据转运场code、日期查询日承载货量信息 -->
+	<select id="queryDailyLoadVolumeByOrgCodeAndDate"
+		parameterType="map"
+		resultMap="dailyLoadVolumeEntityResultMap">
+		<include refid="sql_dailyLoadVolume_select_clause" />
+			where t.be_newest = 'Y' and t.availability_date <![CDATA[ <= ]]> #{queryDate,jdbcType=TIMESTAMP}
+				and t.org_code = #{orgCode,jdbcType=VARCHAR}
+		UNION ALL
+		<include refid="sql_dailyLoadVolume_select_clause" />
+			where t.be_newest = 'N' and t.availability_date <![CDATA[ < ]]> #{queryDate,jdbcType=TIMESTAMP}
+				and t.expiry_date <![CDATA[ > ]]> #{queryDate,jdbcType=TIMESTAMP}
+				and t.org_code = #{orgCode,jdbcType=VARCHAR}
+	</select>
+	
+	<!--查询日期段内的日承载货量信息 -->
+	<select id="queryMonthLoadVolumeByOrgCodeAndDate"
+		parameterType="map"
+		resultMap="dailyLoadVolumeEntityResultMap">
+		select * from (
+		<include refid="sql_dailyLoadVolume_select_clause" />
+			where t.availability_date <![CDATA[ >= ]]> #{firstDayOfMonth,jdbcType=TIMESTAMP}
+				and  t.expiry_date <![CDATA[ <= ]]> #{endQueryDate,jdbcType=TIMESTAMP}
+				and t.org_code = #{orgCode,jdbcType=VARCHAR}
+				union 
+		<include refid="sql_dailyLoadVolume_select_clause" />
+			where t.availability_date <![CDATA[ <= ]]> #{firstDayOfMonth,jdbcType=TIMESTAMP}
+				and  t.expiry_date <![CDATA[ > ]]> #{firstDayOfMonth,jdbcType=TIMESTAMP}
+				and t.org_code = #{orgCode,jdbcType=VARCHAR}
+				union 
+		<include refid="sql_dailyLoadVolume_select_clause" />
+			where t.availability_date <![CDATA[ >= ]]> #{firstDayOfMonth,jdbcType=TIMESTAMP}
+				and  t.expiry_date <![CDATA[ > ]]> #{endQueryDate,jdbcType=TIMESTAMP}
+				and t.org_code = #{orgCode,jdbcType=VARCHAR}
+				) order by createTime
+	</select>
+</mapper>

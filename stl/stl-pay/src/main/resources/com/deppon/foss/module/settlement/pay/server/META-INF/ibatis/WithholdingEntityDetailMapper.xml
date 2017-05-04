@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.WithholdingEntityDetailDao" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.pay.api.shared.domain.WithholdingEntityDetail" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="RENTCAR_NO" property="rentCarNo" jdbcType="VARCHAR" />
+    <result column="PAYABLE_NO" property="payableNo" jdbcType="VARCHAR" />
+    <result column="WITHHOLDING_NO" property="withholdingNo" jdbcType="VARCHAR" />
+    <result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+    <result column="DRIVER_NAME" property="driverName" jdbcType="VARCHAR" />
+    <result column="DRIVER_CODE" property="driverCode" jdbcType="VARCHAR" />
+    <result column="RENTCAR_AMOUNT" property="rentCarAmount" jdbcType="DECIMAL" />
+    <result column="USECAR_DATE" property="useCarDate" jdbcType="TIMESTAMP" />
+    <result column="NOTES" property="notes" jdbcType="VARCHAR" />
+    <result column="RENTCAR_USE_TYPE" property="rentCarUseType" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="DRIVER_PHONE" property="driverPhone" jdbcType="VARCHAR" />
+  </resultMap>
+  
+  <sql id="Base_Column_List" >
+    ID, RENTCAR_NO, PAYABLE_NO, WITHHOLDING_NO, VEHICLE_NO, DRIVER_NAME, DRIVER_CODE, 
+    RENTCAR_AMOUNT/100 RENTCAR_AMOUNT, USECAR_DATE, NOTES ,RENTCAR_USE_TYPE ,CREATE_TIME,
+    DRIVER_PHONE
+  </sql>
+  <!-- 插入预提明细 -->
+  <insert id="insert" parameterType="com.deppon.foss.module.settlement.pay.api.shared.domain.WithholdingEntityDetail" >
+    insert into STL.T_STL_BILL_WITHHOLDING_DETAIL (ID, RENTCAR_NO, PAYABLE_NO, 
+      WITHHOLDING_NO, VEHICLE_NO, DRIVER_NAME, 
+      DRIVER_CODE, RENTCAR_AMOUNT, USECAR_DATE, 
+      NOTES,RENTCAR_USE_TYPE ,CREATE_TIME,
+      DRIVER_PHONE)
+    values (#{id,jdbcType=VARCHAR}, #{rentCarNo,jdbcType=VARCHAR}, #{payableNo,jdbcType=VARCHAR}, 
+      #{withholdingNo,jdbcType=VARCHAR}, #{vehicleNo,jdbcType=VARCHAR}, #{driverName,jdbcType=VARCHAR}, 
+      #{driverCode,jdbcType=VARCHAR}, #{rentCarAmount,jdbcType=DECIMAL}*100, #{useCarDate,jdbcType=TIMESTAMP}, 
+      #{notes,jdbcType=VARCHAR},#{rentCarUseType,jdbcType=VARCHAR},#{createTime,jdbcType=TIMESTAMP},
+      #{driverPhone,jdbcType=TIMESTAMP})
+  </insert>
+  <!-- 查询预提明细 -->
+  <select id="selectRentCarNoByWorkFlowNo" resultType="String" parameterType="String">
+  	SELECT WD.RENTCAR_NO 	
+	  FROM STL.T_STL_BILL_WITHHOLDING W
+	  JOIN STL.T_STL_BILL_WITHHOLDING_DETAIL WD
+	    ON WD.WITHHOLDING_NO = W.WITHHOLDING_NO
+	 WHERE W.WORKFLOW_NO =  #{workflowNo,jdbcType=VARCHAR}
+	   AND W.ACTIVE = 'Y'
+  </select>
+ 
+</mapper>

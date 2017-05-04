@@ -1,0 +1,830 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.pkp.pkp-pricing.pricingRegionEcGoodsArrive" >
+	<!-- 价格趋于结果集 -->
+	<resultMap id="pricingRegionArriveResultMap" 
+		type="com.deppon.foss.module.pickup.pricing.api.shared.domain.PriceRegionEcGoodsArriveEntity">
+		<id property="id" column="ID"/>
+		<result property="regionCode" column="CODE"/>
+		<result property="regionName" column="NAME"/>
+		<result property="regionType" column="TYPE"/>
+		<result property="active" column="ACTIVE"/>
+		<result property="beginTime" column="BEGIN_TIME"/>
+		<result property="endTime" column="END_TIME"/>
+		<result property="description" column="DESCRIPTION"/>
+		<result property="versionNo" column="VERSION_NO"/>
+		<result property="nationCode" column="NATION_CODE"/>
+		<result property="proCode" column="PROV_CODE"/>
+		<result property="cityCode" column="CITY_CODE"/>
+		<result property="countyCode" column="COUNTY_CODE"/>
+		<result property="nationName" column="BASNATION_CODE"/>
+		<result property="proName" column="BASPRO_NAME"/>
+		<result property="cityName" column="BASCITY_NAME"/>
+		<result property="countyName" column="BASCOUNTY_NAME"/>
+		<result property="createUser" column="CREATE_USER_CODE"/>
+		<result property="modifyUser" column="MODIFY_USER_CODE"/>
+		<result property="createDate" column="CREATE_TIME"/>
+		<result property="modifyDate" column="MODIFY_TIME"/>
+		<result property="modifyUserName" column="EMP_EMPNAME"/>
+		<result property="createOrgCode" column="CREATE_ORG_CODE"/>
+		<result property="modifyOrgCode" column="MODIFY_ORG_CODE"/>
+	</resultMap>
+       
+	<resultMap id="priceRegionOrgArriveResultMap" 
+		type="com.deppon.foss.module.pickup.pricing.api.shared.domain.PriceRegionEcGoodsOrgArriveEntity">
+		<id property="id" column="ID"/>
+		<result property="priceRegionId" column="T_SRV_PRICE_REGION_ID"/>
+		<result property="priceRegionCode" column="T_SRV_PRICE_REGION_CODE"/>
+		<result property="includeOrgId" column="INCLUDE_ORG_ID"/>
+		<result property="includeOrgCode" column="INCLUDE_ORG_CODE"/>
+		<result property="active" column="ACTIVE"/>
+		<result property="createUser" column="CREATE_USER_CODE"/>
+		<result property="createDate" column="CREATE_TIME"/>
+		<result property="createOrgCode" column="CREATE_ORG_CODE"/>
+		<result property="modifyUser" column="MODIFY_USER_CODE"/>
+		<result property="modifyDate" column="MODIFY_TIME"/>
+		<result property="modifyOrgCode" column="MODIFY_ORG_CODE"/>
+		<result property="versionNo" column="VERSION_NO"/>
+		<result property="beginTime" column="BEGIN_TIME"/>
+		<result property="endTime" column="END_TIME"/>
+	</resultMap>
+	
+	<!-- 查询字段 -->
+	<sql id="select_param">
+	   MASTER.ID                 AS ID,
+       MASTER.CODE               AS CODE,
+       MASTER.NAME               AS NAME,
+       MASTER.TYPE               AS TYPE,
+       MASTER.ACTIVE             AS ACTIVE,
+       MASTER.BEGIN_TIME         AS BEGIN_TIME,
+       MASTER.END_TIME           AS END_TIME,
+       MASTER.DESCRIPTION        AS DESCRIPTION,
+       MASTER.VERSION_NO         AS VERSION_NO,
+       MASTER.NATION_CODE        AS NATION_CODE,
+       MASTER.PROV_CODE          AS PROV_CODE, 
+       MASTER.CITY_CODE          AS CITY_CODE, 
+       MASTER.COUNTY_CODE        AS COUNTY_CODE, 
+       MASTER.CREATE_USER_CODE   AS CREATE_USER_CODE, 
+       MASTER.MODIFY_USER_CODE   AS MODIFY_USER_CODE, 
+       MASTER.CREATE_TIME        AS CREATE_TIME, 
+       MASTER.MODIFY_TIME        AS MODIFY_TIME, 
+       MASTER.CREATE_ORG_CODE    AS CREATE_ORG_CODE, 
+       MASTER.MODIFY_ORG_CODE    AS MODIFY_ORG_CODE
+	</sql>
+	
+	<sql id="select_pricing_regionorg_param">
+	   ID,
+       T_SRV_PRICE_REGION_ID,
+       T_SRV_PRICE_REGION_CODE,
+       INCLUDE_ORG_ID,
+       INCLUDE_ORG_CODE,
+       ACTIVE,
+       CREATE_USER_CODE,
+       CREATE_TIME,
+       CREATE_ORG_CODE,
+       MODIFY_USER_CODE,
+       MODIFY_TIME,
+       MODIFY_ORG_CODE,
+       VERSION_NO,
+       BEGIN_TIME,
+       END_TIME
+	</sql>
+	
+	<!--获得序列编号-->
+	<select id="getNextSequenceValue" resultType="java.lang.String" parameterType="java.util.Map">
+  	  select pkp.${sequenceName}.NEXTVAL from dual
+  	</select>
+	
+	<!-- 根据条件查询价格区域 -->
+	<select id="searchRegionByCondition" resultMap="pricingRegionArriveResultMap"
+		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.PriceRegionEcGoodsArriveEntity">
+		<![CDATA[
+			SELECT /** 综合-价格-根据综合条件查询增值价格区域 **/ DISTINCT
+		]]>
+		<include refid="select_param" />
+		<![CDATA[
+			FROM pkp.T_SRV_PRICE_ARRIVE_REGION_EC MASTER
+			LEFT JOIN pkp.T_SRV_PRICE_ARR_REGION_ORG_EC MASTERORG
+			ON MASTER.ID = MASTERORG.T_SRV_PRICE_REGION_ID
+		]]>
+		<where>
+			<if test="id != null and id != ''">
+				MASTER.ID = #{id}
+			</if>
+			<if test="regionCode != null and regionCode != ''">
+				AND MASTER.CODE  = #{regionCode}
+			</if>
+			<if test="regionName != null and regionName != ''">
+				AND MASTER.NAME like #{regionName}
+			</if>
+			<if test="regionType != null and regionType != ''">
+				AND MASTER.TYPE = #{regionType}
+			</if>
+			<if test="active != null and active != ''">
+				AND MASTER.ACTIVE  = #{active}
+			</if>
+			<if test="nationCode != null and nationCode != ''">
+				AND MASTER.NATION_CODE = #{nationCode}
+			</if>
+			<if test="proCode != null and proCode != ''">
+				AND MASTER.PROV_CODE = #{proCode}
+			</if>
+			<if test="cityCode != null and cityCode != ''">
+				AND  MASTER.CITY_CODE = #{cityCode}
+			</if>
+			<if test="countyCode != null and countyCode != ''">
+				AND MASTER.COUNTY_CODE like #{countyCode}
+			</if>
+			<if test="deptCode != null and deptCode != ''">
+				AND MASTERORG.INCLUDE_ORG_CODE = #{deptCode}
+			</if>
+			<if test="beginTime != null">
+				<![CDATA[ AND MASTERORG.BEGIN_TIME <= #{beginTime} AND MASTERORG.END_TIME > #{beginTime} ]]>
+			</if>
+			<!-- yuehongjie at 2012-11-29 edit 数据下载时调用该方法需要用到billDate-->
+			<if test="billDate != null and billDate!=''">
+				<![CDATA[ AND MASTERORG.BEGIN_TIME <= #{billDate} 
+						  AND MASTERORG.END_TIME > #{billDate} ]]>
+			</if>
+			<if test="activeTime != null and activeTime!=''">
+				<![CDATA[  AND MASTERORG.END_TIME > #{activeTime} ]]>
+			</if>
+		</where>
+		<![CDATA[
+			ORDER BY MASTER.MODIFY_TIME DESC
+		]]>
+	</select>
+	
+	
+	<!-- 根据条件查询增值价格区域 -->
+	<select id="checkRegionOrganizationType" resultMap="pricingRegionArriveResultMap"
+		parameterType="map">
+		<![CDATA[
+			SELECT /** 综合-价格-根据行政区域联接字符串CODE查询增值价格区域 **/ DISTINCT
+		]]>
+		<include refid="select_param" />
+		<![CDATA[
+			FROM pkp.T_SRV_PRICE_ARRIVE_REGION_EC MASTER
+		]]>
+		<where>
+			MASTER.NATION_CODE||MASTER.PROV_CODE||MASTER.CITY_CODE||MASTER.COUNTY_CODE = #{administrativeRegionCodes}
+			<![CDATA[AND MASTER.END_TIME > #{now}]]>
+		</where>
+	</select>
+	
+	<!-- 根据条件查询增值价格区域部门信息 -->
+	<select id="selectPriceRegionByCondition" resultMap="pricingRegionArriveResultMap"
+		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.PriceRegionEcGoodsArriveEntity">
+		SELECT /** 综合-价格-根据条件查询增值价格区域 **/
+		<include refid="select_param" />
+		FROM pkp.T_SRV_PRICE_ARRIVE_REGION_EC MASTER 
+		<where>
+	  	<if test="active!=null and active!=''">
+			MASTER.ACTIVE = #{active}
+	 	</if>         
+  		<if test="versionNo!=null and versionNo!=''"> 
+			AND MASTER.VERSION_NO >= #{versionNo}        
+  		</if>
+		</where>
+			order by MASTER.VERSION_NO,MASTER.ID ASC 
+	</select>
+	
+	<!-- 根据条件查询增值价格区域部门信息 -->
+	<select id="selectPriceRegionOrgByCondition" resultMap="priceRegionOrgArriveResultMap"
+		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.PriceRegionEcGoodsOrgArriveEntity">
+		SELECT  /** 综合-价格-根据条件查询增值价格区域部门信息 **/
+		<include refid="select_pricing_regionorg_param" />
+		FROM pkp.T_SRV_PRICE_ARR_REGION_ORG_EC
+		<where>
+	  	<if test="active!=null and active!=''">
+			ACTIVE = #{active}
+	 	</if>         
+  		<if test="versionNo!=null and versionNo!=''"> 
+			AND VERSION_NO >= #{versionNo}        
+  		</if>
+		</where>
+			order by VERSION_NO,ID ASC 
+	</select>
+	
+	<!-- 根据名称查询增值价格区域 -->
+	<select id="searchRegionByName" resultMap="pricingRegionArriveResultMap"
+		parameterType="map">
+		<![CDATA[
+			SELECT /** 综合-价格-根据名称查询增值价格区域 **/
+		]]>
+		<include refid="select_param" />
+		<![CDATA[
+			FROM pkp.T_SRV_PRICE_ARRIVE_REGION_EC MASTER
+		]]>
+		<where>
+			<if test="regionName != null and regionName != ''">
+				 MASTER.NAME = #{regionName}
+			</if>
+		</where>
+		<![CDATA[
+			ORDER BY MASTER.MODIFY_TIME DESC
+		]]>
+	</select>
+	
+	<!-- 根据ID查询增值价格区域 -->
+	<select id="searchRegionByID" resultMap="pricingRegionArriveResultMap"
+		parameterType="map">
+		<![CDATA[
+			SELECT /** 综合-价格-根据ID查询增值价格区域  **/
+		]]>
+		<include refid="select_param" />
+		<![CDATA[
+			FROM pkp.T_SRV_PRICE_ARRIVE_REGION_EC MASTER
+			 
+		]]>
+		<where>
+			<if test="id != null and id != ''">
+				 MASTER.ID = #{id}
+			</if>
+		</where>
+	</select>
+		<!-- 根据条件查询增值价格区域总数 -->
+	<select id="countRegionByCondition" resultType="long"
+		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.PriceRegionEcGoodsArriveEntity">
+		<![CDATA[
+			SELECT /** 综合-价格-根据条件查询增值价格区域总数  **/ COUNT(1)
+		]]>
+		<![CDATA[
+			FROM pkp.T_SRV_PRICE_ARRIVE_REGION_EC MASTER
+		]]>
+		<where>
+			<if test="id != null and id != ''">
+				MASTER.ID = #{id}
+			</if>
+			<if test="regionCode != null and regionCode != ''">
+				AND MASTER.CODE  = #{regionCode}
+			</if>
+			<if test="regionName != null and regionName != ''">
+				AND MASTER.NAME like #{regionName}
+			</if>
+			<if test="regionType != null and regionType != ''">
+				AND MASTER.TYPE = #{regionType}
+			</if>
+			<if test="active != null and active != ''">
+				AND MASTER.ACTIVE  = #{active}
+			</if>
+			<if test="nationCode != null and nationCode != ''">
+				AND MASTER.NATION_CODE = #{nationCode}
+			</if>
+			<if test="proCode != null and proCode != ''">
+				AND MASTER.PROV_CODE = #{proCode}
+			</if>
+			<if test="cityCode != null and cityCode != ''">
+				AND  MASTER.CITY_CODE = #{cityCode}
+			</if>
+			<if test="countyCode != null and countyCode != ''">
+				AND MASTER.COUNTY_CODE like #{countyCode}
+			</if>
+		</where>
+	</select>
+	
+	<sql id="insert_region_param">
+	   ID,
+       CODE,
+       NAME,
+       TYPE,
+       ACTIVE,
+       BEGIN_TIME,
+       END_TIME,
+       DESCRIPTION,
+       VERSION_NO,
+       NATION_CODE,
+       PROV_CODE,
+       CITY_CODE,
+       COUNTY_CODE,
+       CREATE_USER_CODE,
+       MODIFY_USER_CODE,
+       CREATE_TIME,
+       MODIFY_TIME,
+       CREATE_ORG_CODE,
+       MODIFY_ORG_CODE
+	</sql>
+	<!-- 修改区域 -->
+	<update id="updateRegion" 
+		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.PriceRegionEcGoodsArriveEntity">
+		<![CDATA[
+			UPDATE /** 综合-价格-根据ID选择性修改增值价格区域  **/  pkp.T_SRV_PRICE_ARRIVE_REGION_EC T
+		]]>
+		<set>
+			<if test="regionCode!=null and regionCode!=''">
+				T.CODE = #{regionCode, jdbcType=VARCHAR},
+			</if>
+			<if test="regionName!=null and regionName!=''">
+				T.NAME = #{regionName, jdbcType=VARCHAR},
+			</if>
+			<if test="regionType!=null and regionType!=''">
+				T.TYPE = #{regionType, jdbcType=VARCHAR},
+			</if>
+			<if test="active!=null and active != ''">
+				T.ACTIVE = #{active, jdbcType=NUMERIC},
+			</if>
+			<if test="beginTime!=null">
+				T.BEGIN_TIME = #{beginTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="endTime!=null">
+				T.END_TIME = #{endTime, jdbcType=TIMESTAMP},
+			</if>
+			<if test="description!=null and description != ''">
+				T.DESCRIPTION = #{description, jdbcType=VARCHAR},
+			</if>
+			<if test="versionNo != null and versionNo != ''">
+				T.VERSION_NO = #{versionNo, jdbcType=NUMERIC},
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				T.MODIFY_USER_CODE = #{modifyUser, jdbcType=VARCHAR},
+			</if>
+			<if test="modifyOrgCode != null and modifyOrgCode != ''">
+				T.MODIFY_ORG_CODE = #{modifyOrgCode, jdbcType=VARCHAR},
+			</if>
+			<if test="id != null and id != ''">
+				T.MODIFY_TIME = sysdate,
+			</if>
+			<if test="nationCode!=null and nationCode != ''">
+				T.NATION_CODE = #{nationCode, jdbcType=VARCHAR},
+			</if>
+			<if test="proCode!=null and proCode != ''">
+				T.PROV_CODE = #{proCode, jdbcType=VARCHAR},
+			</if>
+			<if test="cityCode!=null and cityCode != ''">
+				T.CITY_CODE = #{cityCode, jdbcType=VARCHAR},
+			</if>
+				T.COUNTY_CODE = #{countyCode, jdbcType=VARCHAR},
+		</set>
+		<![CDATA[
+ 			WHERE T.ID = #{id}
+ 		]]>
+	</update>
+	
+	<!-- 激活区域 -->
+	<update id="activeRegion" 
+		parameterType="map">
+		<![CDATA[
+			UPDATE /** 综合-价格-根据ID集合批量激活增值价格区域  **/ 
+			pkp.T_SRV_PRICE_ARRIVE_REGION_EC T
+			SET T.ACTIVE = 'Y',
+			T.VERSION_NO = #{versionNo,jdbcType=DECIMAL}
+		]]>
+		<where>
+		<![CDATA[ T.ID IN ]]>
+			<foreach collection="regionIds" open="(" close=")" separator=","
+				item="regionId">
+			<![CDATA[	#{regionId}  ]]>
+			</foreach>
+		</where>	
+	</update>
+	
+	<!-- 删除区域 -->
+	<update id="deleteRegion" 
+		parameterType="map">
+		<![CDATA[
+			DELETE /** 综合-价格-根据ID集合批量删除增值价格区域  **/ 
+			FROM pkp.T_SRV_PRICE_ARRIVE_REGION_EC T 
+		]]>
+		<where>
+		<![CDATA[ T.ID IN ]]>
+			<foreach collection="regionIds" open="(" close=")" separator=","
+				item="regionId">
+			<![CDATA[	#{regionId}  ]]>
+			</foreach>
+		</where>	
+	</update>
+	
+	<!-- 删除区域 -->
+	<update id="deleteRegionOrg" 
+		parameterType="map">
+		<![CDATA[
+			DELETE /** 综合-价格-根据ID集合批量删除增值价格区域和部门  **/  
+			FROM pkp.T_SRV_PRICE_ARR_REGION_ORG_EC T 
+		]]>
+		<where>
+		<![CDATA[ T.T_SRV_PRICE_REGION_ID IN ]]>
+			<foreach collection="regionIds" open="(" close=")" separator=","
+				item="regionId">
+			<![CDATA[	#{regionId}  ]]>
+			</foreach>
+		</where>	
+	</update>
+	
+		<!-- 激活区域关联部门 -->
+	<update id="activeRegionOrg" 
+		parameterType="map">
+		<![CDATA[
+			UPDATE /** 综合-价格-批量激活增值价格区域和部门  **/  
+			pkp.T_SRV_PRICE_ARR_REGION_ORG_EC T
+			SET T.ACTIVE = 'Y',
+			T.VERSION_NO = #{versionNo,jdbcType=DECIMAL}
+		]]>
+		<where>
+		   <![CDATA[ T.T_SRV_PRICE_REGION_ID = #{regionId, jdbcType=VARCHAR}]]>
+		</where>	
+	</update>
+	
+	<!-- 添加区域-->
+	<insert id="insertRegion"
+		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.PriceRegionEcGoodsArriveEntity">
+		<![CDATA[
+			INSERT INTO  /** 综合-价格-插入增值价格区域  **/  
+			pkp.T_SRV_PRICE_ARRIVE_REGION_EC(
+		]]>
+			<include refid="insert_region_param" />
+		<![CDATA[
+			) values (
+				#{id, jdbcType=VARCHAR},
+				#{regionCode, jdbcType=VARCHAR},				
+				#{regionName, jdbcType=VARCHAR},			
+				#{regionType, jdbcType=VARCHAR},
+				#{active},
+				#{beginTime,jdbcType=TIMESTAMP},
+				#{endTime, jdbcType=TIMESTAMP},
+				#{description, jdbcType=VARCHAR},
+				#{versionNo, jdbcType=NUMERIC},
+				#{nationCode, jdbcType=VARCHAR},
+				#{proCode, jdbcType=VARCHAR},
+				#{cityCode, jdbcType=VARCHAR},
+				#{countyCode, jdbcType=VARCHAR},
+				#{createUser, jdbcType=VARCHAR},
+				#{modifyUser, jdbcType=VARCHAR},
+				sysdate,
+				sysdate,
+				#{createOrgCode, jdbcType=VARCHAR},
+				#{modifyOrgCode, jdbcType=VARCHAR}
+
+			)
+		]]>
+	</insert>
+	<sql id="insert_regionorg_param">
+	   ID,
+       T_SRV_PRICE_REGION_ID,
+       T_SRV_PRICE_REGION_CODE,
+       INCLUDE_ORG_ID,
+       INCLUDE_ORG_CODE,
+       ACTIVE,
+       CREATE_USER_CODE,
+       CREATE_TIME,
+       CREATE_ORG_CODE,
+       MODIFY_USER_CODE,
+       MODIFY_TIME,
+       MODIFY_ORG_CODE,
+       VERSION_NO,
+       BEGIN_TIME,
+       END_TIME
+	</sql>
+	<!-- 修改区域和部门的关联关系 -->
+	<update id="updateRegionOrg" 
+		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.PriceRegionEcGoodsOrgArriveEntity">
+		<![CDATA[
+			UPDATE  /** 综合-价格-批量修改增值价格区域和部门  **/ 
+			pkp.T_SRV_PRICE_ARR_REGION_ORG_EC T
+		]]>
+		<set>
+			<if test="beginTime!=null">
+				T.BEGIN_TIME = #{beginTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="endTime!=null">
+				T.END_TIME = #{endTime, jdbcType=TIMESTAMP},
+			</if>
+			<if test="versionNo != null and versionNo != ''">
+				T.VERSION_NO = #{versionNo, jdbcType=NUMERIC},
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				T.MODIFY_USER_CODE = #{modifyUser, jdbcType=VARCHAR},
+			</if>
+			<if test="modifyOrgCode != null and modifyOrgCode != ''">
+				T.MODIFY_ORG_CODE = #{modifyOrgCode, jdbcType=VARCHAR},
+			</if>
+			<if test="id != null and id != ''">
+                T.MODIFY_TIME = sysdate,
+			</if>
+			<if test="active != null and active != ''">
+                T.ACTIVE = #{active, jdbcType=VARCHAR},
+			</if>
+		</set>
+		<![CDATA[
+ 			WHERE T.ID = #{id}
+ 		]]>
+	</update>
+	<!-- 添加区域与部门的关联-->
+	<insert id="insertRegionOrg"
+		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.PriceRegionEcGoodsOrgArriveEntity">
+		<![CDATA[
+			INSERT INTO  /** 综合-价格-插入增值价格区域和部门  **/ 
+			pkp.T_SRV_PRICE_ARR_REGION_ORG_EC(
+		]]>
+			<include refid="insert_regionorg_param" />
+		<![CDATA[
+			) values (
+				#{id, jdbcType=VARCHAR},
+				#{priceRegionId, jdbcType=VARCHAR},				
+				#{priceRegionCode, jdbcType=VARCHAR},			
+				#{includeOrgId, jdbcType=VARCHAR},
+				#{includeOrgCode, jdbcType=VARCHAR},
+				#{active},
+				#{createUser, jdbcType=VARCHAR},
+				sysdate,
+				#{createOrgCode, jdbcType=VARCHAR},
+				#{modifyUser, jdbcType=VARCHAR},
+				sysdate,
+				#{modifyOrgCode, jdbcType=VARCHAR},
+				#{versionNo, jdbcType=VARCHAR},
+				#{beginTime,jdbcType=TIMESTAMP},
+				#{endTime, jdbcType=TIMESTAMP}
+			)
+		]]>
+	</insert>
+	<!-- 价格趋于结果集 -->
+	<resultMap id="pricingRegionOrgResultMap" 
+		type="com.deppon.foss.module.pickup.pricing.api.shared.domain.PriceRegionEcGoodsOrgArriveEntity">
+		<id property="id" column="ID"/>
+		<result property="priceRegionCode" column="REGIONCODE"/>
+		<result property="priceRegionId" column="REGIONID"/>
+		<result property="includeOrgId" column="ORGID"/>
+		<result property="includeOrgCode" column="ORGCODE"/>
+		<result property="includeOrgName" column="ORG_ORGNAME"/>
+		<result property="cityCode" column="BASCITY_CITYCODE"/>
+		<result property="cityName" column="BASCITY_CITYNAME"/>
+		<result property="countyCode" column="BASCOUNTY_COUNTYCODE"/>
+		<result property="countyName" column="BASCOUNTY_COUNTYNAME"/>
+		<result property="proCode" column="BASPRO_PROCODE"/>
+		<result property="proName" column="BASPRO_PRONAME"/>
+		<result property="nationCode" column="BASNATION_NATIONCODE"/>
+		<result property="nationName" column="BASNATION_NATIONNAME"/>
+		<result property="active" column="ACTIVE"/>
+		<result property="beginTime" column="BEGINTIME"/>
+		<result property="endTime" column="ENDTIME"/>
+		<result property="versionNo" column="VERSION_NO"/>
+		<result property="modifyUser" column="MODIFY_USER_CODE"/>
+		<result property="createOrgCode" column="CREATE_ORG_CODE"/>
+		<result property="createUser" column="CREATE_USER_CODE"/>
+		<result property="createDate" column="CREATE_TIME"/>
+		<result property="modifyDate" column="MODIFY_TIME"/>
+	</resultMap>
+   <!-- 查询字段 -->
+	<sql id="select_regionorg_param">
+	   MASTER.ID                           AS ID,
+       MASTER.T_SRV_PRICE_REGION_CODE      AS REGIONCODE,
+       MASTER.T_SRV_PRICE_REGION_ID        AS REGIONID,
+       MASTER.INCLUDE_ORG_ID               AS ORGID,
+       MASTER.INCLUDE_ORG_CODE             AS ORGCODE,
+       MASTER.ACTIVE 					   AS ACTIVE,
+       MASTER.VERSION_NO				   AS VERSION_NO,
+       MASTER.BEGIN_TIME                   AS BEGINTIME,
+       MASTER.END_TIME                     AS ENDTIME,
+       MASTER.CREATE_USER_CODE   		   AS CREATE_USER_CODE, 
+       MASTER.MODIFY_USER_CODE   		   AS MODIFY_USER_CODE, 
+       MASTER.CREATE_TIME        		   AS CREATE_TIME, 
+       MASTER.MODIFY_TIME                  AS MODIFY_TIME, 
+       MASTER.CREATE_ORG_CODE              AS CREATE_ORG_CODE
+	</sql>
+	
+	<!-- 根据条件查询价格区域关联部门 -->
+	<select id="searchRegionOrgByCondition" resultMap="pricingRegionOrgResultMap"
+		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.PriceRegionEcGoodsOrgArriveEntity">
+		<![CDATA[
+			SELECT /** 综合-价格-精准电商根据条件查询价格区域关联部门 2016/07/15 赵一清 **/
+		]]>
+		<include refid="select_regionorg_param" />
+		<![CDATA[
+			FROM pkp.T_SRV_PRICE_ARR_REGION_ORG_EC MASTER
+		]]>
+		<where>
+			<if test="priceRegionId != null and priceRegionId != ''">
+				MASTER.T_SRV_PRICE_REGION_ID = #{priceRegionId}
+			</if>
+			<if test="active != null and active != ''">
+			 AND MASTER.ACTIVE = #{active,jdbcType=VARCHAR}
+		    </if>
+		    
+		    <if test="includeOrgCode != null and includeOrgCode != ''">
+			 AND MASTER.INCLUDE_ORG_CODE = #{includeOrgCode,jdbcType=VARCHAR}
+		    </if>
+		    		
+			<if test="billDate != null">
+			AND  MASTER.BEGIN_TIME  <![CDATA[ <= ]]>  #{billDate,jdbcType=TIMESTAMP} 
+			AND  MASTER.END_TIME    <![CDATA[ > ]]>   #{billDate,jdbcType=TIMESTAMP} 
+		</if>
+		</where>
+	</select>
+	<!-- 根据行政区域查询逻辑区域信息 -->
+	<select id="searchRegionByDistrict" resultMap="pricingRegionArriveResultMap"
+		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.PriceRegionEcGoodsArriveEntity">
+		<![CDATA[
+			SELECT /** 综合-价格-根据行政区域查询逻辑区域信息  **/ 
+		]]>
+		<include refid="select_param" />
+		<![CDATA[
+			FROM pkp.T_SRV_PRICE_ARRIVE_REGION_EC MASTER
+			 
+		]]>
+		<where>
+			<if test="active != null and active != ''">
+				  MASTER.ACTIVE  = #{active}
+			</if> 
+			<if test="regionType != null and regionType != ''">
+				AND MASTER.TYPE = #{regionType}
+			</if>
+			  <if test="countyCode != null and countyCode != ''">
+				  AND (MASTER.COUNTY_CODE = #{countyCode}  or  MASTER.CITY_CODE = #{cityCode}  or MASTER.PROV_CODE = #{proCode})
+			  </if >
+			   <if test="cityCode != null and cityCode != '' and (countyCode==null or countyCode=='') ">
+				    AND ( MASTER.CITY_CODE = #{cityCode}  or MASTER.PROV_CODE = #{proCode})
+			   </if>
+			   <if test="proCode != null and proCode != ''  and (countyCode==null or countyCode=='') and (cityCode == null or cityCode == '' )">
+				   AND MASTER.PROV_CODE = #{proCode}
+			  </if>
+			  
+			 <if test="nationCode != null and nationCode != ''">
+				   AND MASTER.NATION_CODE = #{nationCode}
+			 </if>
+			 
+			
+			 <if test="billDate != null">
+				<![CDATA[ AND MASTER.BEGIN_TIME <= #{billDate,jdbcType=TIMESTAMP} AND MASTER.END_TIME > #{billDate,jdbcType=TIMESTAMP} ]]>
+			</if>
+		</where>
+		<![CDATA[
+			ORDER BY MASTER.MODIFY_TIME DESC
+		]]>
+	</select>
+	
+	<!-- 增值区域查询专用 -->
+	<select id="searchRegionByDistrictNew" resultMap="pricingRegionArriveResultMap"
+		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.PriceRegionEcGoodsArriveEntity">
+		<![CDATA[
+			SELECT /** 综合-价格-根据行政区域查询逻辑区域信息 2016/07/15 赵一清 **/
+		]]>
+		<include refid="select_param" />
+		<![CDATA[
+			FROM pkp.T_SRV_PRICE_ARRIVE_REGION_EC MASTER
+		]]>
+		<where>
+			<if test="active != null and active != ''">
+				  MASTER.ACTIVE  = #{active}
+			</if> 
+			<if test="regionType != null and regionType != ''">
+				AND MASTER.TYPE = #{regionType}
+			</if>
+			  <if test="countyCode != null and countyCode != ''">
+				  AND (MASTER.COUNTY_CODE = #{countyCode}  or  MASTER.CITY_CODE = #{cityCode} or MASTER.PROV_CODE = #{proCode} )
+			  </if >
+			   <if test="cityCode != null and cityCode != '' and (countyCode==null or countyCode=='') ">
+				    AND ( MASTER.CITY_CODE = #{cityCode} or MASTER.PROV_CODE = #{proCode} )
+			   </if>
+			<if test="proCode !=null and proCode != '' and (cityCode == null or cityCode == '') and (countyCode==null or countyCode=='') ">
+				AND MASTER.PROV_CODE = #{proCode}
+			</if>
+			 <if test="nationCode != null and nationCode != ''">
+				   AND MASTER.NATION_CODE = #{nationCode}
+			 </if>
+			 <if test="billDate != null">
+				<![CDATA[ AND MASTER.BEGIN_TIME <= #{billDate,jdbcType=TIMESTAMP} AND MASTER.END_TIME > #{billDate,jdbcType=TIMESTAMP} ]]>
+			</if>
+		</where>
+	</select>
+	
+		<!-- 根据区域名称批量查找区域信息 -->
+  
+	<select id="findRegionByNames" resultMap="pricingRegionArriveResultMap"
+		parameterType="map">
+		<![CDATA[
+			SELECT /** 综合-价格-根据区域名称批量查找区域信息  **/  DISTINCT
+		]]>
+		<include refid="select_param" />
+		<![CDATA[
+			FROM pkp.T_SRV_PRICE_ARRIVE_REGION_EC MASTER
+			 
+		]]>
+		<where>
+		     <if test="active != null and active != ''">
+				  MASTER.ACTIVE  = #{active}
+			</if> 
+			
+		     <![CDATA[ AND  MASTER.NAME IN ]]>
+			<foreach collection="regionNames" open="(" close=")" separator=","
+				item="regionName">
+			<![CDATA[	#{regionName}  ]]>
+			</foreach>
+			
+			 <if test="billDate != null">
+				<![CDATA[ AND MASTER.BEGIN_TIME <= #{billDate} AND MASTER.END_TIME > #{billDate} ]]>
+			</if>
+		</where>
+	</select>
+	
+	<select id="findRegionByCodes" resultMap="pricingRegionArriveResultMap"
+		parameterType="map">
+		<![CDATA[
+			SELECT /** 综合-价格-根据区域CODE批量查找区域信息  **/  DISTINCT
+		]]>
+		<include refid="select_param" />
+		<![CDATA[
+			FROM pkp.T_SRV_PRICE_ARRIVE_REGION_EC MASTER
+		]]>
+		<where>
+		     <if test="active != null and active != ''">
+				  MASTER.ACTIVE  = #{active}
+			</if> 
+			
+		     <![CDATA[ AND  MASTER.CODE IN ]]>
+			<foreach collection="regionCodes" open="(" close=")" separator=","
+				item="regionCode">
+			<![CDATA[	#{regionCode}  ]]>
+			</foreach>
+			
+			 <if test="billDate != null">
+				<![CDATA[ AND MASTER.BEGIN_TIME <= #{billDate} AND MASTER.END_TIME > #{billDate} ]]>
+			</if>
+		</where>
+	</select>
+	
+	<!-- 根据disctrictCODE查询价格区域信息 -->
+	<select id="searchRegionByDistrictForCache" resultMap="pricingRegionArriveResultMap"
+		parameterType="map">
+		<![CDATA[
+			SELECT /** 综合-价格-根据区域CODE查找区域信息  **/
+		]]>
+		<include refid="select_param" />
+		<![CDATA[
+			FROM pkp.T_SRV_PRICE_ARRIVE_REGION_EC MASTER
+			 
+		]]>
+		<where>
+			<if test="active != null and active != ''">
+				MASTER.ACTIVE = #{active}
+			</if>
+			<if test="countyCode != null and countyCode != ''">
+				AND (MASTER.COUNTY_CODE = #{countyCode} or MASTER.CITY_CODE = #{cityCode} or MASTER.PROV_CODE = #{proCode}
+				)
+			</if>
+			<if test="cityCode != null and cityCode != '' and (countyCode==null or countyCode=='') ">
+				AND ( MASTER.CITY_CODE = #{cityCode}  or MASTER.PROV_CODE = #{proCode} )
+			</if>
+			<if test="proCode !=null and proCode != '' and (cityCode == null or cityCode == '') and (countyCode==null or countyCode=='') ">
+				AND MASTER.PROV_CODE = #{proCode}
+			</if>
+			<if test="billDate != null">
+				<![CDATA[ AND MASTER.BEGIN_TIME <= #{billDate,jdbcType=TIMESTAMP} AND MASTER.END_TIME > #{billDate,jdbcType=TIMESTAMP} ]]>
+			</if>
+		</where>
+	</select>
+	
+	<!-- 根据网点CODE查询价格区域关联部门 -->
+	<select id="searchRegionOrgByDeptNo" resultMap="pricingRegionOrgResultMap"
+		parameterType="string">
+		<![CDATA[
+			SELECT /** 综合-价格-网点CODE查询价格区域关联部门  **/
+		]]>
+		<include refid="select_regionorg_param" />
+		<![CDATA[
+			FROM pkp.T_SRV_PRICE_ARR_REGION_ORG_EC MASTER
+		]]>
+		<where>
+		    AND MASTER.ACTIVE = 'Y' 
+		    AND MASTER.INCLUDE_ORG_CODE = #{deptNo,jdbcType=VARCHAR}
+		</where>
+	</select>
+	
+	<!--  add at 2013-04-22 by sz -->
+	<select id="searchRegionOrgByRegionId" resultMap="pricingRegionOrgResultMap" parameterType="map">
+		<![CDATA[
+			SELECT /** 综合-价格-根据综合条件查询价格区域 **/ DISTINCT
+		]]>
+		<include refid="select_regionorg_param" />
+		<![CDATA[
+			FROM pkp.T_SRV_PRICE_ARRIVE_REGION_EC T
+			LEFT JOIN pkp.T_SRV_PRICE_ARR_REGION_ORG_EC MASTER
+			ON T.ID = MASTER.T_SRV_PRICE_REGION_ID
+		]]>
+		<where>
+			<if test="id != null and id != ''">
+				T.ID = #{id}
+			</if>
+			<if test="billDate != null">
+				<![CDATA[ AND MASTER.BEGIN_TIME <= #{billDate} AND MASTER.END_TIME > #{billDate} ]]>
+			</if>
+		</where>
+	</select>
+	
+	<!-- 客户端调用根据ID查询区域部门  -->
+	<select id="searchRegionOrgByRegionIdClient" resultMap="pricingRegionOrgResultMap" parameterType="map">
+		<![CDATA[
+			SELECT /** 综合-价格-根据综合条件查询价格区域 **/ 
+		]]>
+		<include refid="select_regionorg_param" />
+		<![CDATA[
+			
+			FROM pkp.T_SRV_PRICE_ARR_REGION_ORG_EC MASTER
+		]]>
+		<where>
+			<if test="id != null and id != ''">
+				MASTER.ID = #{id}
+			</if>
+		</where>
+	</select>
+</mapper>

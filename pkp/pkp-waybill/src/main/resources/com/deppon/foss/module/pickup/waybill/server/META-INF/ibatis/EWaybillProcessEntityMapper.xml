@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.deppon.foss.module.pickup.waybill.shared.domain.EWaybillProcessEntity">
+
+	<!-- 银行信息 -->
+	<resultMap id="BaseResultMap"
+		type="com.deppon.foss.module.pickup.waybill.shared.domain.EWaybillProcessEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+    	<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+   	 	<result column="JOB_ID" property="jobId" jdbcType="VARCHAR" />
+    	<result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    	<result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+   	 	<result column="FAIL_REASON" property="failReason" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 数据字段 -->
+	<sql id="Base_Column_List">
+		 ID, WAYBILL_NO, JOB_ID, CREATE_TIME, MODIFY_TIME,FAIL_REASON
+	</sql>
+	
+	<!-- 获取最后跟新时间 -->
+	<select id="queryAllByCommon"  parameterType="java.util.Map"  resultMap="BaseResultMap">
+		  SELECT 
+		 <include refid="Base_Column_List" />
+		  FROM PKP.T_SRV_EWAYBIL_PROCESS 
+		  <where>
+			<if test="jobId !=null and jobId != '' ">
+				AND JOB_ID = #{jobId,jdbcType=VARCHAR}
+			</if>
+		</where>
+   </select>
+   
+   <!-- zxy 20140709 内部优化 新增:更新jobid -->
+	<update id="updateForJob"
+		parameterType="java.util.Map">
+			UPDATE PKP.T_SRV_EWAYBIL_PROCESS
+				SET JOB_ID = #{jobId,jdbcType=VARCHAR} ,
+				MODIFY_TIME =  #{modifyTime,jdbcType=TIMESTAMP} 
+			WHERE JOB_ID = 'N/A' AND FAIL_REASON ='N'
+			<if test="rownum != null and rownum != '' ">
+				<![CDATA[	AND ROWNUM <= #{rownum,jdbcType=INTEGER} ]]>
+			</if>
+	</update>
+	
+	<!-- 成功激活完成之后，要删除待激活运单表中数据-->
+	<delete id="deleteByWaybillNo" parameterType="String">
+			DELETE FROM PKP.T_SRV_EWAYBIL_PROCESS
+			WHERE WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR} 
+	</delete> 
+	
+	<insert id="insert" parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.EWaybillProcessEntity" >
+	    insert into PKP.T_SRV_EWAYBIL_PROCESS
+	    <trim prefix="(" suffix=")" suffixOverrides="," >
+	      <if test="id != null" >
+	        ID,
+	      </if>
+	      <if test="waybillNo != null" >
+	        WAYBILL_NO,
+	      </if>
+	      <if test="jobId != null" >
+	        JOB_ID,
+	      </if>
+	      <if test="createTime != null" >
+	        CREATE_TIME,
+	      </if>
+	      <if test="modifyTime != null" >
+	        MODIFY_TIME,
+	      </if>
+	      <if test="failReason != null and failReason != ''" >
+	        FAIL_REASON,
+	      </if>
+	    </trim>
+	    <trim prefix="values (" suffix=")" suffixOverrides="," >
+	      <if test="id != null" >
+	        #{id,jdbcType=VARCHAR},
+	      </if>
+	      <if test="waybillNo != null" >
+	        #{waybillNo,jdbcType=VARCHAR},
+	      </if>
+	      <if test="jobId != null" >
+	        #{jobId,jdbcType=VARCHAR},
+	      </if>
+	      <if test="createTime != null" >
+	        #{createTime,jdbcType=TIMESTAMP},
+	      </if>
+	      <if test="modifyTime != null" >
+	        #{modifyTime,jdbcType=TIMESTAMP},
+	      </if>
+	      <if test="failReason != null and failReason != ''" >
+	        #{failReason,jdbcType=VARCHAR},
+	      </if>
+	    </trim>
+  </insert>
+  
+  <!-- 获取最后跟新时间 -->
+	<select id="queryEWaybillByCondition"  parameterType="java.util.Map"  resultMap="BaseResultMap">
+		  SELECT 
+		 <include refid="Base_Column_List" />
+		  FROM PKP.T_SRV_EWAYBIL_PROCESS 
+		  <where>
+	        <choose>
+				<when test="waybillNo != null and waybillNo != ''">
+					AND WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+				</when>
+				<otherwise>
+				<if test="jobId !=null and jobId != '' ">
+					AND JOB_ID = #{jobId,jdbcType=VARCHAR}
+				</if>
+				</otherwise>
+			</choose>
+		</where>
+   </select>
+   
+   <update id="updateEWaybillProcessByWaybillNo" parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.EWaybillProcessEntity">
+		UPDATE PKP.T_SRV_EWAYBIL_PROCESS
+		<set>
+			<if test="id != null" >
+	        ID=#{id,jdbcType=VARCHAR},
+	      </if>
+	      <if test="waybillNo != null" >
+	        WAYBILL_NO=#{waybillNo,jdbcType=VARCHAR},
+	      </if>
+	      <if test="jobId != null" >
+	        JOB_ID=#{jobId,jdbcType=VARCHAR},
+	      </if>
+	      <if test="createTime != null" >
+	        CREATE_TIME=#{createTime,jdbcType=TIMESTAMP},
+	      </if>
+	      <if test="modifyTime != null" >
+	        MODIFY_TIME=#{modifyTime,jdbcType=TIMESTAMP},
+	      </if>
+	      <if test="failReason != null and failReason != ''" >
+	        FAIL_REASON=#{failReason,jdbcType=VARCHAR},
+	      </if>
+		</set>
+		where WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+	</update>
+	
+		<update id="updateProcessJobIdByIdForActive" parameterType="java.lang.String" >  
+  	update PKP.T_SRV_EWAYBIL_PROCESS 	
+	  	<set>
+	      	JOB_ID='N/A',FAIL_REASON ='N'
+	    </set>
+		where JOB_ID=#{jobId,jdbcType=VARCHAR}
+  	</update>
+</mapper>

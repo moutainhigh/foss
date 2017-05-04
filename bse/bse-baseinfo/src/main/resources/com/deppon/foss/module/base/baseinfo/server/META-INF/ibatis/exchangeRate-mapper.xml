@@ -1,0 +1,330 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.exchangeRate">
+	<!-- 汇率信息 -->
+	<resultMap id="exchangeRateResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExchangeRateEntity">
+		<result column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="VIRTUAL_CODE" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="CURRENCY" property="currency" jdbcType="VARCHAR" />
+		<result column="EXCHANGE" property="exchange" jdbcType="DECIMAL" />
+		<result column="BEGIN_TIME" property="beginTime" jdbcType="TIMESTAMP" />
+		<result column="END_TIME" property="endTime" jdbcType="TIMESTAMP" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 数据字段 -->
+	<sql id="exchangeRate_Column_List">
+		ID, VIRTUAL_CODE, CURRENCY, EXCHANGE, BEGIN_TIME, END_TIME,
+		CREATE_TIME,
+		MODIFY_TIME,
+		ACTIVE, CREATE_USER_CODE, MODIFY_USER_CODE
+	</sql>
+	
+	<!-- 数据字段查询时汇率要除以100000 -->
+	<sql id="select_Column_List">
+		ID, VIRTUAL_CODE, CURRENCY, EXCHANGE/100000 EXCHANGE, BEGIN_TIME, END_TIME,
+		CREATE_TIME,
+		MODIFY_TIME,
+		ACTIVE, CREATE_USER_CODE, MODIFY_USER_CODE
+	</sql>
+
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<if test="currency != null and currency != ''">
+				T.CURRENCY = #{currency,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+		ORDER BY T.CURRENCY
+
+	</sql>
+	<!-- 分页查询条件2 -->
+	<sql id="queryWhereByTime">
+		<where>
+			<if test="currency != null and currency != ''">
+				T.CURRENCY = #{currency,jdbcType=VARCHAR}
+			</if>
+			<if test="beginTime != null and beginTime != ''">
+				AND T.BEGIN_TIME <![CDATA[  >=  ]]> #{beginTime,jdbcType=TIMESTAMP}
+			</if>
+			<if test="endTime != null and endTime != ''">
+				AND T.END_TIME  <![CDATA[  <  ]]>  #{endTime,jdbcType=TIMESTAMP}
+			</if>
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+		ORDER BY T.CURRENCY, T.END_TIME DESC
+
+	</sql>
+
+	<!-- 查询所有汇率信息 -->
+	<select id="queryAllExchangeRate"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExchangeRateEntity"
+		resultMap="exchangeRateResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有汇率信息**/
+		]]>
+		<include refid="select_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_EXCHANGE_RATE T
+		]]>
+		<include refid="queryWhereByTime" />
+	</select>
+	
+	<!-- 根据币种查询汇率信息 -->
+	<select id="queryRateEntityByCurrency"
+		parameterType="map"
+		resultMap="exchangeRateResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据币种查询汇率信息 **/
+		]]>
+		<include refid="select_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_EXCHANGE_RATE T
+		]]>
+		<where>
+			<if test="currency != null and currency != ''">
+				T.CURRENCY = #{currency,jdbcType=VARCHAR}
+			</if>
+			<if test="id != null and id != ''">
+				AND T.ID != #{id,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		
+		</where>
+	</select>
+	<!-- 根据币种和有效时间段查询汇率信息 -->
+	<select id="queryExchangeRateBytimeAndCurrency"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExchangeRateEntity"
+		resultMap="exchangeRateResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据币种查询汇率信息 **/
+		]]>
+		<include refid="select_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_EXCHANGE_RATE T
+		]]>
+		<where>
+			<if test="beginTime != null and beginTime != ''">
+				AND T.BEGIN_TIME <![CDATA[  >=  ]]> #{beginTime,jdbcType=TIMESTAMP}
+			</if>
+			<if test="endTime != null and endTime != ''">
+				AND T.END_TIME  <![CDATA[  <  ]]>  #{endTime,jdbcType=TIMESTAMP}
+			</if>
+			<if test="currency != null and currency != ''">
+				AND T.CURRENCY = #{currency,jdbcType=VARCHAR}
+			</if>
+			<if test="id != null and id != ''">
+				AND T.ID != #{id,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		
+		</where>
+	</select>
+	<!-- 根据id查询汇率信息 -->
+	<select id="queryExchangeRateById"
+		parameterType="map"
+		resultMap="exchangeRateResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据币种查询汇率信息 **/
+		]]>
+		<include refid="select_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_EXCHANGE_RATE T
+		]]>
+		<where>
+			<if test="id != null and id != ''">
+				 T.ID = #{id,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		
+		</where>
+	</select>
+	
+	<!-- 根据币种编码、开单日期查询汇率信息 -->
+	<select id="queryExchangeRate"
+		parameterType="map"
+		resultMap="exchangeRateResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据币种编码、开单日期查询汇率信息**/
+		]]>
+		<include refid="select_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_EXCHANGE_RATE T
+		]]>
+		<where>
+		
+			<if test="currency != null and currency != ''">
+				T.CURRENCY = #{currency,jdbcType=VARCHAR}
+			</if>
+			<if test="billTime != null">
+				 and T.BEGIN_TIME <![CDATA[  <=  ]]> #{billTime ,jdbcType=TIMESTAMP}
+		    	and T.END_TIME <![CDATA[  >  ]]> #{billTime,jdbcType=TIMESTAMP} 
+			</if>
+		</where>
+	</select>
+	
+	<!-- 根据币种查询失效时间最大的汇率信息 -->
+	<select id="queryRateEntityByMaxEndTimeCurrency"
+		parameterType="map"
+		resultMap="exchangeRateResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据币种查询失效时间最大的汇率信息**/
+		]]>
+		<include refid="select_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_EXCHANGE_RATE T
+		]]>
+		<where>
+		
+			T.CURRENCY = #{currency,jdbcType=VARCHAR}
+			<if test="id != null and id != ''">
+				AND T.ID != #{id,jdbcType=VARCHAR}
+			</if>
+			AND T.END_TIME = 
+			(
+			 SELECT MAX(B.END_TIME) FROM T_BAS_EXCHANGE_RATE B
+			WHERE B.currency = #{currency,jdbcType=VARCHAR}
+			<if test="id != null and id != ''">
+				AND B.ID != #{id,jdbcType=VARCHAR}
+			</if>
+			) AND ROWNUM = 1
+			
+			
+		</where>
+	</select>
+
+	<!-- 统计总记录数 -->
+	<select id="queryCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExchangeRateEntity">
+	    <![CDATA[
+	       	select/** 综合:统计总记录数**/ count(*) FROM BSE.T_BAS_EXCHANGE_RATE T 
+	    ]]>
+		<include refid="queryWhere" />
+
+	</select>
+
+	<!-- 新增信息 -->
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExchangeRateEntity">
+		
+		<![CDATA[
+			INSERT/** 综合:新增信息**/ INTO BSE.T_BAS_EXCHANGE_RATE T	(
+		]]>
+		<include refid="exchangeRate_Column_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, #{virtualCode,jdbcType=VARCHAR},
+		#{currency,jdbcType=VARCHAR},
+		#{exchange,jdbcType=DECIMAL}*100000,
+		#{beginTime,jdbcType=TIMESTAMP}, #{endTime,jdbcType=TIMESTAMP},
+		#{createDate,jdbcType=TIMESTAMP}, #{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=CHAR},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+
+	<!-- 修改信息 -->
+	<update id="update"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExchangeRateEntity">
+		update/** 综合:修改信息**/ BSE.T_BAS_EXCHANGE_RATE
+		<set>
+			<!-- <if test="virtualCode != null">
+				VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR},
+			</if> -->
+			<if test="currency != null">
+				CURRENCY = #{currency,jdbcType=VARCHAR},
+			</if>
+			<if test="exchange != null">
+				EXCHANGE = #{exchange,jdbcType=DECIMAL}*100000,
+			</if>
+			<if test="beginTime != null">
+				BEGIN_TIME = #{beginTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="endTime != null">
+				END_TIME = #{endTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="createDate != null">
+				CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<!-- <if test="active != null">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if> -->
+			<if test="createUser != null">
+				CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+		</set>
+
+		<where>
+			<if test="virtualCode != null">
+				VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR}
+			</if>
+		</where>
+
+	</update>
+
+	<!-- 作废信息 -->
+	<update id="deleteByCode" parameterType="map">
+		update/** 综合:作废信息**/ BSE.T_BAS_EXCHANGE_RATE
+
+		<set>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				MODIFY_USER_CODE = #{modifyUser, jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+				END_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+		</set>
+
+		<where>
+			<if test="virtualCodeList !=null and virtualCodeList.size > 0">
+				VIRTUAL_CODE in
+				<foreach collection="virtualCodeList" index="index" item="code" open="("
+					separator="," close=")">
+					#{code}
+				</foreach>
+			</if>
+			<if test="active0 != null and active0 != ''">
+				and ACTIVE = #{active0,jdbcType=CHAR}
+			</if>
+		</where>
+	</update>
+
+</mapper>

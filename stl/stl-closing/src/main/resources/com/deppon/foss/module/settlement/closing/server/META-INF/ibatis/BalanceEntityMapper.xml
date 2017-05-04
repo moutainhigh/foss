@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stv.BalanceMapper" >
+  
+  <!-- 结账存储过程 -->
+  <select id="proc_balance" statementType="CALLABLE" parameterType="map">
+  	<![CDATA[
+  		{call /*结算-结账-结账存储过程*/ stv.PKG_STL_BALANCE.proc_balance_call('','BALANCE',#{endDate,jdbcType=DATE})}
+  	]]>
+  </select>
+  
+  <!-- 反结账存储过程 -->
+  <select id="proc_unbalance"  statementType="CALLABLE" parameterType="java.util.Date">
+  	<![CDATA[
+  		{call /*结算-结账-反结账存储过程*/ stv.PKG_STL_BALANCE.proc_balance_call('','UNBALANCE',#{endDate,jdbcType=DATE})}
+  	]]>
+  </select>
+  
+  <!-- 判断是否在结账 -->
+  <select id="isBalanceRun" resultType="int">
+  	SELECT STV.PKG_STL_BALANCE.FUNC_BALANCE_STATE() FROM DUAL
+  </select>
+  
+  <!-- 查询当前结账期间 -->
+  <select id="currentBalanceDate" resultType="java.util.Date">
+  	SELECT MAX(T.BUSINESS_DATE)
+		FROM STV.T_STL_BALANCE_BATCH T
+	 WHERE T.STATUS = 'END'
+				 AND T.ACTIVE = 'Y'
+  </select>
+</mapper>

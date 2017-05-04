@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.StatementConfReceiptEntityDao">
+
+	<!-- 查询最新的对账单回执记录 -->
+	<select id="selectLastPrintReceipt" resultMap="BaseResultMap" parameterType="java.lang.String">
+		SELECT /*结算-核销-查询最新的对账单回执记录*/
+		<include refid="Base_Column_List" />
+		FROM (
+			SELECT 
+				ID, CON_RECEIPT_NO, STATEMENT_BILL_NO, ORG_CODE, ORG_NAME, CUSTOMER_CODE, CUSTOMER_NAME, 
+   				RECEIVED_AMOUNT, PAYMENT_TYPE, PAYMENT_DATE, RECEIVE_EMP_NAME, CREATE_USER_NAME, 
+   				CUSTOMER_IDEA, CREATE_TIME
+			FROM STL.T_STL_STATEMENT_CONF_RECEIPT
+			WHERE STATEMENT_BILL_NO=#{statementBillNo}  
+			ORDER BY CREATE_TIME DESC
+		)
+		WHERE 	<![CDATA[ ROWNUM <=1 ]]> 
+	</select>
+	
+	<!-- 根据对账单号查询对账单回执列表 -->
+	<select id="selectReceiptListByStatementBillNo" resultMap="BaseResultMap" parameterType="java.lang.String">
+		SELECT /*结算-核销-根据对账单号查询对账单回执列表*/
+		<include refid="Base_Column_List" />
+		FROM STL.T_STL_STATEMENT_CONF_RECEIPT
+		WHERE STATEMENT_BILL_NO=#{statementBillNo}
+	</select>
+</mapper>

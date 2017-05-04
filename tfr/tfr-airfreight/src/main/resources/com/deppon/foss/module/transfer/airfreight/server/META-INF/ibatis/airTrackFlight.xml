@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.airfreight.trackFlight" >
+  <!-- 空运跟踪信息结果映射 -->
+  <resultMap  id="airWayBillAndTrackResultMap" type="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirTrackFlightDto">
+  		<!-- 航空正单 -->
+		<result property="airWaybillId" column="AIR_WAYBILL_ID"/>
+		<!-- 航空公司 -->
+		<result property="airLineTwoletter" column="AIR_LINE_TWOLETTER" jdbcType="VARCHAR"/>
+		<!-- 航空运单号 -->
+		<result property="airWaybillNo" column="AIR_WAYBILL_NO" jdbcType="VARCHAR" />
+		<!-- 航班号 -->
+		<result property="flightNo" column="FLIGHT_NO" jdbcType="VARCHAR"/>
+		<!-- 航班日期 -->
+		<result property="flightDate" column="FLIGHT_DATE" jdbcType="TIMESTAMP" />
+		<!-- 空运总调编码 -->
+		<result property="airAssembleDeptCode" column="AIR_ASSEMBLEDEPT_CODE" jdbcType="VARCHAR"/>
+		<!-- 空运总调名称 -->
+		<result property="airAssembleDeptName" column="AIR_ASSEMBLEDEPT_NAME" jdbcType="VARCHAR"/>
+		<!-- 到达区域编码 -->
+		<result property="arrvRegionCode" column="ARRV_REGION_CODE" jdbcType="VARCHAR"/>
+		<!-- 到达区域名称 -->
+		<result property="arrvRegionName" column="ARRV_REGION_NAME" jdbcType="VARCHAR"/>
+		<!-- 起飞时间 -->
+		<result property="takeOffTime" column="TAKE_OFF_TIME" jdbcType="TIMESTAMP"/>
+		<!-- 到达时间 -->
+		<result property="arriveTime" column="ARRIVE_TIME" jdbcType="TIMESTAMP"/> 
+		<!-- 实际起飞时间 -->
+		<result property="actualTakeOffTime" column="ACTUAL_TAKE_OFF_TIME" jdbcType="TIMESTAMP"/>
+		<!-- 实际到达时间 -->
+		<result property="actualArriveTime" column="ACTUAL_ARRIVE_TIME" jdbcType="TIMESTAMP"/> 
+		<!-- 跟踪状态 -->
+		<result property="trackState" column="TRACK_STATE" jdbcType="VARCHAR"/> 
+		<!-- 跟踪信息 -->
+		<result property="message" column="MESSAGE" jdbcType="VARCHAR"/> 
+		<!-- 空运跟踪表集合 -->
+		<collection property="airTrackFlightList"  column="AIR_WAYBILL_ID" ofType="com.deppon.foss.module.transfer.airfreight.api.shared.domain.AirTrackFlightEntity">
+			<!-- 运单号 -->
+			<result property="airWaybillId" column="AIR_WAYBILL_ID" jdbcType="VARCHAR" />
+		    <!-- 跟踪信息 -->
+		    <result property="message" column="MESSAGE" jdbcType="VARCHAR" />
+		</collection>
+  </resultMap>	
+  
+  <!-- 空运跟踪明细结果映射 -->
+  <resultMap id="trackFlightResultMap" type="com.deppon.foss.module.transfer.airfreight.api.shared.domain.AirTrackFlightEntity" >
+  	<!-- 正单号 -->
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <!-- 运单号 -->
+    <result property="airWaybillId" column="AIR_WAYBILL_ID" jdbcType="VARCHAR" />
+    <!-- 创建人编码 -->
+    <result property="createUserCode" column="CREATE_USER_CODE" jdbcType="VARCHAR" />
+    <!-- 创建人名称 -->
+    <result property="createUserName" column="CREATE_USER_NAME" jdbcType="VARCHAR" />
+    <!-- 跟踪信息 -->
+    <result property="message" column="MESSAGE" jdbcType="VARCHAR" />
+    <!-- 创建部门编码 -->
+    <result property="createOrgCode" column="CREATE_ORG_CODE" jdbcType="VARCHAR" />
+    <!-- 创建部门名称 -->
+    <result property="createOrgName" column="CREATE_ORG_NAME" jdbcType="VARCHAR" />
+    <!-- 创建时间 -->
+    <result property="createTime" column="CREATE_TIME" jdbcType="TIMESTAMP" />
+  </resultMap>
+  
+  <!-- 提供给综合查询的接口 -->
+  <resultMap type="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirTrackFlightDto" id="forBaseQueryMap">
+    <!-- 创建人编码 -->
+    <result property="createUserCode" column="CREATE_USER_CODE" jdbcType="VARCHAR" />
+    <!-- 创建人名称 -->
+    <result property="createUserName" column="CREATE_USER_NAME" jdbcType="VARCHAR" />
+	<!-- 跟踪状态 -->
+	<result property="trackState" column="TRACK_STATE" jdbcType="VARCHAR"/> 
+	<result property="createOrgCode" column="CREATE_ORG_CODE" jdbcType="VARCHAR"/> 
+	<result property="createTime" column="CREATE_TIME" jdbcType="TIMESTAMP"/> 
+	<!-- 实际起飞时间 -->
+	<result property="actualTakeOffTime" column="ACTUAL_TAKE_OFF_TIME" jdbcType="TIMESTAMP"/>
+	<!-- 实际到达时间 -->
+	<result property="actualArriveTime" column="ACTUAL_ARRIVE_TIME" jdbcType="TIMESTAMP"/> 
+  </resultMap>
+  
+  <sql id="trackFlight_Column_List" >
+  	AirWayBill.ID AS AIR_WAYBILL_ID,<!-- 正单号 -->
+    AirWayBill.AIR_WAYBILL_NO AS AIR_WAYBILL_NO,<!-- 运单号 -->
+    AirWayBill.AIR_LINE_TWOLETTER AS AIR_LINE_TWOLETTER,<!-- 航空公司 -->
+    AirWayBill.CREATE_ORG_CODE AS AIR_ASSEMBLEDEPT_CODE,<!-- 空运总调部门编码 -->
+    AirWayBill.CREATE_ORG_NAME AS AIR_ASSEMBLEDEPT_NAME,<!-- 空运总调部门名称 -->
+    AirWayBill.FLIGHT_DATE AS FLIGHT_DATE,<!-- 航班日期 -->
+    AirWayBill.FLIGHT_NO AS FLIGHT_NO,<!-- 航班号 -->
+    AirWayBill.ARRV_REGION_CODE AS ARRV_REGION_CODE,<!-- 到达区域编码 -->
+    AirWayBill.ARRV_REGION_NAME as ARRV_REGION_NAME,<!-- 到达区域名称 -->
+    AirWayBill.TAKE_OFF_TIME as TAKE_OFF_TIME,
+    AirWayBill.ARRIVE_TIME as ARRIVE_TIME,
+    AirWayBill.ACTUAL_TAKE_OFF_TIME AS ACTUAL_TAKE_OFF_TIME,<!-- 实际起飞时间 -->
+    AirWayBill.ACTUAL_ARRIVE_TIME AS ACTUAL_ARRIVE_TIME,<!-- 实际到达时间 -->
+    AirWayBill.TRACK_STATE AS TRACK_STATE,<!-- 跟踪状态 -->
+    LISTAGG(TRACK.MESSAGE, '|') within group(order by TRACK.CREATE_TIME DESC) AS MESSAGE<!-- 信息拼接 -->
+  </sql>
+  <!-- 根据正单号查询 -->
+  <select id="selectTrackStatus" resultMap="airWayBillAndTrackResultMap" parameterType="java.lang.String" >
+    SELECT 
+    <include refid="trackFlight_Column_List" />
+    FROM TFR.T_OPT_AIR_TRACKFLIGHT
+    where ID = #{id,jdbcType=VARCHAR}
+    <!-- 根据界面录入正单号查询 -->
+  </select>
+  
+   <select id="selectTrackFlight" resultMap="airWayBillAndTrackResultMap" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirTrackFlightDto" >
+    SELECT 
+    <include refid="trackFlight_Column_List" />
+    FROM 
+    	TFR.T_OPT_AIR_WAYBILL AirWayBill,
+    	TFR.T_OPT_AIR_TRACKFLIGHT TRACK
+    <where>
+    	AirWayBill.ID = TRACK.AIR_WAYBILL_ID(+)
+    	 <if test="airLineTwoletter != null and airLineTwoletter != ''" >
+        	AND AIR_LINE_TWOLETTER = #{airLineTwoletter,jdbcType=VARCHAR}
+     	 </if>
+     	 <if test="flightNo != null and flightNo != ''" >
+        	AND FLIGHT_NO = #{flightNo,jdbcType=VARCHAR}
+     	 </if>
+     	 <if test="airAssembleDeptCode != null and airAssembleDeptCode != ''" >
+        	AND AirWayBill.CREATE_ORG_CODE = #{airAssembleDeptCode,jdbcType=VARCHAR}
+     	 </if>
+     	 <if test="arrvRegionCode != null and arrvRegionCode != ''" >
+        	AND ARRV_REGION_CODE = #{arrvRegionCode,jdbcType=VARCHAR}
+     	 </if>
+     	 <if test="flightDate != null" >
+        	AND FLIGHT_DATE = #{flightDate,jdbcType=TIMESTAMP}
+     	 </if>
+     	 <if test="trackState != null and trackState != ''" >
+        	AND TRACK_STATE = #{trackState,jdbcType=VARCHAR}
+     	 </if>
+     	 <if test="airWaybillNo != null and airWaybillNo != ''" >
+        	AND AIR_WAYBILL_NO = #{airWaybillNo,jdbcType=VARCHAR}
+     	 </if>
+    </where>
+     group by AirWayBill.ID, AirWayBill.AIR_WAYBILL_NO,
+                           AirWayBill.AIR_LINE_TWOLETTER,
+                           AirWayBill.CREATE_ORG_CODE, AirWayBill.FLIGHT_DATE,AirWayBill.CREATE_ORG_NAME,
+                           AirWayBill.FLIGHT_NO, AirWayBill.ARRV_REGION_CODE,
+                           AirWayBill.ARRV_REGION_NAME,
+                           AirWayBill.ACTUAL_TAKE_OFF_TIME,
+                           AirWayBill.ACTUAL_ARRIVE_TIME,
+                           AirWayBill.TRACK_STATE,
+                           AirWayBill.TAKE_OFF_TIME,
+                           AirWayBill.ARRIVE_TIME
+  </select>
+  
+  <!-- 统计跟踪记录的条数，实际统计按条件查询出的正单数就行了 -->
+  <select id="selectTrackFlightCount" resultType="Long" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirTrackFlightDto">
+  	SELECT 
+  		COUNT(*) 
+  	FROM 
+    	TFR.T_OPT_AIR_WAYBILL AirWayBill 
+    <where>
+    	 <if test="airLineTwoletter != null and airLineTwoletter != ''" >
+        	AND AIR_LINE_TWOLETTER = #{airLineTwoletter,jdbcType=VARCHAR}
+     	 </if>
+     	 <if test="flightNo != null and flightNo != ''" >
+        	AND FLIGHT_NO = #{flightNo,jdbcType=VARCHAR}
+     	 </if>
+     	 <if test="airAssembleDeptCode != null and airAssembleDeptCode != ''" >
+        	AND CREATE_ORG_CODE = #{airAssembleDeptCode,jdbcType=VARCHAR}
+     	 </if>
+     	 <if test="arrvRegionCode != null and arrvRegionCode != ''" >
+        	AND ARRV_REGION_CODE = #{arrvRegionCode,jdbcType=VARCHAR}
+     	 </if>
+     	 <if test="flightDate != null" >
+        	AND FLIGHT_DATE = #{flightDate,jdbcType=TIMESTAMP}
+     	 </if>
+     	 <if test="trackState != null and trackState != ''" >
+        	AND TRACK_STATE = #{trackState,jdbcType=VARCHAR}
+     	 </if>
+     	 <if test="airWaybillNo != null and airWaybillNo != ''" >
+        	AND AIR_WAYBILL_NO = #{airWaybillNo,jdbcType=VARCHAR}
+     	 </if>
+    </where>	
+  </select>
+  
+  <!-- 新增跟踪信息 -->
+ 	
+  <insert id="insertAirTrackFlight" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.domain.AirTrackFlightEntity" >
+	    INSERT INTO 
+	    	TFR.T_OPT_AIR_TRACKFLIGHT(
+		    	ID, 
+		    	AIR_WAYBILL_ID, <!-- 正单号 -->
+		    	CREATE_USER_CODE, <!--创建人编码 -->
+		      	CREATE_USER_NAME, <!-- 创建人名称 -->
+		      	MESSAGE, <!-- 跟踪信息 -->
+		      	CREATE_ORG_CODE, <!-- 创建部门编码 -->
+		      	CREATE_ORG_NAME, <!-- 创建部门名称 -->
+		      	CREATE_TIME<!-- 创建时间 -->
+	      	) VALUES (
+	      		#{id,jdbcType=VARCHAR}, <!-- 正单号读取值 -->
+	      		#{airWaybillId,jdbcType=VARCHAR}, <!-- 运单读取号 -->
+	      		#{createUserCode,jdbcType=VARCHAR}, <!-- 创建人编码读取值 -->
+	      		#{createUserName,jdbcType=VARCHAR}, <!-- 创建人名称读取值 -->
+	      		#{message,jdbcType=VARCHAR}, <!-- 跟踪信息读取值 -->
+	      		#{createOrgCode,jdbcType=VARCHAR}, <!-- 创建部门编码读取值 -->
+	      		#{createOrgName,jdbcType=VARCHAR}, <!-- 创建部门名称读取值 -->
+	      		#{createTime,jdbcType=TIMESTAMP}<!-- 创建时间读取值 -->
+	      	)
+  </insert>
+  
+  <!-- 提供给综合查询的接口 -->
+  <select id="queryTrackInfoByAirWaybillNo" resultMap="forBaseQueryMap" resultType="java.lang.String">
+  	 SELECT track.AIR_WAYBILL_ID, 
+	    	track.CREATE_USER_CODE, 
+	      	track.CREATE_USER_NAME,
+	      	track.MESSAGE, 
+	      	track.CREATE_ORG_CODE, 
+	      	track.CREATE_ORG_NAME, 
+	      	track.CREATE_TIME,
+       AirWayBill.TRACK_STATE,
+       airwaybill.actual_take_off_time,
+       airwaybill.actual_arrive_time
+	  FROM TFR.T_OPT_AIR_WAYBILL AirWayBill, TFR.T_OPT_AIR_TRACKFLIGHT TRACK
+	 where AirWayBill.id = track.air_waybill_id
+	 and AirWayBill.Air_Waybill_No = #{airWaybillNo,jdbcType=VARCHAR}
+	 order by track.create_time ASC
+  </select>
+
+</mapper>

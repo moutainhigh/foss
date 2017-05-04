@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tfr-AgingNodesLog">
+	<resultMap id="AgingNodesLogResultMap"
+		type="com.deppon.foss.module.transfer.departure.api.shared.domain.AgingNodesLogEntity">
+		<id column="ID" property="id" />
+		<result column="modifyName" property="modifyName" />
+		<result column="modifyCode" property="modifyCode" />
+		<result column="modifyType" property="modifyType" />
+		<result column="modifyTime" property="modifyTime" />
+		<result column="beforeModifyTime" property="beforeModifyTime" />
+		<result column="afterModifyTime" property="afterModifyTime" />
+		<result column="billNo" property="billNo" />	
+	</resultMap>
+	<!-- 查询时间节点修改日志-->
+	<select id="queryAgingNodesLog" parameterType="java.lang.String" resultMap="AgingNodesLogResultMap" >
+		select ID id,
+			MODIFY_NAME modifyName,
+			MODIFY_CODE modifyCode,
+			MODIFY_TYPE modifyType,
+			MODIFY_TIME modifyTime,
+			BEFORE_MODIFY_TIME beforeModifyTime,
+			AFTER_MODIFY_TIME afterModifyTime,
+			BILL_NO billNo
+			 from tfr.t_opt_agingnodeslog al
+			 <where>
+			 	al.BILL_NO=#{billNo}
+			 </where>
+	</select>
+	<!--更新车辆任务明细-->
+	<update id="updateTrucktastDeteil" parameterType="HashMap">
+		update tfr.t_Opt_Truck_Task_Detail td 
+		<set>
+			td.modify_time = sysdate,
+			<if test="actualDepartTime!=null and actualDepartTime!='' ">	td.actual_depart_time=#{actualDepartTime,jdbcType=TIMESTAMP} ,</if>
+			<if test="actualArriveTime!=null and actualArriveTime!='' "> 	td.actual_arrive_time= #{actualArriveTime,jdbcType=TIMESTAMP} ,</if>
+			<if test="manualDepartTime!=null and manualDepartTime!='' ">	td.manual_depart_time=#{manualDepartTime,jdbcType=TIMESTAMP} ,</if>
+			<if test="manualArriveTime!=null and manualArriveTime!='' ">	td.manual_arrive_time= #{manualArriveTime,jdbcType=TIMESTAMP}</if> 
+		</set>
+			<where> 
+				td.id =#{id}
+			</where> 
+	</update>
+	<!--插入修改日志-->
+	<insert id="saveAgingNodesLog" parameterType="com.deppon.foss.module.transfer.departure.api.shared.domain.AgingNodesLogEntity">
+		insert into tfr.t_opt_agingnodeslog
+		  (ID,
+		   MODIFY_NAME,
+		   MODIFY_CODE,
+		   MODIFY_TYPE,
+		   MODIFY_TIME,
+		   BEFORE_MODIFY_TIME,
+		   AFTER_MODIFY_TIME,
+		   BILL_NO,
+		   RELATION_BILL_NO)
+		values
+		  (#{id,jdbcType=VARCHAR},
+		   #{modifyName,jdbcType=VARCHAR},
+		   #{modifyCode,jdbcType=VARCHAR},
+		   #{modifyType,jdbcType=VARCHAR},
+		   #{modifyTime, jdbcType=TIMESTAMP},
+		   #{beforeModifyTime, jdbcType=TIMESTAMP},
+		   #{afterModifyTime, jdbcType=TIMESTAMP},
+		   #{billNo,jdbcType=VARCHAR},
+		   #{relationbillNos,jdbcType=VARCHAR}
+		   )
+	</insert>
+	<select id="queryRelationbillNos" parameterType="java.lang.String" resultType="String" >
+		select tb.bill_no
+		  from tfr.t_opt_truck_task_bill tb
+		 where tb.truck_task_detail_id in
+		       (select td.id
+		          from tfr.t_opt_truck_task_detail td
+		          left join tfr.t_opt_truck_task_bill tb on tb.truck_task_detail_id =
+		                                                    td.id
+		         where tb.bill_no = #{billNo,jdbcType=VARCHAR})
+	</select>
+</mapper>

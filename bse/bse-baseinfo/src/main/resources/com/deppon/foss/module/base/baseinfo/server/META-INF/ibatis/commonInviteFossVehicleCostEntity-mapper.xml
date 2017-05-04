@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="foss.bse.bse-baseinfo.commoninvitefossvehiclecostentity">
+	<resultMap id="inviteFossVehicleCostEntityResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.domain.InviteFossVehicleCostEntity">
+	<id column="ID" property="id" jdbcType="VARCHAR"/>
+	<!--事业部编码  -->
+	<result column="BUSINESS_CODE" property="businessCode" jdbcType="VARCHAR" />
+	<!--事业部名称  -->
+	<result column="BUSINESS_NAME" property="businessName" jdbcType="VARCHAR"/>
+	<!--大区编码 -->
+	<result column="REGIONAL_CODE" property="regionalCode" jdbcType="VARCHAR"/>
+	<!--大区名称  -->
+	<result column="REGIONAL_NAME" property="regionalName" jdbcType="VARCHAR" />
+	<!--单票费用上限  -->
+	<result column="VEHICLE_COST_MAX" property="vehicleCostMax" jdbcType="VARCHAR" />
+	<!-- 是否有效 -->
+	<result column="ACTIVE" property="active" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<resultMap id="inviteCommonExpressageEntityResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.domain.InviteCommonExpressageEntity">
+	<id column="ID" property="id" jdbcType="VARCHAR"/>
+	<!--事业部编码  -->
+	<result column="EXPRESSAGE_CODE" property="expressageCode" jdbcType="VARCHAR" />
+	<!--事业部名称  -->
+	<result column="EXPRESSAGE_NAME" property="expressageName" jdbcType="VARCHAR"/>
+	<!-- 是否有效 -->
+	<result column="ACTIVE" property="active" jdbcType="VARCHAR" />
+	</resultMap> 
+
+	
+	<!-- 事业部查询公共选择器total -->
+	<select id="queryCommonBusinessCount" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.InviteFossVehicleCostEntity" resultType="Long">
+		select count(*)
+          from (select  distinct
+            t.code   BUSINESS_CODE,
+            t.name   BUSINESS_NAME
+          from bse.t_bas_org t
+          where t.division = 'Y' and t.active = 'Y'      
+          <if test="businessName != null and businessName != ''">
+          AND t.name like CONCAT(CONCAT('%',
+            #{businessName,jdbcType=VARCHAR}),
+						'%')
+		  </if>
+		  )
+	</select>
+		
+	<!--公共选择器模糊查询出事业部编码及名称  -->
+	<select id="queryCommonInviteFossVehicleCostByBusiness" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.InviteFossVehicleCostEntity"
+			resultMap="inviteFossVehicleCostEntityResultMap">
+		select  distinct
+            t.code   BUSINESS_CODE,
+            t.name   BUSINESS_NAME
+          from bse.t_bas_org t
+          where t.division = 'Y' and t.active = 'Y'      
+          <if test="businessName != null and businessName != ''">
+          AND t.name like CONCAT(CONCAT('%',
+            #{businessName,jdbcType=VARCHAR}),
+						'%')
+		  </if>
+	</select>
+	
+	<!-- 大区查询公共选择器total -->
+	<select id="queryCommonRegionalCount" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.InviteFossVehicleCostEntity" resultType="Long">
+		select count(*)
+          from (select  distinct
+            t.code   REGIONAL_CODE,
+            t.name   REGIONAL_NAME
+          from bse.t_bas_org t
+          where t.active = 'Y'      
+          <if test="regionalName != null and regionalName != ''">
+          AND t.name like CONCAT(CONCAT('%',#{regionalName,jdbcType=VARCHAR}),'%')
+		  </if>
+		  and (t.big_region = 'Y' or t.division = 'Y' or t.trans_department = 'Y' or t.trans_team = 'Y')
+		  )
+	</select>
+		
+	<!--公共选择器模糊查询出大区编码及名称  -->
+	<select id="queryCommonInviteFossVehicleCostByRegional" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.InviteFossVehicleCostEntity"
+			resultMap="inviteFossVehicleCostEntityResultMap">
+		select  distinct
+            t.code   REGIONAL_CODE,
+            t.name   REGIONAL_NAME
+          from bse.t_bas_org t
+          where t.active = 'Y'      
+          <if test="regionalName != null and regionalName != ''">
+          AND t.name like CONCAT(CONCAT('%',#{regionalName,jdbcType=VARCHAR}),'%')
+		  </if>
+		  and (t.big_region = 'Y' or t.division = 'Y' or t.trans_department = 'Y' or t.trans_team = 'Y')
+	</select>
+	
+	<!-- 快递点部和分部查询公共选择器total -->
+	<select id="queryCommonExpressageCount" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.InviteCommonExpressageEntity" resultType="Long">
+		select count(*)
+          from (select  distinct
+            t.code   EXPRESSAGE_CODE,
+            t.name   EXPRESSAGE_NAME
+          from bse.t_bas_org t
+          where t.active = 'Y'     
+          <if test="expressageName != null and expressageName != ''">
+          and t.name like CONCAT(CONCAT('%',#{expressageName,jdbcType=VARCHAR}),'%')
+		  </if>
+		  and (t.express_part = 'Y' or t.express_branch = 'Y') 
+		  )
+	</select>
+		
+	<!--公共选择器模糊查询出快递点部和分部编码及名称  -->
+	<select id="queryCommonInviteFossVehicleCostByExpressage" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.InviteCommonExpressageEntity"
+			resultMap="inviteCommonExpressageEntityResultMap">
+		select  distinct
+            t.code   EXPRESSAGE_CODE,
+            t.name   EXPRESSAGE_NAME
+          from bse.t_bas_org t
+          where t.active = 'Y'       
+          <if test="expressageName != null and expressageName != ''">
+          and t.name like CONCAT(CONCAT('%',#{expressageName,jdbcType=VARCHAR}),'%')
+		  </if>
+		  and (t.express_part = 'Y' or t.express_branch = 'Y')
+	</select>
+	
+</mapper>
+

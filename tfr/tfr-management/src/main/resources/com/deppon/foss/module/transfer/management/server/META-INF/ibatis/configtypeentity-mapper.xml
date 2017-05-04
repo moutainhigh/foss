@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.management.configtypeentity">
+	<resultMap type="com.deppon.foss.module.transfer.management.api.shared.domain.ConfigTypeEntity" id="configItemEntityActionResult">
+		<result column="ID" property="id" jdbcType="VARCHAR"/>
+		<result column="CONF_TYPE" property="confType" jdbcType="VARCHAR"/>
+		<result column="CONF_TYPE_NAME" property="confTypeName" jdbcType="VARCHAR"/>
+		<result column="ACTIVE" property="active" jdbcType="VARCHAR"/>
+		<result column="CREATE_USER" property="createUser" jdbcType="VARCHAR"/>
+		<result column="CREATE_DATE" property="createDate" jdbcType="TIMESTAMP"/>
+		<result column="MODIFY_USER" property="modifyUser" jdbcType="VARCHAR"/>
+		<result column="MODIFY_DATE" property="modifyDate" jdbcType="TIMESTAMP"/>
+		<result column="VERSION_NO" property="versionNo" jdbcType="DECIMAL"/>
+	</resultMap>
+
+	<sql id="ConfigTypeEntity_Columns">
+		ID,CONF_TYPE,CONF_TYPE_NAME,ACTIVE,CREATE_USER,CREATE_DATE,MODIFY_USER,MODIFY_DATE,VERSION_NO
+	</sql>
+
+	<sql id="ConfigTypeEntity_Where">
+		<where>
+			<if test="id!=null and id!=''">
+				and ID=#{id,jdbcType=VARCHAR}
+			</if>
+			<if test="confType!=null and confType!=''">
+				and CONF_TYPE = #{confType,jdbcType=VARCHAR}
+			</if>
+			<if test="confTypeName and confTypeName!=''">
+				and CONF_TYPE_NAME = #{confTypeName,jdbcType=VARCHAR}
+			</if>
+			<choose>
+				<when test="active!=null and active!=''">
+					and ACTIVE = #{active,jdbcType=VARCHAR}
+				</when>
+				<otherwise>
+					and ACTIVE = 'Y'
+				</otherwise>
+			</choose>
+		</where>
+	</sql>
+	
+	<!-- 新增配置项类型信息 -->
+	<insert id="addConfigTypeEntity" parameterType="com.deppon.foss.module.transfer.management.api.shared.domain.ConfigTypeEntity">
+		insert into tfr.T_OPT_CONFIG_TYPE
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id!=null">
+				ID,
+			</if>
+			<if test="confType!=null">
+				CONF_TYPE,
+			</if>
+			<if test="confTypeName!=null">
+				CONF_TYPE_NAME,
+			</if>
+			<if test="active!=null">
+				ACTIVE,
+			</if>
+			<if test="createUser!=null">
+				CREATE_USER,
+			</if>
+				CREATE_DATE,
+			<if test="modifyUser!=null">
+				MODIFY_USER,
+			</if>
+			<if test="modifyDate!=null">
+				MODIFY_DATE,
+			</if>
+			<if test="versionNo!=null">
+				VERSION_NO,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id!=null">
+				#{id,jdbcType=VARCHAR},
+			</if>
+			<if test="confType!=null">
+				#{confType,jdbcType=VARCHAR},
+			</if>
+			<if test="confTypeName!=null">
+				#{confTypeName,jdbcType=VARCHAR},
+			</if>
+			<if test="active!=null">
+				#{active,jdbcType=VARCHAR},
+			</if>
+			<if test="createUser!=null">
+				#{createUser,jdbcType=VARCHAR},
+			</if>
+			sysdate,
+			<if test="modifyUser!=null">
+				#{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate!=null">
+				#{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="versionNo!=null">
+				#{versionNo,jdbcType=DECIMAL},
+			</if>
+		</trim>
+	</insert>
+	<!-- 作废配置项类型 -->
+	<update id="abolishConfigTypeEntity" parameterType="list">
+		begin
+		<foreach collection="list" item="item" separator=";">
+			update tfr.T_OPT_CONFIG_TYPE
+			<set>
+				<![CDATA[ 
+					MODIFY_USER=#{item.modifyUser,jdbcType=VARCHAR},
+					MODIFY_DATE=sysdate,
+					ACTIVE=#{item.active,jdbcType=VARCHAR}
+	   		    ]]>
+			</set>
+			where ID=#{item.id,jdbcType=VARCHAR}
+		</foreach>
+		;end;
+	</update>
+	<!-- 查询有效的配置项类型数量 -->
+	<select id="queryConfigTypeEntityCount" parameterType="com.deppon.foss.module.transfer.management.api.shared.domain.ConfigTypeEntity" resultType="Long">
+		select count(1) from tfr.T_OPT_CONFIG_TYPE
+		<where>
+			<if test="id!=null and id!=''">
+				and ID=#{id,jdbcType=VARCHAR}
+			</if>
+			<if test="confType!=null and confType!=''">
+				and CONF_TYPE = #{confType,jdbcType=VARCHAR}
+			</if>
+			<choose>
+				<when test="active!=null and active!=''">
+					and ACTIVE = #{active,jdbcType=VARCHAR}
+				</when>
+				<otherwise>
+					and ACTIVE = 'Y'
+				</otherwise>
+			</choose>
+		</where>
+	</select>
+	<!-- 查询有效的配置项类型信息 -->
+	<select id="queryConfigTypeEntityList" parameterType="com.deppon.foss.module.transfer.management.api.shared.domain.ConfigTypeEntity" resultMap="configItemEntityActionResult">
+		select
+		<include refid="ConfigTypeEntity_Columns"/>
+		from tfr.T_OPT_CONFIG_TYPE
+		<include refid="ConfigTypeEntity_Where"/>
+		<![CDATA[ order by CONF_TYPE]]>
+	</select>
+	<!-- 查询有效的配置项类型数量 -->
+	<select id="queryConfigTypeEntityListCount" parameterType="com.deppon.foss.module.transfer.management.api.shared.domain.ConfigTypeEntity" resultType="Long">
+		select count(1) from tfr.T_OPT_CONFIG_TYPE
+		<include refid="ConfigTypeEntity_Where"/>
+	</select>
+	<!-- 查询有效的配置项类型信息 -->
+	<select id="queryConfigTypeEntity" parameterType="com.deppon.foss.module.transfer.management.api.shared.domain.ConfigTypeEntity" resultMap="configItemEntityActionResult">
+		select
+		<include refid="ConfigTypeEntity_Columns"/>
+		from tfr.T_OPT_CONFIG_TYPE
+		<include refid="ConfigTypeEntity_Where"/>
+	</select>
+	
+	<!-- 查询所有有效的配置项类型信息 -->
+	<select id="queryAllConfigTypes" resultMap="configItemEntityActionResult">
+		select DISTINCT CONF_TYPE as confType,CONF_TYPE_NAME as confTypeName
+		from tfr.T_OPT_CONFIG_TYPE
+		where ACTIVE='Y'
+	</select>
+	
+	<!-- 修改配置项 -->
+	<update id="modifyConfigItemTypeRefItem" parameterType="com.deppon.foss.module.transfer.management.api.shared.domain.ConfigTypeEntity">
+		update tfr.T_OPT_CONFIG_ITEM i
+		<set>
+			i.CONF_TYPE=#{confType,jdbcType=VARCHAR},
+			i.CONF_TYPE_NAME=#{confTypeName,jdbcType=VARCHAR},
+			i.MODIFY_USER_CODE=#{modifyUser,jdbcType=VARCHAR},
+			i.MODIFY_TIME=sysdate
+		</set>
+		where i.ACTIVE = 'Y' and i.CONF_TYPE=(select t.CONF_TYPE from  TFR.T_OPT_CONFIG_TYPE t where t.ID=#{id,jdbcType=VARCHAR})
+	</update>
+	<!-- 修改配置组织关系 -->
+	<update id="modifyConfigItemTypeRefOrg" parameterType="com.deppon.foss.module.transfer.management.api.shared.domain.ConfigTypeEntity">
+		update tfr.T_OPT_CONFIGORG_RELATION i
+		<set>
+			i.CONF_TYPE=#{confType,jdbcType=VARCHAR},
+			i.CONF_TYPE_NAME=#{confTypeName,jdbcType=VARCHAR},
+			i.MODIFY_USER_CODE=#{modifyUser,jdbcType=VARCHAR},
+			i.MODIFY_TIME=sysdate
+		</set>
+		where i.ACTIVE = 'Y' and i.CONF_TYPE=(select t.CONF_TYPE from  TFR.T_OPT_CONFIG_TYPE t where t.ID=#{id,jdbcType=VARCHAR})
+	</update>
+</mapper>

@@ -1,0 +1,673 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.load.express.package">
+	<resultMap id="expressPackageDtoResultMap"
+		type="com.deppon.foss.module.transfer.pda.api.shared.dto.ExpressPackageDto">
+		<result property="packageNo" column="packageNo" />
+		<result property="status" column="status" />
+		<result property="arriveOrgCode" column="arriveOrgCode" />
+		<result property="arriveOrgName" column="arriveOrgName" />
+		<result property="userCode" column="userCode" />
+		<result property="expressPackageType" column="expressPackageType" />
+	</resultMap>
+	<resultMap id="expressPackageGoodsDtoResultMap"
+		type="com.deppon.foss.module.transfer.load.api.shared.dto.ExpressPackageGoodsDto">
+		<result property="packageNo" column="packageNo" />
+		<result property="wayBillNo" column="wayBillNo" />
+		<result property="seiralNo" column="seiralNo" />
+		<result property="wayBillQty" column="wayBillQty" />
+		<result property="stockQty" column="stockQty" />
+		<result property="operateQty" column="operateQty" />
+		<result property="weight" column="weight" />
+		<result property="volume" column="volume" />
+		<result property="goodsName" column="goodsName" />
+		<result property="receiveOrgCode" column="receiveOrgCode" />
+		<result property="receiveOrgName" column="receiveOrgName" />
+		<result property="reachOrgCode" column="reachOrgCode" />
+		<result property="reachOrgName" column="reachOrgName" />
+		<result property="transportTypeName" column="transportTypeName" />
+		<result property="transportTypeCode" column="transportTypeCode" />
+		<result property="notes" column="notes" />
+		<result property="pack" column="pack" />
+	</resultMap>
+	<resultMap id="expressPackageDetailEntityResultMap"
+		type="com.deppon.foss.module.transfer.load.api.shared.domain.ExpressPackageDetailEntity">
+		<result property="id" column="id" />
+		<result property="packageNo" column="package_no" />
+		<result property="wayBillNo" column="waybill_no" />
+		<result property="serialNo" column="serial_no" />
+		<result property="transportTypeName" column="trans_type_name" />
+		<result property="transportTypeCode" column="trans_type_code" />
+		<result property="goodsQty" column="billing_goods_qty" />
+		<result property="weight" column="weight" />
+		<result property="volume" column="volume" />
+		<result property="recieveOrgName" column="receive_org_name" />
+		<result property="reachOrgName" column="reach_org_name" />
+		<result property="pack" column="GOODS_PACKAGING" />
+		<result property="goodsName" column="goods_name" />
+		<result property="notes" column="notes" />
+		<result property="goodsState" column="goods_state" />
+		<result property="scanState" column="scan_state" />
+		<result property="deviceNo" column="device_no" />
+		<result property="scanTime" column="scan_time" />
+		<result property="createTime" column="create_time" />
+	</resultMap>
+	<!--根据理货员查询快递包-->
+	<select id="queryPackageByUser" resultMap="expressPackageDtoResultMap" 
+		parameterType="HashMap">
+			select 
+			       p.PACKAGE_NO       packageNo,
+			       p.ARRIVE_ORG_CODE  arriveOrgCode,
+			       p.ARRIVE_ORG_NAME as arriveOrgName,
+			       p.CREATE_USER_CODE userCode,
+			       p.STATUS           status,
+			       p.express_package_type expressPackageType
+			  from tfr.T_OPT_PACKAGE p
+		<where>
+		 	 <![CDATA[p.CREATE_TIME >= #{queryStartTime,jdbcType=TIMESTAMP}
+			 and p.CREATE_TIME <= #{queryEndTime,jdbcType=TIMESTAMP}]]>
+			 and p.CREATE_USER_CODE = #{userCode,jdbcType=VARCHAR}
+			 and p.STATUS in
+			 <foreach collection="states" open="(" close=")" item="item" separator="," index="index">
+			 	#{item}
+			 </foreach>
+		</where> 
+	</select>
+	<!--根据包号查询快递包-->
+	<select id="queryPackageByPackageNo" resultMap="expressPackageResultMap" 
+		parameterType="HashMap">
+			   select p.ID                   id,
+		       p.PACKAGE_NO           packageNo,
+		       p.DEPART_ORG_CODE      departOrgCode,
+		       p.DEPART_ORG_NAME      departOrgName,
+		       p.ARRIVE_ORG_CODE      arriveOrgCode,
+		       p.ARRIVE_ORG_NAME      arriveOrgName,
+		       p.CREATE_USER_NAME     createUserName,
+		       p.CREATE_USER_CODE     createUserCode,
+		       p.CREATE_TIME          createTime,
+		       p.WEIGHT               weight,
+		       p.VOLUME               volume,
+		       p.WAYBILL_QTY          waybillQty,
+		       p.SERIAL_QTY           goodsQty,
+		       p.STATUS               status,
+		       p.END_TIME             endTime,
+		       p.express_package_type expressPackageType 
+		  from (select *
+		          from tfr.T_OPT_PACKAGE TP
+		          where 
+		         <![CDATA[TP.PACKAGE_NO = #{packageNo,jdbcType=VARCHAR}
+		 	              and TP.STATUS<>'CANCELED'
+		 	     ]]>
+		         order by TP.CREATE_TIME DESC) P
+		 where rownum = 1
+	</select>
+	<select id="queryPackageCountByNo" resultType="int" 
+		parameterType="HashMap">
+			select count (p.ID)
+			  from tfr.T_OPT_PACKAGE p
+		<where>
+		 	 <![CDATA[p.PACKAGE_NO = #{packageNo,jdbcType=VARCHAR}
+		 	 and p.STATUS<>'CANCELED'
+		 	 ]]>
+		</where> 
+	</select>
+	<!--插入快递包-->
+	<insert id="insertExpressPackage" parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.ExpressPackageEntity">
+			insert into tfr.t_opt_package
+			  (id,
+			   package_no,
+			   depart_org_code,
+			   depart_org_name,
+			   arrive_org_code,
+			   arrive_org_name,
+			   create_user_name,
+			   create_user_code,
+			   create_time,
+			   status,
+			   express_package_type,
+			   weight,
+			   volume,
+			   waybill_qty,
+			   serial_qty,
+			   end_time
+			   )
+			values(
+				#{id,jdbcType=VARCHAR},
+				#{packageNo,jdbcType=VARCHAR},
+				#{departOrgCode,jdbcType=VARCHAR},
+				#{departOrgName,jdbcType=VARCHAR},
+				#{arriveOrgCode,jdbcType=VARCHAR},
+				#{arriveOrgName,jdbcType=VARCHAR},
+				#{createUserName,jdbcType=VARCHAR},
+				#{createUserCode,jdbcType=VARCHAR},
+				#{createTime,jdbcType=TIMESTAMP},
+				#{status,jdbcType=VARCHAR},
+				#{expressPackageType,jdbcType=VARCHAR},
+				#{weight ,jdbcType=DECIMAL},
+				#{volume ,jdbcType=DECIMAL},
+				#{waybillQty ,jdbcType=DECIMAL},
+				#{goodsQty ,jdbcType=DECIMAL},
+				#{endTime ,jdbcType=TIMESTAMP}
+			)
+	</insert>
+	<!-- 更新快递包 -->
+	<update id="updateExpressPackage" parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.ExpressPackageEntity">
+		update tfr.t_opt_package p set p.status =#{status,jdbcType=VARCHAR}
+		<if test="endTime !=null and endTime !=''">
+			, p.end_time = #{endTime,jdbcType=TIMESTAMP}
+		</if>
+		<if test="weight !=null and weight !=''">
+			, p.WEIGHT = #{weight,jdbcType=DECIMAL}
+		</if>
+		<if test="volume !=null and volume !=''">
+			, p.VOLUME = #{volume,jdbcType=DECIMAL}
+		</if>
+		<if test="waybillQty !=null and waybillQty !=''">
+			, p.WAYBILL_QTY = #{waybillQty,jdbcType=DECIMAL}
+		</if>
+		<if test="goodsQty !=null and goodsQty !=''">
+			, p.SERIAL_QTY = #{goodsQty,jdbcType=DECIMAL}
+		</if>
+		where p.id = #{id,jdbcType=VARCHAR}
+	</update>
+	<!--插入快递包明细-->
+	<insert id="insertExpressPackageDetail" parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.ExpressPackageDetailEntity">
+		insert into tfr.t_opt_package_detail
+		  (ID,
+		   PACKAGE_NO,
+		   WAYBILL_NO,
+		   TRANS_TYPE_NAME,
+		   TRANS_TYPE_CODE,
+		   BILLING_GOODS_QTY,
+		   RECEIVE_ORG_NAME,
+		   REACH_ORG_NAME,
+		   WEIGHT,
+		   VOLUME,
+		   GOODS_NAME,
+		   GOODS_PACKAGING,
+		   NOTES,
+		   SERIAL_NO,
+		   SCAN_STATE,
+		   GOODS_STATE,
+		   SCAN_TIME,
+		   CREATE_TIME,
+		   DEVICE_NO)
+		values
+		  (#{id,jdbcType=VARCHAR},
+		  #{packageNo,jdbcType=VARCHAR},
+		  #{wayBillNo,jdbcType=VARCHAR},
+		  #{transportTypeName,jdbcType=VARCHAR},
+		  #{transportTypeCode,jdbcType=VARCHAR},
+		  #{goodsQty,jdbcType=DECIMAL},
+		  #{recieveOrgName,jdbcType=VARCHAR},
+		  #{reachOrgName,jdbcType=VARCHAR},
+		  #{weight,jdbcType=DECIMAL},
+		  #{volume,jdbcType=DECIMAL},
+		  #{goodsName,jdbcType=VARCHAR},
+		  #{pack,jdbcType=VARCHAR},
+		  #{notes,jdbcType=VARCHAR},
+		  #{serialNo,jdbcType=VARCHAR},
+		  #{scanState,jdbcType=VARCHAR},
+		  #{goodsState,jdbcType=VARCHAR},
+		  #{scanTime,jdbcType=TIMESTAMP},
+		  #{createTime,jdbcType=TIMESTAMP},
+		  #{deviceNo,jdbcType=VARCHAR})
+	</insert>
+	<select id="queryStockPackageGoods" resultMap="expressPackageGoodsDtoResultMap" 
+		parameterType="HashMap">
+			<![CDATA[select w.product_code             as transportTypeCode,
+			       w.waybill_no               as wayBillNo,
+			       w.receive_org_code         as receiveOrgCode,
+			       w.receive_org_name         as receiveOrgName,
+			       w.customer_pickup_org_code as reachOrgCode,
+			       w.customer_pickup_org_name as reachOrgName,
+			       w.goods_qty_total          as wayBillQty,
+			       w.goods_weight_total       as weight,
+			       w.goods_volume_total       as volume,
+			       w.goods_package            as pack,
+			       w.goods_name               as goodsName,
+			       w.inner_notes              as notes,
+			       pd.name                    as transportTypeName,
+			       1                          as stockQty,
+			       p.package_no               as packageNo,
+			       st.serial_no               as seiralNo,
+			       nvl2(d.id,1,0)             as operateQty
+			  from tfr.t_opt_package p
+			 inner join tfr.t_opt_stock st on st.org_code = p.depart_org_code
+			                              and st.next_org_code = p.arrive_org_code
+			  left join tfr.t_opt_package_detail d on d.package_no = p.package_no
+			                                      and d.waybill_no = st.waybill_no and d.goods_state<>'CANCELED'
+			                                      and d.serial_no = st.serial_no
+			 inner join pkp.t_srv_waybill w on w.waybill_no = st.waybill_no
+			                               and w.active = 'Y'
+			 inner join pkp.t_srv_product pd on pd.code = w.product_code
+			                                and pd.active = 'Y']]>
+			 <where> 
+			    p.package_no = #{packageNo}
+			    <!--建包提交后，不能被下拉到-->
+			    and st.is_pakcage='N'
+			    <![CDATA[and p.STATUS<>'CANCELED']]>
+			    and w.product_code in (
+			    	<foreach collection="transportTypeCode" item="item" separator=",">
+								  		#{item,jdbcType=VARCHAR}
+									</foreach>
+			    )
+			 </where> 
+	</select>
+	<select id="queryScanPackageGoods" resultMap="expressPackageGoodsDtoResultMap" 
+		parameterType="HashMap">
+			<![CDATA[select w.product_code             as transportTypeCode,
+			       w.waybill_no               as wayBillNo,
+			       w.receive_org_code         as receiveOrgCode,
+			       w.receive_org_name         as receiveOrgName,
+			       w.customer_pickup_org_code as reachOrgCode,
+			       w.customer_pickup_org_name as reachOrgName,
+			       w.goods_qty_total          as wayBillQty,
+			       w.goods_weight_total       as weight,
+			       w.goods_volume_total       as volume,
+			       w.goods_package            as pack,
+			       w.goods_name               as goodsName,
+			       w.inner_notes              as notes,
+			       pd.name                    as transportTypeName,
+			       0                          as stockQty,
+			       p.package_no               as packageNo,
+			       d.serial_no               as seiralNo,
+			       1             as operateQty
+			  from tfr.t_opt_package p
+			  left join tfr.t_opt_package_detail d on d.package_no = p.package_no
+			                                      and  d.goods_state<>'CANCELED'
+			 inner join pkp.t_srv_waybill w on w.waybill_no = d.waybill_no
+			                               and w.active = 'Y'
+			 inner join pkp.t_srv_product pd on pd.code = w.product_code
+			                                and pd.active = 'Y']]>
+			 <where> 
+			    p.package_no = #{packageNo}
+			    <![CDATA[and p.STATUS<>'CANCELED']]>
+			 </where> 
+	</select>
+	<select id="queryPackageQty" resultType = "int" parameterType = "String">
+		select nvl(count(p.id),0) as operateQty
+			  from tfr.t_opt_package_detail p
+			  <where> p.package_no = #{packageNo} and <![CDATA[p.goods_state <> 'CANCELED']]>
+			 </where>
+	</select>
+	<select id="statisticalData" resultMap = "expressPackageResultMap" parameterType = "String">
+		select count(t.wayBillNo) as waybillQty,
+		       sum(t.goodsQty) as goodsQty,
+		       sum(t.weight * t.goodsQty / t.bilingQty) as weight,
+		       sum(t.volume * t.goodsQty / t.bilingQty) as volume
+		  from (select max(pd.weight) as weight,
+		               max(pd.volume) as volume,
+		               max(pd.billing_goods_qty) as bilingQty,
+		               count(pd.id) as goodsQty,
+		               pd.waybill_no as wayBillNo
+		          from tfr.t_Opt_Package_Detail pd
+		         <where>
+		           pd.package_no = #{packNo}
+		           <![CDATA[and pd.goods_state <> 'CANCELED']]>
+		         </where>
+		         group by pd.waybill_no) t
+	</select>
+	<!--查询包扫描明细-->
+	<select id="queryExpressPackageDetail" resultMap="expressPackageDetailEntityResultMap" 
+		parameterType="HashMap">
+			select pd.id,
+			       pd.package_no,
+			       pd.waybill_no,
+			       pd.trans_type_name,
+			       pd.trans_type_code,
+			       pd.billing_goods_qty,
+			       pd.receive_org_name,
+			       pd.reach_org_name,
+			       pd.weight,
+			       pd.volume,
+			       pd.goods_name,
+			       pd.goods_packaging,
+			       pd.serial_no,
+			       pd.scan_state,
+			       pd.scan_time,
+			       pd.goods_state,
+			       pd.create_time,
+			       pd.device_no,
+			       pd.notes
+			  from tfr.t_opt_package_detail pd
+			 <where> 
+			   pd.package_no = #{packNo}
+			   and pd.waybill_no = #{wayBillNo}
+			   and pd.serial_no = #{serialNo}
+			   and pd.goods_state = 'NORMAL'
+			 </where>
+	</select>
+		<!--查询包扫描明细-->
+	<select id="queryScanPackageDetails" resultMap="expressPackageDetailEntityResultMap" 
+		parameterType="HashMap">
+			select pd.id,
+			       pd.package_no,
+			       pd.waybill_no,
+			       pd.trans_type_name,
+			       pd.trans_type_code,
+			       pd.billing_goods_qty,
+			       pd.receive_org_name,
+			       pd.reach_org_name,
+			       pd.weight,
+			       pd.volume,
+			       pd.goods_name,
+			       pd.goods_packaging,
+			       pd.serial_no,
+			       pd.scan_state,
+			       pd.scan_time,
+			       pd.goods_state,
+			       pd.create_time,
+			       pd.device_no,
+			       pd.notes
+			  from tfr.t_opt_package_detail pd
+			 <where> 
+			   pd.package_no = #{packNo}
+			   <![CDATA[and pd.goods_state <> 'CANCELED']]>
+			   order by pd.waybill_no
+			 </where>
+	</select>
+	<!-- 更新快递包扫描明细 -->
+	<update id="updateExpressPackageDetail" parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.ExpressPackageDetailEntity">
+		update tfr.t_opt_package_detail pd 
+		set pd.device_no =#{deviceNo,jdbcType=VARCHAR},
+		    pd.scan_time = #{scanTime,jdbcType=TIMESTAMP},
+			pd.scan_state =#{scanState,jdbcType=VARCHAR},
+			pd.goods_state =#{goodsState,jdbcType=VARCHAR}
+		where <![CDATA[pd.scan_time < #{scanTime,jdbcType=TIMESTAMP}]]>
+		and pd.package_no = #{packageNo,jdbcType=VARCHAR}
+		and pd.waybill_no = #{wayBillNo,jdbcType=VARCHAR}
+		and pd.serial_no = #{serialNo,jdbcType=VARCHAR}
+	</update>
+	<!-- 更新快递包扫描明细 -->
+	<update id="updateStockIsPackage" parameterType="HashMap">
+		update tfr.T_OPT_STOCK st
+		set st.IS_PAKCAGE = 'Y'
+		where st.WAYBILL_NO=#{wayBillNo} and st.SERIAL_NO = #{serialNo}
+	</update>
+	<!-- 删除快递包扫描明细 -->
+	<delete id = "deletePackageDetail" parameterType = "String">
+		delete tfr.t_opt_package_detail pd where pd.package_no = #{packageNo}
+	</delete>
+	
+	<!-- ========================快递直达包======================== -->
+	<!-- 查询库存快递包明细 -->
+	<select id="queryStockThroughPackageDetail2" resultMap="expressPackageGoodsDtoResultMap" parameterType="HashMap">
+			select w.product_code             as transportTypeCode,
+			       w.waybill_no               as wayBillNo,
+			       w.receive_org_code         as receiveOrgCode,
+			       w.receive_org_name         as receiveOrgName,
+			       w.customer_pickup_org_code as reachOrgCode,
+			       w.customer_pickup_org_name as reachOrgName,
+			       w.goods_qty_total          as wayBillQty,
+			       w.goods_weight_total       as weight,
+			       w.goods_volume_total       as volume,
+			       w.goods_package            as pack,
+			       w.goods_name               as goodsName,
+			       --w.inner_notes              as notes,
+			       pd.name                    as transportTypeName,
+			       1                          as stockQty,
+			       p.package_no               as packageNo,
+			       s.serial_no               as seiralNo,
+			       1                          as operateQty
+			  from tfr.t_opt_package p
+			 inner join tfr.t_opt_stock s
+			    on s.org_code = p.depart_org_code
+			 inner join tfr.t_opt_path_detail pa1
+			    on s.org_code = pa1.orig_org_code
+			   and s.waybill_no = pa1.waybill_no
+			   and pa1.orig_org_code=#{departOrgCode}
+			 inner join pkp.t_srv_waybill w
+			    on w.waybill_no = s.waybill_no
+			   and w.active = 'Y'
+			 inner join pkp.t_srv_product pd
+			    on pd.code = w.product_code
+			   and pd.active = 'Y'
+			 where not exists (select 1
+			          from tfr.t_opt_package pa
+			          join tfr.t_opt_package_detail d
+			            on pa.package_no = d.package_no
+			         where d.waybill_no = s.waybill_no
+			           and pa.status = 'FINISHED'
+			          -- and pa.express_package_type='THROUGH_ARRIVE'
+			           and pa.depart_org_code=#{departOrgCode} 
+                       and pa.arrive_org_code=#{arriveOrgCode}
+			           and pa.depart_org_code = s.org_code
+			           and  d.serial_no = s.serial_no
+			           )
+			   and s.org_code = #{departOrgCode}
+			   and p.package_no =#{packageNo}
+			   <![CDATA[ and p.status <> 'CANCELED']]> 
+			   			    and w.product_code in (
+			    	<foreach collection="transportTypeCode" item="item" separator=",">
+								  		#{item,jdbcType=VARCHAR}
+					</foreach>
+			    )
+			     group by w.product_code  ,           
+			       w.waybill_no  ,        
+			       w.receive_org_code  ,    
+			       w.receive_org_name  ,   
+			       w.customer_pickup_org_code ,
+			       w.customer_pickup_org_name,
+			       w.goods_qty_total  ,  
+			       w.goods_weight_total  ,   
+			       w.goods_volume_total  ,
+			       w.goods_package , 
+			       w.goods_name    , 
+			       --w.inner_notes  ,
+			       pd.name   ,
+			       p.package_no  ,
+			       s.serial_no 
+	</select>
+	
+	
+	<!--  上面queryStockThroughPackageDetail2 消耗性能所以改为一下方式实现-->
+	<select id="queryStockThroughPackageDetail" resultMap="expressPackageGoodsDtoResultMap" parameterType="HashMap">
+		select w.product_code             as transportTypeCode,
+		       w.waybill_no               as wayBillNo,
+		       w.receive_org_code         as receiveOrgCode,
+		       w.receive_org_name         as receiveOrgName,
+		       w.customer_pickup_org_code as reachOrgCode,
+		       w.customer_pickup_org_name as reachOrgName,
+		       w.goods_qty_total          as wayBillQty,
+		       w.goods_weight_total       as weight,
+		       w.goods_volume_total       as volume,
+		       w.goods_package            as pack,
+		       w.goods_name               as goodsName,
+		       w.inner_notes              as notes,
+		       pd.name      as transportTypeName,
+		       1            as stockQty,
+		      #{packageNo} as packageNo,
+		       s.serial_no  as seiralNo,
+		       1            as operateQty
+		  from tfr.t_opt_stock s 
+		 inner join pkp.t_srv_waybill w
+		    on w.waybill_no = s.waybill_no
+		   and w.active = 'Y'
+		 inner join pkp.t_srv_product pd
+		    on pd.code = w.product_code
+		   and pd.active = 'Y'
+		 inner join tfr.t_opt_path_detail p1
+		    on w.waybill_no=p1.waybill_no
+		    and s.org_code=p1.orig_org_code
+         inner join tfr.t_opt_path_detail p2
+             on w.waybill_no=p2.waybill_no  
+		 where not exists (select 1
+		          from tfr.t_opt_package pa
+		          join tfr.t_opt_package_detail d
+		            on pa.package_no = d.package_no
+		         where d.waybill_no = s.waybill_no
+		           and pa.status = 'FINISHED'
+		           and pa.depart_org_code = #{departOrgCode}
+		           and pa.arrive_org_code = #{arriveOrgCode}
+		           and pa.depart_org_code = s.org_code
+		           and d.serial_no = s.serial_no)
+		   and p2.route_no>=p1.route_no
+		   <!--建包提交后，不能被下拉到-->
+		   and s.is_pakcage='N'
+		   and p2.objective_org_code=#{arriveOrgCode}       
+		   and s.org_code = #{departOrgCode}
+		   and s.in_stock_time>sysdate-5
+		   and w.product_code in (
+			    	<foreach collection="transportTypeCode" item="item" separator=",">
+								  		#{item,jdbcType=VARCHAR}
+					</foreach>
+			    )
+	</select>
+	<!--  建立空运直达包的时候查询库存中的空运运单-->
+	<select id="queryStockAirThroughPackageDetail" resultMap="expressPackageGoodsDtoResultMap" parameterType="HashMap">
+		select w.product_code             as transportTypeCode,
+		       w.waybill_no               as wayBillNo,
+		       w.receive_org_code         as receiveOrgCode,
+		       w.receive_org_name         as receiveOrgName,
+		       w.customer_pickup_org_code as reachOrgCode,
+		       w.customer_pickup_org_name as reachOrgName,
+		       w.goods_qty_total          as wayBillQty,
+		       w.goods_weight_total       as weight,
+		       w.goods_volume_total       as volume,
+		       w.goods_package            as pack,
+		       w.goods_name               as goodsName,
+		       w.inner_notes              as notes,
+		       pd.name      as transportTypeName,
+		       1            as stockQty,
+		      #{packageNo} as packageNo,
+		       s.serial_no  as seiralNo,
+		       1            as operateQty
+		  from tfr.t_opt_stock s 
+		 inner join pkp.t_srv_waybill w
+		    on w.waybill_no = s.waybill_no
+		   and w.active = 'Y' and s.is_pakcage='N'
+		 inner join pkp.t_srv_product pd
+		    on pd.code = w.product_code
+		   and pd.active = 'Y'
+		 inner join tfr.t_opt_path_detail p1
+		    on w.waybill_no=p1.waybill_no
+		    and s.org_code=p1.orig_org_code
+         inner join tfr.t_opt_path_detail p2
+             on w.waybill_no=p2.waybill_no  
+		 where not exists (select 1
+		          from tfr.t_opt_package pa
+		          join tfr.t_opt_package_detail d
+		            on pa.package_no = d.package_no
+		         where d.waybill_no = s.waybill_no
+		           and pa.status = 'FINISHED'
+		           and pa.depart_org_code = #{departOrgCode}
+		           and pa.arrive_org_code = #{arriveOrgCode}
+		           and pa.depart_org_code = s.org_code
+		           and d.serial_no = s.serial_no)
+		   and p2.route_no>=p1.route_no
+		   <!--建包提交后，不能被下拉到-->
+		   and s.is_pakcage='N'
+		   and p2.objective_org_code=#{arriveOrgCode}       
+		   and s.org_code = #{departOrgCode}
+		   and s.in_stock_time>sysdate-3
+		   and w.product_code in (
+			    	<foreach collection="transportTypeCode" item="item" separator=",">
+								  		#{item,jdbcType=VARCHAR}
+					</foreach>
+			    )
+	</select>
+		<select id="querySCStockPackageGoods" resultMap="expressPackageGoodsDtoResultMap" 
+		parameterType="HashMap">
+			<![CDATA[ select /**二程接驳-PDA建包-刷新接驳点下运单明细-Alfred**/
+			  w.product_code as transportTypeCode,
+              w.waybill_no as wayBillNo,
+              w.receive_org_code as receiveOrgCode,
+              w.receive_org_name as receiveOrgName,
+              w.customer_pickup_org_code as reachOrgCode,
+              w.customer_pickup_org_name as reachOrgName,
+              w.goods_qty_total as wayBillQty,
+              w.goods_weight_total as weight,
+              w.goods_volume_total as volume,
+              w.goods_package as pack,
+              w.goods_name as goodsName,
+              w.inner_notes as notes,
+              pd.name as transportTypeName,
+              1 as stockQty,
+              p.package_no as packageNo,
+              st.serial_no as seiralNo,
+              nvl2(d.id, 1, 0) as operateQty
+         from tfr.t_opt_package p
+         join bse.t_bas_acceptpointsales_dept ad on ad.accept_point_code = p.arrive_org_code
+                                                and ad.active = 'Y'
+         join bse.t_bas_org og on og.code = ad.sales_department_code and og.active = 'Y'
+         join tfr.t_opt_stock st on st.org_code = p.depart_org_code
+                                and st.next_org_code = og.code
+         left join tfr.t_opt_package_detail d on d.package_no = p.package_no
+                                             and d.waybill_no = st.waybill_no
+                                             and d.goods_state <> 'CANCELED'
+                                             and d.serial_no = st.serial_no
+        inner join pkp.t_srv_waybill w on w.waybill_no = st.waybill_no
+                                      and w.active = 'Y'
+        inner join pkp.t_srv_product pd on pd.code = w.product_code
+                                       and pd.active = 'Y']]>
+	     <where> 
+			    p.package_no = #{packageNo}
+			    <!--建包提交后，不能被下拉到-->
+				and st.is_pakcage='N'
+			    <![CDATA[and p.STATUS<>'CANCELED']]>
+			    and w.product_code in (
+			    	<foreach collection="transportTypeCode" item="item" separator=",">
+								  		#{item,jdbcType=VARCHAR}
+									</foreach>
+			    )
+	    </where> 
+	</select>
+
+	 <!-- 根据包号下拉当前库存中的运输类型为快递空运的运单 -->
+ <select id="refrushAirPackageDetail" resultMap="expressPackageGoodsDtoResultMap" parameterType="HashMap">
+	 
+		 SELECT /*根据包号下拉当前库存中的运输类型为快递空运的运单*/
+		 w.product_code             AS transporttypecode,
+		 w.waybill_no               AS waybillno,
+		 w.receive_org_code         AS receiveorgcode,
+		 w.receive_org_name         AS receiveorgname,
+		 w.customer_pickup_org_code AS reachorgcode,
+		 w.customer_pickup_org_name AS reachorgname,
+		 w.goods_qty_total          AS waybillqty,
+		 w.goods_weight_total       AS weight,
+		 w.goods_volume_total       AS volume,
+		 w.goods_package            AS pack,
+		 w.goods_name               AS goodsname,
+		 w.inner_notes              AS notes,
+		 pd.name                    AS transporttypename,
+		 1                          AS stockqty,
+		 p.package_no               packageno,
+		 s.serial_no                AS seiralno,
+		 1                          AS operateqty
+		  FROM tfr.t_opt_package p
+		  JOIN tfr.t_opt_stock s
+		    ON p.depart_org_code = s.org_code
+		   AND p.arrive_org_code = s.next_org_code and s.is_pakcage='N'
+		  LEFT JOIN tfr.t_opt_package_detail d
+		    ON d.package_no = p.package_no
+		   AND d.waybill_no = s.waybill_no
+		  <![CDATA[ AND d.goods_state <> 'CANCELED']]>
+		   AND d.serial_no = s.serial_no
+		 INNER JOIN pkp.t_srv_waybill w
+		    ON w.waybill_no = s.waybill_no
+		   AND w.active = 'Y'
+		 INNER JOIN pkp.t_srv_product pd
+		    ON pd.code = w.product_code
+		   AND pd.active = 'Y'
+		Where p.package_no=#{packageNo}
+		And p.depart_org_code=#{orgCode} 
+		AND p.arrive_org_code=#{destOrgCode}
+		and w.product_code in (
+			    	<foreach collection="transportTypeCode" item="item" separator=",">
+								  		#{item,jdbcType=VARCHAR}
+					</foreach>
+			    )
+		AND s.in_stock_time>=Sysdate-3
+		<![CDATA[AND p.status<>'CANCELED']]>
+ </select>	
+ 
+ <!-- 物理删除快递包 -->
+	<delete id="deleteExpressPackage" parameterType="java.lang.String">
+		delete from /** 物理删除快递包 **/
+		tfr.t_opt_package p
+		where p.PACKAGE_NO = #{packageNo,jdbcType=VARCHAR}
+	</delete>
+</mapper>

@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.partialline.agentWaybillTrackMapper" >
+
+	<resultMap id="AgentWaybillTrackMap" type="com.deppon.foss.module.transfer.partialline.api.shared.domain.AgentWaybillTrackEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR"/>
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR"/>
+		<result column="OPERATE_DEPT_CODE" property="operateDeptCode" jdbcType="VARCHAR"/>
+		<result column="OPERATE_DEPT_NAME" property="operateDeptName" jdbcType="VARCHAR"/>
+		<result column="OPERATE_CITY_CODE" property="operateCityCode" jdbcType="VARCHAR"/>
+		<result column="OPERATE_CITY_NAME" property="operateCityName" jdbcType="VARCHAR"/>
+		<result column="OPERATE_TYPE" property="operateType" jdbcType="VARCHAR"/>
+		<result column="OPERATE_CONTENT" property="operateContent" jdbcType="VARCHAR"/>
+		<result column="OPERATE_TIME" property="operateTime" jdbcType="TIMESTAMP"/>
+		<result column="OPERATOR_NAME" property="operatorName" jdbcType="VARCHAR"/>
+		<result column="DELIVER_NAME" property="deliverName" jdbcType="VARCHAR"/>
+		<result column="DELIVER_PHONE" property="deliverPhone" jdbcType="VARCHAR"/>
+		<result column="SINGER_NAME" property="singerName" jdbcType="VARCHAR"/>
+		<result column="REMARK" property="remark" jdbcType="VARCHAR"/>
+		<result column="IS_SEND" property="isSend" jdbcType="VARCHAR"/>
+		
+	</resultMap>
+	
+	<resultMap id="AgentWaybillNoMap" type="com.deppon.foss.module.transfer.partialline.api.shared.domain.AgentWaybillNoEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR"/>
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR"/>
+		<result column="TRACK_TIME" property="trackTime" jdbcType="TIMESTAMP"/>
+		<result column="IS_END" property="isEnd" jdbcType="VARCHAR"/>
+	</resultMap>
+	
+	<resultMap id="InterTrackingMap" type="com.deppon.foss.module.transfer.partialline.api.shared.domain.InternationalTrackingEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR"/>
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR"/>
+		<result column="OPERATION_TYPE" property="operateType" jdbcType="VARCHAR"/>
+		<result column="OPERATION_TIME" property="operateTime" jdbcType="TIMESTAMP"/>
+		<result column="NOTE" property="note" jdbcType="VARCHAR"/>
+		<result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP"/>
+		<result column="CITY_NAME" property="cityName" jdbcType="VARCHAR"/>
+		<result column="AGENCY_NO" property="agencyNo" jdbcType="VARCHAR"/>
+		<result column="AGENT_COMPANY_CODE" property="agencyCompCode" jdbcType="VARCHAR"/>
+		<result column="AGENT_COMPANY_NAME" property="agencyCompName" jdbcType="VARCHAR"/>
+		<result column="DEST_COUNTRY_NAME" property="destCountry" jdbcType="VARCHAR"/>
+		<result column="CHANNEL" property="channel" jdbcType="VARCHAR"/>
+	</resultMap>
+	
+	<resultMap id="ExpressPushInfoMap" type="com.deppon.foss.module.transfer.partialline.api.shared.dto.ExpressPushInfoDto">
+		<id column="ID" property="id" jdbcType="VARCHAR"/>
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR"/>
+		<result column="AGENT_WAYBILL_NO" property="agentWaybillNo" jdbcType="VARCHAR"/>
+		<result column="AGENT_COMPANY_CODE" property="agentCompanyCode" jdbcType="VARCHAR"/>
+		<result column="REASON_CODE" property="reasonCode" jdbcType="VARCHAR"/>
+		<result column="REASON" property="reason" jdbcType="VARCHAR"/>
+		<result column="CREATE_TIME" property="createTime" jdbcType="VARCHAR"/>
+		<result column="TRACK_STAGE" property="trackStage" jdbcType="VARCHAR"/>
+		<result column="PRINT_TYPE" property="printType" jdbcType="VARCHAR"/>
+		<result column="REMARK" property="remark" jdbcType="VARCHAR"/>
+	</resultMap>
+	
+	<!-- 查询要统计轨迹的运单信息 -->
+	<select id="queryWaybillNos" parameterType="int" resultMap="AgentWaybillNoMap">
+		select w.waybill_no,w.track_time,w.is_end
+        from tfr.t_opt_agent_request_waybillno w
+         where w.is_end = 'N'
+          order by w.counts                  
+	</select>
+	<!-- 保存轨迹 -->
+	<insert id="addOneTrack" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.domain.AgentWaybillTrackEntity">
+		insert into TFR.T_OPT_AGENT_REQUEST_TRACK
+		  (ID,
+		   WAYBILL_NO,
+		   OPERATE_DEPT_CODE,
+		   OPERATE_DEPT_NAME,
+		   OPERATE_CITY_CODE,
+		   OPERATE_TYPE,
+		   OPERATE_CONTENT,
+		   OPERATE_TIME,
+		   OPERATOR_NAME,
+		   DELIVER_NAME,
+		   DELIVER_PHONE,
+		   SINGER_NAME,
+		   REMARK)
+		values
+		  (#{id,jdbcType=VARCHAR},
+		   #{waybillNo,jdbcType=VARCHAR},
+		   #{operateDeptCode,jdbcType=VARCHAR},
+		   #{operateDeptName,jdbcType=VARCHAR},
+		   #{operateCityCode,jdbcType=VARCHAR},
+		   #{operateCityName,jdbcType=VARCHAR},
+		   #{operateType,jdbcType=VARCHAR},
+		   #{operateContent,jdbcType=VARCHAR},
+		   #{operateTime,jdbcType=TIMESTAMP},
+		   #{operatorName,jdbcType=VARCHAR},
+		   #{deliverName,jdbcType=VARCHAR},
+		   #{deliverPhone,jdbcType=VARCHAR},
+		   #{singerName,jdbcType=VARCHAR},
+		   #{remark,jdbcType=VARCHAR}
+		   )
+	</insert>
+	
+	<insert id="addInternationTrack" 
+			parameterType="com.deppon.foss.module.transfer.partialline.api.shared.domain.InternationalTrackingEntity">
+		insert into
+		/**轨迹模块-新增国际外发轨迹-alfred**/
+		 TFR.T_OPT_INTERNATION_TRACK
+		  (ID,
+		   WAYBILL_NO,
+		   OPERATION_TIME,
+		   OPERATION_TYPE,
+		   NOTE,
+		   CITY_NAME,
+		   AGENCY_NO,
+		   AGENT_COMPANY_CODE,
+		   AGENT_COMPANY_NAME,
+		   DEST_COUNTRY_NAME,
+		   CHANNEL)
+		values
+		  (#{id,jdbcType=VARCHAR},
+		   #{waybillNo,jdbcType=VARCHAR},
+		   #{operateTime,jdbcType=TIMESTAMP},
+		   #{operateType,jdbcType=VARCHAR},
+		   #{note,jdbcType=VARCHAR},
+		   #{cityName,jdbcType=VARCHAR},
+		   #{agencyNo,jdbcType=VARCHAR},
+		   #{agencyCompCode,jdbcType=VARCHAR},
+		   #{agencyCompName,jdbcType=VARCHAR},
+		   #{destCountry,jdbcType=VARCHAR},
+		   #{channel,jdbcType=VARCHAR}
+		   )
+	</insert>
+	
+	<select id="queryInterTrackings" parameterType="java.lang.String" resultMap="InterTrackingMap">
+		select /**轨迹模块-查询国际外发轨迹-alfred**/
+		    ID, 
+		    WAYBILL_NO, 
+		    OPERATION_TYPE, 
+		    OPERATION_TIME, 
+		    NOTE,
+		    CREATE_TIME,
+		    CITY_NAME,
+		    AGENCY_NO,
+		    AGENT_COMPANY_CODE,
+		    AGENT_COMPANY_NAME,
+		    DEST_COUNTRY_NAME,
+		    CHANNEL
+  		from tfr.t_opt_internation_track t
+ 	    where t.waybill_no = #{waybillNo,jdbcType=VARCHAR}           
+	</select>
+	
+	<!-- 更新代理运单信息 -->
+	<update id="updateWaybillNoInfo" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.domain.AgentWaybillNoEntity">
+		update tfr.t_opt_agent_request_waybillno w
+		set w.track_time = #{trackTime,jdbcType=VARCHAR},
+		    w.is_end = #{isEnd,jdbcType=VARCHAR},
+		    w.update_time = sysdate,
+		    w.counts = w.counts + 1
+		where w.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+	</update>
+	
+	<!-- 新增运单号 -->
+	<insert id="addWaybillNo" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.domain.AgentWaybillNoEntity">
+		  insert into tfr.t_opt_agent_request_waybillno
+		    (id, waybill_no, create_time, update_time, track_time, COUNTS)
+		  values
+		    (#{id,jdbcType=VARCHAR},#{waybillNo,jdbcType=VARCHAR},sysdate,sysdate,null,0)
+	</insert>
+	
+	<!-- 查询绑定单号 -->
+	<!-- <select id="queryWaybillNos" parameterType="string" resultType="string">
+		 select p.waybill_no from tfr.t_opt_print_agentwaybill p
+	     where p.active = 'Y'
+	     and p.agent_waybill_no = #{agentWaybillNo,jdbcType=VARCHAR}
+	</select> -->
+	
+	<!-- 查询要推送的代理单号信息 -->
+	<select id="queryAgentWaybillNoList" parameterType="java.util.Date" resultType="com.deppon.foss.module.transfer.common.api.shared.dto.AgentWaybillNoRequestDto">
+		SELECT a.agent_waybill_no "number",
+	        dv.extattribute1 company,
+	       de.city_code "to"
+	  from tfr.t_opt_print_agentwaybill a
+	 inner join PKP.T_SRV_WAYBILL w on a.waybill_no = w.waybill_no
+	     inner join bse.t_bas_data_dictionary_value dv 
+    on a.agent_company_code=dv.value_code and dv.terms_code='ABBREVIATION_OF_AGENCY_COMPANY' and dv.active='Y'
+	 INNER JOIN (SELECT O.CODE, O.NAME, O.CITY_CODE
+               FROM BSE.T_BAS_ORG O
+              WHERE O.ACTIVE = 'Y'
+             UNION all
+             SELECT B.AGENT_DEPT_CODE CODE,
+                    B.AGENT_DEPT_NAME NAME,
+                    B.CITY_CODE
+               FROM BSE.T_BAS_OUTER_BRANCH B
+              WHERE B.ACTIVE = 'Y') DE ON de.code = w.customer_pickup_org_code
+		 where a.active = 'Y'
+		   and a.is_push = 'N'
+		   and w.active = 'Y'
+		   and a.print_time >= #{startDate,jdbcType=TIMESTAMP}
+	</select>
+	
+	<!-- 更新绑定关系中的推送状态 -->
+	<update id="updatePrintWaybillInfo" parameterType="string">
+		update TFR.T_OPT_PRINT_AGENTWAYBILL A 
+	    set a.is_push = 'Y',
+	    	a.push_time = sysdate
+	    where a.agent_waybill_no = #{agentWaybillNo,jdbcType=VARCHAR}
+	    and a.active = 'Y'	
+	</update>
+	<!-- 新增异常信息 -->
+	<insert id="addExceptionInfo" parameterType="com.deppon.foss.module.transfer.common.api.shared.vo.AgentWaybillExceptionDto">
+		insert into tfr.t_opt_agent_request_exception
+		  (id, waybill_no, code, message, exp_type, create_time)
+		values
+		  (#{id,jdbcType=VARCHAR},
+		   #{waybillNo,jdbcType=VARCHAR},
+		   #{code,jdbcType=VARCHAR},
+		   #{message,jdbcType=VARCHAR},
+		   #{type,jdbcType=VARCHAR},
+		   sysdate)
+	</insert>
+	
+	<!--保存快递100推送过来数据信息-->
+	<insert id="savePushExpressInfo" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.ExpressPushInfoDto">
+		insert into tfr.T_OPT_RECEIVE_EXP_PUSH_INFO
+		  (id, waybill_no, AGENT_WAYBILL_NO,AGENT_COMPANY_CODE, REASON_CODE, REASON, CREATE_TIME,TRACK_STAGE,PRINT_TYPE,REMARK)
+		values
+		  (#{id,jdbcType=VARCHAR},
+		   #{waybillNo,jdbcType=VARCHAR},
+		   #{agentWaybillNo,jdbcType=VARCHAR},
+		   #{agentCompanyCode,jdbcType=VARCHAR},
+		   #{reasonCode,jdbcType=VARCHAR},
+		   #{reason,jdbcType=VARCHAR},
+		   sysdate,
+		   #{trackStage,jdbcType=VARCHAR},
+		   #{printType,jdbcType=VARCHAR},
+		   #{remark,jdbcType=VARCHAR}
+		  )
+	</insert>
+	
+	<!-- 查询快递100推送的过滤信息-->
+	<select id="queryPushExpressListByWaybillNo" parameterType="java.util.HashMap" resultMap="ExpressPushInfoMap">
+		select pi.ID,pi.WAYBILL_NO,pi.AGENT_WAYBILL_NO,
+		       pi.AGENT_COMPANY_CODE,pi.REASON_CODE,
+		       pi.REASON,pi.CREATE_TIME,pi.TRACK_STAGE,
+		       pi.PRINT_TYPE,pi.REMARK
+		from tfr.T_OPT_RECEIVE_EXP_PUSH_INFO pi
+			where 1=1
+		<if test="waybillNo!=null and waybillNo!= ''">
+			AND pi.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		</if> 
+		<if test="reasonCode!=null and reasonCode!= ''">
+			AND pi.REASON_CODE = #{reasonCode,jdbcType=VARCHAR}
+		</if>            
+	</select>
+		
+	<update id="updatePrintWaybillInfoByAgentInfo" parameterType="java.util.HashMap" >
+		 update tfr.t_opt_print_agentwaybill a set a.is_push='Y',a.push_time=sysdate
+		 where a.agent_waybill_no = #{agentWaybillNo,jdbcType=VARCHAR} and a.active = 'Y' and exists (
+		 select 1 from bse.t_bas_data_dictionary_value v where v.terms_code='ABBREVIATION_OF_AGENCY_COMPANY'
+		 and v.value_code=a.agent_company_code and v.extattribute1=#{kd100CompanyCode,jdbcType=VARCHAR})
+	</update>
+	
+	<!-- 删除轨迹信息  352203-foss-wx-->
+	<delete id="deleteInterTrackings" parameterType="string">
+		delete from tfr.t_opt_internation_track where WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+	</delete>
+</mapper>

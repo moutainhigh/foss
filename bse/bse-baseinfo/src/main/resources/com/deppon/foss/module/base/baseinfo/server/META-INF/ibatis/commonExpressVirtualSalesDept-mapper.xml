@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.commonQueryVirtualSalesDept">
+	<!-- 公共选择组件 -->
+	<resultMap id="virtualSalesDeptResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.OrgAdministrativeInfoEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="NAME" property="name" jdbcType="VARCHAR" />
+		<result column="CODE" property="code" jdbcType="VARCHAR" />
+		<result column="UNIFIED_CODE" property="unifiedCode" jdbcType="VARCHAR" />
+		<result column="SIMPLE_NAME" property="orgSimpleName" jdbcType="VARCHAR" />
+		<result column="PINYIN" property="pinyin" jdbcType="VARCHAR" />
+		<result column="PROV_CODE" property="provCode" jdbcType="VARCHAR" />
+		<result column="CITY_CODE" property="cityCode" jdbcType="VARCHAR" />
+		<result column="CONUNTY_CODE" property="countyCode" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="DIVISION" property="division" jdbcType="CHAR" />
+		<result column="DO_AIR_DISPATCH" property="doAirDispatch" jdbcType="CHAR" />
+		<result column="TRANSFER_CENTER" property="transferCenter" jdbcType="CHAR" />
+		<result column="BIG_REGION" property="bigRegion" jdbcType="CHAR" />
+		<result column="SMALL_REGION" property="smallRegion" jdbcType="CHAR" />
+		<result column="AIR_DISPATCH" property="airDispatch" jdbcType="CHAR" />
+		<result column="SALES_DEPARTMENT" property="salesDepartment" jdbcType="CHAR" />
+		<result column="TRANS_DEPARTMENT" property="transDepartment" jdbcType="CHAR" />
+		<result column="TRANS_TEAM" property="transTeam" jdbcType="CHAR" />
+		<result column="DISPATCH_TEAM" property="dispatchTeam" jdbcType="CHAR" />
+		<result column="BILLING_GROUP" property="billingGroup" jdbcType="CHAR" />
+		<result column="IS_DELIVER_SCHEDULE" property="isDeliverSchedule" jdbcType="CHAR" />
+		<result column="IS_ARRANGE_GOODS" property="isArrangeGoods" jdbcType="CHAR" />
+		<result column="IS_ENTITY_FINANCE" property="isEntityFinance" jdbcType="CHAR" />
+		<result column="EXPRESS_SALES_DEPARTMENT" property="expressSalesDepartment" jdbcType="CHAR" />
+		<result column="EXPRESS_PART" property="expressPart" jdbcType="CHAR" />
+		<result column="EXPRESS_BIG_REGION" property="expressBigRegion" jdbcType="CHAR" />
+	</resultMap>
+
+	<!-- 数据字段 -->
+	<sql id="commonOrg_Column_List">
+		T.ID AS ID,
+		T.NAME AS NAME,
+		T.CODE AS CODE,
+		T.UNIFIED_CODE AS UNIFIED_CODE,
+		T.ORG_SIMPLE_NAME AS SIMPLE_NAME,
+		T.PINYIN AS PINYIN,
+		T.PROV_CODE AS PROV_CODE,
+		T.CREATE_TIME AS CREATE_TIME,
+		T.MODIFY_TIME AS MODIFY_TIME,
+		T.ACTIVE AS ACTIVE,
+		T.CITY_CODE AS CITY_CODE,
+		T.COUNTY_CODE AS CONUNTY_CODE,
+		T.DIVISION AS DIVISION,
+		T.DO_AIR_DISPATCH AS DO_AIR_DISPATCH,
+		T.TRANSFER_CENTER AS TRANSFER_CENTER,
+		T.BIG_REGION AS BIG_REGION,
+		T.SMALL_REGION AS SMALL_REGION,
+		T.AIR_DISPATCH AS AIR_DISPATCH,
+		T.SALES_DEPARTMENT AS SALES_DEPARTMENT,
+		T.TRANS_DEPARTMENT AS TRANS_DEPARTMENT,
+		T.TRANS_TEAM AS TRANS_TEAM,
+		T.BILLING_GROUP AS BILLING_GROUP,
+		T.IS_DELIVER_SCHEDULE AS IS_DELIVER_SCHEDULE,
+		T.IS_ARRANGE_GOODS AS IS_ARRANGE_GOODS,
+		T.DISPATCH_TEAM AS DISPATCH_TEAM,
+		T.IS_ENTITY_FINANCE AS IS_ENTITY_FINANCE,
+		T.EXPRESS_SALES_DEPARTMENT AS EXPRESS_SALES_DEPARTMENT,
+		T.EXPRESS_PART AS EXPRESS_PART,
+		T.EXPRESS_BIG_REGION AS EXPRESS_BIG_REGION
+	</sql>
+	<!-- 分页查询条件 -->
+	<sql id="queryCondition">
+		<where>
+			<if test="org.name != null and org.name != ''">
+				AND T.NAME like CONCAT(CONCAT('%', #{org.name,jdbcType=VARCHAR}),'%')
+			</if>
+			<if test="org.code != null and org.code != ''">
+				AND T.CODE like CONCAT(CONCAT('%', #{org.code,jdbcType=VARCHAR}),'%')
+			</if>
+			<if test="org.pinyin != null and org.pinyin != ''">
+				AND T.PINYIN like CONCAT(CONCAT('%', #{org.pinyin,jdbcType=VARCHAR}),'%')
+			</if>
+			<if test="org.orgSimpleName != null and  org.orgSimpleName != ''">
+				AND T.SIMPLENAME like CONCAT(CONCAT('%',#{org.simpleName,jdbcType=VARCHAR}), '%')
+			</if>
+			<if test="org.active != null and org.active != ''">
+				AND T.ACTIVE = #{org.active,jdbcType=CHAR}
+			</if>
+			    AND T.CODE IN 
+			    (SELECT DISTINCT A.SALESDEPT
+                  FROM (SELECT M.ORIG_ORG_CODE SALESDEPT, 
+                               M.DEST_ORG_CODE TRANSCENTER
+                            FROM BSE.T_BAS_LINE M
+                           WHERE M.ACTIVE = 'Y'
+                                 AND M.LINE_SORT = 'BSE_LINE_SORT_SOURCE'
+                                UNION
+                         SELECT M.DEST_ORG_CODE SALESDEPT, 
+                                M.ORIG_ORG_CODE TRANSCENTER
+                            FROM BSE.T_BAS_LINE M
+                	       WHERE M.ACTIVE = 'Y'
+                                 AND M.LINE_SORT = 'BSE_LINE_SORT_TARGET'
+                                 UNION
+                          SELECT F.ORIG_ORG_CODE SALESDEPT, 
+                               	 F.DEST_ORG_CODE TRANSCENTER
+                            FROM BSE.T_BAS_EXPRESS_LINE F
+                           WHERE F.ACTIVE = 'Y'
+                                 AND F.LINE_SORT = 'BSE_LINE_SORT_SOURCE'
+                                UNION
+                         SELECT F.DEST_ORG_CODE SALESDEPT, 
+                                F.ORIG_ORG_CODE TRANSCENTER
+                            FROM BSE.T_BAS_EXPRESS_LINE F
+                	       WHERE F.ACTIVE = 'Y'
+                                 AND F.LINE_SORT = 'BSE_LINE_SORT_TARGET') A
+             		 WHERE A.TRANSCENTER IN
+			    <if test="virtualDeptCodes != null and virtualDeptCodes.size>0">
+			       <foreach collection="virtualDeptCodes" open="(" close=")" separator="," item="code">
+			         #{code,jdbcType=VARCHAR} 
+				   </foreach>
+	      	   </if>
+	      	 )
+			<if test="org.expressSalesDepartment != null and  org.expressSalesDepartment != ''">
+				AND T.EXPRESS_SALES_DEPARTMENT = #{org.expressSalesDepartment,jdbcType=CHAR}
+			</if>
+		</where>
+	</sql>
+
+	<!-- 查询虚拟营业部信息 -->
+	<select id="queryVirtualSalesDeptList" parameterType="map" resultMap="virtualSalesDeptResultMap">
+	    SELECT 
+	    /** 综合:查询虚拟营业部信息 **/
+		  <include refid="commonOrg_Column_List" />
+	    FROM BSE.T_BAS_ORG T
+		  <include refid="queryCondition"/>
+		  ORDER BY T.NAME
+	</select>
+
+	<!-- 统计总记录数 -->
+	<select id="countRecords" resultType="Long" parameterType="map">
+		 SELECT/** 综合:统计总记录数 **/  COUNT(*) FROM BSE.T_BAS_ORG T 
+			<include refid="queryCondition"/>
+	</select>
+	
+	<select id="queryVirtualDeptCodes" parameterType="map" resultType = "java.util.List">
+					SELECT /** 综合:查询快递大区下面所对应的的虚拟营业部的code **/ A.CODE
+  					FROM (SELECT M.CODE, M.EXPRESS_SALES_DEPARTMENT
+         					 FROM (SELECT * FROM BSE.T_BAS_ORG O WHERE O.ACTIVE = 'Y') M
+         					 START WITH M.CODE IN 
+         					 <foreach collection="org" open="(" close=")" separator="," item="code" index="index" >
+			       					 #{code} 
+							 </foreach>
+        					 CONNECT BY PRIOR M.UNIFIED_CODE = M.PARENT_ORG_UNIFIED_CODE) A
+ 					   <where>
+ 							A.EXPRESS_SALES_DEPARTMENT = 'Y'
+ 					   </where> 
+	</select>
+</mapper>

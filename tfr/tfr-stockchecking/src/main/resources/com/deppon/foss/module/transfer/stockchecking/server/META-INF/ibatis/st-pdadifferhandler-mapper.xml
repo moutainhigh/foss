@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.tfr.PdaDifferReportDao" >
+	<resultMap id="DifferReportMap" type="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StDifferReportEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR"/>
+		<result column="ST_TASK_ID" property="stTaskId" jdbcType="VARCHAR" />
+	    <result column="REPORT_CODE" property="reportCode" jdbcType="VARCHAR" />
+	    <result column="EXCEED_GOODS_QTY" property="exceedGoodsQty" jdbcType="DECIMAL" />
+	    <result column="LESS_GOODS_QTY" property="lessGoodsQty" jdbcType="DECIMAL" />
+	    <result column="HANDLE_STATUS" property="handleStatus" jdbcType="VARCHAR" />
+	    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+	    <result column="GOODS_AREA_CODE" property="goodsAreaCode" jdbcType="VARCHAR" />
+	    <result column="GOODS_AREA_NAME" property="goodsAreaName" jdbcType="VARCHAR" />
+	    <result column="DEPTCODE" property="deptcode" jdbcType="VARCHAR" />
+	    <result column="PDA_HANDLE_STATUS" property="pdaHandleStatus" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<resultMap id="DifferDetailMap" type="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StDifferDetailEntity" >
+	    <id column="ID" property="id" jdbcType="VARCHAR" />
+	    <result column="ST_DIFFER_REPORT_ID" property="stDifferReportId" jdbcType="VARCHAR" />
+	    <result column="OA_ERROR_NO" property="oaErrorNo" jdbcType="VARCHAR" />
+	    <result column="DIFFERENCE_TYPE" property="differenceType" jdbcType="VARCHAR" />
+	    <result column="HANDLE_TIME" property="handleTime" jdbcType="TIMESTAMP" />
+	    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+	    <result column="SERIAL_NO" property="serialNo" jdbcType="VARCHAR" />
+	    <result column="USER_CODE" property="userCode" jdbcType="VARCHAR" />
+	    <result column="HANDLE_STATUS" property="handleStatus" jdbcType="VARCHAR" />
+	    <result column="REMARK" property="remark" jdbcType="VARCHAR" />
+    </resultMap>
+  
+	<select id="queryDifferReportList" parameterType="map" resultType="com.deppon.foss.module.transfer.pda.api.shared.domain.PdaDifferEntity">
+		SELECT R.REPORT_CODE reportCode, 
+			   COUNT(D.SERIAL_NO) lessQty, 
+			   R.GOODS_AREA_NAME goodsAreaName,
+			   R.CREATE_TIME createTime
+		  FROM TFR.T_OPT_ST_DIFFER_DETAIL D
+		 INNER JOIN TFR.T_OPT_ST_DIFFER_REPORT R ON D.ST_DIFFER_REPORT_ID = R.ID
+		 INNER JOIN PKP.T_SRV_WAYBILL W ON W.WAYBILL_NO = D.WAYBILL_NO AND W.ACTIVE = 'Y'
+		 WHERE R.CREATE_TIME >= SYSDATE - #{hours,jdbcType=DECIMAL}/24
+		   AND R.HANDLE_STATUS = 'DOING'
+		   AND R.DEPTCODE in 
+			   <foreach item="item" index="index" collection="deptCodes" open="(" separator="," close=")">
+			    	#{item}
+			   </foreach>
+		   AND R.PDA_HANDLE_STATUS = 'DOING'
+		   AND D.DIFFERENCE_TYPE = 'LACK'
+		   AND (W.PRODUCT_CODE = 'PACKAGE'  OR W.PRODUCT_CODE = 'RCP' OR W.PRODUCT_CODE = 'EPEP' OR w.Product_Code = 'DEAP')
+		 GROUP BY R.REPORT_CODE, R.GOODS_AREA_NAME,R.CREATE_TIME
+		 ORDER BY R.REPORT_CODE
+	</select>
+	
+	<!--根据差异报告编号查询差异报告明细，并返回给PDA-->
+	<select id="queryDifferDetailByReportNo" parameterType="string" resultType="com.deppon.foss.module.transfer.pda.api.shared.domain.PdaDifferDetailEntity">
+		SELECT D.PACKAGE_NO packageNo,
+			   D.WAYBILL_NO waybillNo, 
+			   D.SERIAL_NO serialNo,
+			   CASE D.HANDLE_STATUS 
+			   WHEN 'DOING' THEN '未扫描'
+			   WHEN 'DONE' THEN '已扫描' 
+			   ELSE '' END handleStatus,
+			   W.TARGET_ORG_CODE destStation
+		  FROM TFR.T_OPT_ST_DIFFER_DETAIL D
+		 INNER JOIN TFR.T_OPT_ST_DIFFER_REPORT R ON R.ID = D.ST_DIFFER_REPORT_ID
+		 INNER JOIN PKP.T_SRV_WAYBILL W ON W.WAYBILL_NO = D.WAYBILL_NO AND W.ACTIVE = 'Y'
+		 WHERE R.REPORT_CODE = #{reportCode,jdbcType=VARCHAR}
+			 	 AND D.DIFFERENCE_TYPE = 'LACK'
+			 	 AND (W.PRODUCT_CODE = 'PACKAGE'  OR W.PRODUCT_CODE = 'RCP' OR W.PRODUCT_CODE = 'EPEP' OR w.Product_Code = 'DEAP')
+		 	 ORDER BY D.WAYBILL_NO,D.SERIAL_NO
+	</select>
+	
+	<!--根据差异报告编号、运单号、流水号查询差异明细-->
+	<select id="queryDifferDetail" parameterType="map" resultMap="DifferDetailMap">
+		SELECT D.ID,
+	       D.ST_DIFFER_REPORT_ID,
+	       D.OA_ERROR_NO,
+	       D.DIFFERENCE_TYPE,
+	       D.HANDLE_TIME,
+	       D.WAYBILL_NO,
+	       D.SERIAL_NO,
+	       D.HANDLE_STATUS,
+	       D.USER_CODE,
+	       D.REMARK
+	 	 FROM TFR.T_OPT_ST_DIFFER_DETAIL D
+		 INNER JOIN TFR.T_OPT_ST_DIFFER_REPORT R ON R.ID = D.ST_DIFFER_REPORT_ID
+		 WHERE R.REPORT_CODE = #{reportCode,jdbcType=VARCHAR}
+		   <if test="waybillNo != null and waybillNo != '' ">
+		   		AND D.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+		   </if>
+		   <if test="serialNo != null and serialNo != '' ">
+		  		AND D.SERIAL_NO = #{serialNo,jdbcType=VARCHAR}
+		   </if>
+
+	</select>
+	<!--插入PDA扫描记录-->
+	<insert id="insertScanInfo" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.PdaDifferDetailLogEntity">
+		INSERT INTO TFR.T_OPT_ST_DIFFER_DETAIL_PDA
+		  (ID,
+		   ST_REPORT_NO,
+		   WAYBILL_NO,
+		   SERIAL_NO,
+		   SCAN_TIME,
+		   CREATE_TIME,
+		   PDA_NO,
+		   OPERATOR_CODE)
+		VALUES
+		  (#{id,jdbcType=VARCHAR},
+		  	#{reportCode,jdcbType=VARCHAR},
+		  	#{waybillNo,jdbcType=VARCHAR},
+		  	#{serialNo,jdbcType=VARCHAR},
+		  	#{scanTime,jdcbType=TIMESTAMP},
+		  	#{createTime,jdbcType=TIMESTAMP},
+		  	#{pdaNo,jdbcType=TIMESTAMP},
+		  	#{operatorCode,jdbcType=VARCHAR})
+	</insert>
+	<!--插入pda处理分支记录-->
+	<insert id="insertBranchInfo" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.PdaDifferLogEntity">
+		INSERT INTO TFR.T_OPT_ST_DIFFER_REPORT_PDA
+		  (ID, ST_REPORT_NO, STATUS, PDA_NO, OPERATOR_CODE, CREATE_TIME)
+		VALUES
+		  (#{id,jdbcType=VARCHAR},
+		   #{reportCode,jdbcType=VARCHAR},
+		   #{status,jdbcType=VARCHAR},
+		   #{pdaNo,jdbcType=VARCHAR},
+		   #{operatorCode,jdbcType=VARCHAR},
+		   #{createTime,jdbcType=TIMESTAMP})
+	</insert>
+	<!--更新差异报告中的pda处理状态-->
+	<update id="updatePdaHandleStatus" parameterType="map">
+		UPDATE TFR.T_OPT_ST_DIFFER_REPORT R
+			SET R.PDA_HANDLE_STATUS = #{pdaHandleStatus,jdbcType=VARCHAR}
+		WHERE R.REPORT_CODE = #{reportCode,jdbcType=VARCHAR}
+	</update>
+	
+	<!--判断差异报告是否已被PDA提交-->
+	<select id="queryDifferByCode" parameterType="string" resultMap="DifferReportMap">
+		  SELECT R.ID,
+         R.ST_TASK_ID,
+         R.REPORT_CODE,
+         R.EXCEED_GOODS_QTY,
+         R.LESS_GOODS_QTY,
+         R.HANDLE_STATUS,
+         R.CREATE_TIME,
+         R.GOODS_AREA_CODE,
+         R.GOODS_AREA_NAME,
+         R.DEPTCODE,
+         R.PDA_HANDLE_STATUS
+    FROM TFR.T_OPT_ST_DIFFER_REPORT R
+    WHERE R.REPORT_CODE = #{reportCode,jdbcType=VARCHAR}
+	</select>
+	
+	<!--插入PDA处理参与人记录-->
+	<insert id="insertOperatorInfo" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.PdaDifferOperatorEntity">
+		INSERT INTO TFR.T_OPT_ST_DIFFER_OPERATOR
+ 		 (ID, ST_REPORT_NO, OPERATOR_CODE, OPERATOR_NAME)
+		VALUES
+		  (#{id,jdbcType=VARCHAR},
+		   #{reportCode,jdbcType=VARCHAR},
+		   #{operatorCode,jdbcType=VARCHAR},
+		   #{operatorName,jdbcType=VARCHAR})
+	</insert>
+	
+	<!--查询操作人信息-->
+	<select id="queryDifferOperator" parameterType="map" resultType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.PdaDifferOperatorEntity">
+		  SELECT O.ID, O.ST_REPORT_NO, O.OPERATOR_CODE, O.OPERATOR_NAME
+		    FROM TFR.T_OPT_ST_DIFFER_OPERATOR O
+		   WHERE O.ST_REPORT_NO = #{reportCode,jdbcType=VARCHAR}
+		     AND O.OPERATOR_CODE = #{operatorCode,jdbcType=VARCHAR}
+	</select>
+</mapper>

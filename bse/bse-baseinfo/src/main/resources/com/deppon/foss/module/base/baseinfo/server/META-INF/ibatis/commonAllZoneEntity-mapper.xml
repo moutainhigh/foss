@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.commonAllzone">
+	<!-- 集中接送货小区 -->
+	<resultMap id="resultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.dto.CommonAllZoneDto">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="REGION_CODE" property="regionCode" jdbcType="VARCHAR" />
+		<result column="REGION_NAME" property="regionName" jdbcType="VARCHAR" />
+		<result column="MANAGEMENT" property="management" jdbcType="VARCHAR" />
+		<result column="TRANS_DEPARTMENT_CODE"  property="transDepartmentCode" jdbcType="VARCHAR"/>
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+		<result column="VIRTUAL_CODE" property="virtualCode" jdbcType="VARCHAR"  />
+		<result column="REGION_TYPE" property="regionType" jdbcType="VARCHAR" />
+		<result column="GISID" property="gisId" jdbcType="VARCHAR" />
+		<result column="BIGZONECODE" property="bigZoneCode" jdbcType="VARCHAR" />
+		<result column="PROVCODE" property="provCode" jdbcType="VARCHAR" />
+		<result column="CITYCODE" property="cityCode" jdbcType="VARCHAR" />
+		<result column="COUNTYCODE" property="countyCode" jdbcType="VARCHAR" />
+		<result column="ZONETYPE" property="zoneType" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<!-- 大小区公用数据字段 -->
+	<sql id="query_common_columns">
+		ID, 
+		REGION_CODE, 
+		REGION_NAME, 
+		MANAGEMENT,  
+		ACTIVE,
+		VIRTUAL_CODE,
+		PROVCODE,
+		CITYCODE,
+		COUNTYCODE,
+		NOTES, 
+	</sql>
+	<!-- 大区数据字段 -->
+	<sql id="query_big_columns">
+	 	<include refid="query_common_columns" />
+		TYPE AS REGION_TYPE,
+		TRANS_DEPARTMENT_CODE,
+		'' AS BIGZONECODE   
+	</sql>
+	<!-- 小区数据字段 -->
+	<sql id="query_small_columns">
+		<include refid="query_common_columns" />
+		REGION_TYPE,  
+		'' AS TRANS_DEPARTMENT_CODE,
+		BIGZONECODE  
+	</sql>
+	<!-- 大小区公用查询条件 -->
+	<sql id="query_common_params">
+		<where>
+			 AND ACTIVE = #{active,jdbcType=CHAR}
+			<if test="queryParam != null and queryParam != ''">
+				AND 
+				( 
+					REGION_CODE like CONCAT(CONCAT('%',#{queryParam}),'%')
+				 OR 	
+				 	REGION_NAME like CONCAT(CONCAT('%',#{queryParam}),'%')
+				) 
+			</if> 
+			<if test="management != null and management != ''">
+				AND MANAGEMENT = #{management,jdbcType=VARCHAR}
+			</if>
+			 <if test="virtualCode != null and virtualCode != ''">
+				AND VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR}
+			</if>
+			<if test="provCode != null and provCode != ''">
+				AND PROVCODE = #{provCode,jdbcType=VARCHAR}
+			</if> 
+			<if test="cityCode != null and cityCode != ''">
+				AND CITYCODE = #{cityCode,jdbcType=VARCHAR}
+			</if>
+			<if test="countyCode != null and countyCode != ''">
+				AND COUNTYCODE = #{countyCode,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</sql>
+	<!-- 大区查询条件 -->
+	<sql id="query_big_params">
+		 <include refid="query_common_params" />
+		 <if test="regionType != null and regionType != ''">
+				AND TYPE = #{regionType,jdbcType=VARCHAR}
+		 </if>
+		 <if test="transDepartmentCode != null and transDepartmentCode != ''">
+				AND TRANS_DEPARTMENT_CODE = #{transDepartmentCode,jdbcType=VARCHAR}
+		</if> 
+	</sql>
+	<!-- 小区查询条件 -->
+	<sql id="query_small_params">
+		 <include refid="query_common_params" />
+		 <if test="regionType != null and regionType != ''">
+				AND REGION_TYPE = #{regionType,jdbcType=VARCHAR}
+		 </if>
+		 <if test="bigZoneCode != null and bigZoneCode != ''">
+				AND BIGZONECODE = #{bigZoneCode,jdbcType=VARCHAR}
+		</if> 
+	</sql>
+	<!-- 查询集中接送货大小区信息 -->
+	<select id="queryAllZoneByCondition" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.CommonAllZoneDto" resultMap="resultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询集中接送货大小区信息 **/
+			'小区' AS ZONETYPE,
+		]]>
+		<include refid="query_small_columns" />
+		<![CDATA[
+			FROM BSE.T_BAS_SERVICE_SMALLZONE T
+		]]>
+		<include refid="query_small_params" />
+		<![CDATA[
+		UNION  ALL
+			SELECT
+			'大区' AS ZONETYPE,
+		]]>
+		<include refid="query_big_columns" />
+		<![CDATA[
+			FROM BSE.T_BAS_SERVICE_BIGZONE T
+		]]>
+		<include refid="query_big_params" />
+	</select>
+
+	<!-- 统计总记录数 -->
+	<select id="queryRecordCount" resultType="Long" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.CommonAllZoneDto">
+		SELECT/** 综合:统计总记录数 **/ COUNT(*) FROM (
+		SELECT
+		ID
+		FROM BSE.T_BAS_SERVICE_SMALLZONE T
+		<include refid="query_small_params" />
+		UNION ALL
+		SELECT
+		ID
+		FROM BSE.T_BAS_SERVICE_BIGZONE T
+		<include refid="query_big_params" />
+		)
+	</select>
+
+</mapper>

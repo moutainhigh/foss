@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.bse.bse-querying.userDefinedQueryCondition" >
+	
+	<!-- 自定义查询条件 -->
+	<resultMap id="queryConditionResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.UserDefinedQueryConditionEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="CONDITION_COMPARECONDITION" jdbcType="VARCHAR" property="compareCondition" />
+		<result column="CONDITION_COMPARESIGN" jdbcType="VARCHAR" property="compareSign" />
+		<result column="CONDITION_COMPAREVALUE" jdbcType="VARCHAR" property="compareValue" />
+		<result column="CONDITION_LOGICSIGN" jdbcType="VARCHAR" property="logicSign" />
+		<result column="CONDITION_SEQ" jdbcType="VARCHAR" property="seq" />
+		<result column="PARENT_SCHEME_CODE" jdbcType="VARCHAR" property="schemeCode" />
+		<result column="CONDITION_ACTIVE" jdbcType="VARCHAR" property="active" />
+		<result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createDate" />
+		<result column="MODIFY_TIME" jdbcType="TIMESTAMP" property="modifyUser" />
+		<result column="CREATE_USER_CODE" jdbcType="VARCHAR" property="createUser" />
+		<result column="MODIFY_USER_CODE" jdbcType="VARCHAR" property="modifyUser" />
+	</resultMap>
+
+	<!-- 数据字段 -->
+	<sql id="queryCondition_Column_List">
+		ID,CONDITION_COMPARECONDITION,CONDITION_COMPARESIGN,
+		CONDITION_COMPAREVALUE,CONDITION_LOGICSIGN,
+		PARENT_SCHEME_CODE,CONDITION_SEQ,
+		CONDITION_ACTIVE,CREATE_TIME,MODIFY_TIME,CREATE_USER_CODE,MODIFY_USER_CODE
+	</sql>
+
+	<!-- 自定义查询查询条件（通过方案id获得方案中查询条件） -->
+	<sql id="queryWhere">
+		<where>
+			PARENT_SCHEME_CODE = #{schemeCode,jdbcType=VARCHAR})
+			<if test="active != null and active != ''">
+				and CONDITION_ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+
+	</sql>
+	<sql id="orderBySqe">
+		ORDER BY T.CONDITION_SEQ
+	</sql>
+	<!-- 获得自定义查询条件集合 -->
+	<select id="getAllConditionInfos"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.UserDefinedQueryConditionEntity"
+		resultMap="queryConditionResultMap">
+		<![CDATA[
+			SELECT
+		]]>
+		<include refid="queryCondition_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_QUERY_CONDITION T
+		]]>
+		<include refid="queryWhere" />
+		<include refid="orderBySqe"/>
+	</select>
+
+	<!-- 通过查询方案id获得自定义查询条件集合 -->
+	<select id="getConditionsBySchemeId"
+		parameterType="string"
+		resultMap="queryConditionResultMap">
+		<![CDATA[
+			SELECT
+		]]>
+		<include refid="queryCondition_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_QUERY_CONDITION T
+			WHERE CONDITION_ACTIVE = 'Y'
+			AND PARENT_SCHEME_CODE = #{schemeCode,jdbcType=VARCHAR}
+		]]>
+		<include refid="orderBySqe"/>
+	</select>
+	<!-- 新增信息 -->
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.UserDefinedQueryConditionEntity">
+		
+		<![CDATA[
+			INSERT INTO BSE.T_BAS_QUERY_CONDITION T	(
+		]]>
+		<include refid="queryCondition_Column_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, 
+		
+		#{compareCondition,jdbcType=CHAR},
+		#{compareSign,jdbcType=CHAR},
+		#{compareValue,jdbcType=CHAR},
+		#{logicSign,jdbcType=CHAR},
+		#{schemeCode,jdbcType=CHAR},
+		bse.QUERY_SCHEME.nextval,
+		#{active,jdbcType=CHAR},
+		#{createDate,jdbcType=TIMESTAMP}, #{modifyDate,jdbcType=TIMESTAMP},
+		#{createUser,jdbcType=VARCHAR},#{modifyUser,jdbcType=VARCHAR}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+
+	<!-- 修改信息 -->
+	<update id="update"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.UserDefinedQueryConditionEntity">
+		update BSE.T_BAS_QUERY_CONDITION
+		<set>
+			<if test="compareCondition != null">
+				CONDITION_COMPARECONDITION = #{compareCondition,jdbcType=CHAR},
+			</if>
+			<if test="compareSign != null">
+				CONDITION_COMPARESIGN = #{compareSign,jdbcType=CHAR},
+			</if>
+			<if test="compareValue != null">
+				CONDITION_COMPAREVALUE = #{compareValue,jdbcType=CHAR},
+			</if>
+			<if test="logicSign != null">
+				CONDITION_LOGICSIGN = #{logicSign,jdbcType=CHAR},
+			</if>
+			<if test="schemeCode != null">
+				PARENT_SCHEME_CODE = #{schemeCode,jdbcType=CHAR},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="active != null">
+				CONDITION_ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+		</set>
+
+		<where>
+			<if test="id != null">
+				ID = #{id,jdbcType=VARCHAR}
+			</if>
+		</where>
+
+	</update>
+
+	<!-- 作废 条件 信息 -->
+	<update id="deleteByCode" parameterType="map">
+		update BSE.T_BAS_QUERY_CONDITION
+
+		<set>
+			<if test="active != null and active != ''">
+				CONDITION_ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				MODIFY_USER_CODE = #{modifyUser, jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+
+		</set>
+
+		<where>
+			<if test="codes!=null and codes.length > 0">
+				ID in
+				<foreach collection="codes" index="index" item="code" open="("
+					separator="," close=")">
+					#{code}
+				</foreach>
+			</if>
+		</where>
+	</update>
+	
+	<!-- 通过 方案code作废 条件 信息 -->
+	<update id="deleteBySchemeCode" parameterType="map">
+		update BSE.T_BAS_QUERY_CONDITION
+
+		<set>
+			<if test="active != null and active != ''">
+				CONDITION_ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				MODIFY_USER_CODE = #{modifyUser, jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+
+		</set>
+
+		<where>
+			<if test="codes!=null and codes.length > 0">
+				PARENT_SCHEME_CODE in
+				<foreach collection="codes" index="index" item="code" open="("
+					separator="," close=")">
+					#{code}
+				</foreach>
+			</if>
+		</where>
+	</update>
+</mapper>

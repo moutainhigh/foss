@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.foss.module.pickup.predeliver.api.shared.vo.HandoverBillVoMapper">
+	
+	<resultMap id="handoverBillMatchAddressMap" type="com.deppon.foss.module.pickup.predeliver.api.shared.vo.HandoverBillVo">
+		<id column="ID" property="id" jdbcType="VARCHAR"/>
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR"/>
+		<result column="RECEIVE_CUSTOMER_ADDRESS" property="receiveCustomerAddress" jdbcType="VARCHAR"/>
+		<result column="LONGITUDE" property="longitude" jdbcType="VARCHAR"/>
+		<result column="LATITUDE" property="latitude" jdbcType="VARCHAR"/>
+		<result column="PRE_DELIVER_DATE" property="preDeliverDate" jdbcType="TIMESTAMP"/>
+		<result column="RECEIVE_CUSTOMER_ADDRESS_NOTE" property="receiveCustomerAddressNote" jdbcType="VARCHAR"/>
+	</resultMap>
+	
+	<sql id="handoverBillColumns">
+		handoverBill.ID, handoverBill.WAYBILL_NO,
+		handoverBill.RECEIVE_CUSTOMER_ADDRESS, handoverBill.LONGITUDE, handoverBill.LATITUDE,
+		handoverBill.PRE_DELIVER_DATE, handoverBill.RECEIVE_CUSTOMER_ADDRESS_NOTE
+	</sql>
+	
+	<select id="selectList" resultMap="handoverBillMatchAddressMap">
+		SELECT <include refid="handoverBillColumns" />, 
+		wayBill.RECEIVE_CUSTOMER_MOBILEPHONE AS receiveCustomerMobilePhone,
+		wayBill.RECEIVE_CUSTOMER_PHONE AS receiveCustomerPhone,
+        prv.name AS receiveCustomerProvName,
+        cty.name AS receiveCustomerCityName,
+        dit.name AS receiveCustomerDistName
+		FROM PKP.T_SRV_DELIVER_HANDOVERBILL handoverBill inner JOIN PKP.T_SRV_WAYBILL wayBill ON handoverBill.WAYBILL_NO = wayBill.WAYBILL_NO
+        LEFT join BSE.T_BAS_DISTRICT prv on handoverBill.Receive_Customer_Prov_Code = prv.code and prv.active='Y'
+        LEFT join BSE.T_BAS_DISTRICT cty on handoverBill.RECEIVE_CUSTOMER_CITY_CODE = cty.code and cty.active='Y'
+        LEFT join BSE.T_BAS_DISTRICT dit on handoverBill.RECEIVE_CUSTOMER_DIST_CODE = dit.code and dit.active='Y'
+		WHERE 
+			 <![CDATA[ 
+				handoverBill.PRE_DELIVER_DATE >= TRUNC(sysdate)
+   				AND handoverBill.PRE_DELIVER_DATE < TRUNC(sysdate + 4)
+			  ]]>
+			  AND handoverBill.ACTIVE = 'Y'
+			  AND wayBill.ACTIVE = 'Y'
+			  AND handoverBill.IS_GIS_DEAL = 'N'
+			  AND handoverBill.IS_USED = 'N'
+			  <![CDATA[ AND rownum  <=  100 ]]>
+	</select>
+	
+	<select id="selectWaybillNoBySmallZoneCode" parameterType="java.util.Map" resultType="java.lang.String">
+		SELECT WAYBILL_NO
+		from PKP.T_SRV_DELIVER_HANDOVERBILL
+		WHERE PRE_DELIVER_DATE <![CDATA[ >= ]]> trunc(#{preDeliverDate, jdbcType=TIMESTAMP})
+			  AND PRE_DELIVER_DATE <![CDATA[ < ]]> trunc(#{preDeliverDate, jdbcType=TIMESTAMP} + 1)
+			  AND SMALLZONE_CODE = #{smallZoneCode, jdbcType=VARCHAR}
+			  AND ACTUAL_SMALLZONE_CODE != #{smallZoneCode, jdbcType=VARCHAR}
+	</select>
+	
+	<update id="updateResidence" parameterType="java.util.Map" >
+		UPDATE PKP.T_SRV_DELIVER_HANDOVERBILL 
+		<set>
+			<if test="smallzoneCode != null and smallzoneCode != ''">
+				SMALLZONE_CODE = #{smallzoneCode, jdbcType=VARCHAR},
+				ACTUAL_SMALLZONE_CODE = #{smallzoneCode, jdbcType=VARCHAR},
+			</if>
+			<if test="smallzoneName != null and smallzoneName != ''">
+				SMALLZONE_NAME = #{smallzoneName, jdbcType=VARCHAR},
+				ACTUAL_SMALLZONE_NAME = #{smallzoneName, jdbcType=VARCHAR},
+			</if>
+			<if test="longitude != null and longitude != ''">
+				LONGITUDE = #{longitude, jdbcType=VARCHAR},
+			</if>
+			<if test="latitude != null and latitude != ''">
+				LATITUDE = #{latitude, jdbcType=VARCHAR},
+			</if>
+			<if test="matchType != null and matchType != ''">
+				MATCH_TYPE = #{matchType, jdbcType=VARCHAR},
+			</if>
+			<if test="vehicleNo != null and vehicleNo != ''">
+				VEHICLE_NO = #{vehicleNo, jdbcType=VARCHAR},
+				ACTUAL_VEHICLE_NO = #{vehicleNo, jdbcType=VARCHAR},
+			</if>
+			<if test="isVehicleScheduling != null and isVehicleScheduling != ''">
+				IS_VEHICLE_SCHEDULING = #{isVehicleScheduling, jdbcType=VARCHAR},
+			</if>
+			<if test="isGisDeal != null and isGisDeal != ''">
+				IS_GIS_DEAL =  #{isGisDeal, jdbcType=VARCHAR},
+			</if>
+			<if test="specialAddressType != null and specialAddressType != ''">
+				SPECIAL_ADDRESS_TYPE = #{specialAddressType, jdbcType=VARCHAR}
+			</if>
+		</set>
+		WHERE ID = #{id, jdbcType=VARCHAR}
+	</update>
+	
+	<update id="updateVehicle" parameterType="java.util.Map">
+		UPDATE PKP.T_SRV_DELIVER_HANDOVERBILL 
+		SET VEHICLE_NO = #{vechileNo, jdbcType=VARCHAR},
+			IS_VEHICLE_SCHEDULING = #{isVehicleScheduling, jdbcType=VARCHAR}
+			
+		<where>
+			<if test="waybillNos != null">
+				WAYBILL_NO NOT IN 
+				<foreach collection="waybillNos" item="waybillNo" separator="," open="( " close=" )" >
+					#{waybillNo, jdbcType=VARCHAR}
+				</foreach>
+			</if>
+			AND PRE_DELIVER_DATE <![CDATA[ >= ]]> trunc(#{preDeliverDate, jdbcType=TIMESTAMP})
+			AND PRE_DELIVER_DATE <![CDATA[ < ]]> trunc(#{preDeliverDate, jdbcType=TIMESTAMP} + 1)
+			AND SMALLZONE_CODE = #{smallZoneCode, jdbcType=VARCHAR}
+		
+		</where>	
+	</update>
+	
+	<update id="updateIsUsed" parameterType="java.util.Map">
+		UPDATE PKP.T_SRV_DELIVER_HANDOVERBILL 
+		SET IS_USED = #{isUsed, jdbcType=VARCHAR}
+		WHERE ID = #{id, jdbcType=VARCHAR}
+	</update>
+</mapper>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:tx="http://www.springframework.org/schema/tx"  
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jaxws="http://cxf.apache.org/jaxws" 
+	xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:jaxrs="http://cxf.apache.org/jaxrs"
+	xsi:schemaLocation="
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+		http://cxf.apache.org/jaxws http://cxf.apache.org/schemas/jaxws.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.0.xsd
+		http://cxf.apache.org/jaxrs  
+		http://cxf.apache.org/schemas/jaxrs.xsd"
+		default-autowire="byName">
+	<import resource="classpath:META-INF/cxf/cxf.xml"/>
+	<import resource="classpath:META-INF/cxf/cxf-extension-xml.xml"/>
+	<import resource="classpath:META-INF/cxf/cxf-servlet.xml"/>
+			
+ 	<bean id="fossOAService" class="com.deppon.foss.module.transfer.oa.server.ws.FossOAService">
+ 	</bean>
+ 	<bean id="CRMFossQMSService" class="com.deppon.foss.module.transfer.oa.server.ws.CRMFossQMSService">
+ 	</bean>
+ 	
+	<!--==== 服务端spring配置======== -->
+	<jaxws:endpoint implementorClass="com.deppon.foss.workflowservice.WorkflowService"
+		implementor="#fossOAService"
+		address="/oaws">
+		<jaxws:features>
+			<bean class="org.apache.cxf.feature.LoggingFeature"></bean>
+		</jaxws:features>
+		<jaxws:inInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingInInterceptor"/>
+		</jaxws:inInterceptors>
+		<jaxws:outInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingOutInterceptor"/>
+		</jaxws:outInterceptors>
+	</jaxws:endpoint>
+	
+	<!-- CXF RESTFUL-->
+  	<bean id="fossQMSService" class="com.deppon.foss.module.transfer.oa.server.ws.FOSSQMSService"/>
+	<jaxrs:server id="restServiceContainer" address="/fossQMSService">
+    	<jaxrs:serviceBeans>
+      	<ref bean="fossQMSService" />
+    	</jaxrs:serviceBeans>
+  	</jaxrs:server>
+  	
+  	<!-- 传给OA的封签所需信息 -->
+  	<bean id="fossSealService" class="com.deppon.foss.module.transfer.oa.server.ws.FossSealService"/>
+	<jaxrs:server id="restServiceContainer2" address="/fossSealService">
+    	<jaxrs:serviceBeans>
+      	<ref bean="fossSealService" />
+    	</jaxrs:serviceBeans>
+  	</jaxrs:server>
+</beans>

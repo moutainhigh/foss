@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://www.springframework.org/schema/jee 
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+			http://www.springframework.org/schema/aop 
+			http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">
+
+	<context:property-placeholder location="classpath*:foss.properties" />
+
+	<!-- 数据源 jndi方式 -->
+	<bean id="dataSourceSpied" class="org.springframework.jndi.JndiObjectFactoryBean">
+		<property name="jndiName">
+			<value>jdbc/fossds</value>
+		</property>
+		<property name="resourceRef" value="true" />
+	</bean>
+	
+	<bean id="dataSource" class="net.sf.log4jdbc.Log4jdbcProxyDataSource">
+		<constructor-arg ref="dataSourceSpied" />
+	</bean>
+
+	<!-- 数据连接管理 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<!-- 事务注解支持-->
+	<tx:annotation-driven transaction-manager="transactionManager" />
+	
+	<!-- myBatis文件 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="configLocation" value="/WEB-INF/ibatis.xml" />
+		<property name="mapperLocations"
+			value="classpath*:com/deppon/**/META-INF/ibatis/*.xml" />
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<bean id="mongo" class="com.deppon.foss.framework.server.components.dataaccess.mongodb.MongoFactoryBean">
+		<property name="host" value="${mongodb.host}" />
+		<property name="port" value="${mongodb.port}" />
+<!-- 		<property name="mongoOptions" ref="mongoOptions" /> -->
+	</bean>
+	
+	<bean id="mongodbFactory" class="com.deppon.foss.framework.server.components.dataaccess.mongodb.MongoDbFactoryBean">
+		<constructor-arg ref="mongo" />
+		<constructor-arg value="${mongodb.database}" />
+	</bean>
+	<!-- 日志队列配置开始 -->
+	<!-- 性能日志 -->
+	<bean id="performanceLog"
+		class="com.deppon.foss.framework.server.components.logger.LogBuffer">
+		<property name="enable" value="${log.enable}" /><!-- 默认启用 -->
+		<property name="queueSize" value="${log.queueSize}" />
+		<property name="listSize" value="${log.listSize}" />
+		<property name="interval" value="${log.interval}" />
+		<property name="logSender" ref="mongoLogSender" />
+	</bean>
+
+	<bean id="mongoLogSender" class="com.deppon.foss.framework.server.components.logger.MongoLogSender">
+	</bean>
+	<!-- 日志队列配置结束 -->
+	<context:annotation-config />
+	<context:component-scan base-package="com.deppon" />
+	
+	<!-- 配合主数据项目定时处理接口接收到的UUMS组织信息的Service -->
+	<bean id="operateMDMOrgInfoFromUUMSService" 
+  	class="com.deppon.foss.module.base.message.server.service.OperateMDMOrgInfoFromUUMSService">
+  		<property name="orgAdministrativeInfoService" ref="orgAdministrativeInfoService" />
+  		<property name="orgAdministrativeInfoRemindService" ref="orgAdministrativeInfoRemindService" />
+  		<property name="orgAdministrativeInfoDao" ref="orgAdministrativeInfoDao" />
+  		<property name="orgAdministrativeInfoToUUDao" ref="orgAdministrativeInfoToUUDao" />
+  		<property name="lineService" ref="lineService" />
+  	</bean>
+  	
+	<!-- 同步组织信息到UUMS -->
+  	<bean id="orgAdministrativeInfoToUUResultCallBackProcessor" 
+  	class="com.deppon.foss.module.base.message.server.callBack.OrgAdministrativeInfoToUUResultCallBackProcessor">
+  		<property name="orgAdministrativeInfoToUUDao" ref="orgAdministrativeInfoToUUDao" />
+  	</bean>
+
+	<!-- 启动MQ监听 -->
+	<bean id="esbInitUtil" class="com.deppon.esb.api.util.ESBInitUtil" init-method="process" lazy-init="false">
+		 <property name="callBackProcessMap">
+			 <map>
+				<entry key="ESB_FOSS2ESB_REVERSE_ADMINORG_FOSS_MDM" value-ref="orgAdministrativeInfoToUUResultCallBackProcessor" />
+ 			 </map>
+     	 </property>  
+	</bean>
+	
+    <!-- BSE JOB   -->
+	<bean id="scheduler1"
+		class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+		<property name="quartzProperties" ref="config" />
+	</bean>
+
+	<bean id="config"
+		class="com.deppon.foss.framework.server.components.jobgrid.SimpleConfigFactory">
+		<property name="instanceId" value="bse-job" />
+		<property name="jndiURL" value="java:comp/env/jdbc/fossds" />
+	</bean>
+
+	<bean id="node1"
+		class="com.deppon.foss.framework.server.components.jobgrid.JobGridNode">
+		<property name="scheduler" ref="scheduler1" /> 
+	</bean>
+	
+	<bean id="poolConfig" class="redis.clients.jedis.JedisPoolConfig">
+		<property name="maxActive" value="${redis.pool.maxActive}"></property>
+		<property name="maxIdle" value="${redis.pool.maxIdle}"></property>
+		<property name="maxWait" value="${redis.pool.maxWait}"></property>
+		<property name="testOnBorrow" value="${redis.pool.testOnBorrow}"></property>
+		<property name="testOnReturn" value="${redis.pool.testOnReturn}"></property>
+	</bean>
+	<bean id="client" class="com.deppon.foss.framework.cache.redis.RedisClient">
+		<property name="host1" value="${redis.host1}"></property>
+		<property name="port1" value="${redis.port1}"></property>
+		<property name="host2" value="${redis.host2}"></property>
+		<property name="port2" value="${redis.port2}"></property>
+		<property name="poolConfig" ref="poolConfig"></property>
+	</bean>
+	<bean id="storage"
+		class="com.deppon.foss.framework.cache.storage.RedisCacheStorage">
+		<property name="client" ref="client"></property>
+	</bean> 
+	<bean id="client1" class="com.deppon.foss.framework.cache.redis.RedisClient">
+		<property name="host1" value="${redis.host3}"></property>
+		<property name="port1" value="${redis.port3}"></property>
+		<property name="host2" value="${redis.host4}"></property>
+		<property name="port2" value="${redis.port4}"></property>
+		<property name="poolConfig" ref="poolConfig"></property>
+	</bean>
+	<bean id="storage1"
+		class="com.deppon.foss.framework.cache.storage.RedisCacheStorage">
+		<property name="client" ref="client1"></property>
+	</bean> 
+	<bean id="client2" class="com.deppon.foss.framework.cache.redis.RedisClient">
+		<property name="host1" value="${redis.host5}"></property>
+		<property name="port1" value="${redis.port5}"></property>
+		<property name="host2" value="${redis.host6}"></property>
+		<property name="port2" value="${redis.port6}"></property>
+		<property name="poolConfig" ref="poolConfig"></property>
+	</bean>
+	<bean id="storage2"
+		class="com.deppon.foss.framework.cache.storage.RedisCacheStorage">
+		<property name="client" ref="client2"></property>
+	</bean> 
+	<bean id="client3" class="com.deppon.foss.framework.cache.redis.RedisClient">
+		<property name="host1" value="${redis.host7}"></property>
+		<property name="port1" value="${redis.port7}"></property>
+		<property name="host2" value="${redis.host8}"></property>
+		<property name="port2" value="${redis.port8}"></property>
+		<property name="poolConfig" ref="poolConfig"></property>
+	</bean>
+	<bean id="storage3"
+		class="com.deppon.foss.framework.cache.storage.RedisCacheStorage">
+		<property name="client" ref="client3"></property>
+	</bean> 
+	
+	<!-- 加入MQC队列拆分共用配置  -->
+	<import resource="spring-mqc.xml"/>
+</beans>

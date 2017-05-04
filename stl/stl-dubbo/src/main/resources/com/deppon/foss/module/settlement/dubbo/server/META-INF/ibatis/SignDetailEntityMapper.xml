@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.uip.dubbo.pickup.sign.api.shared.domain.SignDetailEntity">
+	<!--运单明细表-->
+	<resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.dubbo.api.define.SignDetailEntity" >
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="ARRIVESHEET_NO" property="arrivesheetNo" jdbcType="VARCHAR" />
+		<result column="SERIAL_NO" property="serialNo" jdbcType="VARCHAR" />
+		<result column="create_time" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="SITUATION" property="situation" jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="Base_Column_List" >
+    ID, ARRIVESHEET_NO, SERIAL_NO,CREATE_TIME,MODIFY_TIME,SITUATION
+	</sql>
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.String" >
+    select  /*模块：接送货-签收-查询签收明细*/
+		<include refid="Base_Column_List" />
+    from PKP.T_SRV_SIGN_DETAIL
+    where ID = #{id,jdbcType=VARCHAR}
+	</select>
+	<select id="selectByArriveSheetNo" resultMap="BaseResultMap" parameterType="java.lang.String" >
+    select 
+		<include refid="Base_Column_List" />
+    from PKP.T_SRV_SIGN_DETAIL
+    	<where>
+    		<choose>
+				<when test="value!=null and value!='' ">
+					and ARRIVESHEET_NO = #{value,jdbcType=VARCHAR}
+				</when>
+				<otherwise>
+					and ARRIVESHEET_NO = ''
+				</otherwise>
+			</choose>
+    	</where>
+	</select>
+	<delete id="deleteByPrimaryKey" parameterType="java.util.Map" >
+    delete from PKP.T_SRV_SIGN_DETAIL
+    where ID = #{id,jdbcType=VARCHAR}
+	</delete>
+	<insert id="insert" parameterType="com.deppon.foss.module.settlement.dubbo.api.define.SignDetailEntity" >
+    insert into PKP.T_SRV_SIGN_DETAIL (ID, ARRIVESHEET_NO, SERIAL_NO,CREATE_TIME,MODIFY_TIME
+      )
+    values (#{id,jdbcType=VARCHAR}, #{arrivesheetNo,jdbcType=VARCHAR}, #{serialNo,jdbcType=VARCHAR},
+    #{createDate,jdbcType=TIMESTAMP},
+    #{modifyDate,jdbcType=TIMESTAMP}
+      )
+	</insert>
+	<insert id="insertSelective" parameterType="com.deppon.foss.module.settlement.dubbo.api.define.SignDetailEntity" >
+    insert into PKP.T_SRV_SIGN_DETAIL
+		<trim prefix="(" suffix=")" suffixOverrides="," >
+			<if test="id != null" >
+        ID,
+			</if>
+			<if test="arrivesheetNo != null" >
+        ARRIVESHEET_NO,
+			</if>
+			<if test="serialNo != null" >
+        SERIAL_NO,
+			</if>
+			<if test="createDate != null" >
+        CREATE_TIME,
+			</if>
+			<if test="modifyDate != null" >
+        MODIFY_TIME,
+			</if>
+			<if test="goodShorts != null" >
+        GOODSHORTS,
+			</if>
+			<if test="situation != null" >
+        SITUATION,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides="," >
+			<if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+			</if>
+			<if test="arrivesheetNo != null" >
+        #{arrivesheetNo,jdbcType=VARCHAR},
+			</if>
+			<if test="serialNo != null" >
+        #{serialNo,jdbcType=VARCHAR},
+			</if>
+			<if test="createDate != null" >
+        #{createDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyDate != null" >
+        #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="goodShorts != null" >
+        #{goodShorts,jdbcType=VARCHAR},
+			</if>
+			<if test="situation != null" >
+        #{situation,jdbcType=VARCHAR},
+			</if>
+		</trim>
+	</insert>
+  
+	<update id="updateByPrimaryKeySelective" parameterType="com.deppon.foss.module.settlement.dubbo.api.define.SignDetailEntity" >
+    update PKP.T_SRV_SIGN_DETAIL
+		<set>
+			<if test="arrivesheetNo != null" >
+        ARRIVESHEET_NO = #{arrivesheetNo,jdbcType=VARCHAR},
+			</if>
+			<if test="serialNo != null" >
+        SERIAL_NO = #{serialNo,jdbcType=VARCHAR},
+			</if>
+			<if test="createDate != null" >
+        create_time=#{createDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyDate != null" >
+        modify_time=#{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+		</set>
+    where ID = #{id,jdbcType=VARCHAR}
+	</update>
+	<!-- 签收出库时保存流水号信息 -->
+	<insert id="saveSerialNoList" parameterType="java.util.List">
+		<foreach collection="list" item="item" separator=";">
+			insert into PKP.T_SRV_SIGN_DETAIL
+			<trim prefix="(" suffix=")" suffixOverrides="," >
+				<if test="item.id != null" >
+        ID,
+				</if>
+				<if test="item.arrivesheetNo != null" >
+        ARRIVESHEET_NO,
+				</if>
+				<if test="item.serialNo != null" >
+        SERIAL_NO,
+				</if>
+				<if test="item.createDate != null" >
+        CREATE_TIME,
+			</if>
+			<if test="item.modifyDate != null" >
+        MODIFY_TIME,
+			</if>
+			<if test="item.situation != null" >
+        SITUATION,
+			</if>
+			</trim>
+			<trim prefix="values (" suffix=")" suffixOverrides="," >
+				<if test="item.id != null" >
+        #{item.id,jdbcType=VARCHAR},
+				</if>
+				<if test="item.arrivesheetNo != null" >
+        #{item.arrivesheetNo,jdbcType=VARCHAR},
+				</if>
+				<if test="item.serialNo != null" >
+        #{item.serialNo,jdbcType=VARCHAR},
+				</if>
+				<if test="item.createDate != null" >
+        #{item.createDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="item.modifyDate != null" >
+        #{item.modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="item.situation != null" >
+        #{item.situation,jdbcType=VARCHAR},
+			</if>
+			</trim>
+		</foreach>
+	</insert>
+	<update id="updateByPrimaryKey" parameterType="com.deppon.foss.module.settlement.dubbo.api.define.SignDetailEntity" >
+    update PKP.T_SRV_SIGN_DETAIL
+    set ARRIVESHEET_NO = #{arrivesheetNo,jdbcType=VARCHAR},
+      SERIAL_NO = #{serialNo,jdbcType=VARCHAR},
+      create_time=#{createDate,jdbcType=TIMESTAMP},
+      modify_time=#{modifyDate,jdbcType=TIMESTAMP}
+    where ID = #{id,jdbcType=VARCHAR}
+	</update>
+	<select id="selectSerialNoIsSign" resultType="java.lang.Integer" parameterType="com.deppon.foss.module.pickup.sign.api.shared.dto.StockDto" >
+   select count(1)
+  from pkp.t_srv_arrivesheet t
+ inner join PKP.T_SRV_SIGN_DETAIL s
+    on t.arrivesheet_no = s.arrivesheet_no
+    	<where>
+    		<if test="waybillNo!=null and waybillNo!='' ">	
+			and t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+			</if>
+			<if test="destroyed != null and destroyed !=''" >
+       		 	AND T.DESTROYED = #{destroyed,jdbcType=CHAR}
+     		 </if>
+     		 <if test="status!=null and status!='' ">
+				AND T.STATUS=#{status,jdbcType=VARCHAR}
+			</if> 
+			<if test="active !=null and active !='' ">
+				and t.active=#{active,jdbcType=VARCHAR}
+			</if>
+			<if test="serialNo != null" >
+				and s.serial_no = #{serialNo,jdbcType=VARCHAR}
+			</if>
+    	</where>
+	</select>
+	
+	
+	<select id="selectSerialNoByWaybillNo" resultType="java.lang.String" parameterType="com.deppon.foss.module.pickup.sign.api.shared.dto.StockDto" >
+   select s.serial_no value
+  from pkp.t_srv_arrivesheet t
+ inner join PKP.T_SRV_SIGN_DETAIL s
+    on t.arrivesheet_no = s.arrivesheet_no
+    	<where>
+    		<if test="waybillNo!=null and waybillNo!='' ">	
+			and t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+			</if>
+			<if test="destroyed != null and destroyed !=''" >
+       		 	AND T.DESTROYED = #{destroyed,jdbcType=CHAR}
+     		 </if>
+     		 <if test="status!=null and status!='' ">
+				AND T.STATUS=#{status,jdbcType=VARCHAR}
+			</if> 
+			<if test="active !=null and active !='' ">
+				and t.active=#{active,jdbcType=VARCHAR}
+			</if>
+			<if test="serialNo != null" >
+				and s.serial_no = #{serialNo,jdbcType=VARCHAR}
+			</if>
+    	</where>
+    	order by s.serial_no asc
+	</select>
+	<select id="selectByParams" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.dubbo.api.define.SignDetailEntity" >
+    select 
+		<include refid="Base_Column_List" />
+    from PKP.T_SRV_SIGN_DETAIL
+    	<where>
+    		<choose>
+				<when test="arrivesheetNo!=null and arrivesheetNo!='' ">
+					and ARRIVESHEET_NO = #{arrivesheetNo,jdbcType=VARCHAR}
+				</when>
+				<otherwise>
+					and ARRIVESHEET_NO = ''
+				</otherwise>
+			</choose>
+			<if test="serialNo!=null and serialNo!=''" >
+				and serial_no = #{serialNo,jdbcType=VARCHAR}
+			</if>
+			<if test="goodShorts!=null and goodShorts!=''" >
+				and GOODSHORTS = #{goodShorts,jdbcType=VARCHAR}
+			</if>
+			<if test="situation != null and situation!=''" >
+      	 	 and situation = #{situation,jdbcType=VARCHAR}
+			</if>
+    	</where>
+	</select>
+	<update id="updateByParams" parameterType="com.deppon.foss.module.settlement.dubbo.api.define.SignDetailEntity" >
+    update PKP.T_SRV_SIGN_DETAIL
+		<set>
+			<if test="situation != null" >
+        situation = #{situation,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate != null" >
+        modify_time=#{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+		</set>
+		<where>
+    		<choose>
+				<when test="arrivesheetNo!=null and arrivesheetNo!='' ">
+					and ARRIVESHEET_NO = #{arrivesheetNo,jdbcType=VARCHAR}
+				</when>
+				<otherwise>
+					and ARRIVESHEET_NO = ''
+				</otherwise>
+			</choose>
+			<if test="serialNos!= null and serialNos.size>0">
+					and serial_no in
+					<foreach collection="serialNos" open="(" close=")" separator=","
+						item="serialNo">
+						<if test="serialNo!=null and serialNo != ''">
+		        	      <![CDATA[	#{serialNo,jdbcType=VARCHAR} ]]>
+		                </if>
+					</foreach>
+		    </if>
+			<if test="oldSituation != null and oldSituation !=''" >
+       		 and situation = #{oldSituation,jdbcType=VARCHAR}
+			</if>
+    	</where>
+	</update>
+	
+	<!--
+	DMANA-9716 @author 231438-foss-chenjunying
+	根据到达联编号，将投诉自动变更异常签收到达联对应的流水号改为异常签收-->
+	<update id="updateByArrivesheetNo" parameterType="com.deppon.foss.module.settlement.dubbo.api.define.SignDetailEntity">
+		update PKP.T_SRV_SIGN_DETAIL 
+		<set>
+			<if test="situation != null and situation!='' " >
+				SITUATION = #{situation,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyTime != null and modifyTime!='' " >
+				MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP},
+			</if>
+		</set>
+		where ARRIVESHEET_NO = #{arrivesheetNo,jdbcType=VARCHAR}
+	</update>
+
+	<!-- 根据运单号查询异常签收明细 @author 231434-FOSS-bieyexiong -->
+	<select id="querySignDetailByWaybillNo" resultMap="BaseResultMap" parameterType="java.lang.String">
+		select /* 模块：接送货-签收-根据运单号查询异常签收明细 */
+		sd.ID, sd.ARRIVESHEET_NO, sd.SERIAL_NO, sd.CREATE_TIME, sd.MODIFY_TIME, sd.SITUATION
+		from pkp.t_srv_sign_detail sd
+		INNER JOIN pkp.t_srv_arrivesheet a
+		ON sd.arrivesheet_no = a.arrivesheet_no
+		INNER JOIN pkp.t_srv_waybill w
+		ON a.waybill_no = w.waybill_no
+		WHERE sd.situation <![CDATA[ <> ]]> 'NORMAL_SIGN'
+		AND a.status = 'SIGN'
+		AND a.active = 'Y'
+		AND a.destroyed = 'N'
+		AND w.active = 'Y'
+		AND w.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+	</select>
+</mapper>

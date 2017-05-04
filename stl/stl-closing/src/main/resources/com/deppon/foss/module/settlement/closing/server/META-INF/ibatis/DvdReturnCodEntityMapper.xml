@@ -1,0 +1,91 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stv.DvdReturnCodEntityMapper" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.closing.api.shared.domain.DvdReturnCodEntity" >
+    <result column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="PERIOD" property="period" jdbcType="VARCHAR" />
+    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+    <result column="PRODUCT_CODE" property="productCode" jdbcType="VARCHAR" />
+    <result column="PAYABLE_ORG_CODE" property="payableOrgCode" jdbcType="VARCHAR" />
+    <result column="PAYABLE_ORG_NAME" property="payableOrgName" jdbcType="VARCHAR" />
+    <result column="PAYABLE_COM_CODE" property="payableComCode" jdbcType="VARCHAR" />
+    <result column="PAYABLE_COM_NAME" property="payableComName" jdbcType="VARCHAR" />
+    <result column="COD_TYPE" property="codType" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_TYPE" property="customerType" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+    <result column="PAYEE_NAME" property="payeeName" jdbcType="VARCHAR" />
+    <result column="PAYEE_ACCOUNT" property="payeeAccount" jdbcType="VARCHAR" />
+    <result column="BANK_HQ_CODE" property="bankHqCode" jdbcType="VARCHAR" />
+    <result column="BANK_HQ_NAME" property="bankHqName" jdbcType="VARCHAR" />
+    <result column="ACCOUNT_DATE" property="accountDate" jdbcType="TIMESTAMP" />
+    <result column="BUSINESS_DATE" property="businessDate" jdbcType="TIMESTAMP" />
+    <result column="SIGN_DATE" property="signDate" jdbcType="TIMESTAMP" />
+    <result column="PAYMENT_DATE" property="paymentDate" jdbcType="TIMESTAMP" />
+    <result column="RETURN_ORG" property="returnOrg" jdbcType="VARCHAR" />
+    <result column="RETURN_COM_ORG" property="returnComOrg" jdbcType="VARCHAR" />
+    <result column="COM_ACCOUNT" property="comAccount" jdbcType="VARCHAR" />
+    <result column="REFUND_PATH" property="refundPath" jdbcType="VARCHAR" />
+    <result column="COD_AMOUNT" property="codAmount" jdbcType="DECIMAL" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+	  ID, PERIOD, WAYBILL_NO,PRODUCT_CODE, 
+      PAYABLE_ORG_CODE, PAYABLE_ORG_NAME, PAYABLE_COM_CODE, 
+      PAYABLE_COM_NAME, COD_TYPE, CUSTOMER_CODE, 
+      CUSTOMER_TYPE, CUSTOMER_NAME, PAYEE_NAME, 
+      PAYEE_ACCOUNT, BANK_HQ_CODE, BANK_HQ_NAME, 
+      ACCOUNT_DATE, BUSINESS_DATE, SIGN_DATE, 
+      PAYMENT_DATE, RETURN_ORG, RETURN_COM_ORG, COM_ACCOUNT,
+      REFUND_PATH, COD_AMOUNT / 100 COD_AMOUNT
+  </sql>
+  <select id="queryDvdReturnCodByConditions" resultMap="BaseResultMap" parameterType="java.util.Map" >
+    SELECT /*结算-凭证报表-根据条件查询退代收货款日报表*/
+    <include refid="Base_Column_List" />
+    FROM STV.T_STL_DVD_RETURN_COD
+    WHERE 
+    	<![CDATA[ ACCOUNT_DATE >=#{startDate} AND   ACCOUNT_DATE < #{endDate} ]]> 
+		<if test="refundPath!=null and refundPath!=''">
+			AND REFUND_PATH = #{refundPath} <!-- 客户不为空时，根据客户编码过滤 -->
+		</if>
+	   	<if test="payableOrgCode!=null and payableOrgCode!=''">
+			AND PAYABLE_ORG_CODE = #{payableOrgCode} 
+		</if>
+		<if test="codTypes!=null and codTypes.size()>0">
+			AND COD_TYPE IN
+				<foreach collection="codTypes"  index="index" item="item"  open="(" separator="," close=")">  
+				        #{item} 
+				</foreach>
+		</if>
+		<if test="productCodeList!=null and productCodeList.size()>0">
+			AND PRODUCT_CODE IN
+				<foreach collection="productCodeList"  index="index" item="productCode"  open="(" separator="," close=")">  
+				        #{productCode} 
+				</foreach>
+		</if>
+  </select>
+  <select id="queryDvdReturnCodByConditionCount" resultType="long" parameterType="java.util.Map" >
+    SELECT /*结算-凭证报表-根据条件查询退代收货款日报表总条数*/
+    count(*)
+    FROM STV.T_STL_DVD_RETURN_COD
+    WHERE 
+    	<![CDATA[ ACCOUNT_DATE >=#{startDate} AND   ACCOUNT_DATE < #{endDate} ]]>
+		<if test="refundPath!=null and refundPath!=''">
+			AND REFUND_PATH = #{refundPath} <!-- 客户不为空时，根据客户编码过滤 -->
+		</if>
+	   	<if test="payableOrgCode!=null and payableOrgCode!=''">
+			AND PAYABLE_ORG_CODE = #{payableOrgCode} 
+		</if>
+		<if test="codTypes!=null and codTypes.size()>0">
+			AND COD_TYPE IN
+				<foreach collection="codTypes"  index="index" item="item"  open="(" separator="," close=")">  
+				        #{item} 
+				</foreach>
+		</if>
+		<if test="productCodeList!=null and productCodeList.size()>0">
+			AND PRODUCT_CODE IN
+				<foreach collection="productCodeList"  index="index" item="productCode"  open="(" separator="," close=")">  
+				        #{productCode} 
+				</foreach>
+		</if>
+  </select>
+</mapper>

@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!-- 客户收支平衡Dao mapper -->
+<mapper namespace="foss.stl.CreditCustomerEntityDao">
+	<!-- 基本返回Map -->
+	<resultMap id="BaseResultMap"
+		type="com.deppon.foss.module.settlement.common.api.shared.domain.CreditCustomerEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="CUSTOMER_CODE" property="customerCode"
+			jdbcType="VARCHAR" />
+		<result column="CUSTOMER_NAME" property="customerName"
+			jdbcType="VARCHAR" />
+		<result column="USED_AMOUNT" property="usedAmount" jdbcType="DECIMAL" />
+		<result column="BUSINESS_DATE" property="businessDate"
+			jdbcType="TIMESTAMP" />
+		<result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_USER_CODE" property="modifyUserCode"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_NAME" property="modifyUserName"
+			jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<!-- 备注信息 -->
+		<result column="Notes" property="notes" jdbcType="VARCHAR" />
+        <!--最早欠款日期 -->
+        <result column="MINDEBITDATE" property="minDebitDate" jdbcType="TIMESTAMP"/>
+	</resultMap>
+
+	<!-- 客户已用、可用额度信息Map -->
+	<resultMap id="DebitMap"
+		type="com.deppon.foss.module.settlement.common.api.shared.dto.CreditCustomerDto">
+		<result column="CUSTOMER_CODE" property="customerCode"
+			jdbcType="VARCHAR" />
+		<result column="USED_AMOUNT" property="usedAmount" jdbcType="DECIMAL" />
+		<!-- 备注信息 -->
+		<result column="Notes" property="notes" jdbcType="VARCHAR" />
+	</resultMap>
+
+
+	<sql id="Base_Column_List">
+		ID, CUSTOMER_CODE, CUSTOMER_NAME, 
+		USED_AMOUNT/100 USED_AMOUNT, BUSINESS_DATE,
+		CREATE_TIME, MODIFY_TIME, MODIFY_USER_CODE, MODIFY_USER_NAME,
+		ACTIVE,NOTES
+	</sql>
+
+
+	<!-- 按客户电话编码查询 客户的已用及可用额度 -->
+	<select id="queryDebitByCustomerCode" resultMap="DebitMap"
+		parameterType="java.lang.String">
+		select /*结算-客户收支平衡-按客户电话编码查询 客户的已用及可用额度*/ CUSTOMER_CODE,
+		USED_AMOUNT/100 USED_AMOUNT,
+		NOTES
+		from
+		STL.T_STL_CREDIT_CUSTOMER
+		where CUSTOMER_CODE =
+		#{customerCode,jdbcType=VARCHAR} 
+	</select>
+
+    <select id="queryCustomerDebitInfo" resultMap="DebitMap" parameterType="string">
+     SELECT SUM(RE.UNVERIFY_AMOUNT)/100 AS USED_AMOUNT,
+           RE.CUSTOMER_CODE AS CUSTOMER_CODE,
+           MIN(RE.BUSINESS_DATE) AS MINDEBITDATE
+      FROM STL.T_STL_BILL_RECEIVABLE RE
+       WHERE RE.ACTIVE = 'Y'
+       AND RE.PAYMENT_TYPE = 'CT'
+       <![CDATA[AND RE.UNVERIFY_AMOUNT > 0]]>
+       AND RE.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR} 
+       AND RE.IS_INIT = 'N'
+       GROUP BY RE.CUSTOMER_CODE
+    </select>
+
+	<!-- 客户编码进行查询 -->
+	<select id="queryByCustomerCode" resultMap="BaseResultMap"
+		parameterType="java.lang.String">
+		select /*结算-客户收支平衡-客户编码进行查询*/
+		<include refid="Base_Column_List" />
+		from STL.T_STL_CREDIT_CUSTOMER
+		where CUSTOMER_CODE =
+		#{customerCode,jdbcType=VARCHAR}
+	</select>
+
+	<!-- 获得总行数 -->
+	<select id="queryTotalRows" resultType="int">
+		select /*结算-客户收支平衡-获得总行数*/ count(1) as
+		totalRows from STL.T_STL_CREDIT_CUSTOMER
+	</select>
+
+
+
+	<!-- 通过分页的方式进行查询 -->
+	<select id="queryCreditCustomerByPage" resultMap="DebitMap">
+		select /*结算-客户收支平衡-通过分页的方式进行查询*/
+		CUSTOMER_CODE,
+		NOTES
+		from STL.T_STL_CREDIT_CUSTOMER
+	</select>
+
+
+
+	<!-- 插入方法 -->
+	<insert id="addCreditCustomer"
+		parameterType="com.deppon.foss.module.settlement.common.api.shared.domain.CreditCustomerEntity">
+		insert into /*结算-客户收支平衡-插入*/ STL.T_STL_CREDIT_CUSTOMER (ID,
+		CUSTOMER_CODE,
+		CUSTOMER_NAME,
+		 USED_AMOUNT,
+		BUSINESS_DATE, CREATE_TIME, MODIFY_TIME,
+		MODIFY_USER_CODE,
+		MODIFY_USER_NAME, ACTIVE,NOTES
+		)
+		values
+		(#{id,jdbcType=VARCHAR},
+		#{customerCode,jdbcType=VARCHAR},
+		#{customerName,jdbcType=VARCHAR},
+		#{usedAmount,jdbcType=DECIMAL}*100,
+		#{businessDate,jdbcType=TIMESTAMP},
+		#{createTime,jdbcType=TIMESTAMP},
+		#{modifyTime,jdbcType=TIMESTAMP},
+		#{modifyUserCode,jdbcType=VARCHAR},
+		#{modifyUserName,jdbcType=VARCHAR},
+		#{active,jdbcType=CHAR},
+		#{notes,jdbcType=VARCHAR}
+		)
+	</insert>
+
+	<!-- 全额更新 -->
+	<insert id="updateCreditCustomer"
+		parameterType="com.deppon.foss.module.settlement.common.api.shared.domain.CreditCustomerEntity">
+		update /*结算-客户收支平衡-全额更新*/ STL.T_STL_CREDIT_CUSTOMER
+		set
+		ID =
+		#{id,jdbcType=VARCHAR},
+		USED_AMOUNT =
+		#{usedAmount,jdbcType=DECIMAL}*100,
+		BUSINESS_DATE =
+		#{businessDate,jdbcType=TIMESTAMP},
+		MODIFY_TIME=#{modifyTime,jdbcType=TIMESTAMP},
+		MODIFY_USER_CODE
+		=#{modifyUserCode,jdbcType=VARCHAR},
+		MODIFY_USER_NAME
+		=#{modifyUserName,jdbcType=VARCHAR}
+		,NOTES =#{notes,jdbcType=VARCHAR}
+
+		where customer_code
+		= #{customerCode,jdbcType=VARCHAR}
+	</insert>
+
+	<!-- 扣减组织信用额度 -->
+	<update id="updateUsedAmount"
+		parameterType="com.deppon.foss.module.settlement.common.api.shared.domain.CreditCustomerEntity">
+		update /*结算-客户收支平衡-扣减组织信用额度 */ STL.T_STL_CREDIT_CUSTOMER
+		set
+		<!-- 已用额度 等于历史已用额度 - 本次使用额度 -->
+		USED_AMOUNT = USED_AMOUNT + #{usedAmount,jdbcType=DECIMAL}*100,
+		BUSINESS_DATE =
+		#{businessDate,jdbcType=TIMESTAMP},
+		MODIFY_TIME =
+		#{modifyTime,jdbcType=TIMESTAMP},
+		MODIFY_USER_NAME =
+		#{modifyUserName,jdbcType=VARCHAR}
+		<!--按客户编码更新 -->
+		where CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+	</update>
+
+	<!-- 更新客户超期欠款标记 -->
+	<update id="updateOverdueStatus"
+		parameterType="com.deppon.foss.module.settlement.common.api.shared.domain.CreditCustomerEntity">
+		update /*结算-客户收支平衡-更新客户超期欠款标记*/ STL.T_STL_CREDIT_CUSTOMER
+		set
+		BUSINESS_DATE =
+		#{businessDate,jdbcType=TIMESTAMP},
+		MODIFY_TIME =
+		#{modifyTime,jdbcType=TIMESTAMP},
+		MODIFY_USER_NAME =
+		#{modifyUserName,jdbcType=VARCHAR},
+		<!-- 备注信息 -->
+		NOTES =
+		#{notes,jdbcType=VARCHAR}
+		<!-- 按客户编码更新 -->
+		where CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+	</update>
+	
+	<select id="queryCustomerInUseRCV" parameterType="map" resultType="string">
+		SELECT T.CUSTOMER_CODE
+			FROM STL.T_STL_BILL_RECEIVABLE T
+		 WHERE T.CUSTOMER_CODE IN 
+		 		<foreach collection="customerCodes" item="customerCode" open="(" close=")" separator=",">
+		 			#{customerCode}
+		 		</foreach>
+				AND T.ACTIVE = #{active}
+				AND T.ACCOUNT_DATE >= #{acctDate}
+				AND T.UNVERIFY_AMOUNT>0
+	</select>
+	
+	<select id="queryCustomerInUsePAY" parameterType="map" resultType="string">
+		SELECT 
+			T.CUSTOMER_CODE
+			FROM STL.T_STL_BILL_PAYABLE T
+		 WHERE T.CUSTOMER_CODE IN 
+		 		<foreach collection="customerCodes" item="customerCode" open="(" close=")" separator=",">
+		 			#{customerCode}
+		 		</foreach>
+				AND T.ACTIVE = #{active}
+				AND T.ACCOUNT_DATE >= #{acctDate}
+				AND T.UNVERIFY_AMOUNT>0 
+	</select>
+	
+	<select id="queryCustomerInUseDR" parameterType="map" resultType="string">
+		SELECT T.CUSTOMER_CODE
+			FROM STL.T_STL_BILL_DEPOSIT_RECEIVED T
+		 WHERE T.CUSTOMER_CODE IN 
+		 		<foreach collection="customerCodes" item="customerCode" open="(" close=")" separator=",">
+		 			#{customerCode}
+		 		</foreach>
+				AND T.ACTIVE = #{active}
+				AND T.ACCOUNT_DATE >= #{acctDate}
+				AND T.UNVERIFY_AMOUNT>0
+	</select>
+	
+	<select id="queryCustomerDebit" resultMap="DebitMap" parameterType="string">
+     SELECT SUM(RE.UNVERIFY_AMOUNT)/100 AS USED_AMOUNT,
+           RE.CUSTOMER_CODE AS CUSTOMER_CODE,
+           MIN(RE.BUSINESS_DATE) AS MINDEBITDATE
+      FROM STL.T_STL_BILL_RECEIVABLE RE
+       WHERE RE.ACTIVE = 'Y'
+       AND RE.PAYMENT_TYPE = 'CT'
+       <![CDATA[AND RE.UNVERIFY_AMOUNT > 0]]>
+       AND RE.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR} 
+       AND RE.PRODUCT_ID= #{productId,jdbcType=VARCHAR}
+       AND RE.IS_INIT = 'N'
+       GROUP BY RE.CUSTOMER_CODE
+    </select>
+</mapper>

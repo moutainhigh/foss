@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.trackings.waybillTrackingsJob" >
+    <resultMap id="waybillDetailMap" type="com.deppon.foss.module.trackings.api.shared.dto.WaybillTrackingsDto">
+  	<id column="id" property="id" jdbcType="VARCHAR"/>
+  	<result column="waybillNo" property="waybillNo" jdbcType="VARCHAR"/>
+  	<result column="operateDeptCode" property="operateDeptCode" jdbcType="VARCHAR"/>
+  	<result column="operateDeptName" property="operateDeptName" jdbcType="VARCHAR"/>
+  	<result column="nextDeptCode" property="nextDeptCode" jdbcType="VARCHAR"/>
+  	<result column="nextDeptName" property="nextDeptName" jdbcType="VARCHAR"/>
+  	<result column="inStockTime" property="inStockTime" jdbcType="TIMESTAMP"/>
+  </resultMap>
+  
+  <!-- 通过任务车辆明细ID获取车载运单明细 -->
+  <select id="queryWaybillDetailByTruckTaskDetailID" parameterType="java.lang.String"
+  	resultMap="waybillDetailMap">
+  	 select 
+	    /*中转-轨迹推送模块-根据任务明细ID获取运单信息*/
+	    hd.waybill_no waybillNo,
+	    h.orig_org_code operateDeptCode,
+	    h.orig_org_name operateDeptName,
+	    h.dest_org_code nextDeptCode,
+	    h.dest_org_name nextDeptName,
+	    t.actual_arrive_time inStockTime
+	   from 
+	  tfr.t_opt_truck_task_detail ttd
+	    inner join tfr.t_opt_truck_task_bill ttb on ttd.id = ttb.truck_task_detail_id
+	    inner join tfr.t_opt_handoverbill h on ttb.bill_no = h.handover_no
+	    inner join tfr.t_opt_handoverbill_detail hd on h.handover_no = hd.handover_no
+	    inner join tfr.t_Opt_Truck_Task_Detail t on t.id = ttd.id
+	    where ttd.id = #{truckTaskDetailID,jdbcType=VARCHAR}
+  </select>
+    <!-- 通过卸车任务ID获取卸车运单明细 -->
+  <select id="queryWaybillDetailByUnloadTaskID" parameterType="java.lang.String"
+  	resultMap="waybillDetailMap">
+  	select 
+      /*中转-根据卸车任务id--获取运单信息*/
+      d.waybill_no waybillNo,
+      t.unload_org_code  nextDeptCode,
+      t.unload_org_name nextDeptName,
+      t.unload_end_time inStockTime
+     from 
+    tfr.t_opt_unload_waybill_detail  d
+      inner join tfr.t_opt_unload_task t on t.id=d.unload_task_id 
+      where t.id = #{truckTaskDetailID,jdbcType=VARCHAR}
+  </select>
+  
+
+</mapper>

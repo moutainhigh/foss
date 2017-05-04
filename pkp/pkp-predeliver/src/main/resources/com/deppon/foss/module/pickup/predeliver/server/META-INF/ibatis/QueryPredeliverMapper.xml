@@ -1,0 +1,467 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.pickup.predeliver.queryPredeliver" >
+	<select id="queryPredeliver"  resultType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.SendHandoverInfoDto">
+		SELECT h.handover_no handoverNo,
+       MAX(h.vehicle_no) vehicleNo,
+       COUNT(w.id) deliverQty,
+       SUM(w.goods_weight_total) deliverweight,
+       SUM(w.goods_volume_total) delivervolume,
+       MAX(h.orig_org_name) origOrgName,
+       MAX(h.dest_org_name) destOrgName,
+       MAX(td.actual_depart_time) leaveTime,
+       MAX(td.actual_arrive_time) arriveTime,
+       MAX(td.plan_arrive_time) preArriveTime,
+       MAX(v.vehicleassemble_no) vehicleassembleNo
+  FROM tfr.t_opt_truck_task_detail td
+ INNER JOIN tfr.t_opt_truck_task_bill tb
+    ON tb.truck_task_detail_id = td.id
+   AND tb.bill_level = 1
+   AND tb.bill_type = 'VEHICLEASSEMBLE'
+ INNER JOIN tfr.t_opt_vehicleassemblebill v
+    ON v.vehicleassemble_no = tb.bill_no
+ INNER JOIN tfr.t_opt_vehicleassemble_detail vd
+    ON vd.vehicleassemblebill_id = v.id
+ INNER JOIN tfr.t_opt_handoverbill h
+    ON h.handover_no = vd.handover_no
+   AND h.handoverbill_state != '90'
+ INNER JOIN tfr.t_opt_handoverbill_detail hd
+    ON hd.handover_no = h.handover_no
+ INNER JOIN pkp.t_srv_waybill w
+    ON w.waybill_no = hd.waybill_no
+   AND w.active = 'Y'
+   AND w.is_express != 'Y'
+   AND w.receive_method IN ('DELIVER',
+                            'DELIVER_INGA',
+                            'DELIVER_NOUP',
+                            'DELIVER_UP',
+                            'LARGE_DELIVER_UP')
+   and w.customer_pickup_org_code= #{departmentCode,jdbcType=VARCHAR}
+   <if test=" inStockTimeBegin != null  and inStockTimeBegin != ''  ">   
+		     left join tfr.t_opt_stock s
+    		 on s.waybill_no = w.waybill_no
+ </if>
+ WHERE h.dest_org_code = #{transferCenterCode,jdbcType=VARCHAR}
+ 		<choose>
+				<when test=" handoverNo != null  and handoverNo != ''  ">
+					<![CDATA[and h.handover_no=#{handoverNo,jdbcType=VARCHAR}]]>
+				</when>
+				<when test=" vehicleassembleNo != null  and vehicleassembleNo != ''  ">
+					<![CDATA[and v.vehicleassemble_no=#{vehicleassembleNo,jdbcType=VARCHAR}]]>
+				</when>
+				<otherwise>
+					<if test=" vehicleNo != null  and vehicleNo != ''  ">
+					<![CDATA[and h.vehicle_no=#{vehicleNo,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" departDeptCode != null  and departDeptCode != ''  ">
+					<![CDATA[and h.orig_org_code=#{departDeptCode,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" preArriveTimeBegin != null  and preArriveTimeBegin != ''  ">
+					<![CDATA[and td.plan_arrive_time >= #{preArriveTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" preArriveTimeEnd != null  and preArriveTimeEnd != ''  ">
+					<![CDATA[and td.plan_arrive_time <= #{preArriveTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" arriveTimeBegin != null  and arriveTimeBegin != ''  ">
+					<![CDATA[and td.actual_arrive_time >= #{arriveTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" arriveTimeEnd != null  and arriveTimeEnd != ''  ">
+					<![CDATA[and td.actual_arrive_time <= #{arriveTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" leaveTimeBegin != null  and leaveTimeBegin != ''  ">
+					<![CDATA[and td.actual_depart_time >= #{leaveTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" leaveTimeEnd != null  and leaveTimeEnd != ''  ">
+					<![CDATA[and td.actual_depart_time <= #{leaveTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" inStockTimeBegin != null  and inStockTimeBegin != ''  ">
+						 and s.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+					<![CDATA[and s.in_stock_time >= #{inStockTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" inStockTimeEnd != null  and inStockTimeEnd != ''  ">
+					<![CDATA[and s.in_stock_time <= #{inStockTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+				</otherwise>
+      		</choose>
+ GROUP BY h.handover_no
+UNION ALL
+SELECT h.handover_no handoverNo,
+       MAX(h.vehicle_no) vehicle_no,
+       COUNT(w.id) deliverQty,
+       SUM(w.goods_weight_total) deliverweight,
+       SUM(w.goods_volume_total) delivervolume,
+       MAX(h.orig_org_name) origOrgName,
+       MAX(h.dest_org_name) destOrgName,
+       MAX(td.actual_depart_time) leaveTime,
+       MAX(td.actual_arrive_time) arriveTime,
+       MAX(td.plan_arrive_time) preArriveTime,
+       NULL vehicleassembleNo
+  FROM tfr.t_opt_truck_task_detail td
+ INNER JOIN tfr.t_opt_truck_task_bill tb
+    ON tb.truck_task_detail_id = td.id
+   AND tb.bill_level = 1
+   AND tb.bill_type = 'HANDOVER'
+ INNER JOIN tfr.t_opt_handoverbill h
+    ON h.handover_no = tb.bill_no
+   AND h.handoverbill_state != '90'
+ INNER JOIN tfr.t_opt_handoverbill_detail hd
+    ON hd.handover_no = h.handover_no
+ INNER JOIN pkp.t_srv_waybill w
+    ON w.waybill_no = hd.waybill_no
+   AND w.active = 'Y'
+   AND w.is_express != 'Y'
+   AND w.receive_method IN ('DELIVER',
+                            'DELIVER_INGA',
+                            'DELIVER_NOUP',
+                            'DELIVER_UP',
+                            'LARGE_DELIVER_UP')
+   AND w.customer_pickup_org_code= #{departmentCode,jdbcType=VARCHAR}
+   <if test=" inStockTimeBegin != null  and inStockTimeBegin != ''  ">   
+		     left join tfr.t_opt_stock s
+    		 on s.waybill_no = w.waybill_no
+ </if>
+ WHERE  h.dest_org_code = #{transferCenterCode,jdbcType=VARCHAR}
+ 		<choose>
+				<when test=" handoverNo != null  and handoverNo != ''  ">
+					<![CDATA[and h.handover_no=#{handoverNo,jdbcType=VARCHAR}]]>
+				</when>
+				<when test=" vehicleassembleNo != null  and vehicleassembleNo != ''  ">
+					and 1 > 2
+				</when>
+				<otherwise>
+					<if test=" vehicleNo != null  and vehicleNo != ''  ">
+					<![CDATA[and h.vehicle_no=#{vehicleNo,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" departDeptCode != null  and departDeptCode != ''  ">
+					<![CDATA[and h.orig_org_code=#{departDeptCode,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" preArriveTimeBegin != null  and preArriveTimeBegin != ''  ">
+					<![CDATA[and td.plan_arrive_time >= #{preArriveTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" preArriveTimeEnd != null  and preArriveTimeEnd != ''  ">
+					<![CDATA[and td.plan_arrive_time <= #{preArriveTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" arriveTimeBegin != null  and arriveTimeBegin != ''  ">
+					<![CDATA[and td.actual_arrive_time >= #{arriveTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" arriveTimeEnd != null  and arriveTimeEnd != ''  ">
+					<![CDATA[and td.actual_arrive_time <= #{arriveTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" leaveTimeBegin != null  and leaveTimeBegin != ''  ">
+					<![CDATA[and td.actual_depart_time >= #{leaveTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" leaveTimeEnd != null  and leaveTimeEnd != ''  ">
+					<![CDATA[and td.actual_depart_time <= #{leaveTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" inStockTimeBegin != null  and inStockTimeBegin != ''  ">
+						 and s.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+					<![CDATA[and s.in_stock_time >= #{inStockTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" inStockTimeEnd != null  and inStockTimeEnd != ''  ">
+					<![CDATA[and s.in_stock_time <= #{inStockTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+				</otherwise>
+      		</choose>
+ GROUP BY h.handover_no
+      </select>
+      <select id="getPredeliverInfoCount"  resultType="Long">
+      	SELECT COUNT(1)
+  FROM (SELECT h.handover_no
+  FROM tfr.t_opt_truck_task_detail td
+ INNER JOIN tfr.t_opt_truck_task_bill tb
+    ON tb.truck_task_detail_id = td.id
+   AND tb.bill_level = 1
+   AND tb.bill_type = 'VEHICLEASSEMBLE'
+ INNER JOIN tfr.t_opt_vehicleassemblebill v
+    ON v.vehicleassemble_no = tb.bill_no
+ INNER JOIN tfr.t_opt_vehicleassemble_detail vd
+    ON vd.vehicleassemblebill_id = v.id
+ INNER JOIN tfr.t_opt_handoverbill h
+    ON h.handover_no = vd.handover_no
+   AND h.handoverbill_state != '90'
+ INNER JOIN tfr.t_opt_handoverbill_detail hd
+    ON hd.handover_no = h.handover_no
+ INNER JOIN pkp.t_srv_waybill w
+    ON w.waybill_no = hd.waybill_no
+   AND w.active = 'Y'
+   AND w.is_express != 'Y'
+   AND w.receive_method IN ('DELIVER',
+                            'DELIVER_INGA',
+                            'DELIVER_NOUP',
+                            'DELIVER_UP',
+                            'LARGE_DELIVER_UP')
+   and w.customer_pickup_org_code= #{departmentCode,jdbcType=VARCHAR}
+   <if test=" inStockTimeBegin != null  and inStockTimeBegin != ''  ">   
+		     left join tfr.t_opt_stock s
+    		 on s.waybill_no = w.waybill_no
+ </if>
+ WHERE  h.dest_org_code = #{transferCenterCode,jdbcType=VARCHAR}
+ 		<choose>
+				<when test=" handoverNo != null  and handoverNo != ''  ">
+					<![CDATA[and h.handover_no=#{handoverNo,jdbcType=VARCHAR}]]>
+				</when>
+				<when test=" vehicleassembleNo != null  and vehicleassembleNo != ''  ">
+					<![CDATA[and v.vehicleassemble_no=#{vehicleassembleNo,jdbcType=VARCHAR}]]>
+				</when>
+				<otherwise>
+					<if test=" vehicleNo != null  and vehicleNo != ''  ">
+					<![CDATA[and h.vehicle_no=#{vehicleNo,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" departDeptCode != null  and departDeptCode != ''  ">
+					<![CDATA[and h.orig_org_code=#{departDeptCode,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" preArriveTimeBegin != null  and preArriveTimeBegin != ''  ">
+					<![CDATA[and td.plan_arrive_time >= #{preArriveTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" preArriveTimeEnd != null  and preArriveTimeEnd != ''  ">
+					<![CDATA[and td.plan_arrive_time <= #{preArriveTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" arriveTimeBegin != null  and arriveTimeBegin != ''  ">
+					<![CDATA[and td.actual_arrive_time >= #{arriveTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" arriveTimeEnd != null  and arriveTimeEnd != ''  ">
+					<![CDATA[and td.actual_arrive_time <= #{arriveTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" leaveTimeBegin != null  and leaveTimeBegin != ''  ">
+					<![CDATA[and td.actual_depart_time >= #{leaveTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" leaveTimeEnd != null  and leaveTimeEnd != ''  ">
+					<![CDATA[and td.actual_depart_time <= #{leaveTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" inStockTimeBegin != null  and inStockTimeBegin != ''  ">
+						 and s.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+					<![CDATA[and s.in_stock_time >= #{inStockTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" inStockTimeEnd != null  and inStockTimeEnd != ''  ">
+					<![CDATA[and s.in_stock_time <= #{inStockTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+				</otherwise>
+      		</choose>
+ GROUP BY h.handover_no
+UNION ALL
+SELECT h.handover_no 
+  FROM tfr.t_opt_truck_task_detail td
+ INNER JOIN tfr.t_opt_truck_task_bill tb
+    ON tb.truck_task_detail_id = td.id
+   AND tb.bill_level = 1
+   AND tb.bill_type = 'HANDOVER'
+ INNER JOIN tfr.t_opt_handoverbill h
+    ON h.handover_no = tb.bill_no
+   AND h.handoverbill_state != '90'
+ INNER JOIN tfr.t_opt_handoverbill_detail hd
+    ON hd.handover_no = h.handover_no
+ INNER JOIN pkp.t_srv_waybill w
+    ON w.waybill_no = hd.waybill_no
+   AND w.active = 'Y'
+   AND w.is_express != 'Y'
+   AND w.receive_method IN ('DELIVER',
+                            'DELIVER_INGA',
+                            'DELIVER_NOUP',
+                            'DELIVER_UP',
+                            'LARGE_DELIVER_UP')
+   AND w.customer_pickup_org_code= #{departmentCode,jdbcType=VARCHAR}
+   <if test=" inStockTimeBegin != null  and inStockTimeBegin != ''  ">   
+		     left join tfr.t_opt_stock s
+    		 on s.waybill_no = w.waybill_no
+ </if>
+ WHERE  h.dest_org_code = #{transferCenterCode,jdbcType=VARCHAR}
+ 		<choose>
+				<when test=" handoverNo != null  and handoverNo != ''  ">
+					<![CDATA[and h.handover_no=#{handoverNo,jdbcType=VARCHAR}]]>
+				</when>
+				<when test=" vehicleassembleNo != null  and vehicleassembleNo != ''  ">
+					and 1 > 2
+				</when>
+				<otherwise>
+					<if test=" vehicleNo != null  and vehicleNo != ''  ">
+					<![CDATA[and h.vehicle_no=#{vehicleNo,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" departDeptCode != null  and departDeptCode != ''  ">
+					<![CDATA[and h.orig_org_code=#{departDeptCode,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" preArriveTimeBegin != null  and preArriveTimeBegin != ''  ">
+					<![CDATA[and td.plan_arrive_time >= #{preArriveTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" preArriveTimeEnd != null  and preArriveTimeEnd != ''  ">
+					<![CDATA[and td.plan_arrive_time <= #{preArriveTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" arriveTimeBegin != null  and arriveTimeBegin != ''  ">
+					<![CDATA[and td.actual_arrive_time >= #{arriveTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" arriveTimeEnd != null  and arriveTimeEnd != ''  ">
+					<![CDATA[and td.actual_arrive_time <= #{arriveTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" leaveTimeBegin != null  and leaveTimeBegin != ''  ">
+					<![CDATA[and td.actual_depart_time >= #{leaveTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" leaveTimeEnd != null  and leaveTimeEnd != ''  ">
+					<![CDATA[and td.actual_depart_time <= #{leaveTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" inStockTimeBegin != null  and inStockTimeBegin != ''  ">
+						 and s.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+					<![CDATA[and s.in_stock_time >= #{inStockTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" inStockTimeEnd != null  and inStockTimeEnd != ''  ">
+					<![CDATA[and s.in_stock_time <= #{inStockTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+				</otherwise>
+      		</choose>
+ GROUP BY h.handover_no)
+      </select>
+      <select id="queryPredeliverWaybill"  resultType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.SendHandoverInfoDto">
+		select  v.vehicleassemble_no vehicleassembleNo,
+				h.handover_no handoverNo,
+				W.GOODS_WEIGHT_TOTAL deliverWeight,
+				W.GOODS_VOLUME_TOTAL deliverVolume,
+				d.actual_depart_time leaveTime,
+				d.actual_arrive_time arriveTime,
+				d.plan_arrive_time preArriveTime,
+		        hd.waybill_no waybillNo,
+		        hd.goods_qty goodsQty,
+		        hd.handover_goods_qty assembleQty,
+		        hd.transport_type productCode,
+		        w.receive_method receiveMethod,
+		        bd.name distName
+		from tfr.t_opt_handoverbill h
+			 left join tfr.t_opt_TRUCK_TASK_BILL b
+			 on b.Bill_No = h.handover_no
+			 left join tfr.t_opt_TRUCK_TASK_DETAIL d
+			 on b.Truck_Task_Detail_Id = d.Id
+       		 left join tfr.T_OPT_VEHICLEASSEMBLE_DETAIL vd
+	         on h.handover_no=vd.HANDOVER_NO
+	         left join tfr.T_OPT_VEHICLEASSEMBLEBILL v
+	         on vd.VEHICLEASSEMBLEBILL_ID = v.id
+             left join tfr.t_opt_handoverbill_detail hd
+		     on h.handover_no = hd.handover_no
+		     left join pkp.T_SRV_WAYBILL w 
+		     on hd.waybill_no = w.waybill_no
+		     left join bse.t_bas_district bd 
+		     on w.receive_customer_dist_code = bd.code and bd.active = 'Y'
+		  <if test=" inStockTimeBegin != null  and inStockTimeBegin != ''  ">   
+		     left join tfr.t_opt_stock s
+    		 on s.waybill_no = w.waybill_no
+    	  </if>
+		where   w.active = 'Y' 
+			and h.handoverbill_state !='90' 
+			and w.is_express !='Y'
+			and w.receive_method in ('DELIVER','DELIVER_INGA','DELIVER_NOUP','DELIVER_UP','LARGE_DELIVER_UP')
+			<!-- and v.state !='90' -->
+      		and w.customer_pickup_org_code= #{departmentCode,jdbcType=VARCHAR}
+			and	h.dest_org_code = #{transferCenterCode,jdbcType=VARCHAR}
+			and h.dest_org_code = d.dest_org_code
+			<choose>
+				<when test=" handoverNo != null  and handoverNo != ''  ">
+					<![CDATA[and h.handover_no=#{handoverNo,jdbcType=VARCHAR}]]>
+				</when>
+				<when test=" vehicleassembleNo != null  and vehicleassembleNo != ''  ">
+					<![CDATA[and v.vehicleassemble_no=#{vehicleassembleNo,jdbcType=VARCHAR}]]>
+				</when>
+				<otherwise>
+					<if test=" vehicleNo != null  and vehicleNo != ''  ">
+					<![CDATA[and h.vehicle_no=#{vehicleNo,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" departDeptCode != null  and departDeptCode != ''  ">
+					<![CDATA[and h.orig_org_code=#{departDeptCode,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" preArriveTimeBegin != null  and preArriveTimeBegin != ''  ">
+					<![CDATA[and d.plan_arrive_time >= #{preArriveTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" preArriveTimeEnd != null  and preArriveTimeEnd != ''  ">
+					<![CDATA[and d.plan_arrive_time <= #{preArriveTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" arriveTimeBegin != null  and arriveTimeBegin != ''  ">
+					<![CDATA[and d.actual_arrive_time >= #{arriveTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" arriveTimeEnd != null  and arriveTimeEnd != ''  ">
+					<![CDATA[and d.actual_arrive_time <= #{arriveTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" leaveTimeBegin != null  and leaveTimeBegin != ''  ">
+					<![CDATA[and d.actual_depart_time >= #{leaveTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" leaveTimeEnd != null  and leaveTimeEnd != ''  ">
+					<![CDATA[and d.actual_depart_time <= #{leaveTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" inStockTimeBegin != null  and inStockTimeBegin != ''  ">
+					 	and s.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+					<![CDATA[and s.in_stock_time >= #{inStockTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" inStockTimeEnd != null  and inStockTimeEnd != ''  ">
+					<![CDATA[and s.in_stock_time <= #{inStockTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+				</otherwise>
+      		</choose>
+      </select>
+      <select id="getPredeliverInfoCountWaybill"  resultType="Long">
+      	select  COUNT(hd.waybill_no)
+		from tfr.t_opt_handoverbill h
+			 left join tfr.t_opt_TRUCK_TASK_BILL b
+			 on b.Bill_No = h.handover_no
+			 left join tfr.t_opt_TRUCK_TASK_DETAIL d
+			 on b.Truck_Task_Detail_Id = d.Id
+       		 left join tfr.T_OPT_VEHICLEASSEMBLE_DETAIL vd
+	         on h.handover_no=vd.HANDOVER_NO
+	         left join tfr.T_OPT_VEHICLEASSEMBLEBILL v
+	         on vd.VEHICLEASSEMBLEBILL_ID = v.id
+             left join tfr.t_opt_handoverbill_detail hd
+		     on h.handover_no = hd.handover_no
+		     left join pkp.T_SRV_WAYBILL w 
+		     on hd.waybill_no = w.waybill_no
+		     left join bse.t_bas_district bd
+		     on w.receive_customer_dist_code = bd.code and bd.active = 'Y'
+		  <if test=" inStockTimeBegin != null  and inStockTimeBegin != ''  ">   
+		     left join tfr.t_opt_stock s
+    		 on s.waybill_no = w.waybill_no
+    	  </if>
+		where   w.active = 'Y' 
+			and h.handoverbill_state !='90' 
+			and w.is_express !='Y' 
+			and w.receive_method in ('DELIVER','DELIVER_INGA','DELIVER_NOUP','DELIVER_UP','LARGE_DELIVER_UP')
+			<!-- and v.state !='90' -->
+      		and w.customer_pickup_org_code= #{departmentCode,jdbcType=VARCHAR}
+			and	h.dest_org_code = #{transferCenterCode,jdbcType=VARCHAR}
+			and h.dest_org_code = d.dest_org_code
+			<choose>
+				<when test=" handoverNo != null  and handoverNo != ''  ">
+					<![CDATA[and h.handover_no=#{handoverNo,jdbcType=VARCHAR}]]>
+				</when>
+				<when test=" vehicleassembleNo != null  and vehicleassembleNo != ''  ">
+					<![CDATA[and v.vehicleassemble_no=#{vehicleassembleNo,jdbcType=VARCHAR}]]>
+				</when>
+				<otherwise>
+					<if test=" vehicleNo != null  and vehicleNo != ''  ">
+					<![CDATA[and h.vehicle_no=#{vehicleNo,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" departDeptCode != null  and departDeptCode != ''  ">
+					<![CDATA[and h.orig_org_code=#{departDeptCode,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" preArriveTimeBegin != null  and preArriveTimeBegin != ''  ">
+					<![CDATA[and d.plan_arrive_time >= #{preArriveTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" preArriveTimeEnd != null  and preArriveTimeEnd != ''  ">
+					<![CDATA[and d.plan_arrive_time <= #{preArriveTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" arriveTimeBegin != null  and arriveTimeBegin != ''  ">
+					<![CDATA[and d.actual_arrive_time >= #{arriveTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" arriveTimeEnd != null  and arriveTimeEnd != ''  ">
+					<![CDATA[and d.actual_arrive_time <= #{arriveTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" leaveTimeBegin != null  and leaveTimeBegin != ''  ">
+					<![CDATA[and d.actual_depart_time >= #{leaveTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" leaveTimeEnd != null  and leaveTimeEnd != ''  ">
+					<![CDATA[and d.actual_depart_time <= #{leaveTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" inStockTimeBegin != null  and inStockTimeBegin != ''  ">
+						 and s.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+					<![CDATA[and s.in_stock_time >= #{inStockTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" inStockTimeEnd != null  and inStockTimeEnd != ''  ">
+					<![CDATA[and s.in_stock_time <= #{inStockTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+				</otherwise>
+      		</choose>
+      </select>
+</mapper>

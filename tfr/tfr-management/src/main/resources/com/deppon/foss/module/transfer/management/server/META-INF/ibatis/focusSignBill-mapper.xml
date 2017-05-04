@@ -1,0 +1,524 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.management.focusSignBill" >
+  <!-- 集中接货签单实体结果映射 -->
+  <resultMap id="FocusSignBillResultMap" type="com.deppon.foss.module.transfer.management.api.shared.domain.FocusSignBillEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="SIGN_BILL_NO" property="signBillNo" jdbcType="VARCHAR" />
+    <result column="DRIVER_CODE" property="driverCode" jdbcType="VARCHAR" />
+    <result column="DRIVER_NAME" property="driverName" jdbcType="VARCHAR" />
+    <result column="RECEIVER_CODE" property="receiverCode" jdbcType="VARCHAR" />
+    <result column="RECEIVER_NAME" property="receiverName" jdbcType="VARCHAR" />
+    <result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+    <result column="VEHICLE_TYPE_LENGTH" property="vehicleTypeLength" jdbcType="VARCHAR" />
+    <result column="Vehicle_Length_Name" property="vehicleLengthName" jdbcType="VARCHAR" />
+    <result column="VACANCY_KM" property="vacancyKm" jdbcType="DECIMAL" />
+    <result column="RUN_KM" property="runKm" jdbcType="DECIMAL" />
+    <result column="SIGN_BILL_DATE" property="signBillDate" jdbcType="TIMESTAMP" />
+    <result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+    <result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+    <result column="UPDATE_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+    <result column="UPDATE_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+    <result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+    <result column="ORG_NAME" property="orgName" jdbcType="VARCHAR" />
+    <!--
+    <result column="WAYBILL_QTY_TOTAL" property="waybillQtyTotal" jdbcType="DECIMAL" />
+    <result column="GOODS_QTY_TOTAL" property="goodsQtyTotal" jdbcType="DECIMAL" />
+    <result column="DRIVER_ROYALTY_AMOUNT" property="driverRoyaltyAmount" jdbcType="DECIMAL" />
+    <result column="UPSTAIRS_BILL_QTY" property="upstairsBillQty" jdbcType="DECIMAL" />
+    <result column="SINGLE_RECEIVE_BILL_QTY" property="singleReceiveBillQty" jdbcType="DECIMAL" />
+    <result column="CURRENCY_CODE" property="currencyCode" jdbcType="VARCHAR" />
+    -->
+  </resultMap>
+  
+  <!-- 集中接货签单与明细结果映射 -->
+  <resultMap id="FocusSignBillAndDetailResultMap" type="com.deppon.foss.module.transfer.management.api.shared.dto.FocusSignBillDto" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="SIGN_BILL_NO" property="signBillNo" jdbcType="VARCHAR" />
+    <result column="DRIVER_CODE" property="driverCode" jdbcType="VARCHAR" />
+    <result column="DRIVER_NAME" property="driverName" jdbcType="VARCHAR" />    
+    <result column="RECEIVER_CODE" property="receiverCode" jdbcType="VARCHAR" />
+    <result column="RECEIVER_NAME" property="receiverName" jdbcType="VARCHAR" />
+    <result column="SIGN_BILL_DATE" property="signBillDate" jdbcType="TIMESTAMP" />
+    <result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+    <result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+    <result column="UPDATE_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+    <result column="UPDATE_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+    <result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+    <result column="VEHICLE_TYPE_LENGTH" property="vehicleTypeLength" jdbcType="VARCHAR" />
+    <result column="RUN_KM" property="runKm" jdbcType="DECIMAL" />
+    <result column="USETRUCK_ORG_CODE" property="useTruckOrgCode" jdbcType="VARCHAR" />
+    <result column="USETRUCK_ORG_NAME" property="useTruckOrgName" jdbcType="VARCHAR" />
+    <result column="WAYBILL_QTY_TOTAL" property="waybillQtyTotal" jdbcType="DECIMAL" />
+    <result column="TOTAL_VOLUME" property="volume" jdbcType="DECIMAL" />
+    <result column="TOTAL_WEIGHT" property="weight" jdbcType="DECIMAL" />
+    <result column="UPSTAIRS_BILL_QTY" property="upstairsBillQty" jdbcType="DECIMAL" />
+    <result column="SINGLE_RECEIVE_BILL_QTY" property="singleReceiveBillQty" jdbcType="DECIMAL" />
+  </resultMap>
+  
+   <!-- 签单合计信息 -->
+  <resultMap id="SignBillTotalResultMap" type="com.deppon.foss.module.transfer.management.api.shared.dto.SignBillTotalDto" >
+    <result column="TOTALDRIVERS" property="totalDrivers" />
+    <result column="TOTALBILLS" property="totalBills" />
+    <result column="TOTALVOLUME" property="totalVolume" />
+    <result column="TOTALWEIGHT" property="totalWeight" />
+    <result column="TOTALWAYBILLQTY" property="totalWaybillQty" />
+    <result column="TOTALUPSTAIRSBILLQTY" property="totalupstairsBillQty" />
+    <result column="TOTALSINGLERECEIVEBILLQTY" property="totalSingleReceiveBillQty" />
+  </resultMap>
+  
+  <!-- 签单实体查询列表 -->
+  <sql id="FocusSignBill_Column_List" >
+    ID, 
+    SIGN_BILL_NO, 
+    DRIVER_CODE, 
+    DRIVER_NAME, 
+    RECEIVER_CODE, 
+    RECEIVER_NAME, 
+    VEHICLE_NO, 
+    VEHICLE_TYPE_LENGTH, 
+    VACANCY_KM, 
+    RUN_KM, 
+    SIGN_BILL_DATE
+  </sql>
+  
+  <!-- 签单及明细查询列表 -->
+  <sql id="FocusSignBillAndDetail_Column_List" >
+    BILL.ID ID, 
+    BILL.SIGN_BILL_NO SIGN_BILL_NO, 
+    DETAIL.USETRUCK_ORG_CODE USETRUCK_ORG_CODE, 
+    BILL.SIGN_BILL_DATE SIGN_BILL_DATE,
+    MAX(BILL.DRIVER_CODE) DRIVER_CODE,
+    MAX(BILL.DRIVER_NAME) DRIVER_NAME, 
+    MAX(BILL.RECEIVER_CODE) RECEIVER_CODE, 
+    MAX(BILL.RECEIVER_NAME) RECEIVER_NAME, 
+    MAX(BILL.VEHICLE_NO) VEHICLE_NO, 
+    MAX(BILL.VEHICLE_TYPE_LENGTH) VEHICLE_TYPE_LENGTH, 
+    MAX(BILL.RUN_KM) RUN_KM, 
+    COUNT(DETAIL.ID) WAYBILL_QTY_TOTAL,
+    sum(DETAIL.VOLUME) TOTAL_VOLUME,
+    sum(DETAIL.WEIGHT) TOTAL_WEIGHT,
+    sum(DECODE(DETAIL.Is_Upstairs,'Y',1,0)) UPSTAIRS_BILL_QTY,
+    sum(DECODE(DETAIL.Is_Single_Receive,'Y',1,0)) SINGLE_RECEIVE_BILL_QTY
+  </sql>
+  
+  <!-- 通过ID查询集中接货签单基本信息  -->
+  <select id="selectFocusSignBillById" resultMap="FocusSignBillResultMap" parameterType="java.lang.String" >
+    select 
+    <include refid="FocusSignBill_Column_List" />
+    from TFR.T_OPT_FOCUS_SIGN_BILL
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+  
+  <!-- 根据部门编号获取部门名称 -->
+  <select id="getOrgNameByCode" parameterType="String" resultType="String">
+	<![CDATA[
+		select name from bse.t_bas_org where code = #{useTruckOrgCode} and active = 'Y'
+    ]]>
+  </select>
+  
+  <!-- 查询集中接货签单信息  -->
+  <select id="selectFocusSignBill" resultMap="FocusSignBillAndDetailResultMap" parameterType="com.deppon.foss.module.transfer.management.api.shared.dto.FocusSignBillDto" >
+    SELECT BILL.ID ID,
+	       BILL.SIGN_BILL_NO SIGN_BILL_NO,
+	       DETAIL.USETRUCK_ORG_CODE USETRUCK_ORG_CODE,
+	       ORG.NAME USETRUCK_ORG_NAME,
+	       BILL.SIGN_BILL_DATE SIGN_BILL_DATE,
+	       BILL.DRIVER_CODE DRIVER_CODE,
+	       BILL.DRIVER_NAME DRIVER_NAME,
+	       BILL.RECEIVER_CODE RECEIVER_CODE,
+	       BILL.RECEIVER_NAME RECEIVER_NAME,
+	       BILL.VEHICLE_NO VEHICLE_NO,
+	       VL.Vehicle_Length_Name VEHICLE_TYPE_LENGTH,
+	       BILL.RUN_KM RUN_KM,
+	       COUNT(DETAIL.ID) WAYBILL_QTY_TOTAL,
+	       sum(DETAIL.VOLUME) TOTAL_VOLUME,
+	       sum(DETAIL.WEIGHT) TOTAL_WEIGHT,
+	       sum(DECODE(DETAIL.Is_Upstairs, 'Y', 1, 0)) UPSTAIRS_BILL_QTY,
+	       sum(DECODE(DETAIL.Is_Single_Receive, 'Y', 1, 0)) SINGLE_RECEIVE_BILL_QTY
+	  FROM TFR.T_OPT_FOCUS_SIGN_BILL BILL
+	  LEFT JOIN TFR.T_OPT_WAYBILL_FEE_DETAIL DETAIL
+	    ON BILL.SIGN_BILL_NO = DETAIL.SIGN_BILL_NO
+	  LEFT JOIN BSE.T_BAS_VEHICLE_TYPE_LENGTH VL
+	    ON VL.Vehicle_Length_Code = BILL.VEHICLE_TYPE_LENGTH
+	  LEFT JOIN BSE.T_BAS_ORG ORG
+	    ON DETAIL.USETRUCK_ORG_CODE = ORG.CODE
+	   AND ORG.ACTIVE = 'Y'
+    <where>
+      <if test="useTruckOrgCode != null and useTruckOrgCode!=''" >
+        AND DETAIL.USETRUCK_ORG_CODE = #{useTruckOrgCode,jdbcType=VARCHAR}
+      </if>
+      <if test="orgCodes != null">
+      AND BILL.ORG_CODE IN
+		<foreach 
+			collection="orgCodes" open="(" close=")" item="item" separator="," index="index"> 
+			#{item} 
+		</foreach>
+      </if>
+      <if test="driverCode != null and driverCode!=''" >
+        AND BILL.DRIVER_CODE = #{driverCode,jdbcType=VARCHAR}
+      </if>
+      <if test="vehicleNo != null and vehicleNo!=''" >
+        AND BILL.VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR}
+      </if>
+      <if test="vehicleTypeLength != null and vehicleTypeLength!=''" >
+        AND BILL.VEHICLE_TYPE_LENGTH = #{vehicleTypeLength,jdbcType=VARCHAR}
+      </if>
+      <![CDATA[ 
+      	AND BILL.SIGN_BILL_DATE >= #{signBillDateFrom,jdbcType=VARCHAR}
+      	AND BILL.SIGN_BILL_DATE <= to_date(to_char(#{signBillDateTo},'yyyy-mm-dd')||'23:59:59','yyyy-mm-dd hh24:mi:ss')
+      ]]>
+    </where>
+    GROUP BY BILL.ID,
+          BILL.SIGN_BILL_NO,
+          DETAIL.USETRUCK_ORG_CODE,
+          ORG.NAME,
+          BILL.SIGN_BILL_DATE,
+          BILL.DRIVER_CODE,
+          BILL.DRIVER_NAME,
+          BILL.RECEIVER_CODE,
+          BILL.RECEIVER_NAME,
+          BILL.VEHICLE_NO,
+          VL.Vehicle_Length_Name,
+          BILL.RUN_KM
+  </select>
+  
+   <!-- 查询集中接货签单信息总数量  -->
+  <select id="selectFocusSignBillCount" resultType="java.lang.Long" parameterType="com.deppon.foss.module.transfer.management.api.shared.dto.FocusSignBillDto" >
+	SELECT 
+    	COUNT(*) 
+	FROM
+	(
+	SELECT BILL.ID ID,
+	       BILL.SIGN_BILL_NO SIGN_BILL_NO,
+	       DETAIL.USETRUCK_ORG_CODE USETRUCK_ORG_CODE,
+	       ORG.NAME USETRUCK_ORG_NAME,
+	       BILL.SIGN_BILL_DATE SIGN_BILL_DATE,
+	       BILL.DRIVER_CODE DRIVER_CODE,
+	       BILL.DRIVER_NAME DRIVER_NAME,
+	       BILL.RECEIVER_CODE RECEIVER_CODE,
+	       BILL.RECEIVER_NAME RECEIVER_NAME,
+	       BILL.VEHICLE_NO VEHICLE_NO,
+	       VL.Vehicle_Length_Name VEHICLE_TYPE_LENGTH,
+	       BILL.RUN_KM RUN_KM,
+	       COUNT(DETAIL.ID) WAYBILL_QTY_TOTAL,
+	       sum(DETAIL.VOLUME) TOTAL_VOLUME,
+	       sum(DETAIL.WEIGHT) TOTAL_WEIGHT,
+	       sum(DECODE(DETAIL.Is_Upstairs, 'Y', 1, 0)) UPSTAIRS_BILL_QTY,
+	       sum(DECODE(DETAIL.Is_Single_Receive, 'Y', 1, 0)) SINGLE_RECEIVE_BILL_QTY
+	  FROM TFR.T_OPT_FOCUS_SIGN_BILL BILL
+	  LEFT JOIN TFR.T_OPT_WAYBILL_FEE_DETAIL DETAIL
+	    ON BILL.SIGN_BILL_NO = DETAIL.SIGN_BILL_NO
+	  LEFT JOIN BSE.T_BAS_VEHICLE_TYPE_LENGTH VL
+	    ON VL.Vehicle_Length_Code = BILL.VEHICLE_TYPE_LENGTH
+	  LEFT JOIN BSE.T_BAS_ORG ORG
+	    ON DETAIL.USETRUCK_ORG_CODE = ORG.CODE
+	   AND ORG.ACTIVE = 'Y'
+    <where>
+      <if test="useTruckOrgCode != null and useTruckOrgCode!=''" >
+        AND DETAIL.USETRUCK_ORG_CODE = #{useTruckOrgCode,jdbcType=VARCHAR}
+      </if>
+      AND BILL.ORG_CODE IN
+		<foreach 
+			collection="orgCodes" open="(" close=")" item="item" separator="," index="index"> 
+			#{item} 
+		</foreach>
+      <if test="driverCode != null and driverCode!=''" >
+        AND BILL.DRIVER_CODE = #{driverCode,jdbcType=VARCHAR}
+      </if>
+      <if test="vehicleNo != null and vehicleNo!=''" >
+        AND BILL.VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR}
+      </if>
+      <if test="vehicleTypeLength != null and vehicleTypeLength!=''" >
+        AND BILL.VEHICLE_TYPE_LENGTH = #{vehicleTypeLength,jdbcType=VARCHAR}
+      </if>
+      <![CDATA[ 
+      	AND BILL.SIGN_BILL_DATE >= #{signBillDateFrom,jdbcType=VARCHAR}
+      	AND BILL.SIGN_BILL_DATE <= to_date(to_char(#{signBillDateTo},'yyyy-mm-dd')||'23:59:59','yyyy-mm-dd hh24:mi:ss')
+      ]]>
+    </where>
+    GROUP BY BILL.ID,
+          BILL.SIGN_BILL_NO,
+          DETAIL.USETRUCK_ORG_CODE,
+          ORG.NAME,
+          BILL.SIGN_BILL_DATE,
+          BILL.DRIVER_CODE,
+          BILL.DRIVER_NAME,
+          BILL.RECEIVER_CODE,
+          BILL.RECEIVER_NAME,
+          BILL.VEHICLE_NO,
+          VL.Vehicle_Length_Name,
+          BILL.RUN_KM
+    )
+  </select>
+  <!-- 查询签单合计信息 -->
+  <select id="selectFocusSignBillTotal" resultMap="SignBillTotalResultMap" parameterType="com.deppon.foss.module.transfer.management.api.shared.dto.FocusSignBillDto">
+  	SELECT 
+  		count(DISTINCT DRIVER_CODE) TOTALDRIVERS,
+  		count(*) TOTALBILLS,
+  		sum(TOTAL_VOLUME) TOTALVOLUME,
+  		sum(TOTAL_WEIGHT) TOTALWEIGHT,
+  		sum(WAYBILL_QTY_TOTAL) TOTALWAYBILLQTY,
+  		sum(UPSTAIRS_BILL_QTY) TOTALUPSTAIRSBILLQTY,
+  		sum(SINGLE_RECEIVE_BILL_QTY) TOTALSINGLERECEIVEBILLQTY
+  	FROM
+  		 (SELECT BILL.ID ID,
+	       BILL.SIGN_BILL_NO SIGN_BILL_NO,
+	       DETAIL.USETRUCK_ORG_CODE USETRUCK_ORG_CODE,
+	       ORG.NAME USETRUCK_ORG_NAME,
+	       BILL.SIGN_BILL_DATE SIGN_BILL_DATE,
+	       BILL.DRIVER_CODE DRIVER_CODE,
+	       BILL.DRIVER_NAME DRIVER_NAME,
+	       BILL.RECEIVER_CODE RECEIVER_CODE,
+	       BILL.RECEIVER_NAME RECEIVER_NAME,
+	       BILL.VEHICLE_NO VEHICLE_NO,
+	       VL.Vehicle_Length_Name VEHICLE_TYPE_LENGTH,
+	       BILL.RUN_KM RUN_KM,
+	       COUNT(DETAIL.ID) WAYBILL_QTY_TOTAL,
+	       sum(DETAIL.VOLUME) TOTAL_VOLUME,
+	       sum(DETAIL.WEIGHT) TOTAL_WEIGHT,
+	       sum(DECODE(DETAIL.Is_Upstairs, 'Y', 1, 0)) UPSTAIRS_BILL_QTY,
+	       sum(DECODE(DETAIL.Is_Single_Receive, 'Y', 1, 0)) SINGLE_RECEIVE_BILL_QTY
+	  FROM TFR.T_OPT_FOCUS_SIGN_BILL BILL
+	  LEFT JOIN TFR.T_OPT_WAYBILL_FEE_DETAIL DETAIL
+	    ON BILL.SIGN_BILL_NO = DETAIL.SIGN_BILL_NO
+	  LEFT JOIN BSE.T_BAS_VEHICLE_TYPE_LENGTH VL
+	    ON VL.Vehicle_Length_Code = BILL.VEHICLE_TYPE_LENGTH
+	  LEFT JOIN BSE.T_BAS_ORG ORG
+	    ON DETAIL.USETRUCK_ORG_CODE = ORG.CODE
+	   AND ORG.ACTIVE = 'Y'
+    <where>
+      <if test="useTruckOrgCode != null and useTruckOrgCode!=''" >
+        AND DETAIL.USETRUCK_ORG_CODE = #{useTruckOrgCode,jdbcType=VARCHAR}
+      </if>
+      AND BILL.ORG_CODE IN
+		<foreach 
+			collection="orgCodes" open="(" close=")" item="item" separator="," index="index"> 
+			#{item} 
+		</foreach>
+      <if test="driverCode != null and driverCode!=''" >
+        AND BILL.DRIVER_CODE = #{driverCode,jdbcType=VARCHAR}
+      </if>
+      <if test="vehicleNo != null and vehicleNo!=''" >
+        AND BILL.VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR}
+      </if>
+      <if test="vehicleTypeLength != null and vehicleTypeLength!=''" >
+        AND BILL.VEHICLE_TYPE_LENGTH = #{vehicleTypeLength,jdbcType=VARCHAR}
+      </if>
+      <![CDATA[ 
+      	AND BILL.SIGN_BILL_DATE >= #{signBillDateFrom,jdbcType=VARCHAR}
+      	AND BILL.SIGN_BILL_DATE <=to_date(to_char(#{signBillDateTo},'yyyy-mm-dd')||'23:59:59','yyyy-mm-dd hh24:mi:ss')
+      ]]>
+    </where>
+    GROUP BY BILL.ID,
+          BILL.SIGN_BILL_NO,
+          DETAIL.USETRUCK_ORG_CODE,
+          ORG.NAME,
+          BILL.SIGN_BILL_DATE,
+          BILL.DRIVER_CODE,
+          BILL.DRIVER_NAME,
+          BILL.RECEIVER_CODE,
+          BILL.RECEIVER_NAME,
+          BILL.VEHICLE_NO,
+          VL.Vehicle_Length_Name,
+          BILL.RUN_KM)
+  </select>
+  
+  <!-- 通过单号查询集中接货签单基本信息  -->
+  <select id="selectFocusSignBillByNo" resultMap="FocusSignBillResultMap" parameterType="java.lang.String" >
+    select 
+    B.ID, 
+    B.SIGN_BILL_NO, 
+    B.DRIVER_CODE, 
+    B.DRIVER_NAME, 
+    B.RECEIVER_CODE, 
+    B.RECEIVER_NAME, 
+    B.VEHICLE_NO, 
+    B.VEHICLE_TYPE_LENGTH,
+    L.Vehicle_Length_Name, 
+    B.VACANCY_KM, 
+    B.RUN_KM, 
+    B.SIGN_BILL_DATE
+    from 
+    	TFR.T_OPT_FOCUS_SIGN_BILL B, BSE.T_BAS_VEHICLE_TYPE_LENGTH L
+    where 
+    	B.VEHICLE_TYPE_LENGTH = L.VEHICLE_LENGTH_CODE
+      	AND L.ACTIVE = 'Y'
+      	AND B.SIGN_BILL_NO = #{signBillNo,jdbcType=VARCHAR}
+  </select>
+  
+  <!-- 通过单号查询集中接货签单基本信息  -->
+  <select id="queryFocusSignBillById" resultMap="FocusSignBillResultMap" parameterType="java.lang.String" >
+    select 
+    B.ID, 
+    B.SIGN_BILL_NO, 
+    B.DRIVER_CODE, 
+    B.DRIVER_NAME, 
+    B.RECEIVER_CODE, 
+    B.RECEIVER_NAME, 
+    B.VEHICLE_NO, 
+    B.VEHICLE_TYPE_LENGTH,
+    L.Vehicle_Length_Name, 
+    B.VACANCY_KM, 
+    B.RUN_KM, 
+    B.SIGN_BILL_DATE
+    from 
+    	TFR.T_OPT_FOCUS_SIGN_BILL B, BSE.T_BAS_VEHICLE_TYPE_LENGTH L
+    where 
+    	B.VEHICLE_TYPE_LENGTH = L.VEHICLE_LENGTH_CODE
+      	AND L.ACTIVE = 'Y'
+      	AND B.ID = #{id,jdbcType=VARCHAR}
+  </select>
+  
+  <!-- 通过单号删除集中接货签单基本信息  -->
+  <delete id="deleteFocusSignBill" parameterType="java.lang.String" >
+    DELETE 
+    FROM 
+    	TFR.T_OPT_FOCUS_SIGN_BILL
+    where 
+    	SIGN_BILL_NO = #{signBillNo,jdbcType=VARCHAR}
+  </delete>
+  
+  <!-- 新增集中接货签单信息 -->
+  <insert id="insertFocusSignBill" parameterType="com.deppon.foss.module.transfer.management.api.shared.domain.FocusSignBillEntity" >
+    INSERT 
+    INTO 
+    	TFR.T_OPT_FOCUS_SIGN_BILL
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+        ID,
+        SIGN_BILL_NO,
+      <if test="driverCode != null and driverCode!=''" >
+        DRIVER_CODE,
+      </if>
+      <if test="driverName != null and driverName!=''" >
+        DRIVER_NAME,
+      </if>
+      <if test="receiverCode != null and receiverCode!=''" >
+        RECEIVER_CODE,
+      </if>
+      <if test="receiverName != null and receiverName!=''" >
+        RECEIVER_NAME,
+      </if>
+      <if test="orgCode != null and orgCode!=''" >
+        ORG_CODE,
+      </if>
+      <if test="orgName != null and orgName!=''" >
+        ORG_NAME,
+      </if>
+      <if test="vehicleNo != null and vehicleNo!=''" >
+        VEHICLE_NO,
+      </if>
+      <if test="vehicleTypeLength != null and vehicleTypeLength!=''" >
+        VEHICLE_TYPE_LENGTH,
+      </if>
+      <if test="vacancyKm != null and vacancyKm!=''" >
+        VACANCY_KM,
+      </if>
+      <if test="runKm != null and runKm!=''" >
+        RUN_KM,
+      </if>
+      <if test="signBillDate != null" >
+        SIGN_BILL_DATE,
+      </if>
+      <if test="createDate != null" >
+        CREATE_TIME,
+      </if>
+      <if test="createUser != null" >
+        CREATE_USER_CODE,
+      </if>
+      <if test="modifyDate != null" >
+        UPDATE_TIME,
+      </if>
+      <if test="modifyUser != null" >
+        UPDATE_USER_CODE,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+        #{id,jdbcType=VARCHAR},
+        #{signBillNo,jdbcType=VARCHAR},
+      <if test="driverCode != null and driverCode!=''" >
+        #{driverCode,jdbcType=VARCHAR},
+      </if>
+      <if test="driverName != null and driverName!=''" >
+        #{driverName,jdbcType=VARCHAR},
+      </if>
+      <if test="receiverCode != null and receiverCode!=''" >
+        #{receiverCode,jdbcType=VARCHAR},
+      </if>
+      <if test="receiverName != null and receiverName!=''" >
+        #{receiverName,jdbcType=VARCHAR},
+      </if>
+      <if test="orgCode != null and orgCode!=''" >
+        #{orgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="orgName != null and orgName!=''" >
+        #{orgName,jdbcType=VARCHAR},
+      </if>
+      <if test="vehicleNo != null and vehicleNo!=''" >
+        #{vehicleNo,jdbcType=VARCHAR},
+      </if>
+      <if test="vehicleTypeLength != null and vehicleTypeLength!=''" >
+        #{vehicleTypeLength,jdbcType=VARCHAR},
+      </if>
+      <if test="vacancyKm != null and vacancyKm!=''" >
+        #{vacancyKm,jdbcType=DECIMAL},
+      </if>
+      <if test="runKm != null and runKm!=''" >
+        #{runKm,jdbcType=DECIMAL},
+      </if>
+      <if test="signBillDate != null" >
+        #{signBillDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="createDate != null" >
+        #{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="createUser != null and createUser!=''" >
+         #{createUser,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyDate != null" >
+         #{modifyDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifyUser != null and modifyUser!=''" >
+        #{modifyUser,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  
+  <!-- 更新集中接货签单信息 -->
+  <update id="updateFocusSignBill" parameterType="com.deppon.foss.module.transfer.management.api.shared.domain.FocusSignBillEntity" >
+    update TFR.T_OPT_FOCUS_SIGN_BILL
+    <set >
+      <if test="signBillNo != null" >
+        SIGN_BILL_NO = #{signBillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="driverCode != null" >
+        DRIVER_CODE = #{driverCode,jdbcType=VARCHAR},
+      </if>
+      <if test="driverName != null" >
+        DRIVER_NAME = #{driverName,jdbcType=VARCHAR},
+      </if>
+      <if test="receiverCode != null" >
+        RECEIVER_CODE = #{receiverCode,jdbcType=VARCHAR},
+      </if>
+      <if test="receiverName != null" >
+        RECEIVER_NAME = #{receiverName,jdbcType=VARCHAR},
+      </if>
+      <if test="vehicleNo != null" >
+        VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR},
+      </if>
+      <if test="vehicleTypeLength != null" >
+        VEHICLE_TYPE_LENGTH = #{vehicleTypeLength,jdbcType=VARCHAR},
+      </if>
+      <if test="vacancyKm != null" >
+        VACANCY_KM = #{vacancyKm,jdbcType=DECIMAL},
+      </if>
+      <if test="runKm != null" >
+        RUN_KM = #{runKm,jdbcType=DECIMAL},
+      </if>
+      <if test="signBillDate != null" >
+        SIGN_BILL_DATE = #{signBillDate,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+</mapper>

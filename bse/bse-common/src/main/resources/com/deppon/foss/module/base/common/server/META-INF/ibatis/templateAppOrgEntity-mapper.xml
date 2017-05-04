@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-common.templateAppOrg">
+
+	<!-- 部门短信模板 -->
+	<resultMap id="templateAppOrgResultMap"
+		type="com.deppon.foss.module.base.common.api.shared.domain.TemplateAppOrgEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="DEPT_CODE" property="orgId" jdbcType="VARCHAR" />
+		<result column="SMS_CONTENT" property="smsContent" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+		<result column="SMS_VIRTUALCODE" property="smsVirtualCode"
+			jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 数据字段 -->
+	<sql id="templateAppOrg_Column_List">
+		ID, DEPT_CODE, SMS_CONTENT, CREATE_TIME, MODIFY_TIME, ACTIVE,
+		CREATE_USER_CODE, MODIFY_USER_CODE,
+		SMS_VIRTUALCODE
+	</sql>
+
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			
+			<if test="smsVirtualCode != null and smsVirtualCode != ''">
+				SMS_VIRTUALCODE = #{smsVirtualCode,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+
+		</where>
+
+	</sql>
+
+	<!-- 查询短信模板下部门短信模板信息 -->
+	<select id="getAllInfos"
+		parameterType="com.deppon.foss.module.base.common.api.shared.domain.TemplateAppOrgEntity"
+		resultMap="templateAppOrgResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询短信模板下部门短信模板信息 **/
+		]]>
+		<include refid="templateAppOrg_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_SMS_TEMPLATE_APP_ORG T
+			
+		]]>
+		<include refid="queryWhere" />
+	</select>
+
+	<!-- 统计总记录数 -->
+	<select id="getCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.common.api.shared.domain.TemplateAppOrgEntity">
+	    <![CDATA[
+	       	select/** 综合:统计总记录数 **/ count(*) from BSE.T_BAS_SMS_TEMPLATE_APP_ORG T
+	    ]]>
+		<include refid="queryWhere" />
+
+	</select>
+
+	<!-- 根据部门编码、短信模板虚拟编码查询部门短信模板信息 -->
+	<select id="queryAppOrgSmsByParams" parameterType="map"
+		resultMap="templateAppOrgResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据部门编码、短信模板虚拟编码查询部门短信模板信息 **/
+		]]>
+		<include refid="templateAppOrg_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_SMS_TEMPLATE_APP_ORG T
+		]]>
+		<where>
+		    <if test="orgCode != null and orgCode != ''">
+		        DEPT_CODE = #{orgCode,jdbcType=VARCHAR}
+		    </if>
+		    <if test="smsVirtualCode != null and smsVirtualCode != ''">
+		        AND SMS_VIRTUALCODE = #{smsVirtualCode,jdbcType=VARCHAR}
+		    </if>
+		    <if test="active != null and active != ''">
+		        AND ACTIVE = #{active,jdbcType=CHAR}
+		    </if>
+		    <if test="appOrgId != null and appOrgId != ''">
+		        AND ID != #{appOrgId,jdbcType=VARCHAR}
+		    </if>
+		
+		</where>
+	</select>
+	
+	<!-- 通过id查询部门短信模板信息 -->
+	<select id="queryAppOrgEntityById" parameterType="map"
+		resultMap="templateAppOrgResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:通过id查询部门短信模板信息 **/
+		]]>
+		<include refid="templateAppOrg_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_SMS_TEMPLATE_APP_ORG T
+		]]>
+		<where>
+		    <if test="active != null and active != ''">
+		        AND ACTIVE = #{active,jdbcType=CHAR}
+		    </if>
+		    <if test="id != null and id != ''">
+		        AND ID = #{id,jdbcType=VARCHAR}
+		    </if>
+		
+		</where>
+	</select>
+	
+
+
+	<!-- 新增信息 -->
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.base.common.api.shared.domain.TemplateAppOrgEntity">
+		
+		<![CDATA[
+			INSERT/** 综合:新增信息 **/ INTO BSE.T_BAS_SMS_TEMPLATE_APP_ORG T	(
+		]]>
+		<include refid="templateAppOrg_Column_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, #{orgId,jdbcType=VARCHAR},
+		#{smsContent,jdbcType=VARCHAR},
+		#{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP}, #{active,jdbcType=CHAR},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR},
+		#{smsVirtualCode,jdbcType=VARCHAR}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+
+	<!-- 修改信息 -->
+	<update id="update"
+		parameterType="com.deppon.foss.module.base.common.api.shared.domain.TemplateAppOrgEntity">
+		update/** 综合:修改信息 **/ BSE.T_BAS_SMS_TEMPLATE_APP_ORG
+		<set>
+			<if test="orgId != null">
+				DEPT_CODE = #{orgId,jdbcType=VARCHAR},
+			</if>
+			<if test="smsContent != null">
+				SMS_CONTENT = #{smsContent,jdbcType=VARCHAR},
+			</if>
+			<!-- <if test="createDate != null"> CREATE_TIME = #{createDate,jdbcType=TIMESTAMP}, 
+				</if> -->
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<!-- <if test="active != null"> ACTIVE = #{active,jdbcType=CHAR}, </if> -->
+			<!-- <if test="createUser != null"> CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR}, 
+				</if> -->
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<!-- <if test="smsVirtualCode != null"> SMS_VIRTUALCODE = #{smsVirtualCode,jdbcType=VARCHAR}, 
+				</if> -->
+		</set>
+
+		<where>
+			<if test="id != null">
+				ID = #{id,jdbcType=VARCHAR}
+			</if>
+		</where>
+
+	</update>
+
+	<!-- 作废信息 -->
+	<update id="deleteByCode" parameterType="map">
+		update/** 综合:作废信息  **/ BSE.T_BAS_SMS_TEMPLATE_APP_ORG
+
+		<set>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				MODIFY_USER_CODE = #{modifyUser, jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+
+		</set>
+
+		<where>
+			<if test="codes!=null and codes.length > 0">
+				ID in
+				<foreach collection="codes" index="index" item="code" open="("
+					separator="," close=")">
+					#{code}
+				</foreach>
+			</if>
+		</where>
+	</update>
+
+</mapper>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.MqLogEntityMapper" >
+    <!-- 326181 日志表映射关系 -->
+	<resultMap id="BaseLogResultMap"
+		type="com.deppon.foss.module.settlement.closing.api.shared.domain.MqLogEntity">
+		<result column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="ESB_CODE" property="esbCode" jdbcType="VARCHAR" />
+		<result column="REQUEST_MSG" property="requestMsg" jdbcType="VARCHAR" />
+		<result column="RESPONSE_MSG" property="responseMsg" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+	</resultMap>
+	
+	<!-- 接口日志表查询接口查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			ESB_CODE != 'FOSS_ESB2FOSS_ECS_FOSS_SEND_POSCARD'
+		    <if test="esbCode != null and esbCode != ''">
+		    	AND ESB_CODE=#{esbCode,jdbcType=VARCHAR}
+		    </if>
+			<if test="startDate != null and startDate != ''">
+				<![CDATA[ AND CREATE_TIME  >=  ]]>
+				#{startDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="endDate != null and endDate != ''">
+				<![CDATA[ AND CREATE_TIME  <  ]]>
+				#{endDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="waybillNo!=null and waybillNo!='' ">
+			 	AND WAYBILL_NO IN #{waybillNo,jdbcType=VARCHAR}
+			 </if>
+		</where>
+	</sql>
+    
+    <!-- 查询日志表数据 ECS-326181-->
+	<select id="findEcsFossFailLog" resultMap="BaseLogResultMap" parameterType="java.util.Map">
+		SELECT ID, WAYBILL_NO, ESB_CODE, REQUEST_MSG, RESPONSE_MSG, CREATE_TIME
+		FROM STL.T_STL_ECS2FOSS_FAIL_LOG 
+		<include refid="queryWhere" />
+		ORDER BY CREATE_TIME ASC
+	</select>
+	
+	 <!-- 查询日志表数据總行數  ECS-326181-->
+	<select id="findLogTotalCount" resultType="long" parameterType="java.util.Map">
+		SELECT COUNT(1)
+		FROM STL.T_STL_ECS2FOSS_FAIL_LOG 
+		<include refid="queryWhere" />
+	</select>
+
+	<delete id="delEcsFossLogById" parameterType="string">
+		DELETE FROM STL.T_STL_ECS2FOSS_FAIL_LOG WHERE ID=#{id,jdbcType=VARCHAR}
+	</delete>
+	
+	 <insert id="insertSuccessLog" parameterType="com.deppon.foss.module.settlement.closing.api.shared.domain.MqLogEntity">  
+        INSERT INTO STL.T_STL_ECS2FOSS_SUCCESS_LOG VALUES(
+        #{id,jdbcType=VARCHAR},
+        #{waybillNo,jdbcType=VARCHAR},
+        #{esbCode,jdbcType=VARCHAR},
+        #{requestMsg,jdbcType=VARCHAR},
+        #{responseMsg,jdbcType=VARCHAR},
+        #{createTime,jdbcType=TIMESTAMP}) 
+    </insert>
+    
+    <insert id="insertFailLog" parameterType="com.deppon.foss.module.settlement.closing.api.shared.domain.MqLogEntity">  
+        INSERT INTO STL.T_STL_ECS2FOSS_FAIL_LOG VALUES(
+        #{id,jdbcType=VARCHAR},
+        #{waybillNo,jdbcType=VARCHAR},
+        #{esbCode,jdbcType=VARCHAR},
+        #{requestMsg,jdbcType=VARCHAR},
+        #{responseMsg,jdbcType=VARCHAR},
+        #{createTime,jdbcType=TIMESTAMP}) 
+    </insert>
+</mapper>

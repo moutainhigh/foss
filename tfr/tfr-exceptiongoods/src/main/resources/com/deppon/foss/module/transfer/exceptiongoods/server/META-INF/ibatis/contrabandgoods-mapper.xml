@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.exceptiongoods.contrabandgoods" >
+	
+	<resultMap id="contrabandGoodsEntityResultMap" type="com.deppon.foss.module.transfer.exceptiongoods.api.shared.domain.ContrabandGoodsEntity" >
+		<result property="waybillNo" column="WAYBILL_NO"/>                                                      
+		<result property="oaErrorNo" column="OA_ERROR_NO"/>                                        
+		<result property="findTime" column="FIND_TIME"/>                                             
+		<result property="handoverStatus" column="HANDOVER_STATUS"/>      
+		<result property="findOrgCode" column="FIND_ORG_CODE"/>                                        
+		<result property="findOrgName" column="FIND_ORG_NAME"/>                                        
+		<result property="handoverOrgName" column="HANDOVER_ORG_NAME"/>                                             
+		<result property="processResult" column="PROCESS_RESULT"/>           
+		<result property="productName" column="PRODUCT_NAME"/>
+		<result property="createBillOrgName" column="CREATE_BILL_ORG_NAME"/>                         
+		<result property="exceptionStatus" column="EXCEPTION_STATUS"/>           
+		<result property="exceptionResult" column="EXCEPTION_RESULT"/>
+		<result property="goodsName" column="GOODS_NAME"/>                                       
+	</resultMap>
+	<!-- 违禁品参数配置信息 -->
+	<sql id="contraband_param">
+	  ID,                  
+	  WAYBILL_NO,        
+	  OA_ERROR_NO,       
+	  FIND_TIME,         
+	  HANDOVER_STATUS,   
+	  FIND_ORG_CODE,     
+	  HANDOVER_ORG_CODE, 
+	  PROCESS_RESULT
+	</sql>
+	<!-- QMS推送违禁品参数配置信息 -->
+	<sql id="contraband_param_from_qms">
+	  ID,             
+	  WAYBILL_NO,
+	  OA_ERROR_NO,
+	  EXCEPTION_STATUS,
+	  EXCEPTION_RESULT,
+	  GOODS_NAME
+	</sql>
+	
+	
+	<!-- 保存违禁品 -->
+	<insert id="insertContrabandGoods"
+		parameterType="com.deppon.foss.module.transfer.exceptiongoods.api.shared.domain.ContrabandGoodsEntity">
+		<![CDATA[
+			INSERT INTO TFR.T_OPT_CONTRABAND(
+		]]>
+		<include refid="contraband_param" />
+		<![CDATA[
+			) VALUES (
+		]]>
+		      #{id,jdbcType=VARCHAR},
+		      #{waybillNo,jdbcType=VARCHAR},
+			  #{oaErrorNo,jdbcType=VARCHAR},
+			  #{findTime,jdbcType=TIMESTAMP},
+			  #{handoverStatus,jdbcType=VARCHAR},
+			  #{findOrgCode,jdbcType=VARCHAR},
+			  #{handoverOrgCode,jdbcType=VARCHAR},
+			  #{processResult,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	<!-- 保存从QMS推送的违禁品 -->
+	<insert id="insertContrabandGoodsFromQms"
+		parameterType="com.deppon.foss.module.transfer.exceptiongoods.api.shared.domain.ContrabandGoodsEntity">
+		<![CDATA[
+			INSERT INTO TFR.T_OPT_CONTRABAND(
+		]]>
+		<include refid="contraband_param_from_qms" />
+		<![CDATA[
+			) VALUES (
+		]]>
+		      #{id,jdbcType=VARCHAR},
+		      #{waybillNo,jdbcType=VARCHAR},
+			  #{oaErrorNo,jdbcType=VARCHAR},
+			  #{exceptionStatus,jdbcType=DECIMAL},
+			  #{exceptionResult,jdbcType=DECIMAL},
+			  #{goodsName,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	<!-- QMS更新违禁品 -->
+	<update id="updateContrabandGoodsFromQms" parameterType="com.deppon.foss.module.transfer.exceptiongoods.api.shared.domain.ContrabandGoodsEntity">
+		UPDATE TFR.T_OPT_CONTRABAND
+		<set>
+			  EXCEPTION_STATUS = #{exceptionStatus,jdbcType=DECIMAL},
+			  EXCEPTION_RESULT = #{exceptionResult,jdbcType=DECIMAL},
+	    	<if test="goodsName != null and goodsName != ''">
+				GOODS_NAME = #{goodsName}
+	    	</if>
+		</set>
+		<where>
+			AND OA_ERROR_NO = #{oaErrorNo}
+		</where>
+	</update>
+	
+	<!-- 查询违禁品-->
+	<select id="queryContrabandGoods"  parameterType="com.deppon.foss.module.transfer.exceptiongoods.api.shared.domain.ContrabandGoodsEntity" resultMap="contrabandGoodsEntityResultMap">
+		  SELECT                   
+	          C.WAYBILL_NO,        
+	          C.OA_ERROR_NO,       
+	          C.FIND_TIME,
+	          C.FIND_ORG_CODE,
+	          O1.NAME AS FIND_ORG_NAME,         
+	          C.HANDOVER_STATUS,   
+	          O2.NAME AS HANDOVER_ORG_NAME,   
+	          C.PROCESS_RESULT,          
+	          O3.NAME AS CREATE_BILL_ORG_NAME,
+	          P.NAME AS PRODUCT_NAME  
+	      FROM TFR.T_OPT_CONTRABAND C
+	      LEFT JOIN PKP.T_SRV_WAYBILL W ON C.WAYBILL_NO = W.WAYBILL_NO AND W.ACTIVE='Y'
+	      LEFT JOIN PKP.T_SRV_PRODUCT P ON W.PRODUCT_CODE = P.CODE AND P.ACTIVE='Y'
+	      LEFT JOIN BSE.T_BAS_ORG O1 ON C.FIND_ORG_CODE = O1.CODE AND O1.ACTIVE = 'Y'
+	      LEFT JOIN BSE.T_BAS_ORG O2 ON C.HANDOVER_ORG_CODE = O2.CODE AND O2.ACTIVE = 'Y'
+	      LEFT JOIN BSE.T_BAS_ORG O3 ON W.CREATE_ORG_CODE = O3.CODE AND O3.ACTIVE = 'Y'
+		<include refid="queryContrabandGoods_Where"/>
+	</select>
+	
+	<select id="queryContrabandGoodsCount"  parameterType="com.deppon.foss.module.transfer.exceptiongoods.api.shared.domain.ContrabandGoodsEntity" resultType="Long">
+			SELECT 
+				COUNT(C.WAYBILL_NO) 
+			FROM TFR.T_OPT_CONTRABAND C
+			LEFT JOIN PKP.T_SRV_WAYBILL W ON C.WAYBILL_NO = W.WAYBILL_NO AND W.ACTIVE='Y'
+		<include refid="queryContrabandGoods_Where"/>
+	</select>
+	
+	<sql id="queryContrabandGoods_Where">
+		<where>
+			<if test="waybillNo != null and waybillNo != ''">
+				AND C.WAYBILL_NO = #{waybillNo}
+			</if>
+			<if test="findOrgCode != null and findOrgCode != ''">
+				AND C.FIND_ORG_CODE = #{findOrgCode}
+			</if>
+			<if test="handoverOrgCode != null and handoverOrgCode != ''">
+				AND C.HANDOVER_ORG_CODE = #{handoverOrgCode}
+			</if>
+			<if test="createBillOrgCode != null and createBillOrgCode != ''">
+				AND W.CREATE_ORG_CODE = #{createBillOrgCode}
+			</if>
+			<if test="beginTime != null and beginTime != ''">
+			<![CDATA[	AND C.FIND_TIME > #{beginTime} ]]>
+			</if>
+			<if test="endTime != null and endTime != ''">
+			<![CDATA[	AND C.FIND_TIME < #{endTime} ]]>
+			</if>
+			<if test="handoverStatus != null and handoverStatus != ''">
+				AND C.HANDOVER_STATUS = #{handoverStatus}
+			</if>
+			<if test="processResult != null and processResult != ''">
+				AND C.PROCESS_RESULT = #{processResult}
+			</if>
+		</where>
+	</sql>
+	<!-- 更新违禁品处理结果、移交状态 -->
+	<update id="updateContrabandGoods" parameterType="com.deppon.foss.module.transfer.exceptiongoods.api.shared.domain.ContrabandGoodsEntity">
+		UPDATE TFR.T_OPT_CONTRABAND
+		<set>
+	    	<if test="handoverStatus != null and handoverStatus != ''">
+				HANDOVER_STATUS = #{handoverStatus},
+	    	</if>
+	    	<if test="processResult != null and processResult != ''">
+				PROCESS_RESULT = #{processResult}
+	    	</if>
+		</set>
+		<where>
+			AND OA_ERROR_NO = #{oaErrorNo}
+		</where>
+	</update>
+	
+	<!-- 根据运单号查询违禁品-->
+	<select id="queryUniqueContrabandGoods"  parameterType="string" resultMap="contrabandGoodsEntityResultMap">
+		  SELECT                   
+	          C.WAYBILL_NO,        
+	          C.OA_ERROR_NO,       
+	          C.FIND_TIME,
+	          C.FIND_ORG_CODE,
+	          C.HANDOVER_STATUS,
+	          C.PROCESS_RESULT,
+	  		  C.EXCEPTION_RESULT
+	      FROM TFR.T_OPT_CONTRABAND C WHERE C.WAYBILL_NO = #{waybillNo}
+	</select>
+	
+</mapper>

@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.lateCoupon" >
+
+  <!-- 晚到补差价的方案实体 resultMap -->
+  <resultMap id="LateCouponResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.domain.LateCouponEntity" >
+  	<result column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="CODE" property="code" jdbcType="VARCHAR" />
+    <result column="NAME" property="name" jdbcType="VARCHAR" />
+    <result column="START_BIGZONE" property="startBigzone" jdbcType="VARCHAR" />
+    <result column="ARRIVE_BIGZONE" property="arriveBigzone" jdbcType="VARCHAR" />
+    <result column="SMS_SENT" property="smsSent" jdbcType="VARCHAR" />
+    <result column="PRODUCT_ITEM" property="productItem" jdbcType="DECIMAL" />
+    <result column="DELIVERY_METHOD" property="deliveryMethod" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_GROUP" property="customerGroup" jdbcType="VARCHAR" />
+    <result column="MAX_VALUE" property="maxValue" jdbcType="VARCHAR" />
+    <result column="BEGIN_TIME" property="beginTime" jdbcType="TIMESTAMP" />
+    <result column="END_TIME" property="endTime" jdbcType="TIMESTAMP"/>
+    <result column="VALID_DAYS" property="validDays" jdbcType="VARCHAR"/>
+    <result column="IS_CODE_MATCHING" property="isCodeMatching" jdbcType="CHAR" />
+    <result column="SMS_INFO" property="smsInfo" jdbcType="VARCHAR" />
+    <result column="IS_ACTIVATION" property="isActivation" jdbcType="CHAR" />
+    <result column="ACTIVE" property="active" jdbcType="CHAR" />
+	<result column="create_time" property="createDate" jdbcType="TIMESTAMP" />
+	<result column="modify_time" property="modifyDate" jdbcType="TIMESTAMP" />
+	<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+	<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+  </resultMap>
+   
+   
+   
+   <!--  分页查询晚到补差价方案   -->
+   <select id="queryLateCouponByCodition" resultMap="LateCouponResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.LateCouponEntity">
+     SELECT  /** 综合—晚到补差价—分页查询晚到补差价方案**/
+     	*
+    	FROM
+    	bse.t_Bas_late_coupon s
+    	<where>
+    		<if test="id != null and id !='' ">
+    			AND s.id=#{id,jdbcType=VARCHAR}
+    		</if>
+    		<if test="name != null and name !='' ">
+    			AND s.name like '%'||#{name,jdbcType=VARCHAR}||'%'
+    		</if>
+    		<if test="isActivation != null and isActivation !='' ">
+    			AND s.is_Activation=#{isActivation,jdbcType=CHAR}
+    		</if>
+    		<if test="businessDate != null and businessDate !='' ">
+    			<![CDATA[ AND s.end_Time>=#{businessDate,jdbcType=TIMESTAMP} ]]>
+    			<![CDATA[ AND s.begin_Time<=#{businessDate,jdbcType=TIMESTAMP} ]]>
+    		</if>
+    		AND s.active='Y'
+    	</where>
+    </select>
+    
+     <!--  计数分页查询晚到补差价方案   -->
+   <select id="countLateCouponByCodition" resultType="Long" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.LateCouponEntity">
+     SELECT  /** 综合—晚到补差价—计数分页查询晚到补差价方案**/
+     	count(*)
+    	FROM
+    	bse.t_Bas_late_coupon s
+    	<where>
+    		<if test="name != null and name !='' ">
+    			AND s.name like '%'||#{name,jdbcType=VARCHAR}||'%'
+    		</if>
+    		<if test="isActivation != null and isActivation !='' ">
+    			AND s.is_Activation=#{isActivation,jdbcType=CHAR}
+    		</if>
+    		<if test="businessDate != null and businessDate !='' ">
+    			<![CDATA[ AND s.end_Time>=#{businessDate,jdbcType=TIMESTAMP} ]]>
+    			<![CDATA[ AND s.begin_Time<=#{businessDate,jdbcType=TIMESTAMP} ]]>
+    		</if>
+    		AND s.active='Y'
+    	</where>
+    </select>
+    <!-- 批量删除（非物理删除） -->
+	<update id="deleteLateCoupon" parameterType="map">
+		update bse.t_Bas_late_coupon s
+		<set>
+			s.active='N',
+			s.modify_time = #{modifyDate,jdbcType=TIMESTAMP} ,
+			s.modify_user_code = #{modifyUser,jdbcType=VARCHAR}
+		</set>
+		where id in
+		<foreach collection="ids" open="(" close=")" separator="," item="id">
+			#{id, jdbcType=VARCHAR} 
+		</foreach>
+	</update>
+	<!-- 新增 -->
+	<insert id="addLateCoupon" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.LateCouponEntity">
+		insert into bse.t_Bas_late_coupon s 
+		values (
+		#{id, jdbcType=VARCHAR},
+		#{code, jdbcType=VARCHAR},
+		#{name, jdbcType=VARCHAR},
+		#{startBigzone, jdbcType=VARCHAR},
+		#{arriveBigzone, jdbcType=VARCHAR},
+		#{smsSent, jdbcType=VARCHAR},
+		#{productItem, jdbcType=VARCHAR},
+		#{deliveryMethod, jdbcType=VARCHAR},
+		#{customerGroup, jdbcType=VARCHAR},
+		#{maxValue, jdbcType=VARCHAR},
+		#{beginTime, jdbcType=TIMESTAMP},
+		#{endTime, jdbcType=TIMESTAMP},
+		#{validDays, jdbcType=VARCHAR},
+		#{isCodeMatching, jdbcType=CHAR},
+		#{smsInfo, jdbcType=VARCHAR},
+		'N',
+		'Y',
+		#{createDate, jdbcType=TIMESTAMP},
+		#{modifyDate, jdbcType=TIMESTAMP},
+		#{createUser, jdbcType=VARCHAR},
+		#{modifyUser, jdbcType=VARCHAR}
+		)
+	</insert>
+	<!-- 晚到补差价方案的查重，名称重复即为重复 -->
+	<select id="queryRepeat" resultMap="LateCouponResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.LateCouponEntity">
+		select /** 综合:晚到补差价方案的查重，名称重复即为重复  **/
+		*
+		from bse.t_Bas_late_coupon s
+		<where>
+			<if test="id != null and id != ''">
+				AND id != #{id, jdbcType=VARCHAR} 
+			</if>
+			<if test="name != null and name != ''">
+				AND name = #{name, jdbcType=VARCHAR}
+			</if>
+			AND active='Y'
+		</where>
+	</select>
+    <!-- 激活方案 -->
+    <update id="activateLateCoupon" parameterType="map">
+		update bse.t_Bas_late_coupon s
+		<set>
+			s.IS_ACTIVATION='Y',
+			s.modify_time = #{modifyDate,jdbcType=TIMESTAMP} ,
+			s.modify_user_code = #{modifyUser,jdbcType=VARCHAR}
+		</set>
+		where id =#{id, jdbcType=VARCHAR} 
+	</update>
+	<!-- 中止方案 -->
+    <update id="stopLateCoupon" parameterType="map">
+		update bse.t_Bas_late_coupon s
+		<set>
+			s.IS_ACTIVATION='N',
+			s.modify_time = #{modifyDate,jdbcType=TIMESTAMP} ,
+			s.modify_user_code = #{modifyUser,jdbcType=VARCHAR}
+		</set>
+		where id =#{id, jdbcType=VARCHAR} 
+	</update>
+	<!-- 获得最大编码 -->
+    <select id="getMaxCode" resultType="String" >
+     SELECT  /** 综合—晚到补差价—获得最大编码**/
+     	max(s.code)
+    	FROM
+    	bse.t_Bas_late_coupon s
+    	where s.active='Y'
+    </select>
+    <!-- 查询-->
+      <select id="findById" resultMap="LateCouponResultMap" parameterType="java.lang.String" >
+     SELECT  /** 综合—晚到补差价—获得最大编码**/
+     	*
+    	FROM
+    	bse.t_Bas_late_coupon s
+    	where s.id= #{id,jdbcType=VARCHAR}
+    </select>
+    
+    
+    
+    
+    <!--  查询收否存在有效方案   -->
+   <select id="findActivationScheme" resultMap="LateCouponResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.LateCouponEntity" >
+    SELECT  /** 综合—晚到补差价—查询收否存在有效方案**/
+       *
+      FROM
+      bse.t_Bas_late_coupon s
+      WHERE
+      s.active='Y' and 
+      s.is_activation='Y'
+      and 
+     ( #{beginTime, jdbcType=TIMESTAMP} between s.begin_time and s.end_time 
+     or
+     #{endTime, jdbcType=TIMESTAMP} between s.begin_time and s.end_time 
+     )
+    </select>
+   
+   <!--  查询当前唯一激活有效方案   -->
+   <select id="selectLateCouponOnly" resultMap="LateCouponResultMap" >
+    SELECT  /** 综合—晚到补差价—查询当前唯一激活有效方案**/
+       *
+      FROM
+      bse.t_Bas_late_coupon s
+      WHERE
+      s.active='Y' and 
+      s.is_activation='Y'
+      and sysdate between s.begin_time and s.end_time
+    </select>
+       <!--  查询大区下属的所有营业部和集中开单组   -->
+   <select id="querySubSalesDept" resultType="String" parameterType="map" >
+     select /** 综合—晚到补差价—查询大区下属的所有营业部和集中开单组**/
+     distinct s.code
+     from bse.t_bas_org s 
+     where
+     s.sales_department='Y' or s.billing_group='Y'
+     start with s.code in
+     <foreach collection="list"  item="deptCode"  open="(" separator="," close=")">
+ 		     #{deptCode,jdbcType=VARCHAR}
+    </foreach>
+     and s.active='Y'
+     CONNECT BY PRIOR s.CODE =s.parent_org_code and s.active='Y'
+   </select>
+    
+  
+</mapper>

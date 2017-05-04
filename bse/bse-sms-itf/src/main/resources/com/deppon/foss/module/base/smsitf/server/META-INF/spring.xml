@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://www.springframework.org/schema/jee 
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+			http://www.springframework.org/schema/aop 
+			http://www.springframework.org/schema/aop/spring-aop-3.0.xsd"
+	default-autowire="byName">
+
+	<!-- 短信发送验证结果处理器 -->
+	<bean id="smsValidateResultCallBackProcessor"
+		class="com.deppon.foss.module.base.smsitf.esb.client.SMSValidateResultCallBackProcessor">
+		<property name="smsSendLogService" ref="smsSendLogService" />
+	</bean>
+
+	<!-- 短信发送结果处理器 -->
+	<bean id="smsSendResultNotificationProcessor"
+		class="com.deppon.foss.module.base.smsitf.esb.server.SMSSendResultNotificationProcessor">
+		<property name="smsFailLogService" ref="smsFailLogService" />
+	</bean>
+	<!-- 短信发送结果处理器 -->
+	<bean id="sMSSendResultNotifincationService"
+		class="com.deppon.foss.module.base.smsitf.ws.server.service.impl.SMSSendResultNotifincationService">
+	</bean>
+	<!-- 待办事项服务端 -->
+	<bean id="messageSourceProcessor"
+		class="com.deppon.foss.module.base.smsitf.esb.server.MessageSourceProcessor">
+	</bean>
+	<!-- 启动MQ监听 -->
+	<bean id="esbInitUtil" class="com.deppon.esb.api.util.ESBInitUtil"
+		init-method="process" lazy-init="false">
+		<property name="processMap">
+			<map>
+				<entry key="FOSS_ESB2FOSS_SEND_PROCESSOR_RESULT" value-ref="smsSendResultNotificationProcessor" />
+			</map>
+		</property>
+		<property name="callBackProcessMap">
+			<map>
+				<entry key="ESB_FOSS2ESB_VOICEMESSAGE" value-ref="smsValidateResultCallBackProcessor" />
+			</map>
+		</property>
+	</bean>
+</beans>

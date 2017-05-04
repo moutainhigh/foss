@@ -1,0 +1,801 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!-- "外请白名单（司机白名单、车辆白名单）" -->
+<mapper namespace="foss.bse.bse-baseinfo.whitelistaudit">
+	<resultMap id="whitelistAuditResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.WhitelistAuditEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="DRIVER_NAME" property="driverName" jdbcType="VARCHAR" />
+		<result column="DRIVER_PHONE" property="driverPhone" jdbcType="VARCHAR" />
+		<result column="DRIVER_ID_CARD" property="driverIdCard" jdbcType="VARCHAR" />
+		<result column="QUALIFICATION" property="qualification" jdbcType="VARCHAR" />
+		<result column="DRIVER_LICENSE" property="driverLicense" jdbcType="VARCHAR" />
+		<result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+		<result column="VEHICLE_TYPE" property="vehicleType" jdbcType="VARCHAR" />
+		<result column="DRIVING_LICENSE" property="drivingLicense" jdbcType="VARCHAR" />
+		<result column="END_TIME_DRIVING_LIC" property="endTimeDrivingLic" jdbcType="TIMESTAMP" />
+		<result column="OPERATING_LIC" property="operatingLic" jdbcType="VARCHAR" />
+		<result column="END_TIME_OPERATING_LIC" property="endTimeOperatingLic" jdbcType="TIMESTAMP" />
+		<result column="INSURE_CARD" property="insureCard" jdbcType="VARCHAR" />
+		<result column="CONTACT" property="contact" jdbcType="VARCHAR" />
+		<result column="CONTACT_PHONE" property="contactPhone" jdbcType="VARCHAR" />
+		<result column="CURRENT_APPLICATION" property="currentApplication" jdbcType="VARCHAR" />
+		<result column="STATUS" property="status" jdbcType="VARCHAR" />
+		<result column="APPLY_USER" property="applyUser" jdbcType="VARCHAR" />
+		<result column="APPLY_TIME" property="applyTime" jdbcType="TIMESTAMP" />
+		<result column="APPROVE_USER" property="approveUser" jdbcType="VARCHAR" />
+		<result column="APPROVE_TIME" property="approveTime" jdbcType="TIMESTAMP" />
+		<result column="AUDIT_NOTES" property="auditNotes" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="WHITELIST_TYPE" property="whitelistType" jdbcType="VARCHAR" />
+		<result column="APPLY_NOTES" property="applyNotes" jdbcType="VARCHAR" />
+	</resultMap>
+	<!-- 定制SQL -->
+	<sql id="whitelistAudit_ResultMap_Param">
+		<![CDATA[
+			ID, DRIVER_NAME, DRIVER_PHONE, DRIVER_ID_CARD, QUALIFICATION,
+			DRIVER_LICENSE, VEHICLE_NO,
+			VEHICLE_TYPE, DRIVING_LICENSE, END_TIME_DRIVING_LIC, OPERATING_LIC,
+			END_TIME_OPERATING_LIC,
+			INSURE_CARD, CONTACT, CONTACT_PHONE, CURRENT_APPLICATION, STATUS, APPLY_USER,
+			APPLY_TIME,
+			APPROVE_USER, APPROVE_TIME, AUDIT_NOTES, CREATE_TIME, MODIFY_TIME, ACTIVE,
+			CREATE_USER_CODE, MODIFY_USER_CODE, WHITELIST_TYPE, APPLY_NOTES
+		]]>
+	</sql>
+	<sql id="whitelistAudit_Pagination_Where_Param">
+		<if test="driverName != null and driverName != ''">
+			AND DRIVER_NAME like CONCAT(CONCAT('%', #{driverName,jdbcType=VARCHAR}), '%')
+		</if>
+		<if test="driverIdCard != null and driverIdCard != ''">
+			AND DRIVER_ID_CARD like CONCAT(CONCAT('%', #{driverIdCard,jdbcType=VARCHAR}), '%')
+		</if>
+		<if test="vehicleNo != null and vehicleNo != ''">
+			AND VEHICLE_NO like CONCAT(CONCAT('%', #{vehicleNo,jdbcType=VARCHAR}), '%') 
+		</if>
+		<if test="status != null and status != ''">
+			AND STATUS = #{status,jdbcType=VARCHAR}
+		</if>
+		<if test="applyUser != null and applyUser != ''">
+			AND APPLY_USER = #{applyUser,jdbcType=VARCHAR}
+		</if>
+		<if test="active != null">
+			AND ACTIVE = #{active,jdbcType=CHAR}
+		</if>
+		<if test="whitelistType != null and whitelistType != ''">
+			AND WHITELIST_TYPE = #{whitelistType,jdbcType=VARCHAR}
+		</if>
+	</sql>
+	<sql id="whitelistAudit_Pagination_Where_Audit_Param">
+		<trim prefix="WHERE" prefixOverrides="AND | OR">
+			<include refid="whitelistAudit_Pagination_Where_Param"/>
+			<choose>
+				<when test="currentApplication == null or currentApplication == ''">
+					<![CDATA[ AND CURRENT_APPLICATION <> 'N/A' ]]>
+				</when>
+				<otherwise>
+					AND CURRENT_APPLICATION = #{currentApplication,jdbcType=VARCHAR}
+				</otherwise>
+			</choose>
+		</trim>
+	</sql>
+	<sql id="whitelistAudit_Pagination_Where_Apply_Param">
+		<trim prefix="WHERE" prefixOverrides="AND | OR">
+			<include refid="whitelistAudit_Pagination_Where_Param"/>
+			<if test="currentApplication != null">
+				<choose>
+					<when test="currentApplication == ''">
+						<![CDATA[ AND CURRENT_APPLICATION IS NULL ]]>
+					</when>
+					<otherwise>
+						AND CURRENT_APPLICATION = #{currentApplication,jdbcType=VARCHAR}
+					</otherwise>
+				</choose>
+			</if>
+		</trim>
+	</sql>
+	<!-- 查询外请白名单（司机白名单、车辆白名单）信息 -->
+	<select id="queryLeasedWhitelistAuditListBySelective" resultMap="whitelistAuditResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.WhitelistAuditEntity">
+		select
+		/** 综合:查询外请白名单（司机白名单、车辆白名单）信息 **/
+		<include refid="whitelistAudit_ResultMap_Param" />
+		from BSE.T_BAS_WHITELIST_AUDIT
+		<trim prefix="WHERE" prefixOverrides="AND | OR">
+			<if test="id != null and id != ''">
+				AND ID = #{id,jdbcType=VARCHAR}
+			</if>
+			<if test="driverName != null and driverName != ''">
+				AND DRIVER_NAME = #{driverName,jdbcType=VARCHAR}
+			</if>
+			<if test="driverPhone != null and driverPhone != ''">
+				AND DRIVER_PHONE = #{driverPhone,jdbcType=VARCHAR}
+			</if>
+			<if test="driverIdCard != null and driverIdCard != ''">
+				AND DRIVER_ID_CARD = #{driverIdCard,jdbcType=VARCHAR}
+			</if>
+			<if test="qualification != null and qualification != ''">
+				AND QUALIFICATION = #{qualification,jdbcType=VARCHAR}
+			</if>
+			<if test="driverLicense != null and driverLicense != ''">
+				AND DRIVER_LICENSE = #{driverLicense,jdbcType=VARCHAR}
+			</if>
+			<if test="vehicleNo != null and vehicleNo != ''">
+				AND VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR}
+			</if>
+			<if test="vehicleType != null and vehicleType != ''">
+				AND VEHICLE_TYPE = #{vehicleType,jdbcType=VARCHAR}
+			</if>
+			<if test="drivingLicense != null and drivingLicense != ''">
+				AND DRIVING_LICENSE = #{drivingLicense,jdbcType=VARCHAR}
+			</if>
+			<if test="endTimeDrivingLic != null and endTimeDrivingLic != ''">
+				AND END_TIME_DRIVING_LIC = #{endTimeDrivingLic,jdbcType=TIMESTAMP}
+			</if>
+			<if test="operatingLic != null and operatingLic != ''">
+				AND OPERATING_LIC = #{operatingLic,jdbcType=VARCHAR}
+			</if>
+			<if test="endTimeOperatingLic != null and endTimeOperatingLic != ''">
+				AND END_TIME_OPERATING_LIC = #{endTimeOperatingLic,jdbcType=TIMESTAMP}
+			</if>
+			<if test="insureCard != null and insureCard != ''">
+				AND INSURE_CARD = #{insureCard,jdbcType=VARCHAR}
+			</if>
+			<if test="contact != null and contact != ''">
+				AND CONTACT = #{contact,jdbcType=VARCHAR}
+			</if>
+			<if test="contactPhone != null and contactPhone != ''">
+				AND CONTACT_PHONE = #{contactPhone,jdbcType=VARCHAR}
+			</if>
+			<if test="currentApplication != null and currentApplication != ''">
+				AND CURRENT_APPLICATION = #{currentApplication,jdbcType=VARCHAR}
+			</if>
+			<if test="status != null and status != ''">
+				AND STATUS = #{status,jdbcType=VARCHAR}
+			</if>
+			<if test="applyUser != null and applyUser != ''">
+				AND APPLY_USER = #{applyUser,jdbcType=VARCHAR}
+			</if>
+			<if test="applyTime != null and applyTime != ''">
+				AND APPLY_TIME = #{applyTime,jdbcType=TIMESTAMP}
+			</if>
+			<if test="approveUser != null and approveUser != ''">
+				AND APPROVE_USER = #{approveUser,jdbcType=VARCHAR}
+			</if>
+			<if test="approveTime != null and approveTime != ''">
+				AND APPROVE_TIME = #{approveTime,jdbcType=TIMESTAMP}
+			</if>
+			<if test="auditNotes != null and auditNotes != ''">
+				AND AUDIT_NOTES = #{auditNotes,jdbcType=VARCHAR}
+			</if>
+			<if test="createDate != null and createDate != ''">
+				AND CREATE_TIME = #{createDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="modifyDate != null and modifyDate != ''">
+				AND MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="active != null and active != ''">
+				AND ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="createUser != null and createUser != ''">
+				AND CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR}
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				AND MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR}
+			</if>
+			<if test="whitelistType != null and whitelistType != ''">
+				AND WHITELIST_TYPE = #{whitelistType,jdbcType=VARCHAR}
+			</if>
+			<if test="applyNotes != null and applyNotes != ''">
+				AND APPLY_NOTES = #{applyNotes,jdbcType=VARCHAR}
+			</if>
+		</trim>
+	</select>
+	<select id="queryLeasedWhitelistAuditListBySelectiveCondition" resultMap="whitelistAuditResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.WhitelistAuditEntity">
+		select
+		<include refid="whitelistAudit_ResultMap_Param" />
+		from BSE.T_BAS_WHITELIST_AUDIT
+		<include refid="whitelistAudit_Pagination_Where_Audit_Param"/>
+	</select>
+	<select id="queryLeasedWhitelistAuditRecordCountBySelectiveCondition" resultType="java.lang.Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.WhitelistAuditEntity">
+		<![CDATA[ select count(*) from BSE.T_BAS_WHITELIST_AUDIT ]]>
+		<include refid="whitelistAudit_Pagination_Where_Audit_Param"/>
+	</select>
+	<select id="queryLeasedWhitelistApplyListBySelectiveCondition" resultMap="whitelistAuditResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.WhitelistAuditQueryDto">
+		select
+		<include refid="whitelistAudit_ResultMap_Param" />
+		from BSE.T_BAS_WHITELIST_AUDIT
+		<where>
+			ACTIVE = #{active,jdbcType=CHAR}
+			AND WHITELIST_TYPE = #{whitelistType,jdbcType=VARCHAR}
+		<if test="vehicleNo != null and vehicleNo != ''">
+			AND VEHICLE_NO like CONCAT(CONCAT('%', #{vehicleNo,jdbcType=VARCHAR}), '%') 
+		</if>	
+		<if test="currentApplication != null">
+				<choose>
+					<when test="currentApplication == ''">
+						<![CDATA[ AND CURRENT_APPLICATION IS NULL ]]>
+					</when>
+					<otherwise>
+						AND CURRENT_APPLICATION = #{currentApplication,jdbcType=VARCHAR}
+					</otherwise>
+				</choose>
+		</if>
+		<if test="status != null and status != ''">
+			AND STATUS = #{status,jdbcType=VARCHAR}
+		</if>
+		<if test="applyUser != null and applyUser != ''">
+			AND APPLY_USER = #{applyUser,jdbcType=VARCHAR}
+		</if>
+		<if test="beginDate != null">
+			<![CDATA[ AND APPLY_TIME >= #{beginDate,jdbcType=TIMESTAMP} ]]>
+		</if>
+		<if test="endDate != null">
+			<![CDATA[ AND APPLY_TIME < #{endDate,jdbcType=TIMESTAMP} ]]>
+		</if>
+		<if test="driverName != null and driverName != ''">
+			AND DRIVER_NAME like CONCAT(CONCAT('%', #{driverName,jdbcType=VARCHAR}), '%')
+		</if>
+		<if test="driverIdCard != null and driverIdCard != ''">
+			AND DRIVER_ID_CARD like CONCAT(CONCAT('%', #{driverIdCard,jdbcType=VARCHAR}), '%')
+		</if>
+		ORDER BY APPLY_TIME DESC
+		</where>
+		
+	</select>
+	<select id="queryLeasedWhitelistApplyRecordCountBySelectiveCondition" resultType="java.lang.Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.WhitelistAuditQueryDto">
+		select count(*) 
+		from BSE.T_BAS_WHITELIST_AUDIT
+		<where>
+			ACTIVE = #{active,jdbcType=CHAR}
+			AND WHITELIST_TYPE = #{whitelistType,jdbcType=VARCHAR}
+		<if test="vehicleNo != null and vehicleNo != ''">
+			AND VEHICLE_NO like CONCAT(CONCAT('%', #{vehicleNo,jdbcType=VARCHAR}), '%') 
+		</if>	
+		<if test="currentApplication != null">
+				<choose>
+					<when test="currentApplication == ''">
+						<![CDATA[ AND CURRENT_APPLICATION IS NULL ]]>
+					</when>
+					<otherwise>
+						AND CURRENT_APPLICATION = #{currentApplication,jdbcType=VARCHAR}
+					</otherwise>
+				</choose>
+		</if>
+		<if test="status != null and status != ''">
+			AND STATUS = #{status,jdbcType=VARCHAR}
+		</if>
+		<if test="applyUser != null and applyUser != ''">
+			AND APPLY_USER = #{applyUser,jdbcType=VARCHAR}
+		</if>
+		<if test="beginDate != null">
+			<![CDATA[ AND APPLY_TIME >= #{beginDate,jdbcType=TIMESTAMP} ]]>
+		</if>
+		<if test="endDate != null">
+			<![CDATA[ AND APPLY_TIME < #{endDate,jdbcType=TIMESTAMP} ]]>
+		</if>
+		<if test="driverName != null and driverName != ''">
+			AND DRIVER_NAME like CONCAT(CONCAT('%', #{driverName,jdbcType=VARCHAR}), '%')
+		</if>
+		<if test="driverIdCard != null and driverIdCard != ''">
+			AND DRIVER_ID_CARD like CONCAT(CONCAT('%', #{driverIdCard,jdbcType=VARCHAR}), '%')
+		</if>
+		ORDER BY APPLY_TIME DESC
+		</where>
+	</select>
+	<!-- 删除外请白名单（司机白名单、车辆白名单）信息 -->
+	<delete id="deleteLeasedWhitelistAudit" parameterType="java.lang.String">
+		delete/** 综合:删除外请白名单（司机白名单、车辆白名单）信息 **/ from BSE.T_BAS_WHITELIST_AUDIT
+		where ID = #{id,jdbcType=VARCHAR}
+	</delete>
+	<!-- 新增外请白名单（司机白名单、车辆白名单）信息 -->
+	<insert id="addLeasedWhitelistAudit"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.WhitelistAuditEntity">
+		insert/** 综合:新增区域 外请白名单（司机白名单、车辆白名单）信息**/ into BSE.T_BAS_WHITELIST_AUDIT (ID, DRIVER_NAME, DRIVER_PHONE,
+		DRIVER_ID_CARD, QUALIFICATION, DRIVER_LICENSE,
+		VEHICLE_NO, VEHICLE_TYPE, DRIVING_LICENSE,
+		END_TIME_DRIVING_LIC, OPERATING_LIC, END_TIME_OPERATING_LIC,
+		INSURE_CARD, CONTACT, CONTACT_PHONE,
+		CURRENT_APPLICATION, STATUS, APPLY_USER,
+		APPLY_TIME, APPROVE_USER, APPROVE_TIME,
+		AUDIT_NOTES, CREATE_TIME, MODIFY_TIME,
+		ACTIVE, CREATE_USER_CODE, MODIFY_USER_CODE,
+		WHITELIST_TYPE,APPLY_NOTES
+		)
+		values (#{id,jdbcType=VARCHAR}, #{driverName,jdbcType=VARCHAR},
+		#{driverPhone,jdbcType=VARCHAR},
+		#{driverIdCard,jdbcType=VARCHAR}, #{qualification,jdbcType=VARCHAR}, #{driverLicense,jdbcType=VARCHAR},
+		#{vehicleNo,jdbcType=VARCHAR}, #{vehicleType,jdbcType=VARCHAR},
+		#{drivingLicense,jdbcType=VARCHAR},
+		#{endTimeDrivingLic,jdbcType=TIMESTAMP}, #{operatingLic,jdbcType=VARCHAR},
+		#{endTimeOperatingLic,jdbcType=TIMESTAMP},
+		#{insureCard,jdbcType=VARCHAR}, #{contact,jdbcType=VARCHAR}, #{contactPhone,jdbcType=VARCHAR},
+		#{currentApplication,jdbcType=VARCHAR}, #{status,jdbcType=VARCHAR},
+		#{applyUser,jdbcType=VARCHAR},
+		#{applyTime,jdbcType=TIMESTAMP}, #{approveUser,jdbcType=VARCHAR}, #{approveTime,jdbcType=TIMESTAMP},
+		#{auditNotes,jdbcType=VARCHAR}, #{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=CHAR}, #{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR},
+		#{whitelistType,jdbcType=VARCHAR},
+		#{applyNotes,jdbcType=VARCHAR}
+		)
+	</insert>
+	<insert id="addLeasedWhitelistAuditBySelective"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.WhitelistAuditEntity">
+		insert into BSE.T_BAS_WHITELIST_AUDIT
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				ID,
+			</if>
+			<if test="driverName != null">
+				DRIVER_NAME,
+			</if>
+			<if test="driverPhone != null">
+				DRIVER_PHONE,
+			</if>
+			<if test="driverIdCard != null">
+				DRIVER_ID_CARD,
+			</if>
+			<if test="qualification != null">
+				QUALIFICATION,
+			</if>
+			<if test="driverLicense != null">
+				DRIVER_LICENSE,
+			</if>
+			<if test="vehicleNo != null">
+				VEHICLE_NO,
+			</if>
+			<if test="vehicleType != null">
+				VEHICLE_TYPE,
+			</if>
+			<if test="drivingLicense != null">
+				DRIVING_LICENSE,
+			</if>
+			<if test="endTimeDrivingLic != null">
+				END_TIME_DRIVING_LIC,
+			</if>
+			<if test="operatingLic != null">
+				OPERATING_LIC,
+			</if>
+			<if test="endTimeOperatingLic != null">
+				END_TIME_OPERATING_LIC,
+			</if>
+			<if test="insureCard != null">
+				INSURE_CARD,
+			</if>
+			<if test="contact != null">
+				CONTACT,
+			</if>
+			<if test="contactPhone != null">
+				CONTACT_PHONE,
+			</if>
+			<if test="currentApplication != null">
+				CURRENT_APPLICATION,
+			</if>
+			<if test="status != null">
+				STATUS,
+			</if>
+			<if test="applyUser != null">
+				APPLY_USER,
+			</if>
+			<if test="applyTime != null">
+				APPLY_TIME,
+			</if>
+			<if test="approveUser != null">
+				APPROVE_USER,
+			</if>
+			<if test="approveTime != null">
+				APPROVE_TIME,
+			</if>
+			<if test="auditNotes != null">
+				AUDIT_NOTES,
+			</if>
+			<if test="createDate != null">
+				CREATE_TIME,
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME,
+			</if>
+			<if test="active != null">
+				ACTIVE,
+			</if>
+			<if test="createUser != null">
+				CREATE_USER_CODE,
+			</if>
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE,
+			</if>
+			<if test="whitelistType != null">
+				WHITELIST_TYPE,
+			</if>
+			<if test="applyNotes != null">
+				APPLY_NOTES,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id,jdbcType=VARCHAR},
+			</if>
+			<if test="driverName != null">
+				#{driverName,jdbcType=VARCHAR},
+			</if>
+			<if test="driverPhone != null">
+				#{driverPhone,jdbcType=VARCHAR},
+			</if>
+			<if test="driverIdCard != null">
+				#{driverIdCard,jdbcType=VARCHAR},
+			</if>
+			<if test="qualification != null">
+				#{qualification,jdbcType=VARCHAR},
+			</if>
+			<if test="driverLicense != null">
+				#{driverLicense,jdbcType=VARCHAR},
+			</if>
+			<if test="vehicleNo != null">
+				#{vehicleNo,jdbcType=VARCHAR},
+			</if>
+			<if test="vehicleType != null">
+				#{vehicleType,jdbcType=VARCHAR},
+			</if>
+			<if test="drivingLicense != null">
+				#{drivingLicense,jdbcType=VARCHAR},
+			</if>
+			<if test="endTimeDrivingLic != null">
+				#{endTimeDrivingLic,jdbcType=TIMESTAMP},
+			</if>
+			<if test="operatingLic != null">
+				#{operatingLic,jdbcType=VARCHAR},
+			</if>
+			<if test="endTimeOperatingLic != null">
+				#{endTimeOperatingLic,jdbcType=TIMESTAMP},
+			</if>
+			<if test="insureCard != null">
+				#{insureCard,jdbcType=VARCHAR},
+			</if>
+			<if test="contact != null">
+				#{contact,jdbcType=VARCHAR},
+			</if>
+			<if test="contactPhone != null">
+				#{contactPhone,jdbcType=VARCHAR},
+			</if>
+			<if test="currentApplication != null">
+				#{currentApplication,jdbcType=VARCHAR},
+			</if>
+			<if test="status != null">
+				#{status,jdbcType=VARCHAR},
+			</if>
+			<if test="applyUser != null">
+				#{applyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="applyTime != null">
+				#{applyTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="approveUser != null">
+				#{approveUser,jdbcType=VARCHAR},
+			</if>
+			<if test="approveTime != null">
+				#{approveTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="auditNotes != null">
+				#{auditNotes,jdbcType=VARCHAR},
+			</if>
+			<if test="createDate != null">
+				#{createDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyDate != null">
+				#{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="active != null">
+				#{active,jdbcType=CHAR},
+			</if>
+			<if test="createUser != null">
+				#{createUser,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyUser != null">
+				#{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="whitelistType != null">
+				#{whitelistType,jdbcType=VARCHAR},
+			</if>
+			<if test="applyNotes != null">
+				#{applyNotes,jdbcType=VARCHAR},
+			</if>
+		</trim>
+	</insert>
+	<!-- 修改外请白名单（司机白名单、车辆白名单）信息 -->
+	<update id="updateLeasedWhitelistAuditBySelective"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.WhitelistAuditEntity">
+		update/** 综合:修改外请白名单（司机白名单、车辆白名单）信息 **/ BSE.T_BAS_WHITELIST_AUDIT
+		<set>
+			<if test="driverName != null">
+				DRIVER_NAME = #{driverName,jdbcType=VARCHAR},
+			</if>
+			<if test="driverPhone != null">
+				DRIVER_PHONE = #{driverPhone,jdbcType=VARCHAR},
+			</if>
+			<if test="driverIdCard != null">
+				DRIVER_ID_CARD = #{driverIdCard,jdbcType=VARCHAR},
+			</if>
+			<if test="qualification != null">
+				QUALIFICATION = #{qualification,jdbcType=VARCHAR},
+			</if>
+			<if test="driverLicense != null">
+				DRIVER_LICENSE = #{driverLicense,jdbcType=VARCHAR},
+			</if>
+			<if test="vehicleNo != null">
+				VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR},
+			</if>
+			<if test="vehicleType != null">
+				VEHICLE_TYPE = #{vehicleType,jdbcType=VARCHAR},
+			</if>
+			<if test="drivingLicense != null">
+				DRIVING_LICENSE = #{drivingLicense,jdbcType=VARCHAR},
+			</if>
+			<if test="endTimeDrivingLic != null">
+				END_TIME_DRIVING_LIC = #{endTimeDrivingLic,jdbcType=TIMESTAMP},
+			</if>
+			<if test="operatingLic != null">
+				OPERATING_LIC = #{operatingLic,jdbcType=VARCHAR},
+			</if>
+			<if test="endTimeOperatingLic != null">
+				END_TIME_OPERATING_LIC = #{endTimeOperatingLic,jdbcType=TIMESTAMP},
+			</if>
+			<if test="insureCard != null">
+				INSURE_CARD = #{insureCard,jdbcType=VARCHAR},
+			</if>
+			<if test="contact != null">
+				CONTACT = #{contact,jdbcType=VARCHAR},
+			</if>
+			<if test="contactPhone != null">
+				CONTACT_PHONE = #{contactPhone,jdbcType=VARCHAR},
+			</if>
+			<if test="currentApplication != null">
+				CURRENT_APPLICATION = #{currentApplication,jdbcType=VARCHAR},
+			</if>
+			<if test="status != null">
+				STATUS = #{status,jdbcType=VARCHAR},
+			</if>
+			<if test="applyUser != null">
+				APPLY_USER = #{applyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="applyTime != null">
+				APPLY_TIME = #{applyTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="approveUser != null">
+				APPROVE_USER = #{approveUser,jdbcType=VARCHAR},
+			</if>
+			<if test="approveTime != null">
+				APPROVE_TIME = #{approveTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="auditNotes != null">
+				AUDIT_NOTES = #{auditNotes,jdbcType=VARCHAR},
+			</if>
+			<if test="createDate != null">
+				CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="active != null">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="createUser != null">
+				CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="whitelistType != null">
+				WHITELIST_TYPE = #{whitelistType,jdbcType=VARCHAR},
+			</if>
+			<if test="applyNotes != null">
+				APPLY_NOTES = #{applyNotes,jdbcType=VARCHAR},
+			</if>
+		</set>
+		where ID = #{id,jdbcType=VARCHAR}
+	</update>
+	<!-- 根据身份证ID或车牌号修改外请白名单（司机白名单、车辆白名单）信息 -->
+	<update id="updateLeasedWhitelistAuditByCardIdOrVehicleNo"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.WhitelistAuditEntity">
+		update/** 综合:根据身份证ID或车牌号修改外请白名单（司机白名单、车辆白名单）信息 **/ BSE.T_BAS_WHITELIST_AUDIT
+		<set>
+			<if test="driverName != null">
+				DRIVER_NAME = #{driverName,jdbcType=VARCHAR},
+			</if>
+			<if test="driverPhone != null">
+				DRIVER_PHONE = #{driverPhone,jdbcType=VARCHAR},
+			</if>
+			<if test="qualification != null">
+				QUALIFICATION = #{qualification,jdbcType=VARCHAR},
+			</if>
+			<if test="driverLicense != null">
+				DRIVER_LICENSE = #{driverLicense,jdbcType=VARCHAR},
+			</if>
+			<if test="drivingLicense != null">
+				DRIVING_LICENSE = #{drivingLicense,jdbcType=VARCHAR},
+			</if>
+			<if test="vehicleType != null">
+				VEHICLE_TYPE = #{vehicleType,jdbcType=VARCHAR},
+			</if>
+			<if test="endTimeDrivingLic != null">
+				END_TIME_DRIVING_LIC = #{endTimeDrivingLic,jdbcType=DATE},
+			</if>
+			<if test="operatingLic != null">
+				OPERATING_LIC = #{operatingLic,jdbcType=VARCHAR},
+			</if>
+			<if test="endTimeOperatingLic != null">
+				END_TIME_OPERATING_LIC = #{endTimeOperatingLic,jdbcType=DATE},
+			</if>
+			<if test="insureCard != null">
+				INSURE_CARD = #{insureCard,jdbcType=VARCHAR},
+			</if>
+			<if test="contact != null">
+				CONTACT = #{contact,jdbcType=VARCHAR},
+			</if>
+			<if test="contactPhone != null">
+				CONTACT_PHONE = #{contactPhone,jdbcType=VARCHAR},
+			</if> 
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=DATE},
+			</if> 
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if> 
+		</set>
+		<where>
+			<if test="driverIdCard != null">
+				DRIVER_ID_CARD = #{driverIdCard,jdbcType=VARCHAR}
+			</if>
+			<if test="vehicleNo != null">
+				VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</update>
+	<update id="updateLeasedWhitelistAudit"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.WhitelistAuditEntity">
+		update BSE.T_BAS_WHITELIST_AUDIT
+		set DRIVER_NAME = #{driverName,jdbcType=VARCHAR},
+		DRIVER_PHONE = #{driverPhone,jdbcType=VARCHAR},
+		DRIVER_ID_CARD = #{driverIdCard,jdbcType=VARCHAR},
+		QUALIFICATION = #{qualification,jdbcType=VARCHAR},
+		DRIVER_LICENSE = #{driverLicense,jdbcType=VARCHAR},
+		VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR},
+		VEHICLE_TYPE = #{vehicleType,jdbcType=VARCHAR},
+		DRIVING_LICENSE = #{drivingLicense,jdbcType=VARCHAR},
+		END_TIME_DRIVING_LIC = #{endTimeDrivingLic,jdbcType=TIMESTAMP},
+		OPERATING_LIC = #{operatingLic,jdbcType=VARCHAR},
+		END_TIME_OPERATING_LIC = #{endTimeOperatingLic,jdbcType=TIMESTAMP},
+		INSURE_CARD = #{insureCard,jdbcType=VARCHAR},
+		CONTACT = #{contact,jdbcType=VARCHAR},
+		CONTACT_PHONE = #{contactPhone,jdbcType=VARCHAR},
+		CURRENT_APPLICATION = #{currentApplication,jdbcType=VARCHAR},
+		STATUS = #{status,jdbcType=VARCHAR},
+		APPLY_USER = #{applyUser,jdbcType=VARCHAR},
+		APPLY_TIME = #{applyTime,jdbcType=TIMESTAMP},
+		APPROVE_USER = #{approveUser,jdbcType=VARCHAR},
+		APPROVE_TIME = #{approveTime,jdbcType=TIMESTAMP},
+		AUDIT_NOTES = #{auditNotes,jdbcType=VARCHAR},
+		CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+		MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+		ACTIVE = #{active,jdbcType=CHAR},
+		CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+		MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+		WHITELIST_TYPE = #{whitelistType,jdbcType=VARCHAR},
+		APPLY_NOTES = #{applyNotes,jdbcType=VARCHAR}
+		where ID = #{id,jdbcType=VARCHAR}
+	</update>
+	
+	
+	<select id="queryLeasedWhitelistApplyListBySelectiveConditionAndApplyOrg" resultMap="whitelistAuditResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.WhitelistAuditQueryDto">
+		select
+			A.ID, 
+			A.DRIVER_NAME, 
+			A.DRIVER_PHONE, 
+			A.DRIVER_ID_CARD, 
+			A.QUALIFICATION,
+			A.DRIVER_LICENSE, 
+			A.VEHICLE_NO,
+			A.VEHICLE_TYPE, 
+			A.DRIVING_LICENSE, 
+			A.END_TIME_DRIVING_LIC, 
+			A.OPERATING_LIC,
+			A.END_TIME_OPERATING_LIC,
+			A.INSURE_CARD, 
+			A.CONTACT, 
+			A.CONTACT_PHONE, 
+			A.CURRENT_APPLICATION, 
+			A.STATUS, 
+			A.APPLY_USER,
+			A.APPLY_TIME,
+			A.APPROVE_USER, 
+			A.APPROVE_TIME, 
+			A.AUDIT_NOTES, 
+			A.CREATE_TIME, 
+			A.MODIFY_TIME, 
+			A.ACTIVE,
+			A.CREATE_USER_CODE, 
+			A.MODIFY_USER_CODE, 
+			A.WHITELIST_TYPE, 
+			A.APPLY_NOTES
+		from BSE.T_BAS_WHITELIST_AUDIT A,BSE.T_BAS_EMPLOYEE E
+		<where>
+			A.APPLY_USER = E.EMP_CODE
+			AND A.ACTIVE = #{active,jdbcType=CHAR}
+			AND A.WHITELIST_TYPE = #{whitelistType,jdbcType=VARCHAR}
+			AND E.ORG_CODE = #{applyOrg,jdbcType=VARCHAR}
+		<if test="vehicleNo != null and vehicleNo != ''">
+			AND A.VEHICLE_NO like CONCAT(CONCAT('%', #{vehicleNo,jdbcType=VARCHAR}), '%') 
+		</if>	
+		<if test="currentApplication != null">
+				<choose>
+					<when test="currentApplication == ''">
+						<![CDATA[ AND A.CURRENT_APPLICATION IS NULL ]]>
+					</when>
+					<otherwise>
+						AND A.CURRENT_APPLICATION = #{currentApplication,jdbcType=VARCHAR}
+					</otherwise>
+				</choose>
+		</if>
+		<if test="status != null and status != ''">
+			AND A.STATUS = #{status,jdbcType=VARCHAR}
+		</if>
+		<if test="applyUser != null and applyUser != ''">
+			AND A.APPLY_USER = #{applyUser,jdbcType=VARCHAR}
+		</if>
+		<if test="beginDate != null">
+			<![CDATA[ AND A.APPLY_TIME >= #{beginDate,jdbcType=TIMESTAMP} ]]>
+		</if>
+		<if test="endDate != null">
+			<![CDATA[ AND A.APPLY_TIME < #{endDate,jdbcType=TIMESTAMP} ]]>
+		</if>
+		ORDER BY A.APPLY_TIME DESC
+		</where>
+	</select>
+	<select id="queryLeasedWhitelistApplyRecordCountBySelectiveConditionAndApplyOrg" resultType="java.lang.Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.WhitelistAuditQueryDto">
+		select count(A.ID) 
+		from BSE.T_BAS_WHITELIST_AUDIT A,BSE.T_BAS_EMPLOYEE E
+		<where>
+			A.APPLY_USER = E.EMP_CODE
+			AND A.ACTIVE = #{active,jdbcType=CHAR}
+			AND A.WHITELIST_TYPE = #{whitelistType,jdbcType=VARCHAR}
+			AND E.ORG_CODE = #{applyOrg,jdbcType=VARCHAR}
+		<if test="vehicleNo != null and vehicleNo != ''">
+			AND A.VEHICLE_NO like CONCAT(CONCAT('%', #{vehicleNo,jdbcType=VARCHAR}), '%') 
+		</if>	
+		<if test="currentApplication != null">
+				<choose>
+					<when test="currentApplication == ''">
+						<![CDATA[ AND A.CURRENT_APPLICATION IS NULL ]]>
+					</when>
+					<otherwise>
+						AND A.CURRENT_APPLICATION = #{currentApplication,jdbcType=VARCHAR}
+					</otherwise>
+				</choose>
+		</if>
+		<if test="status != null and status != ''">
+			AND A.STATUS = #{status,jdbcType=VARCHAR}
+		</if>
+		<if test="applyUser != null and applyUser != ''">
+			AND A.APPLY_USER = #{applyUser,jdbcType=VARCHAR}
+		</if>
+		<if test="beginDate != null">
+			<![CDATA[ AND A.APPLY_TIME >= #{beginDate,jdbcType=TIMESTAMP} ]]>
+		</if>
+		<if test="endDate != null">
+			<![CDATA[ AND A.APPLY_TIME < #{endDate,jdbcType=TIMESTAMP} ]]>
+		</if>
+		ORDER BY A.APPLY_TIME DESC
+		</where>
+	</select>
+</mapper>

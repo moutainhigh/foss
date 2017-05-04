@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.platform" >
+
+	<resultMap id="platformResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.PlatformEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="org_code" property="organizationCode" jdbcType="VARCHAR" />
+		<result column="platform_code" property="platformCode" jdbcType="VARCHAR" />
+		<result column="virtual_code" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="haslift" property="hasLift" jdbcType="CHAR" />
+		<result column="platform_height" property="height" jdbcType="NUMERIC" />
+		<result column="platform_width" property="width" jdbcType="NUMERIC" />
+		<result column="platform_position" property="position" jdbcType="VARCHAR" />
+ 		<result column="active" property="active" jdbcType="CHAR" />
+		<result column="notes" property="notes" jdbcType="VARCHAR" />
+		<result column="create_time" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="modify_time" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="VEHICLE_LENGTH_CODE" property="vehicleCode" jdbcType="VARCHAR" />
+
+
+		<!-- 新增属性 横坐标 ，纵坐标，月台类型:长途，月台类型:短途，月台类型:接送货-->
+		
+		<result column="ABSCISSA" property="abscissa" jdbcType="VARCHAR" />
+		<result column="ORDINATE" property="ordinate" jdbcType="VARCHAR" />
+		<result column="LONG_DISTANCE" property="longDistance" jdbcType="VARCHAR" />
+		<result column="SHORT_DISTANCE" property="shortDistance" jdbcType="VARCHAR" />
+		<result column="PKP" property="pkp" jdbcType="VARCHAR" />	
+		
+		
+		<!-- 冗余属性	 -->
+		<result column="orgName" property="organizationName" jdbcType="VARCHAR" />
+		<result column="transferCode" property="transferCode" jdbcType="VARCHAR" />
+		<result column="vehicleName" property="vehicleName" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<sql id="extColumns">
+		O.NAME as orgName, 
+		C.CODE as transferCode, 
+		V.VEHICLE_LENGTH_NAME as vehicleName,	
+	</sql>
+
+	<sql id="columns">
+		T.ID,
+		T.ORG_CODE,
+		T.PLATFORM_CODE,
+		T.HASLIFT,
+		T.PLATFORM_HEIGHT,
+		T.PLATFORM_WIDTH,
+		T.PLATFORM_POSITION,
+ 		T.CREATE_TIME,
+		T.MODIFY_TIME,
+		T.ACTIVE,
+		T.CREATE_USER_CODE,
+		T.MODIFY_USER_CODE,
+		T.NOTES,
+		T.VIRTUAL_CODE,
+		T.VEHICLE_LENGTH_CODE,
+		T.ABSCISSA,
+		T.ORDINATE,
+		T.LONG_DISTANCE,
+		T.SHORT_DISTANCE,
+		T.PKP
+		
+	</sql>
+
+	<sql id="extTables">
+		FROM BSE.T_BAS_PLATFORM T
+		LEFT JOIN BSE.T_BAS_ORG O ON T.ORG_CODE = O.CODE AND O.ACTIVE = 'Y'
+		LEFT JOIN BSE.T_BAS_TRANSFER_CENTER C ON T.ORG_CODE = C.ORG_CODE AND C.ACTIVE = 'Y'
+		LEFT JOIN BSE.T_BAS_VEHICLE_TYPE_LENGTH V ON T.VEHICLE_LENGTH_CODE = V.VEHICLE_LENGTH_CODE AND V.ACTIVE = 'Y'
+	</sql>
+	
+	<sql id="values">
+		#{id,jdbcType=VARCHAR},
+		#{organizationCode,jdbcType=VARCHAR}, 
+		#{platformCode,jdbcType=VARCHAR}, 
+		#{hasLift,jdbcType=VARCHAR}, 
+		#{height,jdbcType=NUMERIC}, 
+		#{width,jdbcType=NUMERIC}, 
+		#{position,jdbcType=VARCHAR}, 
+ 		#{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=VARCHAR}, 
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR}, 
+		#{notes,jdbcType=VARCHAR}, 
+		#{virtualCode, jdbcType=VARCHAR},
+		#{vehicleCode, jdbcType=VARCHAR},
+		#{abscissa, jdbcType=VARCHAR},
+		#{ordinate, jdbcType=VARCHAR},
+		#{longDistance, jdbcType=VARCHAR},
+		#{shortDistance, jdbcType=VARCHAR},
+		#{pkp, jdbcType=VARCHAR}
+		
+	</sql>
+
+	<insert id="addPlatform" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PlatformEntity">
+		insert into BSE.T_BAS_PLATFORM T (
+		<include refid="columns"/>
+		) values (
+		<include refid="values"/>
+		)
+	</insert>
+
+	<update id="deletePlatform" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PlatformEntity">
+		update BSE.T_BAS_PLATFORM T
+		set T.active = #{active, jdbcType=CHAR} 
+		, T.modify_time = #{modifyDate,jdbcType=TIMESTAMP} 
+		, T.modify_user_code = #{modifyUser,jdbcType=VARCHAR} 
+		where T.id = #{id,jdbcType=VARCHAR}
+	</update>
+
+	<select id="queryPlatformByVirtualCode" resultMap="platformResultMap" parameterType="map">
+		select 
+		<include refid="columns"/>
+		 from BSE.T_BAS_PLATFORM T where T.active = #{active, jdbcType=CHAR} AND T.virtual_code = #{virtualCode, jdbcType=VARCHAR}
+	</select>
+	
+	<select id="queryPlatformByCode" resultMap="platformResultMap" parameterType="map">
+		select
+		<include refid="columns"/>
+		from BSE.T_BAS_PLATFORM T
+		<where>
+			<if test="organizationCode != null and organizationCode != ''">
+				AND T.org_code = #{organizationCode, jdbcType=VARCHAR} 
+			</if>
+			<if test="platformCode != null and platformCode != ''">
+				AND T.platform_code = #{platformCode, jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+			 	AND T.active = #{active, jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+
+	<sql id="wherePlatformListByCondition">
+		<where>
+			<if test="organizationCode != null and organizationCode != ''">
+				AND T.org_code = #{organizationCode, jdbcType=VARCHAR} 
+			</if>
+			<if test="orgCodeList != null and orgCodeList.size > 0">
+				AND T.org_code in 
+				<foreach collection="orgCodeList" open="(" close=")" separator="," item="orgCode">
+					#{orgCode} 
+				</foreach>
+			</if>
+			<if test="platformCode != null and platformCode != ''">
+				AND T.platform_code like CONCAT(CONCAT('%', #{platformCode, jdbcType=VARCHAR}), '%')  
+			</if>
+			<if test="position != null and position != ''">
+				AND T.platform_position like CONCAT(CONCAT('%', #{position, jdbcType=VARCHAR}), '%') 
+			</if>
+ 			<if test="vehicleCode != null and vehicleCode != ''">
+				AND T.VEHICLE_LENGTH_CODE = #{vehicleCode, jdbcType=VARCHAR}
+			</if>
+			<if test="longDistance != null and longDistance != ''">
+				AND T.LONG_DISTANCE = #{longDistance, jdbcType=VARCHAR}
+			</if>
+			<if test="shortDistance != null and shortDistance != ''">
+				AND T.SHORT_DISTANCE = #{shortDistance, jdbcType=VARCHAR}
+			</if>
+			<if test="pkp != null and pkp != ''">
+				AND T.PKP = #{pkp, jdbcType=VARCHAR}
+			</if>
+		 	AND T.active = #{active, jdbcType=CHAR}
+		</where>
+	</sql>
+
+	<select id="queryPlatformListByCondition" resultMap="platformResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PlatformEntity">
+		select   
+		<include refid="columns"/>
+		FROM BSE.T_BAS_PLATFORM T
+		<include refid="wherePlatformListByCondition"/>
+		order by T.org_code, T.platform_code
+	</select>
+
+	<select id="queryPlatformListForExport" resultMap="platformResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PlatformEntity">
+		select
+		<include refid="extColumns"/>
+		<include refid="columns"/>
+		<include refid="extTables"/>
+		<include refid="wherePlatformListByCondition"/>
+		order by T.org_code, T.platform_code,T.CREATE_TIME
+	</select>
+
+	<select id="queryPlatformListForExportByVehicleType2" resultMap="platformResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PlatformEntity">
+		select
+		<include refid="extColumns"/>
+		<include refid="columns"/>
+		<include refid="extTables"/>
+		<where>
+			<if test="organizationCode != null and organizationCode != ''">
+				 T.org_code = #{organizationCode, jdbcType=VARCHAR} 
+			</if>
+			<if test="orgCodeList != null and orgCodeList.size > 0">
+				AND T.org_code in 
+				<foreach collection="orgCodeList" open="(" close=")" separator="," item="orgCode">
+					#{orgCode} 
+				</foreach>
+			</if>
+			<if test="platformCode != null and platformCode != ''">
+				AND T.platform_code like CONCAT(CONCAT('%', #{platformCode, jdbcType=VARCHAR}), '%')  
+			</if>
+			<if test="position != null and position != ''">
+				AND T.platform_position like CONCAT(CONCAT('%', #{position, jdbcType=VARCHAR}), '%') 
+			</if>
+<!--  			<if test="vehicleCode != null and vehicleCode != ''"> -->
+<!-- 				AND T.VEHICLE_LENGTH_CODE = #{vehicleCode, jdbcType=VARCHAR} -->
+<!-- 			</if> -->
+			<if test="longDistance != null and longDistance != ''">
+				AND T.LONG_DISTANCE = #{longDistance, jdbcType=VARCHAR}
+			</if>
+			<if test="shortDistance != null and shortDistance != ''">
+				AND T.SHORT_DISTANCE = #{shortDistance, jdbcType=VARCHAR}
+			</if>
+			<if test="pkp != null and pkp != ''">
+				AND T.PKP = #{pkp, jdbcType=VARCHAR}
+			</if>
+		 	AND T.active = #{active, jdbcType=CHAR}
+		</where>
+		
+		
+<!-- 		<include refid="wherePlatformListByCondition"/> -->
+		order by T.org_code, T.platform_code
+	</select>
+	
+	
+	<select id="countPlatformListByCondition" resultType="long" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PlatformEntity">
+		select count(1) 
+		FROM BSE.T_BAS_PLATFORM T
+		<include refid="wherePlatformListByCondition"/>
+	</select>
+
+	<select id="queryPlatformListByOrgCodeAndPlatformCodeLimit" resultMap="platformResultMap" parameterType="map">
+		select 
+		<include refid="columns"/>
+		from BSE.T_BAS_PLATFORM T
+		where T.active = #{active, jdbcType=CHAR} 
+		<if test="startCode != null and startCode != ''">
+			<![CDATA[ and T.platform_code >= #{startCode, jdbcType=VARCHAR}  ]]>
+		</if>
+		<if test="endCode != null and endCode != ''">
+			<![CDATA[ and T.platform_code <= #{endCode, jdbcType=VARCHAR} ]]>
+		</if>
+		and T.org_code = #{organizationCode}
+		order by T.platform_code
+	</select>
+
+	<update id="deletePlatforms" parameterType="map">
+		update BSE.T_BAS_PLATFORM T
+		set T.active = #{inactive, jdbcType=CHAR} 
+		, T.modify_time = #{modifyDate,jdbcType=TIMESTAMP} 
+		, T.modify_user_code = #{modifyUser,jdbcType=VARCHAR} 
+		where T.active = #{active, jdbcType=CHAR}
+		and T.virtual_code in 
+		<foreach collection="virtualCodes" open="(" close=")" separator="," item="virtualCode">
+			#{virtualCode, jdbcType=VARCHAR} 
+		</foreach>
+	</update>
+
+
+
+	<!-- 以下为 cache 使用 -->
+
+	<select id="queryLastCreateTime" resultType="date">
+		<![CDATA[
+			SELECT MAX(CREATE_TIME)
+			FROM BSE.T_BAS_PLATFORM T
+		]]>
+	</select>
+
+	<select id="queryLastModifyTime" resultType="date" parameterType="date">
+		<![CDATA[
+			SELECT MAX(MODIFY_TIME)
+			FROM BSE.T_BAS_PLATFORM T
+			WHERE T.MODIFY_TIME <= #{now,jdbcType=TIMESTAMP}
+		]]>
+	</select>
+
+	<select id="queryPlatformListForCache" resultMap="platformResultMap" parameterType="string">
+		select 
+		<include refid="columns"/>
+		FROM BSE.T_BAS_PLATFORM T
+		where T.active = #{active, jdbcType=CHAR}
+		order by T.platform_code
+	</select>
+
+	<select id="queryPlatformListViaDateForCache" resultMap="platformResultMap" parameterType="map">
+		SELECT
+		<include refid="columns"/>
+		<![CDATA[
+		FROM BSE.T_BAS_PLATFORM T
+		where T.active = #{active, jdbcType=CHAR}
+		AND (T.CREATE_TIME > #{now, jdbcType=TIMESTAMP} or T.MODIFY_TIME > #{now, jdbcType=TIMESTAMP})
+		AND T.MODIFY_TIME < sysdate + 1
+		]]>
+	</select>
+
+</mapper>

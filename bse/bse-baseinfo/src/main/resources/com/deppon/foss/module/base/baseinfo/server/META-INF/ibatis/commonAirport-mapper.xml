@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.commonAirport">
+	<resultMap id="airportResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.AirportEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="AIRPORT_NAME" property="airportName" jdbcType="VARCHAR" />
+		<result column="AIRPORT_CODE" property="airportCode" jdbcType="VARCHAR" />
+		<result column="CITY_CODE" property="cityCode" jdbcType="VARCHAR" />
+		<result column="COUNTY_CODE" property="countyCode" jdbcType="VARCHAR" />
+		<result column="CITY_NAME" property="cityName" jdbcType="VARCHAR" />
+		<result column="COUNTY_NAME" property="countyName" jdbcType="VARCHAR" />
+		<result column="CONTACT" property="contact" jdbcType="VARCHAR" />
+		<result column="CONTACT_PHONE" property="contactPhone" jdbcType="VARCHAR" />
+		<result column="PICKUP_ADDRESS" property="pickupAddress" jdbcType="VARCHAR" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="airport_Column_List">
+		T1.ID, T1.AIRPORT_NAME, T1.AIRPORT_CODE,
+		T1.CITY_CODE,T2.NAME,T1.COUNTY_CODE,T2.CODE,
+		T1.CONTACT,T1.CONTACT_PHONE, T1.PICKUP_ADDRESS,
+		T1.NOTES, T1.CREATE_TIME, T1.MODIFY_TIME,
+		T1.ACTIVE, T1.CREATE_USER_CODE, T1.MODIFY_USER_CODE
+	</sql>
+	<select id="queryAirportListByCondition" resultMap="airportResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AirportEntity">
+		SELECT
+		<include refid="airport_Column_List" />
+		FROM BSE.T_BAS_AIRPORT T1, BSE.T_BAS_DISTRICT T2 
+		<include refid="searchCondition" />
+	</select>
+	<select id="countAirportListByCondition" resultType="long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AirportEntity">
+		SELECT
+		COUNT(*)
+		FROM BSE.T_BAS_AIRPORT T1, BSE.T_BAS_DISTRICT T2 
+		<include refid="searchCondition" />
+	</select>
+	<sql id="searchCondition">
+		<where>
+			T1.CITY_CODE=T2.CODE 
+			<if test="queryParam != null and queryParam !=''">
+				AND (
+					     T1.AIRPORT_NAME LIKE  CONCAT(CONCAT('%',#{queryParam,jdbcType=VARCHAR}),'%')
+					 OR
+					 	 T1.AIRPORT_CODE LIKE  CONCAT(CONCAT('%',#{queryParam,jdbcType=VARCHAR}),'%')
+					 )
+			</if>
+			<if test="queryDistrictParam != null and queryDistrictParam !=''">
+				AND (
+					     T2.CODE LIKE  CONCAT(CONCAT('%',#{queryDistrictParam,jdbcType=VARCHAR}),'%')
+					 OR
+					 	 T2.NAME LIKE  CONCAT(CONCAT('%',#{queryDistrictParam,jdbcType=VARCHAR}),'%')
+					 )
+			</if>
+			<if test="airportName != null and airportName !=''">
+				AND T1.AIRPORT_NAME = #{airportName,jdbcType=VARCHAR} 
+			</if>
+			<if test="airportCode != null and airportCode !=''">
+				AND T1.AIRPORT_CODE = #{airportCode,jdbcType=VARCHAR}
+			</if>
+			<if test="cityCode != null and acityCode !=''">
+				AND T1.CITY_CODE = #{cityCode,jdbcType=VARCHAR}
+			</if>
+			<if test="countyCode != null and acountyCode !=''">
+				AND T1.COUNTY_CODE = #{countyCode,jdbcType=VARCHAR}
+			</if>
+			<if test="contact != null and contact !=''">
+				AND T1.CONTACT = #{contact,jdbcType=VARCHAR}
+			</if>
+			<if test="contactPhone != null and contactPhone !=''">
+				AND T1.CONTACT_PHONE = #{contactPhone,jdbcType=VARCHAR}
+			</if>
+			<if test="pickupAddress != null and pickupAddress !=''">
+				AND T1.PICKUP_ADDRESS = #{pickupAddress,jdbcType=VARCHAR}
+			</if>
+			<if test="notes != null and notes != ''">
+				AND T1.NOTES = #{notes,jdbcType=VARCHAR}
+			</if>
+			<if test="createDate != null and createDate !=''">
+				AND T1.CREATE_TIME = #{createDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="modifyDate != null and modifyDate !=''">
+				AND T1.MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="active != null and active !=''">
+				AND T1.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="createUser != null and createUser !=''">
+				AND T1.CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR}
+			</if>
+			<if test="modifyUser != null and modifyUser !=''">
+				AND T1.MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</sql>
+</mapper>

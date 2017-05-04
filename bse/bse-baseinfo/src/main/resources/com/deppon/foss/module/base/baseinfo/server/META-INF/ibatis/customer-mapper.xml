@@ -1,0 +1,2586 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.customer">
+	<!-- 客户相关信息配置文件 -->
+	<!-- 客户信息 -->
+	<resultMap id="customerResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.CustomerEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="ADDRESS" property="address" jdbcType="VARCHAR" />
+		<result column="PROPERTY" property="property" jdbcType="VARCHAR" />
+		<result column="TYPE" property="type" jdbcType="VARCHAR" />
+		<result column="CREDIT_AMOUNT" property="creditAmount"
+			jdbcType="DECIMAL" />
+		<result column="NAME" property="name" jdbcType="VARCHAR" />
+		<result column="LICENSE" property="license" jdbcType="VARCHAR" />
+		<result column="UNIFIED_CODE" property="unifiedCode" jdbcType="VARCHAR" />
+		<result column="CODE" property="cusCode" jdbcType="VARCHAR" />
+		<result column="ACTIVE_CUS" property="activeCus" jdbcType="CHAR" />
+		<result column="TOTAL_ARREARS" property="totalArrears"
+			jdbcType="DECIMAL" />
+		<result column="CHARGE_MODE" property="chargeMode" jdbcType="VARCHAR" />
+		<result column="DEGREE" property="degree" jdbcType="VARCHAR" />
+		<result column="CRM_CUS_ID" property="crmCusId" jdbcType="DECIMAL" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+		<result column="VIRTUAL_CODE" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="FISTRANGOODS" property="fistrangoods" jdbcType="CHAR" />
+		<result column="PROVNAME" property="provName" jdbcType="VARCHAR" />
+		<result column="CITYNAME" property="cityName" jdbcType="VARCHAR" />
+		<result column="SIMPLENAME" property="simpleName" jdbcType="VARCHAR" />
+		<result column="ISIMPORT" property="isImport" jdbcType="CHAR" />
+		<result column="ISSPECIAL" property="isSpecial" jdbcType="CHAR" />
+		<result column="BILLTITLE" property="billTitle" jdbcType="VARCHAR" />
+		<result column="ISDELETE" property="isDelete" jdbcType="CHAR" />
+		<!-- 发件人短信 收件人短信字段 -->
+		<result column="SHIPPER_SMS" property="shipperSms" jdbcType="VARCHAR" />
+		<result column="RECEIVER_SMS" property="receiverSms" jdbcType="VARCHAR" />
+		<!-- 新增收货人固定手机号 -->
+		<result column="FIXED_RECEIVE_MOBILE" property="fixedReceiveMobile" jdbcType="VARCHAR"/>
+		<!-- 新增是否精确代收 -->
+		<result column="ACCURATE_COLLECTION" property="accurateCollection" jdbcType="CHAR" />
+		<!-- 078816_wp_2014-03-21 CMR2期-->
+		<result column="ISLARGECUSTOMERS" property="isLargeCustomers" jdbcType="CHAR" />
+		<result column="CUSTOMSERNATURE" property="customserNature" jdbcType="VARCHAR" />
+		<result column="BUSINESSTYPE" property="businessType" jdbcType="VARCHAR" />
+		<result column="ONELEVELINDUSTRY" property="oneLevelIndustry" jdbcType="VARCHAR" />
+		<result column="TWOLEVELINDUSTRY" property="twoLevelIndustry" jdbcType="VARCHAR" />
+		<!--是否电子运单大客户 -->
+		<result column="ISELECBILLBIGCUST" property="isElecBillBigCust" jdbcType="CHAR" />
+		<!-- 132599 2014-10-28 新增是否快递大客户标识 -->
+		<result column="ISEXPRESSBIGCUST" property="isExpressBigCust" jdbcType="CHAR" />
+		<result column="CUST_ADDR_REMARK" property="custAddrRemark" jdbcType="VARCHAR" />
+		<!--是否精准计价 -->
+		<result column="ISACCURATEPRICE" property="isAccuratePrice" jdbcType="CHAR" />
+		<!--特安上限 -->
+		<result column="TEAN_LIMIT" property="teanLimit" jdbcType="INTEGER" />
+		
+		<!--发票标记 -->
+		<result column="INVOICE_TYPE" property="invoiceType" jdbcType="VARCHAR" />		
+		<!--客户分群（CRM月度标签） -->
+		<result column="FLABELLEAVEMONTH" property="flabelleavemonth" jdbcType="VARCHAR" />
+		<!--黑名单类别  差错延期-->
+		<result column="FBLACKLISTCATEGORY" property="blackListCategory" jdbcType="VARCHAR" />	
+		<!--快递装卸费业务类型 css-->
+		<result column="EXPHANDCHARGEBUSITYPE" property="expHandChargeBusiType" jdbcType="VARCHAR" />	
+		<!--设置比例 css-->
+		<result column="SETPROPORTION" property="setProportion" jdbcType="VARCHAR" />	
+	</resultMap>
+	
+		
+	<!-- 客户信息 308861 -->
+	<resultMap id="customerResultNewMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.CustomerNewEntity">
+		<!-- 078816_wp_2014-03-21 CMR2期-->
+		<result column="ISLARGECUSTOMERS" property="isLargeCustomers" jdbcType="CHAR" />
+		<!--客户分群（CRM月度标签） -->
+		<result column="FLABELLEAVEMONTH" property="flabelleavemonth" jdbcType="VARCHAR" />
+		<!-- 是否电子运单大客户 -->
+		<result column="ISELECBILLBIGCUST" property="isElecBillBigCust" jdbcType="CHAR" />
+	</resultMap>
+	
+	<resultMap
+		type="com.deppon.foss.module.base.baseinfo.api.shared.dto.CustomerDto"
+		id="customerAccountDtoResultMap" extends="customerResultMap">
+		<!-- 一对多配置 客户对应一个或多个 开户银行账户 -->
+		<collection property="bankAccountList" column="CRM_CUS_ID"
+			select="queryCusAccountByCusCode" ofType="java.util.ArrayList" />
+	</resultMap>
+	<!-- 客户以及客户相关信息 -->
+	<resultMap id="customerDtoResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.dto.CustomerDto">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="ADDRESS" property="address" jdbcType="VARCHAR" />
+		<result column="PROPERTY" property="property" jdbcType="VARCHAR" />
+		<result column="TYPE" property="type" jdbcType="VARCHAR" />
+		<result column="CREDIT_AMOUNT" property="creditAmount"
+			jdbcType="DECIMAL" />
+		<result column="NAME" property="name" jdbcType="VARCHAR" />
+		<result column="LICENSE" property="license" jdbcType="VARCHAR" />
+		<result column="UNIFIED_CODE" property="unifiedCode" jdbcType="VARCHAR" />
+		<result column="CODE" property="cusCode" jdbcType="VARCHAR" />
+		<result column="ACTIVE_CUS" property="activeCus" jdbcType="CHAR" />
+		<result column="TOTAL_ARREARS" property="totalArrears"
+			jdbcType="DECIMAL" />
+		<result column="CHARGE_MODE" property="chargeMode" jdbcType="VARCHAR" />
+		<result column="DEGREE" property="degree" jdbcType="VARCHAR" />
+		<result column="CRM_CUS_ID" property="crmCusId" jdbcType="DECIMAL" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+		<result column="VIRTUAL_CODE" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="FISTRANGOODS" property="fistrangoods" jdbcType="CHAR" />
+		<result column="PROVNAME" property="provName" jdbcType="VARCHAR" />
+		<result column="CITYNAME" property="cityName" jdbcType="VARCHAR" />
+		<result column="SIMPLENAME" property="simpleName" jdbcType="VARCHAR" />
+		<result column="ISIMPORT" property="isImport" jdbcType="CHAR" />
+		<result column="ISSPECIAL" property="isSpecial" jdbcType="CHAR" />
+		<result column="BILLTITLE" property="billTitle" jdbcType="VARCHAR" />
+		<result column="ISDELETE" property="isDelete" jdbcType="CHAR" />
+		<!-- 发件人短信 收件人短信字段 -->
+		<result column="SHIPPER_SMS" property="shipperSms" jdbcType="VARCHAR" />
+		<result column="RECEIVER_SMS" property="receiverSms" jdbcType="VARCHAR" />
+		<!-- 新增是否精确代收 -->
+		<result column="ACCURATE_COLLECTION" property="accurateCollection" jdbcType="CHAR" />
+		<!-- 新增收货人固定手机号 -->
+		<result column="FIXED_RECEIVE_MOBILE" property="fixedReceiveMobile" jdbcType="VARCHAR"/>
+		<!-- 078816_wp_2014-03-21 CMR2期-->
+		<result column="ISLARGECUSTOMERS" property="isLargeCustomers" jdbcType="CHAR" />
+		<result column="CUSTOMSERNATURE" property="customserNature" jdbcType="VARCHAR" />
+		<result column="BUSINESSTYPE" property="businessType" jdbcType="VARCHAR" />
+		<result column="ONELEVELINDUSTRY" property="oneLevelIndustry" jdbcType="VARCHAR" />
+		<result column="TWOLEVELINDUSTRY" property="twoLevelIndustry" jdbcType="VARCHAR" />
+		
+		<!--是否电子运单大客户 -->
+		<result column="ISELECBILLBIGCUST" property="isElecBillBigCust" jdbcType="CHAR" />
+		<!--特安上限 -->
+		<result column="TEAN_LIMIT" property="teanLimit" jdbcType="INTEGER" />
+		<!--发票标记 -->
+		<result column="INVOICE_TYPE" property="invoiceType" jdbcType="VARCHAR" />
+		<!-- 132599 2014-10-28 新增是否快递大客户标识 -->
+		<result column="ISEXPRESSBIGCUST" property="isExpressBigCust" jdbcType="CHAR" />
+		<result column="CUST_ADDR_REMARK" property="custAddrRemark" jdbcType="VARCHAR" />
+
+		<!-- 一对多配置 客户对应一个或多个 联系人 -->
+		<collection property="contactList" column="CRM_CUS_ID"
+			select="queryContactsByCusCode" ofType="java.util.ArrayList" />
+
+		<!-- 一对多配置 客户对应一个或多个 开户银行账户 -->
+		<collection property="bankAccountList" column="CRM_CUS_ID"
+			select="queryCusAccountByCusCode" ofType="java.util.ArrayList" />
+
+		<!-- 一对多配置 客户对应一个或多个 客户合同信息 -->
+		<collection property="bargainList" column="CRM_CUS_ID"
+			select="queryCusBargainByCusCode" ofType="java.util.ArrayList" />
+
+		<!-- 一对多配置 客户对应一个或多个 客户合同-优惠信息 -->
+		<collection property="bargainPreferList" column="CRM_CUS_ID"
+			select="foss.bse.bse-baseinfo.cusBargain.querybargainPreferByCrmId"
+			ofType="java.util.ArrayList" />
+		<!-- 一对多配置 客户对应一个或多个 客户联系人-偏好地址-接送货地址信息 -->
+		<collection property="contactAddressList" column="CRM_CUS_ID"
+			select="foss.bse.bse-baseinfo.cusContact.queryContactAddressByCrmId"
+			ofType="java.util.ArrayList" />
+	</resultMap>
+    
+	<!-- 客户以及客户相关信息 但是不包含客户合同适用部门信息，151211杨套红，修复大客户绑定N多客户合同开单慢问题,20150320-->
+	<resultMap id="customerDtoResultMapNew"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.dto.CustomerDto">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="ADDRESS" property="address" jdbcType="VARCHAR" />
+		<result column="PROPERTY" property="property" jdbcType="VARCHAR" />
+		<result column="TYPE" property="type" jdbcType="VARCHAR" />
+		<result column="CREDIT_AMOUNT" property="creditAmount"
+			jdbcType="DECIMAL" />
+		<result column="NAME" property="name" jdbcType="VARCHAR" />
+		<result column="LICENSE" property="license" jdbcType="VARCHAR" />
+		<result column="UNIFIED_CODE" property="unifiedCode" jdbcType="VARCHAR" />
+		<result column="CODE" property="cusCode" jdbcType="VARCHAR" />
+		<result column="ACTIVE_CUS" property="activeCus" jdbcType="CHAR" />
+		<result column="TOTAL_ARREARS" property="totalArrears"
+			jdbcType="DECIMAL" />
+		<result column="CHARGE_MODE" property="chargeMode" jdbcType="VARCHAR" />
+		<result column="DEGREE" property="degree" jdbcType="VARCHAR" />
+		<result column="CRM_CUS_ID" property="crmCusId" jdbcType="DECIMAL" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+		<result column="VIRTUAL_CODE" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="FISTRANGOODS" property="fistrangoods" jdbcType="CHAR" />
+		<result column="PROVNAME" property="provName" jdbcType="VARCHAR" />
+		<result column="CITYNAME" property="cityName" jdbcType="VARCHAR" />
+		<result column="SIMPLENAME" property="simpleName" jdbcType="VARCHAR" />
+		<result column="ISIMPORT" property="isImport" jdbcType="CHAR" />
+		<result column="ISSPECIAL" property="isSpecial" jdbcType="CHAR" />
+		<result column="BILLTITLE" property="billTitle" jdbcType="VARCHAR" />
+		<result column="ISDELETE" property="isDelete" jdbcType="CHAR" />
+		<!-- 发件人短信 收件人短信字段 -->
+		<result column="SHIPPER_SMS" property="shipperSms" jdbcType="VARCHAR" />
+		<result column="RECEIVER_SMS" property="receiverSms" jdbcType="VARCHAR" />
+		<!-- 新增是否精确代收 -->
+		<result column="ACCURATE_COLLECTION" property="accurateCollection" jdbcType="CHAR" />
+		<!-- 新增收货人固定手机号 -->
+		<result column="FIXED_RECEIVE_MOBILE" property="fixedReceiveMobile" jdbcType="VARCHAR"/>
+		<!-- 078816_wp_2014-03-21 CMR2期-->
+		<result column="ISLARGECUSTOMERS" property="isLargeCustomers" jdbcType="CHAR" />
+		<result column="CUSTOMSERNATURE" property="customserNature" jdbcType="VARCHAR" />
+		<result column="BUSINESSTYPE" property="businessType" jdbcType="VARCHAR" />
+		<result column="ONELEVELINDUSTRY" property="oneLevelIndustry" jdbcType="VARCHAR" />
+		<result column="TWOLEVELINDUSTRY" property="twoLevelIndustry" jdbcType="VARCHAR" />
+		
+		<!--是否电子运单大客户 -->
+		<result column="ISELECBILLBIGCUST" property="isElecBillBigCust" jdbcType="CHAR" />
+		<!--特安上限 -->
+		<result column="TEAN_LIMIT" property="teanLimit" jdbcType="INTEGER" />
+		<!--发票标记 -->
+		<result column="INVOICE_TYPE" property="invoiceType" jdbcType="VARCHAR" />
+		<!-- 132599 2014-10-28 新增是否快递大客户标识 -->
+		<result column="ISEXPRESSBIGCUST" property="isExpressBigCust" jdbcType="CHAR" />
+		<result column="CUST_ADDR_REMARK" property="custAddrRemark" jdbcType="VARCHAR" />
+
+		<!-- 一对多配置 客户对应一个或多个 联系人 -->
+		<collection property="contactList" column="CRM_CUS_ID"
+			select="queryContactsByCusCode" ofType="java.util.ArrayList" />
+
+		<!-- 一对多配置 客户对应一个或多个 开户银行账户 -->
+		<collection property="bankAccountList" column="CRM_CUS_ID"
+			select="queryCusAccountByCusCode" ofType="java.util.ArrayList" />
+
+		<!-- 一对多配置 客户对应一个或多个 客户合同信息 ,151211杨套红，修复大客户绑定N多客户合同开单慢问题,20150320-->
+		<collection property="bargainList" column="CRM_CUS_ID"
+			select="queryCusBargainByCusCodeNew" ofType="java.util.ArrayList" />
+
+		<!-- 一对多配置 客户对应一个或多个 客户合同-优惠信息 -->
+		<collection property="bargainPreferList" column="CRM_CUS_ID"
+			select="foss.bse.bse-baseinfo.cusBargain.querybargainPreferByCrmId"
+			ofType="java.util.ArrayList" />
+		<!-- 一对多配置 客户对应一个或多个 客户联系人-偏好地址-接送货地址信息 -->
+		<collection property="contactAddressList" column="CRM_CUS_ID"
+			select="foss.bse.bse-baseinfo.cusContact.queryContactAddressByCrmId"
+			ofType="java.util.ArrayList" />
+	</resultMap>
+    
+    
+	<!-- 客户开户银行 -->
+	<resultMap id="cusAccountResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusAccountEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="OTHER_BRANCH_BANK_NAME" property="otherBranchBankName"
+			jdbcType="VARCHAR" />
+		<result column="ACCOUNT_NO" property="accountNo" jdbcType="VARCHAR" />
+		<result column="ACCOUNT_NAME" property="accountName" jdbcType="VARCHAR" />
+		<result column="CITY_CODE" property="cityCode" jdbcType="VARCHAR" />
+		<result column="PROV_CODE" property="provCode" jdbcType="VARCHAR" />
+		<result column="BANK_CODE" property="bankCode" jdbcType="VARCHAR" />
+		<result column="MOBILE_PHONE" property="mobilePhone" jdbcType="VARCHAR" />
+		<result column="CUSTOMER" property="customer" jdbcType="VARCHAR" />
+		<result column="DEFAULT_ACCOUNT" property="defaultAccount"
+			jdbcType="CHAR" />
+		<result column="BRANCH_BANK_CODE" property="branchBankCode"
+			jdbcType="VARCHAR" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+		<result column="VIRTUAL_CODE" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="ACCOUNTNATURE" property="accountNature"
+			jdbcType="VARCHAR" />
+		<result column="CRM_ID" property="crmId" jdbcType="DECIMAL" />
+		<result column="CITYNAME" property="cityName" jdbcType="VARCHAR" />
+		<result column="PROVINCENAME" property="provinceName" jdbcType="VARCHAR" />
+		<result column="OPENING_BANK_NAME" property="openingBankName"
+			jdbcType="VARCHAR" />
+		<result column="BRANCH_BANK_NAME" property="branchBankName"
+			jdbcType="VARCHAR" />
+		<!-- BELONGCUSTOM 字段重命名为：CRM_CUS_ID 实体属性 belongCustom 未作更改-->
+		<result column="CRM_CUS_ID" property="belongCustom" jdbcType="DECIMAL" />
+		<result column="FINANCELINKMAN" property="financeLinkman"
+			jdbcType="VARCHAR" />
+		<result column="ACCOUNTUSE" property="accountUse" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 客户开户银行 -->
+	<resultMap id="cusAccountResultDtoMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.dto.CusAccountDto">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="OTHER_BRANCH_BANK_NAME" property="otherBranchBankName"
+			jdbcType="VARCHAR" />
+		<result column="ACCOUNT_NO" property="accountNo" jdbcType="VARCHAR" />
+		<result column="ACCOUNT_NAME" property="accountName" jdbcType="VARCHAR" />
+		<result column="CITY_CODE" property="cityCode" jdbcType="VARCHAR" />
+		<result column="PROV_CODE" property="provCode" jdbcType="VARCHAR" />
+		<result column="BANK_CODE" property="bankCode" jdbcType="VARCHAR" />
+		<result column="MOBILE_PHONE" property="mobilePhone" jdbcType="VARCHAR" />
+		<result column="CUSTOMER" property="customer" jdbcType="VARCHAR" />
+		<result column="DEFAULT_ACCOUNT" property="defaultAccount"
+			jdbcType="CHAR" />
+		<result column="BRANCH_BANK_CODE" property="branchBankCode"
+			jdbcType="VARCHAR" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+		<result column="VIRTUAL_CODE" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="ACCOUNTNATURE" property="accountNature"
+			jdbcType="VARCHAR" />
+		<result column="CRM_ID" property="crmId" jdbcType="DECIMAL" />
+		<result column="CITYNAME" property="cityName" jdbcType="VARCHAR" />
+		<result column="PROVINCENAME" property="provinceName" jdbcType="VARCHAR" />
+		<result column="OPENING_BANK_NAME" property="openingBankName"
+			jdbcType="VARCHAR" />
+		<result column="BRANCH_BANK_NAME" property="branchBankName"
+			jdbcType="VARCHAR" />
+		<!-- BELONGCUSTOM 字段重命名为：CRM_CUS_ID 实体属性 belongCustom 未作更改-->
+		<result column="CRM_CUS_ID" property="belongCustom" jdbcType="DECIMAL" />
+		<result column="FINANCELINKMAN" property="financeLinkman"
+			jdbcType="VARCHAR" />
+		<result column="ACCOUNTUSE" property="accountUse" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 客户联系人混合实体 -->
+	<resultMap id="contactResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.ContactEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="GENDER" property="gender" jdbcType="CHAR" />
+		<result column="CONTACT_PHONE" property="contactPhone"
+			jdbcType="VARCHAR" />
+		<result column="MOBILE_PHONE" property="mobilePhone" jdbcType="VARCHAR" />
+		<result column="FAX_NO" property="faxNo" jdbcType="VARCHAR" />
+		<result column="ADDRESS" property="address" jdbcType="VARCHAR" />
+		<result column="EMAIL" property="email" jdbcType="VARCHAR" />
+		<result column="ZIP_CODE" property="zipCode" jdbcType="VARCHAR" />
+		<result column="BIRTHDAY" property="birthday" jdbcType="TIMESTAMP" />
+		<result column="ID_CARD" property="idCard" jdbcType="VARCHAR" />
+		<result column="HOBBY" property="hobby" jdbcType="VARCHAR" />
+		<result column="RECEIVE_EMAIL" property="receiveEmail"
+			jdbcType="CHAR" />
+		<result column="RECEIVE_MESSAGE" property="receiveMessage"
+			jdbcType="CHAR" />
+		<result column="RECEIVE_LETTER" property="receiveLetter"
+			jdbcType="CHAR" />
+		<result column="WAY" property="way" jdbcType="VARCHAR" />
+		<result column="NATION" property="nation" jdbcType="VARCHAR" />
+		<result column="HOMETOWN" property="hometown" jdbcType="VARCHAR" />
+		<result column="TITLE" property="title" jdbcType="VARCHAR" />
+		<result column="WORKING_DEPT" property="workingDept" jdbcType="VARCHAR" />
+		<result column="CONTACT_NAME" property="contactName" jdbcType="VARCHAR" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+		<result column="CONTACT_TYPE" property="contactType" jdbcType="VARCHAR" />
+		<result column="MAIN_CONTRACT" property="mainContract"
+			jdbcType="CHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+		<!-- CUSTOMER_CODE 字段重命名为：CRM_CUS_ID 实体属性 customerCode 未作更改-->
+		<result column="CRM_CUS_ID" property="customerCode"
+			jdbcType="VARCHAR" />
+		<result column="VIRTUAL_CODE" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="CRM_ID" property="crmId" jdbcType="DECIMAL" />
+		
+		<!-- 078816_wp_2014-03-21 CMR2期-->
+		<result column="CUSTFOSSID" property="ownCustId" jdbcType="VARCHAR" />
+		
+		<!-- 一对多配置 客户联系人对应一个或多个 联系人-地址（即客户偏好地址） -->
+		<collection property="contactAddrList" column="CRM_ID"
+			select="queryContactAddressByCusCode" ofType="java.util.ArrayList" />
+	</resultMap>
+	
+	<!-- 客户联系人实体 -->
+	<resultMap id="cusContactResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.ContactEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="GENDER" property="gender" jdbcType="CHAR" />
+		<result column="CONTACT_PHONE" property="contactPhone"
+			jdbcType="VARCHAR" />
+		<result column="MOBILE_PHONE" property="mobilePhone" jdbcType="VARCHAR" />
+		<result column="FAX_NO" property="faxNo" jdbcType="VARCHAR" />
+		<result column="ADDRESS" property="address" jdbcType="VARCHAR" />
+		<result column="EMAIL" property="email" jdbcType="VARCHAR" />
+		<result column="ZIP_CODE" property="zipCode" jdbcType="VARCHAR" />
+		<result column="BIRTHDAY" property="birthday" jdbcType="TIMESTAMP" />
+		<result column="ID_CARD" property="idCard" jdbcType="VARCHAR" />
+		<result column="HOBBY" property="hobby" jdbcType="VARCHAR" />
+		<result column="RECEIVE_EMAIL" property="receiveEmail"
+			jdbcType="CHAR" />
+		<result column="RECEIVE_MESSAGE" property="receiveMessage"
+			jdbcType="CHAR" />
+		<result column="RECEIVE_LETTER" property="receiveLetter"
+			jdbcType="CHAR" />
+		<result column="WAY" property="way" jdbcType="VARCHAR" />
+		<result column="NATION" property="nation" jdbcType="VARCHAR" />
+		<result column="HOMETOWN" property="hometown" jdbcType="VARCHAR" />
+		<result column="TITLE" property="title" jdbcType="VARCHAR" />
+		<result column="WORKING_DEPT" property="workingDept" jdbcType="VARCHAR" />
+		<result column="CONTACT_NAME" property="contactName" jdbcType="VARCHAR" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+		<result column="CONTACT_TYPE" property="contactType" jdbcType="VARCHAR" />
+		<result column="MAIN_CONTRACT" property="mainContract"
+			jdbcType="CHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+		<!-- CUSTOMER_CODE 字段重命名为：CRM_CUS_ID 实体属性 customerCode 未作更改-->
+		<result column="CRM_CUS_ID" property="customerCode"
+			jdbcType="DECIMAL" />
+		<result column="VIRTUAL_CODE" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="CRM_ID" property="crmId" jdbcType="DECIMAL" />
+		<result column="CODE" property="code" jdbcType="VARCHAR" />
+		<!--wp_20140423-crm2期-->
+		<result column="CUSTFOSSID" property="ownCustId" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 客户联系人地址 -->
+	<resultMap id="contactAddressResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.ContactAddressEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<!-- SERVICE_ADDRESS_ID 字段重命名为：ADDRESS_CRM_ID 实体属性 serviceAddressId 未作更改-->
+		<result column="ADDRESS_CRM_ID" property="serviceAddressId"
+			jdbcType="VARCHAR" />
+		<!-- CONTACT 字段重命名为：CONTACT_CRM_ID 实体属性 contact 未作更改-->
+		<result column="CONTACT_CRM_ID" property="contact" jdbcType="VARCHAR" />
+		<result column="ADDRESS_TYPE" property="addressType" jdbcType="VARCHAR" />
+		<result column="CONTACT_ADDRESS" property="contactAddress"
+			jdbcType="VARCHAR" />
+		<result column="BILL_DEMAND" property="billDemand" jdbcType="VARCHAR" />
+		<result column="CHARGE_TYPE" property="chargeType" jdbcType="VARCHAR" />
+		<result column="OTHER_DEMAND" property="otherDemand" jdbcType="VARCHAR" />
+		<result column="PARKING_FEE" property="parkingFee" jdbcType="CHAR" />
+		<result column="MAIN_ADDRESS" property="mainAddress" jdbcType="CHAR" />
+		<result column="STATUS" property="status" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="BEGIN_TIME" property="beginTime" jdbcType="TIMESTAMP" />
+		<result column="END_TIME" property="endTime" jdbcType="TIMESTAMP" />
+		<result column="DELIVERY_UPSTAIRS" property="deliveryUpstairs"
+			jdbcType="CHAR" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+		<result column="CRM_ID" property="crmId" jdbcType="DECIMAL" />
+		<!-- 联系人-地址（即偏好地址）与客户地址是一对一关系 -->
+		<association property="addressEntity" column="ADDRESS_CRM_ID"
+			select="foss.bse.bse-baseinfo.cusAddress.queryCusAddressById"></association>
+	</resultMap>
+
+	<!-- 客户以及客户联系人信息结果映射 -->
+	<resultMap id="customerContactResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.dto.CustomerContactDto">
+		<result column="CUSTID" property="custId" jdbcType="VARCHAR" />
+		<result column="CUSTCODE" property="custCode" jdbcType="VARCHAR" />
+		<result column="CUSTNAME" property="custName" jdbcType="VARCHAR" />
+		<result column="CHARGE_MODE" property="chargeMode" jdbcType="VARCHAR" />
+		<result column="CREDIT_AMOUNT" property="creditAmount"
+			jdbcType="DECIMAL" />
+		<result column="ID_CARD" property="idCard" jdbcType="VARCHAR" />
+		<result column="CONTACT_NAME" property="contactName" jdbcType="VARCHAR" />
+		<result column="MOBILE_PHONE" property="mobilePhone" jdbcType="VARCHAR" />
+		<result column="CONTACT_PHONE" property="officePhone" jdbcType="VARCHAR" />
+		<result column="ADDRESS" property="address" jdbcType="VARCHAR" />
+		<result column="CRM_ID" property="contactId" jdbcType="DECIMAL" />
+		<!--是否精准计价 -->
+		<result column="ISACCURATEPRICE" property="isAccuratePrice" jdbcType="CHAR" />
+	</resultMap>
+
+	<!-- 客户联系人数据字段 -->
+	<sql id="contact_Column_List">
+		ID, GENDER, CONTACT_PHONE, MOBILE_PHONE, FAX_NO, ADDRESS,
+		EMAIL, ZIP_CODE, BIRTHDAY,
+		ID_CARD, HOBBY, RECEIVE_EMAIL,
+		RECEIVE_MESSAGE, RECEIVE_LETTER, WAY, NATION,
+		HOMETOWN,
+		TITLE,
+		WORKING_DEPT, CONTACT_NAME, NOTES, CONTACT_TYPE, MAIN_CONTRACT,
+		CREATE_TIME,
+		MODIFY_TIME, ACTIVE, CREATE_USER_CODE, MODIFY_USER_CODE,
+		CRM_CUS_ID,
+		VIRTUAL_CODE,CRM_ID,CODE,
+		<!-- 078816_wp_2014-03-21 CMR2期-->
+		CUSTFOSSID
+	</sql>
+	
+	<!-- 客户联系人的数据字段 -->
+	<sql id="cusContact_Column_List">
+		A.ID, A.GENDER, A.CONTACT_PHONE, A.MOBILE_PHONE, A.FAX_NO, A.ADDRESS,
+		A.EMAIL,
+		A.ZIP_CODE, A.BIRTHDAY,
+		A.ID_CARD, A.HOBBY, A.RECEIVE_EMAIL,
+		A.RECEIVE_MESSAGE, A.RECEIVE_LETTER, A.WAY, A.NATION,
+		A.HOMETOWN,
+		A.TITLE,
+		A.WORKING_DEPT, A.CONTACT_NAME, A.NOTES, A.CONTACT_TYPE, A.MAIN_CONTRACT,
+		A.CREATE_TIME,
+		A.MODIFY_TIME, A.ACTIVE, A.CREATE_USER_CODE, A.MODIFY_USER_CODE,
+		A.CRM_CUS_ID,
+		A.VIRTUAL_CODE,A.CRM_ID,A.CODE,A.CUSTFOSSID
+	</sql>
+	
+	<!-- 查询客户信息表数据字段 308861 -->
+	<sql id="customer_Column_new">
+		<!-- 078816_wp_2014-03-21 CMR2期-->
+		T.ISLARGECUSTOMERS,		
+		T.FLABELLEAVEMONTH,
+		ISELECBILLBIGCUST			
+	</sql>
+	
+	<!-- 查询客户信息表数据字段 -->
+	<sql id="customer_Column_List">
+		T.ID, T.ADDRESS, T.PROPERTY, T.TYPE, T.CREDIT_AMOUNT/100 CREDIT_AMOUNT, T.NAME, T.LICENSE,
+		T.UNIFIED_CODE, T.CODE, T.ACTIVE_CUS,
+		T.TOTAL_ARREARS, T.CHARGE_MODE, T.DEGREE,
+		T.CRM_CUS_ID, T.CREATE_TIME, T.MODIFY_TIME, T.ACTIVE,
+		T.CREATE_USER_CODE,
+		T.MODIFY_USER_CODE, T.VIRTUAL_CODE, T.FISTRANGOODS, T.PROVNAME,
+		T.CITYNAME,T.SIMPLENAME, T.ISIMPORT,
+		T.ISSPECIAL, T.BILLTITLE,T.ISDELETE,T.SHIPPER_SMS,T.RECEIVER_SMS,T.ACCURATE_COLLECTION,
+		T.FIXED_RECEIVE_MOBILE,
+		<!-- 078816_wp_2014-03-21 CMR2期-->
+		T.ISLARGECUSTOMERS,
+		T.CUSTOMSERNATURE,
+		T.BUSINESSTYPE,
+		T.ONELEVELINDUSTRY,
+		T.TWOLEVELINDUSTRY,
+		<!--是否电子运单大客户 -->
+		T.ISELECBILLBIGCUST,
+		<!-- 新增快递大客户标识 -->
+		T.ISEXPRESSBIGCUST,
+		T.CUST_ADDR_REMARK,
+		T.TEAN_LIMIT,
+		T.INVOICE_TYPE,		
+		T.FLABELLEAVEMONTH			
+		,T.FBLACKLISTCATEGORY
+		,T.EXPHANDCHARGEBUSITYPE
+		,T.SETPROPORTION
+		,T.ISACCURATEPRICE
+		</sql>
+	<!-- 查询散客信息表数据字段 -->
+	<sql id="singlePeople_Column_List">
+		 T.ID,T.CONTACTADDRESS,NULL AS PROPERTY,T.TYPE,T.TEMP_ARREARS / 100 AS CREDIT_AMOUNT,T.CUSTNAME AS NAME,NULL AS LICENSE,
+         T.UNIFIED_CODE,T.CUSTCODE AS CODE,NULL AS ACTIVE_CUS,
+         0 AS TOTAL_ARREARS,NULL AS CHARGE_MODE,NULL AS DEGREE,
+         T.CRM_ID AS CRM_CUS_ID,T.CREATE_TIME,T.MODIFY_TIME,T.ACTIVE,
+         T.CREATE_USER_CODE,T.MODIFY_USER_CODE,NULL AS VIRTUAL_CODE,NULL AS FISTRANGOODS,
+         NULL AS PROVNAME,NULL AS CITYNAME,
+         T.LINKMANNAME AS SIMPLENAME,NULL AS ISIMPORT,T.ISACCURATEPRICE as ISACCURATEPRICE,
+         NULL AS ISSPECIAL,NULL AS BILLTITLE,NULL AS ISDELETE
+	</sql>
+	<!-- 插入客户信息表数据字段 -->
+	<sql id="customer_Insert_List">
+		ID, ADDRESS, PROPERTY, TYPE, CREDIT_AMOUNT, NAME, LICENSE,
+		UNIFIED_CODE, CODE, ACTIVE_CUS,
+		TOTAL_ARREARS, CHARGE_MODE, DEGREE,
+		CRM_CUS_ID, CREATE_TIME, MODIFY_TIME, ACTIVE,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE, VIRTUAL_CODE, FISTRANGOODS, PROVNAME,
+		CITYNAME,SIMPLENAME, ISIMPORT,
+		ISSPECIAL, BILLTITLE,ISDELETE,SHIPPER_SMS,RECEIVER_SMS,ACCURATE_COLLECTION,
+		FIXED_RECEIVE_MOBILE,
+		<!-- 078816_wp_2014-03-21 CMR2期-->
+		ISLARGECUSTOMERS,
+		CUSTOMSERNATURE,
+		BUSINESSTYPE,
+		ONELEVELINDUSTRY,
+		TWOLEVELINDUSTRY,
+		<!--是否电子运单大客户 -->
+		ISELECBILLBIGCUST,
+		ISEXPRESSBIGCUST,
+		CUST_ADDR_REMARK,
+		TEAN_LIMIT,
+		INVOICE_TYPE,
+		<!-- 2015-07-06  FOSS css 261997 -->
+		FLABELLEAVEMONTH				
+		<!-- 261997 foss 2015-06-04 -->
+		,FBLACKLISTCATEGORY
+		<!-- 261997 foss 2015-09-07 -->
+		,EXPHANDCHARGEBUSITYPE
+		,SETPROPORTION
+		,ISACCURATEPRICE
+	</sql>
+
+	<!-- 客户银行数据字段 -->
+	<sql id="cusAccount_Column_List">
+		ID, OTHER_BRANCH_BANK_NAME, ACCOUNT_NO, ACCOUNT_NAME,
+		CITY_CODE, PROV_CODE, BANK_CODE,
+		MOBILE_PHONE, CUSTOMER,
+		DEFAULT_ACCOUNT, BRANCH_BANK_CODE, NOTES, CREATE_TIME,
+		MODIFY_TIME,
+		ACTIVE, CREATE_USER_CODE, MODIFY_USER_CODE,
+		VIRTUAL_CODE,ACCOUNTNATURE,CRM_ID,CITYNAME, PROVINCENAME,
+		OPENING_BANK_NAME,
+		BRANCH_BANK_NAME,CRM_CUS_ID,
+		FINANCELINKMAN,ACCOUNTUSE
+	</sql>
+
+	<!-- 联系人地址数据字段 -->
+	<sql id="contactAddress_Column_List">
+		ID, ADDRESS_CRM_ID, CONTACT_CRM_ID, ADDRESS_TYPE,
+		CONTACT_ADDRESS, BILL_DEMAND, CHARGE_TYPE,
+		OTHER_DEMAND, PARKING_FEE,
+		MAIN_ADDRESS, STATUS, CREATE_TIME, MODIFY_TIME,
+		BEGIN_TIME,
+		END_TIME,
+		DELIVERY_UPSTAIRS, ACTIVE, CREATE_USER_CODE, MODIFY_USER_CODE, CRM_ID
+	</sql>
+
+	<!-- 通过传入一个客户编码查询出对应的客户信息以及银行、联系人等与客户信息相关联信息 -->
+	<select id="queryCustInfoByCode" parameterType="map"
+		resultMap="customerDtoResultMap">
+	<![CDATA[
+		SELECT 
+		/** 综合:通过传入一个客户编码查询出对应的客户信息以及银行、联系人等与客户信息相关联信息 **/
+	]]>
+		<include refid="customer_Column_List" />
+	<![CDATA[
+		FROM BSE.T_BAS_CUSTOMER T
+	]]>
+		<where>
+			<if test="custCode != null and custCode != ''">
+				CODE = #{custCode,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 通过传入一个客户编码查询出对应的客户信息以及银行、联系人等与客户信息相关联信息但不查客户合同适用部门信息,151211，杨套红，修复一个大客户绑定全国营业部开单慢问题20150320 -->
+	<select id="queryCustInfoByCodeNew" parameterType="map"
+		resultMap="customerDtoResultMapNew">
+	<![CDATA[
+		SELECT 
+		/** 综合:通过传入一个客户编码查询出对应的客户信息以及银行、联系人等与客户信息相关联信息 **/
+	]]>
+		<include refid="customer_Column_List" />
+	<![CDATA[
+		FROM BSE.T_BAS_CUSTOMER T
+	]]>
+		<where>
+			<if test="custCode != null and custCode != ''">
+				CODE = #{custCode,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 通过传入一个客户编码查询出财务未作废客户信息 -->
+	<select id="queryNoDeletedCustInfoByCode" parameterType="map"
+		resultMap="customerResultMap">
+	<![CDATA[
+		SELECT
+		/** 综合:验证客户信息是否存在**/
+	]]>
+		<include refid="customer_Column_List" />
+	<![CDATA[
+		FROM BSE.T_BAS_CUSTOMER T
+	]]>
+		<where>
+			<if test="custCode != null and custCode != ''">
+				CODE = #{custCode,jdbcType=VARCHAR}
+			</if>
+			<if test="isDelete != null and isDelete != ''">
+				AND ISDELETE = #{isDelete,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+    
+	<!-- 根据合同ID查询合同绑定部门名称,151211,CN-282合同邦定部门过多导致开单卡顿问题：优化SQL -->
+	<select id="queryAppOrgNameByBargainId" parameterType="map"
+		resultType="java.util.List">
+	<![CDATA[
+		select distinct org.name from bse.t_Bas_Cus_Bargain_App_Org bargain 
+		left join bse.T_bas_org org on org.unified_code=bargain.unified_code and org.active='Y'
+	]]>
+		<where>
+			<if test="bargainId != null and bargainId != ''">
+				bargain.BARGAIN_CRM_ID = #{bargainId,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND bargain.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+    
+	<!-- 通过传入一个客户名称查询出对应的客户信息以及银行、联系人等与客户信息相关联信息 -->
+	<select id="queryCustInfoByName" parameterType="map"
+		resultMap="customerDtoResultMap">
+	<![CDATA[
+		SELECT 
+		/** 综合:通过传入一个客户名称查询出对应的客户信息以及银行、联系人等与客户信息相关联信息 **/
+	]]>
+		<include refid="customer_Column_List" />
+	<![CDATA[
+		FROM BSE.T_BAS_CUSTOMER T
+	]]>
+		<where>
+			<if test="custName != null and custName != ''">
+				NAME = #{custName,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+	<!-- 通过传入一个客户名称查询出对应的客户信息及与客户信息相关联的银行信息 -->
+	<select id="queryCustAndAccountsInfoByCondition"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.CustomerQueryConditionDto"
+		resultMap="customerAccountDtoResultMap">
+	<![CDATA[
+		SELECT 
+		/** 综合:通过传入一个客户名称查询出对应的客户信息及与客户信息相关联的银行信息 **/
+	]]>
+		<include refid="customer_Column_List" />
+	<![CDATA[
+		FROM BSE.T_BAS_CUSTOMER  T
+	]]>
+		<include refid="queryAcccountWhere" />
+	</select>
+	
+	<!-- 通过传入一个客户名称查询出对应的会员客户和散客信息-->
+	<select id="queryCustAccountsInfoByCondition"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.CustomerQueryConditionDto" resultMap="cusAccountResultDtoMap"> 
+	  SELECT/** 综合:通过传入一个客户名称查询出对应的会员客户和散客信息 **/ 	T2.ID,
+       		   	T2.OTHER_BRANCH_BANK_NAME,
+       			T2.ACCOUNT_NO,
+       			T2.ACCOUNT_NAME,
+       			T2.CITY_CODE,
+				T2.PROV_CODE,
+				T2.BANK_CODE,
+				T2.MOBILE_PHONE,
+				T2.CUSTOMER,
+				T2.DEFAULT_ACCOUNT,
+				T2.BRANCH_BANK_CODE,
+				T2.NOTES,
+				T2.CREATE_TIME,
+				T2.MODIFY_TIME,
+				T2.ACTIVE,
+				T2.CREATE_USER_CODE,
+				T2.MODIFY_USER_CODE,
+				T2.VIRTUAL_CODE,
+				T2.ACCOUNTNATURE,
+				T2.CRM_ID,
+				T2.CITYNAME,
+				T2.PROVINCENAME,
+				T2.OPENING_BANK_NAME,
+				T2.BRANCH_BANK_NAME,
+				T2.CRM_CUS_ID,
+				T2.FINANCELINKMAN,
+				T2.ACCOUNTUSE
+  		FROM BSE.T_BAS_CUSTOMER T1,BSE.T_BAS_CUS_ACCOUNT T2
+  		WHERE 	T1.CRM_CUS_ID = T2.CRM_CUS_ID(+) 
+    		AND T2.ACTIVE='Y' 
+		<if test="custCode != null and custCode != ''">
+				AND T1.CODE = #{custCode,jdbcType=VARCHAR}
+		</if>
+		<!-- 	UNION ALL  -->
+		<!-- 	  SELECT   T2.ID, -->
+		<!-- 		       T2.OTHER_BRANCH_BANK_NAME, -->
+		<!-- 		       T2.ACCOUNT_NO, -->
+		<!-- 		       T2.ACCOUNT_NAME, -->
+		<!-- 		       T2.CITY_CODE, -->
+		<!-- 		       T2.PROV_CODE, -->
+		<!-- 		       T2.BANK_CODE, -->
+		<!-- 		       T2.MOBILE_PHONE, -->
+		<!-- 		       T2.CUSTOMER, -->
+		<!-- 		       T2.DEFAULT_ACCOUNT, -->
+		<!-- 		       T2.BRANCH_BANK_CODE, -->
+		<!-- 		       T2.NOTES, -->
+		<!-- 		       T2.CREATE_TIME, -->
+		<!-- 		       T2.MODIFY_TIME, -->
+		<!-- 		       T2.ACTIVE, -->
+		<!-- 		       T2.CREATE_USER_CODE, -->
+		<!-- 		       T2.MODIFY_USER_CODE, -->
+		<!-- 		       '' AS VIRTUAL_CODE, -->
+		<!-- 		       T2.ACCOUNTNATURE, -->
+		<!-- 		       T2.CRM_ID, -->
+		<!-- 		       T2.CITYNAME, -->
+		<!-- 		       T2.PROVINCENAME, -->
+		<!-- 		       T2.OPENING_BANK_NAME, -->
+		<!-- 		       T2.BRANCH_BANK_NAME, -->
+		<!-- 		       T2.NONCUST_CRM_ID, -->
+		<!-- 		       '' AS FINANCELINKMAN, -->
+		<!-- 		       '' AS ACCOUNTUSE -->
+		<!--  		FROM BSE.T_BAS_NONFIXED_CUSTOMER T1, BSE.T_BAS_NONFIXED_ACCOUNT T2 -->
+		<!-- 		WHERE T1.CRM_ID = T2.NONCUST_CRM_ID(+) -->
+		<!--      	  AND T2.ACTIVE = 'Y'  -->
+		<!--      	 <if test="custCode != null and custCode != ''"> -->
+		<!-- 				AND T1.CUSTCODE = #{custCode,jdbcType=VARCHAR} -->
+		<!-- 		 </if> -->
+		 ORDER BY MODIFY_TIME DESC
+	</select> 
+	
+	<select id="queryCusAccountJoinCus"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.CusAccountDto" resultMap="cusAccountResultDtoMap"> 
+	  		SELECT 	/** 综合：开户人姓名选择器查询 **/ 	
+	  			s.ID,
+       		   	s.OTHER_BRANCH_BANK_NAME,
+       			s.ACCOUNT_NO,
+       			s.ACCOUNT_NAME,
+       			s.CITY_CODE,
+				s.PROV_CODE,
+				s.BANK_CODE,
+				s.MOBILE_PHONE,
+				s.CUSTOMER,
+				s.DEFAULT_ACCOUNT,
+				s.BRANCH_BANK_CODE,
+				s.NOTES,
+				s.CREATE_TIME,
+				s.MODIFY_TIME,
+				s.ACTIVE,
+				s.CREATE_USER_CODE,
+				s.MODIFY_USER_CODE,
+				s.VIRTUAL_CODE,
+				s.ACCOUNTNATURE,
+				s.CRM_ID,
+				s.CITYNAME,
+				s.PROVINCENAME,
+				s.OPENING_BANK_NAME,
+				s.BRANCH_BANK_NAME,
+				s.CRM_CUS_ID,
+				s.FINANCELINKMAN,
+				s.ACCOUNTUSE
+  		FROM bse.t_bas_cus_account s 
+  		join bse.t_bas_customer c on s.crm_cus_id = c.crm_cus_id and s.active='Y' and c.active='Y' 
+  		<where>
+			<if test="accountName != null and accountName != ''">
+					AND s.account_Name like  '%' || #{accountName,jdbcType=VARCHAR} || '%'
+			</if>
+			<if test="unifiedCode != null and unifiedCode != ''">
+					AND c.unified_Code = #{unifiedCode,jdbcType=VARCHAR}
+			</if>
+			and s.account_no is not null
+  		</where>
+	</select> 
+		<select id="queryCusAccountJoinCusCount"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.CusAccountDto" resultType="Long"> 
+	  		SELECT 	/** 综合：开户人姓名选择器查询 **/ 	
+	  			count(*)
+  		FROM bse.t_bas_cus_account s 
+  		join bse.t_bas_customer c on s.crm_cus_id = c.crm_cus_id and s.active='Y' and c.active='Y' 
+  		<where>
+			<if test="accountName != null and accountName != ''">
+					AND s.account_Name like  '%' || #{accountName,jdbcType=VARCHAR} || '%'
+			</if>
+			<if test="unifiedCode != null and unifiedCode != ''">
+					AND c.unified_Code = #{unifiedCode,jdbcType=VARCHAR}
+			</if>
+			and s.account_no is not null
+  		</where>
+	</select> 
+	
+	<select id="countCustAndAccountsInfoByCondition"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.CustomerQueryConditionDto"
+		resultType="long">
+	<![CDATA[
+		SELECT  COUNT(*)
+		FROM BSE.T_BAS_CUSTOMER 
+	]]>
+		<include refid="queryAcccountWhere" />
+	</select>
+
+	<!-- 根据合同ID查询合同绑定部门 -->
+	<select id="queryAppOrgEntitiesByBargainId" parameterType="map"
+		resultMap="foss.bse.bse-baseinfo.bargainAppOrg.bargainAppOrgResultMap">
+	<![CDATA[
+		SELECT 
+		/** 综合:根据合同ID查询合同绑定部门 **/
+	]]>
+		<include
+			refid="foss.bse.bse-baseinfo.bargainAppOrg.bargainAppOrg_Column_List" />
+	<![CDATA[
+		FROM BSE.T_BAS_CUS_BARGAIN_APP_ORG 
+	]]>
+		<where>
+			<if test="bargainId != null and bargainId != ''">
+				BARGAIN_CRM_ID = #{bargainId,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+
+	<sql id="queryAcccountWhere">
+		<where>
+			<if test="custName != null and custName != ''">
+				NAME like
+				CONCAT(CONCAT('%',#{custName,jdbcType=VARCHAR}),'%')
+			</if>
+			<if test="custCode != null and custCode != ''">
+				AND CODE = #{custCode,jdbcType=CHAR}
+			</if>
+			<!-- <if test="contactName != null and contactName != ''"> -->
+			<!-- AND ACTIVE = #{contactName,jdbcType=CHAR} -->
+			<!-- </if> -->
+			<!-- <if test="contactPhone != null and contactPhone != ''"> -->
+			<!-- AND ACTIVE = #{contactPhone,jdbcType=CHAR} -->
+			<!-- </if> -->
+			<!-- <if test="mobilePhone != null and active != ''"> -->
+			<!-- AND ACTIVE = #{mobilePhone,jdbcType=CHAR} -->
+			<!-- </if> -->
+			<!-- <if test="idCard != null and idCard != ''"> -->
+			<!-- AND ACTIVE = #{idCard,jdbcType=CHAR} -->
+			<!-- </if> -->
+			<if test="deptCode != null and deptCode != ''">
+				AND UNIFIED_CODE = #{deptCode,jdbcType=CHAR}
+			</if>
+		</where>
+	</sql>
+
+	<!-- 根据客户编码查询客户联系人信息 -->
+	<select id="queryContactsByCusCode" parameterType="java.lang.String"
+		resultMap="contactResultMap">
+	<![CDATA[
+		SELECT 
+		/** 综合:根据客户编码查询客户联系人信息 **/
+	]]>
+		<include refid="contact_Column_List" />
+	<![CDATA[
+		FROM BSE.T_BAS_CUS_CONTACT 
+	]]>
+		<where>
+			CRM_CUS_ID = #{crmCusId,jdbcType=DECIMAL} 
+			AND ACTIVE = 'Y'
+		</where>
+	</select>
+	
+	<!-- 根据客户编码查询客户开户银行账户信息 -->
+	<select id="queryCusAccountByCusCode" parameterType="java.lang.String"
+		resultMap="cusAccountResultMap">
+	<![CDATA[
+		SELECT 
+		/** 综合:根据客户编码查询客户开户银行账户信息 **/
+	]]>
+		<include refid="cusAccount_Column_List" />
+	<![CDATA[
+		FROM BSE.T_BAS_CUS_ACCOUNT 
+	]]>
+		<where>
+			CRM_CUS_ID = #{crmCusId,jdbcType=DECIMAL} 
+			AND ACTIVE = 'Y'
+		</where>
+	</select>
+
+	<!-- 根据接送货地址ID查询联系人地址信息 -->
+	<select id="queryContactAddressById" parameterType="map"
+		resultMap="contactAddressResultMap">
+	<![CDATA[
+		SELECT
+		/** 综合:根据接送货地址ID查询联系人地址信息 **/
+	]]>
+		<include refid="contactAddress_Column_List" />
+	<![CDATA[
+		FROM BSE.T_BAS_CUS_CONTACT_ADDRESS T
+	]]>
+		<where>
+			<if test="contactAddressId != null and contactAddressId != ''">
+				ADDRESS_CRM_ID = #{contactAddressId,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+
+	<!-- 根据客户ID查询客户合同信息 -->
+	<select id="queryCusBargainByCusCode" parameterType="java.lang.String"
+		resultMap="foss.bse.bse-baseinfo.cusBargain.cusBargainResultMap">
+	<![CDATA[
+		SELECT 
+		/** 综合:根据客户ID查询客户合同信息 **/
+	]]>
+		<include refid="foss.bse.bse-baseinfo.cusBargain.cusBargain_Column_List" />
+	<![CDATA[
+		FROM BSE.T_BAS_CUS_BARGAIN 
+	]]>
+		<where>
+			CRM_CUS_ID = #{crmCusId,jdbcType=DECIMAL}
+			AND ACTIVE = 'Y'
+		</where>
+	</select>
+	
+	<!-- 根据客户ID查询客户合同信息 ,151211杨套红，修复大客户绑定N多客户合同开单慢问题,20150320-->
+	<select id="queryCusBargainByCusCodeNew" parameterType="java.lang.String"
+		resultMap="foss.bse.bse-baseinfo.cusBargain.cusBargainResultMapNew">
+	<![CDATA[
+		SELECT 
+		/** 综合:根据客户ID查询客户合同信息 **/
+	]]>
+		<include refid="foss.bse.bse-baseinfo.cusBargain.cusBargain_Column_List" />
+	<![CDATA[
+		FROM BSE.T_BAS_CUS_BARGAIN 
+	]]>
+		<where>
+			CRM_CUS_ID = #{crmCusId,jdbcType=DECIMAL}
+			AND ACTIVE = 'Y'
+		</where>
+	</select>
+
+	<!-- 根据客户联系人ID查询联系人-地址（偏好地址）信息 -->
+	<select id="queryContactAddressByCusCode" parameterType="java.lang.String"
+		resultMap="contactAddressResultMap">
+	<![CDATA[
+		SELECT 
+		/** 综合:根据客户联系人ID查询联系人-地址（偏好地址）信息 **/
+	]]>
+		<include refid="contactAddress_Column_List" />
+	<![CDATA[
+		FROM BSE.T_BAS_CUS_CONTACT_ADDRESS 
+	]]>
+		<where>
+			CONTACT_CRM_ID = #{crmId,jdbcType=VARCHAR}
+			AND ACTIVE = 'Y'
+		</where>
+	</select>
+
+	<!-- 通过传入部门编码查询该部门下所有客户信息：客户编码、客户名称 -->
+	<select id="queryCusInfosByDeptCode" parameterType="map"
+		resultMap="customerResultMap">
+	<![CDATA[
+		SELECT
+		/** 综合:通过传入部门编码查询该部门下所有客户信息：客户编码、客户名称 **/
+	]]>
+		<include refid="customer_Column_List" />
+	<![CDATA[
+		FROM BSE.T_BAS_CUSTOMER T
+	]]>
+		<where>
+			<if test="unifiedCode != null and unifiedCode != ''">
+				UNIFIED_CODE = #{unifiedCode,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+
+	<!--根据传入的手机号、部门Code查询 客户编码、客户名称、联系人、手机、电话、地址 -->
+	<select id="queryCustInfoByMobile" parameterType="map"
+		resultMap="customerContactResultMap">
+	<![CDATA[
+		SELECT
+		/** 综合:根据传入的手机号、部门Code查询 客户编码、客户名称、联系人、手机、电话、地址 **/
+	]]>
+		T.ID AS CUSTID,
+		T.CODE AS CUSTCODE,
+		T.NAME AS CUSTNAME,
+		T.CHARGE_MODE AS
+		CHARGE_MODE,
+		T.CREDIT_AMOUNT/100 AS CREDIT_AMOUNT,
+		D.ID_CARD AS ID_CARD,
+		D.CONTACT_NAME
+		AS CONTACT_NAME,
+		D.MOBILE_PHONE AS MOBILE_PHONE,
+		D.CONTACT_PHONE AS
+		CONTACT_PHONE,
+		D.ADDRESS AS ADDRESS,
+		D.CRM_ID AS CRM_ID,
+		D.ISACCURATEPRICE
+	<![CDATA[
+		FROM BSE.T_BAS_CUSTOMER T,BSE.T_BAS_CUS_CONTACT D
+	]]>
+		<where>
+			T.CRM_CUS_ID = D.CRM_CUS_ID(+) AND T.ACTIVE = D.ACTIVE
+			<if test="deptCode != null and deptCode != ''">
+				AND T.UNIFIED_CODE = #{deptCode,jdbcType=VARCHAR}
+			</if>
+			<if test="mobilePhone != null and mobilePhone != ''">
+				AND D.MOBILE_PHONE = #{mobilePhone,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+
+	<!--根据传入的联系人电话List、部门Code查询 客户编码、客户名称、联系人、手机、电话、地址 -->
+	<select id="queryCustInfoByPhone" parameterType="map"
+		resultMap="customerContactResultMap">
+	<![CDATA[
+		SELECT
+		/** 综合:根据传入的联系人电话List、部门Code查询 客户编码、客户名称、联系人、手机、电话、地址 **/
+	]]>
+		T.ID AS CUSTID,
+		T.CODE AS CUSTCODE,
+		T.NAME AS CUSTNAME,
+		T.CHARGE_MODE AS
+		CHARGE_MODE,
+		T.CREDIT_AMOUNT/100 AS CREDIT_AMOUNT,
+		D.ID_CARD AS ID_CARD,
+		D.CONTACT_NAME
+		AS CONTACT_NAME,
+		D.MOBILE_PHONE AS MOBILE_PHONE,
+		D.CONTACT_PHONE AS
+		CONTACT_PHONE,
+		D.ADDRESS AS ADDRESS,
+		D.CRM_ID AS CRM_ID,
+		D.ISACCURATEPRICE
+	<![CDATA[
+		FROM BSE.T_BAS_CUSTOMER T,BSE.T_BAS_CUS_CONTACT D
+	]]>
+		<where>
+			T.CRM_CUS_ID = D.CRM_CUS_ID(+) AND T.ACTIVE = D.ACTIVE
+			<if test="deptCode != null and deptCode != ''">
+				AND T.UNIFIED_CODE = #{deptCode,jdbcType=VARCHAR}
+			</if>
+			<if test="phoneList !=null and phoneList != ''">
+				AND D.CONTACT_PHONE in
+				<foreach collection="phoneList" index="index" item="officePhone"
+					open="(" separator="," close=")">
+					#{officePhone}
+				</foreach>
+			</if>
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+
+	<!--根据传入的参数查询 客户ID，客户编码、客户名称、联系人、手机、电话、地址 -->
+	<select id="queryCustomerInfo" parameterType="map"
+		resultMap="customerContactResultMap">
+	<![CDATA[
+		SELECT
+		/** 综合:根据传入的参数查询 客户ID，客户编码、客户名称、联系人、手机、电话、地址 **/
+	]]>
+		T.ID AS CUSTID,
+		T.CODE AS CUSTCODE,
+		T.NAME AS CUSTNAME,
+		T.CHARGE_MODE AS
+		CHARGE_MODE,
+		T.CREDIT_AMOUNT/100 AS CREDIT_AMOUNT,
+		D.ID_CARD AS ID_CARD,
+		D.CONTACT_NAME
+		AS CONTACT_NAME,
+		D.MOBILE_PHONE AS MOBILE_PHONE,
+		D.CONTACT_PHONE AS
+		CONTACT_PHONE,
+		D.ADDRESS AS ADDRESS,
+		D.CRM_ID AS CRM_ID,
+		D.ISACCURATEPRICE
+	<![CDATA[
+		FROM BSE.T_BAS_CUSTOMER T,BSE.T_BAS_CUS_CONTACT D
+	]]>
+		<where>
+			T.CRM_CUS_ID = D.CRM_CUS_ID(+) AND T.ACTIVE = D.ACTIVE
+			<if test="condition.deptCode != null and condition.deptCode != ''">
+				AND T.UNIFIED_CODE =
+				#{condition.deptCode,jdbcType=VARCHAR}
+			</if>
+			<if test="condition.custName != null and condition.custName != '' ">
+				AND T.NAME like
+				CONCAT(CONCAT('%',#{condition.custName,jdbcType=VARCHAR}),'%')
+			</if>
+			<if test="condition.custCode != null and condition.custCode != '' ">
+				AND T.CODE = #{condition.custCode,jdbcType=VARCHAR}
+			</if>
+			<if test="condition.contactName != null and condition.contactName != ''">
+				AND D.CONTACT_NAME like
+				CONCAT(CONCAT('%',#{condition.contactName,jdbcType=VARCHAR}),'%')
+			</if>
+			<if test="condition.contactPhone != null and condition.contactPhone != ''">
+				AND D.CONTACT_PHONE =
+				#{condition.contactPhone,jdbcType=VARCHAR}
+			</if>
+			<if test="condition.mobilePhone != null and condition.mobilePhone != ''">
+				AND D.MOBILE_PHONE =
+				#{condition.mobilePhone,jdbcType=VARCHAR}
+			</if>
+			<if test="condition.idCard != null and condition.idCard != ''">
+				AND D.ID_CARD = #{condition.idCard,jdbcType=VARCHAR}
+			</if>
+			<if test="condition.linkmanCode != null and condition.linkmanCode != ''">
+				AND D.CODE = #{condition.linkmanCode,jdbcType=VARCHAR}
+			</if>
+			<if test="condition.address != null and condition.address != ''">
+				AND D.ADDRESS like
+				CONCAT(CONCAT('%',#{condition.address,jdbcType=VARCHAR}),'%')
+			</if>
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+		ORDER BY CUSTCODE
+	</select>
+
+	<!-- ======================== 以上为外部接口查询 =============================== -->
+
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<if test="cusCode != null and cusCode != ''">
+				AND T.CODE = #{cusCode,jdbcType=VARCHAR}
+			</if>
+			<if test="name != null and name != ''">
+				AND T.NAME LIKE CONCAT(#{name,jdbcType=VARCHAR},'%')
+			</if>
+			<if test="queryParam != null and queryParam != '' ">
+				AND 
+				(
+					T.NAME LIKE CONCAT(#{queryParam,jdbcType=VARCHAR},'%')
+				 OR  		
+				 	T.CODE LIKE CONCAT(#{queryParam,jdbcType=VARCHAR},'%')
+				 )
+			</if>
+			<if test="unifiedCode != null and unifiedCode != ''">
+				AND T.UNIFIED_CODE = #{unifiedCode,jdbcType=CHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+			</if> 
+		</where>
+	</sql>
+	<!-- 分页查询条件 -->
+	<sql id="queryExtWhere">
+		<if test="cusCode != null and cusCode != ''">
+				AND T.CODE = #{cusCode,jdbcType=VARCHAR}
+		</if>
+		<if test="name != null and name != ''">
+				AND T.NAME LIKE CONCAT(CONCAT('%',#{name,jdbcType=VARCHAR}),'%')
+		</if>
+		<choose>
+			<when test="queryParam != null and queryParam != '' and contcatFlag !=null and contcatFlag !=''">
+					AND 
+					(
+						T.NAME LIKE CONCAT(CONCAT('%',#{queryParam,jdbcType=VARCHAR}),'%')
+					 OR  		
+					 	T.CODE LIKE CONCAT(CONCAT('%',#{queryParam,jdbcType=VARCHAR}),'%')
+					 OR 
+					 	T2.MOBILE_PHONE LIKE CONCAT(CONCAT('%',#{queryParam,jdbcType=VARCHAR}),'%')
+					 OR
+					 	T2.CONTACT_PHONE LIKE CONCAT(CONCAT('%',#{queryParam,jdbcType=VARCHAR}),'%')
+					 )
+			</when>
+			<otherwise>
+					AND 
+					(
+						T.NAME LIKE CONCAT(CONCAT('%',#{queryParam,jdbcType=VARCHAR}),'%')
+					 OR  		
+					 	T.CODE LIKE CONCAT(CONCAT('%',#{queryParam,jdbcType=VARCHAR}),'%')
+					 )
+			</otherwise>
+		</choose>
+		<if test="unifiedCode != null and unifiedCode != ''">
+				AND T.UNIFIED_CODE = #{unifiedCode,jdbcType=CHAR}
+		</if>
+		<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+		</if>
+	</sql>  
+	<sql id="queryExtWhereByName1">
+		<if test="queryParam != null and queryParam != ''">
+			AND T.NAME LIKE CONCAT(#{queryParam,jdbcType=VARCHAR},'%')	
+		</if>
+		<if test="unifiedCode != null and unifiedCode != ''">
+			AND T.UNIFIED_CODE = #{unifiedCode,jdbcType=CHAR}
+		</if>
+		<if test="active != null and active != ''">
+			AND T.ACTIVE = #{active,jdbcType=CHAR}
+		</if> 
+	</sql>
+	<sql id="queryExtWhereByName2">
+		<if test="queryParam != null and queryParam != ''">
+			AND T.CODE LIKE CONCAT(#{queryParam,jdbcType=VARCHAR},'%')	
+		</if>
+		<if test="unifiedCode != null and unifiedCode != ''">
+			AND T.UNIFIED_CODE = #{unifiedCode,jdbcType=CHAR}
+		</if>
+		<if test="active != null and active != ''">
+			AND T.ACTIVE = #{active,jdbcType=CHAR}
+		</if>
+	</sql>
+	<sql id="queryExtWhereByName3">
+		<if test="queryParam != null and queryParam != ''">
+			AND T2.MOBILE_PHONE = #{queryParam,jdbcType=VARCHAR}
+		</if>						
+		<if test="unifiedCode != null and unifiedCode != ''">
+			AND T.UNIFIED_CODE = #{unifiedCode,jdbcType=CHAR}
+		</if>
+		<if test="active != null and active != ''">
+			AND T.ACTIVE = #{active,jdbcType=CHAR}
+		</if> 
+	</sql>
+	<sql id="queryExtWhereByName4">
+		<if test="queryParam != null and queryParam != ''">
+			AND T2.CONTACT_PHONE = #{queryParam,jdbcType=VARCHAR}
+		</if>				
+		<if test="unifiedCode != null and unifiedCode != ''">
+			AND T.UNIFIED_CODE = #{unifiedCode,jdbcType=CHAR}
+		</if>
+		<if test="active != null and active != ''">
+			AND T.ACTIVE = #{active,jdbcType=CHAR}
+		</if> 
+	</sql> 
+	<!-- 查询散客分页条件 -->
+	<sql id="querySinglePeopleWhere">
+		<if test="cusCode != null and cusCode != ''">
+				AND T.CUSTCODE = #{cusCode,jdbcType=VARCHAR}
+		</if>
+		<if test="name != null and name != ''">
+				AND T.CUSTNAME LIKE CONCAT(CONCAT('%',#{name,jdbcType=VARCHAR}),'%')
+		</if>
+		<if test="queryParam != null and queryParam != ''">
+				AND 
+					(
+						T.CUSTCODE LIKE CONCAT(CONCAT('%',#{queryParam,jdbcType=VARCHAR}),'%')
+					 OR  		
+					 	T.CUSTNAME LIKE CONCAT(CONCAT('%',#{queryParam,jdbcType=VARCHAR}),'%')
+					  OR 
+					 	T.MOBILEPHONE LIKE CONCAT(CONCAT('%',#{queryParam,jdbcType=VARCHAR}),'%')
+					 OR
+					 	T.TELEPHONE LIKE CONCAT(CONCAT('%',#{queryParam,jdbcType=VARCHAR}),'%')
+					 )
+		</if>
+		<if test="unifiedCode != null and unifiedCode != ''">
+				AND T.UNIFIED_CODE = #{unifiedCode,jdbcType=CHAR}
+		</if>
+		<if test="active != null and active != ''">
+				and T.ACTIVE = #{active,jdbcType=CHAR}
+		</if>
+	</sql>
+	
+	<!-- 查询散客分页条件 -->
+	<sql id="querySinglePeopleWhere1">
+		<if test="cusCode != null and cusCode != ''">
+				AND T.CUSTCODE = #{cusCode,jdbcType=VARCHAR}
+		</if>
+		<if test="name != null and name != ''">
+				AND T.CUSTNAME LIKE CONCAT(#{name,jdbcType=VARCHAR},'%')
+		</if>
+		<if test="queryParam != null and queryParam != ''">								
+				AND T.CUSTCODE LIKE CONCAT(#{queryParam,jdbcType=VARCHAR},'%')					 
+		</if>
+		<if test="unifiedCode != null and unifiedCode != ''">
+				AND T.UNIFIED_CODE = #{unifiedCode,jdbcType=CHAR}
+		</if>
+		<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+		</if>
+	</sql>
+	<!-- 查询散客分页条件 -->
+	<sql id="querySinglePeopleWhere2">
+		<if test="cusCode != null and cusCode != ''">
+				AND T.CUSTCODE = #{cusCode,jdbcType=VARCHAR}
+		</if>
+		<if test="name != null and name != ''">
+				AND T.CUSTNAME LIKE CONCAT(#{name,jdbcType=VARCHAR},'%')
+		</if>
+		<if test="queryParam != null and queryParam != ''">											
+				AND	T.CUSTNAME LIKE CONCAT(#{queryParam,jdbcType=VARCHAR},'%')					 
+		</if>
+		<if test="unifiedCode != null and unifiedCode != ''">
+				AND T.UNIFIED_CODE = #{unifiedCode,jdbcType=CHAR}
+		</if>
+		<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+		</if> 
+	</sql>
+	<!-- 查询散客分页条件 -->
+	<sql id="querySinglePeopleWhere3">
+		<if test="cusCode != null and cusCode != ''">
+				AND T.CUSTCODE = #{cusCode,jdbcType=VARCHAR}
+		</if>
+		<if test="name != null and name != ''">
+				AND T.CUSTNAME LIKE CONCAT(#{name,jdbcType=VARCHAR},'%')
+		</if>
+		<if test="queryParam != null and queryParam != ''">
+				AND	T.MOBILEPHONE = #{queryParam,jdbcType=VARCHAR}
+		</if>
+		<if test="unifiedCode != null and unifiedCode != ''">
+				AND T.UNIFIED_CODE = #{unifiedCode,jdbcType=CHAR}
+		</if>
+		<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+		</if> 
+	</sql><!-- 查询散客分页条件 -->
+	<sql id="querySinglePeopleWhere4">
+		<if test="cusCode != null and cusCode != ''">
+				AND T.CUSTCODE = #{cusCode,jdbcType=VARCHAR}
+		</if>
+		<if test="name != null and name != ''">
+				AND T.CUSTNAME LIKE CONCAT(#{name,jdbcType=VARCHAR},'%')
+		</if>
+		<if test="queryParam != null and queryParam != ''">
+				AND	T.TELEPHONE = #{queryParam,jdbcType=VARCHAR}			 
+		</if>
+		<if test="unifiedCode != null and unifiedCode != ''">
+				AND T.UNIFIED_CODE = #{unifiedCode,jdbcType=CHAR}
+		</if>
+		<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+		</if> 
+	</sql>
+	<!-- 查询所有客户基本信息 -->
+	<select id="queryAllInfos"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CustomerEntity"
+		resultMap="customerResultMap">
+	<![CDATA[
+		SELECT
+		/** 综合:查询所有客户基本信息 **/
+	]]>
+		<include refid="customer_Column_List" />
+	<![CDATA[
+		FROM BSE.T_BAS_CUSTOMER T
+	]]>
+		<include refid="queryWhere" />
+	</select>
+	<!-- 查询所有客户基本信息(关联客户联系人) -->
+	<select id="queryExtAllInfos" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CustomerEntity"
+		resultMap="customerResultMap">
+		<choose>
+			<when test="queryParam != null and queryParam != '' and contcatFlag !=null and contcatFlag !=''">
+				SELECT
+					/** 综合:根据名称查询公司客户信息 **/
+				<include refid="customer_Column_List" />
+					FROM BSE.T_BAS_CUSTOMER T  
+					WHERE 
+			<![CDATA[ ROWNUM < 501 ]]>
+				<include refid="queryExtWhereByName1" />  
+				UNION ALL	
+					SELECT
+					/** 综合:根据编码查询公司客户信息 **/
+				<include refid="customer_Column_List" />
+					FROM BSE.T_BAS_CUSTOMER T  
+			WHERE <![CDATA[ ROWNUM < 501 ]]>
+				<include refid="queryExtWhereByName2" /> 
+				UNION ALL	
+					SELECT
+					/** 综合:查询公司客户信息--按客户移动电话查询 **/
+				<include refid="customer_Column_List" />
+					FROM BSE.T_BAS_CUSTOMER T ,BSE.T_BAS_CUS_CONTACT T2 
+					WHERE T.CRM_CUS_ID=T2.CRM_CUS_ID 
+					  AND T.ACTIVE = T2.ACTIVE
+				<include refid="queryExtWhereByName3" /> 
+				UNION ALL	
+					SELECT
+					/** 综合:查询公司客户信息--按客户移动电话查询 **/
+				<include refid="customer_Column_List" />
+					FROM BSE.T_BAS_CUSTOMER T ,BSE.T_BAS_CUS_CONTACT T2 
+					WHERE T.CRM_CUS_ID=T2.CRM_CUS_ID 
+					  AND T.ACTIVE = T2.ACTIVE
+				<include refid="queryExtWhereByName4" />	 
+			</when>
+			<otherwise>
+					SELECT
+					/** 综合:查询公司客户信息 **/
+				<include refid="customer_Column_List" />
+					FROM BSE.T_BAS_CUSTOMER T  
+			WHERE <![CDATA[ ROWNUM < 501 ]]>
+				<include refid="queryExtWhereByName1" /> 
+				UNION ALL	
+					SELECT
+					/** 综合:查询公司客户信息 **/
+				<include refid="customer_Column_List" />
+					FROM BSE.T_BAS_CUSTOMER T  
+			WHERE <![CDATA[ ROWNUM < 501 ]]>
+				<include refid="queryExtWhereByName2" /> 
+			</otherwise>
+		</choose>							
+		<!-- 			  	UNION ALL	 -->
+		<!-- 			 		SELECT -->
+		<!-- 			 		/** 综合:查询散户信息按客户名称查询 **/ -->
+		<!-- 				  		 <include refid="singlePeople_Column_List" /> -->
+		<!-- 			   		FROM BSE.T_BAS_NONFIXED_CUSTOMER T   -->
+		<!-- 			  		WHERE <![CDATA[ ROWNUM < 501 ]]> -->
+		<!-- 					<include refid="querySinglePeopleWhere1" />   -->
+		<!-- 				UNION ALL	 -->
+		<!-- 			 		SELECT -->
+		<!-- 				  		 <include refid="singlePeople_Column_List" /> -->
+		<!-- 			   		FROM BSE.T_BAS_NONFIXED_CUSTOMER T   -->
+		<!-- 			  		WHERE <![CDATA[ ROWNUM < 501 ]]> -->
+		<!-- 					<include refid="querySinglePeopleWhere2" />  -->
+		<!-- 				UNION ALL	 -->
+		<!-- 			 		SELECT -->
+		<!-- 				  		 <include refid="singlePeople_Column_List" /> -->
+		<!-- 			   		FROM BSE.T_BAS_NONFIXED_CUSTOMER T   -->
+		<!-- 			  		WHERE <![CDATA[ ROWNUM < 501 ]]> -->
+		<!-- 					<include refid="querySinglePeopleWhere3" />  -->
+		<!-- 				UNION ALL	 -->
+		<!-- 			 		SELECT -->
+		<!-- 				  		 <include refid="singlePeople_Column_List" /> -->
+		<!-- 			   		FROM BSE.T_BAS_NONFIXED_CUSTOMER T   -->
+		<!-- 			  		WHERE <![CDATA[ ROWNUM < 501 ]]> -->
+		<!-- 						<include refid="querySinglePeopleWhere4" />  -->
+	</select>
+	<!-- 统计总记录数 (关联客户联系人) -->
+	<select id="queryExtCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CustomerEntity">
+	       	SELECT/** 综合:统计总记录数 (关联客户联系人) **/ COUNT(*) FROM (	
+		<choose>
+			<when test="queryParam != null and queryParam != '' and contcatFlag !=null and contcatFlag !=''">
+		SELECT
+		/** 综合:查询散客和公司客户信息--按客户名称查询 **/
+				<include refid="customer_Column_List" />
+		FROM BSE.T_BAS_CUSTOMER T 
+			WHERE <![CDATA[ ROWNUM < 501 ]]>
+				<include refid="queryExtWhereByName1" />
+	UNION ALL	
+		SELECT
+		/** 综合:查询散客和公司客户信息--按客户编号查询 **/
+				<include refid="customer_Column_List" />
+		FROM BSE.T_BAS_CUSTOMER T  
+			WHERE <![CDATA[ ROWNUM < 501 ]]>
+				<include refid="queryExtWhereByName2" />
+	UNION ALL	
+		SELECT
+		/** 综合:查询散客和公司客户信息--按客户移动电话查询 **/
+				<include refid="customer_Column_List" />
+		FROM BSE.T_BAS_CUSTOMER T ,BSE.T_BAS_CUS_CONTACT T2 
+		WHERE T.CRM_CUS_ID=T2.CRM_CUS_ID 
+		  AND T.ACTIVE = T2.ACTIVE
+				<include refid="queryExtWhereByName3" />
+	UNION ALL	
+		SELECT
+		/** 综合:查询散客和公司客户信息--按客户住宅电话查询 **/
+				<include refid="customer_Column_List" />
+		FROM BSE.T_BAS_CUSTOMER T ,BSE.T_BAS_CUS_CONTACT T2 
+		WHERE T.CRM_CUS_ID=T2.CRM_CUS_ID 
+		  AND T.ACTIVE = T2.ACTIVE
+				<include refid="queryExtWhereByName4" />				 
+			</when>
+			<otherwise>
+		SELECT
+		/** 综合:查询散客和公司客户信息--按客户名称查询 **/
+				<include refid="customer_Column_List" />
+		FROM BSE.T_BAS_CUSTOMER T 
+			WHERE <![CDATA[ ROWNUM < 501 ]]>
+				<include refid="queryExtWhereByName1" />
+	UNION ALL	
+		SELECT
+			/** 综合:查询散客和公司客户信息--按客户编码查询 **/
+				<include refid="customer_Column_List" />
+			FROM BSE.T_BAS_CUSTOMER T 
+			WHERE <![CDATA[ ROWNUM < 501 ]]>
+				<include refid="queryExtWhereByName2" />
+			</otherwise>
+		</choose>							
+		<!--   	UNION ALL	 -->
+		<!--  		SELECT -->
+		<!--  		/** 综合:查询散户信息按客户名称查询 **/ -->
+		<!-- 	  		 <include refid="singlePeople_Column_List" /> -->
+		<!--    		FROM BSE.T_BAS_NONFIXED_CUSTOMER T   -->
+		<!--   		WHERE <![CDATA[ ROWNUM < 501 ]]> -->
+		<!-- 			<include refid="querySinglePeopleWhere1" /> -->
+		<!-- 	UNION ALL	 -->
+		<!--  		SELECT -->
+		<!-- 	  		 <include refid="singlePeople_Column_List" /> -->
+		<!--    		FROM BSE.T_BAS_NONFIXED_CUSTOMER T   -->
+		<!--   		WHERE <![CDATA[ ROWNUM < 501 ]]> -->
+		<!-- 			<include refid="querySinglePeopleWhere2" /> -->
+		<!-- 	UNION ALL	 -->
+		<!--  		SELECT -->
+		<!-- 	  		 <include refid="singlePeople_Column_List" /> -->
+		<!--    		FROM BSE.T_BAS_NONFIXED_CUSTOMER T   -->
+		<!--   		WHERE <![CDATA[ ROWNUM < 501 ]]> -->
+		<!-- 			<include refid="querySinglePeopleWhere3" /> -->
+		<!-- 	UNION ALL	 -->
+		<!--  		SELECT -->
+		<!-- 	  		 <include refid="singlePeople_Column_List" /> -->
+		<!--    		FROM BSE.T_BAS_NONFIXED_CUSTOMER T   -->
+		<!--   		WHERE <![CDATA[ ROWNUM < 501 ]]> -->
+		<!-- 			<include refid="querySinglePeopleWhere4" /> -->
+		)
+	</select> 
+	<!-- 查询散客和公司客户信息 -->
+	<select id="queryExtCustWithSingleInfo" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CustomerEntity"
+		resultMap="customerResultMap"> 
+		<choose>
+			<when test="queryParam != null and queryParam != '' and contcatFlag !=null and contcatFlag !=''">
+		SELECT
+		/** 综合:查询公司客户信息--按客户名称查询 **/
+				<include refid="customer_Column_List" />
+		FROM BSE.T_BAS_CUSTOMER T 
+			WHERE <![CDATA[ ROWNUM < 501 ]]>
+				<include refid="queryExtWhereByName1" />
+	UNION ALL	
+		SELECT
+		/** 综合:查询公司客户信息--按客户编码查询 **/
+				<include refid="customer_Column_List" />
+		FROM BSE.T_BAS_CUSTOMER T 
+			WHERE <![CDATA[ ROWNUM < 501 ]]>
+				<include refid="queryExtWhereByName2" />
+	UNION ALL	
+		SELECT
+		/** 综合:查询公司客户信息--按客户移动电话查询 **/
+				<include refid="customer_Column_List" />
+		FROM BSE.T_BAS_CUSTOMER T ,BSE.T_BAS_CUS_CONTACT T2 
+		WHERE T.CRM_CUS_ID=T2.CRM_CUS_ID 
+		  AND T.ACTIVE = T2.ACTIVE
+				<include refid="queryExtWhereByName3" />
+	UNION ALL	
+		SELECT
+		/** 综合:查询公司客户信息--按客户住宅电话查询 **/
+				<include refid="customer_Column_List" />
+		FROM BSE.T_BAS_CUSTOMER T ,BSE.T_BAS_CUS_CONTACT T2 
+		WHERE T.CRM_CUS_ID=T2.CRM_CUS_ID 
+		  AND T.ACTIVE = T2.ACTIVE
+				<include refid="queryExtWhereByName4" />				 
+			</when>
+			<otherwise>
+		SELECT
+		/** 综合:查询公司客户信息--按客户名称查询 **/
+				<include refid="customer_Column_List" />
+		FROM BSE.T_BAS_CUSTOMER T 
+			WHERE <![CDATA[ ROWNUM < 501 ]]>
+				<include refid="queryExtWhereByName1" />
+	UNION ALL	
+		SELECT
+		/** 综合:查询公司客户信息--按客户编码查询 **/
+				<include refid="customer_Column_List" />
+		FROM BSE.T_BAS_CUSTOMER T 
+			WHERE <![CDATA[ ROWNUM < 501 ]]>
+				<include refid="queryExtWhereByName2" />
+			</otherwise>
+		</choose>							
+		<!--   	UNION ALL	 -->
+		<!--  		SELECT -->
+		<!--  		/** 综合:查询散户信息按客户名称查询 **/ -->
+		<!-- 	  		 <include refid="singlePeople_Column_List" /> -->
+		<!--    		FROM BSE.T_BAS_NONFIXED_CUSTOMER T   -->
+		<!--   		WHERE <![CDATA[ ROWNUM < 501 ]]> -->
+		<!-- 			<include refid="querySinglePeopleWhere1" /> -->
+		<!-- 	UNION ALL	 -->
+		<!--  		SELECT -->
+		<!-- 	  		 <include refid="singlePeople_Column_List" /> -->
+		<!--    		FROM BSE.T_BAS_NONFIXED_CUSTOMER T   -->
+		<!--   		WHERE <![CDATA[ ROWNUM < 501 ]]> -->
+		<!-- 			<include refid="querySinglePeopleWhere2" /> -->
+		<!-- 	UNION ALL	 -->
+		<!--  		SELECT -->
+		<!-- 	  		 <include refid="singlePeople_Column_List" /> -->
+		<!--    		FROM BSE.T_BAS_NONFIXED_CUSTOMER T   -->
+		<!--   		WHERE <![CDATA[ ROWNUM < 501 ]]> -->
+		<!-- 			<include refid="querySinglePeopleWhere3" /> -->
+		<!-- 	UNION ALL	 -->
+		<!--  		SELECT -->
+		<!-- 	  		 <include refid="singlePeople_Column_List" /> -->
+		<!--    		FROM BSE.T_BAS_NONFIXED_CUSTOMER T   -->
+		<!--   		WHERE <![CDATA[ ROWNUM < 501 ]]> -->
+		<!-- 			<include refid="querySinglePeopleWhere4" /> -->
+	</select>
+	<!-- 统计总记录数 (散客和公司客户信息) -->
+	<select id="countExtCustWithSinglePeople" resultType="Long" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CustomerEntity">
+	    SELECT/** 综合:统计总记录数 (散客和公司客户信息)**/ COUNT(*) FROM (  
+		<choose>
+			<when test="queryParam != null and queryParam != '' and contcatFlag !=null and contcatFlag !=''">
+				SELECT
+				/** 综合:查询公司客户信息--按客户名称查询 **/
+				<include refid="customer_Column_List" />
+				FROM BSE.T_BAS_CUSTOMER T 
+			WHERE <![CDATA[ ROWNUM < 501 ]]>
+				<include refid="queryExtWhereByName1" />
+			  UNION ALL	
+				SELECT
+				/** 综合:查询公司客户信息--按客户编码查询 **/
+				<include refid="customer_Column_List" />
+				FROM BSE.T_BAS_CUSTOMER T 
+			WHERE <![CDATA[ ROWNUM < 501 ]]>
+				<include refid="queryExtWhereByName2" />
+			   UNION ALL	
+				SELECT
+				/** 综合:查询公司客户信息--按客户移动电话查询 **/
+				<include refid="customer_Column_List" />
+				 FROM BSE.T_BAS_CUSTOMER T ,BSE.T_BAS_CUS_CONTACT T2 
+				 WHERE T.CRM_CUS_ID=T2.CRM_CUS_ID 
+				  AND T.ACTIVE = T2.ACTIVE
+				<include refid="queryExtWhereByName3" />
+			   UNION ALL	
+				SELECT
+				/** 综合:查询公司客户信息--按客户住宅电话查询 **/
+				<include refid="customer_Column_List" />
+				FROM BSE.T_BAS_CUSTOMER T ,BSE.T_BAS_CUS_CONTACT T2 
+				WHERE T.CRM_CUS_ID=T2.CRM_CUS_ID 
+				  AND T.ACTIVE = T2.ACTIVE
+				<include refid="queryExtWhereByName4" />				 
+			</when>
+			<otherwise>
+				SELECT
+				/** 综合:查询公司客户信息--按客户名称查询 **/
+				<include refid="customer_Column_List" />
+				FROM BSE.T_BAS_CUSTOMER T 
+			WHERE <![CDATA[ ROWNUM < 501 ]]>
+				<include refid="queryExtWhereByName1" />
+			  UNION ALL	
+				SELECT
+				/** 综合:查询公司客户信息--按客户编码查询 **/
+				<include refid="customer_Column_List" />
+				FROM BSE.T_BAS_CUSTOMER T 
+			WHERE <![CDATA[ ROWNUM < 501 ]]>
+				<include refid="queryExtWhereByName2" />
+			</otherwise>
+		</choose>							
+		<!--   			UNION ALL	 -->
+		<!-- 		 		SELECT -->
+		<!-- 		 		/** 综合:查询散户信息按客户名称查询 **/ -->
+		<!-- 			  		 <include refid="singlePeople_Column_List" /> -->
+		<!-- 		   		FROM BSE.T_BAS_NONFIXED_CUSTOMER T   -->
+		<!-- 		  		WHERE <![CDATA[ ROWNUM < 501 ]]> -->
+		<!-- 					<include refid="querySinglePeopleWhere1" /> -->
+		<!-- 			UNION ALL	 -->
+		<!-- 		 		SELECT -->
+		<!-- 			  		 <include refid="singlePeople_Column_List" /> -->
+		<!-- 		   		FROM BSE.T_BAS_NONFIXED_CUSTOMER T   -->
+		<!-- 		  		WHERE <![CDATA[ ROWNUM < 501 ]]> -->
+		<!-- 					<include refid="querySinglePeopleWhere2" /> -->
+		<!-- 			UNION ALL	 -->
+		<!-- 		 		SELECT -->
+		<!-- 			  		 <include refid="singlePeople_Column_List" /> -->
+		<!-- 		   		FROM BSE.T_BAS_NONFIXED_CUSTOMER T   -->
+		<!-- 		  		WHERE <![CDATA[ ROWNUM < 501 ]]> -->
+		<!-- 					<include refid="querySinglePeopleWhere3" /> -->
+		<!-- 			UNION ALL	 -->
+		<!-- 		 		SELECT -->
+		<!-- 			  		 <include refid="singlePeople_Column_List" /> -->
+		<!-- 		   		FROM BSE.T_BAS_NONFIXED_CUSTOMER T   -->
+		<!-- 		  		WHERE <![CDATA[ ROWNUM < 501 ]]> -->
+		<!-- 					<include refid="querySinglePeopleWhere4" />  -->
+		)
+	</select> 
+	<!-- 验证客户信息是否存在 -->
+	<select id="queryCustomerByCrmId" parameterType="map"
+		resultMap="customerResultMap">
+	<![CDATA[
+		SELECT
+		/** 综合:验证客户信息是否存在**/
+	]]>
+		<include refid="customer_Column_List" />
+	<![CDATA[
+		FROM BSE.T_BAS_CUSTOMER T
+	]]>
+		<where>
+			<if test="crmId != null and crmId != ''">
+				CRM_CUS_ID = #{crmId,jdbcType=DECIMAL}
+			</if>
+			<if test="modifyDate != null and modifyDate != ''">
+			AND MODIFY_TIME <![CDATA[ >= ]]> #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="active != null and active != ''">
+				AND active = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+
+	<!-- 统计总记录数 -->
+	<select id="queryCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CustomerEntity">
+	<![CDATA[
+		   select/** 综合:统计总记录数**/ count(*) from BSE.T_BAS_CUSTOMER T
+	]]>
+		<include refid="queryWhere" />
+
+	</select>
+
+	<!-- 新增信息 -->
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CustomerEntity">
+		
+	<![CDATA[
+		INSERT/** 综合:新增信息**/ INTO BSE.T_BAS_CUSTOMER T	(
+	]]>
+		<include refid="customer_Insert_List" />
+	<![CDATA[
+		)VALUES(
+	]]>
+		#{id,jdbcType=VARCHAR}, #{address,jdbcType=VARCHAR},
+		#{property,jdbcType=VARCHAR},
+		#{type,jdbcType=VARCHAR},
+		#{creditAmount,jdbcType=DECIMAL}*100, #{name,jdbcType=VARCHAR},
+		#{license,jdbcType=VARCHAR}, #{unifiedCode,jdbcType=VARCHAR},
+		#{cusCode,jdbcType=VARCHAR},
+		#{activeCus,jdbcType=CHAR},
+		#{totalArrears,jdbcType=DECIMAL}, #{chargeMode,jdbcType=VARCHAR},
+		#{degree,jdbcType=VARCHAR}, #{crmCusId,jdbcType=DECIMAL},
+		#{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=CHAR}, #{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR}, #{virtualCode,jdbcType=VARCHAR},
+		#{fistrangoods,jdbcType=CHAR},#{provName,jdbcType=VARCHAR},
+		#{cityName,jdbcType=VARCHAR},#{simpleName,jdbcType=VARCHAR},
+		#{isImport,jdbcType=CHAR},
+		#{isSpecial,jdbcType=CHAR},
+		#{billTitle,jdbcType=VARCHAR},
+		#{isDelete,jdbcType=CHAR},
+		#{shipperSms,jdbcType=VARCHAR},
+		#{receiverSms,jdbcType=VARCHAR},
+		#{accurateCollection,jdbcType=CHAR},
+		#{fixedReceiveMobile,jdbcType=VARCHAR},
+		<!-- 078816_wp_2014-03-21 CMR2期-->
+		#{isLargeCustomers,jdbcType=CHAR},
+		#{customserNature,jdbcType=VARCHAR},
+		#{businessType,jdbcType=VARCHAR},
+		#{oneLevelIndustry,jdbcType=VARCHAR},
+		#{twoLevelIndustry,jdbcType=VARCHAR},
+		<!--是否电子运单大客户 -->
+		#{isElecBillBigCust,jdbcType=CHAR},
+		#{isExpressBigCust,jdbcType=CHAR},
+		#{custAddrRemark,jdbcType=VARCHAR},
+		#{teanLimit,jdbcType=INTEGER},
+		<!--发票标记 -->
+		#{invoiceType,jdbcType=VARCHAR},
+		<!-- 客户分群 -->
+		#{flabelleavemonth,jdbcType=VARCHAR}
+		<!--261997 foss css黑名单类别 -->
+		 ,#{blackListCategory,jdbcType=VARCHAR}
+		 <!--261997 foss css快递装卸费业务类型   设置比例  2015-09-07 -->
+		 ,#{expHandChargeBusiType,jdbcType=VARCHAR}
+		 ,#{setProportion,jdbcType=VARCHAR}
+		 ,#{isAccuratePrice,jdbcType=CHAR}
+	<![CDATA[
+		)
+	]]>
+	</insert>
+
+	<!-- 修改信息 -->
+	<update id="update"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CustomerEntity">
+		update/** 综合:修改信息**/ BSE.T_BAS_CUSTOMER
+		<set>
+				ADDRESS = #{address,jdbcType=VARCHAR},
+				PROPERTY = #{property,jdbcType=VARCHAR},
+				TYPE = #{type,jdbcType=VARCHAR},
+				CREDIT_AMOUNT = #{creditAmount,jdbcType=DECIMAL}*100,
+				NAME = #{name,jdbcType=VARCHAR},
+				LICENSE = #{license,jdbcType=VARCHAR},
+				UNIFIED_CODE = #{unifiedCode,jdbcType=VARCHAR},
+				CODE = #{cusCode,jdbcType=VARCHAR},
+				ACTIVE_CUS = #{activeCus,jdbcType=CHAR},
+				TOTAL_ARREARS = #{totalArrears,jdbcType=DECIMAL},
+				CHARGE_MODE = #{chargeMode,jdbcType=VARCHAR},
+				DEGREE = #{degree,jdbcType=VARCHAR},
+			<if test="customserNature == 'SC_CUSTOMER'">
+				CRM_CUS_ID = #{crmCusId,jdbcType=DECIMAL},
+			</if>
+				CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+				ACTIVE = #{active,jdbcType=CHAR},
+				CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+				VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR},
+				FISTRANGOODS = #{fistrangoods,jdbcType=CHAR},
+				PROVNAME = #{provName,jdbcType=VARCHAR},
+				CITYNAME = #{cityName,jdbcType=VARCHAR},
+				SIMPLENAME = #{simpleName,jdbcType=VARCHAR},
+				ISIMPORT = #{isImport,jdbcType=CHAR},
+				ISSPECIAL = #{isSpecial,jdbcType=CHAR},
+				BILLTITLE = #{billTitle,jdbcType=VARCHAR},
+				ISDELETE = #{isDelete,jdbcType=CHAR},
+				SHIPPER_SMS= #{shipperSms,jdbcType=VARCHAR},
+				RECEIVER_SMS= #{receiverSms,jdbcType=VARCHAR},
+				ACCURATE_COLLECTION= #{accurateCollection,jdbcType=CHAR},
+				FIXED_RECEIVE_MOBILE= #{fixedReceiveMobile,jdbcType=VARCHAR},
+			<!-- 078816_wp_2014-03-21 CMR2期-->
+		        ISLARGECUSTOMERS = #{isLargeCustomers,jdbcType=CHAR},
+				CUSTOMSERNATURE = #{customserNature,jdbcType=VARCHAR},
+				BUSINESSTYPE = #{businessType,jdbcType=VARCHAR},
+				ONELEVELINDUSTRY = #{oneLevelIndustry,jdbcType=VARCHAR},
+				TWOLEVELINDUSTRY = #{twoLevelIndustry,jdbcType=VARCHAR},
+			<!--是否电子运单大客户 -->
+				ISELECBILLBIGCUST = #{isElecBillBigCust,jdbcType=CHAR},
+				ISEXPRESSBIGCUST = #{isExpressBigCust,jdbcType=CHAR},
+				CUST_ADDR_REMARK = #{custAddrRemark,jdbcType=VARCHAR},
+				TEAN_LIMIT = #{teanLimit,jdbcType=INTEGER},
+			<!--发票标记 -->
+				INVOICE_TYPE  = #{invoiceType,jdbcType=VARCHAR},
+			<!-- 客户分群 -->
+			FLABELLEAVEMONTH = #{flabelleavemonth,jdbcType=VARCHAR}
+			<!-- 用户黑名单 -->
+			,FBLACKLISTCATEGORY = #{blackListCategory,jdbcType=VARCHAR}
+			<!-- 快递装卸费业务类型  设置比例 -->
+			,EXPHANDCHARGEBUSITYPE = #{expHandChargeBusiType,jdbcType=VARCHAR}
+			,SETPROPORTION = #{setProportion,jdbcType=VARCHAR}
+			,ISACCURATEPRICE=#{isAccuratePrice,jdbcType=CHAR}
+		</set>
+
+		<where>
+			<!-- 078816_wp_2014-03-21 CMR2期-->
+			<!-- 			<if test="crmCusId != null and crmCusId != ''"> -->
+			<!-- 				CRM_CUS_ID = #{crmCusId,jdbcType=DECIMAL} -->
+			<!-- 			</if> -->
+			<if test="crmCusId != null">
+				<choose>
+					<when test="customserNature == 'SC_CUSTOMER'">
+						<if test="cusCode != null and cusCode != ''">
+			    		CODE = #{cusCode,jdbcType=VARCHAR}
+						</if>
+						<if test="id != null and id != ''">
+			    	  OR ID = #{id,jdbcType=VARCHAR}
+						</if>
+						<if test="crmCusId != null and crmCusId != ''">
+			    	  OR CRM_CUS_ID = #{crmCusId,jdbcType=DECIMAL}
+						</if>
+					</when>
+					<otherwise>
+				CRM_CUS_ID = #{crmCusId,jdbcType=DECIMAL}
+					</otherwise>
+				</choose>
+			</if>
+		</where>
+
+	</update>
+
+	<!-- 作废信息 -->
+	<update id="deleteByCode" parameterType="map">
+		update/** 综合:作废信息**/ BSE.T_BAS_CUSTOMER
+
+		<set>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				MODIFY_USER_CODE = #{modifyUser, jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+
+		</set>
+
+		<where>
+			<if test="crmCusId !=null and crmCusId != ''">
+				CRM_CUS_ID = #{crmCusId,jdbcType=DECIMAL}
+			</if>
+			<if test="active0 != null and active0 != ''">
+				AND ACTIVE = #{active0,jdbcType=CHAR}
+			</if>
+		</where>
+	</update>
+	
+	
+	<!-- 组装客户相关数据 -->
+	<resultMap id="customerConditionResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.dto.CustomerQueryConditionDto">
+		<result column="CUST_ID" property="custId" jdbcType="DECIMAL" />
+		<result column="CUST_CODE" property="custCode" jdbcType="VARCHAR" />
+		<result column="CUST_NAME" property="custName" jdbcType="VARCHAR" />
+		<result column="CUST_CREDIT" property="creditAmount" jdbcType="DECIMAL" />
+		<result column="UNIFIED_CODE" property="deptCode" jdbcType="VARCHAR" />
+		<result column="CONTACT_ID" property="linkmanId" jdbcType="DECIMAL" />
+		<result column="LINKMAN_CODE" property="linkmanCode" jdbcType="VARCHAR" />
+		<result column="LINKMAN_NAME" property="contactName" jdbcType="VARCHAR" />
+		<result column="LINKMAN_MOBILEPHONE" property="mobilePhone" jdbcType="VARCHAR" />
+		<result column="LINKMAN_TELEPHONE" property="contactPhone" jdbcType="VARCHAR" />
+		<result column="LINKMAN_IDCARD" property="idCard" jdbcType="VARCHAR" />
+		<result column="CHARGE_TYPE" property="chargeType" jdbcType="VARCHAR" />
+		<result column="BARGAIN_CODE" property="bargainCode" jdbcType="VARCHAR" />
+		<result column="BEGIN_TIME" property="beginTime" jdbcType="TIMESTAMP" />
+		<result column="END_TIME" property="endTime" jdbcType="TIMESTAMP" />
+		<result column="ADDRESS" property="address" jdbcType="VARCHAR" />
+		<result column="PROVINCE_CODE" property="provinceCode" jdbcType="VARCHAR" />
+		<result column="CITY_CODE" property="cityCode" jdbcType="VARCHAR" />
+		<result column="COUNTY_CODE" property="countyCode" jdbcType="VARCHAR" />
+		<result column="ADDRESS_ID" property="addressId" jdbcType="VARCHAR" />
+		<result column="PREFERENTIAL_TYPE" property="preferentialType" jdbcType="VARCHAR" />
+		<result column="ADDRESS_REMARK" property="addressRemark" jdbcType="VARCHAR" />
+			
+		<!-- 新增快递属性：2013-09-25 -->	
+		<result column="EXPAY_WAY" property="exPayWay" jdbcType="VARCHAR" />	
+		<result column="EXPREFERENTIAL_TYPE" property="exPreferentialType" jdbcType="VARCHAR" />	
+		<result column="EXPRICE_VERSION_DATE" property="exPriceVersionDate" jdbcType="TIMESTAMP" />
+		<result column="CRM_ID" property="bargainCrmId" jdbcType="DECIMAL" />
+		<!-- 发件人短信 收件人短信字段 -->
+		<result column="SHIPPER_SMS" property="shipperSms" jdbcType="VARCHAR" />
+		<result column="RECEIVER_SMS" property="receiverSms" jdbcType="VARCHAR" />
+		<!-- 精确代收-->
+		<result column="ACCURATE_COLLECTION" property="accurateCollection" jdbcType="CHAR" />	
+		<!-- 078816_wp_2014-03-21 CMR2期-->
+		<result column="ISLARGECUSTOMERS" property="isLargeCustomers" jdbcType="CHAR" />
+		<result column="CUSTOMSERNATURE" property="customserNature" jdbcType="VARCHAR" />
+		<result column="BUSINESSTYPE" property="businessType" jdbcType="VARCHAR" />
+		<result column="ONELEVELINDUSTRY" property="oneLevelIndustry" jdbcType="VARCHAR" />
+		<result column="TWOLEVELINDUSTRY" property="twoLevelIndustry" jdbcType="VARCHAR" />
+		<!--是否电子运单大客户 -->
+		<result column="ISELECBILLBIGCUST" property="isElecBillBigCust" jdbcType="CHAR" />
+		<result column="TEAN_LIMIT" property="teanLimit" jdbcType="INTEGER" />
+		<!-- 快递大客户标识 -->
+		<result column="ISEXPRESSBIGCUST" property="isExpressBigCust" jdbcType="CHAR" />
+		<result column="CUST_ADDR_REMARK" property="custAddrRemark" jdbcType="VARCHAR" />
+		<!-- 是否电商尊享 -->
+		<result column="IF_ELEC_ENJOY" property="ifElecEnjoy" jdbcType="CHAR" />
+		<!--是否精准计价 -->
+		<result column="ISACCURATEPRICE" property="isAccuratePrice" jdbcType="CHAR" />
+		<!--客户分群（CRM月度标签） -->
+		<result column="FLABELLEAVEMONTH" property="flabelleavemonth" jdbcType="VARCHAR" />	
+	</resultMap>
+	<!-- 通过查询条件联系表查询客户表、联系人表、接送货地址表、合同表中相关数据 -->
+	<select id="queryCustomerByCondition" parameterType="map" resultMap="customerConditionResultMap">
+	<![CDATA[
+		 SELECT/** 综合:通过查询条件联系表查询客户表、联系人表、接送货地址表、合同表中相关数据**/ 
+	]]> 
+		CUST.CRM_CUS_ID AS CUST_ID,
+		CUST.CODE AS CUST_CODE, 
+		CUST.NAME AS CUST_NAME,
+		CUST.CREDIT_AMOUNT/100 AS CUST_CREDIT,
+		CUST.UNIFIED_CODE AS UNIFIED_CODE,
+		CUST.ACCURATE_COLLECTION AS ACCURATE_COLLECTION,		<!-- 078816_wp_2014-03-21 CMR2期-->
+		CUST.ISLARGECUSTOMERS AS ISLARGECUSTOMERS,
+		CUST.BUSINESSTYPE AS BUSINESSTYPE,
+		CUST.ONELEVELINDUSTRY AS ONELEVELINDUSTRY,
+		CUST.TWOLEVELINDUSTRY AS TWOLEVELINDUSTRY,
+		CUST.ISEXPRESSBIGCUST AS ISEXPRESSBIGCUST,
+		CUST.CUSTOMSERNATURE AS CUSTOMSERNATURE,
+		<!--是否电子运单大客户 -->
+		CUST.ISELECBILLBIGCUST AS ISELECBILLBIGCUST,
+		CUST.CUST_ADDR_REMARK AS CUST_ADDR_REMARK,
+		CUST.TEAN_LIMIT,
+		<!-- 客户分群  -->
+		CUST.FLABELLEAVEMONTH,
+		<!-- 是否精准计价  -->
+		CUST.ISACCURATEPRICE as ISACCURATEPRICE,
+		
+		LINKMAN.CRM_ID AS CONTACT_ID,
+		LINKMAN.CODE AS LINKMAN_CODE, 
+		LINKMAN.CONTACT_NAME AS LINKMAN_NAME,
+		LINKMAN.MOBILE_PHONE AS LINKMAN_MOBILEPHONE,
+		LINKMAN.CONTACT_PHONE AS LINKMAN_TELEPHONE,
+		LINKMAN.ID_CARD AS LINKMAN_IDCARD,
+		ADDRESS.ADDRESS AS ADDRESS,
+		ADDRESS.PROVINCE_CODE AS PROVINCE_CODE,
+		ADDRESS.CITY_CODE     AS CITY_CODE, 
+		ADDRESS.COUNTY_CODE   AS COUNTY_CODE,
+		ADDRESS.CRM_ID AS ADDRESS_ID,
+		ADDRESS.ADDRESS_REMARK AS ADDRESS_REMARK,
+		
+		BARGAIN.EXPAY_WAY AS EXPAY_WAY,
+		BARGAIN.EXPREFERENTIAL_TYPE AS EXPREFERENTIAL_TYPE,
+		BARGAIN.EXPRICE_VERSION_DATE AS EXPRICE_VERSION_DATE,
+		BARGAIN.CRM_ID AS CRM_ID,
+		BARGAIN.IF_ELEC_ENJOY AS IF_ELEC_ENJOY
+	<![CDATA[
+		 FROM BSE.T_BAS_CUSTOMER CUST 
+		 INNER JOIN BSE.T_BAS_CUS_CONTACT LINKMAN ON CUST.CRM_CUS_ID = LINKMAN.CRM_CUS_ID
+		  LEFT JOIN BSE.T_BAS_CUS_CONTACT_ADDRESS AD ON LINKMAN.CRM_ID = AD.CONTACT_CRM_ID
+		  LEFT JOIN BSE.T_BAS_CUS_ADDRESS ADDRESS ON AD.ADDRESS_CRM_ID = ADDRESS.CRM_ID
+		  AND ADDRESS.ACTIVE = #{active,jdbcType=CHAR}
+		  LEFT JOIN BSE.T_BAS_CUS_BARGAIN BARGAIN ON CUST.CRM_CUS_ID = BARGAIN.CRM_CUS_ID
+		  AND BARGAIN.begin_time <= #{condition.invoiceDate ,jdbcType=TIMESTAMP}
+		   AND BARGAIN.end_time >= #{condition.invoiceDate,jdbcType=TIMESTAMP} 
+	]]> 
+		<where>
+			CUST.ACTIVE = LINKMAN.ACTIVE
+			
+			<!-- 			AND CUST.CRM_CUS_ID = LINKMAN.CRM_CUS_ID(+) -->
+			<!-- 			AND LINKMAN.CRM_ID = AD.CONTACT_CRM_ID(+) -->
+			<!-- 			AND AD.ADDRESS_CRM_ID = ADDRESS.CRM_ID(+) -->
+			<!-- 是否查询全公司 -->
+			<if test="condition.deptCode != null and condition.deptCode != ''">
+				AND CUST.UNIFIED_CODE = #{condition.deptCode,jdbcType=VARCHAR}
+			</if>
+			AND CUST.ACTIVE = #{active,jdbcType=CHAR}
+			<!-- 			AND NVL(LINKMAN.ACTIVE,1) = NVL2(LINKMAN.CRM_CUS_ID,#{active,jdbcType=CHAR},1) -->
+			<!-- 			AND NVL(ADDRESS.ACTIVE,1) = NVL2(ADDRESS.CRM_ID,#{active,jdbcType=CHAR},1) -->
+			<choose>
+				<!-- 判断为false：则模糊查询 -->
+				<when test="condition.exactQuery == false ">
+					<if test="condition.custName != null and condition.custName != '' ">
+						AND CUST.NAME like CONCAT(CONCAT('%',#{condition.custName,jdbcType=VARCHAR}),'%')
+					</if>
+					<if test="condition.custCode != null and condition.custCode != '' ">
+						AND CUST.CODE = #{condition.custCode,jdbcType=VARCHAR}
+					</if>
+					<if test="condition.contactName != null and condition.contactName != ''">
+						AND LINKMAN.CONTACT_NAME like CONCAT(CONCAT('%',#{condition.contactName,jdbcType=VARCHAR}),'%')
+					</if>
+					<if test="condition.linkmanCode != null and condition.linkmanCode != ''">
+						AND LINKMAN.CODE = #{condition.linkmanCode,jdbcType=VARCHAR}
+					</if>
+					<if test="condition.mobilePhone != null and condition.mobilePhone != ''">
+						AND LINKMAN.MOBILE_PHONE like CONCAT(CONCAT('%',#{condition.mobilePhone,jdbcType=VARCHAR}),'%')
+					</if>
+					<if test="condition.contactPhone != null and condition.contactPhone != ''">
+						AND LINKMAN.CONTACT_PHONE like CONCAT(CONCAT('%',#{condition.contactPhone,jdbcType=VARCHAR}),'%')
+					</if>
+					<if test="condition.idCard != null and condition.idCard != ''">
+						AND LINKMAN.ID_CARD = #{condition.idCard,jdbcType=VARCHAR}
+					</if>
+					<if test="condition.address != null and condition.address != ''">
+						AND ADDRESS.ADDRESS like CONCAT(CONCAT('%',#{condition.address,jdbcType=VARCHAR}),'%')
+					</if>
+				</when>
+				<!-- 判断为true：则精确查询 -->
+				<otherwise>
+					<if test="condition.custName != null and condition.custName != '' ">
+						AND CUST.NAME = #{condition.custName,jdbcType=VARCHAR}
+					</if>
+					<if test="condition.custCode != null and condition.custCode != '' ">
+						AND CUST.CODE = #{condition.custCode,jdbcType=VARCHAR} 
+					</if>
+					<if test="condition.contactName != null and condition.contactName != ''">
+						AND LINKMAN.CONTACT_NAME = #{condition.contactName,jdbcType=VARCHAR} 
+					</if>
+					<if test="condition.linkmanCode != null and condition.linkmanCode != ''">
+						AND LINKMAN.CODE = #{condition.linkmanCode,jdbcType=VARCHAR} 
+					</if>
+					<if test="condition.mobilePhone != null and condition.mobilePhone != ''">
+						AND LINKMAN.MOBILE_PHONE = #{condition.mobilePhone,jdbcType=VARCHAR} 
+					</if>
+					<if test="condition.contactPhone != null and condition.contactPhone != ''">
+						AND LINKMAN.CONTACT_PHONE = #{condition.contactPhone,jdbcType=VARCHAR} 
+					</if>
+					<if test="condition.idCard != null and condition.idCard != ''">
+						AND LINKMAN.ID_CARD = #{condition.idCard,jdbcType=VARCHAR} 
+					</if>
+					<if test="condition.address != null and condition.address != ''">
+						AND ADDRESS.ADDRESS = #{condition.address,jdbcType=VARCHAR} 
+					</if>
+				</otherwise>
+			</choose>
+		<![CDATA[
+			AND ROWNUM<102
+		]]> 
+		</where>
+	</select>
+	
+	
+	<!-- 通过查询条件联系表查询客户表、联系人表、接送货地址表、合同表中相关数据 -->
+	<select id="countCustomerByCondition" parameterType="map" resultType="int">
+	<![CDATA[
+		SELECT /** 综合:通过查询条件联系表查询客户表记录总数**/  COUNT(1) FROM (
+		SELECT
+	]]> 
+		CUST.CRM_CUS_ID AS CUST_ID,
+		CUST.CODE AS CUST_CODE, 
+		CUST.NAME AS CUST_NAME,
+		CUST.CREDIT_AMOUNT/100 AS CUST_CREDIT,
+		CUST.UNIFIED_CODE AS UNIFIED_CODE,
+		CUST.ACCURATE_COLLECTION AS ACCURATE_COLLECTION,		<!-- 078816_wp_2014-03-21 CMR2期-->
+		CUST.ISLARGECUSTOMERS AS ISLARGECUSTOMERS,
+		CUST.BUSINESSTYPE AS BUSINESSTYPE,
+		CUST.ONELEVELINDUSTRY AS ONELEVELINDUSTRY,
+		CUST.TWOLEVELINDUSTRY AS TWOLEVELINDUSTRY,
+		CUST.ISEXPRESSBIGCUST AS ISEXPRESSBIGCUST,
+		CUST.CUSTOMSERNATURE AS CUSTOMSERNATURE,
+		<!--是否电子运单大客户 -->
+		CUST.ISELECBILLBIGCUST AS ISELECBILLBIGCUST,
+		CUST.CUST_ADDR_REMARK AS CUST_ADDR_REMARK,
+		CUST.TEAN_LIMIT,
+		<!-- 是否精准计价  -->
+		CUST.ISACCURATEPRICE as ISACCURATEPRICE,
+		
+		LINKMAN.CRM_ID AS CONTACT_ID,
+		LINKMAN.CODE AS LINKMAN_CODE, 
+		LINKMAN.CONTACT_NAME AS LINKMAN_NAME,
+		LINKMAN.MOBILE_PHONE AS LINKMAN_MOBILEPHONE,
+		LINKMAN.CONTACT_PHONE AS LINKMAN_TELEPHONE,
+		LINKMAN.ID_CARD AS LINKMAN_IDCARD,
+		ADDRESS.ADDRESS AS ADDRESS,
+		ADDRESS.PROVINCE_CODE AS PROVINCE_CODE,
+		ADDRESS.CITY_CODE     AS CITY_CODE, 
+		ADDRESS.COUNTY_CODE   AS COUNTY_CODE,
+		ADDRESS.CRM_ID AS ADDRESS_ID,
+		ADDRESS.ADDRESS_REMARK AS ADDRESS_REMARK,
+		
+		BARGAIN.EXPAY_WAY AS EXPAY_WAY,
+		BARGAIN.EXPREFERENTIAL_TYPE AS EXPREFERENTIAL_TYPE,
+		BARGAIN.EXPRICE_VERSION_DATE AS EXPRICE_VERSION_DATE,
+		BARGAIN.CRM_ID AS CRM_ID,
+		BARGAIN.IF_ELEC_ENJOY AS IF_ELEC_ENJOY
+	<![CDATA[
+		 FROM BSE.T_BAS_CUSTOMER CUST 
+		 INNER JOIN BSE.T_BAS_CUS_CONTACT LINKMAN ON CUST.CRM_CUS_ID = LINKMAN.CRM_CUS_ID
+		  LEFT JOIN BSE.T_BAS_CUS_CONTACT_ADDRESS AD ON LINKMAN.CRM_ID = AD.CONTACT_CRM_ID
+		  LEFT JOIN BSE.T_BAS_CUS_ADDRESS ADDRESS ON AD.ADDRESS_CRM_ID = ADDRESS.CRM_ID
+			   AND ADDRESS.ACTIVE = #{active,jdbcType=CHAR}
+		   LEFT JOIN BSE.T_BAS_CUS_BARGAIN BARGAIN ON CUST.CRM_CUS_ID = BARGAIN.CRM_CUS_ID
+		  AND BARGAIN.begin_time <= #{condition.invoiceDate ,jdbcType=TIMESTAMP}
+		   AND BARGAIN.end_time >= #{condition.invoiceDate,jdbcType=TIMESTAMP} 
+	]]> 
+		<where>
+			CUST.ACTIVE = LINKMAN.ACTIVE
+			<!-- 			AND CUST.CRM_CUS_ID = LINKMAN.CRM_CUS_ID(+) -->
+			<!-- 			AND LINKMAN.CRM_ID = AD.CONTACT_CRM_ID(+) -->
+			<!-- 			AND AD.ADDRESS_CRM_ID = ADDRESS.CRM_ID(+) -->
+			<!-- 是否查询全公司 -->
+			<if test="condition.deptCode != null and condition.deptCode != ''">
+				AND CUST.UNIFIED_CODE = #{condition.deptCode,jdbcType=VARCHAR}
+			</if>
+			AND CUST.ACTIVE = #{active,jdbcType=CHAR}
+			<!-- 			AND NVL(LINKMAN.ACTIVE,1) = NVL2(LINKMAN.CRM_CUS_ID,#{active,jdbcType=CHAR},1) -->
+			<!-- 			AND NVL(ADDRESS.ACTIVE,1) = NVL2(ADDRESS.CRM_ID,#{active,jdbcType=CHAR},1) -->
+			<choose>
+				<!-- 判断为false：则模糊查询 -->
+				<when test="condition.exactQuery == false ">
+					<if test="condition.custName != null and condition.custName != '' ">
+						<!-- 客户名称半模糊 -->
+						AND CUST.NAME like CONCAT(#{condition.custName,jdbcType=VARCHAR},'%')
+					</if>
+					<if test="condition.custCode != null and condition.custCode != '' ">
+						AND CUST.CODE like CONCAT(CONCAT(#{condition.custCode,jdbcType=VARCHAR}),'%')
+					</if>
+					<if test="condition.contactName != null and condition.contactName != ''">
+						<!-- 联系人名称半模糊 -->
+						AND LINKMAN.CONTACT_NAME like CONCAT(#{condition.contactName,jdbcType=VARCHAR},'%')
+					</if>
+					<if test="condition.linkmanCode != null and condition.linkmanCode != ''">
+						AND LINKMAN.CODE like CONCAT(CONCAT('%',#{condition.linkmanCode,jdbcType=VARCHAR}),'%')
+					</if>
+					<if test="condition.mobilePhone != null and condition.mobilePhone != ''">
+						AND LINKMAN.MOBILE_PHONE like CONCAT(CONCAT('%',#{condition.mobilePhone,jdbcType=VARCHAR}),'%')
+					</if>
+					<if test="condition.contactPhone != null and condition.contactPhone != ''">
+						AND LINKMAN.CONTACT_PHONE like CONCAT(CONCAT('%',#{condition.contactPhone,jdbcType=VARCHAR}),'%')
+					</if>
+					<if test="condition.idCard != null and condition.idCard != ''">
+						AND LINKMAN.ID_CARD like CONCAT(CONCAT('%',#{condition.idCard,jdbcType=VARCHAR}),'%')
+					</if>
+					<if test="condition.address != null and condition.address != ''">
+						AND ADDRESS.ADDRESS like CONCAT(CONCAT('%',#{condition.address,jdbcType=VARCHAR}),'%')
+					</if>
+				</when>
+				<!-- 判断为true：则精确查询 -->
+				<otherwise>
+					<if test="condition.custName != null and condition.custName != '' ">
+						AND CUST.NAME = #{condition.custName,jdbcType=VARCHAR}
+					</if>
+					<if test="condition.custCode != null and condition.custCode != '' ">
+						AND CUST.CODE = #{condition.custCode,jdbcType=VARCHAR} 
+					</if>
+					<if test="condition.contactName != null and condition.contactName != ''">
+						AND LINKMAN.CONTACT_NAME = #{condition.contactName,jdbcType=VARCHAR} 
+					</if>
+					<if test="condition.linkmanCode != null and condition.linkmanCode != ''">
+						AND LINKMAN.CODE = #{condition.linkmanCode,jdbcType=VARCHAR} 
+					</if>
+					<if test="condition.mobilePhone != null and condition.mobilePhone != ''">
+						AND LINKMAN.MOBILE_PHONE = #{condition.mobilePhone,jdbcType=VARCHAR} 
+					</if>
+					<if test="condition.contactPhone != null and condition.contactPhone != ''">
+						AND LINKMAN.CONTACT_PHONE = #{condition.contactPhone,jdbcType=VARCHAR} 
+					</if>
+					<if test="condition.idCard != null and condition.idCard != ''">
+						AND LINKMAN.ID_CARD = #{condition.idCard,jdbcType=VARCHAR} 
+					</if>
+					<if test="condition.address != null and condition.address != ''">
+						AND ADDRESS.ADDRESS = #{condition.address,jdbcType=VARCHAR} 
+					</if>
+				</otherwise>
+			</choose>
+		<![CDATA[
+			AND ROWNUM<102 
+		]]> 
+		</where>
+	<![CDATA[
+		)
+	]]> 
+	</select>
+	
+	<!-- 通过查询条件联系表查询客户表、联系人表、接送货地址表、合同表中相关数据 -->
+	<select id="queryBargainByCondition" parameterType="java.util.Map" resultMap="customerConditionResultMap">
+	<![CDATA[
+		 SELECT/** 综合:通过查询条件联系表查询客户表、联系人表、接送货地址表、合同表中相关数据**/  
+	]]> 
+ 		    BARGAIN.CHARGE_TYPE AS CHARGE_TYPE, 
+		    BARGAIN.BARGAIN_CODE AS BARGAIN_CODE, 
+		    BARGAIN.BEGIN_TIME AS BEGIN_TIME, 
+		    BARGAIN.END_TIME AS END_TIME,
+		    BARGAIN.PREFERENTIAL_TYPE AS PREFERENTIAL_TYPE,
+		    BARGAIN.EXPAY_WAY AS EXPAY_WAY,
+		    BARGAIN.EXPREFERENTIAL_TYPE AS EXPREFERENTIAL_TYPE,
+		    BARGAIN.EXPRICE_VERSION_DATE AS EXPRICE_VERSION_DATE,
+		    BARGAIN.IF_ELEC_ENJOY AS IF_ELEC_ENJOY,
+		    BARGAIN.CRM_ID
+		    
+	<![CDATA[
+		 FROM BSE.T_BAS_CUS_BARGAIN BARGAIN 
+	]]> 
+		<where>
+ 			BARGAIN.ACTIVE = #{active,jdbcType=CHAR} 
+ 			AND BARGAIN.CRM_CUS_ID = #{condition.custId,jdbcType=VARCHAR}
+			AND ROWNUM = 1
+		AND <![CDATA[ BARGAIN.BEGIN_TIME <= SYSDATE ]]> 
+		AND <![CDATA[ SYSDATE <= ]]>  BARGAIN.END_TIME 
+		</where>
+	</select>
+	
+	<!-- 通过查询条件联系表查询客户表、联系人表、接送货地址表、合同表中相关数据 -->
+	<select id="queryComtomerInvoiceType" parameterType="java.util.Map" resultType="String">
+		   select invoice_type from BSE.T_BAS_CUS_BARGAIN_CONTRACT_TAX   
+			where
+			bargain_crm_id = #{braginCrmId,jdbcType=DECIMAL}
+	and  <![CDATA[ begin_time <= ]]> #{date,jdbcType=TIMESTAMP}
+	and  <![CDATA[ end_time >= ]]> #{date,jdbcType=TIMESTAMP}
+            and rownum = 1
+	</select>
+	<select id ="queryIscpackBybargainCrmId" resultType ="long" parameterType="java.util.Map">
+	<![CDATA[SELECT COUNT(1)
+       FROM BSE.T_BAS_CUS_PREFERENTIAL AL
+        WHERE AL.EFFECTIVEDATE <= SYSDATE
+      AND AL.EXPIRATIONDATE >= SYSDATE
+      AND AL.IS_ACCURSATE_PACKAGE = 'Y'
+      AND AL.BARGAIN_CRM_ID= ]]> #{braginCrmId,jdbcType=DECIMAL} 
+	</select>
+	<!-- 078816_wp_2014-04-10 -->
+	<!-- 通过查询条件联系表查询客户表、联系人表、接送货地址表、合同表中相关数据 -->
+	<select id="queryNonfixedCustomerByCondition" parameterType="java.util.Map" resultMap="customerConditionResultMap">
+	<![CDATA[
+		 SELECT/** 综合:通过查询条件联系表查询客户表、联系人表、接送货地址表、合同表中相关数据**/ 
+	]]> 
+		CUST.CRM_CUS_ID AS CUST_ID,
+		CUST.CODE AS CUST_CODE, 
+		CUST.NAME AS CUST_NAME,
+		CUST.CREDIT_AMOUNT/100 AS CUST_CREDIT,
+		CUST.UNIFIED_CODE AS UNIFIED_CODE,
+		<!-- 078816_wp_2014-03-21 CMR2期-->
+		CUST.ISLARGECUSTOMERS AS ISLARGECUSTOMERS,
+		CUST.BUSINESSTYPE AS BUSINESSTYPE,
+		CUST.ONELEVELINDUSTRY AS ONELEVELINDUSTRY,
+		CUST.TWOLEVELINDUSTRY AS TWOLEVELINDUSTRY,
+		CUST.ISEXPRESSBIGCUST AS ISEXPRESSBIGCUST,
+		CUST.CUSTOMSERNATURE AS CUSTOMSERNATURE,
+		<!--是否电子运单大客户 -->
+		CUST.ISELECBILLBIGCUST AS ISELECBILLBIGCUST,
+		CUST.CUST_ADDR_REMARK AS CUST_ADDR_REMARK,
+		CUST.TEAN_LIMIT AS TEAN_LIMIT,
+		<!-- 是否精准计价  -->
+		CUST.ISACCURATEPRICE as ISACCURATEPRICE,
+		LINKMAN.CRM_ID AS CONTACT_ID,
+		LINKMAN.CODE AS LINKMAN_CODE, 
+		LINKMAN.CONTACT_NAME AS LINKMAN_NAME,
+		LINKMAN.MOBILE_PHONE AS LINKMAN_MOBILEPHONE,
+		LINKMAN.CONTACT_PHONE AS LINKMAN_TELEPHONE,
+		LINKMAN.ID_CARD AS LINKMAN_IDCARD,
+		ADDRESS.ADDRESS AS ADDRESS,
+		ADDRESS.PROVINCE_CODE AS PROVINCE_CODE,
+		ADDRESS.CITY_CODE     AS CITY_CODE, 
+		ADDRESS.COUNTY_CODE   AS COUNTY_CODE,
+		ADDRESS.CRM_ID AS ADDRESS_ID,
+		ADDRESS.ADDRESS_REMARK AS ADDRESS_REMARK
+	<![CDATA[
+		 FROM BSE.T_BAS_CUSTOMER CUST 
+		 INNER JOIN BSE.T_BAS_CUS_CONTACT LINKMAN ON CUST.ID = LINKMAN.CUSTFOSSID
+		  LEFT JOIN BSE.T_BAS_CUS_ADDRESS ADDRESS ON CUST.ID = ADDRESS.CUSTFOSSID
+		  AND ADDRESS.ACTIVE = #{active,jdbcType=CHAR}
+	]]> 
+		<where>
+			CUST.ACTIVE = LINKMAN.ACTIVE
+			<!-- 是否查询全公司 -->
+			<if test="condition.deptCode != null and condition.deptCode != ''">
+				AND CUST.UNIFIED_CODE = #{condition.deptCode,jdbcType=VARCHAR}
+			</if>
+			AND CUST.ACTIVE = #{active,jdbcType=CHAR}
+			<choose>
+				<!-- 判断为false：则模糊查询 -->
+				<when test="condition.exactQuery == false ">
+					<if test="condition.custName != null and condition.custName != '' ">
+						AND CUST.NAME like CONCAT(CONCAT('%',#{condition.custName,jdbcType=VARCHAR}),'%')
+					</if>
+					<if test="condition.custCode != null and condition.custCode != '' ">
+						AND CUST.CODE = #{condition.custCode,jdbcType=VARCHAR}
+					</if>
+					<if test="condition.contactName != null and condition.contactName != ''">
+						AND LINKMAN.CONTACT_NAME like CONCAT(CONCAT('%',#{condition.contactName,jdbcType=VARCHAR}),'%')
+					</if>
+					<if test="condition.linkmanCode != null and condition.linkmanCode != ''">
+						AND LINKMAN.CODE = #{condition.linkmanCode,jdbcType=VARCHAR}
+					</if>
+					<if test="condition.mobilePhone != null and condition.mobilePhone != ''">
+						AND LINKMAN.MOBILE_PHONE like CONCAT(CONCAT('%',#{condition.mobilePhone,jdbcType=VARCHAR}),'%')
+					</if>
+					<if test="condition.contactPhone != null and condition.contactPhone != ''">
+						AND LINKMAN.CONTACT_PHONE like CONCAT(CONCAT('%',#{condition.contactPhone,jdbcType=VARCHAR}),'%')
+					</if>
+					<if test="condition.idCard != null and condition.idCard != ''">
+						AND LINKMAN.ID_CARD = #{condition.idCard,jdbcType=VARCHAR}
+					</if>
+					<if test="condition.address != null and condition.address != ''">
+						AND ADDRESS.ADDRESS like CONCAT(CONCAT('%',#{condition.address,jdbcType=VARCHAR}),'%')
+					</if>
+				</when>
+				<!-- 判断为true：则精确查询 -->
+				<otherwise>
+					<if test="condition.custName != null and condition.custName != '' ">
+						AND CUST.NAME = #{condition.custName,jdbcType=VARCHAR}
+					</if>
+					<if test="condition.custCode != null and condition.custCode != '' ">
+						AND CUST.CODE = #{condition.custCode,jdbcType=VARCHAR} 
+					</if>
+					<if test="condition.contactName != null and condition.contactName != ''">
+						AND LINKMAN.CONTACT_NAME = #{condition.contactName,jdbcType=VARCHAR} 
+					</if>
+					<if test="condition.linkmanCode != null and condition.linkmanCode != ''">
+						AND LINKMAN.CODE = #{condition.linkmanCode,jdbcType=VARCHAR} 
+					</if>
+					<if test="condition.mobilePhone != null and condition.mobilePhone != ''">
+						AND LINKMAN.MOBILE_PHONE = #{condition.mobilePhone,jdbcType=VARCHAR} 
+					</if>
+					<if test="condition.contactPhone != null and condition.contactPhone != ''">
+						AND LINKMAN.CONTACT_PHONE = #{condition.contactPhone,jdbcType=VARCHAR} 
+					</if>
+					<if test="condition.idCard != null and condition.idCard != ''">
+						AND LINKMAN.ID_CARD = #{condition.idCard,jdbcType=VARCHAR} 
+					</if>
+					<if test="condition.address != null and condition.address != ''">
+						AND ADDRESS.ADDRESS = #{condition.address,jdbcType=VARCHAR} 
+					</if>
+				</otherwise>
+			</choose>
+		<![CDATA[
+			AND ROWNUM<102
+		]]> 
+		</where>
+	</select>
+	
+	
+	<!-- 通过指定的条件从客户表中查询 符合添加的值  基于模糊查询    2014-07-12 下午6:46:39-->
+	<select id="queryCustomersByExpSmsLimit" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CustomerEntity" resultMap="customerResultMap">
+		<!--select CODE as cusCode ,UNIFIED_CODE as unifiedCode  from BSE.T_BAS_CUSTOMER c  where instr(c.EXP_SMS_LIMIT,#{expSmsLimit})=1 and c.ACTIVE='Y'-->
+		select CODE as cusCode ,UNIFIED_CODE as unifiedCode  from BSE.T_BAS_CUSTOMER c  where c.SHIPPER_SMS='BATCH_MESSAGE_FOR_DELIVER' and c.ACTIVE='Y'
+	</select>
+	
+	<!-- 通过客户编码和手机号查询出 联系人名称queryContactNameByCustCodeAndcustMobile -->
+	<select id="queryContactNameByCustCodeAndcustMobile" parameterType="java.lang.String" resultType="java.lang.String">
+		select a.CONTACT_NAME from  bse.t_bas_cus_contact a 
+		<where>
+		<![CDATA[ 1 = 1  ]]>
+			  and a.CRM_CUS_ID=(select c.CRM_CUS_ID from BSE.T_BAS_CUSTOMER c
+			<where>
+			<![CDATA[ 1 = 1  ]]>
+				<if test="custCode !=null "><![CDATA[ and c.CODE = #{custCode,jdbcType=VARCHAR}  ]]></if>
+			  		and c.ACTIVE='Y')
+			</where>
+			<if test="customerMobile !=null "><![CDATA[ and a.MOBILE_PHONE = #{customerMobile,jdbcType=VARCHAR}  ]]></if>
+			  and a.ACTIVE='Y'
+		</where>
+	</select>
+	<!--通过客户编码查询客户状态 -->
+	<select id="queryCustStateByCode" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CustomerEntity" resultMap="customerResultMap">
+		select <include refid="customer_Column_List" /> from BSE.T_BAS_CUSTOMER T  where T.CODE=#{custCode,jdbcType=VARCHAR} and T.ACTIVE='Y'
+	</select>
+	<!-- 通过客户的标杆编码查询 客户所属部门 -->
+	<select id="queryOrgCodeByUnifiedCode" parameterType="java.lang.String" resultType="java.lang.String" >
+		select CODE  from BSE.T_BAS_ORG   where UNIFIED_CODE=#{unifiedCode,jdbcType=VARCHAR}  and ACTIVE='Y'
+	</select>
+	
+	<!-- 通过客户手机查询客户编码-->
+	<select id="queryCustCodeByCustMobile" parameterType="java.lang.String" resultType="java.lang.String" >
+		select r.CODE from BSE.T_BAS_CUSTOMER r where r.CRM_CUS_ID=(select to_char(c.CRM_CUS_ID) as CRM_CUS_ID from bse.t_bas_cus_contact c where c.MOBILE_PHONE=#{customerMobile,jdbcType=VARCHAR} and c.ACTIVE='Y') and r.ACTIVE='Y'
+	</select>
+	
+	<!-- 通过传入一个crm_cus_id查询客户信息 -->
+	<select id="queryCusInfosByCrmCusId" parameterType="map"
+		resultMap="customerResultMap">
+	<![CDATA[
+		SELECT
+		/** 综合:通过传入一个crm_cus_id查询客户信息**/
+	]]>
+		<include refid="customer_Column_List" />
+	<![CDATA[
+		FROM BSE.T_BAS_CUSTOMER T
+	]]>
+		<where>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="crmCusId != null and crmCusId != ''">
+				AND CRM_CUS_ID = #{crmCusId,jdbcType=DECIMAL}  
+			</if>			
+			<if test="fossId != null and fossId != ''">
+				AND ID = #{fossId,jdbcType=VARCHAR}  
+			</if>
+		</where>
+	</select>
+	
+	<!-- 通过传入一个客户编码查询出客户联系人信息(只针对crm传过来的固定客户使用 潜客不适用) -->
+	<select id="queryContactInfoByCusCode"
+		parameterType="java.util.Map"
+		resultMap="cusContactResultMap">
+	<![CDATA[
+		SELECT 
+		/** 通过传入一个客户编码查询出客户联系人信息(只针对crm传过来的固定客户使用 潜客不适用) **/
+	]]>
+		<include refid="cusContact_Column_List" />
+	<![CDATA[
+		FROM BSE.T_BAS_CUSTOMER  T
+		LEFT JOIN BSE.T_BAS_CUS_CONTACT A
+		ON T.CRM_CUS_ID=A.CRM_CUS_ID
+		AND A.ACTIVE='Y'
+	]]>
+		<where>
+			<if test="code != null and code != ''">
+				T.CODE = #{code,jdbcType=VARCHAR}
+				AND T.ACTIVE='Y'  
+			</if>			
+		</where>
+	</select>
+	
+	
+	<!-- 通过传入一个注入了客户编码与客户手机号码的实体类查询客户信息 -->
+	<select id="queryCustInfoByCustomerEntity" parameterType="map"
+		resultMap="customerResultMap">
+	<![CDATA[
+		SELECT
+		/** 综合:通过传入一个注入了客户编码与客户手机号码的实体类查询客户信息**/
+	]]>
+		<include refid="customer_Column_List" />
+	<![CDATA[
+		FROM BSE.T_BAS_CUSTOMER T
+	]]>
+		<where>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="cusCode != null and cusCode != ''">
+				AND CODE = #{cusCode,jdbcType=VARCHAR}  
+			</if>			
+			<if test="fixedReceiveMobile != null and fixedReceiveMobile != ''">
+				AND FIXED_RECEIVE_MOBILE = #{fixedReceiveMobile,jdbcType=VARCHAR}  
+			</if>
+		</where>
+	</select>
+	
+	<!-- 通过传入一个客户编码查询出客户联系人信息(只针对crm传过来的固定客户使用 潜客不适用) -->
+	<select id="queryCustomerInfoByCusCode"
+		parameterType="java.util.Map"
+		resultMap="customerResultMap">
+        <![CDATA[
+			SELECT 
+			/** 通过传入一个客户编码查询出客户联系人信息(只针对crm传过来的固定客户使用 潜客不适用) **/
+		]]>
+		<include refid="customer_Column_List" />
+		<![CDATA[
+		    FROM BSE.T_BAS_CUSTOMER  T		   
+		]]>
+		<where>
+			<if test="code != null and code != ''">
+				T.CODE = #{code,jdbcType=VARCHAR}
+				AND T.ACTIVE='Y'  
+			</if>			
+		</where>
+	</select>
+	
+	<!-- 根据客户编码查询客户信息（是否大客户标记  客户分群） 308861-->
+	<select id="customerByCusCode"
+		parameterType="java.util.Map"
+		resultMap="customerResultNewMap">
+        <![CDATA[
+			SELECT 
+			/** 通过传入一个客户编码查询出客户联系人信息(只针对crm传过来的固定客户使用 潜客不适用) **/
+		]]>
+		<include refid="customer_Column_new" />
+		<![CDATA[
+		    FROM BSE.T_BAS_CUSTOMER  T		   
+		]]>
+		<where>
+			<if test="code != null and code != ''">
+				T.CODE = #{code,jdbcType=VARCHAR}
+				AND T.ACTIVE='Y'  
+			</if>			
+		</where>
+	</select>
+	
+	<select id="queryExistsCustInfoByCode"
+		parameterType="java.util.Map"
+		resultType="long">
+        select count(code) from BSE.T_BAS_CUSTOMER r where r.code=#{code,jdbcType=VARCHAR}  AND r.ACTIVE='Y'
+	</select>
+	
+</mapper>

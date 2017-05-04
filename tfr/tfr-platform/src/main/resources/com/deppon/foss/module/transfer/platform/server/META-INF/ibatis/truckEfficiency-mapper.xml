@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="Foss.platform.truckEfficiencyJob" >
+
+	<resultMap id="TruckEfficiencyMap" type="com.deppon.foss.module.transfer.platform.api.shared.domain.TruckEfficiencyEntity" >
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="STATISTIC_DATE" property="statisticDate" jdbcType="TIMESTAMP" />
+		<result column="STATISTIC_MONTH" property="statisticMonth" jdbcType="NUMERIC" />
+		<result column="TRANSFER_CENTER_CODE" property="transferCenterCode" jdbcType="VARCHAR" />
+		<result column="TRANSFER_CENTER_NAME" property="transferCenterName" jdbcType="VARCHAR" />
+		<result column="LOAD_TOTAL_WEIGHT" property="loadTotalWeight" jdbcType="DECIMAL" />
+		<result column="UNLOAD_TOTAL_WEIGHT" property="unloadTotalWeight" jdbcType="DECIMAL" />
+		<result column="LOAD_TOTAL_DURATION" property="loadTotalDuration" jdbcType="DECIMAL" />
+		<result column="UNLOAD_TOTAL_DURATION" property="unloadTotalDuration" jdbcType="DECIMAL" />
+		<result column="LOAD_RATIO" property="loadRatio" jdbcType="DECIMAL" />
+		<result column="UNLOAD_RATIO" property="unloadRatio" jdbcType="DECIMAL" />
+		<result column="TOTAL_RATIO" property="totalRatio" jdbcType="DECIMAL" />
+		<result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="OPERATION_DEPT_CODE" property="operationDeptCode" jdbcType="VARCHAR" />
+		<result column="OPERATION_DEPT_NAME" property="operationDeptName" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<!-- 统计装卸车效率 -->
+	<select id="loadAndUnloadEfficiency" parameterType="HashMap" resultMap="TruckEfficiencyMap">
+		select 
+			   transfer_center_code transfer_center_code,
+		       max(transfer_center_name) transfer_center_name,
+		       sum(load_total_weight)/1000 load_total_weight,
+		       sum(unload_total_weight)/1000 unload_total_weight,
+		       round(sum(load_total_duration),2) load_total_duration,
+		       round(sum(unload_total_duration),2) unload_total_duration,
+		       round(sum(load_total_weight)/1000/
+		             decode(sum(load_total_duration),
+		                    0,
+		                    1,
+		                    sum(load_total_duration)),
+		             2) load_ratio,
+		       round(sum(unload_total_weight)/1000 /
+		             decode(sum(unload_total_duration),
+		                    0,
+		                    1,
+		                    sum(unload_total_duration)),
+		             2) unload_ratio,
+		       round((sum(load_total_weight)/1000 + sum(unload_total_weight)/1000)/decode(
+		             (sum(load_total_duration) + sum(unload_total_duration)),0,1,
+		             (sum(load_total_duration) + sum(unload_total_duration))),
+		             2) total_ratio
+		  from (
+		        
+		        select
+		        
+		         max(tc.org_code) transfer_center_code,
+		          max(tc.name) transfer_center_name,
+		          sum(sd.load_weight_total) load_total_weight,
+		          0 unload_total_weight,
+		          max(round((cast(s.load_end_time as date) -
+		                    cast(s.load_start_time as date)) * 24,
+		                    4)) load_total_duration,
+		          0 unload_total_duration
+		          from tfr.t_Opt_Load_Task s
+		          join tfr.t_opt_load_waybill_detail sd
+		            on sd.load_task_id = s.id
+		          join bse.t_bas_transfer_center tc
+		            on tc.org_code = s.orig_org_code
+		           and tc.active = 'Y'
+		          LEFT join bse.t_bas_org o
+		            on o.code = tc.org_code
+		           and o.active = 'Y'
+		         where s.task_state in ('FINISHED', 'SUBMITED')
+		           and s.load_end_time >= (#{statisticDate,jdbcType=TIMESTAMP})
+		     <![CDATA[      and s.load_end_time < #{statisticDate,jdbcType=TIMESTAMP}+1     ]]>
+		           AND (o.express_branch = 'N' OR o.express_branch IS NULL)
+		         group by s.task_no
+		        
+		        union all
+		        
+		        select
+		        
+		         max(tc.org_code) transfer_center_code,
+		         max(tc.name) transfer_center_name,
+		         0 load_total_weight,
+		         sum(sd.unload_weight_total) unload_total_weight,
+		         0 load_total_duration,
+		         max(round((cast(s.unload_end_time as date) -
+		                   cast(s.unload_start_time as date)) * 24,
+		                   4)) unload_total_duration
+		          from tfr.t_Opt_unLoad_Task s
+		          join tfr.t_opt_unload_waybill_detail sd
+		            on sd.unload_task_id = s.id
+		          join bse.t_bas_transfer_center tc
+		            on tc.org_code = s.unload_org_code
+		           and tc.active = 'Y'
+		          LEFT join bse.t_bas_org o
+		            on o.code = tc.org_code
+		           and o.active = 'Y'
+		         where s.task_state in ('FINISHED')
+		           and s.unload_end_time >= (#{statisticDate,jdbcType=TIMESTAMP})
+		       <![CDATA[    and s.unload_end_time < #{statisticDate,jdbcType=TIMESTAMP}+1 ]]>
+		           AND (o.express_branch != 'Y' OR o.express_branch IS NULL)
+		         group by s.unload_task_no)
+		 group by transfer_center_code
+
+	</select>
+	
+	<!-- 插入装卸车统计数据 -->
+	<insert id="saveTruckEfficiencyEntity" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.TruckEfficiencyEntity">
+		insert into tfr.t_opt_truck_efficiency
+			  (id,
+			   statistic_date,
+			   statistic_month,
+			   transfer_center_code,
+			   transfer_center_name,
+			   load_total_weight,
+			   unload_total_weight,
+			   load_total_duration,
+			   unload_total_duration,
+			   load_ratio,
+			   unload_ratio,
+			   total_ratio,
+			   create_time,
+			   operation_dept_code,
+			   operation_dept_name)
+			values
+			  (
+			   #{id,jdbcType=VARCHAR},
+			   #{statisticDate,jdbcType=TIMESTAMP},
+			   #{statisticMonth,jdbcType=NUMERIC},
+			   #{transferCenterCode,jdbcType=VARCHAR},
+			   #{transferCenterName,jdbcType=VARCHAR},
+			   #{loadTotalWeight,jdbcType=DECIMAL},
+			   #{unloadTotalWeight,jdbcType=DECIMAL},
+			   #{loadTotalDuration,jdbcType=DECIMAL},
+			   #{unloadTotalDuration,jdbcType=DECIMAL},
+			   #{loadRatio,jdbcType=DECIMAL},
+			   #{unloadRatio,jdbcType=DECIMAL},
+			   #{totalRatio,jdbcType=DECIMAL},
+			   #{createTime,jdbcType=TIMESTAMP},
+			   #{operationDeptCode,jdbcType=VARCHAR},
+			   #{operationDeptName,jdbcType=VARCHAR}
+			   )
+	</insert>
+	
+	<!-- 按日期查询   按转运场显示-->
+	<select id="queryTruckEfficiencyByDay" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.TruckEfficiencyEntity" resultMap="TruckEfficiencyMap">
+		select * 
+		from tfr.t_opt_truck_efficiency s
+			where s.statistic_date = #{statisticDate,jdbcType=TIMESTAMP}
+			<if test="operationDeptCode != null and operationDeptCode != ''">
+				and s.operation_dept_code = #{operationDeptCode,jdbcType=VARCHAR}
+			</if>
+	</select>
+	
+	<!-- 按日期查询   按转运场显示 总条数-->
+	<select id="queryTruckEfficiencyByDayCount" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.TruckEfficiencyEntity" resultType="Long">
+		select count(*) 
+		from tfr.t_opt_truck_efficiency s
+			where s.statistic_date = #{statisticDate,jdbcType=TIMESTAMP}
+			<if test="operationDeptCode != null and operationDeptCode != ''">
+				and s.operation_dept_code = #{operationDeptCode,jdbcType=VARCHAR}
+			</if>
+	</select>
+	
+	<!-- 按日期查询  但按天显示 -->
+	<select id="queryTruckEfficiencyByDayOfTransfer" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.TruckEfficiencyEntity" resultMap="TruckEfficiencyMap">
+		select * 
+			from tfr.t_opt_truck_efficiency s
+				where s.statistic_date >= trunc(#{statisticDate,jdbcType=TIMESTAMP},'mm')
+			<![CDATA[	and s.statistic_date <= #{statisticDate,jdbcType=TIMESTAMP} ]]>
+				and s.transfer_center_code = #{transferCenterCode,jdbcType=VARCHAR}
+				<if test="operationDeptCode != null and operationDeptCode != ''">
+					and s.operation_dept_code = #{operationDeptCode,jdbcType=VARCHAR}
+				</if>
+	</select>
+	
+	<!-- 按日期查询  但按天显示 总条数-->
+	<select id="queryTruckEfficiencyByDayOfTransferCount" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.TruckEfficiencyEntity" resultType="Long">
+		select count(*) 
+			from tfr.t_opt_truck_efficiency s
+				where s.statistic_date >= trunc(#{statisticDate,jdbcType=TIMESTAMP},'mm')
+			<![CDATA[	and s.statistic_date <= #{statisticDate,jdbcType=TIMESTAMP} ]]>
+				and s.transfer_center_code = #{transferCenterCode,jdbcType=VARCHAR}
+				<if test="operationDeptCode != null and operationDeptCode != ''">
+					and s.operation_dept_code = #{operationDeptCode,jdbcType=VARCHAR}
+				</if>
+	</select>
+	
+	<!-- 按月查询 -->
+	<select id="queryTruckEfficiencyByMonth" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.TruckEfficiencyEntity" resultMap="TruckEfficiencyMap">
+	
+	  select transferCode transfer_center_code,
+	         transferName transfer_center_name,
+	         operationCode operation_dept_code,
+	         operationName operation_dept_name,
+	         statisticDate statisticDate,
+	         load_weight load_total_weight,
+	         unload_weight unload_total_weight,
+	         load_duration load_total_duration,
+	         unload_duration unload_total_duration,
+	         round(load_weight / decode(load_duration, 0, 1,load_duration), 2) load_ratio,
+      		 round(unload_weight / decode(unload_duration, 0, 1,unload_duration), 2) unload_ratio,
+      		 round((unload_weight + load_weight) /
+             decode((load_duration + unload_duration), 0, 1,(load_duration + unload_duration)),
+             2) total_ratio
+	    from (select s.transfer_center_code transferCode,
+	                 s.transfer_center_name transferName,
+	                 s.operation_dept_code operationCode,
+	                 s.operation_dept_name operationName,
+	                 max(s.statistic_date) statisticDate,
+	                 sum(s.load_total_weight) load_weight,
+	                 sum(s.unload_total_weight) unload_weight,
+	                 sum(s.load_total_duration) load_duration,
+	                 sum(s.unload_total_duration) unload_duration
+	            from tfr.t_opt_truck_efficiency s
+	           where s.statistic_month = #{statisticMonth,jdbcType=NUMERIC}
+	           		<if test="transferCenterCode != null and transferCenterCode != ''">
+	           			and s.transfer_center_code = #{transferCenterCode,jdbcType=VARCHAR}
+	           		</if>
+	           		<if test="operationDeptCode != null and operationDeptCode != ''">
+	           			and s.operation_dept_code = #{operationDeptCode,jdbcType=VARCHAR}
+	           		</if>
+	           group by s.transfer_center_code,
+	                    s.transfer_center_name,
+	                    s.operation_dept_code,
+	                    s.operation_dept_name) 
+	</select>
+	
+	<!-- 按月查询  总条数-->
+	<select id="queryTruckEfficiencyByMonthCount" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.TruckEfficiencyEntity" resultType="Long">
+	
+	select count(*) from(
+	   select s.transfer_center_code transferCode
+	            from tfr.t_opt_truck_efficiency s
+	           where s.statistic_month = #{statisticMonth,jdbcType=NUMERIC}
+	           		<if test="transferCenterCode != null and transferCenterCode != ''">
+	           			and s.transfer_center_code = #{transferCenterCode,jdbcType=VARCHAR}
+	           		</if>
+	           		<if test="operationDeptCode != null and operationDeptCode != ''">
+	           			and s.operation_dept_code = #{operationDeptCode,jdbcType=VARCHAR}
+	           		</if>
+	           group by s.transfer_center_code,
+	                    s.transfer_center_name,
+	                    s.operation_dept_code,
+	                    s.operation_dept_name)
+	</select>
+	
+	<!-- 根据部门查询经营本部 -->
+	<select id="queryOperationDeptCodeByCurrentCode" parameterType="String" resultMap="TruckEfficiencyMap">
+		 SELECT hq_code operation_dept_code, hq_name operation_dept_name
+		  FROM (SELECT t.code, t.parent_org_code hq_code, t.parent_org_name hq_name
+		          FROM (SELECT o.name,
+		                       o.parent_org_name,
+		                       o.code,
+		                       o.parent_org_code,
+		                       nvl(o.is_manage_department, 'N') hq
+		                  FROM bse.t_bas_org o
+		                 WHERE o.active = 'Y') t
+		         START WITH t.code = #{orgCode,jdbcType=VARCHAR}
+		        CONNECT BY PRIOR t.parent_org_code = t.code
+		               AND t.hq = 'N'
+		         ORDER BY LEVEL DESC)
+		 WHERE rownum = 1
+	</select>
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+</mapper>

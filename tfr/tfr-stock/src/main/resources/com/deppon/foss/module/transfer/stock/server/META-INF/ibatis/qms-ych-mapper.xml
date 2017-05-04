@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="qms.ych" >
+	<!-- 异常大于90天的货返回信息 -->
+	<resultMap id="asyncWaybillResultMap" 
+				type="com.deppon.foss.module.transfer.stock.api.shared.domain.QmsYchEntity" >
+		<id property="waybillNo" column="waybill_no"/>
+		<result property="isStation" column="station"/>
+		<result property="transferCenter" column="transfer_center"/>
+		<result property="billTime" column="bill_time"/>
+		<result property="totalFee" column="TOTAL_FEE"/>
+		<result property="codAmount" column="COD_AMOUNT"/>
+		<result property="prePayAmount" column="PRE_PAY_AMOUNT"/>
+		<result property="toPayAmount" column="TO_PAY_AMOUNT"/>
+		<result property="goodsName" column="GOODS_NAME"/>
+		<result property="receiveOrgCode" column="RECEIVE_ORG_CODE"/>
+		<result property="receiveOrgName" column="RECEIVE_ORG_NAME"/>
+		<result property="targetOrgCode" column="target_org_code"/>
+		<result property="targetOrgName" column="target_Org_Name"/>
+		<result property="orgCode" column="org_code"/>
+		<result property="orgName" column="org_name"/>
+		<result property="bigdeptcode" column="bigdeptcode"/>
+		<result property="bigdept" column="bigdept"/>
+		<result property="divisioncode" column="divisioncode"/>
+		<result property="division" column="division"/>
+		<result property="goodsQtyTotal" column="GOODS_QTY_TOTAL"/>
+		<result property="goodsWeightTotal" column="GOODS_WEIGHT_TOTAL"/>
+		<result property="goodsVolumeTotal" column="GOODS_VOLUME_TOTAL"/>
+		<result property="insuranceAmount" column="INSURANCE_AMOUNT"/>
+		<result property="productCode" column="PRODUCT_CODE"/>
+		<result property="productName" column="PRODUCT_NAME"/>
+		<result property="signSituationCode" column="sign_situation_code"/>
+		<result property="signSituation" column="sign_situation"/>
+	</resultMap>
+	<!-- 内部带货实体类 -->
+ 	<resultMap id="innerPickupCurrDeptResultMap"  
+ 				type="com.deppon.foss.module.transfer.stock.api.shared.domain.InnerPickupCurrDeptEntity" > 
+ 		<result property="waybillNo" column="waybillNo"/> 
+ 		<result property="orgName" column="orgName"/> 
+ 		<result property="isSuccess" column="isSuccess"/> 
+ 		<result property="reason" column="reason"/> 
+ 		<result property="orgCode" column="orgCode"/> 
+ 		<result property="goodsQtyTotal" column="goods_qty_total"/> 
+ 		<result property="billTime" column="bill_time"/> 
+ 		<result property="goodsVolumeTotal" column="goods_volume_total"/> 
+ 	</resultMap> 
+ 	
+ 	
+	<!-- 是否在丢货小组 -->
+	<resultMap id="isLoseGroupResultMap" type="com.deppon.foss.module.transfer.stock.api.shared.domain.IsLoseGroupEntity" >
+		<result property="waybillNo" column="WAYBILL_NO"/>
+		<result property="orgCode" column="org_code"/>
+	</resultMap>
+	
+	<!-- 异常货同步未处理的单号到达部门实体类 -->
+	<resultMap id="queryWaybillArrideptMap" type="com.deppon.foss.module.transfer.stock.api.shared.domain.WaybillArridept" >
+		<result property="waybillNo" column="WAYBILL_NO"/>
+		<result property="stockCode" column="stockCode"/>
+		<result property="stockName" column="stockName"/>
+		<result property="arrideptCode" column="arrideptCode"/>
+		<result property="arrideptName" column="arrideptName"/>
+		<result property="bigRegionCode" column="bigRegionCode"/>
+		<result property="bigRegionName" column="bigRegionName"/>
+		<result property="divisionCode" column="divisionCode"/>
+		<result property="divisionName" column="divisionName"/>
+	</resultMap>
+	
+	<!-- FOSS系统库存中开单=90天的运单信息-->
+	<select id="queryBillTimeBigNinetyDay"  resultMap="asyncWaybillResultMap">
+	<![CDATA[select a.waybill_no /*运单号*/,
+       bbsd.station, /*是否是驻地营业部*/
+       bbsd.transfer_center, /*目的部门所属外场*/
+       a.bill_time /*开单日期*/,
+       a.TOTAL_FEE /*开单金额*/,
+       a.COD_AMOUNT /*代收货款金额*/,
+       a.PRE_PAY_AMOUNT /*预付金额*/,
+       a.TO_PAY_AMOUNT /*到付金额*/,
+       a.GOODS_NAME /*开单品名*/, 
+       a.receive_org_code /*收货部门code*/, 
+       e.name RECEIVE_ORG_NAME  /*收货部门name*/, 
+       --到达部门code 
+       a.Customer_Pickup_Org_Code target_org_code,
+       a.customer_pickup_org_name  target_Org_Name,
+       b.org_code /*库存部门编码*/,
+       d.name org_Name /*库存部门name*/,
+		  CASE WHEN bd.name ='办公门户机构人员' THEN a.customer_pickup_org_code
+		        WHEN bd.name IS NULL THEN a.customer_pickup_org_code
+		         WHEN bd.name = '总裁' THEN bb.code
+		          WHEN bd.name like '%本部%' THEN bc.code
+		        ELSE bd.code
+		           END divisioncode,--事业部编码,
+		   CASE WHEN bd.name ='办公门户机构人员' THEN a.customer_pickup_org_name
+		        WHEN bd.name IS NULL THEN a.customer_pickup_org_name
+		         WHEN bd.name = '总裁' THEN bb.name
+		          WHEN bd.name like '%本部%' THEN bc.name
+		        ELSE bd.name 
+		          END division,--事业部名称,
+		   CASE WHEN bc.name ='办公门户机构人员' THEN a.customer_pickup_org_code
+		        WHEN bc.name IS NULL THEN a.customer_pickup_org_code
+		         WHEN bc.name = '总裁' THEN a.customer_pickup_org_code
+		          WHEN bc.name like '%本部%' THEN a.customer_pickup_org_code
+		           WHEN bc.name like '%事业部%' THEN bb.code
+		        ELSE bc.code 
+		          END bigdeptcode,--大区编码,
+		   CASE WHEN bc.name ='办公门户机构人员' THEN a.customer_pickup_org_name
+		        WHEN bc.name IS NULL THEN a.customer_pickup_org_name
+		         WHEN bc.name = '总裁' THEN a.customer_pickup_org_name
+		          WHEN bc.name like '%本部%' THEN a.customer_pickup_org_name
+		           WHEN bc.name like '%事业部%' THEN bb.name
+		        ELSE bc.name 
+		          END bigdept,--大区名称
+		      a.GOODS_QTY_TOTAL /*开单件数*/,
+		      a.GOODS_WEIGHT_TOTAL /*开单重量*/,
+		      a.GOODS_VOLUME_TOTAL /*开单体积*/,
+		      a.INSURANCE_AMOUNT/100 INSURANCE_AMOUNT /*保险价值*/,
+		      a.PRODUCT_CODE /*运输性质code*/,
+		      ppt.name PRODUCT_NAME /*运输性质name*/,
+		      pt.sign_situation sign_situation_code /*签收结果code*/,
+		      case
+		        when pt.sign_situation = 'NORMAL_SIGN' then
+		         '正常签收'
+		        when pt.sign_situation = 'UNNORMAL_BREAK' then
+		         '异常-破损'
+		        when pt.sign_situation = 'UNNORMAL_DAMP' then
+		         '异常-潮湿'
+		        when pt.sign_situation = 'UNNORMAL_POLLUTION' then
+		         '异常-污染'
+		        when pt.sign_situation = 'UNNORMAL_CONTRABAND' then
+		         '异常-违禁品'
+		        when pt.sign_situation = 'UNNORMAL_SIGN' then
+		         '异常签收'
+		        when pt.sign_situation = 'PARTIAL_SIGN' then
+		         '部分签收'
+		        when pt.sign_situation = 'UNNORMAL_LOSTCARGO' then
+		         '异常-丢货'
+		        when pt.sign_situation = 'UNNORMAL_ABANDONGOODS' then
+		         '异常-弃货'
+		      end sign_situation/*签收结果*/
+		 from tfr.t_opt_waybill_stock b
+		inner join pkp.t_srv_waybill a
+		   on a.waybill_no = b.waybill_no
+		  and a.active = 'Y'
+		  left join bse.t_bas_org ba        --（匹配组织表）
+		     on a.customer_pickup_org_code = ba.code          --（用code 关联）
+		    and ba.active = 'Y'
+		   left join bse.t_bas_org bb
+		     on ba.PARENT_ORG_CODE = bb.code --小区    （自关联第一次，查询上级小区）
+		    and bb.active = 'Y'
+		   left join bse.t_bas_org bc
+		     on bb.PARENT_ORG_CODE = bc.code --大区  （自关联第二次，查询小区的上级大区）
+		    and bc.active = 'Y'
+		   left join bse.t_bas_org bd
+		     on bc.PARENT_ORG_CODE = bd.code --事业部  （自关联第三次，查询大区的上级事业部）
+		    and bd.active = 'Y'
+		 left join pkp.t_srv_waybill_sign_result pt
+		   on b.waybill_no = pt.waybill_no
+		  and pt.sign_time>Trunc(Sysdate-90)
+		  and pt.active = 'Y'
+		 left join bse.t_bas_org d
+		   on b.org_code = d.code
+		  and d.active = 'Y'
+		 left join bse.t_bas_org e
+		   on a.receive_org_code = e.code
+		  and e.active = 'Y'
+		 left join pkp.t_srv_product ppt
+		   on a.PRODUCT_CODE = ppt.code
+		  and ppt.active = 'Y'
+		 left join bse.t_bas_sales_department bbsd
+		   on a.Customer_Pickup_Org_Code = bbsd.code
+		  and bbsd.active = 'Y'
+		where a.bill_time between #{beginDate} and #{endDate}
+		  and a.active = 'Y'
+		  And B.Org_Code Not In ('W01000301050203', 'W0000002728')
+		  And A.Product_Code Not In ('AF', 'PLF')
+    ]]>
+	</select>
+	
+	<!-- 查询是否在零担丢货小组或者快递丢货小组       -->
+	<!-- 生产上  零担丢货管理组:W01000301050203,快递丢货管理小组:W0000002728 -->
+	<select id="isLoseGroup" parameterType = "String" resultMap="isLoseGroupResultMap">
+		select a.waybill_no,a.org_code from tfr.t_opt_waybill_stock a
+       where a.org_code in ('W01000301050203','W0000002728')
+       and a.waybill_no = #{waybillNo}
+	</select>
+	
+	<!-- 内部带货同步所处部门 -->
+	<select id="innerPickupCurrDept"  resultMap="innerPickupCurrDeptResultMap">
+		select ws.waybill_no waybillNo,
+      	 ws.org_code orgCode,
+      	 bo.name orgName,
+      	 pw.goods_qty_total,
+      	 pw.bill_time,
+         pw.goods_volume_total
+	  from tfr.t_opt_waybill_stock ws
+	  left join pkp.t_srv_waybill pw
+	    on ws.waybill_no = pw.waybill_no
+	   and pw.active = 'Y'
+	   And pw.bill_time>=Sysdate-30
+	   and pw.receive_method = 'INNER_PICKUP'
+	  left join bse.t_bas_org bo
+	    on ws.org_code = bo.code
+	   and bo.active = 'Y'
+	 where pw.active = 'Y'
+	   and pw.receive_method = 'INNER_PICKUP'
+	   and bo.active = 'Y'
+	   And ws.in_stock_time>=Sysdate-30
+	</select>
+	<!-- 判断部门是否是驻地营业部 -->
+	<select id="isStation" parameterType = "String" resultType="String">
+		select a.station from bse.t_bas_sales_department a
+       where a.code = #{orgCode} and a.active = 'Y'
+	</select>
+	
+	
+	<!-- 根据驻地部门code查找对应的外场code -->
+	<select id="selectTransferByOrgCode" parameterType = "String" resultType="String">
+		select a.transfer_center from bse.t_bas_sales_department a
+       where a.code = #{orgCode} and a.active = 'Y'
+	</select>
+	
+	<!-- 异常货同步未处理的单号到达部门 -->
+	<select id="queryWaybillArridept" parameterType = "list" resultMap="queryWaybillArrideptMap">
+		select pa.waybill_no, 
+			 tta.org_code stockCode, --库存部门code,
+      		 bbo.name stockName,--库存部门name,
+	       pa.customer_pickup_org_code arrideptCode,--到达部门code,
+	       pa.customer_pickup_org_name arrideptName,--到达部门name,
+		CASE WHEN d.name ='办公门户机构人员' THEN pa.customer_pickup_org_code
+		     WHEN d.name IS NULL THEN pa.customer_pickup_org_code
+		      WHEN d.name = '总裁' THEN b.code
+		       WHEN d.name like '%本部%' THEN c.code
+		     ELSE d.code
+		        END divisionCode,--事业部编码,
+		CASE WHEN d.name ='办公门户机构人员' THEN pa.customer_pickup_org_name
+		     WHEN d.name IS NULL THEN pa.customer_pickup_org_name
+		      WHEN d.name = '总裁' THEN b.name
+		       WHEN d.name like '%本部%' THEN c.name
+		     ELSE d.name 
+		       END divisionName,--事业部名称,
+		CASE WHEN c.name ='办公门户机构人员' THEN pa.customer_pickup_org_code
+		     WHEN c.name IS NULL THEN pa.customer_pickup_org_code
+		      WHEN c.name = '总裁' THEN pa.customer_pickup_org_code
+		       WHEN c.name like '%本部%' THEN pa.customer_pickup_org_code
+		        WHEN c.name like '%事业部%' THEN b.code
+		     ELSE c.code 
+		       END bigRegionCode,--大区编码,
+		CASE WHEN c.name ='办公门户机构人员' THEN pa.customer_pickup_org_name
+		     WHEN c.name IS NULL THEN pa.customer_pickup_org_name
+		      WHEN c.name = '总裁' THEN pa.customer_pickup_org_name
+		       WHEN c.name like '%本部%' THEN pa.customer_pickup_org_name
+		        WHEN c.name like '%事业部%' THEN b.name
+		     ELSE c.name 
+		       END bigRegionName--大区名称
+       
+	 from pkp.t_srv_waybill pa
+	  left join tfr.t_opt_waybill_stock tta
+     	on pa.waybill_no = tta.waybill_no
+      left join bse.t_bas_org bbo
+    	on tta.org_code = bbo.code and bbo.active = 'Y'
+	  left join bse.t_bas_org a        --（匹配组织表）
+	    on pa.customer_pickup_org_code = a.code          --（用code 关联）
+	   and a.active = 'Y'
+	  left join bse.t_bas_org b
+	    on a.PARENT_ORG_CODE = b.code --小区    （自关联第一次，查询上级小区）
+	   and b.active = 'Y'
+	  left join bse.t_bas_org c
+	    on b.PARENT_ORG_CODE = c.code --大区  （自关联第二次，查询小区的上级大区）
+	   and c.active = 'Y'
+	  left join bse.t_bas_org d
+	    on c.PARENT_ORG_CODE = d.code --事业部  （自关联第三次，查询大区的上级事业部）
+	   and d.active = 'Y'
+		where pa.active = 'Y' and pa.waybill_no in 
+		<foreach collection="list" open="(" close=")" separator="," index="index" item="item">
+			#{item}
+		</foreach>
+	</select>
+</mapper>

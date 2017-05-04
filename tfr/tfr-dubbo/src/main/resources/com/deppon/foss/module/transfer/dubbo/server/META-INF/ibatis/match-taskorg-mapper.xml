@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tfr-dubbo-match-taskorg" >
+	<resultMap id="BaseResultMap" type="com.deppon.foss.module.transfer.dubbo.api.define.PathDetailEntity" >
+		<id column="PATH_DETAIL_ID" property="pathDetailId" jdbcType="VARCHAR" />
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="GOODS_NO" property="goodsNo" jdbcType="VARCHAR" />
+		<result column="ORIG_ORG_CODE" property="origOrgCode" jdbcType="VARCHAR" />
+		<result column="OBJECTIVE_ORG_CODE" property="objectiveOrgCode" jdbcType="VARCHAR" />
+		<result column="ORIG_ORG_NAME" property="origOrgName" jdbcType="VARCHAR" />
+		<result column="OBJECTIVE_ORG_NAME" property="objectiveOrgName" jdbcType="VARCHAR" />
+		<result column="ROUTE_NO" property="routeNo" jdbcType="VARCHAR" />
+		<result column="PLAN_START_TIME" property="planStartTime" jdbcType="TIMESTAMP"/>
+		<result column="ACTUAL_START_TIME" property="actualStartTime" jdbcType="TIMESTAMP"/>
+		<result column="ARRIVE_OR_LEAVE" property="arriveOrLeave" jdbcType="VARCHAR" />
+		<result column="PLAN_ARRIVE_TIME" property="planArriveTime" jdbcType="TIMESTAMP"/>
+		<result column="ACTUAL_ARRIVE_TIME" property="actualArriveTime" jdbcType="TIMESTAMP"/>
+		<result column="BILLING_ORG_CODE" property="billingOrgCode" jdbcType="VARCHAR" />
+		<result column="NEXT_DEST_ORG_CODE" property="nextDestOrgCode" jdbcType="VARCHAR" />
+		<result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+		<result column="BEFORE_VEHICLE_NO" property="beforeVehicleNo" jdbcType="VARCHAR" />
+		<result column="IF_CHANGE_TIME" property="ifChangeTime" jdbcType="VARCHAR" />
+		<result column="MODIFY_START_TIME" property="modifyStartTime" jdbcType="TIMESTAMP"/>
+		<result column="MODITY_ARRIVE_TIME" property="modifyArriveTime" jdbcType="TIMESTAMP"/>
+		<result column="TRUCK_DETAIL_ID" property="truckDetailId" jdbcType="VARCHAR" />
+		<result column="NEXT_ARRIVE_TIME" property="nextArriveTime" jdbcType="TIMESTAMP"/>
+		<result column="PLAN_PICKUP_TIME" property="planPickupTime" jdbcType="TIMESTAMP"/>
+		<result column="waybillNoCount" property="waybillNoCount" jdbcType="VARCHAR"/>
+	</resultMap>
+	<sql id="Base_Column_List" >
+	    PATH_DETAIL_ID, WAYBILL_NO, GOODS_NO, ORIG_ORG_CODE, OBJECTIVE_ORG_CODE, ROUTE_NO, 
+	    PLAN_START_TIME, ACTUAL_START_TIME, ARRIVE_OR_LEAVE, PLAN_ARRIVE_TIME, ACTUAL_ARRIVE_TIME,
+	    BILLING_ORG_CODE, NEXT_DEST_ORG_CODE, VEHICLE_NO, BEFORE_VEHICLE_NO, IF_CHANGE_TIME, 
+	    MODIFY_START_TIME, MODITY_ARRIVE_TIME, TRUCK_DETAIL_ID, NEXT_ARRIVE_TIME, PLAN_PICKUP_TIME
+	</sql>	
+	<sql id="select_Where">
+		<where>
+			<if test="pathDetailId!=null and pathDetailId!='' ">
+					PATH_DETAIL_ID = #{pathDetailId}
+			</if>
+			<if test="waybillNo!=null and waybillNo!='' ">
+					AND WAYBILL_NO = #{waybillNo}
+			</if>
+			<if test="goodsNo!=null and goodsNo!='' ">
+					AND GOODS_NO = #{goodsNo}
+			</if>
+			<if test="origOrgCode!=null and origOrgCode!='' ">
+					AND ORIG_ORG_CODE = #{origOrgCode}
+			</if>
+			<if test="objectiveOrgCode!=null and objectiveOrgCode!='' ">
+					AND OBJECTIVE_ORG_CODE = #{objectiveOrgCode}
+			</if>
+			<if test="routeNo!=null and routeNo!='' ">
+					AND ROUTE_NO = #{routeNo}
+			</if>
+			<if test="arriveOrLeave!=null and arriveOrLeave!='' ">
+					AND ARRIVE_OR_LEAVE = #{arriveOrLeave}
+			</if>
+			<if test="ifChangeTime!=null and ifChangeTime!='' ">
+					AND IF_CHANGE_TIME = #{ifChangeTime}
+			</if>
+			<if test="modifyStartTime!=null and modifyStartTime!='' ">
+					AND MODIFY_START_TIME = #{modifyStartTime}
+			</if>
+			<if test="modifyArriveTime!=null and modifyArriveTime!='' ">
+					AND MODITY_ARRIVE_TIME = #{modifyArriveTime}
+			</if>
+			<if test="truckDetailId!=null and truckDetailId!='' ">
+					AND TRUCK_DETAIL_ID = #{truckDetailId}
+			</if>
+			<if test="nextArriveTime!=null and nextArriveTime!='' ">
+					AND NEXT_ARRIVE_TIME = #{nextArriveTime}
+			</if>
+		</where>
+	</sql>
+	<!-- 根据库存部门编码set查询，走货路径中最前面的哪个部门编码 -->
+	<select id="queryFirstOrgByStockOrgSet4dubbo"  parameterType="Map" resultType="String">
+			SELECT code
+			from (
+				select s.objective_org_code code,
+				row_number() over(partition by s.waybill_no order by s.route_no) rn
+				from tfr.t_opt_path_detail s
+				<where>
+					 s.waybill_no = #{waybillNo} 
+					 and s.objective_org_code in
+						 <foreach collection="stockSet" open="(" close=")" separator="," index="index" item="item">
+							#{item}
+						 </foreach>
+				</where>
+			) where rn =1
+			
+	</select>
+	
+	<!-- 根据运单号 查询该运单是否已经全部签收,全部签收就返回true，否则返回false -->
+	<select id="checkWaybillIsSigned4dubbo"  parameterType="String" resultType="Boolean">
+		select decode(count(0),0,0,1)
+		 from pkp.t_srv_waybill_sign_result s 
+		 where s.waybill_no = #{waybillNo} 
+		 and s.sign_status = 'SIGN_STATUS_ALL' 
+		 and s.active = 'Y'
+	</select>
+	
+	
+	<select id="pathDetailQuery4dubbo" parameterType="com.deppon.foss.module.transfer.dubbo.api.define.PathDetailEntity" resultMap="BaseResultMap">
+		SELECT
+		<include refid="Base_Column_List" />
+		FROM TFR.T_OPT_PATH_DETAIL
+		<include refid="select_Where"/>
+		ORDER BY WAYBILL_NO, GOODS_NO, TO_NUMBER(NVL(ROUTE_NO,'0'))
+	</select>
+	
+	
+</mapper>

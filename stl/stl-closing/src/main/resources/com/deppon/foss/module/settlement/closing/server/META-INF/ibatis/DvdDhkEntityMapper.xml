@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stv.DvdDhkEntityDao" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.closing.api.shared.domain.DvdDhkEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="REMIT_DATE" property="remitDate" jdbcType="TIMESTAMP" />
+    <result column="PERIOD" property="period" jdbcType="VARCHAR" />
+    <result column="REMIT_ORG_CODE" property="remitOrgCode" jdbcType="VARCHAR" />
+    <result column="REMIT_ORG_NAME" property="remitOrgName" jdbcType="VARCHAR" />
+    <result column="BYREMIT_ORG_CODE" property="byremitOrgCode" jdbcType="VARCHAR" />
+    <result column="BYREMIT_ORG_NAME" property="byremitOrgName" jdbcType="VARCHAR" />
+    <result column="BILL_NO" property="billNo" jdbcType="VARCHAR" />
+    <result column="SOURCE_BILL_NO" property="sourceBillNo" jdbcType="VARCHAR" />
+    <result column="BILL_TYPE" property="billType" jdbcType="VARCHAR" />
+    <result column="AMOUNT" property="amount" jdbcType="DECIMAL" />
+    <result column="PAYMENT_TYPE" property="paymentType" jdbcType="VARCHAR" />
+    <result column="VOUCHER_CREATE_TIME" property="voucherCreateTime" jdbcType="TIMESTAMP" />
+  </resultMap>
+  
+  <resultMap id="DvdDhkDtoResultMap" type="com.deppon.foss.module.settlement.closing.api.shared.dto.DvdDhkDto" >
+    <result column="COUNT" property="count" jdbcType="DECIMAL" />
+    <result column="AMOUNT" property="amount" jdbcType="DECIMAL" />
+  </resultMap>
+  
+  <sql id="Base_Column_List" >
+    ID, REMIT_DATE, PERIOD, REMIT_ORG_CODE, REMIT_ORG_NAME, BYREMIT_ORG_CODE, BYREMIT_ORG_NAME, 
+    BILL_NO, SOURCE_BILL_NO, BILL_TYPE, AMOUNT / 100 AMOUNT, PAYMENT_TYPE, VOUCHER_CREATE_TIME
+  </sql>
+  
+  <sql id="Base_Total_List" >
+	COUNT(ID) COUNT,
+	SUM(AMOUNT ) / 100 AMOUNT
+  </sql>
+  
+  <!-- 查询条件 -->
+  <sql id="condition_expression">
+	
+	<if test="paymentType != null and paymentType != ''">
+		and t.PAYMENT_TYPE =#{paymentType,jdbcType=VARCHAR}
+	</if>
+	<if test="billType != null and billType != ''">
+		and t.BILL_TYPE =#{billType,jdbcType=VARCHAR}
+	</if>
+	
+	<if test="remitOrgCode != null and remitOrgCode != ''">
+		and t.REMIT_ORG_CODE =#{remitOrgCode,jdbcType=VARCHAR}
+	</if>
+	<if test="byremitOrgCode != null and byremitOrgCode != ''">
+		and t.BYREMIT_ORG_CODE =#{byremitOrgCode,jdbcType=VARCHAR}
+	</if>	
+
+  </sql>
+  
+  <select id="selectByConditions" resultMap="BaseResultMap" parameterType="java.util.Map" >
+    select /*结算-凭证报表-根据条件查询代汇款明细报表*/
+    <include refid="Base_Column_List" />
+    from STV.T_STL_DVD_DHK t
+    where 
+    <![CDATA[ t.REMIT_DATE >=#{startDate} AND   t.REMIT_DATE < #{endDate} ]]> 
+    <!-- 引入查询条件 -->
+	<include refid="condition_expression" />		
+  </select>
+  
+  <select id="selectTotalByConditions" resultMap="DvdDhkDtoResultMap" parameterType="java.util.Map" >
+    select /*结算-凭证报表-根据条件查询代汇款明细报表总条数，总金额*/
+    <include refid="Base_Total_List" />
+    from STV.T_STL_DVD_DHK t
+    where 
+    <![CDATA[ t.REMIT_DATE >=#{startDate} AND   t.REMIT_DATE < #{endDate} ]]> 
+    <!-- 引入查询条件 -->
+	<include refid="condition_expression" />		
+  </select>
+</mapper>

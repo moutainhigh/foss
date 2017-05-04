@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.contactAddress">
+	<!-- 联系人接送货地址 --> 
+	<resultMap id="contactAddressResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.ContactAddressEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<!-- SERVICE_ADDRESS_ID 字段重命名为：ADDRESS_CRM_ID 实体属性 serviceAddressId 未作更改-->
+		<result column="ADDRESS_CRM_ID" property="serviceAddressId"
+			jdbcType="DECIMAL" />
+		<!-- CONTACT 字段重命名为：CONTACT_CRM_ID 实体属性 contact 未作更改-->
+		<result column="CONTACT_CRM_ID" property="contact" jdbcType="DECIMAL" />
+		<result column="ADDRESS_TYPE" property="addressType" jdbcType="VARCHAR" />
+		<result column="CONTACT_ADDRESS" property="contactAddress"
+			jdbcType="VARCHAR" />
+		<result column="BILL_DEMAND" property="billDemand" jdbcType="VARCHAR" />
+		<result column="CHARGE_TYPE" property="chargeType" jdbcType="VARCHAR" />
+		<result column="OTHER_DEMAND" property="otherDemand" jdbcType="VARCHAR" />
+		<result column="PARKING_FEE" property="parkingFee" jdbcType="CHAR" />
+		<result column="MAIN_ADDRESS" property="mainAddress" jdbcType="CHAR" />
+		<result column="STATUS" property="status" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="BEGIN_TIME" property="beginTime" jdbcType="TIMESTAMP" />
+		<result column="END_TIME" property="endTime" jdbcType="TIMESTAMP" />
+		<result column="DELIVERY_UPSTAIRS" property="deliveryUpstairs"
+			jdbcType="CHAR" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+		<result column="CRM_ID" property="crmId" jdbcType="DECIMAL" />
+	</resultMap>
+	<!-- 联系人接送货地址字段 -->
+	<sql id="contactAddress_Column_List">
+		ID, ADDRESS_CRM_ID, CONTACT_CRM_ID, ADDRESS_TYPE,
+		CONTACT_ADDRESS,
+		BILL_DEMAND, CHARGE_TYPE,
+		OTHER_DEMAND, PARKING_FEE,
+		MAIN_ADDRESS, STATUS, CREATE_TIME, MODIFY_TIME,
+		BEGIN_TIME,
+		END_TIME,
+		DELIVERY_UPSTAIRS, ACTIVE, CREATE_USER_CODE, MODIFY_USER_CODE, CRM_ID
+	</sql>
+
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<if test="active != null and active != ''">
+				and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</sql>
+
+	<!-- 查询所有联系人接送货地址信息 -->
+	<select id="queryAllInfos"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ContactAddressEntity"
+		resultMap="contactAddressResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有联系人接送货地址信息 **/
+		]]>
+		<include refid="contactAddress_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUS_CONTACT_ADDRESS T
+		]]>
+		<include refid="queryWhere" />
+	</select>
+	
+	<!-- 验证联系人接送货地址是否存在 -->
+	<select id="queryContactAddressByCrmId" parameterType="map" resultMap="contactAddressResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:验证联系人接送货地址是否存在 **/
+		]]>
+		<include refid="contactAddress_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUS_CONTACT_ADDRESS T
+		]]>
+		<where>
+		    <if test="crmId != null and crmId != ''">
+		        CRM_ID = #{crmId,jdbcType=DECIMAL}
+		    </if>
+		    <if test="modifyDate != null and modifyDate != ''">
+		        AND MODIFY_TIME <![CDATA[  >=  ]]> #{modifyDate,jdbcType=TIMESTAMP}
+		    </if>
+		    <if test="active != null and active != ''">
+		        AND active =  #{active,jdbcType=CHAR}
+		    </if>
+		</where>
+	</select>
+
+	<!-- 统计总记录数 -->
+	<select id="queryCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ContactAddressEntity">
+	    <![CDATA[
+	       	select/** 综合:统计总记录数 **/ count(*) from BSE.T_BAS_CUS_CONTACT_ADDRESS T
+	    ]]>
+		<include refid="queryWhere" />
+
+	</select>
+
+	<!-- 新增信息 -->
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ContactAddressEntity">
+		
+		<![CDATA[
+			INSERT/** 综合:新增信息 **/ INTO BSE.T_BAS_CUS_CONTACT_ADDRESS T	(
+		]]>
+		<include refid="contactAddress_Column_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, #{serviceAddressId,jdbcType=DECIMAL},
+		#{contact,jdbcType=DECIMAL},
+		#{addressType,jdbcType=VARCHAR},
+		#{contactAddress,jdbcType=VARCHAR}, #{billDemand,jdbcType=VARCHAR},
+		#{chargeType,jdbcType=VARCHAR}, #{otherDemand,jdbcType=VARCHAR},
+		#{parkingFee,jdbcType=CHAR},
+		#{mainAddress,jdbcType=CHAR},
+		#{status,jdbcType=VARCHAR}, #{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=DATE}, #{beginTime,jdbcType=TIMESTAMP},
+		#{endTime,jdbcType=TIMESTAMP},
+		#{deliveryUpstairs,jdbcType=CHAR},
+		#{active,jdbcType=CHAR}, #{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR}, #{crmId,jdbcType=DECIMAL}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+
+	<!-- 修改信息 -->
+	<update id="update"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ContactAddressEntity">
+		update/** 综合:修改信息 **/ BSE.T_BAS_CUS_CONTACT_ADDRESS
+		<set>
+				ADDRESS_CRM_ID =
+				#{serviceAddressId,jdbcType=DECIMAL},
+				CONTACT_CRM_ID = #{contact,jdbcType=DECIMAL},
+				ADDRESS_TYPE = #{addressType,jdbcType=VARCHAR},
+				CONTACT_ADDRESS = #{contactAddress,jdbcType=VARCHAR},
+				BILL_DEMAND = #{billDemand,jdbcType=VARCHAR},
+				CHARGE_TYPE = #{chargeType,jdbcType=VARCHAR},
+				OTHER_DEMAND = #{otherDemand,jdbcType=VARCHAR},
+				PARKING_FEE = #{parkingFee,jdbcType=CHAR},
+				MAIN_ADDRESS = #{mainAddress,jdbcType=CHAR},
+				STATUS = #{status,jdbcType=VARCHAR},
+				CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+				BEGIN_TIME = #{beginTime,jdbcType=TIMESTAMP},
+				END_TIME = #{endTime,jdbcType=TIMESTAMP},
+				DELIVERY_UPSTAIRS = #{deliveryUpstairs,jdbcType=CHAR},
+				ACTIVE = #{active,jdbcType=CHAR}, 
+				CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR}
+			<!-- <if test="crmId != null">
+				CRM_ID = #{crmId,jdbcType=DECIMAL},
+			</if> -->
+		</set>
+
+		<where>
+			<if test="crmId != null and crmId != ''">
+				CRM_ID = #{crmId,jdbcType=DECIMAL}
+			</if>
+		</where>
+
+	</update>
+
+	<!-- 作废信息 -->
+	<update id="deleteByCode" parameterType="map">
+		update/** 综合:作废信息 **/ BSE.T_BAS_CUS_CONTACT_ADDRESS
+
+		<set>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+
+		</set>
+
+		<where>
+			<if test="code !=null and code != ''">
+				CRM_ID = #{code,jdbcType=DECIMAL}
+			</if>
+			<if test="active0 != null and active0 != ''">
+				AND ACTIVE = #{active0,jdbcType=CHAR}
+			</if>
+		</where>
+	</update>
+</mapper>

@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.foss.module.transfer.load.server.META-INF.ibatis.sealInfo">
+	
+	<!-- 查询等操作封签信息操作 106162-foss-liping -->
+	<!-- @author:106162 @date:2016-04-25 @description:对接快递,根据传递过来的交接单号，获取对应的封签编号信息 -->
+	<select id="querySealNumByEIRNum" parameterType="java.lang.String" resultType="java.lang.String">
+	 select
+		sod.seal_no 
+		from tfr.t_Opt_Truck_Task_Bill tb
+		inner join tfr.t_opt_truck_task_detail ttd
+		on tb.truck_task_detail_id = ttd.id
+		inner join tfr.t_opt_truck_task tt
+		on ttd.truck_task_id = tt.id
+		inner join tfr.t_opt_seal os
+		on tt.id = os.t_truck_task_detail_id
+		inner join tfr.t_opt_seal_orig_detail sod
+		on os.id = sod.seal_id
+	 where tb.bill_no=#{eirNum,jdbcType=VARCHAR}
+		      and tb.bill_type='HANDOVER'  
+	</select>
+	
+	<!-- 查询装车任务车辆信息  106162-foss-liping -->
+	<resultMap type="com.deppon.foss.module.transfer.load.api.shared.domain.OptTruckTaskResponseEntity" id="responseTruckTaskMap">
+	    <result property="truckTaskId" column="id" />
+	    <result property="truckNo" column="task_no" />
+	    <result property="vehicleNo" column="vehicle_no" />
+	    <result property="origOrgCode" column="orig_org_code" />
+	    <result property="origOrgName" column="orig_org_name" />
+	    <result property="destOrgCode" column="dest_org_code" />
+	    <result property="destOrgName" column="dest_org_name" />
+	    <result property="actualDepartTime" column="actual_depart_time" />
+	    <result property="actualArrivedTime" column="actual_arrive_time" />
+	    <result property="createrName" column="creater" />
+	    <result property="status" column="status" />
+	</resultMap>
+	<!-- @author:106162 @date:2016-04-25 @description:对接快递, 查询装车任务车辆信息（车牌号不为空） -->
+	<select id="queryTruckTaskByCarNum"
+	        parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.OptTruckDepartArriveEntity" 
+	        resultMap="responseTruckTaskMap">
+			select
+		         a.id,
+		         a.task_no,
+		         a.vehicle_no,
+		         a.orig_org_code,
+		         a.dest_org_code,
+		         a.orig_org_name,
+		         a.dest_org_name,
+			     a.actual_depart_time,
+			     a.actual_arrive_time,
+		         e.emp_name||' '||a.departOperCode||' ' departOperName,
+		         d.emp_name||' '||a.arriveOperCode||' ' arriveOperName,
+		         a.status
+		     from(       
+			         select 
+				         f.id,
+				         '' as task_no,
+				         f.vehicle_no,
+				         f.orig_org_code,
+				         f.dest_org_code,
+			             f.orig_org_name,
+			             f.dest_org_name,
+				         f.actual_depart_time,
+				         f.actual_arrive_time,
+				         nvl(ar.manual_arrive_user_code,ar.pda_arrive_user_code) arriveOperCode,
+			             nvl(de.manual_depart_user_code,de.pda_depart_user_code) departOperCode,      
+				         case f.status
+				           when 'UNDEPART' then '未出发'
+				           when 'ONTHEWAY' then '在途'
+				           when 'ARRIVED'  then '已到达'
+				           when 'CANCLED'  then '作废'
+				         else '' end status
+			        from tfr.t_opt_truck_task_detail f
+			        left join tfr.t_opt_truck_arrive ar 
+			               on ar.id = f.truck_arrive_id
+			        left join tfr.t_opt_truck_depart de 
+			               on de.id = f.truck_depart_id
+			        where f.vehicle_no = #{vehicleNo,jdbcType=VARCHAR}
+			         <if test="deptType!=null and ''!=deptType and deptType=='0'.toString()">
+			           and f.orig_org_code=#{origOrgCode,jdbcType=VARCHAR}
+			           and f.status in('UNDEPART','ONTHEWAY')
+			         </if>
+			         <if test="deptType!=null and ''!=deptType and deptType=='1'.toString()">
+			           and f.dest_org_code=#{destOrgCode,jdbcType=VARCHAR}
+			           and f.status = 'ONTHEWAY'
+			         </if>
+			         and f.create_time>=trunc(sysdate)
+		         ) a
+		        left join bse.t_bas_employee e
+		        on a.departOperCode = e.emp_code
+		        and e.active='Y' 
+		        left join bse.t_bas_employee d
+		        on a.arriveOperCode = d.emp_code
+		        and d.active='Y'  
+		              
+         <!-- 
+           and floor(to_date(to_char(sysdate,'yyyy-mm-dd'),'yyyy-mm-dd') -TO_DATE(TO_CHAR(f.CREATE_TIME,'YYYY-MM-DD'),'YYYY-MM-DD'))=0 
+	      -->
+	</select>
+	<!-- @author:106162 @date:2016-04-25 @description:对接快递, 查询装车任务车辆信息（车牌号为空） -->
+	<select id="queryTruckTaskByDeptCode"
+	        parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.OptTruckDepartArriveEntity" 
+	        resultMap="responseTruckTaskMap">
+	        
+	        select
+		         a.id,
+		         a.task_no,
+		         a.vehicle_no,
+		         a.orig_org_code,
+		         a.dest_org_code,
+		         a.orig_org_name,
+		         a.dest_org_name,
+			     a.actual_depart_time,
+			     a.actual_arrive_time,
+		         e.emp_name||' '||a.departOperCode||' ' departOperName,
+		         d.emp_name||' '||a.arriveOperCode||' ' arriveOperName,
+		         a.status
+		     from(       
+			         select 
+				         f.id,
+				         '' as task_no,
+				         f.vehicle_no,
+				         f.orig_org_code,
+				         f.dest_org_code,
+			             f.orig_org_name,
+			             f.dest_org_name,
+				         f.actual_depart_time,
+				         f.actual_arrive_time,
+				         nvl(ar.manual_arrive_user_code,ar.pda_arrive_user_code) arriveOperCode,
+			             nvl(de.manual_depart_user_code,de.pda_depart_user_code) departOperCode,      
+				         case f.status
+				           when 'UNDEPART' then '未出发'
+				           when 'ONTHEWAY' then '在途'
+				           when 'ARRIVED'  then '已到达'
+				           when 'CANCLED'  then '作废'
+				         else '' end status
+			        from tfr.t_opt_truck_task_detail f
+			        left join tfr.t_opt_truck_arrive ar 
+			               on ar.id = f.truck_arrive_id
+			        left join tfr.t_opt_truck_depart de 
+			               on de.id = f.truck_depart_id
+			        where 
+			         <if test="deptType!=null and ''!=deptType and deptType=='0'.toString()">
+			           f.orig_org_code=#{origOrgCode,jdbcType=VARCHAR}
+			           and f.status in('UNDEPART','ONTHEWAY')
+			         </if>
+			         <if test="deptType!=null and ''!=deptType and deptType=='1'.toString()">
+			           f.dest_org_code=#{destOrgCode,jdbcType=VARCHAR}
+			           and f.status = 'ONTHEWAY'
+			         </if> 
+			          and f.create_time>=trunc(sysdate)
+		         ) a
+		        left join bse.t_bas_employee e
+		        on a.departOperCode = e.emp_code
+		        and e.active='Y'
+		        left join bse.t_bas_employee d
+		        on a.arriveOperCode = d.emp_code
+		        and d.active='Y'         
+	</select>
+	
+	<!-- 获取车辆任务明细信息,以保存在出发和到到达的 表：TFR.T_OPT_TRUCK_ARRIVE、 TFR.T_OPT_TRUCK_DEPART author:106162 date:2016-07-04 -->
+	<select id="queryTruckTaskDetailInfo" parameterType="java.util.Map"
+	             resultType ="com.deppon.foss.module.transfer.load.api.shared.domain.WKTruckTaskCreateInfoEntity">
+	    select 
+		 de.truck_depart_id truckDepartId,
+		 de.truck_arrive_id truckArriveId,
+		 de.truck_task_id truckTaskId
+		from tfr.t_opt_truck_task_detail de
+		where de.vehicle_no=#{vehicleNo,jdbcType=VARCHAR}
+		  and de.id=#{taskId,jdbcType=VARCHAR}
+	</select>
+
+	<!-- 获取车辆任务明细信息,以保存在出发放行 表： TFR.T_OPT_TRUCK_DEPART author:106162 date:2016-07-04 -->
+	<insert id="insertDepartToData" parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.WKTruckTaskOperRecordsEntity">
+	  insert into TFR.T_OPT_TRUCK_DEPART(
+		  id,
+		  vehicle_no,
+		  create_time,
+		  create_user_code,
+		  create_user_name,
+		  create_org_code,
+		  update_time,
+		  update_user_code,
+		  update_user_name,
+		  update_org_code,
+		  manual_depart_user_code,
+		  pda_depart_user_code,
+		  truck_task_id,
+		  status)
+	  values(
+		  	#{truckDepartId,jdbcType=VARCHAR},
+		    #{vehicleNo,jdbcType=VARCHAR},
+		    TO_TIMESTAMP(TO_CHAR(SYSDATE, 'YYYY-MM-DD HH24:MI:SS'),'YYYY-MM-DD HH24:MI:SS'),
+		    #{createUserCode,jdbcType=VARCHAR},
+		    #{createUserName,jdbcType=VARCHAR},
+		    #{createOrgCode,jdbcType=VARCHAR},
+		    TO_TIMESTAMP(TO_CHAR(SYSDATE, 'YYYY-MM-DD HH24:MI:SS'),'YYYY-MM-DD HH24:MI:SS'),
+		    #{createUserCode,jdbcType=VARCHAR},
+		    #{createUserName,jdbcType=VARCHAR},
+		    #{createOrgCode,jdbcType=VARCHAR},
+		    #{manualUserCode,jdbcType=VARCHAR},
+		    #{pdaUserCode,jdbcType=VARCHAR},
+		    #{truckTaskId,jdbcType=VARCHAR},
+		    #{status,jdbcType=VARCHAR}
+     )
+	</insert>
+	<!-- 获取车辆任务明细信息,以保存在到到达的 表：TFR.T_OPT_TRUCK_ARRIVE、 author:106162 date:2016-07-04 -->
+	<insert id="insertArriveToData" parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.WKTruckTaskOperRecordsEntity">
+	  insert into TFR.T_OPT_TRUCK_ARRIVE(
+		  id,
+		  vehicle_no,
+		  pda_arrive_user_code,
+		  manual_arrive_user_code,
+		  status,
+		  create_time,
+		  create_user_code,
+		  create_user_name,
+		  create_org_code)
+     values(
+		   #{truckArriveId,jdbcType=VARCHAR},
+		   #{vehicleNo,jdbcType=VARCHAR},
+		   #{pdaUserCode,jdbcType=VARCHAR},
+		   #{manualUserCode,jdbcType=VARCHAR},
+		   #{status,jdbcType=VARCHAR},
+		   TO_TIMESTAMP(TO_CHAR(SYSDATE, 'YYYY-MM-DD HH24:MI:SS'),'YYYY-MM-DD HH24:MI:SS'),
+		   #{createUserCode,jdbcType=VARCHAR},
+		   #{createUserName,jdbcType=VARCHAR},
+		   #{createOrgCode,jdbcType=VARCHAR}
+     )
+	</insert>
+	
+	<!-- 修改车辆任务明细中的出发truck_depart_id字段、 author:106162 date:2016-07-04 -->
+	<update id="updateDeaprtId" parameterType="java.util.Map">
+	     update tfr.t_opt_truck_task_detail d set d.truck_depart_id= #{truck_depart_id,jdbcType=VARCHAR}
+         where d.id= #{id,jdbcType=VARCHAR}
+	</update>
+
+	<!-- 修改车辆任务明细中的到达truck_arrive_id字段、 author:106162 date:2016-07-04 -->
+	<update id="updateArriveId" parameterType="java.util.Map">
+	     update tfr.t_opt_truck_task_detail d set d.truck_arrive_id= #{truck_arrive_id,jdbcType=VARCHAR}
+         where d.id= #{id,jdbcType=VARCHAR}
+	</update>
+	
+	<!--  @author:106162 @date:2016-04-25 @description: 出发与到达确认时,先判断是否封签-->
+	<select id="checkIsBindSeal" parameterType="java.lang.String" resultType="java.lang.String">
+	     select /*s.vehicle_no*/
+	           s.seal_type
+           from tfr.t_Opt_Seal s 
+     inner join tfr.T_OPT_TRUCK_TASK t
+             on s.t_truck_task_detail_id = t.id
+     inner join tfr.t_opt_truck_task_detail d
+             on t.id = d.truck_task_id
+          where d.id =#{taskId,jdbcType=VARCHAR}
+                and s.seal_type='BIND'
+          order by  s.check_time desc
+	</select>
+	<!-- 修改确认发车、到达部门确认、取消发车 状态 -->
+	<!-- @author:106162 @date:2016-04-25 @description:对接快递,根据传递过来的车辆号，修改确认发车、到达部门确认、取消发车 状态 -->
+	<!-- 确认发车状态维护 -->
+    <update id="updateDepartureState" parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.OptTruckTaskEntity"> 
+       update tfr.t_opt_truck_task_detail f 
+          set f.status='ONTHEWAY',
+          f.actual_depart_time=TO_TIMESTAMP(TO_CHAR(SYSDATE, 'YYYY-MM-DD HH24:MI:SS'),'YYYY-MM-DD HH24:MI:SS'),
+          f.ACTUAL_DEPART_TYPE=#{actualDepartType,jdbcType=VARCHAR}
+       where f.vehicle_no=#{vehicleNo,jdbcType=VARCHAR}
+          and f.id=#{truckTaskId,jdbcType=VARCHAR}         
+          and f.status='UNDEPART'    
+    </update>
+    <!-- 确认到达状态维护 -->
+    <update id="updateArriveState" parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.OptTruckTaskEntity"> 
+       update tfr.t_opt_truck_task_detail f 
+          set f.status='ARRIVED',
+          f.ACTUAL_ARRIVE_TIME=TO_TIMESTAMP(TO_CHAR(SYSDATE, 'YYYY-MM-DD HH24:MI:SS'),'YYYY-MM-DD HH24:MI:SS'),
+          f.ACTUAL_ARRIVE_TYPE=#{actualDepartType,jdbcType=VARCHAR}
+       where f.vehicle_no=#{vehicleNo,jdbcType=VARCHAR}
+          and f.id=#{truckTaskId,jdbcType=VARCHAR}           
+          and f.status='ONTHEWAY'    
+    </update>
+    <!-- 确认取消发车状态维护 -->
+     <update id="updateCancleState" parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.OptTruckTaskEntity"> 
+       update tfr.t_opt_truck_task_detail f 
+          set f.status='UNDEPART',
+          f.actual_depart_time=null,
+          f.ACTUAL_ARRIVE_TIME=null,
+          f.ACTUAL_DEPART_TYPE=null,
+          f.manual_depart_time=null
+       where f.vehicle_no=#{vehicleNo,jdbcType=VARCHAR}
+          and f.id=#{truckTaskId,jdbcType=VARCHAR}              
+    </update>
+    <!-- 修改装车任务表 author:106162 date:2016-04-28 -->
+    <update id="updateTruckTaskTableState" parameterType="java.util.Map">
+       update tfr.t_opt_truck_task ff
+          set ff.status=#{status,jdbcType=VARCHAR},
+              ff.modify_time=TO_TIMESTAMP(TO_CHAR(SYSDATE, 'YYYY-MM-DD HH24:MI:SS'),'YYYY-MM-DD HH24:MI:SS')
+        where ff.id=(
+           select f.truck_task_id from tfr.t_opt_truck_task_detail f
+           where f.id=#{taskId,jdbcType=VARCHAR}
+        )
+        and ff.vehicle_no=#{vehicleNo,jdbcType=VARCHAR}
+    </update>
+    
+    <!--author：106162 date:2016-04-28 note:校验封签车辆 -->
+    <!-- 1.先查询该车辆是否封签 -->
+    <select id="queryCarIsSeal" parameterType="java.lang.String" resultType="java.lang.String">
+        select 
+            og.name
+          from  tfr.t_opt_seal os
+          inner join tfr.t_opt_truck_task tk
+          on os.t_truck_task_detail_id = tk.id
+          inner join tfr.t_opt_truck_task_detail de
+          on tk.id = de.truck_task_id
+          inner join bse.t_bas_org og
+          on de.DEST_ORG_CODE = og.code
+          and og.active='Y'
+        where de.vehicle_no=#{vehicleNo,jdbcType=VARCHAR}
+          and os.seal_state='UNCHECK'
+          and os.seal_type not in ('INVALID')
+    </select>
+    <!-- 2.查询该车辆是否被别的部门占用 -->
+    <select id="checkExpressEIRCar"  parameterType="java.util.Map" resultType="java.lang.String">
+       select og.name
+       from tfr.t_opt_truck_task_detail td 
+       inner join bse.t_bas_org og
+         on td.orig_org_code = og.code
+         and og.active='Y'
+       where td.vehicle_no = #{vehicleNo,jdbcType=VARCHAR}
+			 and td.orig_org_code !=#{deptCode,jdbcType=VARCHAR}			 
+             and td.status =#{status,jdbcType=VARCHAR}
+			 and (td.IS_INIT != 'Y' or td.IS_INIT is null)       
+    </select>
+    
+    <!-- 查询车牌号是否是合法的（首先从自有车辆查询，其次查询外请车 当两者都未找到就默认为非法车辆） author:106162 date:2016-06-08 -->
+    <select id="queryOwnerCar" parameterType="java.lang.String" resultType="java.lang.String">
+       select otk.vehicle_no from bse.t_bas_own_truck otk
+       where otk.vehicle_no=#{vehicleNo,jdbcType=VARCHAR}
+    </select>
+    <select id="queryOutSiteCar" parameterType="java.lang.String" resultType="java.lang.String">
+       select tk.vehicle_no from bse.t_bas_leased_truck tk
+       where tk.vehicle_no=#{vehicleNo,jdbcType=VARCHAR}
+    </select>
+    
+    <!-- 根据车牌号查询车辆任务状态是否在途中,如果在途中是不能解封签 -->
+    <select id="queryTruckTaskStatus" parameterType="java.lang.String" resultType="java.lang.String">
+        select fh.id from tfr.t_opt_truck_task_detail fh
+         where fh.vehicle_no=#{vehicleNo,jdbcType=VARCHAR} and fh.status='ONTHEWAY'
+    </select>
+    
+    <!-- 针对PDA通过车牌号查询该车辆是否绑定封签  author:106162 date:2016-11-24-->
+    <select id="checkSealForCar"  parameterType="java.lang.String" resultType="java.lang.String">
+       select s.seald_org_code from tfr.t_opt_seal s 
+        where s.vehicle_no=#{vehicleNum,jdbcType=VARCHAR}
+          and s.seal_type='BIND'
+    </select>
+    
+</mapper>

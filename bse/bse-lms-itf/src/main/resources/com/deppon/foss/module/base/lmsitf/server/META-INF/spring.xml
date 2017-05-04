@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://www.springframework.org/schema/jee 
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+			http://www.springframework.org/schema/aop 
+			http://www.springframework.org/schema/aop/spring-aop-3.0.xsd"
+	default-autowire="byName">
+
+	<!-- 同步"拖头"信息接口结果处理器  -->
+	<bean id="tractorsResultNotificationProcessor"
+		class="com.deppon.foss.module.base.lmsitf.esb.server.TractorsResultNotificationProcessor">
+		<property name="synchronousOwnVehicleService" ref="synchronousOwnVehicleService"/>
+		<property name="orgAdministrativeInfoService" ref="orgAdministrativeInfoService"/>
+		<!-- <property name="leasedVehicleTypeService" ref="leasedVehicleTypeService"/>-->
+	</bean>
+
+	<!-- 同步"挂车"信息接口结果处理器  -->
+	<bean id="trailerResultNotificationProcessor"
+		class="com.deppon.foss.module.base.lmsitf.esb.server.TrailerResultNotificationProcessor">
+		<property name="synchronousOwnVehicleService" ref="synchronousOwnVehicleService"/>
+		<property name="orgAdministrativeInfoService" ref="orgAdministrativeInfoService"/>
+		<property name="leasedVehicleTypeService" ref="leasedVehicleTypeService"/>
+	</bean>
+	
+	<!-- 同步"厢式车"信息接口结果处理器  -->
+	<bean id="vanResultNotificationProcessor"
+		class="com.deppon.foss.module.base.lmsitf.esb.server.VanResultNotificationProcessor">
+		<property name="synchronousOwnVehicleService" ref="synchronousOwnVehicleService"/>
+		<property name="orgAdministrativeInfoService" ref="orgAdministrativeInfoService"/>
+		<property name="leasedVehicleTypeService" ref="leasedVehicleTypeService"/>
+	</bean>
+	
+	<!-- 同步"骨架车"信息接口结果处理器  -->
+	<bean id="rResultNotificationProcessor"
+		class="com.deppon.foss.module.base.lmsitf.esb.server.RQSVCResultNotificationProcessor">
+		<property name="synchronousOwnVehicleService" ref="synchronousOwnVehicleService"/>
+		<property name="orgAdministrativeInfoService" ref="orgAdministrativeInfoService"/>
+		<property name="leasedVehicleTypeService" ref="leasedVehicleTypeService"/>
+	</bean>
+	
+	<!-- 同步"车辆品牌"信息接口结果处理器  -->
+	<bean id="vehicleBrandResultNotificationProcessor"
+		class="com.deppon.foss.module.base.lmsitf.esb.server.VehicleBrandResultNotificationProcessor">
+		<property name="dataDictionaryValueService" ref="dataDictionaryValueService"/>
+	</bean>
+	
+	<!-- 同步"车辆车长"信息接口结果处理器  -->
+	<bean id="vehicleLengthResultNotificationProcessor"
+		class="com.deppon.foss.module.base.lmsitf.esb.server.VehicleLengthResultNotificationProcessor">
+		<property name="leasedVehicleTypeService" ref="leasedVehicleTypeService"/>
+	</bean>
+	
+	<!-- 同步"司机信息"信息接口结果处理器  -->
+	<bean id="driverResultNotificationProcessor"
+		class="com.deppon.foss.module.base.lmsitf.esb.server.DriverResultNotificationProcessor">
+		<property name="ownDriverService" ref="ownDriverService"/>
+		<property name="orgAdministrativeInfoService" ref="orgAdministrativeInfoService"/>
+	</bean>
+	
+	<!-- 同步"停车原因"信息接口结果处理器  -->
+	<bean id="ahchorReasonResultNotificationProcessor"
+		class="com.deppon.foss.module.base.lmsitf.esb.server.AhchorReasonResultNotificationProcessor">
+		<property name="dataDictionaryValueService" ref="dataDictionaryValueService"/>
+	</bean>
+	
+	<!-- 同步"停车计划"信息接口结果处理器  -->
+	<bean id="anchorPlanResultNotificationProcessor"
+		class="com.deppon.foss.module.base.lmsitf.esb.server.AnchorPlanResultNotificationProcessor">
+		<property name="synchronousOwnVehicleService" ref="synchronousOwnVehicleService"/>
+	</bean>
+	
+	<!-- 同步"挂车类型"信息接口结果处理器  -->
+	<bean id="trailerTypeResultNotificationProcessor"
+		class="com.deppon.foss.module.base.lmsitf.esb.server.TrailerTypeResultNotificationProcessor">
+		<property name="dataDictionaryValueService" ref="dataDictionaryValueService"/>
+	</bean>
+	
+	<!-- 启动MQ监听 -->
+	<bean id="esbInitUtil" class="com.deppon.esb.api.util.ESBInitUtil"
+		init-method="process" lazy-init="false">
+		<property name="processMap">
+			<map>
+				<entry key="FOSS_ESB2FOSS_RECEIVE_TRACTOR" value-ref="tractorsResultNotificationProcessor" />
+				<entry key="FOSS_ESB2FOSS_RECEIVE_TRAILER" value-ref="trailerResultNotificationProcessor" />
+				<entry key="FOSS_ESB2FOSS_RECEIVE_VAN" value-ref="vanResultNotificationProcessor" />
+				<entry key="FOSS_ESB2FOSS_SYNCHRONOUS_SKELETON_CAR" value-ref="rResultNotificationProcessor" />
+				<entry key="FOSS_ESB2FOSS_RECEIVE_VEHICLEBRAND" value-ref="vehicleBrandResultNotificationProcessor" />
+				<entry key="FOSS_ESB2FOSS_RECEIVE_VEHICLELENGTH" value-ref="vehicleLengthResultNotificationProcessor" />
+				<entry key="FOSS_ESB2FOSS_RECEIVE_DRIVER" value-ref="driverResultNotificationProcessor" />
+				<entry key="FOSS_ESB2FOSS_RECEIVE_AHCHORREASON" value-ref="ahchorReasonResultNotificationProcessor" />
+				<entry key="FOSS_ESB2FOSS_RECEIVE_ANCHORPLAN" value-ref="anchorPlanResultNotificationProcessor" />
+				<entry key="FOSS_ESB2FOSS_RECEIVE_TRAILERTYPE" value-ref="trailerTypeResultNotificationProcessor" />
+			</map>
+		</property>
+		<!-- 移到 bse-baseinfo-web 工程
+		<property name="callBackProcessMap">
+			<map>
+				<entry key="ESB_FOSS2ESB_RECEIVE_TRANSFERSITEINFO" value-ref="transferSiteInfoResultCallBackProcessor" />
+			</map>
+		</property>
+		-->
+	</bean>
+
+	<!-- 同步"挂车类型"信息接口结果处理器  087584-foss-lijun   移到 bse-baseinfo-web 工程
+	<bean id="transferSiteInfoResultCallBackProcessor"
+		class="com.deppon.foss.module.base.lmsitf.esb.client.TransferSiteInfoResultCallBackProcessor">
+	</bean>  -->
+	
+	<!-- "同步公司车辆"服务类，包括其他模块同步服务 -->
+	<bean id="synchronousOwnVehicleService" class="com.deppon.foss.module.base.lmsitf.esb.service.impl.SynchronousOwnVehicleService">
+		<property name="lmsSynchronousService" ref="lmsSynchronousService"/>
+		<property name="vehicleActualSituationManageService" ref="vehicleActualSituationManageService"/>
+		<property name="ownVehicleService" ref="ownVehicleService"/>
+		<property name="vehicleUnavilableService" ref="vehicleUnavilableService"/>
+	</bean>
+
+</beans>

@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="com.deppon.foss.module.pickup.predeliver.api.shared.domain.WorkFlowEntity">
+
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.domain.WorkFlowEntity">
+		insert into PKP.T_SRV_WORKFLOW
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				ID,
+			</if>
+			<if test="waybillNo != null">
+				WAYBILL_NO,
+			</if>
+			<if test="flowCode != null">
+				FLOW_CODE,
+			</if>
+			<if test="customerCooperateStatus != null">
+				CUSTOMER_COOPERATE_STATUS,
+			</if>
+			<if test="respectiveRegional != null">
+				RESPECTIVE_REGIONAL,
+			</if>
+			<if test="respectiveRegionalName != null">
+				RESPECTIVE_REGIONAL_NAME,
+			</if>
+			<if test="createUserTitle != null">
+				CREATE_USER_TITLE,
+			</if>
+			<if test="createUserName != null">
+				CREATE_USER_NAME,
+			</if>
+			<if test="createUserCode != null">
+				CREATE_USER_CODE,
+			</if>
+			<if test="createOrgName != null">
+				CREATE_ORG_NAME,
+			</if>
+			<if test="createOrgCode != null">
+				CREATE_ORG_CODE,
+			</if>
+			<if test="bizCode !=null">
+				BIZ_CODE,
+			</if>
+			<if test="serialNumber !=null">
+				SERIAL_NUMBER,
+			</if>
+			CREATE_TIME
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id,jdbcType=VARCHAR},
+			</if>
+
+			<if test="waybillNo != null">
+				#{waybillNo,jdbcType=VARCHAR},
+			</if>
+			<if test="flowCode != null">
+				#{flowCode,jdbcType=VARCHAR},
+			</if>
+			<if test="customerCooperateStatus != null">
+				#{customerCooperateStatus,jdbcType=VARCHAR},
+			</if>
+			<if test="respectiveRegional != null">
+				#{respectiveRegional,jdbcType=VARCHAR},
+			</if>
+			<if test="respectiveRegionalName != null">
+				#{respectiveRegionalName,jdbcType=VARCHAR},
+			</if>
+			<if test="createUserTitle != null">
+				#{createUserTitle,jdbcType=VARCHAR},
+			</if>
+			<if test="createUserName != null">
+				#{createUserName,jdbcType=VARCHAR},
+			</if>
+			<if test="createUserCode != null">
+				#{createUserCode,jdbcType=VARCHAR},
+			</if>
+			<if test="createOrgName != null">
+				#{createOrgName,jdbcType=VARCHAR},
+			</if>
+			<if test="createOrgCode != null">
+				#{createOrgCode,jdbcType=VARCHAR},
+			</if>
+			<if test="bizCode != null">
+				#{bizCode,jdbcType=VARCHAR},
+			</if>
+			<if test="serialNumber != null">
+				#{serialNumber,jdbcType=VARCHAR},
+			</if>
+			to_char(sysdate,'yyyyMMdd')
+		</trim>
+	</insert>
+
+
+	<select id="search"
+		resultType="com.deppon.foss.module.pickup.predeliver.api.shared.domain.WorkFlowEntity"
+		parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.domain.WorkFlowEntity">
+		SELECT
+		WAYBILL_NO AS waybillNo,
+		FLOW_CODE AS flowCode,
+		CUSTOMER_COOPERATE_STATUS AS customerCooperateStatus,
+		RESPECTIVE_REGIONAL AS respectiveRegional,
+		RESPECTIVE_REGIONAL_NAME AS
+		respectiveRegionalName,
+		CREATE_USER_CODE AS createUserCode,
+		CREATE_USER_NAME AS createUserName,
+		CREATE_ORG_NAME AS createOrgName,
+		CREATE_ORG_CODE AS createOrgCode,
+		CREATE_USER_TITLE AS createUserTitle,
+		SERIAL_NUMBER AS serialNumber
+		FROM PKP.T_SRV_WORKFLOW
+		<where>
+			<if test=" waybillNo !=null and waybillNo !='' ">
+				AND WAYBILL_NO=#{waybillNo}
+			</if>
+			<if test=" flowCode !=null and flowCode !='' ">
+				AND FLOW_CODE=#{flowCode}
+			</if>
+			<if test=" bizCode !=null and bizCode !='' ">
+				AND BIZ_CODE=#{bizCode}
+			</if>
+		</where>
+	</select>
+
+	<select id="getCount" resultType="int">
+		SELECT
+		COUNT(1)
+		FROM
+		PKP.T_SRV_WORKFLOW where create_time=to_char(sysdate,'yyyyMMdd')
+	</select>
+	
+	<select id="getIdByWaybillNo" resultType="string" parameterType="map">
+	
+		select id from PKP.T_SRV_ABANDON_GOODS_APP where waybill_no=#{waybillNo,jdbcType=VARCHAR}
+		<if test="serialNumber != null and serialNumber != ''">
+				and SERIAL_NO=#{serialNumber,jdbcType=VARCHAR}
+		</if>
+	</select>
+	
+	<update id="update" parameterType="map">
+	    UPDATE PKP.T_SRV_WORKFLOW SET FLOW_CODE=#{flowCode,jdbcType=VARCHAR} WHERE BIZ_CODE=#{bizCode,jdbcType=VARCHAR} AND WAYBILL_NO=#{waybillNo,jdbcType=VARCHAR}
+	</update>
+	
+	<update id="updateAppStatus" parameterType="map">
+	   update PKP.T_SRV_ABANDON_GOODS_APP SET STATUS=#{status,jdbcType=VARCHAR} WHERE WAYBILL_NO=#{waybillNo,jdbcType=VARCHAR}
+	</update>
+	
+	
+	
+	<select id="queryOrgCodeByUnifiedCode" resultType="string" parameterType="string">
+	select CODE from bse.t_bas_org where UNIFIED_CODE=#{unifiedCode,jdbcType=VARCHAR} and rownum=1
+	</select>
+</mapper>

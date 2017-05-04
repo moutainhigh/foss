@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.pkp.freightRouteMapper" >
+
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.domain.FreightRouteEntity" >
+    	<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="virtual_code" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="orig_org_code" property="orginalOrganizationCode" jdbcType="VARCHAR" />
+		<result column="dest_org_code" property="destinationOrganizationCode" jdbcType="VARCHAR" />
+		<result column="orig_type" property="orginalType" jdbcType="VARCHAR" />
+		<result column="dest_type" property="destinationType" jdbcType="VARCHAR" />
+		<result column="TRANSPORT_TYPE" property="transType" jdbcType="VARCHAR" />
+		<result column="aging" property="aging" jdbcType="NUMERIC" />
+		<result column="default_route" property="defaultRoute" jdbcType="CHAR" />
+		<result column="do_packing" property="doPacking" jdbcType="CHAR" />
+		<result column="TRANSFER_CENTER_PACKING" property="packingOrganizationCode" jdbcType="VARCHAR" />
+		<result column="active" property="active" jdbcType="CHAR" />
+		<result column="notes" property="notes" jdbcType="VARCHAR" />
+		<result column="create_time" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="modify_time" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="VERSION_NO" property="version" jdbcType="DECIMAL" />
+		<result column="VALID" property="valid" jdbcType="CHAR" />
+  </resultMap>
+
+  <resultMap id="joinTransferCenterResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.domain.FreightRouteEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="TRANSPORT_TYPE" property="transportType" jdbcType="VARCHAR" />
+    <result column="ORIG_ORG_CODE" property="origOrgCode" jdbcType="VARCHAR" />
+    <result column="DEST_ORG_CODE" property="destOrgCode" jdbcType="VARCHAR" />
+    <result column="AGING" property="aging" jdbcType="DECIMAL" />
+    <result column="DEFAULT_ROUTE" property="defaultRoute" jdbcType="CHAR" />
+    <result column="DO_PACKING" property="doPacking" jdbcType="CHAR" />
+    <result column="NET_GROUP_LEAVE" property="netGroupLeave" jdbcType="VARCHAR" />
+    <result column="NET_GROUP_ARRIVE" property="netGroupArrive" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+    <result column="ACTIVE" property="active" jdbcType="CHAR" />
+    <result column="CREATE_USER_CODE" property="createUserCode" jdbcType="VARCHAR" />
+    <result column="MODIFY_USER_CODE" property="modifyUserCode" jdbcType="VARCHAR" />
+    <result column="NOTES" property="notes" jdbcType="VARCHAR" />
+    <association property="transferCenterPacking" column="ID" 
+    	javaType="com.deppon.foss.module.base.baseinfo.api.shared.domain.OutfieldEntity" 
+    	resultMap="transCenterResultMap" />
+  </resultMap>
+  
+  <resultMap id="transCenterResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.domain.OutfieldEntity" >
+    <id column="TRANS_CENTER_ID" property="id" jdbcType="VARCHAR" />
+    <result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+    <result column="CODE" property="code" jdbcType="VARCHAR" />
+    <result column="NAME" property="name" jdbcType="VARCHAR" />
+    <result column="PINYIN" property="pinyin" jdbcType="VARCHAR" />
+    <result column="SIMPLE_CODE" property="simpleCode" jdbcType="VARCHAR" />
+    <result column="VEHICLE_ASSEMBLE" property="vehicleAssemble" jdbcType="CHAR" />
+    <result column="OUT_ASSEMBLE" property="outAssemble" jdbcType="CHAR" />
+    <result column="PACKING_WOOD" property="packingWood" jdbcType="CHAR" />
+    <result column="TRANSFER" property="transfer" jdbcType="CHAR" />
+    <result column="SORTING_MACHINE" property="sortingMachine" jdbcType="CHAR" />
+    <result column="GOODS_AREA" property="goodsArea" jdbcType="DECIMAL" />
+    <result column="PLAT_AREA" property="platArea" jdbcType="DECIMAL" />
+    <result column="PLAT_TYPE" property="platType" jdbcType="VARCHAR" />
+    <result column="PARENT_ORG_ID" property="parentOrgId" jdbcType="VARCHAR" />
+  </resultMap>
+  
+  <sql id="freightRoute_Column_List" >
+    ID, TRANSPORT_TYPE, ORIG_ORG_CODE, DEST_ORG_CODE, AGING, DEFAULT_ROUTE, DO_PACKING, 
+    TRANSFER_CENTER_PACKING, CREATE_TIME, MODIFY_TIME, 
+    ACTIVE, CREATE_USER_CODE, MODIFY_USER_CODE, NOTES
+  </sql>
+  
+  <sql id="transCenter_Column_List" >
+    ID, TRANSPORT_TYPE, ORIG_ORG_CODE, DEST_ORG_CODE, AGING, DEFAULT_ROUTE, DO_PACKING, 
+    TRANSFER_CENTER_PACKING, NET_GROUP_LEAVE, NET_GROUP_ARRIVE, CREATE_TIME, MODIFY_TIME, 
+    ACTIVE, CREATE_USER_CODE, MODIFY_USER_CODE, NOTES, b.ID as TRANS_CENTER_ID, ORG_CODE,
+    CODE, NAME, PINYIN, SIMPLE_CODE, VEHICLE_ASSEMBLE, OUT_ASSEMBLE, PACKING_WOOD,
+    TRANSFER, SORTING_MACHINE, GOODS_AREA, PLAT_AREA, PLAT_TYPE, PARENT_ORG_ID
+  </sql>
+
+	<sql id="whereFreightRouteListByCondition">
+		FROM BSE.T_BAS_FREIGHT_ROUTE
+		where active = #{active}
+		<if
+			test="orginalOrganizationCode != null and orginalOrganizationCode != ''">
+			AND ORIG_ORG_CODE = #{orginalOrganizationCode}
+		</if>
+		<if
+			test="destinationOrganizationCode != null and destinationOrganizationCode != ''">
+			AND DEST_ORG_CODE = #{destinationOrganizationCode}
+		</if>
+		<if test="transType != null and transType != ''">
+			AND transport_type = #{transType}
+		</if>
+	</sql>
+  
+ 
+  <select id="selectFreightRouteByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.String" >
+    select 
+    <include refid="freightRoute_Column_List" />
+    from BSE.T_BAS_FREIGHT_ROUTE
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+  
+  <select id="selectFreightRouteBySaleDept" resultMap="joinTransferCenterResultMap" parameterType="java.util.Map" >
+    select 
+    <include refid="transCenter_Column_List" />
+    from BSE.T_BAS_FREIGHT_ROUTE a 
+    inner join BSE.T_BAS_TRANSFER_CENTER b 
+    on a.TRANSFER_CENTER_PACKING = b.TRANS_CENTER_ID
+    where a.ACTIVE = #{active,jdbcType=CHAR}
+    	and a.ORIG_ORG_CODE = #{departureNetGrp,jdbcType=VARCHAR}
+    	and a.DEST_ORG_CODE = #{arrivalNetGrp,jdbcType=VARCHAR}
+    	and a.TRANSPORT_TYPE = #{transType,jdbcType=CHAR}
+  </select>
+
+	<select id="queryFreightRouteByVirtualCode" resultMap="BaseResultMap"
+		parameterType="map">
+		select * from BSE.T_BAS_FREIGHT_ROUTE where virtual_code
+		= #{virtualCode} and active = #{active}
+	</select>
+	<select id="queryFreightRouteListByCondition" resultMap="BaseResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.FreightRouteEntity">
+		select 
+		<include refid="freightRoute_Column_List" />
+		<include refid="whereFreightRouteListByCondition" />
+	</select>
+  
+  
+ 
+  <delete id="deleteFreightRouteByPrimaryKey" parameterType="java.lang.String" >
+    delete from BSE.T_BAS_FREIGHT_ROUTE
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  
+  <insert id="insertFreightRoute" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.FreightRouteEntity">
+		insert into BSE.T_BAS_FREIGHT_ROUTE (id,create_time, create_user_code, modify_time, modify_user_code, transport_type, 
+		orig_org_code, dest_org_code, orig_type, dest_type, aging, default_route, do_packing, TRANSFER_CENTER_PACKING,
+		active, notes, virtual_code,VERSION_NO,VALID) 
+		values ( #{id,jdbcType=VARCHAR},#{createDate,jdbcType=TIMESTAMP},#{createUser,jdbcType=VARCHAR},#{modifyDate,jdbcType=TIMESTAMP},
+		#{modifyUser,jdbcType=VARCHAR}, #{transType,jdbcType=VARCHAR}, #{orginalOrganizationCode,jdbcType=VARCHAR},  
+		#{destinationOrganizationCode,jdbcType=VARCHAR}, #{orginalType,jdbcType=VARCHAR}, #{destinationType,jdbcType=VARCHAR}, 
+		#{aging,jdbcType=NUMERIC}, #{defaultRoute, jdbcType=CHAR}, #{doPacking, jdbcType=CHAR},
+		#{packingOrganizationCode, jdbcType=VARCHAR},
+		#{active,jdbcType=CHAR}, #{notes,jdbcType=VARCHAR},
+		#{virtualCode, jdbcType=VARCHAR},#{version, jdbcType=DECIMAL},#{valid,jdbcType=VARCHAR})
+	</insert>
+  
+  <update id="updateByPrimaryKeySelective" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.FreightRouteEntity">
+		update BSE.T_BAS_FREIGHT_ROUTE 
+		set active = #{active, jdbcType=CHAR} 
+		, modify_time = #{modifyDate,jdbcType=TIMESTAMP} 
+		, modify_user_code = #{modifyUser,jdbcType=VARCHAR} 
+		, VERSION_NO = #{version,jdbcType=DECIMAL} 
+		, VALID = #{valid,jdbcType=VARCHAR}
+		where id = #{id}
+  </update>
+  
+  <select id="selectById" resultType="String"
+		parameterType="java.util.Map">
+		<![CDATA[
+		SELECT 
+	        ID
+	    	FROM BSE.T_BAS_FREIGHT_ROUTE 
+		]]>
+		<where>
+			ID = #{id,jdbcType=VARCHAR}	
+		</where>
+	</select>
+	<delete id="delete" 
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.FreightRouteEntity">
+		delete from BSE.T_BAS_FREIGHT_ROUTE
+		 where ID =  #{id,jdbcType=VARCHAR}	
+	</delete>
+  
+</mapper>

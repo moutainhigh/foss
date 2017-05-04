@@ -1,0 +1,504 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.BillReceivableEntityDao">
+	<!-- 通过业务日期查询应收单 -->
+	<select id="queryByBusinessDate" resultMap="BaseResultMap"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.BillReceivableDto">
+		SELECT/*结算-客户管理-通过业务日期查询应收单 */
+		<include refid="Base_Column_List" />
+		FROM STL.T_STL_BILL_RECEIVABLE T
+		WHERE
+			<![CDATA[T.BUSINESS_DATE >=#{ startDate ,jdbcType=TIMESTAMP} and T.BUSINESS_DATE <#{endDate ,jdbcType=TIMESTAMP} ]]>
+			<if test="sourceBillType != null and sourceBillType != ''">
+				AND T.SOURCE_BILL_TYPE = #{sourceBillType}
+			</if>
+			<if test="customerCode != null and customerCode != ''">
+				AND T.CUSTOMER_CODE = #{customerCode}
+			</if>
+			<if test="billType != null and billType != ''">
+				AND T.BILL_TYPE = #{billType}
+			</if>
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active}
+			</if>
+			<if test="isInit != null and isInit != ''">
+				AND T.IS_INIT = #{isInit}
+			</if>
+			<if test="isDiscount != null and isDiscount != ''">
+				<choose>
+					<when test="isDiscount=='Y'.toString()">
+						AND T.IS_DISCOUNT = #{isDiscount}
+					</when>
+					<when test="isDiscount=='N'.toString()">
+						AND (T.IS_DISCOUNT = #{isDiscount} OR T.IS_DISCOUNT IS NULL)
+					</when>
+				</choose>
+			</if>
+			<if test="isPartner != null and isPartner != ''">
+				<choose>
+					<when test="isPartner=='Y'.toString()">
+						AND BILL_TYPE IN ('PDR','POR','PFCR','PDFR','PP','PTF','PER','POFR','DR','CR')
+					</when>
+					<when test="isDiscount!='N'.toString()">
+						AND BILL_TYPE NOT IN ('PDR','POR','PDFR','PP','PTF','PER','POFR')
+					</when>
+				</choose>
+			</if>
+			<if test="isPartner == null or isPartner == ''">
+				AND BILL_TYPE NOT IN ('PDR','POR','PDFR','PP','PTF','PER','POFR')
+			</if>
+			<if test="productCode != null and productCode.size() > 0 ">
+				AND T.PRODUCT_CODE IN
+				<foreach collection="productCode"  index="index" item="item"  open="(" separator="," close=")">  
+			    	#{item} 
+				</foreach>				
+			</if>
+			<if test="isSign != null and isSign != '' and isSign == Receivable_Bill_ISSIGN_YES">
+				AND T.CONREVEN_DATE IS NOT NULL
+			</if>
+			<if test="isSign != null and isSign != '' and isSign == Receivable_Bill_ISSIGN_NO ">
+				AND T.CONREVEN_DATE IS NULL
+			</if>
+		   <if test="billTypes != null and billTypes.length>0 ">
+			   and T.BILL_TYPE in
+			   <foreach collection="billTypes"  index="index" item="item"  open="(" separator="," close=")">
+				   #{item}
+			   </foreach>
+
+		   </if>
+		   <if test="paymentTypes != null and paymentTypes.length>0">
+			   and T.payment_type in
+			   <foreach collection="paymentTypes"  index="index" item="item"  open="(" separator="," close=")">
+				   #{item}
+			   </foreach>
+		   </if>
+			<if test="departments != null and departments.size()>0 ">
+			 <choose>
+				<when test="dunningDeptCode!=null and dunningDeptCode !=''">
+					AND T.DUNNING_ORG_CODE IN
+					<foreach collection="departments"  index="index" item="item"  open="(" separator="," close=")">  
+		        	#{item} 
+					</foreach>
+				</when>
+				<when test="generatingOrgCode!=null and generatingOrgCode!=''">
+				    AND T.GENERATING_ORG_CODE IN 
+				    <foreach collection="departments"  index="index" item="item"  open="(" separator="," close=")">  
+		        	#{item} 
+					</foreach>   
+				</when>
+			</choose>				
+			</if>
+		<if test="empCode != null and empCode != ''">
+			AND EXISTS (
+						SELECT ORG_CODE
+						FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V 
+					 	WHERE V.EMP_CODE = #{empCode}
+					 	AND ( 
+							<choose>
+							<when test="dunningDeptCode!=null and dunningDeptCode !=''">
+								T.DUNNING_ORG_CODE = V.ORG_CODE 
+							</when>
+							<when test="generatingOrgCode!=null and generatingOrgCode!=''">
+								T.GENERATING_ORG_CODE=V.ORG_CODE 
+							</when>
+								<otherwise>
+									T.DUNNING_ORG_CODE= V.ORG_CODE 
+								</otherwise>
+							</choose>
+					 	)
+			)
+		</if>
+	</select>
+	
+	
+		<!-- 查询应收单记录条数，总金额，核销总金额和未核销总金额resultMap -->
+	<resultMap id="TotalAmountResultMap"
+		type="com.deppon.foss.module.settlement.consumer.api.shared.dto.BillReceivableDto">
+		<result column="Total_Records_In_DB" property="totalRecordsInDB"
+			jdbcType="DECIMAL" />
+		<result column="Total_Amount" property="totalAmount" jdbcType="DECIMAL" />
+		<result column="Total_VerifyAmount" property="totalVerifyAmount"
+			jdbcType="DECIMAL" />
+		<result column="Total_UnverifyTotalAmount" property="totalUnverifyAmount"
+			jdbcType="DECIMAL" />
+		<result column="COD_AMOUNT" property="CodAmount"
+				jdbcType="DECIMAL" />
+		<result column="INSURANCE_AMOUNT" property="insuranceAmount"
+				jdbcType="DECIMAL" />
+		<result column="TRASPORT_AMOUNT" property="transportAmount"
+				jdbcType="DECIMAL" />
+	</resultMap>
+
+	<!-- 查询应收单总记录条数，总金额，未核销总金额，核销总金额 -->
+	<select id="queryTotalAmountByBusinessDate" resultMap="TotalAmountResultMap"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.BillReceivableDto">
+		SELECT/*结算-客户管理-通过业务日期查询应收单总记录条数，总金额，未核销总金额，核销总金额 */ count(T.ID) as Total_Records_In_DB,sum(T.AMOUNT)/100 as
+		Total_Amount,sum(T.VERIFY_AMOUNT)/100 as totalVerifyAmount,
+		sum(T.UNVERIFY_AMOUNT)/100 as Total_UnverifyTotalAmount
+		FROM STL.T_STL_BILL_RECEIVABLE T
+		WHERE
+			<![CDATA[T.BUSINESS_DATE >=#{ startDate ,jdbcType=TIMESTAMP} and T.BUSINESS_DATE <#{endDate ,jdbcType=TIMESTAMP} ]]>
+			
+			<if test="sourceBillType != null and sourceBillType != ''">
+				AND T.SOURCE_BILL_TYPE = #{sourceBillType}
+			</if>
+			<if test="customerCode != null and customerCode != ''">
+				AND T.CUSTOMER_CODE = #{customerCode}
+			</if>
+			<if test="billType != null and billType != ''">
+				AND T.BILL_TYPE = #{billType}
+			</if>
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active}
+			</if>
+			<if test="isInit != null and isInit != ''">
+				AND T.IS_INIT = #{isInit}
+			</if>
+			<if test="isDiscount != null and isDiscount != ''">
+				<choose>
+					<when test="isDiscount=='Y'.toString()">
+						AND T.IS_DISCOUNT = #{isDiscount}
+					</when>
+					<when test="isDiscount=='N'.toString()">
+						AND (T.IS_DISCOUNT = #{isDiscount} OR T.IS_DISCOUNT IS NULL)
+					</when>
+				</choose>
+			</if>
+			<if test="isPartner != null and isPartner != ''">
+				<choose>
+					<when test="isPartner=='Y'.toString()">
+						AND BILL_TYPE IN ('PDR','POR','PFCR','PDFR','PP','PTF','PER','POFR','DR','CR')
+					</when>
+					<when test="isDiscount!='N'.toString()">
+						AND BILL_TYPE NOT IN ('PDR','POR','PDFR','PP','PTF','PER','POFR')
+					</when>
+				</choose>
+			</if>
+			<if test="isPartner == null or isPartner == ''">
+				AND BILL_TYPE NOT IN ('PDR','POR','PDFR','PP','PTF','PER','POFR')
+			</if>
+			<if test="productCode != null and productCode.size() > 0 ">
+				AND T.PRODUCT_CODE IN
+				<foreach collection="productCode"  index="index" item="item"  open="(" separator="," close=")">  
+			    	#{item} 
+				</foreach>				
+			</if>
+			<if test="isSign != null and isSign != '' and isSign == Receivable_Bill_ISSIGN_YES">
+				AND T.CONREVEN_DATE IS NOT NULL
+			</if>
+			<if test="isSign != null and isSign != '' and isSign == Receivable_Bill_ISSIGN_NO">
+				AND T.CONREVEN_DATE IS NULL
+			</if>
+			
+			<if test="departments != null and departments.size()>0 ">
+			 <choose>
+				<when test="dunningDeptCode!=null and dunningDeptCode !=''">
+					AND T.DUNNING_ORG_CODE IN
+					<foreach collection="departments"  index="index" item="item"  open="(" separator="," close=")">  
+		        	#{item} 
+					</foreach>
+				</when>
+				<when test="generatingOrgCode!=null and generatingOrgCode!=''">
+				    AND T.GENERATING_ORG_CODE IN 
+				    <foreach collection="departments"  index="index" item="item"  open="(" separator="," close=")">  
+		        	#{item} 
+					</foreach>   
+				</when>
+			</choose>				
+			</if>
+		<if test="empCode != null and empCode != ''">
+			AND EXISTS (
+						SELECT ORG_CODE
+						FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V 
+					 	WHERE V.EMP_CODE = #{empCode}
+					 	AND ( 
+							<choose>
+							<when test="dunningDeptCode!=null and dunningDeptCode !=''">
+								T.DUNNING_ORG_CODE = V.ORG_CODE 
+							</when>
+							<when test="generatingOrgCode!=null and generatingOrgCode!=''">
+								T.GENERATING_ORG_CODE=V.ORG_CODE 
+							</when>
+								<otherwise>
+									T.DUNNING_ORG_CODE= V.ORG_CODE 
+								</otherwise>
+							</choose>
+					 	)
+						
+			)
+		</if>
+	</select>
+
+	<!-- 通过记账日期查询应收单 -->
+	<select id="queryByAccountDate" resultMap="BaseResultMap"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.BillReceivableDto">
+		SELECT/*结算-客户管理-通过记账日期查询应收单 */
+		<include refid="Base_Column_List" />
+		FROM STL.T_STL_BILL_RECEIVABLE T
+		WHERE
+			<![CDATA[T.ACCOUNT_DATE >=#{ startDate ,jdbcType=TIMESTAMP} and T.ACCOUNT_DATE <#{endDate ,jdbcType=TIMESTAMP}]]>
+			<if test="sourceBillType != null and sourceBillType != ''">
+				AND T.SOURCE_BILL_TYPE = #{sourceBillType}
+			</if>
+			<if test="customerCode != null and customerCode != ''">
+				AND T.CUSTOMER_CODE = #{customerCode}
+			</if>
+			<if test="billType != null and billType != ''">
+				AND T.BILL_TYPE = #{billType}
+			</if>
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active}
+			</if>
+			<if test="isInit != null and isInit != ''">
+				AND T.IS_INIT = #{isInit}
+			</if>
+			<if test="isDiscount != null and isDiscount != ''">
+				<choose>
+					<when test="isDiscount=='Y'.toString()">
+						AND T.IS_DISCOUNT = #{isDiscount}
+					</when>
+					<when test="isDiscount=='N'.toString()">
+						AND (T.IS_DISCOUNT = #{isDiscount} OR T.IS_DISCOUNT IS NULL)
+					</when>
+				</choose>
+			</if>
+			<if test="isPartner != null and isPartner != ''">
+				<choose>
+					<when test="isPartner=='Y'.toString()">
+						AND BILL_TYPE IN ('PDR','POR','PFCR','PDFR','PP','PTF','PER','POFR','DR','CR')
+					</when>
+					<when test="isDiscount!='N'.toString()">
+						AND BILL_TYPE NOT IN ('PDR','POR','PDFR','PP','PTF','PER','POFR')
+					</when>
+				</choose>
+			</if>
+			<if test="isPartner == null or isPartner == ''">
+				AND BILL_TYPE NOT IN ('PDR','POR','PDFR','PP','PTF','PER','POFR')
+			</if>
+			<if test="productCode != null and productCode.size() > 0 ">
+				AND T.PRODUCT_CODE IN
+				<foreach collection="productCode"  index="index" item="item"  open="(" separator="," close=")">  
+			    	#{item} 
+				</foreach>				
+			</if>
+			<if test="isSign != null and isSign != '' and isSign == Receivable_Bill_ISSIGN_YES">
+				AND T.CONREVEN_DATE IS NOT NULL
+			</if>
+			<if test="isSign != null and isSign != '' and isSign == Receivable_Bill_ISSIGN_NO ">
+				AND T.CONREVEN_DATE IS NULL
+			</if>
+			
+			<if test="departments != null and departments.size()>0 ">
+			 <choose>
+				<when test="dunningDeptCode!=null and dunningDeptCode !=''">
+					AND T.DUNNING_ORG_CODE IN
+					<foreach collection="departments"  index="index" item="item"  open="(" separator="," close=")">  
+		        	#{item} 
+					</foreach>
+				</when>
+				<when test="generatingOrgCode!=null and generatingOrgCode!=''">
+				    AND T.GENERATING_ORG_CODE IN 
+				    <foreach collection="departments"  index="index" item="item"  open="(" separator="," close=")">  
+		        	#{item} 
+					</foreach>   
+				</when>
+			</choose>				
+			</if>
+			
+		<if test="empCode != null and empCode != ''">
+			AND EXISTS (
+						SELECT ORG_CODE
+						FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V 
+					 	WHERE V.EMP_CODE = #{empCode}
+					 	AND ( 
+							<choose>
+							<when test="dunningDeptCode!=null and dunningDeptCode !=''">
+								T.DUNNING_ORG_CODE = V.ORG_CODE 
+							</when>
+							<when test="generatingOrgCode!=null and generatingOrgCode!=''">
+								T.GENERATING_ORG_CODE=V.ORG_CODE 
+							</when>
+								<otherwise>
+									T.DUNNING_ORG_CODE= V.ORG_CODE 
+								</otherwise>
+							</choose>
+					 	)
+						
+			)
+		</if>
+	</select>
+
+
+	
+	<!-- 查询应收单总记录条数，总金额，未核销总金额，核销总金额 -->
+	<select id="queryTotalAmountByAccountDate" resultMap="TotalAmountResultMap"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.BillReceivableDto">
+		SELECT/*结算-客户管理-查询应收单总记录条数，总金额，未核销总金额，核销总金额 */ count(T.ID) as Total_Records_In_DB,sum(T.AMOUNT)/100 as
+		Total_Amount,sum(T.VERIFY_AMOUNT)/100 as totalVerifyAmount,
+		sum(T.UNVERIFY_AMOUNT)/100 as Total_UnverifyTotalAmount
+		FROM STL.T_STL_BILL_RECEIVABLE T
+		WHERE
+			<![CDATA[T.ACCOUNT_DATE >=#{ startDate ,jdbcType=TIMESTAMP} and T.ACCOUNT_DATE <#{endDate ,jdbcType=TIMESTAMP}]]> 
+		
+			
+			<if test="sourceBillType != null and sourceBillType != ''">
+				AND T.SOURCE_BILL_TYPE = #{sourceBillType}
+			</if>
+			<if test="customerCode != null and customerCode != ''">
+				AND T.CUSTOMER_CODE = #{customerCode}
+			</if>
+			<if test="billType != null and billType != ''">
+				AND T.BILL_TYPE = #{billType}
+			</if>
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active}
+			</if>
+			<if test="isInit != null and isInit != ''">
+				AND T.IS_INIT = #{isInit}
+			</if>
+			<if test="isDiscount != null and isDiscount != ''">
+				<choose>
+					<when test="isDiscount=='Y'.toString()">
+						AND T.IS_DISCOUNT = #{isDiscount}
+					</when>
+					<when test="isDiscount=='N'.toString()">
+						AND (T.IS_DISCOUNT = #{isDiscount} OR T.IS_DISCOUNT IS NULL)
+					</when>
+				</choose>
+			</if>
+			<if test="isPartner != null and isPartner != ''">
+				<choose>
+					<when test="isPartner=='Y'.toString()">
+						AND BILL_TYPE IN ('PDR','POR','PFCR','PDFR','PP','PTF','PER','POFR','DR','CR')
+					</when>
+					<when test="isDiscount!='N'.toString()">
+						AND BILL_TYPE NOT IN ('PDR','POR','PDFR','PP','PTF','PER','POFR')
+					</when>
+				</choose>
+			</if>
+			<if test="isPartner == null or isPartner == ''">
+				AND BILL_TYPE NOT IN ('PDR','POR','PDFR','PP','PTF','PER','POFR')
+			</if>
+			<if test="productCode != null and productCode.size() > 0 ">
+				AND T.PRODUCT_CODE IN
+				<foreach collection="productCode"  index="index" item="item"  open="(" separator="," close=")">  
+			    	#{item} 
+				</foreach>				
+			</if>
+			<if test="isSign != null and isSign != '' and isSign == Receivable_Bill_ISSIGN_YES">
+				AND T.CONREVEN_DATE IS NOT NULL
+			</if>
+			<if test="isSign != null and isSign != '' and isSign == Receivable_Bill_ISSIGN_NO">
+				AND T.CONREVEN_DATE IS NULL
+			</if>
+			<!-- 加入数据权限 -->
+			<if test="departments != null and departments.size()>0 ">
+			 <choose>
+				<when test="dunningDeptCode!=null and dunningDeptCode !=''">
+					AND T.DUNNING_ORG_CODE IN
+					<foreach collection="departments"  index="index" item="item"  open="(" separator="," close=")">  
+		        	#{item} 
+					</foreach>
+				</when>
+				<when test="generatingOrgCode!=null and generatingOrgCode!=''">
+				    AND T.GENERATING_ORG_CODE IN 
+				    <foreach collection="departments"  index="index" item="item"  open="(" separator="," close=")">  
+		        	#{item} 
+					</foreach>   
+				</when>
+			</choose>				
+			</if>
+				
+			<if test="empCode != null and empCode != ''">
+				AND EXISTS (
+							SELECT ORG_CODE
+							FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V 
+						 	WHERE V.EMP_CODE = #{empCode}
+						 	AND ( 
+								<choose>
+								<when test="isDept=='dunningDeptCode'">
+									T.DUNNING_ORG_CODE = V.ORG_CODE 
+								</when>
+								<when test="isDept=='generatingOrgCode'">
+									T.GENERATING_ORG_CODE=V.ORG_CODE 
+								</when>
+									<otherwise>
+										T.DUNNING_ORG_CODE= V.ORG_CODE 
+									</otherwise>
+								</choose>
+						 	)	
+				)
+			</if>
+	</select>
+
+	<!-- 查询应收单总记录条数，代收货款手续费总金额，保价费总金额，公布价运费 -->
+	<select id="queryDiscountTotalAmountByBusinessDate" resultMap="TotalAmountResultMap"
+			parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.BillReceivableDto">
+		SELECT /*结算-客户管理-通过业务日期查询应收单总记录条数，总金额，未核销总金额，核销总金额 */
+		count(T.ID) as Total_Records_In_DB,
+		sum(T.Cod_Fee) / 100 as COD_AMOUNT,
+		sum(T.Insurance_Fee) / 100 as INSURANCE_AMOUNT,
+		sum(T.Transport_Fee) / 100 as TRASPORT_AMOUNT
+		FROM STL.T_STL_BILL_RECEIVABLE T
+		WHERE
+		<![CDATA[T.BUSINESS_DATE >=#{ startDate ,jdbcType=TIMESTAMP} and T.BUSINESS_DATE <#{endDate ,jdbcType=TIMESTAMP} ]]>
+		and (T.is_discount = 'N' or T.is_discount is null)
+
+		<if test="sourceBillType != null and sourceBillType != ''">
+			AND T.SOURCE_BILL_TYPE = #{sourceBillType}
+		</if>
+		<if test="customerCode != null and customerCode != ''">
+			AND T.CUSTOMER_CODE = #{customerCode}
+		</if>
+		<if test="billType != null and billType != ''">
+			AND T.BILL_TYPE = #{billType}
+		</if>
+		<if test="active != null and active != ''">
+			AND T.ACTIVE = #{active}
+		</if>
+		<if test="isInit != null and isInit != ''">
+			AND T.IS_INIT = #{isInit}
+		</if>
+		<if test="productCode != null and productCode.size() > 0 ">
+			AND T.PRODUCT_CODE IN
+			<foreach collection="productCode"  index="index" item="item"  open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		<if test="isSign != null and isSign != '' and isSign == Receivable_Bill_ISSIGN_YES">
+			AND T.CONREVEN_DATE IS NOT NULL
+		</if>
+		<if test="isSign != null and isSign != '' and isSign == Receivable_Bill_ISSIGN_NO">
+			AND T.CONREVEN_DATE IS NULL
+		</if>
+		<if test="billTypes != null and billTypes.length>0 ">
+			and T.BILL_TYPE in
+			<foreach collection="billTypes"  index="index" item="item"  open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		<if test="paymentTypes != null and paymentTypes.length>0">
+			and T.payment_type in
+			<foreach collection="paymentTypes"  index="index" item="item"  open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+
+		<if test="departments != null and departments.size()>0 ">
+			<choose>
+				<when test="dunningDeptCode!=null and dunningDeptCode !=''">
+					AND T.DUNNING_ORG_CODE IN
+					<foreach collection="departments"  index="index" item="item"  open="(" separator="," close=")">
+						#{item}
+					</foreach>
+				</when>
+				<when test="generatingOrgCode!=null and generatingOrgCode!=''">
+					AND T.GENERATING_ORG_CODE IN
+					<foreach collection="departments"  index="index" item="item"  open="(" separator="," close=")">
+						#{item}
+					</foreach>
+				</when>
+			</choose>
+		</if>
+	</select>
+</mapper>

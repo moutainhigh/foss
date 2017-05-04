@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.BillCashCollectionEntityDao" >
+
+  <!-- 通过业务日期查询现金收款单 -->
+  <select id="queryByBusinessDate" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.BillCashCollectionQueryDto" >
+    SELECT /*结算-客户管理-通过业务日期查询现金收款单*/
+	    <include refid="Base_Column_List" />
+	    FROM STL.T_STL_BILL_CASH_COLLECTION  T,(SELECT * FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW ) V
+    	WHERE
+			<![CDATA[T.BUSINESS_DATE >=#{ startDate ,jdbcType=TIMESTAMP} and T.BUSINESS_DATE < #{endDate ,jdbcType=TIMESTAMP} and T.ACCOUNT_DATE >=#{ startDate ,jdbcType=TIMESTAMP}]]>
+				AND V.ORG_CODE = T.COLLECTION_ORG_CODE
+    			AND V.EMP_CODE = #{empCode}
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active}
+			</if>
+			<if test="isInit != null and isInit != ''">
+				AND T.IS_INIT = #{isInit}
+			</if>
+			<if test="collectionOrgCode != null and collectionOrgCode != ''">
+				AND T.COLLECTION_ORG_CODE = #{collectionOrgCode}
+			</if>
+			<if test="generatingOrgCode != null and generatingOrgCode != ''">
+				AND T.GENERATING_ORG_CODE = #{generatingOrgCode}
+			</if>
+			<if test="customerCode != null and customerCode != ''">
+				AND T.CUSTOMER_CODE = #{customerCode}
+			</if>
+			<if test="status != null and status != ''">
+				AND T.STATUS = #{status}
+			</if>
+			<if test="paymentType != null and paymentType != ''">
+				AND T.PAYMENT_TYPE = #{paymentType}
+			</if>
+			<if test="productCode != null and productCode.size() > 0 ">
+				AND T.PRODUCT_CODE IN
+				<foreach collection="productCode"  index="index" item="item"  open="(" separator="," close=")">  
+			    	#{item} 
+				</foreach>				
+			</if>
+			<if test="posSerialNum !=null and posSerialNum != ''">
+				AND T.POS_SERIAL_NUM = #{posSerialNum}
+			</if>
+	 		<!-- 加入数据权限
+			<if test="empCode != null and empCode != ''">
+				and exists (select 1
+		          from bse.mv_bas_user_org_auth_view uov
+		         where uov.emp_code = #{empCode}
+		           and uov.Org_Code = T.COLLECTION_ORG_CODE)
+			</if> -->
+  </select>
+  
+    <!-- 通过记账日期查询现金收款单 -->
+  <select id="queryByAccountDate" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.BillCashCollectionQueryDto" >
+    SELECT/*结算-客户管理-通过记账日期查询应收单*/
+    <include refid="Base_Column_List" />
+    FROM STL.T_STL_BILL_CASH_COLLECTION  T,(SELECT * FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW ) V
+ 		WHERE
+			<![CDATA[T.ACCOUNT_DATE >=#{ startDate ,jdbcType=TIMESTAMP} and T.ACCOUNT_DATE <#{endDate ,jdbcType=TIMESTAMP} ]]>
+				AND V.ORG_CODE = T.COLLECTION_ORG_CODE
+    			AND V.EMP_CODE = #{empCode} 
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active}
+			</if>
+			<if test="isInit != null and isInit != ''">
+				AND T.IS_INIT = #{isInit}
+			</if>
+			<if test="collectionOrgCode != null and collectionOrgCode != ''">
+				AND T.COLLECTION_ORG_CODE = #{collectionOrgCode}
+			</if>
+			<if test="generatingOrgCode != null and generatingOrgCode != ''">
+				AND T.GENERATING_ORG_CODE = #{generatingOrgCode}
+			</if>
+			<if test="customerCode != null and customerCode != ''">
+				AND T.CUSTOMER_CODE = #{customerCode}
+			</if>
+			<if test="status != null and status != ''">
+				AND T.STATUS = #{status}
+			</if>
+			<if test="paymentType != null and paymentType != ''">
+				AND T.PAYMENT_TYPE = #{paymentType}
+			</if>
+			<if test="productCode != null and productCode.size() > 0 ">
+				AND T.PRODUCT_CODE IN
+				<foreach collection="productCode"  index="index" item="item"  open="(" separator="," close=")">  
+			    	#{item} 
+				</foreach>				
+			</if>
+			<if test="posSerialNum !=null and posSerialNum != ''">
+				AND T.POS_SERIAL_NUM = #{posSerialNum}
+			</if>
+			<!-- 加入数据权限
+			<if test="empCode != null and empCode != ''">
+				and exists (select 1
+		          from bse.mv_bas_user_org_auth_view uov
+		         where uov.emp_code = #{empCode}
+		           and uov.Org_Code = T.COLLECTION_ORG_CODE)
+			</if> -->
+		ORDER BY T.ACCOUNT_DATE ASC
+  </select>
+  
+    <!-- 查询现金收款单记录条数，总金额，核销总金额和未核销总金额resultMap -->
+  <resultMap id="TotalAmountResultMap" type="com.deppon.foss.module.settlement.consumer.api.shared.dto.BillCashCollectionQueryDto" >
+    <result column="Total_Records_In_DB" property="totalRecordsInDB" jdbcType="DECIMAL" />
+    <result column="Total_Amount" property="totalAmount" jdbcType="DECIMAL" />
+  </resultMap>
+  <!-- 通过业务日期查询现金收款单总记录条数，总金额 -->
+  <select id="queryTotalAmountByBusinessDate" resultMap="TotalAmountResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.BillCashCollectionQueryDto">
+	SELECT /*结算-客户管理-通过业务日期查询现金收款单总记录条数，总金额 */ count(T.ID) as Total_Records_In_DB,sum(T.AMOUNT)/100 as Total_Amount
+		FROM  STL.T_STL_BILL_CASH_COLLECTION T,(SELECT * FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW ) V
+		WHERE
+			<![CDATA[T.BUSINESS_DATE >=#{ startDate ,jdbcType=TIMESTAMP} and T.BUSINESS_DATE <#{endDate ,jdbcType=TIMESTAMP} and T.ACCOUNT_DATE >=#{ startDate ,jdbcType=TIMESTAMP} ]]>
+				AND V.ORG_CODE = T.COLLECTION_ORG_CODE
+    			AND V.EMP_CODE = #{empCode}  
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active}
+			</if>
+			<if test="isInit != null and isInit != ''">
+				AND T.IS_INIT = #{isInit}
+			</if>
+			<if test="collectionOrgCode != null and collectionOrgCode != ''">
+				AND T.COLLECTION_ORG_CODE = #{collectionOrgCode}
+			</if>
+			<if test="generatingOrgCode != null and generatingOrgCode != ''">
+				AND T.GENERATING_ORG_CODE = #{generatingOrgCode}
+			</if>
+			<if test="customerCode != null and customerCode != ''">
+				AND T.CUSTOMER_CODE = #{customerCode}
+			</if>
+			<if test="status != null and status != ''">
+				AND T.STATUS = #{status}
+			</if>
+			<if test="paymentType != null and paymentType != ''">
+				AND T.PAYMENT_TYPE = #{paymentType}
+			</if>
+			<if test="productCode != null and productCode.size() > 0 ">
+				AND T.PRODUCT_CODE IN
+				<foreach collection="productCode"  index="index" item="item"  open="(" separator="," close=")">  
+			    	#{item} 
+				</foreach>				
+			</if>
+			<if test="posSerialNum !=null and posSerialNum != ''">
+				AND T.POS_SERIAL_NUM = #{posSerialNum}
+			</if>
+			<!-- 加入数据权限 
+			<if test="empCode != null and empCode != ''">
+				and exists (select 1
+		          from bse.mv_bas_user_org_auth_view uov
+		         where uov.emp_code = #{empCode}
+		           and uov.Org_Code = T.COLLECTION_ORG_CODE)
+			</if> -->
+  </select> 
+  
+    <!-- 通过记账日期查询现金收款单总记录条数，总金额 -->
+  <select id="queryTotalAmountByAccountDate" resultMap="TotalAmountResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.BillCashCollectionQueryDto">
+	SELECT /*结算-客户管理-通过记账日期查询现金收款单总记录条数，总金额 */ count(T.ID) as Total_Records_In_DB,sum(T.AMOUNT)/100 as Total_Amount
+		FROM  STL.T_STL_BILL_CASH_COLLECTION T,(SELECT * FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW ) V
+		WHERE
+			<![CDATA[T.ACCOUNT_DATE >=#{ startDate ,jdbcType=TIMESTAMP} and T.ACCOUNT_DATE <#{endDate ,jdbcType=TIMESTAMP} ]]>
+				AND V.ORG_CODE = T.COLLECTION_ORG_CODE
+    			AND V.EMP_CODE = #{empCode}   
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active}
+			</if>
+			<if test="isInit != null and isInit != ''">
+				AND T.IS_INIT = #{isInit}
+			</if>
+			<if test="collectionOrgCode != null and collectionOrgCode != ''">
+				AND T.COLLECTION_ORG_CODE = #{collectionOrgCode}
+			</if>
+			<if test="generatingOrgCode != null and generatingOrgCode != ''">
+				AND T.GENERATING_ORG_CODE = #{generatingOrgCode}
+			</if>
+			<if test="customerCode != null and customerCode != ''">
+				AND T.CUSTOMER_CODE = #{customerCode}
+			</if>
+			<if test="status != null and status != ''">
+				AND T.STATUS = #{status}
+			</if>
+			<if test="paymentType != null and paymentType != ''">
+				AND T.PAYMENT_TYPE = #{paymentType}
+			</if>
+			<if test="productCode != null and productCode.size() > 0 ">
+				AND T.PRODUCT_CODE IN
+				<foreach collection="productCode"  index="index" item="item"  open="(" separator="," close=")">  
+			    	#{item} 
+				</foreach>				
+			</if>
+			<if test="posSerialNum !=null and posSerialNum != ''">
+				AND T.POS_SERIAL_NUM = #{posSerialNum}
+			</if>
+			
+			<!-- 加入数据权限
+			<if test="empCode != null and empCode != ''">
+				and exists (select 1
+		          from bse.mv_bas_user_org_auth_view uov
+		         where uov.emp_code = #{empCode}
+		           and uov.Org_Code = T.COLLECTION_ORG_CODE)
+			</if> -->
+  </select> 
+  
+  <!-- 按运单号查询现金收款单 -->
+  <select id="selectCashCollectionByWaybillNo" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.BillCashCollectionQueryDto">
+  	SELECT/*结算-客户管理- 按运单号查询现金收款单 */
+    <include refid="Base_Column_List" />
+    FROM STL.T_STL_BILL_CASH_COLLECTION  T
+    <where>
+    	T.WAYBILL_NO IN 
+    	<foreach collection="waybillNos" open="(" close=")" separator="," item="item" index="index">
+    		#{item}
+    	</foreach>
+    	or
+    	T.CASH_COLLECTION_NO IN 
+    	<foreach collection="waybillNos" open="(" close=")" separator="," item="item" index="index">
+    		#{item}
+    	</foreach>
+    	
+    	<!-- 加入数据权限 -->
+		AND EXISTS
+		(SELECT V.ORG_CODE FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V WHERE V.EMP_CODE = #{empCode}
+			AND (V.ORG_CODE=T.GENERATING_ORG_CODE   
+			or V.ORG_CODE=T.COLLECTION_ORG_CODE )  
+		)
+    </where>
+  </select>
+  
+</mapper>

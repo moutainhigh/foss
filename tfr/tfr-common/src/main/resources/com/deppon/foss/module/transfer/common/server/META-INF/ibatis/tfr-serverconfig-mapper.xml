@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.tfr.serverconfig" >
+  <resultMap id="serverConfigResultMap" type="com.deppon.foss.module.transfer.common.api.shared.domain.ServerConfigEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="MODULE" property="module" jdbcType="VARCHAR" />
+    <result column="CODE" property="code" jdbcType="VARCHAR" />
+    <result column="VALUE" property="value" jdbcType="VARCHAR" />
+    <result column="DESCRIPTION" property="description" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+  </resultMap>
+  
+   <sql id="serverConfig_Column_List" >
+		ID,
+		MODULE,
+		CODE,
+		VALUE,	
+		DESCRIPTION,
+		CREATE_TIME,
+		MODIFY_TIME
+  </sql>
+  
+  <select id="queryServerConfig" parameterType="java.util.HashMap"
+  	resultMap="serverConfigResultMap">
+  	SELECT 
+  	/*中转-通用模块-查询后台配置*/
+  	<include refid="serverConfig_Column_List" />
+  	FROM TFR.T_OPT_SERVER_CONFIG sc
+  	<where>
+  		SC.MODULE = #{module,jdbcType=VARCHAR}
+  		and SC.CODE = #{code,jdbcType=VARCHAR}
+  	</where>
+  </select>
+  
+  <insert id="insertServerConfig" parameterType="java.util.HashMap">
+  		insert into TFR.T_OPT_SERVER_CONFIG
+  		/*中转-根据模块和编码来更新配置项的值*/
+  		 (ID,
+		MODULE,
+		CODE,
+		VALUE,	
+		DESCRIPTION,
+		CREATE_TIME,
+		MODIFY_TIME) values(
+	    sys_guid(),
+	    #{module,jdbcType=VARCHAR},
+	    #{code,jdbcType=VARCHAR},
+	    'N',
+	    #{description,jdbcType=VARCHAR},
+	    sysdate,
+	    sysdate
+	    )
+  </insert>
+  
+  <update id="updateServerConfig"  parameterType="java.util.HashMap">
+  	UPDATE TFR.T_OPT_SERVER_CONFIG SC
+  	/*中转-通用模块-更新后台配置*/
+  	<set>
+  		SC.VALUE = #{newValue,jdbcType=VARCHAR},
+  		SC.MODIFY_TIME = SYSDATE
+  	</set>
+  	<where>
+  		SC.MODULE = #{module,jdbcType=VARCHAR}
+  		AND SC.CODE = #{code,jdbcType=VARCHAR}
+  	</where>
+  </update>
+  	
+  <update id="updateServerConfigLogLast" >
+  	UPDATE TFR.T_OPT_SERVER_CONFIG SC
+  	/*中转-通用模块-更新后台配置*/
+  	<set>
+  		SC.MODIFY_TIME = SYSDATE
+  	</set>
+  	<where>
+  		SC.id= (select max(id) from TFR.T_OPT_SERVER_CONFIG Where module='AUTO_ADD_CODE' and value='N')
+  	</where>
+  </update>	
+  	
+</mapper>

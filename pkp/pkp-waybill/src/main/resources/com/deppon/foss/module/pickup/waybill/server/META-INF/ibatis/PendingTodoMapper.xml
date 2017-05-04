@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.pkp.PendingTodoMapper" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.pickup.waybill.shared.domain.PendingTodoEntity" >
+    <result column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="JOB_ID" property="jobId" jdbcType="VARCHAR" />
+    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+    <result column="WAYBILLRFC_ID" property="waybillRfcId" jdbcType="VARCHAR" />
+    <result column="FAIL_REASON" property="failReason" jdbcType="VARCHAR" />  
+  </resultMap>
+  
+  	<sql id="Base_Column_List">
+		ID, JOB_ID, WAYBILL_NO, WAYBILLRFC_ID, FAIL_REASON 
+	</sql>
+	
+	<select id="queryAllTodo" resultMap="BaseResultMap">
+		<![CDATA[
+		select todo.id            as ID,
+	           todo.Job_Id        as JOB_ID,
+	           todo.waybillrfc_id as WAYBILLRFC_ID,
+	           todo.waybill_no as WAYBILL_NO,
+	           todo.fail_reason   as FAIL_REASON
+	      from pkp.t_srv_pending_todo todo
+	     inner join pkp.t_srv_waybillrfc rfc
+	        on rfc.id = todo.waybillrfc_id
+	     where rfc.status = 'ACCECPT'
+	     order by todo.waybill_no, rfc.operate_time
+		]]>		
+	</select>
+	
+	<select id="queryPendingTodoByWaybillId" resultMap="BaseResultMap" parameterType="java.util.Map">
+		select /*模块：接送货-运单-查询待处理发送代办 */
+		<include refid="Base_Column_List" />
+		<![CDATA[
+		from PKP.T_SRV_PENDING_TODO where WAYBILLRFC_ID=#{waybillRfcId,jdbcType=VARCHAR}
+		]]>		
+	</select>
+	
+	<insert id="insert" parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.PendingTodoEntity" >
+    insert into PKP.T_SRV_PENDING_TODO (<include refid="Base_Column_List" />)
+    values (#{id,jdbcType=VARCHAR},
+      #{jobId,jdbcType=VARCHAR}, 
+      #{waybillNo,jdbcType=VARCHAR}, 
+      #{waybillRfcId,jdbcType=VARCHAR}, 
+      #{failReason,jdbcType=VARCHAR})
+  </insert>
+  
+  <update id="update" parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.PendingTodoEntity" >
+  
+  	update pkp.T_SRV_PENDING_TODO set 
+  	JOB_ID=#{jobId,jdbcType=VARCHAR},
+  	WAYBILL_NO=#{waybillNo,jdbcType=VARCHAR},
+  	WAYBILLRFC_ID =#{waybillRfcId,jdbcType=VARCHAR},
+  	FAIL_REASON =#{failReason,jdbcType=VARCHAR} 
+  	
+  	where ID=#{id,jdbcType=VARCHAR}
+  
+  </update>
+  
+  
+  <delete id="delete" parameterType="java.lang.String">
+  
+  	delete from pkp.T_SRV_PENDING_TODO where ID=#{id,jdbcType=VARCHAR}
+  
+  </delete>
+  
+  <update id="updateJobIDByID" parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.PendingTodoEntity" >
+  
+  	update pkp.T_SRV_PENDING_TODO set JOB_ID=#{jobId,jdbcType=VARCHAR} where ID=#{id,jdbcType=VARCHAR}
+  
+  </update>
+  
+  
+  <select id="queryPendingTodoByIds" resultMap="BaseResultMap" parameterType="java.util.Map">
+		select /*模块：接送货-运单-查询待处理发送代办 */
+		<include refid="Base_Column_List" />
+		from PKP.T_SRV_PENDING_TODO 
+		<choose>
+			<when test="pendTodoIdList!= null and pendTodoIdList.size>0">
+				where id in
+				<foreach collection="pendTodoIdList" open="(" close=")" separator=","
+					item="pendTodoId">
+					<if test="pendTodoId!=null and pendTodoId != ''">
+		    	    	 #{pendTodoId,jdbcType=VARCHAR}
+		            </if>
+				</foreach>
+			</when>
+			<otherwise>
+				where id =''
+			</otherwise>
+		</choose>	
+	</select>
+  
+</mapper>

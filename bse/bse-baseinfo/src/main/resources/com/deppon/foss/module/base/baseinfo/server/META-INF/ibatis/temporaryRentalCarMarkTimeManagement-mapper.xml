@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.temporaryRentalCarMarkTimeManagement">
+	<resultMap id="temporaryRentalCarMarkTimeManagementResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.TemporaryRentalCarMarkTimeManagementEntity">
+		<result column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="DEPT_ATTRIBUTES" property="deptAttributes" jdbcType="VARCHAR" />
+		<result column="VALUE_NAME" property="deptAttributesName" jdbcType="VARCHAR" />
+		<result column="SET_TIME" property="setTime" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="OPERATION_CODE" property="operationCode" jdbcType="VARCHAR" />
+		<result column="OPERATION_NAME" property="operationName" jdbcType="VARCHAR" />
+		<result column="CREATE_DATE" property="operationDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_DATE" property="modifyDate" jdbcType="TIMESTAMP" />
+	</resultMap>
+	
+	<!-- 数据字段 -->
+	<sql id="temporaryRentalCarMarkTimeManagementResultMap_Column_List">
+		T.ID, T.DEPT_ATTRIBUTES,E.VALUE_NAME,T.SET_TIME, T.ACTIVE,T.OPERATION_CODE,T.OPERATION_NAME,T.CREATE_DATE,T.MODIFY_DATE
+	</sql>
+	<sql id="temporaryRentalCarMarkTimeManagementResultMap_Column_List1">
+		T.ID, T.DEPT_ATTRIBUTES,T.SET_TIME, T.ACTIVE,T.OPERATION_CODE,T.OPERATION_NAME,T.CREATE_DATE,T.MODIFY_DATE
+	</sql>
+	
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<if test="deptAttributes != null and deptAttributes != ''">
+				T.DEPT_ATTRIBUTES = #{deptAttributes,jdbcType=VARCHAR}
+			</if>
+			<if test="operationName != null and operationName != ''">
+				AND T.OPERATION_NAME = #{operationName,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+
+	</sql>
+	
+	<!-- 查询所有TemporaryRentalCarMarkTimeManagement(临时租车标记时间管理)信息 -->
+	<select id="queryAllTemporaryRentalCarMarkTimeManagement"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.TemporaryRentalCarMarkTimeManagementEntity"
+		resultMap="temporaryRentalCarMarkTimeManagementResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有TemporaryRentalCarMarkTimeManagement(临时租车标记时间管理)信息**/
+		]]>
+		<include refid="temporaryRentalCarMarkTimeManagementResultMap_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_RENTCAR_MARK_MANAGE T LEFT JOIN BSE.T_BAS_DATA_DICTIONARY_VALUE E  ON T.DEPT_ATTRIBUTES=E.VALUE_CODE
+			AND E.ACTIVE='Y'
+		]]>
+		<include refid="queryWhere" />
+	</select>
+	
+	<!-- 统计总记录数 -->
+	<select id="queryCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.TemporaryRentalCarMarkTimeManagementEntity">
+	    <![CDATA[
+	       	select/** 综合:统计总记录数**/ count(*) FROM BSE.T_BAS_RENTCAR_MARK_MANAGE T 
+	    ]]>
+		<include refid="queryWhere" />
+	</select>
+	
+	<!-- 新增信息 -->
+	<insert id="insertTemporaryRentalCarMarkTimeManagement"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.TemporaryRentalCarMarkTimeManagementEntity">
+		
+		<![CDATA[
+			INSERT/** 综合:新增(临时租车标记时间管理)信息**/ INTO BSE.T_BAS_RENTCAR_MARK_MANAGE T	(
+		]]>
+		<include refid="temporaryRentalCarMarkTimeManagementResultMap_Column_List1" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, 
+		#{deptAttributes,jdbcType=VARCHAR},
+		#{setTime,jdbcType=VARCHAR}, 
+		#{active,jdbcType=CHAR},
+		#{operationCode,jdbcType=VARCHAR},
+		#{operationName,jdbcType=VARCHAR},
+		#{operationDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+	
+	<!-- 修改信息 -->
+	<update id="updateTemporaryRentalCarMarkTimeManagement"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.TemporaryRentalCarMarkTimeManagementEntity">
+		update/** 综合:修改(临时租车标记时间管理)信息**/ BSE.T_BAS_RENTCAR_MARK_MANAGE
+		<set>
+			<if test="deptAttributes != null">
+				DEPT_ATTRIBUTES = #{deptAttributes,jdbcType=VARCHAR},
+			</if>
+			<if test="setTime != null">
+				SET_TIME = #{setTime,jdbcType=VARCHAR},
+			</if>
+			<if test="active != null">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="operationCode != null">
+				OPERATION_CODE = #{operationCode,jdbcType=VARCHAR},
+			</if>
+			<if test="operationName != null">
+				OPERATION_NAME = #{operationName,jdbcType=VARCHAR},
+			</if>
+			<if test="operationDate != null">
+				CREATE_DATE = #{operationDate,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_DATE = #{modifyDate,jdbcType=VARCHAR},
+			</if>
+		</set>
+
+		<where>
+			<if test="id != null">
+				ID = #{id,jdbcType=VARCHAR}
+			</if>
+		</where>
+
+	</update>
+	
+	<!-- 作废信息 -->
+	<update id="deleteByIdTemporaryRentalCarMarkTimeManagement" parameterType="map">
+		update/** 综合:作废信息**/ BSE.T_BAS_RENTCAR_MARK_MANAGE
+
+		<set>
+			<if test="inactive != null and inactive != ''">
+				ACTIVE = #{inactive,jdbcType=CHAR},
+			</if>
+		</set>
+
+		<where>
+			<if test="idList!=null and idList.size > 0">
+				ID in
+				<foreach collection="idList" index="index" item="code" open="("
+					separator="," close=")">
+					#{code}
+				</foreach>
+			</if>
+			<if test="active != null and active != ''">
+				and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</update>
+	
+	
+	<!-- 专为接送货写的查询接口：根据部门属性code查询设置时长 -->
+	<select id="querySetTimeByDeptAttributes" parameterType="map" resultType="String">
+		<![CDATA[
+			SELECT SET_TIME	FROM BSE.T_BAS_RENTCAR_MARK_MANAGE T		
+		]]>
+		<where>
+			<if test="deptAttributes != null and deptAttributes != ''">
+				T.DEPT_ATTRIBUTES = #{deptAttributes,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+	
+	
+</mapper>

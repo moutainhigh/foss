@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.platform.stockPair" >
+	<!-- 货件库存 -->
+	<resultMap id="stockPairResultMap" type="com.deppon.foss.module.transfer.platform.api.shared.domain.StockPairEntity" >
+		<result property="id" column="id"/>
+		<result property="waybillNO" column="WAYBILL_NO"/>
+		<result property="serialNO" column="SERIAL_NO"/>
+		<result property="inStockTime" column="IN_STOCK_TIME"/>
+		<result property="operatorCode" column="OPERATOR_CODE"/>
+		<result property="operatorName" column="OPERATOR_NAME"/>
+		<result property="orgCode" column="ORG_CODE"/>
+		<result property="goodsAreaCode" column="GOODS_AREA_CODE"/>
+		<result property="deviceType" column="DEVICE_TYPE"/>
+		<result property="scanTime" column="SCAN_TIME"/>
+		<result property="preHandOverState" column="PRE_HANDOVER_STATUS"/>
+		<result property="nextOrgCode" column="NEXT_ORG_CODE"/>
+		<result property="position" column="position" />
+		<result property="isSendRate" column="is_send_rate" ></result>
+	</resultMap>
+	
+	<!-- 外场对应的 事业部 本部 大区 -->
+	<resultMap id="transCenterOrgResultMap" type="com.deppon.foss.module.transfer.platform.api.shared.domain.TransCenterOrgEntity" >
+		<result property="orgCode" column="ORG_CODE"/>
+		<result property="name" column="name"/>
+		<result property="bigdept" column="bigdept"/>
+		<result property="division" column="division"/>
+		<result property="bigArea" column="bigarea"/>
+	</resultMap>
+	
+	<insert id="addStockPair" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.StockPairEntity">
+		<![CDATA[ 
+		insert into tfr.t_opt_stock_pair(
+			id,
+			waybill_no,
+			serial_no,
+			in_stock_time,
+			operator_code,
+			operator_name,
+			goods_area_code,
+			device_type,
+			org_code,
+			position
+			)values (
+			#{id jdbcType=VARCHAR},
+			#{waybillNO jdbcType=VARCHAR},
+			#{serialNO jdbcType=VARCHAR},
+			#{inStockTime jdbcType=TIMESTAMP},
+			#{operatorCode jdbcType=VARCHAR},
+			#{operatorName jdbcType=VARCHAR},
+			#{goodsAreaCode jdbcType=VARCHAR},
+			#{deviceType jdbcType=VARCHAR},
+			#{orgCode jdbcType=VARCHAR},
+			#{position jdbcType=VARCHAR}
+			)
+	    ]]> 
+	</insert>
+	
+	<insert id="batchAddStockPair" parameterType="java.util.List" >
+		begin
+		<foreach collection="list" item="item" separator=";">
+			insert into tfr.t_opt_stock_pair(
+			id,
+			waybill_no,
+			serial_no,
+			in_stock_time,
+			operator_code,
+			operator_name,
+			goods_area_code,
+			device_type,
+			org_code,
+			position
+			)values (
+			#{item.id jdbcType=VARCHAR},
+			#{item.waybillNO jdbcType=VARCHAR},
+			#{item.serialNO jdbcType=VARCHAR},
+			#{item.inStockTime jdbcType=TIMESTAMP},
+			#{item.operatorCode jdbcType=VARCHAR},
+			#{item.operatorName jdbcType=VARCHAR},
+			#{item.goodsAreaCode jdbcType=VARCHAR},
+			#{item.deviceType jdbcType=VARCHAR},
+			#{item.orgCode jdbcType=VARCHAR},
+			#{item.position jdbcType=VARCHAR}
+			)
+		</foreach>
+		;end;
+	</insert>
+	
+	
+	<delete id="deleteStockPair" parameterType="map">
+		delete from tfr.T_OPT_STOCK_PAIR t where t.is_send_rate='Y'
+		  <![CDATA[
+		and t.in_stock_time >=to_date(#{queryDate} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss') 
+		and t.in_stock_time <=to_date(#{queryDate} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+			]]>
+	</delete>
+	<sql id="selectAllOrgSql">
+		 select a.ORG_CODE, a.name, b.goods_area_code, b.goods_area_name
+        from bse.t_bas_transfer_center a
+        left join BSE.T_BAS_GOODS_AREA b
+          on b.org_code = a.ORG_CODE
+         and b.goods_area_type = 'BSE_GOODSAREA_TYPE_STATION'
+         and b.active = 'Y'
+       where a.active = 'Y'
+         and b.goods_area_type = 'BSE_GOODSAREA_TYPE_STATION'
+         and b.active = 'Y'
+         order by a.org_code
+	</sql>
+	<select id="queryStockPairJob" parameterType="map" resultMap="stockPairResultMap">
+		select t1.id,
+	   	t1.waybill_no,t1.serial_no,t1.in_stock_time,
+		t1.operator_code,
+		t1.operator_name,
+		t1.goods_area_code,
+		t1.device_type,
+		t1.org_code,
+		t1.scan_time,
+		t1.next_org_code,
+		t1.pre_handover_status,
+		t1.position from tfr.t_opt_stock t1
+    left join (
+         select a.ORG_CODE, a.name, b.goods_area_code, b.goods_area_name
+        from bse.t_bas_transfer_center a
+        left join BSE.T_BAS_GOODS_AREA b
+          on b.org_code = a.ORG_CODE
+         and b.goods_area_type = 'BSE_GOODSAREA_TYPE_STATION'
+         and b.active = 'Y'
+       where a.active = 'Y'
+         and b.goods_area_type = 'BSE_GOODSAREA_TYPE_STATION'
+         and b.active = 'Y'
+         and a.ORG_CODE = #{orgCode}
+         order by a.org_code
+    ) t on t.org_code=t1.org_code and t.goods_area_code = t1.goods_area_code
+    where not Exists(
+          select 1 from tfr.t_opt_stock_pair t2 where t2.waybill_no=t1.waybill_no and
+          t2.serial_no=t1.serial_no and
+          t2.org_code=t1.org_code and
+          t2.in_stock_time=t1.in_stock_time
+    ) and t.org_code = t1.org_code and t.goods_area_code=t1.goods_area_code
+    <![CDATA[
+    and t1.in_stock_time >= to_date(#{queryDate} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss') 
+    and t1.in_stock_time <= to_date(#{queryDate} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss') 
+    ]]>
+    <!-- and ORA_HASH(t1.id, #{threadCount}) = #{threadNo} -->
+	</select>
+	
+	<update id="updateStockPair" parameterType="map">
+			update tfr.T_OPT_STOCK_PAIR t1 
+			<set>
+				<if test="isSendRate != null and isSendRate != '' ">
+					t1.is_send_rate='Y' 
+				</if>
+			</set>
+			where 
+			 <![CDATA[
+		     t1.in_stock_time >= to_date(#{day} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss') 
+		    and t1.in_stock_time <= to_date(#{day} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss') 
+		    ]]>
+	</update>
+	
+	<select id="transferCenterAndGoodsAreaQuery" resultMap="stockPairResultMap">
+		select a.ORG_CODE,b.goods_area_code from bse.t_bas_transfer_center a
+		left join  BSE.T_BAS_GOODS_AREA b on b.org_code=a.ORG_CODE and b.goods_area_type='BSE_GOODSAREA_TYPE_STATION' and b.active='Y'
+		 where a.active='Y'
+		 and b.goods_area_type='BSE_GOODSAREA_TYPE_STATION'
+		  and b.active='Y'
+		  order by a.org_code
+	</select>
+	
+	<select id="queryAllTransOrg" resultMap="transCenterOrgResultMap" >
+			select * from (
+		select h.*,bb2.bigDept
+		,bb3.DIVISION
+		from 
+		(
+		 select a.ORG_CODE, a.name
+		          from bse.t_bas_transfer_center a
+		          left join BSE.T_BAS_GOODS_AREA b
+		            on b.org_code = a.ORG_CODE
+		           and b.goods_area_type = 'BSE_GOODSAREA_TYPE_STATION'
+		           and b.active = 'Y'
+		         where a.active = 'Y'
+		           and b.goods_area_type = 'BSE_GOODSAREA_TYPE_STATION'
+		           and b.active = 'Y'
+		) h
+		LEFT JOIN
+		    (
+		        SELECT
+		            lay.code,
+		            lay.name dept,
+		            org.name bigDept
+		        FROM
+		            bse.T_BAS_MV_ORG_LAYER lay,
+		            bse.t_bas_org org
+		        WHERE
+		            lay.level3=org.code
+		        AND org.active='Y'
+		        AND lay.active='Y') bb2
+		ON
+		     h.ORG_CODE=bb2.code
+		LEFT JOIN
+		    (
+		        SELECT
+		            lay.code,
+		            lay.name dept,
+		            org.name DIVISION
+		        FROM
+		            bse.T_BAS_MV_ORG_LAYER lay,
+		            bse.t_bas_org org
+		        WHERE
+		            lay.level4=org.code
+		        AND org.active='Y'
+		        AND lay.active='Y') bb3
+		ON
+		     h.ORG_CODE=bb3.code
+		     where h.ORG_CODE=bb2.code
+		     )k group by org_code,name,bigdept,DIVISION
+	
+	</select>
+	
+	<select id="queryAllOutTransOrg" resultMap="transCenterOrgResultMap" >
+			select * from (
+		select h.*,bb2.bigDept
+		,bb3.DIVISION
+		,bb4.bigArea
+		from 
+		(
+		 select a.ORG_CODE, a.name
+		          from bse.t_bas_transfer_center a
+		         where a.active = 'Y'
+		) h
+		LEFT JOIN
+		    (
+		        SELECT
+		            lay.code,
+		            lay.name dept,
+		            org.name bigDept
+		        FROM
+		            bse.T_BAS_MV_ORG_LAYER lay,
+		            bse.t_bas_org org
+		        WHERE
+		            lay.level3=org.code
+		        AND org.active='Y'
+		        AND lay.active='Y') bb2
+		ON
+		     h.ORG_CODE=bb2.code
+		LEFT JOIN
+		    (
+		        SELECT
+		            lay.code,
+		            lay.name dept,
+		            org.name DIVISION
+		        FROM
+		            bse.T_BAS_MV_ORG_LAYER lay,
+		            bse.t_bas_org org
+		        WHERE
+		            lay.level4=org.code
+		        AND org.active='Y'
+		        AND lay.active='Y') bb3
+		ON
+		     h.ORG_CODE=bb3.code
+		 LEFT JOIN
+        (
+            SELECT
+                lay.code,
+                lay.name dept,
+                org.name bigArea
+            FROM
+                bse.T_BAS_MV_ORG_LAYER lay,
+                bse.t_bas_org org
+            WHERE
+                lay.level5=org.code
+            AND org.active='Y'
+            AND lay.active='Y') bb4
+    ON
+         h.ORG_CODE=bb4.code
+		     where h.ORG_CODE=bb2.code
+		     )k group by org_code,name,bigdept,DIVISION,bigArea
+	
+	</select>
+</mapper>

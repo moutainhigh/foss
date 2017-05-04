@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.pricing.RegionEffectiveEntityMapper" >
+  <!-- 查询汽运时效方案明细  ResultMap  --> 
+  <resultMap id="RegionEffectiveMap" type="com.deppon.foss.module.pickup.pricing.api.shared.dto.RegionEffectiveDto" >
+		<result column="PROV_NAME" property="provinceName" jdbcType="VARCHAR" />
+		<result column="CITY_NAME" property="cityName" jdbcType="VARCHAR" />
+		<result column="COUNTY_NAME" property="countyName" jdbcType="VARCHAR" />
+		<result column="PROV_CODE" property="provinceCode" jdbcType="VARCHAR" />
+		<result column="CITY_CODE" property="cityCode" jdbcType="VARCHAR" />
+		<result column="COUNTY_CODE" property="countyCode" jdbcType="VARCHAR" />
+		<result column="LONG_OR_SHORT" property="longOrShort" jdbcType="VARCHAR" />
+		<result column="PRODUCT_ID" property="productId" jdbcType="VARCHAR" />
+		<result column="PRODUCT_CODE" property="productCode" jdbcType="VARCHAR" />
+		<result column="MAX_TIME" property="maxTime" jdbcType="DECIMAL" />
+		<result column="MAX_TIME_UNIT" property="maxTimeUnit" jdbcType="VARCHAR" />
+		<result column="MIN_TIME" property="minTime" jdbcType="DECIMAL" />
+		<result column="MIN_TIME_UNIT" property="minTimeUnit" jdbcType="VARCHAR" />
+		<result column="ARRIVE_TIME" property="arriveTime" jdbcType="VARCHAR" />
+  </resultMap>
+  <!-- 查询合伙人汽运时效方案明细  ResultMap  --> 
+   <resultMap id="RegionPartnerEffectiveMap" type="com.deppon.foss.module.pickup.pricing.api.shared.dto.RegionPartnerEffectiveDto" >
+       <result column="PRODUCT_ID" property="productId" jdbcType="VARCHAR" />
+       <result column="PRODUCT_CODE" property="productCode" jdbcType="VARCHAR" />
+       <result column="LONG_OR_SHORT" property="longOrShort" jdbcType="VARCHAR" />
+       <result column="PROV_NAME" property="provinceName" jdbcType="VARCHAR" />
+	   <result column="CITY_NAME" property="cityName" jdbcType="VARCHAR" />
+		<result column="COUNTY_NAME" property="countyName" jdbcType="VARCHAR" />
+		<result column="ORG_NAME" property="orgName" jdbcType="VARCHAR" />
+		<result column="PROV_CODE" property="provinceCode" jdbcType="VARCHAR" />
+		<result column="CITY_CODE" property="cityCode" jdbcType="VARCHAR" />
+		<result column="COUNTY_CODE" property="countyCode" jdbcType="VARCHAR" />
+		<result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+		<result column="ARRIVE_TIME" property="arriveTime" jdbcType="VARCHAR" />
+		
+		<result column="MAX_TIME" property="maxTime" jdbcType="DECIMAL" />
+		<result column="MAX_TIME_UNIT" property="maxTimeUnit" jdbcType="VARCHAR" />
+		<result column="MIN_TIME" property="minTime" jdbcType="DECIMAL" />
+		<result column="MIN_TIME_UNIT" property="minTimeUnit" jdbcType="VARCHAR" />
+		<result column="ARR_TYPE" property="arrType" jdbcType="VARCHAR" />
+		
+  </resultMap>
+   <!-- 汽运时效方案明细  Query Column --> 
+  <sql id="Combination_Column_List" >
+	   district.name as PROV_NAME ,
+       district2.simple_name as CITY_NAME ,
+       district3.simple_name as COUNTY_NAME ,
+       arr.prov_code as PROV_CODE ,
+       arr.city_code as CITY_CODE ,
+       arr.county_code as COUNTY_CODE ,
+       detail.long_or_short as LONG_OR_SHORT ,
+       detail.t_srv_product_id as PRODUCT_ID ,
+       detail.t_srv_product_code as PRODUCT_CODE ,
+       detail.max_time as MAX_TIME ,
+       detail.max_time_unit as MAX_TIME_UNIT ,
+       detail.min_time as MIN_TIME ,
+       detail.min_time_unit as MIN_TIME_UNIT,
+       detail.arrive_time as ARRIVE_TIME 
+  </sql>
+  
+  <!--  查询同一始发区域下的空运价格明细信息   -->
+  <select id="findEffectiveByQueryEffectiveBean" resultMap="RegionEffectiveMap" parameterType="java.util.Map" >
+     SELECT /*综合-价格-价格表-查询同一始发区域下的汽运时效明细信息*/ 
+    	<include refid="Combination_Column_List" />
+	 from pkp.t_srv_effective_plan p
+	 inner join pkp.t_srv_effective_plan_detail detail on detail.t_srv_effective_plan_id = p.id
+	 inner join pkp.t_srv_effective_region arr on arr.id = detail.arrv_region_id
+	 inner join bse.t_bas_district district on district.code = arr.prov_code
+	 inner join bse.t_bas_district district2 on district2.code = arr.city_code
+	 left join bse.t_bas_district district3 on district3.code = arr.county_code and district3.active = 'Y'
+    <where>
+    	 <if test="currentDateTime!=null and currentDateTime!=''">
+    	 	<![CDATA[ AND P.BEGIN_TIME <= #{currentDateTime} 
+    	 			  AND P.END_TIME > #{currentDateTime} ]]>
+    	 </if>
+    	 <if test="active!=null and active!=''">
+    	 	 AND p.active =#{active,jdbcType=VARCHAR} 	
+			 AND detail.active =#{active,jdbcType=VARCHAR} 	
+			 AND arr.active = #{active,jdbcType=VARCHAR} 	
+			 AND district.active = #{active,jdbcType=VARCHAR} 	
+			 AND district2.active = #{active,jdbcType=VARCHAR} 	
+    	 </if>
+    	 <if test="deptRegionId!=null and deptRegionId!=''">
+    	 	    and p.dept_region_id = #{deptRegionId,jdbcType=VARCHAR}
+    	 </if>
+      	 <if test="arrType!=null and arrType!=''">
+    	 	    and arr.type= #{arrType,jdbcType=VARCHAR}
+    	 </if>
+	 	<if test="productList != null and productList != '' ">
+	 		AND detail.t_srv_product_code in
+			<foreach collection="productList" open="(" close=")" separator="," item="productCode">
+			<![CDATA[	#{productCode}  ]]>
+			</foreach>
+ 		</if>
+    </where>
+  </select>
+  
+  <select id="queryCountryEffectivePrice" resultMap="RegionPartnerEffectiveMap" parameterType="java.util.Map">
+      SELECT /*综合-价格-价格表-查询同一始发区域下的汽运时效明细信息*/
+		 district.name             as PROV_NAME,
+		 district2.simple_name     as CITY_NAME,
+		 district3.simple_name     as COUNTY_NAME,
+		 arr.prov_code             as PROV_CODE,
+		 arr.city_code             as CITY_CODE,
+		 arr.county_code           as COUNTY_CODE,
+		 detail.long_or_short      as LONG_OR_SHORT,
+		 detail.t_srv_product_id   as PRODUCT_ID,
+		 detail.t_srv_product_code as PRODUCT_CODE,
+		 detail.max_time           as MAX_TIME,
+		 detail.max_time_unit      as MAX_TIME_UNIT,
+		 detail.min_time           as MIN_TIME,
+		 detail.min_time_unit      as MIN_TIME_UNIT,
+		 detail.arrive_time        as ARRIVE_TIME,
+		 arr.type                  as ARR_TYPE
+		  from pkp.t_srv_effective_plan p
+		 inner join pkp.t_srv_effective_plan_detail detail
+		    on detail.t_srv_effective_plan_id = p.id
+		 inner join pkp.t_srv_effective_region arr
+		    on arr.id = detail.arrv_region_id
+		 inner join bse.t_bas_district district
+		    on district.code = arr.prov_code
+		 inner join bse.t_bas_district district2
+		    on district2.code = arr.city_code
+		  left join bse.t_bas_district district3
+		    on district3.code = arr.county_code
+		   and district3.active = 'Y'
+ <where> 
+      <if test="currentDateTime!=null and currentDateTime!=''">
+			<![CDATA[
+		   AND P.BEGIN_TIME <= #{currentDateTime}
+		   AND P.END_TIME > #{currentDateTime}
+	       ]]>
+	</if>
+	
+       <if test="active!=null and active!=''">
+		   AND p.active = #{active,jdbcType=VARCHAR}
+		   AND detail.active = #{active,jdbcType=VARCHAR}
+		   AND arr.active = #{active,jdbcType=VARCHAR}
+		   AND district.active = #{active,jdbcType=VARCHAR}
+		   AND district2.active = #{active,jdbcType=VARCHAR}
+		</if>
+    <if test="effectiveRegionId!=null and effectiveRegionId!=''">
+    	and p.dept_region_id = #{effectiveRegionId,jdbcType=VARCHAR}
+    </if>
+  
+   and arr.type = 'ADMINISTRATIVE'
+   	<if test="productList != null and productList != '' ">
+	 		AND detail.t_srv_product_code in
+			<foreach collection="productList" open="(" close=")" separator="," item="productCode">
+			<![CDATA[	#{productCode}  ]]>
+			</foreach>
+ 		</if>
+   </where>   
+  </select>
+  
+  <select id="queryNetworkEffectivePrice" resultMap="RegionPartnerEffectiveMap" parameterType="java.util.Map">
+      SELECT /*综合-价格-价格表-查询同一始发区域下的汽运时效明细信息*/
+		 district.name             as PROV_NAME,
+		 district2.simple_name     as CITY_NAME,
+		 district3.simple_name     as COUNTY_NAME,
+		 bas_org.name              as ORG_NAME,
+		 bas_org.prov_code         as PROV_CODE,
+		 bas_org.city_code         as CITY_CODE,
+		 bas_org.county_code       as COUNTY_CODE,
+		 bas_org.code              as ORG_CODE,
+		 detail.long_or_short      as LONG_OR_SHORT,
+		 detail.t_srv_product_id   as PRODUCT_ID,
+		 detail.t_srv_product_code as PRODUCT_CODE,
+		 detail.max_time           as MAX_TIME,
+		 detail.max_time_unit      as MAX_TIME_UNIT,
+		 detail.min_time           as MIN_TIME,
+		 detail.min_time_unit      as MIN_TIME_UNIT,
+		 detail.arrive_time        as ARRIVE_TIME,
+		 arr.type                  as ARR_TYPE
+		  from pkp.t_srv_effective_plan p
+		 inner join pkp.t_srv_effective_plan_detail detail
+		    on detail.t_srv_effective_plan_id = p.id
+		 inner join pkp.t_srv_effective_region arr
+		    on arr.id = detail.arrv_region_id
+		 inner join pkp.t_srv_effective_region_org arr_org
+		    on arr.id = arr_org.effective_region_id
+		 inner join bse.t_bas_org bas_org
+		    on arr_org.include_org_code = bas_org.code
+		 inner join bse.t_bas_district district
+		    on district.code = bas_org.prov_code
+		 inner join bse.t_bas_district district2
+		    on district2.code = bas_org.city_code
+		  left join bse.t_bas_district district3
+		    on district3.code = bas_org.county_code
+		   and district3.active = 'Y'
+	<where>
+	    
+	  <if test="currentDateTime!=null and currentDateTime!=''">
+			<![CDATA[    
+			   AND P.BEGIN_TIME <= #{currentDateTime}
+			   AND P.END_TIME > #{currentDateTime}
+			   and arr_org.BEGIN_TIME <= #{currentDateTime}
+			   AND arr_org.END_TIME > #{currentDateTime}
+			    ]]>
+	</if>
+	
+	   <if test="active!=null and active!=''">
+			 	AND p.active = #{active,jdbcType=VARCHAR}
+			   AND detail.active = #{active,jdbcType=VARCHAR}
+			   AND arr.active = #{active,jdbcType=VARCHAR}
+			   AND arr_org.active = #{active,jdbcType=VARCHAR}
+			   AND bas_org.active = #{active,jdbcType=VARCHAR}
+			   AND district.active = #{active,jdbcType=VARCHAR}
+			   AND district2.active = #{active,jdbcType=VARCHAR}
+		</if>
+	  
+    <if test="effectiveRegionId!=null and effectiveRegionId!=''">
+    	and p.dept_region_id = #{effectiveRegionId,jdbcType=VARCHAR}
+    </if>
+   AND arr.type = 'DEPT'
+   	<if test="productList != null and productList != '' ">
+	 		AND detail.t_srv_product_code in
+			<foreach collection="productList" open="(" close=")" separator="," item="productCode">
+			<![CDATA[	#{productCode}  ]]>
+			</foreach>
+ 		</if>
+   </where>   
+  </select>
+</mapper>

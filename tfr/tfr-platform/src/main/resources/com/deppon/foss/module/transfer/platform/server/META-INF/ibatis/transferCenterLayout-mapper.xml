@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="foss.platform.transferCenterLayout">
+
+	<resultMap id="unitsResultMap"
+		type="com.deppon.foss.module.transfer.platform.api.shared.dto.TransferCenterUnitDto">
+		<result property="orgCode" column="orgCode" />
+		<result property="orgName" column="orgName" />
+		<result property="length" column="transferCenterName" />
+		<result property="width" column="totalQtyBudeget" />
+		<result property="x" column="loaderBudget" />
+		<result property="y" column="driverBudget" />
+		<result property="code" column="totalQtyActual" />
+		<result property="name" column="totalQtyActualFirstDay" />
+		<result property="type" column="loaderActual" />
+	</resultMap>
+	
+	<!-- 查询库区 -->
+	<select id="queryGoodsArea" resultMap="unitsResultMap"
+		parameterType="java.lang.String">
+		select
+			ga.org_code orgCode,
+			o.name orgName,
+			ga.goods_area_length length,
+			ga.goods_area_width width,
+			to_number(ga.abscissa) x,
+			to_number(ga.ordinate) y,
+			ga.goods_area_code code,
+			ga.goods_area_name name,
+			'GOODSAREA' type
+		from bse.t_bas_goods_area ga 
+			left join bse.t_bas_org o on ga.org_code = o.code and o.active = 'Y'
+		where ga.active = 'Y'
+			and ga.goods_area_width is not null
+			and ga.goods_area_length is not null
+			and ga.abscissa is not null
+			and ga.ordinate is not null
+			and ga.org_code = #{orgCode}
+	</select>
+
+	<!-- 查询月台 -->
+	<select id="queryPlatform" resultMap="unitsResultMap"
+		parameterType="java.lang.String">
+		select 
+			p.org_code orgCode,
+			o.name orgName,
+			6 length,
+			round(to_number(p.platform_width)/1000,3) width,
+			to_number(p.abscissa) x,
+			to_number(p.ordinate) y,
+			p.platform_code code,
+			p.platform_code name,
+			'PLATFORM' type
+		from bse.t_bas_platform p
+			left join bse.t_bas_org o on p.org_code = o.code and o.active = 'Y'
+		where p.active = 'Y'
+			and p.platform_width is not null
+			and p.abscissa is not null
+			and p.ordinate is not null
+			and p.org_code = #{orgCode}
+	</select>
+
+	<!-- 查询待叉区 -->
+	<select id="queryTransferArea" resultMap="unitsResultMap"
+		parameterType="java.lang.String">
+		select 
+			wa.org_code orgCode,
+			wa.org_name orgName,
+			round(to_number(wa.waitforkarea_length)/1000,3) length,
+			round(to_number(wa.waitforkarea_width)/1000,3) width,
+			round(to_number(wa.abscissa)/1000,3) x,
+			round(to_number(wa.ordinate)/1000,3) y,
+			wa.waitforkarea_code code,
+			wa.waitforkarea_code name,
+			'TRANSFERAREA' type
+		from bse.t_bas_waitforkarea wa
+		where wa.active = 'Y' 
+			and wa.waitforkarea_length is not null
+			and wa.waitforkarea_width is not null
+			and wa.abscissa is not null
+			and wa.ordinate is not null
+			and wa.org_code = #{orgCode}
+	</select>
+</mapper>

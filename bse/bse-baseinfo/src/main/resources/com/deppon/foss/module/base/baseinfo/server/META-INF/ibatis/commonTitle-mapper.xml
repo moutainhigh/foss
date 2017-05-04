@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.commonTitle"> 
+	<resultMap id="titleResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.CommonTitleEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="EMP_CODE" property="empCode" jdbcType="VARCHAR" />
+		<result column="EMP_NAME" property="empName" jdbcType="VARCHAR" />
+		<result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+		<result column="ORG_NAME" property="orgName" jdbcType="VARCHAR" />
+		<result column="VALUE_CODE" property="titleValueCode" jdbcType="VARCHAR" />
+		<result column="VALUE_NAME" property="titleValueName" jdbcType="VARCHAR" />
+		<result column="TITLE" property="title" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+	</resultMap>
+	<sql id="title_Column_List">
+		T.ID, T.EMP_CODE, T.EMP_NAME, T.ORG_CODE,
+		T.TITLE, M.VALUE_CODE, M.VALUE_NAME,M.ACTIVE
+	</sql>  
+	<!-- 分页查询条件(作废) -->
+	<sql id="queryWhere">  
+		<where>
+			<if test="empName != null and empName != ''">
+			    T.EMP_NAME  LIKE CONCAT(CONCAT('%',#{empName,jdbcType=VARCHAR}),'%')
+			</if>
+			<if test="empCode != null and empCode != ''">
+				AND T.EMP_CODE = #{empCode,jdbcType=VARCHAR}
+			</if>
+			<if test="titleValueName != null and titleValueName != ''"> 
+				AND M.VALUE_NAME  LIKE CONCAT(CONCAT('%',#{titleValueName,jdbcType=VARCHAR}),'%') 
+			</if>
+			<if test="titleValueCode != null and titleValueCode != ''">
+				AND M.VALUE_CODE = #{titleValueCode,jdbcType=VARCHAR}
+			</if>
+			<if test="orgCode != null and orgCode != ''">
+				AND T.ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+			</if> 
+			<if test="title != null and title != ''">
+				AND T.TITLE = #{title,jdbcType=VARCHAR}
+			</if>
+			<![CDATA[
+				AND M.ACTIVE = 'Y' AND T.TITLE=M.VALUE_CODE AND T.ACTIVE=M.ACTIVE 
+				AND M.TYPE='UUMS_POSITION'
+			]]>
+		</where>
+	</sql>
+	<!-- 分页查询所有职位信息 (作废)-->
+	<select id=""
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CommonTitleEntity"
+		resultMap="titleResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:分页查询所有岗位信息 **/
+		]]>
+		<include refid="title_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_EMPLOYEE T, T_BAS_DATA_POSTION_DEGREE M 
+		]]>
+		<include refid="queryWhere" />
+	</select>
+	
+	<!-- 分页查询职位信息 (主要根据部门CODE查询该部门下的所有职位名称及代码)-->
+	<select id="queryTitleListByCondition"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CommonTitleEntity"
+		resultMap="titleResultMap">
+		<![CDATA[
+		SELECT P.ORG_CODE,T.VALUE_CODE,T.VALUE_NAME FROM BSE.T_BAS_DATA_POSTION_DEGREE T
+          JOIN (
+        	SELECT E.TITLE, E.ORG_CODE FROM BSE.T_BAS_EMPLOYEE E
+         	WHERE E.ACTIVE = 'Y'
+     	]]>
+         <if test="orgCode != null and orgCode != ''">
+				AND E.ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+		 </if> 
+		 <![CDATA[
+         GROUP BY E.TITLE, E.ORG_CODE) P
+         ON T.VALUE_CODE = P.TITLE 
+         ]]>
+         <if test="titleValueName != null and titleValueName != ''"> 
+				AND T.VALUE_NAME  LIKE CONCAT(CONCAT('%',#{titleValueName,jdbcType=VARCHAR}),'%') 
+		 </if>
+		 <if test="titleValueCode != null and titleValueCode != ''">
+				AND T.VALUE_CODE = #{titleValueCode,jdbcType=VARCHAR}
+		 </if>
+		
+	</select>
+
+	<!-- 统计总记录数(主要根据部门CODE查询该部门下的所有职位名称及代码)） -->
+	<select id="countTitleListByCondition" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CommonTitleEntity">
+	    <![CDATA[
+	       	SELECT /** 综合:统计记录数 **/ COUNT(*) FROM (
+	    ]]>
+	    <![CDATA[
+		SELECT P.ORG_CODE,T.VALUE_CODE,T.VALUE_NAME FROM BSE.T_BAS_DATA_POSTION_DEGREE T
+          JOIN (
+        	SELECT E.TITLE, E.ORG_CODE FROM BSE.T_BAS_EMPLOYEE E
+         	WHERE E.ACTIVE = 'Y'
+     	]]>
+         <if test="orgCode != null and orgCode != ''">
+				AND E.ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+		 </if> 
+		 <![CDATA[
+         GROUP BY E.TITLE, E.ORG_CODE) P
+         ON T.VALUE_CODE = P.TITLE 
+         ]]>
+         <if test="titleValueName != null and titleValueName != ''"> 
+				AND T.VALUE_NAME  LIKE CONCAT(CONCAT('%',#{titleValueName,jdbcType=VARCHAR}),'%') 
+		 </if>
+		 <if test="titleValueCode != null and titleValueCode != ''">
+				AND T.VALUE_CODE = #{titleValueCode,jdbcType=VARCHAR}
+		 </if>
+	    <![CDATA[
+	       	)
+     	]]>
+         
+	</select>
+</mapper>

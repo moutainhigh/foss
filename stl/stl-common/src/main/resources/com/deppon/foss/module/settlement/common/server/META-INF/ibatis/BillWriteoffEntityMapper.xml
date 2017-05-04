@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.BillWriteoffEntityDao" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.common.api.shared.domain.BillWriteoffEntity" >
+    <result column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="WRITEOFF_BATCH_NO" property="writeoffBatchNo" jdbcType="VARCHAR" />
+    <result column="WRITEOFF_BILL_NO" property="writeoffBillNo" jdbcType="VARCHAR" />
+    <result column="BEGIN_NO" property="beginNo" jdbcType="VARCHAR" />
+    <result column="END_NO" property="endNo" jdbcType="VARCHAR" />
+    <result column="STATEMENT_BILL_NO" property="statementBillNo" jdbcType="VARCHAR" />
+    <result column="CREATE_TYPE" property="createType" jdbcType="VARCHAR" />
+    <result column="WRITEOFF_TYPE" property="writeoffType" jdbcType="VARCHAR" />
+    <result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+    <result column="ORG_NAME" property="orgName" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+    <result column="AMOUNT" property="amount" jdbcType="DECIMAL" />
+    <result column="ACTIVE" property="active" jdbcType="CHAR" /> 
+    <result column="IS_RED_BACK" property="isRedBack" jdbcType="CHAR" />
+    <result column="CREATE_USER_CODE" property="createUserCode" jdbcType="VARCHAR" />
+    <result column="CREATE_USER_NAME" property="createUserName" jdbcType="VARCHAR" />
+    <result column="RED_IMPACT_USER_CODE" property="redImpactUserCode" jdbcType="VARCHAR" />
+    <result column="RED_IMPACT_USER_NAME" property="redImpactUserName" jdbcType="VARCHAR" />
+    <result column="WRITEOFF_TIME" property="writeoffTime" jdbcType="TIMESTAMP" />
+    <result column="ACCOUNT_DATE" property="accountDate" jdbcType="TIMESTAMP" />
+    <result column="IS_INIT" property="isInit" jdbcType="CHAR" /> 
+    <result column="VERSION_NO" property="versionNo" jdbcType="DECIMAL" />
+  	<result column="BEGIN_WAYBILL_NO" property="beginWaybillNo" jdbcType="VARCHAR"/>
+  	<result column="END_WAYBILL_NO" property="endWaybillNo" jdbcType="VARCHAR"/>
+    <result column="BEGIN_ACCOUNT_DATE" property="beginAccountDate" jdbcType="TIMESTAMP" />
+    <result column="END_ACCOUNT_DATE" property="endAccountDate" jdbcType="TIMESTAMP" />
+    <result column="BEGIN_ID" property="beginId" jdbcType="VARCHAR" />
+    <result column="END_ID" property="endId" jdbcType="VARCHAR" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    ID, WRITEOFF_BATCH_NO, WRITEOFF_BILL_NO, BEGIN_NO, END_NO, STATEMENT_BILL_NO, 
+    CREATE_TYPE, WRITEOFF_TYPE, ORG_CODE, ORG_NAME, CUSTOMER_CODE, CUSTOMER_NAME, AMOUNT/100 AMOUNT, 
+    ACTIVE, IS_RED_BACK, CREATE_USER_CODE, CREATE_USER_NAME, RED_IMPACT_USER_CODE, RED_IMPACT_USER_NAME, 
+    WRITEOFF_TIME, ACCOUNT_DATE, IS_INIT, VERSION_NO, 
+    BEGIN_WAYBILL_NO, END_WAYBILL_NO, BEGIN_ACCOUNT_DATE, END_ACCOUNT_DATE,BEGIN_ID,END_ID
+  </sql>
+  
+  <!-- 根据核销ID查询核销单信息  -->
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.String" >
+    select /*结算-核销单-根据核销ID查询核销单信息*/
+    <include refid="Base_Column_List" />
+    from STL.T_STL_BILL_WRITEOFF
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+  <!-- 根据ID集合查询核销单信息 -->
+  <select id="selectByPrimaryKeys" resultMap="BaseResultMap" parameterType="list" >
+    select /*结算-核销单-根据核销ID查询核销单信息*/
+    <include refid="Base_Column_List" />
+    from STL.T_STL_BILL_WRITEOFF
+    where ID IN
+    <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+    	#{item,jdbcType=VARCHAR}
+    </foreach>
+  </select>
+  
+  
+  <!-- 根据开始来源单号和目的来源单号查询有效的并且自动生成的核销单信息  -->
+  <select id="selectByBeginNoAndEndNo" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.common.api.shared.dto.BillWriteoffQueryParaDto" >
+    select /*结算-核销单-根据开始来源单号和目的来源单号查询有效的并且自动生成的核销单信息*/
+    <include refid="Base_Column_List" />
+    from STL.T_STL_BILL_WRITEOFF
+    where BEGIN_NO = #{beginNo,jdbcType=VARCHAR}
+      AND END_NO = #{endNo}
+      AND ACTIVE = #{active}
+      AND CREATE_TYPE = #{createType}
+      AND WRITEOFF_TYPE = #{writeoffType}
+  </select>
+  
+  <!-- 根据核销开始来源单号查询核销单信息  -->
+   <select id="selectByBeginNo" resultMap="BaseResultMap" parameterType="java.util.Map" >
+    SELECT /*结算-核销单-根据核销开始来源单号查询核销单信息*/
+    <include refid="Base_Column_List" />
+    FROM STL.T_STL_BILL_WRITEOFF WHERE BEGIN_NO=#{beginNo}
+	<if test="active!=null and active!='' ">
+		AND ACTIVE = #{active}
+	</if>
+	<if test="createType!=null and createType!='' ">
+		AND CREATE_TYPE = #{createType}
+	</if>
+	<if test="writeoffType!=null and writeoffType!='' ">
+		AND WRITEOFF_TYPE = #{writeoffType}
+	</if>
+  </select>
+  
+  <select id="selectByBeginNoR" resultMap="BaseResultMap" parameterType="java.util.Map" >
+    SELECT /*结算-核销单-根据核销开始来源单号查询核销单信息*/
+    <include refid="Base_Column_List" />
+    FROM STL.T_STL_BILL_WRITEOFF WHERE BEGIN_NO=#{beginNo}
+	<if test="active!=null and active!='' ">
+		AND ACTIVE = #{active}
+	</if>
+	<if test="createType!=null and createType!='' ">
+		AND CREATE_TYPE = #{createType}
+	</if>
+	<if test="writeoffType!=null and writeoffType!='' ">
+		AND WRITEOFF_TYPE = #{writeoffType}
+	</if>
+	AND WRITEOFF_BILL_NO  NOT IN (
+		SELECT WRITEOFF_BILL_NO FROM STL.T_STL_REPAYMENT_DISDETAIL 
+		WHERE BEGIN_NO =  #{beginNo}
+		AND ACTIVE = 'Y'
+	)
+  </select>
+  
+  <select id="selectByBeginNoRepay" resultType="map" parameterType="java.util.Map" >
+    SELECT /*结算-核销单-根据核销开始来源单号查询核销单信息*/
+    COUNT(ID) COUNT,
+    SUM(AMOUNT)/100 AMOUNT
+    FROM STL.T_STL_BILL_WRITEOFF WHERE BEGIN_NO=#{beginNo}
+	<if test="active!=null and active!='' ">
+		AND ACTIVE = #{active}
+	</if>
+	<if test="createType!=null and createType!='' ">
+		AND CREATE_TYPE = #{createType}
+	</if>
+	<if test="writeoffType!=null and writeoffType!='' ">
+		AND WRITEOFF_TYPE = #{writeoffType}
+	</if>
+	AND WRITEOFF_BILL_NO  NOT IN (
+		SELECT WRITEOFF_BILL_NO FROM STL.T_STL_REPAYMENT_DISDETAIL
+		WHERE BEGIN_NO =  #{beginNo}
+		AND ACTIVE = 'Y'
+	)
+  </select>
+  
+  <!-- 查询是否存在手工核销的应收单 -->
+  <select id="queryHandWriteoffReceivableByWaybillNo" resultMap="BaseResultMap" parameterType="java.util.Map" >
+		SELECT /*结算-核销单-查询是否存在手工核销的应收单*/ WO.ID, WO.WRITEOFF_BILL_NO, WO.BEGIN_NO, WO.END_NO
+			FROM STL.T_STL_BILL_WRITEOFF WO
+			JOIN STL.T_STL_BILL_RECEIVABLE RCV ON (WO.BEGIN_NO = RCV.RECEIVABLE_NO)
+																						OR (WO.END_NO = RCV.RECEIVABLE_NO)
+		 WHERE WO.ACTIVE = #{active}
+					 AND RCV.ACTIVE = #{active}
+					 AND WO.CREATE_TYPE = #{createType}
+					 AND RCV.WAYBILL_NO = #{waybillNo}
+  </select>
+  
+  <!-- 根据核销目的来源单号查询核销单信息  -->
+  <select id="selectByEndNo" resultMap="BaseResultMap" parameterType="java.util.Map" >
+    SELECT /*结算-核销单-根据核销目的来源单号查询核销单信息*/
+    <include refid="Base_Column_List" />
+    FROM STL.T_STL_BILL_WRITEOFF WHERE END_NO=#{endNo}
+	<if test="active!=null and active!='' ">
+		AND ACTIVE = #{active}
+	</if>
+	<if test="createType!=null and createType!='' ">
+		AND CREATE_TYPE = #{createType}
+	</if>
+  </select>
+  
+  <!-- 根据对账单号查询核销单信息  -->
+  <select id="selectByStatementBillNo" resultMap="BaseResultMap" parameterType="java.util.Map" >
+    SELECT /*结算-核销单-根据对账单号查询核销单信息*/
+    <include refid="Base_Column_List" />
+    FROM STL.T_STL_BILL_WRITEOFF WHERE STATEMENT_BILL_NO=#{statementBillNo}
+	<if test="beginNo!=null and beginNo!='' ">
+		AND BEGIN_NO = #{beginNo}
+	</if>
+	<if test="endNo!=null and endNo!='' ">
+		AND END_NO = #{endNo}
+	</if>
+	<if test="writeoffType!=null and writeoffType!='' ">
+		AND WRITEOFF_TYPE = #{writeoffType}
+	</if>
+	<if test="active!=null and active!='' ">
+		AND ACTIVE = #{active}
+	</if>
+  </select>
+  
+  <!-- 生成核销单信息  -->
+  <insert id="insert" parameterType="com.deppon.foss.module.settlement.common.api.shared.domain.BillWriteoffEntity" >
+    insert /*结算-核销单-生成核销单信息*/ into STL.T_STL_BILL_WRITEOFF (ID, WRITEOFF_BATCH_NO, WRITEOFF_BILL_NO, 
+      BEGIN_NO, END_NO, STATEMENT_BILL_NO, 
+      CREATE_TYPE, WRITEOFF_TYPE, ORG_CODE, 
+      ORG_NAME, CUSTOMER_CODE, CUSTOMER_NAME, 
+      AMOUNT, ACTIVE, IS_RED_BACK, 
+      CREATE_USER_CODE, CREATE_USER_NAME, RED_IMPACT_USER_CODE, 
+      RED_IMPACT_USER_NAME, WRITEOFF_TIME, ACCOUNT_DATE, 
+      IS_INIT, VERSION_NO, 
+      BEGIN_WAYBILL_NO, END_WAYBILL_NO, BEGIN_ACCOUNT_DATE, END_ACCOUNT_DATE,
+      BEGIN_ID,END_ID)
+    values (#{id,jdbcType=VARCHAR}, #{writeoffBatchNo,jdbcType=VARCHAR}, #{writeoffBillNo,jdbcType=VARCHAR}, 
+      #{beginNo,jdbcType=VARCHAR}, #{endNo,jdbcType=VARCHAR}, #{statementBillNo,jdbcType=VARCHAR}, 
+      #{createType,jdbcType=VARCHAR}, #{writeoffType,jdbcType=VARCHAR}, #{orgCode,jdbcType=VARCHAR}, 
+      #{orgName,jdbcType=VARCHAR}, #{customerCode,jdbcType=VARCHAR}, #{customerName,jdbcType=VARCHAR}, 
+      #{amount,jdbcType=DECIMAL}*100, #{active,jdbcType=CHAR}, #{isRedBack,jdbcType=CHAR}, 
+      #{createUserCode,jdbcType=VARCHAR}, #{createUserName,jdbcType=VARCHAR}, #{redImpactUserCode,jdbcType=VARCHAR}, 
+      #{redImpactUserName,jdbcType=VARCHAR}, #{writeoffTime,jdbcType=TIMESTAMP}, #{accountDate,jdbcType=TIMESTAMP}, 
+      #{isInit,jdbcType=CHAR}, #{versionNo,jdbcType=DECIMAL}, 
+      #{beginWaybillNo,jdbcType=VARCHAR}, #{endWaybillNo,jdbcType=VARCHAR}, #{beginAccountDate,jdbcType=TIMESTAMP}, #{endAccountDate,jdbcType=TIMESTAMP},
+      #{beginId,jdbcType=VARCHAR},#{endId,jdbcType=VARCHAR})
+  </insert>
+  
+  <!-- 更新核销单记录为无效  -->
+  <update id="updateActiveById" parameterType="com.deppon.foss.module.settlement.common.api.shared.domain.BillWriteoffEntity" >
+    update /*结算-核销单-更新核销单记录为无效*/ STL.T_STL_BILL_WRITEOFF
+    set ACTIVE = #{active,jdbcType=CHAR},VERSION_NO = VERSION_NO + 1
+    where ID = #{id,jdbcType=VARCHAR}
+      AND VERSION_NO = #{versionNo,jdbcType=DECIMAL}
+  </update>
+  
+</mapper>

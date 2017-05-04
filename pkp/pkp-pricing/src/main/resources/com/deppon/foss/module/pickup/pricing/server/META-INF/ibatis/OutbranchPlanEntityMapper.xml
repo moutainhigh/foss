@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.pkp.pkp-pricing.outbranchPlanEntity">
+	<!-- 快递代理网点运价方案 -->
+	<!-- 快递代理网点运价方案信息 -->
+	<resultMap id="BaseResultMap"
+		type="com.deppon.foss.module.pickup.pricing.api.shared.domain.OutbranchPlanEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="EXPRESS_PARTBUSS_PLAN_ID" property="expressPartbussPlanId"
+			jdbcType="VARCHAR" />
+		<result column="OUTER_BRANCH_CODE" property="outerBranchCode"
+			jdbcType="VARCHAR" />
+		<result column="BILL_TYPE" property="billType" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="VERSION_NO" property="versionNo" jdbcType="DECIMAL" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+		<result column="CREATE_ORG_CODE" property="createOrgCode"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_ORG_CODE" property="modifyOrgCode"
+			jdbcType="VARCHAR" />
+		<result column="CURRENCY_CODE" property="currencyCode"
+			jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<resultMap id="priceDetailResultMap"
+		type="com.deppon.foss.module.pickup.pricing.api.shared.domain.OutbranchPlanEntity">
+		<result property="billType" column="BILL_TYPE" jdbcType="VARCHAR" />
+		<result property="outerBranchCode" column="OUTER_BRANCH_CODE" jdbcType="VARCHAR" />		
+		<collection property="priceDetail" column="EXPRESS_OUTBRANCH_PLAN_ID"
+			ofType="com.deppon.foss.module.pickup.pricing.api.shared.domain.OubrPlanDetailEntity">
+		<result property="caculateType" column="CACULATE_TYPE" jdbcType="VARCHAR" /> 
+		<result column="LEFTRANGE" property="leftrange" jdbcType="DECIMAL" />
+		<result column="RIGHTRANGE" property="rightrange" jdbcType="DECIMAL" />
+		<result column="FEE" property="fee" jdbcType="DECIMAL" />
+		<result column="FEE_RATE" property="feeRate" jdbcType="DECIMAL" />
+		<result column="DIMENSION" property="dimension" jdbcType="DECIMAL" />
+		<result column="MIN_FEE" property="minFee" jdbcType="DECIMAL" /> 		 
+		</collection>
+	</resultMap>
+	<!-- 数据字段 -->
+	<sql id="Base_Column_List" >
+    ID, EXPRESS_PARTBUSS_PLAN_ID, OUTER_BRANCH_CODE, BILL_TYPE, ACTIVE, VERSION_NO, CREATE_TIME, 
+    MODIFY_TIME, CREATE_USER_CODE, MODIFY_USER_CODE, CREATE_ORG_CODE, MODIFY_ORG_CODE, 
+    CURRENCY_CODE
+ 	 </sql>
+
+	<!-- 查询所有快递代理网点运价方案信息 -->
+	<select id="queryAllInfos"
+		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.OutbranchPlanEntity"
+		resultMap="BaseResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有快递代理网点运价方案信息 **/
+		]]>
+		<include refid="Base_Column_List" />
+		<![CDATA[
+			FROM PKP.T_SRV_EXPRESS_OUTBRANCH_PLAN T
+		]]>
+		<include refid="queryWhere" />
+	</select>
+
+	<!-- 统计总记录数 -->
+	<select id="queryCount" resultType="Long"
+		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.OutbranchPlanEntity">
+	    <![CDATA[
+	       	select/** 综合:统计总记录数 **/ count(*) from PKP.T_SRV_EXPRESS_OUTBRANCH_PLAN T
+	    ]]>
+		<include refid="queryWhere" />
+
+	</select>
+	
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<if test="expressPartbussPlanId != null and expressPartbussPlanId != ''">
+				T.EXPRESS_PARTBUSS_PLAN_ID = #{expressPartbussPlanId,jdbcType=VARCHAR}
+			</if>
+			<if test="outerBranchCode != null and outerBranchCode != ''">
+				AND T.OUTER_BRANCH_CODE = #{outerBranchCode,jdbcType=VARCHAR}
+			</if>
+			<if test="billType != null and billType != ''">
+				AND T.BILL_TYPE = #{billType,jdbcType=VARCHAR}
+			</if>
+			<if test="cityCode != null and cityCode != ''">
+				AND T.OUTER_BRANCH_CODE IN (SELECT B.AGENT_DEPT_CODE FROM BSE.T_BAS_OUTER_BRANCH B
+				WHERE B.BRANCHTYPE = 'LD' AND B.ACTIVE = 'Y'
+						AND B.CITY_CODE = #{cityCode,jdbcType=VARCHAR})
+			</if>
+			<if test="districtCode != null and districtCode != ''">
+				AND T.OUTER_BRANCH_CODE IN (SELECT B.AGENT_DEPT_CODE FROM BSE.T_BAS_OUTER_BRANCH B
+				WHERE B.BRANCHTYPE = 'LD' AND B.ACTIVE = 'Y'
+						AND B.COUNTY_CODE = #{districtCode,jdbcType=VARCHAR})
+			</if>
+		</where>
+	</sql>
+	
+	<!-- 查询所有快递代理网点运价方案信息 -->
+	<select id="queryInfoById" parameterType="map" resultMap="BaseResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有快递代理网点运价方案信息 **/
+		]]>
+		<include refid="Base_Column_List" />
+		<![CDATA[
+			FROM PKP.T_SRV_EXPRESS_OUTBRANCH_PLAN T
+		]]>
+		<where>
+			T.ID = #{id,jdbcType=VARCHAR}
+		</where>
+	</select>
+
+	<!-- 新增信息 -->
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.OutbranchPlanEntity">
+		
+		<![CDATA[
+			INSERT/** 综合:新增信息 **/ INTO PKP.T_SRV_EXPRESS_OUTBRANCH_PLAN T	(
+		]]>
+		<include refid="Base_Column_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, #{expressPartbussPlanId,jdbcType=VARCHAR},
+		#{outerBranchCode,jdbcType=VARCHAR},
+		#{billType,jdbcType=VARCHAR},
+		#{active,jdbcType=CHAR}, #{versionNo,jdbcType=DECIMAL},
+		#{createDate,jdbcType=TIMESTAMP}, #{modifyDate,jdbcType=TIMESTAMP},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR}, #{createOrgCode,jdbcType=VARCHAR},
+		#{modifyOrgCode,jdbcType=VARCHAR},
+		#{currencyCode,jdbcType=VARCHAR}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+
+	<!-- 激活快递代理网点运价方案 -->
+	<update id="activate"
+		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.OutbranchPlanEntity">
+		update/** 综合:修改信息 **/ PKP.T_SRV_EXPRESS_OUTBRANCH_PLAN
+		<set>
+			<!-- <if test="expressPartbussPlanId != null">
+				EXPRESS_PARTBUSS_PLAN_ID =
+				#{expressPartbussPlanId,jdbcType=VARCHAR},
+			</if> -->
+			<if test="outerBranchCode != null">
+				OUTER_BRANCH_CODE = #{outerBranchCode,jdbcType=VARCHAR},
+			</if>
+			<if test="billType != null">
+				BILL_TYPE = #{billType,jdbcType=VARCHAR},
+			</if>
+			<if test="active != null">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="versionNo != null">
+				VERSION_NO = #{versionNo,jdbcType=DECIMAL},
+			</if>
+			<if test="createDate != null">
+				CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="createUser != null">
+				CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="createOrgCode != null">
+				CREATE_ORG_CODE = #{createOrgCode,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyOrgCode != null">
+				MODIFY_ORG_CODE = #{modifyOrgCode,jdbcType=VARCHAR},
+			</if>
+			<if test="currencyCode != null">
+				CURRENCY_CODE = #{currencyCode,jdbcType=VARCHAR},
+			</if>
+
+		</set>
+
+		<where>
+			EXPRESS_PARTBUSS_PLAN_ID = #{expressPartbussPlanId,jdbcType=VARCHAR}
+		</where>
+
+	</update>
+	
+	<!-- 修改信息 -->
+	<update id="update"
+		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.OutbranchPlanEntity">
+		update/** 综合:修改信息 **/ PKP.T_SRV_EXPRESS_OUTBRANCH_PLAN
+		<set>
+			<if test="expressPartbussPlanId != null">
+				EXPRESS_PARTBUSS_PLAN_ID =
+				#{expressPartbussPlanId,jdbcType=VARCHAR},
+			</if>
+			<if test="outerBranchCode != null">
+				OUTER_BRANCH_CODE = #{outerBranchCode,jdbcType=VARCHAR},
+			</if>
+			<if test="billType != null">
+				BILL_TYPE = #{billType,jdbcType=VARCHAR},
+			</if>
+			<if test="active != null">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="versionNo != null">
+				VERSION_NO = #{versionNo,jdbcType=DECIMAL},
+			</if>
+			<if test="createDate != null">
+				CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="createUser != null">
+				CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="createOrgCode != null">
+				CREATE_ORG_CODE = #{createOrgCode,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyOrgCode != null">
+				MODIFY_ORG_CODE = #{modifyOrgCode,jdbcType=VARCHAR},
+			</if>
+			<if test="currencyCode != null">
+				CURRENCY_CODE = #{currencyCode,jdbcType=VARCHAR},
+			</if>
+
+		</set>
+
+		<where>
+			ID = #{id,jdbcType=VARCHAR}
+		</where>
+
+	</update>
+
+	<!-- 根据ID作废信息 -->
+	<update id="deleteByCode" parameterType="map">
+		delete from /** 作废信息 **/ PKP.T_SRV_EXPRESS_OUTBRANCH_PLAN
+		<where>
+			<if test="codes!=null and codes.size > 0">
+				ID in
+				<foreach collection="codes" index="index" item="code" open="("
+					separator="," close=")">
+					#{code}
+				</foreach>
+			</if>
+		</where>
+	</update>
+	
+	<!-- 根据父ID作废信息 -->
+	<update id="deleteByParentCode" parameterType="map">
+		delete from /** 作废信息 **/ PKP.T_SRV_EXPRESS_OUTBRANCH_PLAN
+		<where>
+			<if test="codes!=null and codes.size > 0">
+				EXPRESS_PARTBUSS_PLAN_ID in
+				<foreach collection="codes" index="index" item="code" open="("
+					separator="," close=")">
+					#{code}
+				</foreach>
+			</if>
+		</where>
+	</update>
+	
+		<!-- 查询制定快递代理网点运价方案信息 ，包括明细-->
+	<select id="queryPriceByCode"
+		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.OutbranchPlanEntity"
+		resultMap="priceDetailResultMap">
+		<![CDATA[
+			SELECT /** 综合:查询所有快递代理网点运价方案信息 **/ ou.BILL_TYPE,ou.OUTER_BRANCH_CODE,de.CACULATE_TYPE,de.LEFTRANGE,de.RIGHTRANGE,de.FEE,de.FEE_RATE,de.DIMENSION,de.MIN_FEE
+              from pkp.T_SRV_EXPRESS_OUBR_PLAN_DETAIL de,pkp.T_SRV_EXPRESS_OUTBRANCH_PLAN ou,pkp.T_SRV_EXPRESS_PARTBUSS_PLAN plan
+                  
+		]]>
+		<where>
+			<if test="active != null and active != ''">
+			     plan.ID=ou.EXPRESS_PARTBUSS_PLAN_ID and ou.id= de.EXPRESS_OUTBRANCH_PLAN_ID 
+				and plan.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="outerBranchCode != null and outerBranchCode != ''">
+				and ou.OUTER_BRANCH_CODE = #{outerBranchCode,jdbcType=CHAR}
+			</if>
+		
+			<if test="billDate != null and '' != billDate">
+    	      AND plan.BEGIN_TIME <![CDATA[ <= ]]> #{billDate ,jdbcType=TIMESTAMP} AND plan.END_TIME  <![CDATA[ > ]]> #{billDate ,jdbcType=TIMESTAMP}               		
+    	   </if>
+		</where>
+		 order by DE.LEFTRANGE ASC
+	 
+	</select>
+
+</mapper>

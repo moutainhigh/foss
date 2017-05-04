@@ -1,0 +1,190 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.BillReceivableEntityDao">
+  <!-- 根据业务时间和客户信息查询应收单列表  dp-liqin-->
+  <select id="selectBillByReceivableByParams" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.BillRecWriteoffBillPayDto" >
+    SELECT /*结算-核销-根据业务时间和客户信息查询应收单列表*/
+    <include refid="Base_Column_List" />
+    FROM STL.T_STL_BILL_RECEIVABLE RE
+    <where>
+    	 <!-- 业务日期 -->
+    	<![CDATA[RE.BUSINESS_DATE >=#{recBusinessStartDate} AND   RE.BUSINESS_DATE <#{recBusinessEndDate} AND RE.ACCOUNT_DATE>=#{recBusinessStartDate} ]]>
+   		<!-- 未核销金额为零时，返回null，否则返回未核金额 大于0的-->
+    	AND RE.UNVERIFY_AMOUNT>0 
+   		 <!-- 审核状态已审核 -->
+	     AND RE.APPROVE_STATUS=#{approveStatus} 
+    	 <!-- 应收单非红单且有效 -->
+	    	AND RE.ACTIVE=#{recActive}
+	        AND RE.IS_RED_BACK = #{recIsRedBack}
+	     <!-- 客户不为空时，根据客户名称过滤 待后续改进按客户编号查询 -->
+    	<if test="customerCode!=null and customerCode!=''"> 
+			AND RE.CUSTOMER_CODE = #{customerCode}
+		</if> 
+		<!-- 收款部门查询 -->
+		<if test="generatingOrgCode!=null">
+			AND RE.RECEIVABLE_ORG_CODE = #{generatingOrgCode}<!-- 登录部门等于应收单所属部门过滤数据 -->
+		</if>
+		
+		<!-- 不能核销的应收单类型 -->
+		<if test="billRecTypeList!=null">
+			AND RE.BILL_TYPE NOT IN
+			<foreach collection="billRecTypeList" index="index" item="item"
+				open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		
+		
+		<!-- 除代收货款应收单为到达应收单代收货款类型时 ，应收单必须已经签收 和所有类型的应收单-->
+		<if test="recBillTypeList!=null and recBillTypeList.size()>0">
+			AND(( RE.BILL_TYPE IN
+			<foreach collection="recBillTypeList " index="index" item="item"
+				open="(" separator="," close=")">
+				#{item}
+			</foreach>
+			AND RE.CONREVEN_DATE IS NOT NULL )
+			
+			OR RE.BILL_TYPE NOT IN 
+			<foreach collection="recBillTypeList" index="index" item="item"
+				open="(" separator="," close=")">
+				#{item}
+			</foreach>
+			)
+		</if>
+		
+		
+		<!-- 应收单锁定时间是否为空，不为空时判断锁定必须小于当前时间才能核销 -->
+		   <![CDATA[ AND(
+		    (RE.UNLOCK_DATE_TIME IS NOT NULL) 
+		     AND RE.UNLOCK_DATE_TIME < #{nowTime}OR RE.UNLOCK_DATE_TIME IS NULL
+		   )]]>
+		   
+		 <![CDATA[ AND   ROWNUM <=#{maxShowNum} ]]>
+	 </where>
+  </select>
+  
+  
+  	<!-- 根据输入应收单号查询可用于核销的应收单 -->
+	<select id="selectWriteOffBillByReceivableNos" resultMap="BaseResultMap"
+		parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.BillRecWriteoffBillPayDto">
+		SELECT /*结算-核销-根据输入应收单号查询可用于核销的应收单*/
+		<include refid="Base_Column_List" />
+		FROM STL.T_STL_BILL_RECEIVABLE RE
+		<where>
+		<!-- 应收单的单号查询 -->
+		RE.RECEIVABLE_NO IN
+		<foreach collection="receivableNos" index="index" item="item"
+			open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		<!-- 当未核销金额为零时，返回null ，否则返回未核销金额-->
+		 AND RE.UNVERIFY_AMOUNT>0 
+		 AND RE.APPROVE_STATUS=#{approveStatus}<!-- 审核状态 已审核-->
+		 AND RE.ACTIVE = #{recActive}<!-- 有效 -->
+		 AND RE.IS_RED_BACK = #{recIsRedBack}<!-- 非红单 -->
+		 
+		<if test="generatingOrgCode!=null">
+			AND RE.RECEIVABLE_ORG_CODE = #{generatingOrgCode}
+		</if><!-- 登录部门等于应收单所属部门过滤数据 -->
+		
+		<!-- 可核销应收单类型：不能为代收货款类型 -->
+		<if test="billRecTypeList!=null">
+			AND RE.BILL_TYPE NOT IN
+			<foreach collection="billRecTypeList" index="index" item="item"
+				open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		
+		
+		<!-- 当应收单为到达应收单代收货款类型时 ，应收单必须已经签收 -->
+		<if test="recBillTypeList!=null and recBillTypeList.size()>0">
+			AND(( RE.BILL_TYPE IN
+			<foreach collection="recBillTypeList" index="index" item="item"
+				open="(" separator="," close=")">
+				#{item}
+			</foreach>
+			AND RE.CONREVEN_DATE IS NOT NULL )
+			
+			OR RE.BILL_TYPE NOT IN 
+			<foreach collection="recBillTypeList" index="index" item="item"
+				open="(" separator="," close=")">
+				#{item}
+			</foreach>
+			)
+		</if>
+		
+		<!-- 应收单锁定时间是否为空，不为空时判断锁定必须小于当前时间才能核销 -->
+		  <![CDATA[ AND(
+		    (RE.UNLOCK_DATE_TIME IS NOT NULL) 
+		     AND RE.UNLOCK_DATE_TIME < #{nowTime}OR RE.UNLOCK_DATE_TIME IS NULL
+		  )]]>
+		
+		</where>
+	</select>
+
+
+	<!-- 根据运单号查询查询可用于核销的应收单 -->
+	<select id="selectBillRecForWaybill" resultMap="BaseResultMap"
+		parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.BillRecWriteoffBillPayDto">
+		SELECT /*结算-核销-根据运单号查询查询可用于核销的应收单 */
+		<include refid="Base_Column_List" />
+		FROM STL.T_STL_BILL_RECEIVABLE RE
+		<where>
+		<!-- 运单号查询-->
+		 RE.WAYBILL_NO IN
+		<foreach collection="sourceBillNosList" index="index" item="item"
+			open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		<!-- 未核销金额大于零 -->
+		AND RE.UNVERIFY_AMOUNT>0 
+		<!-- 审核状态 -->
+		AND RE.APPROVE_STATUS=#{approveStatus}
+		AND RE.ACTIVE = #{recActive}
+		
+		<!-- 非红单 -->
+		<if test="isRedBack!=null">
+			AND RE.IS_RED_BACK = #{recIsRedBack}<!-- 非红单 -->
+		</if>
+		
+		<!-- 登录部门等于应收单所属部门过滤数据 -->
+		<if test="generatingOrgCode!=null">
+			AND RE.RECEIVABLE_ORG_CODE = #{generatingOrgCode}
+		</if>
+
+		<!-- 可核销应收单类型：不能为代收货款类型 -->
+		<if test="billRecTypeList!=null">
+			AND RE.BILL_TYPE NOT IN
+			<foreach collection="billRecTypeList" index="index" item="item"
+				open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+
+		<!-- 当应收单为到达应收单代收货款类型时 ，应收单必须已经签收 -->
+		<if test="recBillTypeList!=null and recBillTypeList.size()>0">
+			AND(( RE.BILL_TYPE IN
+			<foreach collection="recBillTypeList"  index="index" item="item"
+				open="(" separator="," close=")">
+				#{item}
+			</foreach>
+			AND RE.CONREVEN_DATE IS NOT NULL )
+			
+			OR RE.BILL_TYPE NOT IN 
+			<foreach collection="recBillTypeList" index="index" item="item"
+				open="(" separator="," close=")">
+				#{item}
+			</foreach>
+			)
+		</if>
+		
+		<!-- 应收单锁定时间是否为空，不为空时判断锁定必须小于当前时间才能核销 -->
+		   <![CDATA[ AND(
+		    (RE.UNLOCK_DATE_TIME IS NOT NULL) 
+		     AND RE.UNLOCK_DATE_TIME < #{nowTime} OR RE.UNLOCK_DATE_TIME IS NULL
+		   )]]>
+		
+		</where>
+	</select>
+</mapper>

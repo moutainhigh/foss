@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.MonitorDataEntityDao" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.base.common.api.shared.domain.MonitorDataEntity" >
+    <result column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="INDICATOR_CODE" property="indicatorCode" jdbcType="VARCHAR" />
+    <result column="INDICATOR_SUB_CODE" property="indicatorSubCode" jdbcType="VARCHAR" />
+    <result column="INDICATOR_VALUE" property="indicatorValue" jdbcType="DECIMAL" />
+    <result column="MONITOR_DATE" property="monitorDate" jdbcType="TIMESTAMP" />
+    <result column="MONITOR_TIME_RANGE" property="monitorTimeRange" jdbcType="VARCHAR" />
+    <result column="MONITOR_START_TIME" property="monitorStartTime" jdbcType="TIMESTAMP" />
+    <result column="MONITOR_END_TIME" property="monitorEndTime" jdbcType="TIMESTAMP" />
+    <result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+    <result column="LEVEL2_ORG_CODE" property="level2OrgCode" jdbcType="VARCHAR" />
+    <result column="LEVEL3_ORG_CODE" property="level3OrgCode" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    ID, INDICATOR_CODE, INDICATOR_SUB_CODE, INDICATOR_VALUE, 
+    MONITOR_DATE, MONITOR_TIME_RANGE, MONITOR_START_TIME, MONITOR_END_TIME, 
+    ORG_CODE, LEVEL2_ORG_CODE, LEVEL3_ORG_CODE, CREATE_TIME
+  </sql>
+  <insert id="insertByBatch" parameterType="com.deppon.foss.module.base.common.api.shared.domain.MonitorDataEntity">
+      insert into BSE.T_BAS_MONITOR_DATA (ID, 
+        INDICATOR_CODE, INDICATOR_SUB_CODE, INDICATOR_VALUE, 
+        MONITOR_DATE, MONITOR_TIME_RANGE, ORG_CODE, 
+        LEVEL2_ORG_CODE, LEVEL3_ORG_CODE, CREATE_TIME,
+        MONITOR_START_TIME, MONITOR_END_TIME
+      )
+      values (#{id,jdbcType=VARCHAR}, 
+        #{indicatorCode,jdbcType=VARCHAR}, #{indicatorSubCode,jdbcType=VARCHAR}, #{indicatorValue,jdbcType=DECIMAL}, 
+        #{monitorDate,jdbcType=TIMESTAMP}, #{monitorTimeRange,jdbcType=VARCHAR}, #{orgCode,jdbcType=VARCHAR}, 
+        #{level2OrgCode,jdbcType=VARCHAR}, #{level3OrgCode,jdbcType=VARCHAR}, #{createTime,jdbcType=TIMESTAMP},
+        #{monitorStartTime,jdbcType=TIMESTAMP}, #{monitorEndTime,jdbcType=TIMESTAMP}
+      )
+  </insert>
+  
+  <delete id="deleteByBatch" parameterType="java.util.Map">
+    DELETE FROM BSE.T_BAS_MONITOR_DATA
+    WHERE MONITOR_DATE = #{monitorDate,jdbcType=TIMESTAMP}
+      AND MONITOR_TIME_RANGE = #{monitorTimeRange,jdbcType=VARCHAR}
+      AND ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+      AND INDICATOR_CODE IN
+    <foreach collection="indicatorCodes" index="index" item="item" open="(" separator="," close=")">  
+      #{item}
+	</foreach>
+  </delete>
+  
+</mapper>

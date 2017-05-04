@@ -1,0 +1,855 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.load.express.complement">
+	<!--用于查询补码信息-->
+	<resultMap id="complementResultMap"
+		type="com.deppon.foss.module.transfer.load.api.shared.dto.ComplementQueryDto">
+		<result property="id" column="id" />
+		<result property="waybillNo" column="waybillNo" />
+		<result property="departCityCode" column="departCityCode" />
+		<result property="departCityName" column="departCityName" />
+		<result property="arriveCityCode" column="arriveCityCode" />
+		<result property="arriveCityName" column="arriveCityName" />
+		<result property="arriveProName" column="arriveProName" />
+		<result property="pkpOrgCode" column="pkpOrgCode" />
+		<result property="pkpOrgName" column="pkpOrgName" />
+		<result property="address" column="address" />
+		<result property="billingTime" column="billingTime" />
+		<result property="beginBillingTime" column="beginBillingTime" />
+		<result property="billingOrgCode" column="billingOrgCode" />
+		<result property="billingOrgName" column="billingOrgName" />
+		<result property="pkpMethod" column="pkpMethod" />
+		<result property="consigneeName" column="consigneeName" />
+		<result property="consigneeTel" column="consigneeTel" />
+		<result property="beDone" column="beDone" />
+		<result property="complementTime" column="complementTime" />
+		<result property="returntype" column="returntype" />
+	</resultMap>
+	
+	<!--用于查询补码信息-->
+	<resultMap id="complementLogResultMap"
+		type="com.deppon.foss.module.transfer.load.api.shared.domain.ComplementLogEntity">
+		<result property="id" column="id" />
+		<result property="waybillNo" column="waybillNo" />
+		<result property="address" column="address"/>
+		<result property="beforeOrgCode" column="beforeOrgCode" />
+		<result property="beforeOrgName" column="beforeOrgName" />
+		<result property="afterOrgCode" column="afterOrgCode" />
+		<result property="afterOrgName" column="afterOrgName" />
+		<result property="operatorCode" column="operatorCode" />
+		<result property="operatorName" column="operatorName" />
+		<result property="operationOrgCode" column="operationOrgCode" />
+		<result property="operationOrgName" column="operationOrgName" />
+		<result property="operationTime" column="operationTime" />
+	</resultMap>
+	
+	<!-- 用于查询子母件单号 
+	<resultMap id="BaseResultMap" type="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillRelateDetailEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="PARENT_WAYBILL_NO" property="parentWaybillNo" jdbcType="VARCHAR" />
+    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+    <result column="PARENT_ORDER_NO" property="parentOrderNo" jdbcType="VARCHAR" />
+    <result column="ORDER_NO" property="orderNo" jdbcType="VARCHAR" />
+    <result column="CREATE_USER_CODE" property="createUserCode" jdbcType="VARCHAR" />
+    <result column="MODIFY_USER_CODE" property="modifyUserCode" jdbcType="VARCHAR" />
+    <result column="MODIFY_ORG_CODE" property="modifyOrgCode" jdbcType="VARCHAR" />
+    <result column="WAYBILL_TYPE" property="waybillType" jdbcType="VARCHAR" />
+    <result column="CREATE_ORG_CODE" property="createOrgCode" jdbcType="VARCHAR" />
+    <result column="RECEIVE_ORG_CODE" property="receiveOrgCode" jdbcType="VARCHAR" />
+    <result column="PENDING_TYPE" property="pendingType" jdbcType="VARCHAR" />
+    <result column="ACTIVE" property="active" jdbcType="CHAR" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+    <result column="BILL_TIME" property="billTime" jdbcType="TIMESTAMP" />
+	<result column="GOODS_WEIGHT_TOTAL" property="goodsWeightTotal" jdbcType="DECIMAL" />
+	<result column="GOODS_VOLUME_TOTAL" property="goodsVolumeTotal" jdbcType="DECIMAL" />
+  </resultMap>-->
+	<!--插入一条补码日志-->
+	<insert id="addComplementLog" parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.ComplementLogEntity">
+		insert into 	tfr.T_OPT_COMPLEMENT_LOG (
+			  ID,
+			  WAYBILL_NO,
+			  BEFORE_ORG_CODE,
+			  BEFORE_ORG_NAME,
+			  AFTER_ORG_CODE,
+			  AFTER_ORG_NAME,
+			  OPERATOR_CODE,
+			  OPERATOR_NAME,
+			  OPERATION_ORG_CODE,
+			  OPERATION_ORG_NAME,
+			  OPERATION_TIME,
+			  MATCH_TYPE
+		) values (
+				#{id,jdbcType=VARCHAR},
+				#{waybillNo,jdbcType=VARCHAR},
+				#{beforeOrgCode,jdbcType=VARCHAR},
+				#{beforeOrgName,jdbcType=VARCHAR},
+				#{afterOrgCode,jdbcType=VARCHAR},
+				#{afterOrgName,jdbcType=VARCHAR},
+				#{operatorCode,jdbcType=VARCHAR},
+				#{operatorName,jdbcType=VARCHAR},
+				#{operationOrgCode,jdbcType=VARCHAR},
+				#{operationOrgName,jdbcType=VARCHAR},
+				#{operationTime,jdbcType=TIMESTAMP},
+				#{matchType,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	<!--查询补码信息-->
+	<!--自提货补码不查 -->
+	<select id = "queryComplementList" parameterType = "com.deppon.foss.module.transfer.load.api.shared.dto.ComplementQueryDto"
+		resultMap = "complementResultMap">
+		select * from (
+		  <choose><!-- 按运单查询 -->
+        	<when test ="waybillNo != null and waybillNo != ''">
+        		select 
+				we.waybill_no waybillNo,
+				di1.code departCityCode,
+				di1.name departCityName,
+				di2.code arriveCityCode,
+				di2.name arriveCityName,
+				pro.name arriveProName,
+				pro1.name || city.name || dis.name ||di3.name|| we.receive_customer_address address,
+				we.customer_pickup_org_code pkpOrgCode,
+				we.customer_pickup_org_name pkpOrgName,
+				we.bill_time billingTime,
+				we.create_org_code billingOrgCode,
+				md1.name billingOrgName,
+				we.receive_customer_name consigneeName,
+				we.receive_customer_phone consigneeTel,
+				we.receive_method pkpMethod,
+				we.is_add_code beDone,
+				we.add_code_time complementTime,
+				2 seq,
+				'' returntype,
+			    1 rn,
+				'' ooc,
+				decode(saf.waybill_type,'EWAYBILL','Y','N') beEwaybill
+				 from pkp.t_srv_waybill_express we
+				 inner join pkp.t_srv_actual_freight f on f.waybill_no = we.waybill_no and f.status = 'EFFECTIVE'
+				 inner join pkp.t_srv_actual_freight saf on we.waybill_no=saf.waybill_no and saf.status = 'EFFECTIVE'
+				 left join bse.mv_dest_net md1 on we.create_org_code = md1.code and md1.active = 'Y'
+				 left join bse.mv_dest_net md2 on we.RECEIVE_ORG_CODE = md2.code and md2.active = 'Y'
+				 left join bse.mv_dest_net md3 on we.CUSTOMER_PICKUP_ORG_CODE = md3.code and md3.active = 'Y'
+				 left join bse.t_bas_district di1 on md2.city_code = di1.code and di1.active = 'Y'
+				 left join bse.t_bas_district di2 on md3.city_code = di2.code and di2.active = 'Y'
+				 left join bse.t_bas_district di3 on saf.RECEIVE_CUSTOMER_VILLAGE_CODE = di3.code and di3.active = 'Y'
+				 left join bse.t_bas_district pro on pro.code = di2.parent_district_code and pro.active = 'Y'
+		         LEFT JOIN bse.t_bas_district dis ON dis.code = we.receive_customer_dist_code AND dis.active = 'Y'
+		         
+		         LEFT JOIN bse.t_bas_district pro1
+                 ON pro1.code = we.receive_customer_prov_code
+                 --由dis.active 改为 pro1.active 218381
+                 AND pro1.active = 'Y'
+                 LEFT JOIN bse.t_bas_district city
+                 ON city.code = we.receive_customer_city_code
+                 AND city.active = 'Y'
+       
+		         
+		         left join tfr.t_opt_auto_add_code_byhand aacb on aacb.waybill_no=we.waybill_no 				where
+			 	 we.receive_method NOT IN ('SELF_PICKUP','INNER_PICKUP')
+			 	 and we.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+				and not exists (
+					select 1
+				  from pkp.t_srv_arrivesheet a
+				 inner join pkp.t_srv_sign_detail  sd
+				 on a.arrivesheet_no =sd.arrivesheet_no
+				where a.active  ='Y' AND A.DESTROYED = 'N' AND A.STATUS='SIGN' and a.waybill_no=we.waybill_no
+					)        	
+			</when>
+				<otherwise>
+  select we.waybill_no waybillNo,
+         di1.code      departCityCode,
+         di1.name      departCityName,
+         di2.code      arriveCityCode,
+         di2.name      arriveCityName,
+         pro.name      arriveProName,
+         pro1.name || city.name || dis.name ||di3.name|| we.receive_customer_address address,
+         we.customer_pickup_org_code pkpOrgCode,
+         we.customer_pickup_org_name pkpOrgName,
+         we.bill_time billingTime,
+         we.create_org_code billingOrgCode,
+         md1.name billingOrgName,
+         we.receive_customer_name consigneeName,
+         we.receive_customer_phone consigneeTel,
+         we.receive_method pkpMethod,
+         we.is_add_code beDone,
+		 we.add_code_time complementTime, 
+		 decode(aacb.reason, 'RETURN_ARRIVE', 1, 'RETURN_FORWARD', 1, 2) seq,
+		 aacb.reason returntype,
+         /*'' returntype,*/
+		 row_number() OVER(PARTITION BY we.waybill_no ORDER BY CAST(pd.route_no AS INTEGER) DESC) rn,
+		 pd.orig_org_code  orig_org_code
+    from tfr.t_opt_auto_add_code_byhand aacb
+   inner join pkp.t_srv_waybill_express we
+      on aacb.waybill_no = we.waybill_no
+			    join pkp.t_srv_actual_freight saf on we.waybill_no=saf.waybill_no and saf.status = 'EFFECTIVE' 
+			     INNER JOIN tfr.t_opt_path_detail pd ON pd.waybill_no = we.waybill_no
+    left join bse.mv_dest_net md1
+      on we.create_org_code = md1.code
+     and md1.active = 'Y'
+    left join bse.mv_dest_net md2
+      on we.RECEIVE_ORG_CODE = md2.code
+     and md2.active = 'Y'
+    left join bse.mv_dest_net md3
+      on we.CUSTOMER_PICKUP_ORG_CODE = md3.code
+     and md3.active = 'Y'
+    left join bse.t_bas_district di1
+      on md2.city_code = di1.code
+     and di1.active = 'Y'
+    left join bse.t_bas_district di2
+      on md3.city_code = di2.code
+     and di2.active = 'Y'
+     left join bse.t_bas_district di3 on saf.RECEIVE_CUSTOMER_VILLAGE_CODE = di3.code and di3.active = 'Y'
+    left join bse.t_bas_district pro
+      on pro.code = di2.parent_district_code
+     and pro.active = 'Y'
+    LEFT JOIN bse.t_bas_district dis
+      ON dis.code = we.receive_customer_dist_code
+     AND dis.active = 'Y'
+    LEFT JOIN bse.t_bas_district pro1
+     ON pro1.code = we.receive_customer_prov_code
+    AND pro1.active = 'Y'
+    LEFT JOIN bse.t_bas_district city
+     ON city.code = we.receive_customer_city_code
+    AND city.active = 'Y'
+		 <where>
+						we.BILL_TIME between #{beginBillingTime,jdbcType=TIMESTAMP}
+						and #{endBillingTime,jdbcType=TIMESTAMP}
+		 	
+					<if test="pkpOrgCodeList != null and pkpOrgCodeList.size() != 0">
+						and(
+						<foreach collection="pkpOrgCodeList" item="item" separator="or">
+										we.CUSTOMER_PICKUP_ORG_CODE = #{item,jdbcType=VARCHAR}
+						</foreach>
+						)
+					</if>
+			          
+					<if test="billingOrgCode != null and billingOrgCode != ''">
+						and we.CREATE_ORG_CODE = #{billingOrgCode,jdbcType=VARCHAR}
+					</if>
+					<if test="departCityCode != null and departCityCode != ''">
+						and md2.city_code = #{departCityCode,jdbcType=VARCHAR}
+					</if>
+					<if test="arriveCityCode != null and arriveCityCode != ''">
+						and md3.city_code = #{arriveCityCode,jdbcType=VARCHAR}
+					</if>
+					<if test="arriveDistCodeList != null and arriveDistCodeList.size() != 0">
+						and dis.CODE in (
+						<foreach collection="arriveDistCodeList" item="item" separator=",">
+										#{item,jdbcType=VARCHAR}
+						</foreach>
+						)
+					</if>
+					<if test="address != null and address != ''">
+						and we.receive_customer_address like '%' || #{address,jdbcType=VARCHAR} || '%'
+					</if>
+			          <if test=" beEwaybill != null and beEwaybill != '' ">
+			            AND  decode(saf.waybill_type,'EWAYBILL','Y','N')=#{beEwaybill,jdbcType=VARCHAR}
+			          </if>
+			     </where>
+				</otherwise>
+		 	</choose>
+			 )
+		  <where>
+		 	rn = 1
+		 	   <if test="currentTransferCenterCode != null and currentTransferCenterCode != ''">
+					 		AND  orig_org_code = #{currentTransferCenterCode,jdbcType=VARCHAR}
+				</if>
+		 </where>
+		 order by seq,billingTime
+	</select>
+	
+	<!--查询补码总记录数-->
+	<select id = "queryComplementCount" parameterType = "com.deppon.foss.module.transfer.load.api.shared.dto.ComplementQueryDto"
+		resultType = "java.lang.Long">
+		select count(*) from (
+		 <choose>
+        	<when test ="waybillNo != null and waybillNo != ''">
+        		select 
+				 	1 rn
+				 from pkp.t_srv_waybill_express we
+				  inner join pkp.t_srv_actual_freight saf on we.waybill_no=saf.waybill_no and saf.status = 'EFFECTIVE'
+				where
+			 	 we.receive_method NOT IN ('SELF_PICKUP','INNER_PICKUP')
+			 	and we.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+			 	and not exists (
+					select 1
+				  from pkp.t_srv_arrivesheet a
+				 inner join pkp.t_srv_sign_detail  sd
+				 on a.arrivesheet_no =sd.arrivesheet_no
+				where a.active  ='Y' AND A.DESTROYED = 'N' AND A.STATUS='SIGN' and a.waybill_no=we.waybill_no
+					)
+        	</when>
+        	<otherwise>
+			        select row_number() OVER(PARTITION BY we.waybill_no ORDER BY pd.route_no DESC) rn,
+			        pd.orig_org_code orig_org_code
+    from tfr.t_opt_auto_add_code_byhand aacb
+   inner join pkp.t_srv_waybill_express we
+      on aacb.waybill_no = we.waybill_no
+    join pkp.t_srv_actual_freight saf on we.waybill_no=saf.waybill_no and saf.status = 'EFFECTIVE'
+     left join bse.mv_dest_net md2 on we.RECEIVE_ORG_CODE = md2.code and md2.active = 'Y'
+      left join bse.mv_dest_net md3 on we.CUSTOMER_PICKUP_ORG_CODE = md3.code and md3.active = 'Y'
+       		    INNER JOIN tfr.t_opt_path_detail pd ON pd.waybill_no = we.waybill_no
+		 LEFT JOIN bse.t_bas_district dis ON dis.code = we.receive_customer_dist_code AND dis.active = 'Y'
+		 <where>
+						we.BILL_TIME between #{beginBillingTime,jdbcType=TIMESTAMP}
+						and #{endBillingTime,jdbcType=TIMESTAMP}
+			            <if test="currentTransferCenterCode != null and currentTransferCenterCode != ''">
+					 		AND  pd.orig_org_code = #{currentTransferCenterCode,jdbcType=VARCHAR}
+					 	</if>
+					<if test="pkpOrgCodeList != null and pkpOrgCodeList.size() != 0">
+						and(
+						<foreach collection="pkpOrgCodeList" item="item" separator="or">
+										we.CUSTOMER_PICKUP_ORG_CODE = #{item,jdbcType=VARCHAR}
+						</foreach>
+						)
+					</if>
+					
+					<if test="billingOrgCode != null and billingOrgCode != ''">
+						and we.CREATE_ORG_CODE = #{billingOrgCode,jdbcType=VARCHAR}
+					</if>
+					<if test="departCityCode != null and departCityCode != ''">
+						and md2.city_code = #{departCityCode,jdbcType=VARCHAR}
+					</if>
+					<if test="arriveCityCode != null and arriveCityCode != ''">
+						and md3.city_code = #{arriveCityCode,jdbcType=VARCHAR}
+					</if>
+					<if test="arriveDistCodeList != null and arriveDistCodeList.size() != 0">
+						and dis.CODE in (
+						<foreach collection="arriveDistCodeList" item="item" separator=",">
+										#{item,jdbcType=VARCHAR}
+						</foreach>
+						)
+					</if>
+					<if test="address != null and address != ''">
+						and we.receive_customer_address like '%' || #{address,jdbcType=VARCHAR} || '%'
+					</if>
+			          <if test=" beEwaybill != null and beEwaybill != '' ">
+			            AND  decode(saf.waybill_type,'EWAYBILL','Y','N')=#{beEwaybill,jdbcType=VARCHAR}
+			          </if>
+			     </where>
+				</otherwise>
+		 	</choose>
+		 )
+		 <where>
+		 	rn = 1
+		 	   <if test="currentTransferCenterCode != null and currentTransferCenterCode != ''">
+					 		AND  orig_org_code = #{currentTransferCenterCode,jdbcType=VARCHAR}
+				</if>
+		 </where>
+	</select>
+	
+	<!--查询补码退回信息-->
+	<!--自提货补码不查 -->
+	<select id = "queryComplementBackList" parameterType = "com.deppon.foss.module.transfer.load.api.shared.dto.ComplementQueryDto"
+		resultMap = "complementResultMap">
+		select * from (
+			  select we.waybill_no waybillNo,
+			         di1.code      departCityCode,
+			         di1.name      departCityName,
+			         di2.code      arriveCityCode,
+			         di2.name      arriveCityName,
+			         pro.name      arriveProName,
+			         pro1.name || city.name || dis.name ||di3.name|| we.receive_customer_address address,
+			         we.customer_pickup_org_code pkpOrgCode,
+			         we.customer_pickup_org_name pkpOrgName,
+			         we.bill_time billingTime,
+			         aacb.create_time returnTime,
+			         we.create_org_code billingOrgCode,
+			         md1.name billingOrgName,
+			         we.receive_customer_name consigneeName,
+			         we.receive_customer_phone consigneeTel,
+			         we.receive_method pkpMethod,
+			         we.is_add_code beDone,
+					 we.add_code_time complementTime, 
+			         '' returntype,
+				     row_number() OVER(PARTITION BY we.waybill_no ORDER BY ocl.operation_time DESC) rn,
+				     ocl.operation_org_code orig_org_code
+			    from tfr.t_opt_auto_add_code_byhand aacb
+			   inner join pkp.t_srv_waybill_express we
+			      on aacb.waybill_no = we.waybill_no
+			   join pkp.t_srv_actual_freight saf
+			     on we.waybill_no=saf.waybill_no 
+			    Inner Join tfr.t_opt_complement_log ocl 
+                   On ocl.waybill_no=we.waybill_no
+			    left join bse.mv_dest_net md1
+			      on we.create_org_code = md1.code
+			     and md1.active = 'Y'
+			    left join bse.mv_dest_net md2
+			      on we.RECEIVE_ORG_CODE = md2.code
+			     and md2.active = 'Y'
+			    left join bse.mv_dest_net md3
+			      on we.CUSTOMER_PICKUP_ORG_CODE = md3.code
+			     and md3.active = 'Y'
+			    left join bse.t_bas_district di1
+			      on md2.city_code = di1.code
+			     and di1.active = 'Y'
+			    left join bse.t_bas_district di2
+			      on md3.city_code = di2.code
+			     and di2.active = 'Y'
+			    left join bse.t_bas_district di3 
+			     on saf.RECEIVE_CUSTOMER_VILLAGE_CODE = di3.code 
+			     and di3.active = 'Y'
+			    left join bse.t_bas_district pro
+			      on pro.code = di2.parent_district_code
+			     and pro.active = 'Y'
+			    LEFT JOIN bse.t_bas_district dis
+			      ON dis.code = we.receive_customer_dist_code
+			     AND dis.active = 'Y'
+			    LEFT JOIN bse.t_bas_district pro1
+			     ON pro1.code = we.receive_customer_prov_code
+			    AND dis.active = 'Y'
+			    LEFT JOIN bse.t_bas_district city
+			     ON city.code = we.receive_customer_city_code
+			    AND city.active = 'Y'
+					 <where>
+					 	<choose>
+					 		<!--运单号不为空时，只按照运单号查询；-->
+					 		<when test="waybillNo != null and waybillNo != ''">
+								aacb.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+								and aacb.reason='RETURN_ARRIVE'
+							</when>
+							<otherwise>
+								we.BILL_TIME between #{beginBillingTime,jdbcType=TIMESTAMP}
+									and #{endBillingTime,jdbcType=TIMESTAMP}
+								and aacb.create_time between #{beginReturnTime,jdbcType=TIMESTAMP}
+									and #{endReturnTime,jdbcType=TIMESTAMP}
+								and aacb.reason='RETURN_ARRIVE'
+								<if test="pkpOrgCodeList != null and pkpOrgCodeList.size() != 0">
+									and(
+									<foreach collection="pkpOrgCodeList" item="item" separator="or">
+													we.CUSTOMER_PICKUP_ORG_CODE = #{item,jdbcType=VARCHAR}
+									</foreach>
+									)
+								</if>
+						          
+								<if test="billingOrgCode != null and billingOrgCode != ''">
+									and we.CREATE_ORG_CODE = #{billingOrgCode,jdbcType=VARCHAR}
+								</if>
+								<if test="departCityCode != null and departCityCode != ''">
+									and md2.city_code = #{departCityCode,jdbcType=VARCHAR}
+								</if>
+								<if test="arriveCityCode != null and arriveCityCode != ''">
+									and md3.city_code = #{arriveCityCode,jdbcType=VARCHAR}
+								</if>
+								<if test="arriveDistCodeList != null and arriveDistCodeList.size() != 0">
+									and dis.CODE in (
+									<foreach collection="arriveDistCodeList" item="item" separator=",">
+													#{item,jdbcType=VARCHAR}
+									</foreach>
+									)
+								</if>
+								<if test="address != null and address != ''">
+									and we.receive_customer_address like '%' || #{address,jdbcType=VARCHAR} || '%'
+								</if>
+						          <if test=" beEwaybill != null and beEwaybill != '' ">
+						            AND  decode(saf.waybill_type,'EWAYBILL','Y','N')=#{beEwaybill,jdbcType=VARCHAR}
+						          </if>
+							</otherwise>
+					 	</choose>
+						     </where>
+						 )
+					  <where>
+					 	rn = 1
+					 	 <if test="currentTransferCenterCode != null and currentTransferCenterCode != ''">
+							 	AND  orig_org_code = #{currentTransferCenterCode,jdbcType=VARCHAR}
+						</if>
+					 </where>
+					 order by billingTime
+	</select>
+	
+	<!--查询补码退回总记录数-->
+	<select id = "queryComplementBackCount" parameterType = "com.deppon.foss.module.transfer.load.api.shared.dto.ComplementQueryDto"
+		resultType = "java.lang.Long">
+		select count(*) from (
+			  select  row_number() OVER(PARTITION BY we.waybill_no ORDER BY ocl.operation_time DESC) rn,
+			  ocl.operation_org_code orig_org_code
+			    from tfr.t_opt_auto_add_code_byhand aacb
+			   inner join pkp.t_srv_waybill_express we
+			      on aacb.waybill_no = we.waybill_no
+			   join pkp.t_srv_actual_freight saf
+			     on we.waybill_no=saf.waybill_no 
+			   left join bse.mv_dest_net md2 
+			     on we.RECEIVE_ORG_CODE = md2.code 
+			     and md2.active = 'Y'
+			   left join bse.mv_dest_net md3
+			     on we.CUSTOMER_PICKUP_ORG_CODE = md3.code
+			     and md3.active = 'Y'
+			    Inner Join tfr.t_opt_complement_log ocl 
+                   On ocl.waybill_no=we.waybill_no
+				LEFT JOIN bse.t_bas_district dis 
+				 ON dis.code = we.receive_customer_dist_code 
+				 AND dis.active = 'Y'
+					 <where>
+				 	<choose>
+				 		<!--运单号不为空时，只按照运单号查询；-->
+		        		<when test ="waybillNo != null and waybillNo != ''">
+		        			aacb.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		        			and aacb.reason='RETURN_ARRIVE'
+		        		</when>
+		        		<otherwise>
+		        			we.BILL_TIME between #{beginBillingTime,jdbcType=TIMESTAMP}
+									and #{endBillingTime,jdbcType=TIMESTAMP}
+								and aacb.create_time between #{beginReturnTime,jdbcType=TIMESTAMP}
+									and #{endReturnTime,jdbcType=TIMESTAMP}
+								and aacb.reason='RETURN_ARRIVE'
+							<if test="pkpOrgCodeList != null and pkpOrgCodeList.size() != 0">
+								and(
+								<foreach collection="pkpOrgCodeList" item="item" separator="or">
+												we.CUSTOMER_PICKUP_ORG_CODE = #{item,jdbcType=VARCHAR}
+								</foreach>
+								)
+							</if>
+							
+							<if test="billingOrgCode != null and billingOrgCode != ''">
+								and we.CREATE_ORG_CODE = #{billingOrgCode,jdbcType=VARCHAR}
+							</if>
+							<if test="departCityCode != null and departCityCode != ''">
+								and md2.city_code = #{departCityCode,jdbcType=VARCHAR}
+							</if>
+							<if test="arriveCityCode != null and arriveCityCode != ''">
+								and md3.city_code = #{arriveCityCode,jdbcType=VARCHAR}
+							</if>
+							<if test="arriveDistCodeList != null and arriveDistCodeList.size() != 0">
+								and dis.CODE in (
+								<foreach collection="arriveDistCodeList" item="item" separator=",">
+												#{item,jdbcType=VARCHAR}
+								</foreach>
+								)
+							</if>
+							<if test="address != null and address != ''">
+								and we.receive_customer_address like '%' || #{address,jdbcType=VARCHAR} || '%'
+							</if>
+					          <if test=" beEwaybill != null and beEwaybill != '' ">
+					            AND  decode(saf.waybill_type,'EWAYBILL','Y','N')=#{beEwaybill,jdbcType=VARCHAR}
+					          </if>
+		        		</otherwise>
+				 	</choose>
+				</where>
+				 )
+		 <where>
+		 	rn = 1
+			 <if test="currentTransferCenterCode != null and currentTransferCenterCode != ''">
+				AND  orig_org_code = #{currentTransferCenterCode,jdbcType=VARCHAR}
+			</if>
+		 </where>
+	</select>
+	
+	<!--根据运单号查询补码日志-->
+	<select id = "queryComplementLogListByWaybillNo" parameterType = "java.lang.String"
+		resultMap = "complementLogResultMap">
+			select 
+				cl.id id,
+				cl.waybill_no waybillNo,
+				cl.before_org_code beforeOrgCode,
+				cl.before_org_name beforeOrgName,
+				cl.after_org_code afterOrgCode,
+				cl.after_org_name afterOrgName,
+				cl.operator_name operatorName,
+				cl.operator_code operatorCode,
+				cl.operation_org_name operationOrgName,
+				cl.operation_org_code operationOrgCode,
+				cl.operation_time operationTime
+				from tfr.t_opt_complement_log cl
+		 <where>
+		 	cl.waybill_no = #{waybillNo,jdbcType=VARCHAR} 
+		 </where>
+		 	order by cl.operation_time desc
+	</select>
+	
+<!-- 补码日志查询where从句 -->
+<!-- 用于queryComplementLogList、queryComplementLogCount -->
+	<sql id="sql_queryComplementLog_where_clause">
+		<where>
+			<choose>
+				<when test="waybillNo != null and waybillNo != ''">
+					t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+				</when>
+				<otherwise>
+					t.operation_org_code = #{operationOrgCode,jdbcType=VARCHAR}
+					AND t.operation_time between #{beginOperateTime,jdbcType=TIMESTAMP}
+					AND #{endOperateTime,jdbcType=TIMESTAMP}
+					<if test="beforeOrgCode != null and beforeOrgCode !=''">
+						AND t.before_org_code = #{beforeOrgCode,jdbcType=VARCHAR}
+					</if>
+					<if test="afterOrgCode != null and afterOrgCode !=''">
+						AND t.after_org_code = #{afterOrgCode,jdbcType=VARCHAR}
+					</if>
+					<if test="operatorCode != null and operatorCode !=''">
+						AND t.operator_code = #{operatorCode,jdbcType=VARCHAR}
+					</if>
+					<if test="departCityCode != null and departCityCode !=''">
+						AND di1.code = #{departCityCode,jdbcType=VARCHAR}
+					</if>
+					<if test="matchType != null and matchType !=''">
+						AND t.match_type = #{matchType,jdbcType=VARCHAR}
+					</if>
+				</otherwise>
+			</choose>		
+		</where>
+	</sql>
+
+<!-- 补码日志查询 -->
+	<select id="queryComplementLogList"
+		parameterType="com.deppon.foss.module.transfer.load.api.shared.dto.ComplementLogDto"
+		resultMap="complementLogResultMap">
+		SELECT t.id                 id,
+		       t.waybill_no         waybillNo,
+		       t.before_org_code    beforeOrgCode,
+		       t.before_org_name    beforeOrgName,
+		       t.after_org_code     afterOrgCode,
+		       t.after_org_name     afterOrgName,
+		       t.operator_name      operatorName,
+		       t.operator_code      operatorCode,
+		       t.operation_org_name operationOrgName,
+		       t.operation_org_code operationOrgCode,
+		       t.operation_time     operationTime,
+		       di1.code      departCityCode,
+		       di1.name      departCityName,
+		       t.match_type matchType
+		  FROM tfr.t_opt_complement_log t
+		  	left join pkp.t_srv_waybill_express p
+	 	  		on t.waybill_no = p.waybill_no
+	 	  	left join bse.mv_dest_net md2
+	 	  		on p.RECEIVE_ORG_CODE = md2.code
+	            and md2.active = 'Y'
+	        left join bse.t_bas_district di1
+	        	on md2.city_code = di1.code
+	            and di1.active = 'Y'
+		 <include refid="sql_queryComplementLog_where_clause"/>
+		  ORDER BY t.waybill_no DESC,t.operation_time DESC
+	</select>
+	
+	<select id="queryComplementLogAddress" resultType="String" parameterType="String">
+		select d1.name || d2.name || d3.name || d4.name || we.receive_customer_address address 
+			 from pkp.t_srv_waybill_express we
+			  join pkp.t_srv_actual_freight saf
+			    on we.waybill_no = saf.waybill_no 
+			  left join bse.t_bas_district d1
+			    on we.receive_customer_prov_code = d1.code and d1.active = 'Y'
+			  left join bse.t_bas_district d2
+			    on we.receive_customer_city_code = d2.code and d2.active = 'Y'
+			  left join bse.t_bas_district d3
+			    on we.receive_customer_dist_code = d3.code and d3.active = 'Y'
+			  left join bse.t_bas_district d4
+			    on saf.RECEIVE_CUSTOMER_VILLAGE_CODE = d4.code and d4.active = 'Y'
+         where we.waybill_no=#{waybillNo}
+	</select> 
+	<!--查询补码部门  -->
+	<select id="queryOperationOrgCode" 
+	parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.ComplementLogEntity"
+	resultMap="complementLogResultMap">
+				select dd.name operationOrgName,dd.orig_org_code operationOrgCode from (
+					select distinct pd.waybill_no,
+							 pd.orig_org_code,
+                             a.name
+                             ,pd.route_no
+                             from tfr.t_opt_path_detail pd
+                             left join bse.t_bas_org a
+                             on a.code = pd.orig_org_code
+                             and a.active = 'Y'
+                             where pd.waybill_no = #{waybillNo} order by to_number(pd.route_no) desc
+                  ) dd where rownum=1
+	</select>   
+	
+<!-- 补码日志总数查询 -->
+	<select id="queryComplementLogCount"
+		parameterType="com.deppon.foss.module.transfer.load.api.shared.dto.ComplementLogDto"
+		resultType="Long">
+		SELECT COUNT(1)
+		  FROM tfr.t_opt_complement_log t
+		  	left join pkp.t_srv_waybill_express p
+	 	  		on t.waybill_no = p.waybill_no
+	 	  	left join bse.mv_dest_net md2
+	 	  		on p.RECEIVE_ORG_CODE = md2.code
+	            and md2.active = 'Y'
+	        left join bse.t_bas_district di1
+	        	on md2.city_code = di1.code
+	            and di1.active = 'Y'
+		 <include refid="sql_queryComplementLog_where_clause"/>
+	</select>
+
+<!-- 通过参数运单号查询出 所有子母件单号
+     <select id="queryWaybillNos" parameterType="String" resultType ="BaseResultMap">
+        select d.waybill_no
+	       from PKP.T_SRV_WAYBILL_RELATE_DETAIL d
+		 where d.parent_waybill_no in
+	       (select d.parent_waybill_no
+	          from PKP.T_SRV_WAYBILL_RELATE_DETAIL d
+	         where d.waybill_no = #{waybillNo})
+</select> -->
+
+<!-- 通过运单号查出是否有子母件 -->
+     <select id="queryWaybillNoCZM" parameterType="String" resultType ="String" >
+	 select min(d.waybill_no)
+	   from pkp.t_srv_waybill_relate_detail d
+	 where d.waybill_no = #{waybillNo}
+	   and d.active = 'Y'
+         
+     </select>
+
+	<insert id="insertAsyncComplement"
+		parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.AsyncComplementEntity">
+		INSERT INTO tfr.t_opt_async_complement
+			(id,
+			waybill_no,
+			pkp_org_code,
+			pkp_org_name,
+			ldp_flag,
+			emp_code,
+			emp_name,
+			emp_dept_code,
+			emp_dept_name,
+			tfr_ctr_code,
+			tfr_ctr_name,
+			create_time,
+			modify_time,
+			failed,
+			before_pkp_org_code,
+			before_pkp_org_name)
+			VALUES
+			(#{id,jdbcType=VARCHAR},
+			#{waybillNo,jdbcType=VARCHAR},
+			#{pkpOrgCode,jdbcType=VARCHAR},
+			#{pkpOrgName,jdbcType=VARCHAR},
+			#{ldpFlag,jdbcType=VARCHAR},
+			#{empCode,jdbcType=VARCHAR},
+			#{empName,jdbcType=VARCHAR},
+			#{empDeptCode,jdbcType=VARCHAR},
+			#{empDeptName,jdbcType=VARCHAR},
+			#{tfrCtrCode,jdbcType=VARCHAR},
+			#{tfrCtrName,jdbcType=VARCHAR},
+			#{createTime,jdbcType=TIMESTAMP},
+			#{modifyTime,jdbcType=TIMESTAMP},
+			#{failed,jdbcType=VARCHAR},
+			#{beforePkpOrgCode,jdbcType=VARCHAR},
+			#{beforePkpOrgName,jdbcType=VARCHAR}
+			)
+	</insert>
+	
+	<select id="findAsyncComplement"
+		resultType="com.deppon.foss.module.transfer.load.api.shared.domain.AsyncComplementEntity">
+		<![CDATA[
+		SELECT id                  id,
+		       waybill_no          waybillNo,
+		       pkp_org_code        pkpOrgCode,
+		       pkp_org_name        pkpOrgName,
+		       ldp_flag            ldpFlag,
+		       emp_code            empCode,
+		       emp_name            empName,
+		       emp_dept_code       empDeptCode,
+		       emp_dept_name       empDeptName,
+		       tfr_ctr_code        tfrCtrCode,
+		       tfr_ctr_name        tfrCtrName,
+		       before_pkp_org_code beforePkpOrgCode,
+		       before_pkp_org_name beforePkpOrgName,
+		       create_time         createTime
+		  FROM (SELECT t.id id,
+		               t.waybill_no,
+		               t.pkp_org_code,
+		               t.pkp_org_name,
+		               t.ldp_flag,
+		               t.emp_code,
+		               t.emp_name,
+		               t.emp_dept_code,
+		               t.emp_dept_name,
+		               t.tfr_ctr_code,
+		               t.tfr_ctr_name,
+		               t.before_pkp_org_code,
+		               t.before_pkp_org_name,
+		               t.create_time,
+		               row_number() over(PARTITION BY t.waybill_no ORDER BY t.create_time DESC) rn
+		          FROM tfr.t_opt_async_complement t
+		         WHERE t.create_time >= TRUNC(SYSDATE) - 1
+		           AND t.failed = 'N')
+		 WHERE rn = 1
+		   AND ROWNUM <= 2000
+		 ]]>
+	</select>
+	
+	<delete id="deleteAsyncComplement" 
+		parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.AsyncComplementEntity">
+		<![CDATA[
+		DELETE FROM tfr.t_opt_async_complement t
+		 WHERE t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		   AND t.create_time <= #{createTime,jdbcType=TIMESTAMP}
+		   AND t.failed = 'N'
+		]]>   
+	</delete>
+	
+	<delete id="deleteAsyncComplementFailed" 
+		parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.AsyncComplementEntity">
+		DELETE FROM tfr.t_opt_async_complement t
+		 WHERE t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		   AND t.failed = 'Y'
+	</delete>
+	
+	<update id="updateAsyncFailed" 
+		parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.AsyncComplementEntity">
+		UPDATE tfr.t_opt_async_complement t
+		   SET t.failed      = 'Y', 
+		       t.fail_info   = #{failInfo,jdbcType=VARCHAR},
+		       t.modify_time = #{modifyTime,jdbcType=TIMESTAMP}
+		 WHERE t.id = #{id,jdbcType=VARCHAR}
+	</update>
+	
+	<select id="findAsyncComplementFailed" 
+		parameterType="com.deppon.foss.module.transfer.load.api.shared.dto.AsyncComplementFailedQcDto" 
+		resultType="com.deppon.foss.module.transfer.load.api.shared.domain.AsyncComplementEntity">
+		SELECT t.waybill_no          waybillNo,
+		       t.before_pkp_org_name beforePkpOrgName,
+		       t.pkp_org_name        pkpOrgName,
+		       t.emp_code            empCode,
+		       t.emp_name            empName,
+		       t.tfr_ctr_name        tfrCtrName,
+		       t.create_time         createTime,
+		       t.fail_info           failInfo
+		  FROM tfr.t_opt_async_complement t
+		  <where>
+		            t.failed = 'Y'
+			 <choose>
+			 	<when test="waybillNo != null and waybillNo != ''">
+					AND t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+				</when>
+				<otherwise>
+	   				AND t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+	   				AND t.create_time between #{beginTime,jdbcType=TIMESTAMP} AND #{endTime,jdbcType=TIMESTAMP}
+	   			  <if test="beforePkpOrgCode != null and beforePkpOrgCode !=''">
+	   				AND t.before_pkp_org_code = #{beforePkpOrgCode,jdbcType=VARCHAR}
+	   			  </if>
+	   			  <if test="pkpOrgCode != null and pkpOrgCode !=''">
+	   				AND t.pkp_org_code = #{pkpOrgCode,jdbcType=VARCHAR}
+	   			  </if>
+				</otherwise>
+			 </choose>
+		  </where>
+	</select>
+	
+	<select id="cntAsyncComplementFailed" 
+		parameterType="com.deppon.foss.module.transfer.load.api.shared.dto.AsyncComplementFailedQcDto" 
+		resultType="java.lang.Long">
+		SELECT COUNT(1)
+		  FROM tfr.t_opt_async_complement t
+		  <where>
+				    t.failed = 'Y'
+			 <choose>
+			 	<when test="waybillNo != null and waybillNo != ''">
+					AND t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+				</when>
+				<otherwise>
+	   				AND t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+	   				AND t.create_time between #{beginTime,jdbcType=TIMESTAMP} AND #{endTime,jdbcType=TIMESTAMP}
+	   			  <if test="beforePkpOrgCode != null and beforePkpOrgCode !=''">
+	   				AND t.before_pkp_org_code = #{beforePkpOrgCode,jdbcType=VARCHAR}
+	   			  </if>
+	   			  <if test="pkpOrgCode != null and pkpOrgCode !=''">
+	   				AND t.pkp_org_code = #{pkpOrgCode,jdbcType=VARCHAR}
+	   			  </if>
+				</otherwise>
+			 </choose>
+		  </where>
+	</select>
+</mapper>

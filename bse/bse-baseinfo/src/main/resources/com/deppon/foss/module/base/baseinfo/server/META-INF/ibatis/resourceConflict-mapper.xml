@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- resourceConflict-mapper.xml -->
+<mapper namespace="foss.bse.bse-baseinfo.resourceConflict" >
+
+	<resultMap id="resourceConflictResultMap"
+   			type="com.deppon.foss.module.base.baseinfo.api.shared.domain.ResourceConflictEntity">
+		<result property="id" column="ID"  jdbcType="VARCHAR" />
+		<result property="virtualCode" column="VIRTUAL_CODE"  jdbcType="VARCHAR" />
+		<result property="firstCode" column="FIRST_CODE"  jdbcType="VARCHAR" />
+		<result property="secondCode" column="SECOND_CODE"  jdbcType="VARCHAR" />
+		<result property="createDate" column="CREATE_TIME"  jdbcType="TIMESTAMP" />
+		<result property="modifyDate" column="MODIFY_TIME"  jdbcType="TIMESTAMP" />
+		<result property="active" column="ACTIVE"  jdbcType="CHAR" />
+		<result property="createUser" column="CREATE_USER_CODE"  jdbcType="VARCHAR" />
+		<result property="modifyUser" column="MODIFY_USER_CODE"  jdbcType="VARCHAR" />
+		<result property="roleCode" column="ROLE_CODE"  jdbcType="VARCHAR" />
+		<result property="roleName" column="ROLE_NAME"  jdbcType="VARCHAR" />
+	</resultMap>
+
+	<sql id="query_resourceConflict_param">
+		A.ID AS ID,		/** ID     **/ 
+		A.VIRTUAL_CODE AS VIRTUAL_CODE,		/** 虚拟编码     **/ 
+		A.FIRST_CODE AS FIRST_CODE,		/** 权限编码一     **/ 
+		A.SECOND_CODE AS SECOND_CODE,		/** 权限编码二     **/ 
+		A.CREATE_TIME AS CREATE_TIME,		/** 创建时间     **/ 
+		A.MODIFY_TIME AS MODIFY_TIME,		/** 更新时间     **/ 
+		A.ACTIVE AS ACTIVE,		/** 是否启用     **/ 
+		A.CREATE_USER_CODE AS CREATE_USER_CODE,		/** 创建人     **/ 
+		A.MODIFY_USER_CODE AS MODIFY_USER_CODE,		/** 更新人     **/
+		A.ROLE_CODE AS ROLE_CODE,		/** 角色编码     **/
+		A.ROLE_NAME AS ROLE_NAME		/** 角色名称    **/ 		 
+	</sql>
+
+	<!-- 插入数据 ： -->
+	<insert id="addResourceConflict"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ResourceConflictEntity">
+		INSERT/** 综合:插入数据  **/ INTO BSE.T_BAS_RESOURCES_CONFLICT(
+		ID,
+		VIRTUAL_CODE,
+		FIRST_CODE,
+		SECOND_CODE,
+		CREATE_TIME,
+		MODIFY_TIME,
+		ACTIVE,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE,
+		ROLE_CODE,
+		ROLE_NAME
+		) VALUES	
+	(
+		#{id, jdbcType=VARCHAR},
+		#{virtualCode, jdbcType=VARCHAR},
+		#{firstCode, jdbcType=VARCHAR},
+		#{secondCode, jdbcType=VARCHAR},
+		#{createDate, jdbcType=TIMESTAMP},
+		#{modifyDate, jdbcType=TIMESTAMP},
+		#{active, jdbcType=CHAR},
+		#{createUser, jdbcType=VARCHAR},
+		#{modifyUser, jdbcType=VARCHAR},
+		#{roleCode, jdbcType=VARCHAR},
+		#{roleName, jdbcType=VARCHAR}
+	)
+	</insert> 
+
+	<!-- 根据VIRTUAL_CODE 删除数据： -->
+	<update id="deleteResourceConflict" 
+		parameterType="map">
+		UPDATE/** 综合:根据VIRTUAL_CODE 删除数据  **/ BSE.T_BAS_RESOURCES_CONFLICT A 
+		SET A.ACTIVE=#{entity.active,jdbcType=CHAR},
+			A.MODIFY_USER_CODE=#{entity.modifyUser,jdbcType=VARCHAR}, 
+			A.MODIFY_TIME = #{entity.modifyDate,jdbcType=TIMESTAMP} 
+		<where>
+			A.VIRTUAL_CODE=#{entity.virtualCode,jdbcType=VARCHAR} 
+			AND  A.ACTIVE=#{conditionActive,jdbcType=CHAR}
+		</where>
+	</update>
+
+	<!-- 批量作废 -->
+	<update id="deleteResourceConflictMore"
+		parameterType="map">
+		UPDATE/** 综合:批量作废  **/ BSE.T_BAS_RESOURCES_CONFLICT A 
+		SET A.ACTIVE=#{entity.active,jdbcType=CHAR},
+			A.MODIFY_USER_CODE=#{entity.modifyUser,jdbcType=VARCHAR}, 
+			A.MODIFY_TIME = #{entity.modifyDate,jdbcType=TIMESTAMP} 
+        <where>
+            <if test="codes!=null and codes.length > 0">
+                VIRTUAL_CODE in
+                <foreach collection="codes"  index="index" item="code"  open="(" separator="," close=")">  
+	            #{code} 
+	            </foreach>
+            </if>
+            AND  A.ACTIVE=#{conditionActive,jdbcType=CHAR}
+        </where>       
+	</update>
+	
+	<!-- 根据权限编码作废 -->
+	<update id="deleteResourceConflictByCode" parameterType="map">
+		UPDATE/** 综合:批量作废  **/ BSE.T_BAS_RESOURCES_CONFLICT A 
+		SET A.ACTIVE=#{inActive,jdbcType=CHAR},
+			A.MODIFY_USER_CODE=#{modifyUserCode,jdbcType=VARCHAR}, 
+			A.MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP} 
+		WHERE 
+			   A.ACTIVE=#{active,jdbcType=CHAR}
+		  AND (
+				 A.FIRST_CODE = #{code, jdbcType=VARCHAR}
+			  OR	
+			 	A.SECOND_CODE = #{code, jdbcType=VARCHAR}
+			  )
+	</update>
+
+	<!-- 根据VIRTUAL_CODE 更新数据：由于更新是先删除再插入，所以这个映射用不上： -->
+	<update id="updateResourceConflict" 
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ResourceConflictEntity">
+		UPDATE/** 综合:根据VIRTUAL_CODE 更新数据：由于更新是先删除再插入，所以这个映射用不上  **/ BSE.T_BAS_RESOURCES_CONFLICT A SET 
+		A.ID = #{id, jdbcType=VARCHAR},
+		A.VIRTUAL_CODE = #{virtualCode, jdbcType=VARCHAR},
+		A.FIRST_CODE = #{firstCode, jdbcType=VARCHAR},
+		A.SECOND_CODE = #{secondCode, jdbcType=VARCHAR},
+		A.CREATE_TIME = #{createDate, jdbcType=TIMESTAMP},
+		A.MODIFY_TIME = #{modifyDate, jdbcType=TIMESTAMP},
+		A.ACTIVE = #{active, jdbcType=CHAR},
+		A.CREATE_USER_CODE = #{createUser, jdbcType=VARCHAR},
+		A.MODIFY_USER_CODE = #{modifyUser, jdbcType=VARCHAR}
+		<where>
+			A.VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR}	
+		</where>
+	</update>
+
+	<!-- 根据 VIRTUAL_CODE 精确查询数据 -->
+	<select id="queryResourceConflictByVirtualCode" resultMap="resourceConflictResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ResourceConflictEntity">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据 VIRTUAL_CODE 精确查询数据  **/
+		]]>
+		<include refid="query_resourceConflict_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_RESOURCES_CONFLICT A 
+		]]>
+		<where>
+			A.VIRTUAL_CODE=#{virtualCode} 
+			AND A.ACTIVE= #{active,jdbcType=CHAR}
+		</where>
+	</select>
+
+	<!-- 根据 VIRTUAL_CODE 批量精确查询数据 -->
+	<select id="queryResourceConflictBatchByVirtualCode" resultMap="resourceConflictResultMap"
+		parameterType="map">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据 VIRTUAL_CODE 批量精确查询数据  **/
+		]]>
+		<include refid="query_resourceConflict_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_RESOURCES_CONFLICT A 
+		]]>
+		<where>
+			<if test="codes!=null and codes.length > 0">
+                A.VIRTUAL_CODE in
+                <foreach collection="codes"  index="index" item="code"  open="(" separator="," close=")">  
+	            #{code,jdbcType=VARCHAR} 
+	            </foreach>
+            </if> 
+			AND A.ACTIVE= #{active,jdbcType=CHAR}
+		</where>
+	</select>
+
+	<!-- 根据entity精确查询的查询条件 ，如果属性为空，则此属性不作为条件-->
+	<sql id="query_queryResourceConflictExactByEntity_condition_param">		
+		<where>
+	      	A.ACTIVE =  #{active,jdbcType=CHAR} 
+	      	<if test="id!=null and id != ''">
+	        	AND A.ID = #{id,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="virtualCode!=null and virtualCode != ''">
+	        	AND A.VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="roleCode!=null and roleCode!=''">
+	      	    AND A.ROLE_CODE=#{roleCode,jdbcType=VARCHAR}
+	      	</if>
+	      	<if test="(firstCode!=null and firstCode != '') or (secondCode!=null and secondCode != '')">
+	      	AND 
+	      	(
+		      	(
+		      		<if test="firstCode!=null and firstCode != ''">
+		        		A.FIRST_CODE = #{firstCode,jdbcType=VARCHAR} 
+			      	</if>
+			      	<if test="firstCode!=null and firstCode != '' and secondCode!=null and secondCode != ''">
+			      		AND 
+			      	</if>
+			      	<if test="secondCode!=null and secondCode != ''">
+			        	A.SECOND_CODE = #{secondCode,jdbcType=VARCHAR} 
+			      	</if>
+			    )
+			    OR
+			    (
+			      	<if test="firstCode!=null and firstCode != ''">
+			        	A.SECOND_CODE = #{firstCode,jdbcType=VARCHAR} 
+			      	</if>
+			      	<if test="firstCode!=null and firstCode != '' and secondCode!=null and secondCode != ''">
+			      		AND 
+			      	</if>
+			      	<if test="secondCode!=null and secondCode != ''">
+			        	A.FIRST_CODE = #{secondCode,jdbcType=VARCHAR} 
+			      	</if>		      	
+		      	)
+	      	)
+	      	</if>
+		</where>
+	</sql>
+	<!-- 根据实体动态条件精确查询,如果属性的值为null或者空白则无效： -->
+	<select id="queryResourceConflictExactByEntity" resultMap="resourceConflictResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ResourceConflictEntity">
+		<![CDATA[
+		  SELECT
+		  /** 综合:根据实体动态条件精确查询,如果属性的值为null或者空白则无效  **/ 
+		]]>
+		<include refid="query_resourceConflict_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_RESOURCES_CONFLICT A 
+		]]>
+		<include refid="query_queryResourceConflictExactByEntity_condition_param" />
+	</select>
+	<!-- 根据实体动态条件精确查询总数,如果属性的值为null或者空白则无效： -->
+	<select id="queryResourceConflictExactByEntityCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ResourceConflictEntity">
+		<![CDATA[
+			 SELECT/** 综合:根据实体动态条件精确查询总数,如果属性的值为null或者空白则无效  **/ count(*) 
+			 FROM BSE.T_BAS_RESOURCES_CONFLICT A 
+		]]>
+		<include refid="query_queryResourceConflictExactByEntity_condition_param" />
+	</select>
+
+
+	<!-- 根据两批权限CODE 查询所互斥的所有权限： -->
+	<select id="queryResourceConflictByTwoCodes" resultMap="resourceConflictResultMap"
+		parameterType="map">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据两批权限CODE 查询所互斥的所有权限  **/
+		]]>
+		<include refid="query_resourceConflict_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_RESOURCES_CONFLICT A 
+		]]>
+		<where>
+			(
+				(
+		            A.FIRST_CODE in
+		            <foreach collection="codes1"  index="index" item="code1"  open="(" separator="," close=")">  
+		            #{code1,jdbcType=VARCHAR} 
+		            </foreach>
+		            AND A.SECOND_CODE in
+		            <foreach collection="codes2"  index="index" item="code2"  open="(" separator="," close=")">  
+		            #{code2,jdbcType=VARCHAR} 
+		            </foreach>
+		            AND A.ACTIVE= #{active,jdbcType=CHAR}
+            	) 
+            	OR
+            	(
+            		A.FIRST_CODE in
+		            <foreach collection="codes2"  index="index" item="code2"  open="(" separator="," close=")">  
+		            	#{code2,jdbcType=VARCHAR} 
+		            </foreach>
+		            AND A.SECOND_CODE in
+		            <foreach collection="codes1"  index="index" item="code1"  open="(" separator="," close=")">  
+		            	#{code1,jdbcType=VARCHAR} 
+		            </foreach>
+		            AND A.ACTIVE= #{active,jdbcType=CHAR}
+            	)
+            )
+		</where>
+	</select>
+	
+	<!-- 根据一批权限CODE 查询跟哪些权限是互斥的： -->
+	<select id="queryResourceConflictByOneCodes" resultMap="resourceConflictResultMap"
+		parameterType="map">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据一批权限CODE 查询跟哪些权限是互斥的  **/
+		]]>
+		<include refid="query_resourceConflict_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_RESOURCES_CONFLICT A 
+		]]>
+		<where>
+            (
+	            A.FIRST_CODE IN
+	            <foreach collection="codes1"  index="index" item="code1"  open="(" separator="," close=")">  
+	            	#{code1,jdbcType=VARCHAR} 
+	            </foreach>
+	            AND A.SECOND_CODE IN
+	            <foreach collection="codes1"  index="index" item="code1"  open="(" separator="," close=")">  
+	            	#{code1,jdbcType=VARCHAR} 
+	            </foreach>
+   			)
+			AND A.ACTIVE= #{active,jdbcType=CHAR}
+		</where>
+	</select>
+	
+	
+	
+		
+	<!-- 查询一批权限内的互斥权限 -->
+	<select id="queryResourceConflictByCodes" resultMap="resourceConflictResultMap"
+		parameterType="map">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:查询一批权限内的互斥权限  **/
+		]]>
+		<include refid="query_resourceConflict_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_RESOURCES_CONFLICT A 
+		]]>
+		<where>
+            (
+	            A.FIRST_CODE in
+	            <foreach collection="codes1"  index="index" item="code1"  open="(" separator="," close=")">  
+	            	#{code,jdbcType=VARCHAR} 
+	            </foreach>
+	            AND A.SECOND_CODE in
+	            <foreach collection="codes1"  index="index" item="code1"  open="(" separator="," close=")">  
+	            	#{code,jdbcType=VARCHAR} 
+	            </foreach>
+   			)
+			AND A.ACTIVE= #{active,jdbcType=CHAR}
+		</where>
+	</select>
+	
+	
+	<!-- 查询两个角色是否互斥 -->
+	<select id="queryResourceConflictBy2Role" 
+			resultMap="resourceConflictResultMap"
+			parameterType="map">
+		select /** 综合:查询两个角色是否互斥  **/
+			<include refid="query_resourceConflict_param" />
+		  from BSE.T_BAS_RESOURCES_CONFLICT A,
+		       BSE.t_bas_role_resources     B,
+		       BSE.t_bas_role_resources     C
+		 where B.role_code = #{firstRoleCode,jdbcType=VARCHAR}
+		   AND C.role_code = #{secondRoleCode,jdbcType=VARCHAR}
+		   AND A.active =#{conditionActive,jdbcType=CHAR}
+		   AND B.ACTIVE =#{conditionActive,jdbcType=CHAR}
+		   AND C.ACTIVE =#{conditionActive,jdbcType=CHAR}
+		   AND ((C.resource_code = A.first_code AND B.resource_code = A.second_code) or
+		       (B.resource_code = A.first_code AND C.resource_code = A.second_code))
+
+	</select>
+</mapper>

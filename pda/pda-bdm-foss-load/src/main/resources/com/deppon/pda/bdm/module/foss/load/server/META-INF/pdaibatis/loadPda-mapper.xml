@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.pda.bdm.module.foss.load.server.dao.impl.LoadPdaDao">
+	
+	<!-- 通过营业部理货员工号查询是相关营业部映射的快递分部编码-->
+	<select id="getLoadExpressBranch" parameterType="java.lang.String"
+		resultType="java.lang.String">
+		select e.EXPRESS_BRANCH_CODE
+		  from t_svr_user c
+		 inner join t_svr_dept dp 
+		            on dp.id = c.deptid
+		            and dp.operflag = 1
+		 inner join T_SVR_EXPRESSBRANCH_SALES_DEPT e 
+		         on e.SALESDEPT_CODE =dp.deptcode
+		            and e.operflag = 1
+		 where c.operflag = 1
+		   and c.empcode = #{userCode,jdbcType=VARCHAR}          		
+	</select>
+	
+	<!-- 通过快递员工号查询所有交接部门-->
+	<select id="getHandoverDepts" parameterType="java.lang.String"
+		resultType="com.deppon.pda.bdm.module.foss.load.shared.domain.HandoverDept">
+		SELECT  DLP.DEPTCODE as deptCode,
+				  DLP.DEPTNAME as deptName
+		FROM T_SVR_EXPRESS_VEHICLE V
+		LEFT JOIN T_SVR_DEPT DP ON DP.DEPTCODE = V.ORGCODE AND DP.OPERFLAG = '1'
+		LEFT JOIN T_SVR_DEPT DLP ON DLP.DEPTCITY = DP.DEPTCITY
+													AND DLP.OPERFLAG = '1'
+													AND DLP.ISOUTSTORAGE = '1'
+													AND DLP.ISTRANSFER = '1'
+													AND DLP.ISEXPRESS_BRANCH = 'N'
+ 		WHERE V.OPERFLAG = '1'
+		 AND V.EMPCODE = #{userCode,jdbcType=VARCHAR}     
+	</select>
+	
+	<!-- 通过城市编码查询该城市下所有交接部门-->
+	<select id="getHandoverDeptsByCityCode" parameterType="java.lang.String"
+		resultType="com.deppon.pda.bdm.module.foss.load.shared.domain.HandoverDept">
+		    SELECT DP.DEPTCODE AS DEPTCODE, DP.DEPTNAME AS DEPTNAME, DP.DEPTCITY
+	     	 FROM T_SVR_DEPT DP
+	    	 WHERE DP.OPERFLAG = '1'
+	       AND DP.ISOUTSTORAGE = '1'
+	       AND DP.ISTRANSFER = '1'
+	       AND DP.ISEXPRESS_BRANCH = 'N'
+	       AND DP.DEPTCITY = #{cityCode,jdbcType=VARCHAR}   
+	</select>
+	
+	
+	<!-- 判断登陆员工与交接员工是否是同一部门-->
+	<select id="queryDiffQueryDept" parameterType="HashMap" resultType="java.lang.String">
+		select count(0) from T_SVR_USER u where 
+		u.empcode=#{userCode,jdbcType=VARCHAR}
+		and u.operflag=1 and 
+		exists (select 1 from T_SVR_USER u1 where 
+		u1.deptid=u.deptid 
+		and u1.empcode=#{tallyerCode,jdbcType=VARCHAR})
+    </select>	
+</mapper>

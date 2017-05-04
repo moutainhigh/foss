@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.tfr.SerialNumberRuleDao" >
+	<resultMap id="snRuleResultMap" type="com.deppon.foss.module.transfer.common.api.shared.domain.SerialNumberRuleEntity" >
+		<result column="CODE" property="code" jdbcType="VARCHAR" />
+	    <result column="NAME" property="name" jdbcType="VARCHAR" />
+	    <result column="CURRENT_TIME" property="currentTime" jdbcType="TIMESTAMP" />
+	    <result column="CURRENT_NUM" property="currentNum" jdbcType="DECIMAL" />
+	</resultMap>
+	<resultMap id="swiftNumberInfoDtoResultMap"
+		type="com.deppon.foss.module.transfer.common.api.shared.dto.SwiftNumberInfoDto">
+		<result property="serialNo" column="Serial_No" />
+		<result property="packageType" column="Package_Type" />
+	</resultMap> 
+	<select id="selectSnRule" resultMap="snRuleResultMap" parameterType="java.lang.String">
+  	  select CODE, NAME, CURRENT_TIME, CURRENT_NUM
+  		from TFR.T_OPT_SN_RULE
+          where CODE = #{ruleCode,jdbcType=VARCHAR}
+  	</select>
+	<select id="selectSnRuleForUpdate" resultMap="snRuleResultMap" parameterType="java.lang.String">
+  	  select CODE, NAME, CURRENT_TIME, CURRENT_NUM
+  		from TFR.T_OPT_SN_RULE
+          where CODE = #{ruleCode,jdbcType=VARCHAR} for update
+  	</select>
+	<insert id="addSnRule" parameterType="com.deppon.foss.module.transfer.common.api.shared.domain.SerialNumberRuleEntity">
+  	  insert into TFR.T_OPT_SN_RULE(CODE, NAME, CURRENT_TIME, CURRENT_NUM)
+  		values (#{code,jdbcType=VARCHAR}, #{name,jdbcType=VARCHAR}, #{currentTime,jdbcType=TIMESTAMP}, #{currentNum,jdbcType=DECIMAL})
+  	</insert>
+	<select id="getNextSequenceValue" resultType="java.lang.Long" parameterType="java.util.Map">
+  	  select ${sequenceName}.NEXTVAL from dual
+  	</select>
+	<select id="resetSequence" parameterType="string">
+	  {call TFR.PKG_OPT_QUERY.PROC_RESET_SEQ(#{sequenceName})}
+	</select>
+	<select id="queryVehicleAssembleBillNo" resultType="java.lang.String" parameterType="java.lang.String">
+		select VEHICLEASSEMBLE_NO from (
+	  	  select VEHICLEASSEMBLE_NO from TFR.T_OPT_VEHICLEASSEMBLEBILL
+	  		where ORIG_ORG_CODE = #{oriOrgCode}
+	  		  and (
+	  		  <foreach collection="destOrgCodeList" item="item" separator="or">
+					DEST_ORG_CODE = #{item,jdbcType=VARCHAR}
+				</foreach>
+	  		  )
+   <![CDATA[  and LEAVE_TIME >= #{leaveStartTime} and LEAVE_TIME < #{leaveEndTime} ]]>
+	        order by CREATE_TIME DESC) a where ROWNUM = 1
+  	</select>
+	<update id="updateSnRule" parameterType="com.deppon.foss.module.transfer.common.api.shared.domain.SerialNumberRuleEntity">
+      update TFR.T_OPT_SN_RULE
+      <set >
+        <if test="currentTime != null" >
+        CURRENT_TIME = #{currentTime,jdbcType=TIMESTAMP},
+        </if>
+        <if test="currentNum != null" >
+        CURRENT_NUM = #{currentNum,jdbcType=DECIMAL},
+        </if>
+      </set>
+      where CODE = #{code,jdbcType=VARCHAR}
+	</update>
+	
+	<!-- ====================CRM接口===================== -->
+	<!-- FOSS匹配责任部门 -->
+	<!-- 通过运单号，卸车部门找所在的 卸车任务编号 -->
+	<select id="queryUnloadTaskNoByWaybillNo" parameterType="map" resultType="string">
+		select detail.unload_task_id
+		  from tfr.t_opt_unload_waybill_detail detail
+		 where detail.waybill_no = #{waybillNo}
+		   and detail.unload_org_code =#{unloadOrgCode}
+	</select>
+	<!-- 通过卸车任务统计卸车任务下的总重量 (顿)-->
+	<select id="queryTotalWeightByUnloadTaskNo" parameterType="string" resultType="DECIMAL">
+	   select sum(bd.weight)/1000 totalWeight
+		  from tfr.t_opt_unload_bill_detail bd
+		 where bd.unload_task_id= #{unloadTaskId}
+		 group by bd.unload_task_id
+	</select>
+	
+	<!-- 查询运单在卸车任务中最后一件货的扫描时间 -->
+	<select id="queryUnloadLastScanTimeByWaybillNo" parameterType="map" resultType="java.util.Date">
+	    select max(s.unload_time) unloadTime
+		   from tfr.t_opt_unload_waybill_detail w
+		   join tfr.t_opt_unload_serialno s
+		     on w.id = s.unload_waybill_detail_id
+		  where w.waybill_no = #{waybillNo}
+		    and w.unload_task_id=#{unloadTaskId}
+		    and w.unload_org_code =#{unloadOrgCode}
+		    <![CDATA[and s.GOODS_STATE<>'LACK']]>
+	</select>
+	
+	<!-- 判断车辆归属性 -->
+	<select id="queryBelongVehicleByVehicleNo" parameterType="string" resultType="string">
+	  select  belong
+		  from (select owner.vehicle_no, 'OWN' as belong
+		          from bse.t_bas_own_truck owner
+		         where owner.active = 'Y'
+		           and owner.vehicle_no = #{vehicleNo}
+		        union all
+		        select leased.vehicle_no, 'OUTER' as belong
+		          from bse.t_bas_leased_truck leased
+		         where leased.active = 'Y'
+		           and leased.vehicle_no = #{vehicleNo}) tab
+	</select>
+	
+	<!-- 查询流水号信息 -->
+	<select id="querySwiftNumberInfo" parameterType="String" resultMap="swiftNumberInfoDtoResultMap">
+		Select d.Serial_No As Serial_No, 
+			   d.Package_Type As Package_Type
+		  From Tfr.t_Opt_Package_Request_Detail d
+		 Where d.Active = 'Y'
+			 and d.waybill_no = #{wayBillNo}
+	</select>
+	 
+	 <!-- 插入错误信息日志表 -->
+	<insert id="addCreateErrorLog" parameterType="com.deppon.foss.module.transfer.common.api.shared.domain.CreateErrorLogEntity">
+  	   insert into /*插入错误信息日志表*/ 
+	  	  TFR.T_OPT_ERROR_LOG(ID, BUSSINESS_TYPE, ERROR_INFO, BUSSINESS_NO,SORT_TABLE,CREATE_TIME)
+	      values (#{ID,jdbcType=VARCHAR}, 
+	      #{bussinessType,jdbcType=VARCHAR},
+	      #{errorInfo,jdbcType=VARCHAR}, 
+	      #{bussinessNo,jdbcType=VARCHAR}, 
+	      #{sortTable,jdbcType=VARCHAR},
+	      #{createTime,jdbcType=TIMESTAMP}
+	      )
+  	</insert>
+		
+</mapper>

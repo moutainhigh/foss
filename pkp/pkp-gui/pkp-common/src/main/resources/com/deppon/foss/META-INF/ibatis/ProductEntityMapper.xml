@@ -1,0 +1,396 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="pkp.productEntityMapper" >
+	<!-- BUG-27918集中开单切换某一部门时运输性质重复 -->
+  <resultMap id="productResultMap" type="com.deppon.foss.module.pickup.pricing.api.shared.domain.ProductEntity" >
+   <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="CODE" property="code" jdbcType="VARCHAR" />
+    <result column="NAME" property="name" jdbcType="VARCHAR" />
+    <result column="ACTIVE" property="active" jdbcType="CHAR" />
+    <result column="DESCRIPTION" property="description" jdbcType="VARCHAR" />
+    <result column="VERSION_NO" property="versionNo" jdbcType="DECIMAL" />
+    <result column="BEGIN_TIME" property="beginTime" jdbcType="TIMESTAMP" />
+    <result column="END_TIME" property="endTime" jdbcType="TIMESTAMP" />
+    <result column="TRANSPORT_TYPE" property="transportType" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+    <result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+    <result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+    <result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+    <result column="CREATE_ORG_CODE" property="createOrgCode" jdbcType="VARCHAR" />
+    <result column="MODIFY_ORG_CODE" property="modifyOrgCode" jdbcType="VARCHAR" />
+    
+    <result column="LEVELS" property="levels" jdbcType="DECIMAL" />
+    <result column="PARENT_CODE" property="parentCode" jdbcType="VARCHAR" />
+    <result column="REF_ID" property="refId" jdbcType="VARCHAR" />
+    <result column="SHORT_NAME" property="shortName" jdbcType="VARCHAR" />
+    <result column="PRIORITY" property="priority" jdbcType="VARCHAR" />
+    <result column="SEQ" property="seq" jdbcType="INTEGER" />
+    <result column="DEST_NET_TYPE" property="destNetType" jdbcType="VARCHAR" />
+  </resultMap>
+  
+  <sql id="product_Column_List" >
+    ID, CODE, NAME, ACTIVE, DESCRIPTION, VERSION_NO, BEGIN_TIME, END_TIME, TRANSPORT_TYPE, 
+    CREATE_TIME, MODIFY_TIME, CREATE_USER_CODE, MODIFY_USER_CODE, CREATE_ORG_CODE, MODIFY_ORG_CODE,
+    LEVELS,PARENT_CODE,REF_ID,SHORT_NAME,PRIORITY,SEQ,DEST_NET_TYPE
+  </sql>
+  
+  <sql id="product_join_Column_List" >
+    A.ID, A.CODE, A.NAME, A.ACTIVE, A.DESCRIPTION, A.VERSION_NO, A.BEGIN_TIME, A.END_TIME, A.TRANSPORT_TYPE, 
+    A.CREATE_TIME, A.MODIFY_TIME, A.CREATE_USER_CODE, A.MODIFY_USER_CODE, A.CREATE_ORG_CODE, A.MODIFY_ORG_CODE, 
+    A.LEVELS, A.PARENT_CODE, A.REF_ID, A.SHORT_NAME, A.PRIORITY, A.SEQ, A.DEST_NET_TYPE
+  </sql>
+  
+  <select id="selectProductByPrimaryKey" resultMap="productResultMap" parameterType="java.lang.String" >
+    select 
+    <include refid="product_Column_List" />
+    from PKP.T_SRV_PRODUCT
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+  
+  <select id="selectProductBySalesDept" resultMap="productResultMap" 
+  parameterType="com.deppon.foss.module.pickup.common.client.dto.ProductDto" >
+    select 
+    <include refid="product_join_Column_List" />
+    from PKP.T_SRV_PRODUCT A,BSE.T_BAS_PRO_SALESDEPT B
+    where A.CODE = B.PRODUCT_CODE
+    	and A.LEVELS = #{levels,jdbcType=VARCHAR}
+    	and B.SALES_DEPT_CODE = #{salesDeptCode,jdbcType=VARCHAR}
+    	and A.ACTIVE = #{active,jdbcType=VARCHAR}
+    	and B.ACTIVE = #{active,jdbcType=VARCHAR}
+    	<if test="salesType != null and salesType != '' ">
+    		and B.SALES_TYPE = #{salesType,jdbcType=VARCHAR}
+    	</if>
+    	 order by A.VERSION_NO DESC
+  </select>
+  
+   <!-- 根据产品编号获取有效产品信息 第一次查询数据库,后续查询缓存-->
+	<select id="getProductByCacheLocal" resultMap="productResultMap"
+		parameterType="java.util.Map">
+		SELECT
+		<include refid="product_Column_List" />
+		FROM PKP.T_SRV_PRODUCT PRO
+		<where>
+			<if test="active!=null and active!=''">
+				PRO.ACTIVE = #{active}
+			</if>
+			<if test="productCode!=null and productCode!=''">
+				AND PRO.CODE = #{productCode}
+			</if>
+			<if test="levels!=null and levels!=''">
+				AND PRO.LEVELS = #{levels}
+			</if>
+			<if test="billDate!=null and billDate!=''">
+				AND #{billDate} BETWEEN PRO.BEGIN_TIME AND PRO.END_TIME
+			</if>
+		</where>
+	</select>
+  
+  
+  
+  <delete id="deleteProductByPrimaryKey" parameterType="java.lang.String" >
+    delete from PKP.T_SRV_PRODUCT
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  
+  <insert id="insertProduct" parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.ProductEntity" >
+    insert into PKP.T_SRV_PRODUCT (ID, CODE, NAME, 
+      ACTIVE, DESCRIPTION, VERSION_NO, 
+      BEGIN_TIME, END_TIME, TRANSPORT_TYPE, 
+      CREATE_TIME, MODIFY_TIME, CREATE_USER_CODE, 
+      MODIFY_USER_CODE, CREATE_ORG_CODE, MODIFY_ORG_CODE,
+      LEVELS,PARENT_CODE,REF_ID,SHORT_NAME,PRIORITY,SEQ,DEST_NET_TYPE
+      )
+    values (  #{id,jdbcType=VARCHAR}, #{code,jdbcType=VARCHAR}, #{name,jdbcType=VARCHAR}, 
+		      #{active,jdbcType=CHAR}, #{description,jdbcType=VARCHAR}, #{versionNo,jdbcType=DECIMAL}, 
+		      #{beginTime,jdbcType=TIMESTAMP}, #{endTime,jdbcType=TIMESTAMP}, #{transportType,jdbcType=VARCHAR}, 
+		      #{createDate,jdbcType=TIMESTAMP}, #{modifyDate,jdbcType=TIMESTAMP}, #{createUser,jdbcType=VARCHAR}, 
+		      #{modifyUser,jdbcType=VARCHAR}, #{createOrgCode,jdbcType=VARCHAR}, #{modifyOrgCode,jdbcType=VARCHAR},
+		      #{levels,jdbcType=DECIMAL},#{parentCode,jdbcType=VARCHAR},#{refId,jdbcType=VARCHAR},#{shortName,jdbcType=VARCHAR},
+		      #{priority,jdbcType=VARCHAR},#{seq,jdbcType=INTEGER},#{destNetType,jdbcType=VARCHAR}
+           )
+  </insert>
+ 
+  <update id="updateProductByPrimaryKey" parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.ProductEntity" >				     
+    update PKP.T_SRV_PRODUCT
+    set CODE = #{code,jdbcType=VARCHAR},
+      NAME = #{name,jdbcType=VARCHAR},
+      ACTIVE = #{active,jdbcType=CHAR},
+      DESCRIPTION = #{description,jdbcType=VARCHAR},
+      VERSION_NO = #{versionNo,jdbcType=DECIMAL},
+      BEGIN_TIME = #{beginTime,jdbcType=TIMESTAMP},
+      END_TIME = #{endTime,jdbcType=TIMESTAMP},
+      TRANSPORT_TYPE = #{transportType,jdbcType=VARCHAR},
+      CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+      MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+      CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+      MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+      CREATE_ORG_CODE = #{createOrgCode,jdbcType=VARCHAR},
+      MODIFY_ORG_CODE = #{modifyOrgCode,jdbcType=VARCHAR},
+      LEVELS = #{levels,jdbcType=DECIMAL},
+      PARENT_CODE = #{parentCode,jdbcType=VARCHAR},
+      REF_ID = #{refId,jdbcType=VARCHAR},
+      SHORT_NAME = #{shortName,jdbcType=VARCHAR},
+      PRIORITY = #{priority,jdbcType=VARCHAR},
+      SEQ = #{priority,jdbcType=INTEGER}
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  
+  <insert id="insertProductSelective" parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.ProductEntity" >
+    insert into PKP.T_SRV_PRODUCT
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="code != null" >
+        CODE,
+      </if>
+      <if test="name != null" >
+        NAME,
+      </if>
+      <if test="active != null" >
+        ACTIVE,
+      </if>
+      <if test="description != null" >
+        DESCRIPTION,
+      </if>
+      <if test="versionNo != null" >
+        VERSION_NO,
+      </if>
+      <if test="beginTime != null" >
+        BEGIN_TIME,
+      </if>
+      <if test="endTime != null" >
+        END_TIME,
+      </if>
+      <if test="transportType != null" >
+        TRANSPORT_TYPE,
+      </if>
+      <if test="createDate != null" >
+        CREATE_TIME,
+      </if>
+      <if test="modifyDate != null" >
+        MODIFY_TIME,
+      </if>
+      <if test="createUser != null" >
+        CREATE_USER_CODE,
+      </if>
+      <if test="modifyUser != null" >
+        MODIFY_USER_CODE,
+      </if>
+      <if test="createOrgCode != null" >
+        CREATE_ORG_CODE,
+      </if>
+      <if test="modifyOrgCode != null" >
+        MODIFY_ORG_CODE,
+      </if>
+      <if test="levels != null" >
+        LEVELS,
+      </if>
+      <if test="parentCode != null" >
+        PARENT_CODE,
+      </if>
+      <if test="refId != null" >
+        REF_ID,
+      </if>
+      <if test="shortName != null" >
+        SHORT_NAME,
+      </if>
+      <if test="priority != null" >
+        PRIORITY,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="code != null" >
+        #{code,jdbcType=VARCHAR},
+      </if>
+      <if test="name != null" >
+        #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="active != null" >
+        #{active,jdbcType=CHAR},
+      </if>
+      <if test="description != null" >
+        #{description,jdbcType=VARCHAR},
+      </if>
+      <if test="versionNo != null" >
+        #{versionNo,jdbcType=DECIMAL},
+      </if>
+      <if test="beginTime != null" >
+        #{beginTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="endTime != null" >
+        #{endTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="transportType != null" >
+        #{transportType,jdbcType=VARCHAR},
+      </if>
+      <if test="createDate != null" >
+        #{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifyDate != null" >
+        #{modifyDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="createUser != null" >
+        #{createUser,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyUser != null" >
+        #{modifyUser,jdbcType=VARCHAR},
+      </if>
+      <if test="createOrgCode != null" >
+        #{createOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyOrgCode != null" >
+        #{modifyOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="levels != null" >
+        #{levels,jdbcType=DECIMAL},
+      </if>
+      <if test="parentCode != null" >
+        #{parentCode,jdbcType=VARCHAR},
+      </if>
+      <if test="refId != null" >
+        #{refId,jdbcType=VARCHAR},
+      </if>
+      <if test="shortName != null" >
+        #{shortName,jdbcType=VARCHAR},
+      </if>
+      <if test="priority != null" >
+        #{priority,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  
+  <update id="updateProductByPrimaryKeySelective" parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.ProductEntity" >
+    update PKP.T_SRV_PRODUCT
+    <set >
+      <if test="code != null" >
+        CODE = #{code,jdbcType=VARCHAR},
+      </if>
+      <if test="name != null" >
+        NAME = #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="active != null" >
+        ACTIVE = #{active,jdbcType=CHAR},
+      </if>
+      <if test="description != null" >
+        DESCRIPTION = #{description,jdbcType=VARCHAR},
+      </if>
+      <if test="versionNo != null" >
+        VERSION_NO = #{versionNo,jdbcType=DECIMAL},
+      </if>
+      <if test="beginTime != null" >
+        BEGIN_TIME = #{beginTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="endTime != null" >
+        END_TIME = #{endTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="transportType != null" >
+        TRANSPORT_TYPE = #{transportType,jdbcType=VARCHAR},
+      </if>
+       
+      <if test="createDate != null" >
+        CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifyDate != null" >
+        MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="createUser != null" >
+        CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyUser != null" >
+        MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+      </if>
+      <if test="createOrgCode != null" >
+        CREATE_ORG_CODE = #{createOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyOrgCode != null" >
+        MODIFY_ORG_CODE = #{modifyOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="levels != null" >
+        LEVELS = #{levels,jdbcType=DECIMAL},
+      </if>
+      <if test="parentCode != null" >
+        PARENT_CODE = #{parentCode,jdbcType=VARCHAR},
+      </if>
+      <if test="refId != null" >
+        REF_ID = #{refId,jdbcType=VARCHAR},
+      </if>
+      <if test="shortName != null" >
+        SHORT_NAME = #{shortName,jdbcType=VARCHAR},
+      </if>
+      <if test="priority != null" >
+        PRIORITY = #{priority,jdbcType=VARCHAR},
+      </if>
+ 	 <if test="destNetType != null" >
+        DEST_NET_TYPE = #{destNetType,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  
+  <select id="selectById" resultType="String"
+		parameterType="java.util.Map">
+		<![CDATA[
+		SELECT 
+	        ID
+	    	FROM PKP.T_SRV_PRODUCT
+		]]>
+		<where>
+			ID = #{id,jdbcType=VARCHAR}	
+		</where>
+	</select>
+   
+   <delete id="delete" 
+	parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.ProductEntity">
+		delete from PKP.T_SRV_PRODUCT
+		where ID =  #{id,jdbcType=VARCHAR}	
+	</delete>
+	
+	<!-- 一般内部查询 
+  	zxy 20130929 BUG-56426  新增：查询产品类别
+  -->
+  <select id="findProduct" resultMap="productResultMap" parameterType="java.util.Map">
+  		SELECT /** 综合-价格-根据综合条件查询产品 **/ 
+  			<include refid="product_Column_List" />
+  		 	FROM PKP.T_SRV_PRODUCT PRO
+  		 	<where>
+			  	<if test="active!=null and active!=''">
+	    			PRO.ACTIVE = #{active}
+	    	 	</if>         
+		   		<if test="name!=null and name!=''"> 
+						AND PRO.NAME LIKE CONCAT(CONCAT('%', #{name}), '%')            
+		  		</if>
+		  		<if test="code!=null and code!=''"> 
+						AND PRO.CODE = #{code}        
+		  		</if>
+		  		<if test="levels!=null and levels!=''"> 
+						AND PRO.LEVELS = #{levels}        
+		  		</if>
+		  		<if test="modifyDate!=null and modifyDate!=''"> 
+						AND PRO.MODIFY_TIME > #{modifyDate}        
+		  		</if>
+		  		<if test="versionNo!=null and versionNo!=''"> 
+						AND PRO.VERSION_NO > #{versionNo}        
+		  		</if>
+			</where>
+			order by PRO.VERSION_NO ASC <!-- 数据下载时最新数据倒序-->
+  </select>
+	
+	<!--getLevel3ProductInfo-->
+	<select id="getLevel3ForProductInfo" resultMap="productResultMap" parameterType="java.util.Map">
+		SELECT /** 综合-价格-根据一级产品查询对应的所有效的3级产品类型 **/ 
+		<include refid="product_Column_List" />
+  		FROM PKP.T_SRV_PRODUCT WHERE ACTIVE = #{active,jdbcType=VARCHAR} 
+  		AND levels = #{levels,jdbcType=DECIMAL} AND PARENT_CODE IN
+       	(SELECT CODE FROM PKP.T_SRV_PRODUCT WHERE ACTIVE = #{active,jdbcType=VARCHAR} AND PARENT_CODE IN
+               (SELECT CODE FROM PKP.T_SRV_PRODUCT P
+                 WHERE  ACTIVE = #{active,jdbcType=VARCHAR} AND CODE IN
+				<foreach collection="productCodeList" open="(" close=")" separator=","
+					item="productCode">
+					<![CDATA[	#{productCode,jdbcType=VARCHAR}]]>
+				</foreach>))
+	</select>
+</mapper>

@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.expressPartSalesDeptEntity">
+
+	<!-- 快递点部营业部映射关系信息 Map-->
+	<resultMap id="expressPartSalesDeptEntityResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressPartSalesDeptEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="PART_CODE" property="partCode" jdbcType="VARCHAR" />
+		<result column="SALES_DEPT_CODE" property="salesDeptCode" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER_CODE" property="createUserCode" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUserCode" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="VERSION_NO" property="versionNo" jdbcType="DECIMAL" />
+		<result column="BEGIN_TIME" property="beginTime" jdbcType="TIMESTAMP" />
+		<result column="END_TIME" property="endTime" jdbcType="TIMESTAMP" />
+	</resultMap>
+
+	<!-- 快递点部营业部映射关系信息及关联取快递点部名称 Map-->
+	<resultMap id="expressPartSalesDeptDtoResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.dto.ExpressPartSalesDeptResultDto">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="PART_CODE" property="partCode" jdbcType="VARCHAR" />
+		<result column="SALES_DEPT_CODE" property="salesDeptCode" jdbcType="VARCHAR" />
+		<result column="PART_NAME" property="partName" jdbcType="VARCHAR" />
+		<result column="SALES_DEPT_NAME" property="salesDeptName" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER_CODE" property="createUserCode" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUserCode" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="VERSION_NO" property="versionNo" jdbcType="DECIMAL" />
+		<result column="UNIFIED_CODE" property="unifiedCode" jdbcType="VARCHAR" />
+		<result column="BEGIN_TIME" property="beginTime" jdbcType="TIMESTAMP" />
+		<result column="END_TIME" property="endTime" jdbcType="TIMESTAMP" />
+	</resultMap>
+	
+  	<!-- 快营业部扩展Map --> 
+ 	<resultMap id="saleDepartmentDtoResultMap" 
+ 		type="com.deppon.foss.module.base.baseinfo.api.shared.dto.ExpressSaleDepartmentResultDto" >
+		<result column="CODE" property="code" jdbcType="VARCHAR" />
+		<result column="NAME" property="name" jdbcType="VARCHAR" />
+		<result column="PROV_CODE" property="provCode" jdbcType="VARCHAR" />
+		<result column="CITY_CODE" property="cityCode" jdbcType="VARCHAR" />
+		<result column="ORG_SIMPLE_NAME" property="orgSimpleName" jdbcType="VARCHAR" />
+  	</resultMap>
+  	
+  
+
+
+	<!-- 快递点部营业部映射关系信息字段 -->
+	<sql id="expressPartSalesDept_Column_List">
+		ID, 
+		PART_CODE, 
+		SALES_DEPT_CODE, 
+		CREATE_TIME, 
+		MODIFY_TIME,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE, 
+		ACTIVE, 
+		VERSION_NO,
+		BEGIN_TIME,
+		END_TIME
+	</sql>
+	
+    <!-- 新增快递点部营业部映射关系信息 -->
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressPartSalesDeptEntity">
+		
+		<![CDATA[
+			INSERT/** 综合:新增试点城市信息 **/ INTO BSE.T_BAS_EXPRESS_PART_SALES_DEPT T	(
+		]]>
+		<include refid="expressPartSalesDept_Column_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, 
+		#{partCode,jdbcType=VARCHAR},
+		#{salesDeptCode,jdbcType=VARCHAR},
+		#{createTime,jdbcType=TIMESTAMP},
+		#{modifyTime,jdbcType=TIMESTAMP},
+		#{createUserCode,jdbcType=VARCHAR},
+		#{modifyUserCode,jdbcType=VARCHAR},
+		#{active,jdbcType=CHAR}, 
+		#{versionNo,jdbcType=DECIMAL},
+		#{beginTime,jdbcType=TIMESTAMP},
+		#{endTime,jdbcType=TIMESTAMP}
+		)
+	</insert>
+	
+	<!-- 根据快递点部名称查询快递点部营业部映射关系总条数 -->
+	<select id="queryTotalByCondition" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.ExpressPartSalesDeptQueryDto" >
+		SELECT
+			/** 综合:根据快递点部名称查询快递点部营业部映射关系总条数 **/
+			COUNT(*)
+		FROM BSE.T_BAS_EXPRESS_PART_SALES_DEPT T,BSE.T_BAS_ORG O,BSE.T_BAS_SALES_DEPARTMENT SD 
+		WHERE T.PART_CODE = O.CODE
+			AND T.SALES_DEPT_CODE = SD.CODE
+			AND SD.ACTIVE = #{ACTIVE_YES}
+      		AND O.ACTIVE = #{ACTIVE_YES}
+			<if test="expressPartCode!=null and expressPartCode != ''">
+      			AND T.PART_CODE = #{expressPartCode,jdbcType=VARCHAR} 
+      		</if>
+      		<if test="salesDeptCode!=null and salesDeptCode != ''">
+      			AND T.SALES_DEPT_CODE = #{salesDeptCode,jdbcType=VARCHAR}
+      		</if>
+      		<if test="active!=null and active != ''">
+      			AND T.ACTIVE =#{active,jdbcType=CHAR}
+      		</if>
+      		<if test="businessTime!=null">
+      			<![CDATA[ AND T.BEGIN_TIME < #{businessTime} AND T.END_TIME >= #{businessTime}]]> 
+      		</if>
+	</select>
+	
+	<!-- 根据快递点部名称查询快递点部营业部映射关系 -->
+	<select id="queryExpressPartSalesDeptByCondition" resultMap="expressPartSalesDeptDtoResultMap" 
+			parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.ExpressPartSalesDeptQueryDto" >
+    	SELECT /*综合：根据快递点部名称查询快递点部营业部映射关系*/
+       		T.ID AS ID,
+       		T.PART_CODE AS PART_CODE,
+       		T.SALES_DEPT_CODE AS SALES_DEPT_CODE,
+          	O.NAME AS PART_NAME,
+          	SD.NAME AS SALES_DEPT_NAME,
+       		T.CREATE_TIME AS CREATE_TIME,
+       		T.MODIFY_TIME AS MODIFY_TIME,
+       		T.CREATE_USER_CODE AS CREATE_USER_CODE,
+       		T.MODIFY_USER_CODE AS MODIFY_USER_CODE,
+       		T.ACTIVE AS ACTIVE,
+       		T.VERSION_NO AS VERSION_NO,
+       		T.BEGIN_TIME AS BEGIN_TIME,
+			T.END_TIME AS END_TIME
+		FROM BSE.T_BAS_EXPRESS_PART_SALES_DEPT T,BSE.T_BAS_ORG O,BSE.T_BAS_SALES_DEPARTMENT SD 
+		WHERE T.PART_CODE = O.CODE
+			AND T.SALES_DEPT_CODE = SD.CODE
+			AND SD.ACTIVE = #{ACTIVE_YES}
+      		AND O.ACTIVE = #{ACTIVE_YES}
+			<if test="expressPartCode!=null and expressPartCode != ''">
+      			AND T.PART_CODE = #{expressPartCode,jdbcType=VARCHAR} 
+      		</if>
+      		<if test="salesDeptCode!=null and salesDeptCode != ''">
+      			AND T.SALES_DEPT_CODE = #{salesDeptCode,jdbcType=VARCHAR}
+      		</if>
+      		<if test="active!=null and active != ''">
+      			AND T.ACTIVE =#{active,jdbcType=CHAR}
+      		</if>
+      		<if test="businessTime!=null">
+      			<![CDATA[ AND T.BEGIN_TIME < #{businessTime} AND T.END_TIME >= #{businessTime}]]> 
+      		</if>
+ 	</select>
+ 	
+	<!-- 根据营业部编码查询快递点部信息 -->
+	<select id="queryExpressPartSalesDeptBySalesCode" resultMap="expressPartSalesDeptDtoResultMap" parameterType="map" >
+	   SELECT /* 综合：根据营业部编码查询快递点部信息*/
+	        T.ID AS ID,
+       		T.PART_CODE AS PART_CODE,
+       		T.SALES_DEPT_CODE AS SALES_DEPT_CODE,
+       		T.CREATE_TIME AS CREATE_TIME,
+       		T.MODIFY_TIME AS MODIFY_TIME,
+       		T.CREATE_USER_CODE AS CREATE_USER_CODE,
+       		T.MODIFY_USER_CODE AS MODIFY_USER_CODE,
+       		T.ACTIVE AS ACTIVE,
+       		T.VERSION_NO AS VERSION_NO,
+       		O.NAME AS PART_NAME,
+       		O.UNIFIED_CODE AS UNIFIED_CODE
+		FROM BSE.T_BAS_EXPRESS_PART_SALES_DEPT T,BSE.T_BAS_ORG O 
+		WHERE T.PART_CODE = O.CODE
+      		AND T.ACTIVE = #{contionActive,jdbcType=CHAR}
+      		AND O.ACTIVE = #{contionActive,jdbcType=CHAR}
+      		AND T.SALES_DEPT_CODE=#{salesDeptCode,jdbcType=VARCHAR}   
+	</select>
+	<!-- 根据营业部编码和时间查询快递点部信息 -->
+	<select id="queryExpressPartSalesDeptBySalesCodeAndTime" resultMap="expressPartSalesDeptDtoResultMap" parameterType="map" >
+	   SELECT /* 综合：根据营业部编码查询快递点部信息*/
+	        T.ID AS ID,
+       		T.PART_CODE AS PART_CODE,
+       		T.SALES_DEPT_CODE AS SALES_DEPT_CODE,
+       		T.CREATE_TIME AS CREATE_TIME,
+       		T.MODIFY_TIME AS MODIFY_TIME,
+       		T.CREATE_USER_CODE AS CREATE_USER_CODE,
+       		T.MODIFY_USER_CODE AS MODIFY_USER_CODE,
+       		T.ACTIVE AS ACTIVE,
+       		T.VERSION_NO AS VERSION_NO,
+       		O.NAME AS PART_NAME,
+       		O.UNIFIED_CODE AS UNIFIED_CODE
+		FROM BSE.T_BAS_EXPRESS_PART_SALES_DEPT T,BSE.T_BAS_ORG O 
+		WHERE T.PART_CODE = O.CODE
+      		<![CDATA[ AND T.BEGIN_TIME <=#{createTime}]]>
+      		<![CDATA[ AND T.END_TIME >#{createTime}]]>
+      		<![CDATA[ AND O.CREATE_TIME <=#{createTime}]]>
+      		<![CDATA[ AND O.MODIFY_TIME >#{createTime}]]>
+<!--       		AND T.ACTIVE = #{contionActive,jdbcType=CHAR} -->
+<!--       		AND O.ACTIVE = #{contionActive,jdbcType=CHAR} -->
+      		AND T.SALES_DEPT_CODE=#{salesDeptCode,jdbcType=VARCHAR}   
+	</select>
+	
+	<!-- 根据快递点部编码查询快递点部营业部映射信息 -->
+	<select id="queryExpressPartSalesDeptByExpressPartCode" resultMap="expressPartSalesDeptDtoResultMap" 
+			parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.ExpressPartSalesDeptQueryDto" >
+    	SELECT /*综合：根据快递点部编码查询快递点部营业部映射信息*/
+       		T.ID AS ID,
+       		T.PART_CODE AS PART_CODE,
+       		T.SALES_DEPT_CODE AS SALES_DEPT_CODE,
+       		T.CREATE_TIME AS CREATE_TIME,
+       		T.MODIFY_TIME AS MODIFY_TIME,
+       		T.CREATE_USER_CODE AS CREATE_USER_CODE,
+       		T.MODIFY_USER_CODE AS MODIFY_USER_CODE,
+       		T.ACTIVE AS ACTIVE,
+       		T.VERSION_NO AS VERSION_NO,
+       		O.NAME AS PART_NAME
+		FROM BSE.T_BAS_EXPRESS_PART_SALES_DEPT T,BSE.T_BAS_ORG O 
+		WHERE T.PART_CODE = O.CODE
+      		AND T.ACTIVE = #{active,jdbcType=CHAR}
+      		AND O.ACTIVE = #{active,jdbcType=CHAR}
+      		AND T.PART_CODE = #{expressPartCode,jdbcType=VARCHAR}  
+ 	</select>
+ 	
+ 	<!-- 根据营业部编码列表查部营业部信息 -->
+	<select id="querySaleDepartmentResultDtoBySalesDeptCodeList" resultMap="saleDepartmentDtoResultMap" 
+			parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.ExpressPartSalesDeptQueryDto" >
+		SELECT /*综合：根据营业部编码列表查部营业部信息*/
+       		O.CODE AS CODE,
+       		O.NAME AS NAME,
+       		O.CITY_CODE AS CITY_CODE,
+       		O.PROV_CODE AS PROV_CODE,
+       		O.ORG_SIMPLE_NAME AS ORG_SIMPLE_NAME
+  		FROM BSE.T_BAS_ORG O
+ 		WHERE O.ACTIVE = #{active,jdbcType=CHAR}
+   		AND O.SALES_DEPARTMENT = #{active,jdbcType=CHAR}
+   		AND O.CODE IN 
+			<foreach collection="selectedCodeList"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+			</foreach>
+ 	</select>
+ 	
+ 	<!-- 根据营业部条件查部营业部信息,多条件模糊查询 -->
+	<select id="querySalesDeptResultDtoListByCondition" resultMap="saleDepartmentDtoResultMap" 
+			parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.ExpressPartSalesDeptQueryDto" >
+		SELECT /*综合：根据营业部条件查部营业部信息,多条件模糊查询*/
+       		O.CODE AS CODE,
+       		O.NAME AS NAME,
+       		O.ORG_SIMPLE_NAME AS ORG_SIMPLE_NAME,
+       		O.CITY_CODE AS CITY_CODE,
+       		O.PROV_CODE AS PROV_CODE
+  		FROM BSE.T_BAS_ORG O
+ 		WHERE O.ACTIVE = #{active,jdbcType=CHAR}
+ 				AND O.SALES_DEPARTMENT = #{active,jdbcType=CHAR}
+ 		<if test="salesDeptCode != null and salesDeptCode != ''">
+      			AND O.CODE LIKE CONCAT(CONCAT('%', #{salesDeptCode,jdbcType=VARCHAR}), '%') 
+      	</if>
+      	<if test="salesDeptName != null and salesDeptName != ''">
+      			AND O.NAME LIKE CONCAT(CONCAT('%', #{salesDeptName,jdbcType=VARCHAR}), '%') 
+      	</if>
+      	<if test="salesDeptPinyin != null and salesDeptPinyin != ''">
+      			AND O.PINYIN LIKE CONCAT(CONCAT('%', #{salesDeptPinyin,jdbcType=VARCHAR}), '%') 
+      	</if>
+      	<if test="provCode != null and provCode != ''">
+      			AND O.PROV_CODE = #{provCode,jdbcType=VARCHAR}  
+      	</if>
+      	<if test="cityCode != null and cityCode != ''">
+      			AND O.CITY_CODE = #{cityCode,jdbcType=VARCHAR}  
+      	</if>
+      	<if test="countyCode != null and countyCode != ''">
+      			AND O.COUNTY_CODE = #{countyCode,jdbcType=VARCHAR}  
+      	</if>
+ 	</select>
+ 	
+ 	<!-- 根据快递点部编码、营业部编码查询有效的映射信息-->
+	<select id="queryResultDtoByExpressPartCodeAndSalesDeptCode" resultMap="expressPartSalesDeptDtoResultMap" parameterType="map" >
+	   SELECT /* 综合：根据快递点部编码、营业部编码查询有效的映射信息*/
+	        T.ID AS ID,
+       		T.PART_CODE AS PART_CODE,
+       		T.SALES_DEPT_CODE AS SALES_DEPT_CODE,
+          	O.NAME AS PART_NAME,
+          	SD.NAME AS SALES_DEPT_NAME,
+       		T.CREATE_TIME AS CREATE_TIME,
+       		T.MODIFY_TIME AS MODIFY_TIME,
+       		T.CREATE_USER_CODE AS CREATE_USER_CODE,
+       		T.MODIFY_USER_CODE AS MODIFY_USER_CODE,
+       		T.ACTIVE AS ACTIVE,
+       		T.VERSION_NO AS VERSION_NO,
+       		T.BEGIN_TIME AS BEGIN_TIME,
+			T.END_TIME AS END_TIME
+		FROM BSE.T_BAS_EXPRESS_PART_SALES_DEPT T,BSE.T_BAS_ORG O,BSE.T_BAS_SALES_DEPARTMENT SD 
+		WHERE T.PART_CODE = O.CODE
+			AND T.SALES_DEPT_CODE = SD.CODE
+			AND SD.ACTIVE = #{activeY,jdbcType=CHAR}
+      		AND O.ACTIVE = #{activeY,jdbcType=CHAR}
+			AND T.ACTIVE = #{active,jdbcType=CHAR}
+      		<if test="expressPartCode != null and expressPartCode != ''">
+      			AND T.PART_CODE = #{expressPartCode,jdbcType=VARCHAR}
+      		</if>
+      		<if test="salesDeptCode != null and salesDeptCode != ''">
+      			AND T.SALES_DEPT_CODE=#{salesDeptCode,jdbcType=VARCHAR}   
+      		</if>
+      		
+	</select>
+	
+	<!-- 修改快递点部营业部映射信息 -->
+	<update id="updateExpressPartSalesDept"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressPartSalesDeptEntity">
+		UPDATE /** 综合:修改快递点部营业部映射信息 **/ 
+		BSE.T_BAS_EXPRESS_PART_SALES_DEPT T
+		SET	T.ACTIVE = #{active,jdbcType=CHAR},
+			T.VERSION_NO = #{versionNo,jdbcType=DECIMAL},
+			T.MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP},
+    		T.MODIFY_USER_CODE = #{modifyUserCode,jdbcType=VARCHAR},
+    		T.BEGIN_TIME = #{beginTime,jdbcType=TIMESTAMP},
+			T.END_TIME = #{endTime,jdbcType=TIMESTAMP},
+			T.PART_CODE = #{partCode,jdbcType=VARCHAR},
+			T.SALES_DEPT_CODE=#{salesDeptCode,jdbcType=VARCHAR}   
+		WHERE T.ID = #{id,jdbcType=VARCHAR}
+	</update>
+	
+	<!-- 根据id查询快递点部营业部映射信息-->
+	<select id="queryInfosByIds" resultMap="expressPartSalesDeptEntityResultMap" parameterType="map" >
+	   	SELECT /* 综合：根据id查询快递点部营业部映射信息*/
+	   	<include refid="expressPartSalesDept_Column_List" />
+	    FROM BSE.T_BAS_EXPRESS_PART_SALES_DEPT T
+		WHERE ID IN 
+			<foreach collection="ids"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+			</foreach>
+	</select>
+	
+	<!-- 根据id查询快递点部营业部映射信息-->
+	<delete id="deleteInfosByIds" parameterType="map" >
+	   	DELETE /* 根据id查询快递点部营业部映射信息*/
+	    FROM BSE.T_BAS_EXPRESS_PART_SALES_DEPT T
+		WHERE ID IN 
+			<foreach collection="ids"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+			</foreach>
+	</delete>
+	
+	<!-- 根据营业部编码\激活状态查询营业部快递点部映射关系-->
+	<select id="queryInfosBySalesCode" resultMap="expressPartSalesDeptEntityResultMap" parameterType="map" >
+	   	SELECT /* 综合：根据营业部编码\激活状态查询营业部快递点部映射关系*/
+	   	<include refid="expressPartSalesDept_Column_List" />
+	    FROM BSE.T_BAS_EXPRESS_PART_SALES_DEPT T
+		WHERE T.ACTIVE = #{active,jdbcType=CHAR}
+      		AND T.SALES_DEPT_CODE=#{salesDeptCode,jdbcType=VARCHAR}   
+	</select>
+	
+</mapper>

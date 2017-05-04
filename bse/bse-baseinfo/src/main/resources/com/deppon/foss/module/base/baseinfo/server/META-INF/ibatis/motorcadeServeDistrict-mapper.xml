@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- motorcadeServeDistrict motorcadeServeDistrict-mapper.xml 车队负责的行政区域 -->
+<mapper namespace="foss.bse.bse-baseinfo.motorcadeServeDistrict" >
+
+	<resultMap id="motorcadeServeDistrictQueryResultMap"
+   			type="com.deppon.foss.module.base.baseinfo.api.shared.domain.MotorcadeServeDistrictEntity">
+		<result property="id" column="ID"  jdbcType="VARCHAR" />
+		<result property="virtualCode" column="VIRTUAL_CODE"  jdbcType="VARCHAR" />
+		<result property="motorcadeCode" column="MOTORCADE_CODE"  jdbcType="VARCHAR" />
+		<result property="motorcadeName" column="MOTORCADE_NAME"  jdbcType="VARCHAR" />
+		<result property="districtCode" column="DISTRICT_CODE"  jdbcType="VARCHAR" />
+		<result property="districtName" column="DISTRICT_NAME"  jdbcType="VARCHAR" />
+		<result property="active" column="ACTIVE"  jdbcType="CHAR" />
+		<result property="createDate" column="CREATE_TIME"  jdbcType="TIMESTAMP" />
+		<result property="modifyDate" column="MODIFY_TIME"  jdbcType="TIMESTAMP" />
+		<result property="createUser" column="CREATE_USER_CODE"  jdbcType="VARCHAR" />
+		<result property="modifyUser" column="MODIFY_USER_CODE"  jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 插入数据 ： -->
+	<insert id="addMotorcadeServeDistrict"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.MotorcadeServeDistrictEntity">
+		INSERT/** 综合:插入数据 **/ INTO BSE.T_BAS_MOTORCADE_DISTRICT(
+		ID,
+		VIRTUAL_CODE,
+		MOTORCADE_CODE,
+		MOTORCADE_NAME,
+		DISTRICT_CODE,
+		DISTRICT_NAME,
+		ACTIVE,
+		CREATE_TIME,
+		MODIFY_TIME,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE) VALUES	
+	(
+		#{id, jdbcType=VARCHAR},
+		#{virtualCode, jdbcType=VARCHAR},
+		#{motorcadeCode, jdbcType=VARCHAR},
+		#{motorcadeName, jdbcType=VARCHAR},
+		#{districtCode, jdbcType=VARCHAR},
+		#{districtName, jdbcType=VARCHAR},
+		#{active, jdbcType=CHAR},
+		#{createDate, jdbcType=TIMESTAMP},
+		#{modifyDate, jdbcType=TIMESTAMP},
+		#{createUser, jdbcType=VARCHAR},
+		#{modifyUser, jdbcType=VARCHAR}
+	)
+	</insert> 
+
+	<!-- 根据VIRTUAL_CODE 作废数据： -->
+	<update id="deleteMotorcadeServeDistrict" 
+		parameterType="map">
+		UPDATE/** 综合:根据VIRTUAL_CODE 作废数据 **/ BSE.T_BAS_MOTORCADE_DISTRICT A 
+		SET A.ACTIVE=#{entity.active,jdbcType=CHAR},
+			A.MODIFY_USER_CODE=#{entity.modifyUser,jdbcType=VARCHAR}, 
+			A.MODIFY_TIME = #{entity.modifyDate,jdbcType=TIMESTAMP} 
+		<where>
+			A.VIRTUAL_CODE=#{entity.virtualCode,jdbcType=VARCHAR} 
+			AND  A.ACTIVE=#{conditionActive,jdbcType=CHAR}
+		</where>
+	</update>
+
+	<!-- 根据VIRTUAL_CODE批量作废 -->
+	<update id="deleteMotorcadeServeDistrictMore"
+		parameterType="map">
+		UPDATE/** 综合:根据VIRTUAL_CODE批量作废 **/ BSE.T_BAS_MOTORCADE_DISTRICT A 
+		SET A.ACTIVE=#{entity.active,jdbcType=CHAR},
+			A.MODIFY_USER_CODE=#{entity.modifyUser,jdbcType=VARCHAR}, 
+			A.MODIFY_TIME = #{entity.modifyDate,jdbcType=TIMESTAMP} 
+        <where>
+            <if test="codes!=null and codes.length > 0">
+                A.VIRTUAL_CODE in
+                <foreach collection="codes"  index="index" item="code"  open="(" separator="," close=")">  
+	            #{code} 
+	            </foreach>
+            </if>
+            AND  A.ACTIVE=#{conditionActive,jdbcType=CHAR}
+        </where>       
+	</update>
+
+	<!-- 根据VIRTUAL_CODE 更新数据：由于更新是先作废再插入，所以这个映射用不上： -->
+	<update id="updateMotorcadeServeDistrict" 
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.MotorcadeServeDistrictEntity">
+		UPDATE/** 综合:根据VIRTUAL_CODE 更新数据：由于更新是先作废再插入，所以这个映射用不上 **/ BSE.T_BAS_MOTORCADE_DISTRICT A SET 
+		A.ID = #{id, jdbcType=VARCHAR},
+		A.VIRTUAL_CODE = #{virtualCode, jdbcType=VARCHAR},
+		A.MOTORCADE_CODE = #{motorcadeCode, jdbcType=VARCHAR},
+		A.MOTORCADE_NAME = #{motorcadeName, jdbcType=VARCHAR},
+		A.DISTRICT_CODE = #{districtCode, jdbcType=VARCHAR},
+		A.DISTRICT_NAME = #{districtName, jdbcType=VARCHAR},
+		A.ACTIVE = #{active, jdbcType=CHAR},
+		A.CREATE_TIME = #{createDate, jdbcType=TIMESTAMP},
+		A.MODIFY_TIME = #{modifyDate, jdbcType=TIMESTAMP},
+		A.CREATE_USER_CODE = #{createUser, jdbcType=VARCHAR},
+		A.MODIFY_USER_CODE = #{modifyUser, jdbcType=VARCHAR}
+		<where>
+			A.VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR}	
+		</where>
+	</update>
+
+
+	<!-- 以下全为查询 -->
+
+	<sql id="query_motorcadeServeDistrict_param">
+		A.ID AS ID,		/** ID     **/ 
+		A.VIRTUAL_CODE AS VIRTUAL_CODE,		/** 虚拟编码     **/ 
+		A.MOTORCADE_CODE AS MOTORCADE_CODE,		/** 车队部门编码     **/ 
+		C.NAME AS MOTORCADE_NAME,		/** 车队部门名称     **/ 
+		A.DISTRICT_CODE AS DISTRICT_CODE,		/** 行政区域部门编码     **/ 
+		D.NAME AS DISTRICT_NAME,		/** 行政区域部门名称     **/ 
+		A.ACTIVE AS ACTIVE,		/** 是否启用     **/ 
+		A.CREATE_TIME AS CREATE_TIME,		/** 创建时间     **/ 
+		A.MODIFY_TIME AS MODIFY_TIME,		/** 更新时间     **/ 
+		A.CREATE_USER_CODE AS CREATE_USER_CODE,		/** 创建人     **/ 
+		A.MODIFY_USER_CODE AS MODIFY_USER_CODE		/** 更新人     **/
+	</sql>
+
+	<!-- 根据 VIRTUAL_CODE 精确查询数据 -->
+	<select id="queryMotorcadeServeDistrictByVirtualCode" resultMap="motorcadeServeDistrictQueryResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.MotorcadeServeDistrictEntity">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据 VIRTUAL_CODE 精确查询数据 **/
+		]]>
+		<include refid="query_motorcadeServeDistrict_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_MOTORCADE_DISTRICT A 
+				LEFT JOIN BSE.T_BAS_ORG C ON A.MOTORCADE_CODE = C.CODE AND C.ACTIVE =  #{active,jdbcType=CHAR} 
+				LEFT JOIN BSE.T_BAS_DISTRICT D ON A.DISTRICT_CODE = D.CODE AND D.ACTIVE =  #{active,jdbcType=CHAR} 
+		]]>
+		<where>
+			A.VIRTUAL_CODE=#{virtualCode} 
+			AND A.ACTIVE= #{active,jdbcType=CHAR}
+		</where>
+	</select>
+	<!-- 根据MOTORCADE_CODE和 DISTRICT_CODE 精确查询-->
+	<select id="queryMotorcadeServeDistrictByMotorCodeAndDistrictCode" resultMap="motorcadeServeDistrictQueryResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.MotorcadeServeDistrictEntity">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据 VIRTUAL_CODE 精确查询数据 **/
+		]]>
+		<include refid="query_motorcadeServeDistrict_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_MOTORCADE_DISTRICT A 
+				LEFT JOIN BSE.T_BAS_ORG C ON A.MOTORCADE_CODE = C.CODE AND C.ACTIVE =  #{active,jdbcType=CHAR} 
+				LEFT JOIN BSE.T_BAS_DISTRICT D ON A.DISTRICT_CODE = D.CODE AND D.ACTIVE =  #{active,jdbcType=CHAR} 
+		]]>
+		<where>
+			<if test="motorcadeCode!=null and motorcadeCode != ''">
+	        	 A.MOTORCADE_CODE = #{motorcadeCode,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="districtCode!=null and districtCode != ''">
+	        	AND A.DISTRICT_CODE = #{districtCode,jdbcType=VARCHAR} 
+	      	</if>
+			AND A.ACTIVE= #{active,jdbcType=CHAR}
+		</where>
+	</select>
+	
+
+	<!-- 根据 VIRTUAL_CODE 批量精确查询数据 -->
+	<select id="queryMotorcadeServeDistrictBatchByVirtualCode" resultMap="motorcadeServeDistrictQueryResultMap"
+		parameterType="map">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据 VIRTUAL_CODE 批量精确查询数据 **/
+		]]>
+		<include refid="query_motorcadeServeDistrict_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_MOTORCADE_DISTRICT A 
+				LEFT JOIN BSE.T_BAS_ORG C ON A.MOTORCADE_CODE = C.CODE AND C.ACTIVE =  #{active,jdbcType=CHAR} 
+				LEFT JOIN BSE.T_BAS_DISTRICT D ON A.DISTRICT_CODE = D.CODE AND D.ACTIVE =  #{active,jdbcType=CHAR} 
+		]]>
+		<where>
+			<if test="codes!=null and codes.length > 0">
+                A.VIRTUAL_CODE in
+                <foreach collection="codes"  index="index" item="code"  open="(" separator="," close=")">  
+	            #{code,jdbcType=VARCHAR} 
+	            </foreach>
+            </if> 
+			AND A.ACTIVE= #{active,jdbcType=CHAR}
+		</where>
+	</select>
+
+	<!-- 根据entity精确查询的查询条件 ，如果属性为空，则此属性不作为条件-->
+	<sql id="query_queryMotorcadeServeDistrictExactByEntity_condition">		
+		<where>
+	      	<if test="id!=null and id != ''">
+	        	AND A.ID = #{id,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="virtualCode!=null and virtualCode != ''">
+	        	AND A.VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="motorcadeCode!=null and motorcadeCode != ''">
+	        	AND A.MOTORCADE_CODE = #{motorcadeCode,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="motorcadeName!=null and motorcadeName != ''">
+	        	AND A.MOTORCADE_NAME = #{motorcadeName,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="districtCode!=null and districtCode != ''">
+	        	AND A.DISTRICT_CODE = #{districtCode,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="districtName!=null and districtName != ''">
+	        	AND A.DISTRICT_NAME = #{districtName,jdbcType=VARCHAR} 
+	      	</if>
+	      	AND A.ACTIVE =  #{active,jdbcType=CHAR} 
+		</where>
+	</sql>
+	<!-- 根据实体动态条件精确查询,如果属性的值为null或者空白则无效： -->
+	<select id="queryMotorcadeServeDistrictExactByEntity" resultMap="motorcadeServeDistrictQueryResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.MotorcadeServeDistrictEntity">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据实体动态条件精确查询,如果属性的值为null或者空白则无效 **/
+		]]>
+		<include refid="query_motorcadeServeDistrict_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_MOTORCADE_DISTRICT A 
+				LEFT JOIN BSE.T_BAS_ORG C ON A.MOTORCADE_CODE = C.CODE AND C.ACTIVE =  #{active,jdbcType=CHAR} 
+				LEFT JOIN BSE.T_BAS_DISTRICT D ON A.DISTRICT_CODE = D.CODE AND D.ACTIVE =  #{active,jdbcType=CHAR} 
+		]]>
+		<include refid="query_queryMotorcadeServeDistrictExactByEntity_condition" />
+	</select>
+	<!-- 根据实体动态条件精确查询总数,如果属性的值为null或者空白则无效： -->
+	<select id="queryMotorcadeServeDistrictExactByEntityCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.MotorcadeServeDistrictEntity">
+		<![CDATA[
+			 SELECT/** 综合:根据实体动态条件精确查询总数,如果属性的值为null或者空白则无效 **/ count(*) 
+			 FROM BSE.T_BAS_MOTORCADE_DISTRICT A 
+				LEFT JOIN BSE.T_BAS_ORG C ON A.MOTORCADE_CODE = C.CODE AND C.ACTIVE =  #{active,jdbcType=CHAR} 
+				LEFT JOIN BSE.T_BAS_DISTRICT D ON A.DISTRICT_CODE = D.CODE AND D.ACTIVE =  #{active,jdbcType=CHAR} 
+		]]>
+		<include refid="query_queryMotorcadeServeDistrictExactByEntity_condition" />
+	</select>
+
+	<!-- 根据entity模糊查询,如果属性的值为null或者空白则无效： -->
+	<sql id="query_queryMotorcadeServeDistrictByEntity_condition">		
+		<where>
+	      	<if test="id!=null and id != ''">
+	        	AND A.ID like CONCAT(CONCAT('%', #{id,jdbcType=VARCHAR}), '%') 
+	      	</if>
+	      	<if test="virtualCode!=null and virtualCode != ''">
+	        	AND A.VIRTUAL_CODE like CONCAT(CONCAT('%', #{virtualCode,jdbcType=VARCHAR}), '%') 
+	      	</if>
+	      	<if test="motorcadeCode!=null and motorcadeCode != ''">
+	        	AND A.MOTORCADE_CODE like CONCAT(CONCAT('%', #{motorcadeCode,jdbcType=VARCHAR}), '%') 
+	      	</if>
+	      	<if test="motorcadeName!=null and motorcadeName != ''">
+	        	AND A.MOTORCADE_NAME like CONCAT(CONCAT('%', #{motorcadeName,jdbcType=VARCHAR}), '%') 
+	      	</if>
+	      	<if test="districtCode!=null and districtCode != ''">
+	        	AND A.DISTRICT_CODE like CONCAT(CONCAT('%', #{districtCode,jdbcType=VARCHAR}), '%') 
+	      	</if>
+	      	<if test="districtName!=null and districtName != ''">
+	        	AND A.DISTRICT_NAME like CONCAT(CONCAT('%', #{districtName,jdbcType=VARCHAR}), '%') 
+	      	</if>
+			AND A.ACTIVE= #{active,jdbcType=CHAR}
+		</where>
+	</sql>
+	<!-- 根据实体动态条件模糊查询,如果属性的值为null或者空白则无效： -->
+	<select id="queryMotorcadeServeDistrictByEntity" resultMap="motorcadeServeDistrictQueryResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.MotorcadeServeDistrictEntity">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据实体动态条件模糊查询,如果属性的值为null或者空白则无效 **/
+		]]>
+		<include refid="query_motorcadeServeDistrict_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_MOTORCADE_DISTRICT A 
+				LEFT JOIN BSE.T_BAS_ORG C ON A.MOTORCADE_CODE = C.CODE AND C.ACTIVE =  #{active,jdbcType=CHAR} 
+				LEFT JOIN BSE.T_BAS_DISTRICT D ON A.DISTRICT_CODE = D.CODE AND D.ACTIVE =  #{active,jdbcType=CHAR} 
+		]]>
+		<include refid="query_queryMotorcadeServeDistrictByEntity_condition" />
+	</select>
+	<!-- 根据实体动态条件模糊查询总数,如果属性的值为null或者空白则无效： -->
+	<select id="queryMotorcadeServeDistrictByEntityCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.MotorcadeServeDistrictEntity">
+		<![CDATA[
+			 SELECT/** 综合:根据实体动态条件模糊查询总数,如果属性的值为null或者空白则无效 **/ count(*) 
+			 FROM BSE.T_BAS_MOTORCADE_DISTRICT A 
+				LEFT JOIN BSE.T_BAS_ORG C ON A.MOTORCADE_CODE = C.CODE AND C.ACTIVE =  #{active,jdbcType=CHAR} 
+				LEFT JOIN BSE.T_BAS_DISTRICT D ON A.DISTRICT_CODE = D.CODE AND D.ACTIVE =  #{active,jdbcType=CHAR} 
+		]]>
+		<include refid="query_queryMotorcadeServeDistrictByEntity_condition" />
+	</select>
+
+	<!-- 查询所有 车队负责的行政区域 信息 以供下载 -->
+	<select id="queryMotorcadeServeDistrictForDownload"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.MotorcadeServeDistrictEntity"
+		resultMap="motorcadeServeDistrictQueryResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有 车队负责的行政区域 信息 以供下载 **/
+		]]>
+		<include refid="query_motorcadeServeDistrict_param" />
+		<![CDATA[
+			FROM BSE.T_BAS_MOTORCADE_DISTRICT A 
+				LEFT JOIN BSE.T_BAS_ORG C ON A.MOTORCADE_CODE = C.CODE AND C.ACTIVE =  #{active,jdbcType=CHAR} 
+				LEFT JOIN BSE.T_BAS_DISTRICT D ON A.DISTRICT_CODE = D.CODE AND D.ACTIVE =  #{active,jdbcType=CHAR} 
+		]]>
+		<where>
+			<if test="modifyDate != null ">
+				AND A.MODIFY_TIME > #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="active != null and active != ''">
+				AND A.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+	
+		
+	
+	<!-- 下面是特殊方法 -->
+	
+	<!-- 根据车队编码MOTORCADE_CODE,作废 车队负责的行政区域 -->
+	<update id="deleteMotorcadeServeDistrictByMotorcadeCode"
+		parameterType="map">
+		UPDATE/** 综合:根据车队编码MOTORCADE_CODE,作废 车队负责的行政区域 **/ BSE.T_BAS_MOTORCADE_DISTRICT A 
+		SET A.ACTIVE=#{entity.active,jdbcType=CHAR},
+			A.MODIFY_USER_CODE=#{entity.modifyUser,jdbcType=VARCHAR}, 
+			A.MODIFY_TIME = #{entity.modifyDate,jdbcType=TIMESTAMP} 
+        <where>
+            A.MOTORCADE_CODE =#{entity.motorcadeCode,jdbcType=VARCHAR} 
+            AND  A.ACTIVE=#{conditionActive,jdbcType=CHAR}
+        </where>       
+	</update>
+
+
+</mapper>

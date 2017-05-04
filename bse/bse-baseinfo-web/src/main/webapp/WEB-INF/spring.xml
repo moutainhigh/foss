@@ -1,0 +1,449 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jaxws="http://cxf.apache.org/jaxws"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://www.springframework.org/schema/jee 
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+			http://www.springframework.org/schema/aop 
+			http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+			http://cxf.apache.org/jaxws http://cxf.apache.org/schemas/jaxws.xsd" default-autowire="byName">
+	<context:property-placeholder location="classpath*:foss.properties"/>
+	<!--
+	<bean
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="ignoreUnresolvablePlaceholders" value="true" />
+		<property name="ignoreResourceNotFound" value="true" />
+		<property name="locations">
+			<list>
+				<bean class="org.springframework.core.io.FileSystemResource">
+					<constructor-arg>
+						<bean class="org.springframework.jndi.JndiObjectFactoryBean">
+							<property name="jndiName">
+								<value>java:comp/env/config/foss</value>
+							</property>
+							<property name="resourceRef" value="false" />
+						</bean>
+					</constructor-arg>
+				</bean>
+			</list>
+		</property>
+	</bean>
+	-->
+
+	<!-- 数据源 jndi方式 -->
+	<bean id="dataSourceSpied" class="org.springframework.jndi.JndiObjectFactoryBean">
+		<property name="jndiName">
+			<value>jdbc/fossds</value>
+		</property>
+		<property name="resourceRef" value="true" />
+	</bean>
+	<bean id="dataSource" class="net.sf.log4jdbc.Log4jdbcProxyDataSource">
+		<constructor-arg ref="dataSourceSpied" />
+	</bean>
+
+	<!-- 数据连接管理 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+		<property name="globalRollbackOnParticipationFailure" value="false" />
+	</bean>
+
+	<!-- 事务注解支持 -->
+	<tx:annotation-driven transaction-manager="transactionManager" />
+
+	<!-- myBatis文件 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="configLocation" value="/WEB-INF/ibatis.xml" />
+		<property name="mapperLocations"
+			value="classpath*:com/deppon/**/META-INF/ibatis/*.xml" />
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<bean id="mongo" class="com.deppon.foss.framework.server.components.dataaccess.mongodb.MongoFactoryBean">
+		<property name="host" value="${mongodb.host}" />
+		<property name="port" value="${mongodb.port}" />
+<!-- 		<property name="mongoOptions" ref="mongoOptions" /> -->
+	</bean>
+	
+	<bean id="mongodbFactory" class="com.deppon.foss.framework.server.components.dataaccess.mongodb.MongoDbFactoryBean">
+		<constructor-arg ref="mongo" />
+		<constructor-arg value="${mongodb.database}" />
+	</bean>
+	<!-- 日志队列配置开始 -->
+	<!-- 性能日志 -->
+	<bean id="performanceLog"
+		class="com.deppon.foss.framework.server.components.logger.LogBuffer">
+		<property name="enable" value="${log.enable}" /><!-- 默认启用 -->
+		<property name="queueSize" value="${log.queueSize}" />
+		<property name="listSize" value="${log.listSize}" />
+		<property name="interval" value="${log.interval}" />
+		<property name="logSender" ref="mongoLogSender" />
+	</bean>
+
+	<bean id="mongoLogSender" class="com.deppon.foss.framework.server.components.logger.MongoLogSender">
+	</bean>
+	<!-- 日志队列配置结束 -->
+	
+	<context:annotation-config />
+	<context:component-scan base-package="com.deppon" />
+
+	<bean id="poolConfig" class="redis.clients.jedis.JedisPoolConfig">
+		<property name="maxActive" value="${redis.pool.maxActive}"></property>
+		<property name="maxIdle" value="${redis.pool.maxIdle}"></property>
+		<property name="maxWait" value="${redis.pool.maxWait}"></property>
+		<property name="testOnBorrow" value="${redis.pool.testOnBorrow}"></property>
+		<property name="testOnReturn" value="${redis.pool.testOnReturn}"></property>
+	</bean>
+
+	<!-- 数据缓存 -->
+	<bean id="client" class="com.deppon.foss.framework.cache.redis.RedisClient">
+		<property name="host1" value="${redis.host1}"></property>
+		<property name="port1" value="${redis.port1}"></property>
+		<property name="host2" value="${redis.host2}"></property>
+		<property name="port2" value="${redis.port2}"></property>
+		<property name="poolConfig" ref="poolConfig"></property>
+	</bean>
+	<bean id="storage"
+		class="com.deppon.foss.framework.cache.storage.RedisCacheStorage">
+		<property name="client" ref="client"></property>
+	</bean>
+	<bean id="client1" class="com.deppon.foss.framework.cache.redis.RedisClient">
+		<property name="host1" value="${redis.host3}"></property>
+		<property name="port1" value="${redis.port3}"></property>
+		<property name="host2" value="${redis.host4}"></property>
+		<property name="port2" value="${redis.port4}"></property>
+		<property name="poolConfig" ref="poolConfig"></property>
+	</bean>
+	<bean id="storage1"
+		class="com.deppon.foss.framework.cache.storage.RedisCacheStorage">
+		<property name="client" ref="client1"></property>
+	</bean>
+	<bean id="client2" class="com.deppon.foss.framework.cache.redis.RedisClient">
+		<property name="host1" value="${redis.host5}"></property>
+		<property name="port1" value="${redis.port5}"></property>
+		<property name="host2" value="${redis.host6}"></property>
+		<property name="port2" value="${redis.port6}"></property>
+		<property name="poolConfig" ref="poolConfig"></property>
+	</bean>
+	<bean id="storage2"
+		class="com.deppon.foss.framework.cache.storage.RedisCacheStorage">
+		<property name="client" ref="client2"></property>
+	</bean>
+	<bean id="client3" class="com.deppon.foss.framework.cache.redis.RedisClient">
+		<property name="host1" value="${redis.host7}"></property>
+		<property name="port1" value="${redis.port7}"></property>
+		<property name="host2" value="${redis.host8}"></property>
+		<property name="port2" value="${redis.port8}"></property>
+		<property name="poolConfig" ref="poolConfig"></property>
+	</bean>
+	<bean id="storage3"
+		class="com.deppon.foss.framework.cache.storage.RedisCacheStorage">
+		<property name="client" ref="client3"></property>
+	</bean>
+	
+	<bean id="attachementDao"
+	class="com.deppon.foss.module.base.baseinfo.server.dao.impl.AttachementDao"/>
+	<bean id="attachementService"
+		class="com.deppon.foss.module.base.baseinfo.server.service.impl.AttachementService"/>
+	
+	<bean id="fileConfig" class="com.deppon.foss.framework.server.components.file.FileSystemConfig">
+		<property name="rootDir" value="${file.rootDir}"></property><!-- 根目录路径 -->
+		<property name="archiveType" value="BY_DATE"></property><!-- 在rootDir下添加日期文件夹,按照日期归档 -->
+	</bean>
+
+	<bean id="fileManager"
+		class="com.deppon.foss.framework.server.components.file.FileManager">
+		<property name="config" ref="fileConfig"></property>
+		<!--<property name="listener" ref="fileListener"></property> 文件监听器，在创建、删除、校验都会触发监听器 -->
+	</bean>
+	<!-- 文件上传 -->
+	<bean id="fileUpload"
+		class="com.deppon.foss.framework.server.web.upload.FileUploadAction"
+		scope="prototype">
+		<property name="fileManager" ref="fileManager"></property>
+		<property name="attachementListener" ref="attachementService"></property>
+	</bean>
+
+	<!-- 同步行政区域接口信息  -->
+	<bean id="districtResultCallBackProcessor"
+		class="com.deppon.foss.module.base.baseinfo.server.callback.DistrictResultCallBackProcessor"> 
+	</bean>
+
+	<!-- 同步营业部接口信息  -->	
+	<bean id="saleDepartmentResultCallBackProcessor"
+		class="com.deppon.foss.module.base.baseinfo.server.callback.SaleDepartmentResultCallBackProcessor"> 
+	</bean>
+	
+	<!-- 同步行政组织到官网接口信息  -->
+	<bean id="orgAdministrativeInfoResultCallBackProcessor"
+		class="com.deppon.foss.module.base.baseinfo.server.callback.OrgAdministrativeInfoResultCallBackProcessor"> 
+	</bean>
+	<!-- 同步线路信息到GPS  -->
+	<bean id="lineinfoResultCallBackProcessor"
+		class="com.deppon.foss.module.base.baseinfo.server.callback.LineinfoResultCallBackProcessor"> 
+	</bean>
+	<!-- 同步 外场信息 到LMS  -->
+	<bean id="transferSiteInfoResultCallBackProcessor"
+		class="com.deppon.foss.module.base.baseinfo.server.callback.TransferSiteInfoResultCallBackProcessor">
+	</bean>
+	<!-- 同步试点、落地配城市接口信息 -->
+	<bean id="expressCityResultCallBackProcessor"
+		class="com.deppon.foss.module.base.baseinfo.server.callback.ExpressCityResultCallBackProcessor">
+	</bean>
+		<!-- 同步车队给CRM接口信息  -->
+	<bean id="motorcadeResultCallBackProcessor"
+		class="com.deppon.foss.module.base.baseinfo.server.callback.MotorcadeResultCallBackProcessor"> 
+	</bean>
+	<!-- 同步营业部和快递点部的对应关系到CRM -->
+	<bean id="expressAndSalesDeptResultCallBackProcessor"
+		class="com.deppon.foss.module.base.baseinfo.server.callback.ExpressAndSalesDeptResultCallBackProcessor">
+	</bean>
+	<!--同步散客数据给crm-->
+	<!-- <bean id="synNonfixedCustomerToCrmCallBackProcessor"
+		class="com.deppon.foss.module.base.baseinfo.server.callback.SynNonfixedCustomerToCrmCallBackProcessor">
+	</bean> -->
+	<!--同步数据库到官网-->
+	<bean id="synExpressRegionsResultCallBackProcessor"
+		class="com.deppon.foss.module.base.baseinfo.server.callback.ExpressRegionsResultCallBackProcessor">
+	</bean>
+
+	<!-- 同步营业部到FIN的发票项目 -->
+	<bean id="salesInfoToFinResultCallBackProcessor" 
+	class="com.deppon.foss.module.base.baseinfo.server.callback.SalesInfoToFinResultCallBackProcessor"></bean>
+	<!-- 同步偏线网点到CC 14.7.21 gcl DMANA-1630-->
+	<bean id="partialLineNetworkCallBackProcessor"
+		class="com.deppon.foss.module.base.baseinfo.server.callback.PartialLineNetworkCallBackProcessor">
+	</bean>
+	<!-- 同步FOSS权限信息 -->
+<!-- 	<bean id="synResourceCallBackProcessor" class="com.deppon.foss.module.base.baseinfo.server.callback.SynResourceCallBackProcessor"></bean>
+	 -->
+	<!-- 同步FOSS用户部门管理信息 -->
+	<bean id="synUserDeptDataCallBackProcessor" class="com.deppon.foss.module.base.baseinfo.server.callback.SynUserDeptDataCallBackProcessor"></bean>
+	
+	<!-- 同步FOSS装卸车标准信息 -->
+	<bean id="synEfficiencyCallBackProcessor" class="com.deppon.foss.module.base.baseinfo.server.callback.SynEfficiencyCallBackProcessor"></bean>
+	
+	<!-- 同步卫星点部与营业部映射到CRM -->
+	<bean id="wxdbResultCallBackProcessor" 
+	class="com.deppon.foss.module.base.baseinfo.server.callback.WxdbResultCallBackProcessor"></bean>
+	<!-- 同步外场信息到OA -->
+	<bean id="outFieldInfoResultCallBackProcessor" 
+	class="com.deppon.foss.module.base.baseinfo.server.callback.OutFieldInfoResultCallBackProcessor"></bean>
+	<!-- 同步快递派送区域基础资料到CRM,GIS -->
+	<bean id="kdpsResultCallBackProcessor" 
+	class="com.deppon.foss.module.base.baseinfo.server.callback.KdpsResultCallBackProcessor"></bean>
+	<!-- 同步线路线路信息给wdgh 的接口信息 -->
+	<bean id="sendLineInfoResultCallBackProcessor" 
+	class="com.deppon.foss.module.base.baseinfo.server.callback.SendLineInfoResultCallBackProcessor"></bean>
+	<!-- 同步快递保价申明价值上限到CRM、CC、官网 -->
+	<bean id="kdbjsxResultCallBackProcessor" 
+	class="com.deppon.foss.module.base.baseinfo.server.callback.KdbjsxResultCallBackProcessor"></bean>
+	<!-- 同步集包地到DOP、OMS -->
+	<bean id="rookieWaybillJBDResultCallBackProcessor"
+	class="com.deppon.foss.module.base.baseinfo.server.callback.RookieWaybillJBDResultCallBackProcessor"></bean>
+	<!-- 同步车队信息到OMS -->
+	<bean id="informationResultCallBackProcessor" 
+	class="com.deppon.foss.module.base.baseinfo.server.callback.InformationResultCallBackProcessor"></bean>
+	<!--同步快递收派小区到OMS -->
+	<bean id="sendExpressSmallZoneToOMSProcessor"
+	class="com.deppon.foss.module.base.baseinfo.server.callback.SendExpressSmallZoneToOMSProcessor"></bean>
+	<!--同步快递车辆到OMS -->
+	<bean id="sendExpressVehicleToOMSProcessor"
+	class="com.deppon.foss.module.base.baseinfo.server.callback.SendExpressVehicleToOMSProcessor"></bean>
+	<!-- 同步营业部自提派送扩展资料给周边系统 -->
+	<bean id="salesDescExpandServiceResultCallBackProcessor"
+	class="com.deppon.foss.module.base.baseinfo.server.callback.SalesDescExpandServiceResultCallBackProcessor"></bean>
+	<!-- 同步营业部给周边系统 -->
+	<bean id="syncAllSalesDepartmentServiceResultCallBackProcessor"
+	class="com.deppon.foss.module.base.baseinfo.server.callback.SyncAllSalesDepartmentServiceResultCallBackProcessor"></bean>
+	
+	<!-- 外请车服务资料同步OMS接口 -->
+	<bean id="syncLeasedTruckTeamCallBackProcessor"
+	class="com.deppon.foss.module.base.baseinfo.server.callback.SyncLeasedTruckTeamtCallBackProcessor"></bean>
+			
+	<!-- 定人定区接口 -->
+	<bean id="regionalVehicleCallBackProcessor"
+	class="com.deppon.foss.module.base.baseinfo.server.callback.SynRegionalVehicleCallBackProcessor"></bean>
+	<!-- 同步保安组信息到ECS -->
+	<bean id="secruityTfrMotorcadeResultCallBackProcessor"
+	class="com.deppon.foss.module.base.baseinfo.server.callback.SecruityTfrMotorcadeResultCallBackProcessor"></bean>
+	<!-- 同步装卸车小队到ECS -->
+	<bean id="loadAndUnloadSquadResultCallBackProcessor"
+	class="com.deppon.foss.module.base.baseinfo.server.callback.LoadAndUnloadSquadResultCallBackProcessor"></bean>
+	
+	<!-- 接送货小区接口 -->
+	<bean id="smallZoneCallBackProcessor"
+	class="com.deppon.foss.module.base.baseinfo.server.callback.SynSmallZoneCallBackProcessor"></bean>
+	
+	<!-- 接送货大区接口 -->
+	<bean id="bigZoneCallBackProcessor"
+	class="com.deppon.foss.module.base.baseinfo.server.callback.SynBigZoneCallBackProcessor"></bean>
+	
+	<!-- 车型每公里费用表基础资料同步接口 -->
+	<bean id="vehicleTypeCallBackProcessor"
+	class="com.deppon.foss.module.base.baseinfo.server.callback.SynVehicleTypeCallBackProcessor"></bean>
+		
+	<!-- 外请车合同主体变更信息到ECS -->
+	<bean id="outfieldTFCompanyCallBackProcessor"
+	class="com.deppon.foss.module.base.baseinfo.server.callback.OutfieldTFCompanyCallBackProcessor"></bean>
+
+	<!-- 同步外请车信息到ECS -->
+	<bean id="leasedInformationServiceCallBackProcessor"
+	class="com.deppon.foss.module.base.baseinfo.server.callback.LeasedInformationServiceCallBackProcessor"></bean>
+	
+	<!-- 零担大客户派送地址库接口 -->
+	<bean id="bigcusCallBackProcessor"
+	class="com.deppon.foss.module.base.baseinfo.server.callback.SynBigcusCallBackProcessor"></bean>
+	<!-- 快递点部营业部映射关系处理器 -->
+	<bean id="expressPartSalesDeptListener"
+	class="com.deppon.foss.module.base.baseinfo.server.service.ExpressPartSalesDeptListener"></bean>
+	<!-- 外发代理公司同步服务端接口 -->
+	<bean id="SyncAgencyCompanyListener"
+	class="com.deppon.foss.module.base.baseinfo.server.service.SyncAgencyCompanyListener"></bean>
+	<!-- 同步网点映射关系接口信息  -->	
+	<bean id="partnerRelationCallBackProcessor"
+		class="com.deppon.foss.module.base.baseinfo.server.callback.PartnerRelationCallBackProcessor"> 
+	</bean>
+	<!--同步快递大区与行政区域接口信息  -->
+	<bean id="SyncExpressBigRegionDistrListener" 
+		class="com.deppon.foss.module.base.baseinfo.server.service.SyncExpressBigRegionDistrListener">
+	</bean>
+	<!-- 差错上报  -->	
+	<bean id="clearanceErrorReportingCallBackProcessor"
+		class="com.deppon.foss.module.base.baseinfo.server.callback.ClearanceErrorReportingCallBackProcessor"> 
+	</bean>
+	<!-- 启动MQ监听  -->
+	<bean id="esbInitUtil" class="com.deppon.esb.api.util.ESBInitUtil" init-method="process" lazy-init="false">
+		<property name="callBackProcessMap">
+			<map>
+				<entry key="ESB_FOSS2ESB_LTL_CUSTOMER_DELIVERY" value-ref="bigcusCallBackProcessor" />
+				<entry key="ESB_FOSS2ESB_RECEIVE_WCYSSYSCWGS" value-ref="outfieldTFCompanyCallBackProcessor" />				
+				<entry key="ESB_FOSS2ESB_CAR_BASIC_INFOR" value-ref="syncLeasedTruckTeamCallBackProcessor" />
+				<entry key="ESB_FOSS2ESB_RECEIVE_LEASEDTRUCK" value-ref="leasedInformationServiceCallBackProcessor" />
+				<entry key="ESB_FOSS2ESB_FIXED_AREA" value-ref="regionalVehicleCallBackProcessor"></entry>
+				<entry key="ESB_FOSS2ESB_DELIVERY_AREA" value-ref="bigZoneCallBackProcessor"></entry>
+				<entry key="ESB_FOSS2ESB_DELIVERY_CELL" value-ref="smallZoneCallBackProcessor"></entry>
+				<entry key="ESB_FOSS2ESB_CAR_CHARGE" value-ref="vehicleTypeCallBackProcessor"></entry>
+				<entry key="ESB_FOSS2ESB_EXPRESS_DELIVERY" value-ref="sendExpressSmallZoneToOMSProcessor"/>
+				<entry key="ESB_FOSS2ESB_EXPRESS_VEHICLE_LIST" value-ref="sendExpressVehicleToOMSProcessor"/>
+				<entry key="ESB_FOSS2ESB_SYNC_DISTRICT" value-ref="districtResultCallBackProcessor" />
+				<entry key="ESB_FOSS2ESB_SYNC_SALES_DEPARTMENT" value-ref="saleDepartmentResultCallBackProcessor" />
+				<entry key="ESB_FOSS2ESB_SYNC_ORGANIZATION" value-ref="orgAdministrativeInfoResultCallBackProcessor" />
+				<entry key="ESB_FOSS2ESB_RECEIVE_TRANSFERSITEINFO" value-ref="transferSiteInfoResultCallBackProcessor" />
+				<entry key="ESB_FOSS2ESB_SYNC_EXPRESS_CITY" value-ref="expressCityResultCallBackProcessor" />
+				<entry key="ESB_FOSS2ESB_SYNC_MOTORCADEINFO" value-ref="motorcadeResultCallBackProcessor" />
+				<entry key="ESB_FOSS2ESB_EXPRESS_DEPT" value-ref="expressAndSalesDeptResultCallBackProcessor" />
+				<entry key="ESB_FOSS2ESB_SYNC_LINEINFO" value-ref="lineinfoResultCallBackProcessor" /> 
+				<entry key="ESB_FOSS2ESB_SYNC_DEPT_ADDRESS" value-ref="salesInfoToFinResultCallBackProcessor"/>
+				<entry key="ESB_FOSS2ESB_QUERY_SENDANDRECEIVE_RANGE" value-ref="synExpressRegionsResultCallBackProcessor" /> 
+				<entry key="ESB_FOSS2ESB_SEND_SHOPSANDSATELLITE_RELATIONINFO" value-ref="wxdbResultCallBackProcessor"></entry>
+				<entry key="ESB_FOSS2ESB_SEND_SHOPSANDSATELLITE_RELATIONINFO" value-ref="wxdbResultCallBackProcessor"></entry>
+				<entry key="ESB_FOSS2ESB_SEND_DEVIATE_WEBSITE" value-ref="partialLineNetworkCallBackProcessor" />
+				<entry key="ESB_FOSS2ESB_MISS_GOODS" value-ref="outFieldInfoResultCallBackProcessor" /> 
+				<entry key="ESB_FOSS2ESB_QUERY_ROUTE_INFO" value-ref="sendLineInfoResultCallBackProcessor"/> 
+				<entry key="ESB_FOSS2ESB_EXPRESS_AREA_DATA" value-ref="kdpsResultCallBackProcessor"></entry> 
+				<entry key="ESB_FOSS2ESB_SYNCEXPRESS_OUTPRICE" value-ref="kdbjsxResultCallBackProcessor"></entry>  
+				<entry key="ESB_FOSS2ESB_JBD_SYNC_HAND" value-ref="rookieWaybillJBDResultCallBackProcessor"></entry>
+				<entry key="ESB_FOSS2ESB_INFORMATION_TABLE" value-ref="informationResultCallBackProcessor"/>
+				<entry key="ESB_FOSS2ESB_EXPANSION_TABLE" value-ref="salesDescExpandServiceResultCallBackProcessor"></entry>
+				<entry key="ESB_FOSS2ESB_DEPARTMENT" value-ref="syncAllSalesDepartmentServiceResultCallBackProcessor"></entry>
+				<entry key="ESB_FOSS2ESB_RECEIVE_ZXCARTEAM" value-ref="loadAndUnloadSquadResultCallBackProcessor"></entry>
+				<entry key="ESB_FOSS2ESB_RECEIVE_SECURITYGROUP" value-ref="secruityTfrMotorcadeResultCallBackProcessor"></entry>
+                
+				<entry key="ESB_FOSS2ESB_RECEIVE_AUTHORITY" value-ref="synUserDeptDataCallBackProcessor"></entry>
+				<entry key="ESB_FOSS2ESB_RECEIVE_ZXCARTIME" value-ref="synEfficiencyCallBackProcessor"></entry>
+				<entry key="ESB_FOSS2ESB_PARTNER_RELATION" value-ref="partnerRelationCallBackProcessor" />
+			 	<entry key="ESB_FOSS2ESB_ERROR_AUTO_REPORT_SYNC" value-ref="clearanceErrorReportingCallBackProcessor" />
+			 </map>
+		</property> 
+		<property name="processMap">
+			<map>				
+				<entry key="FOSS_ESB2FOSS_SYN_SALES_MAPPING" value-ref="expressPartSalesDeptListener" /> 
+				<entry key="FOSS_ESB2FOSS_SENDSYNC_EXPRESS_AGENCY" value-ref="SyncAgencyCompanyListener"></entry>
+			</map>
+		</property>
+	</bean>
+	
+	<!-- GPS同步接口Client -->
+	<jaxws:client id="depponGpsService" 
+				serviceClass="org.example.deppon_gps_service.DepponGpsService" 
+				address="${esb.ws}/foss2gps/gpsService">
+		<jaxws:inInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingInInterceptor"/>
+		</jaxws:inInterceptors>
+		<jaxws:outInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingOutInterceptor"/>
+		</jaxws:outInterceptors>
+	</jaxws:client>
+	
+	<!-- 设置配置文件属性  -->
+	<bean id="applicationProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean"> 
+	   <property name="singleton" value="true" /> 
+	   <property name="properties"> 
+		   <props> 
+			  <prop key="gis.js.map">${gis.js.map}</prop> 
+			  <prop key="network.js.path">${network.js.path}</prop>
+			  <prop key="workFlow.ArrearsStandard.url">${workFlow.ArrearsStandard.url}</prop>
+			  <prop key="workFlow.ArrearsStandardExample.url">${workFlow.ArrearsStandardExample.url}</prop>
+		   </props> 
+	   </property> 
+	</bean>
+	
+	<!-- FTP配置 -->
+	<!-- FTP配置 -->
+	<bean id="ftpConfig" class="com.deppon.foss.framework.server.components.ftp.FTPConfig">
+		<property name="host" value="${ftp.host}"></property>
+		<property name="port" value="${ftp.port}"></property>
+		<property name="userName" value="${ftp.write.user}"></property>
+		<property name="password" value="${ftp.write.pass}"></property>
+		<property name="path" value="bse"></property>
+	</bean>
+	
+	<bean id="downloadFtpConfig" class="com.deppon.foss.framework.server.components.ftp.FTPConfig">
+		<property name="host" value="${ftp.host}"></property>
+		<property name="port" value="${ftp.port}"></property>
+		<property name="userName" value="${ftp.read.user}"></property>
+		<property name="password" value="${ftp.read.pass}"></property>
+		<property name="path" value="bse"></property>
+	</bean>
+	
+	<bean id="ftpClient" class="com.deppon.foss.framework.server.components.ftp.FTPClient">
+		<property name="ftpConfig" ref="ftpConfig"></property>
+	</bean>
+	
+	<!-- BAMP -->
+	<bean name="appProfile" class="com.deppon.ar.bamp.common.config.AppProfile" init-method="initAppProfile"> 
+		<property name="appCode" value="FOSS"></property>
+		<property name="actionExtension">
+			<list>
+				<value>action</value>
+				<value>do</value>
+			</list>
+		</property>
+	</bean>
+	
+	<!-- 系统http请求日志开关，默认开启 -->
+	<bean name="logSwitch" class="com.deppon.ar.bamp.common.dispatch.switchs.LogSwitch"
+		init-method="initLogSwitch">
+		<property name="localReqLogSwitch" value="1"></property>
+	</bean>
+
+	<!-- MQ的ip信息-->
+	<bean name="activeMQUtil" class="com.deppon.ar.bamp.client.jms.ActiveMQUtil"
+		init-method="startConnectionFactory">
+		<property name="brokerUrl" value="${brokerUrl}"></property>
+	</bean>
+
+	<!-- 加入MQC队列拆分共用配置  -->
+	<import resource="spring-mqc.xml"/>
+</beans>

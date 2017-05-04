@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	<!-- expressDeliveryAddress-mapper.xml 快递派送区域地址库 -->
+<mapper namespace="foss.bse.bse-baseinfo.expressDeliveryAddress">
+	<resultMap type="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressDeliveryAddressEntity" 
+		id="expressDeliveryAddressMap">
+		<result property="departmentCode" column="DEPARTMENT_CODE"/>
+		<result property="departmentName" column="DEPARTMENT_NAME"/>		
+		<result property="provinceCode" column="PROVINCE_CODE"/>
+		<result property="provinceName" column="PROVINCE_NAME"/>
+		<result property="cityCode" column="CITY_CODE"/>
+		<result property="cityName" column="CITY_NAME"/>
+		<result property="countyCode"   column="COUNTY_CODE"/>
+		<result property="countyName" column="COUNTY_NAME"/>
+		<result property="townCode" column="TOWN_CODE"/>
+		<result property="townName" column="TOWN_NAME"/>
+		<result property="startHouseNumber" column="START_HOUSE_NUMBER"/>
+		<result property="endHouseNumber" column="END_HOUSE_NUMBER"/>
+		<result property="pccAddress" column="PCC_ADDRESS"/>
+		<result property="operatorName" column="OPERATOR_NAME"/>
+		<result property="startTime" column="START_TIME"/>
+		<result property="endTime" column="END_TIME"/>
+		<result property="createDate" column="CREATE_TIME"/>
+		<result property="modifyDate" column="MODIFY_TIME"/>
+		<result property="createUser" column="CREATE_USER_CODE"/>
+		<result property="modifyUser" column="MODIFY_USER_CODE"/>	
+	</resultMap>
+	<sql id="columns">
+	   ID,DEPARTMENT_CODE,DEPARTMENT_NAME,PROVINCE_CODE,PROVINCE_NAME,
+	   CITY_CODE,CITY_NAME,COUNTY_CODE,COUNTY_NAME,TOWN_CODE,TOWN_NAME,
+       STREET,PCC_ADDRESS,OPERATOR_NAME,
+       START_HOUSE_NUMBER,END_HOUSE_NUMBER,
+       START_TIME,END_TIME,TYPE,SIGN,CREATE_TIME,MODIFY_TIME,
+       CREATE_USER_CODE,MODIFY_USER_CODE,ACTIVE
+	</sql>
+	<sql id="query_param">
+		<where>
+			<if test="id != null and id != ''">
+				AND ID = #{id,jdbcType=VARCHAR}
+			</if>
+			<if test="pccAddress !=null and pccAddress != ''">
+				AND PCC_ADDRESS = #{pccAddress,jdbcType=VARCHAR}
+			</if>
+			<!-- <if test="tsAddress !=null and tsAddress != ''">
+				AND TS_ADDRESS = #{tsAddress,jdbcType=VARCHAR}
+			</if>
+			<if test="type != null and type != ''">
+				AND TYPE = #{type,jdbcType=VARCHAR}
+			</if> -->
+			<if test="street !=null and street != ''">
+				AND STREET LIKE CONCAT('%',CONCAT(#{street,jdbcType=VARCHAR},'%'))
+			</if>
+			<if test="departmentCode != null and departmentCode != ''">
+				AND DEPARTMENT_CODE = #{departmentCode,jdbcType=VARCHAR}
+			</if>
+			<if test="provinceCode !=null and provinceCode != ''">
+				AND PROVINCE_CODE = #{provinceCode,jdbcType=VARCHAR}
+			</if>
+			<if test="cityCode != null and cityCode !=''">
+				AND CITY_CODE = #{cityCode,jdbcType=VARCHAR} 
+			</if>
+			<if test="countyCode != null and countyCode != ''">
+				AND COUNTY_CODE = #{countyCode,jdbcType=VARCHAR}
+			</if>
+			<if test="townCode != null and townCode != ''">
+				AND TOWN_CODE = #{townCode,jdbcType=VARCHAR}
+			</if>
+			
+			<if test="1==1">
+				AND ACTIVE = 'Y'
+			</if>
+		</where>
+	</sql>
+	<!-- 根据条件分页查询数据 -->
+	<select id="queryExpressDeliveryAddressEntitys" resultMap="expressDeliveryAddressMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressDeliveryAddressEntity">
+		SELECT <include refid="columns"/>/** 根据条件分页查询数据**/
+		FROM BSE.T_BAS_EXPRESS_DELIVERY_ADDRESS T
+		<include refid="query_param"/>
+	</select>
+	
+	<!-- 根据条件查询总条数 -->
+	<select id="getCountByCondition" resultType="long" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressDeliveryAddressEntity">
+		SELECT COUNT(1)/** 根据条件查询总条数**/
+		FROM BSE.T_BAS_EXPRESS_DELIVERY_ADDRESS
+		<include refid="query_param"/>
+	</select>
+	<!-- 校验重复 -->
+	<select id="queryAlreadyExpressDeliveryAddressEntitys" resultMap="expressDeliveryAddressMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressDeliveryAddressEntity">
+		SELECT <include refid="columns"/>/** 校验是否重复数据**/
+		FROM BSE.T_BAS_EXPRESS_DELIVERY_ADDRESS T
+		<where>
+			<if test="pccAddress !=null and pccAddress != ''">
+				AND PCC_ADDRESS = #{pccAddress,jdbcType=VARCHAR}
+			</if>
+			<if test="townCode != null and townCode != ''">
+				AND TOWN_CODE = #{townCode,jdbcType=VARCHAR}
+			</if>
+			<if test="street !=null and street != ''">
+				AND STREET = #{street,jdbcType=VARCHAR}
+			</if>
+			<if test="1==1">
+				AND ACTIVE = 'Y'
+			</if>
+		</where>
+	</select>
+	<!-- 根据id查询 -->
+	<select id="queryExpressDeliveryAddressEntitysByCodes" resultMap="expressDeliveryAddressMap" parameterType="list">
+		SELECT <include refid="columns"/>/** 根据ID查询数据**/
+		FROM BSE.T_BAS_EXPRESS_DELIVERY_ADDRESS T
+		WHERE T.ID IN 
+		<foreach collection="list" item="id" index="index" open="(" separator="," close=")">
+			#{id,jdbcType=VARCHAR}
+		</foreach>
+	</select>
+	
+	<!-- 插入数据 -->
+	<insert id="insertExpressDeliveryAddressEntity" parameterType="list">
+		INSERT INTO BSE.T_BAS_EXPRESS_DELIVERY_ADDRESS(/** 插入数据**/
+			ID,DEPARTMENT_CODE,DEPARTMENT_NAME,PROVINCE_CODE,PROVINCE_NAME,
+	   		CITY_CODE,CITY_NAME,COUNTY_CODE,COUNTY_NAME,TOWN_CODE,TOWN_NAME,
+       		STREET,PCC_ADDRESS,OPERATOR_NAME,
+       		START_HOUSE_NUMBER,END_HOUSE_NUMBER,
+       		START_TIME,END_TIME,TYPE,SIGN,CREATE_TIME,MODIFY_TIME,
+       		CREATE_USER_CODE,MODIFY_USER_CODE,ACTIVE) 
+       		<foreach collection="list" item="entity" index="index" open="(" separator="union" close=")">
+				SELECT #{entity.id,jdbcType=VARCHAR},#{entity.departmentCode,jdbcType=VARCHAR},#{entity.departmentName,jdbcType=VARCHAR},
+		       		#{entity.provinceCode,jdbcType=VARCHAR},#{entity.provinceName,jdbcType=VARCHAR},#{entity.cityCode,jdbcType=VARCHAR},
+		       		#{entity.cityName,jdbcType=VARCHAR},#{entity.countyCode,jdbcType=VARCHAR},#{entity.countyName,jdbcType=VARCHAR},
+		       		#{entity.townCode,jdbcType=VARCHAR},#{entity.townName,jdbcType=VARCHAR},#{entity.street,jdbcType=VARCHAR},
+		       		#{entity.pccAddress,jdbcType=VARCHAR},#{entity.operatorName,jdbcType=VARCHAR},
+		       		#{entity.startHouseNumber,jdbcType=VARCHAR},#{entity.endHouseNumber,jdbcType=VARCHAR},
+		       		#{entity.startTime,jdbcType=TIMESTAMP},#{entity.endTime,jdbcType=TIMESTAMP},#{entity.type,jdbcType=VARCHAR},
+		       		#{entity.sign,jdbcType=VARCHAR},#{entity.createDate,jdbcType=TIMESTAMP},#{entity.modifyDate,jdbcType=TIMESTAMP},
+		       		#{entity.createUser,jdbcType=VARCHAR},#{entity.modifyUser,jdbcType=VARCHAR},#{entity.active,jdbcType=VARCHAR}
+				FROM DUAL
+			</foreach>
+	</insert>
+	
+	<!-- 修改 -->
+	<!-- <update id="updateExpressDeliveryAddressEntity" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressDeliveryAddressEntity">
+		UPDATE BSE.T_BAS_EXPRESS_DELIVERY_ADDRESS T/** 修改地址库数据**/
+		SET TOWN_CODE =#{townCode,jdbcType=VARCHAR},
+		TOWN_NAME=#{townName,jdbcType=VARCHAR},
+		STREET=#{street,jdbcType=VARCHAR},
+		OPERATOR_NAME=#{operatorName,jdbcType=VARCHAR},
+		START_HOUSE_NUMBER=#{startHouseNumber,jdbcType=VARCHAR},
+		END_HOUSE_NUMBER=#{endHouseNumber,jdbcType=VARCHAR},
+		START_TIME=#{startTime,jdbcType=TIMESTAMP},
+		END_TIME=#{endTime,jdbcType=TIMESTAMP},
+		TYPE=#{type,jdbcType=VARCHAR},
+       	SIGN=#{sign,jdbcType=VARCHAR},
+       	MODIFY_TIME=#{modifyDate,jdbcType=TIMESTAMP},
+       	MODIFY_USER_CODE=#{modifyUser,jdbcType=VARCHAR}
+       	WHERE ID = #{id,jdbcType=VARCHAR}
+	</update> -->
+	<update id="updateExpressDeliveryAddressEntity" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressDeliveryAddressEntity">
+		UPDATE BSE.T_BAS_EXPRESS_DELIVERY_ADDRESS T/** 修改地址库数据**/
+		SET T.ACTIVE = 'N',
+		T.MODIFY_TIME=#{modifyDate,jdbcType=TIMESTAMP},
+       	T.MODIFY_USER_CODE=#{modifyUser,jdbcType=VARCHAR},
+       	T.OPERATOR_NAME=#{operatorName,jdbcType=VARCHAR}
+       	WHERE T.ID = #{id,jdbcType=VARCHAR}
+	</update>
+	
+	<!-- 作废 -->
+	<update id="deleteExpressDeliveryAddressEntity" parameterType="map">
+		UPDATE BSE.T_BAS_EXPRESS_DELIVERY_ADDRESS T/** 根据ID作废数据**/
+		SET T.ACTIVE = 'N',
+		T.MODIFY_TIME=#{modifyDate,jdbcType=TIMESTAMP},
+        T.MODIFY_USER_CODE=#{modifyUser,jdbcType=VARCHAR},
+       	T.OPERATOR_NAME=#{operatorName,jdbcType=VARCHAR}
+		WHERE T.ID IN 
+		<foreach collection="ids" item="id" index="index" open="(" separator="," close=")">
+			#{id,jdbcType=VARCHAR}
+		</foreach>
+	</update>
+	<!-- 批量修改 -->
+	<update id="updateBatchExpressDeliveryAddressEntity" parameterType="map">
+		UPDATE BSE.T_BAS_EXPRESS_DELIVERY_ADDRESS T
+		SET T.START_TIME = #{startTime,jdbcType=TIMESTAMP},
+		T.END_TIME = #{endTime,jdbcType=TIMESTAMP},
+		T.MODIFY_TIME=#{modifyDate,jdbcType=TIMESTAMP},
+       	T.MODIFY_USER_CODE=#{modifyUser,jdbcType=VARCHAR},
+       	T.OPERATOR_NAME=#{operatorName,jdbcType=VARCHAR}
+		WHERE T.ID IN 
+		<foreach collection="ids" item="id" index="index" open="(" separator="," close=")">
+			#{id,jdbcType=VARCHAR}
+		</foreach>
+	</update>
+</mapper>

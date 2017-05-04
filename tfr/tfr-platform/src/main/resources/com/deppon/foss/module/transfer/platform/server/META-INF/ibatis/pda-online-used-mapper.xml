@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="pda-online">
+
+  <resultMap  id="pdaOnlineEntityMap" type="com.deppon.foss.module.transfer.platform.api.shared.domain.PDAOnlineUsingEntity">
+        <result property="id" column="id" />
+		<result property="hqCode" column="hqCode" />
+		<result property="hqName" column="hqName" />
+		<result property="transferCenterCode" column="transferCenterCode" />
+		<result property="transferCenterName" column="transferCenterName" />
+		<result property="postCode" column="postCode" />
+		<result property="pdaMaxQtyDay" column="pdaMaxQtyDay" />
+		<result property="pointRelatedDay" column="pointRelatedDay" />
+		<result property="pdaMaxQtyMonth" column="pdaMaxQtyMonth" />
+		<result property="pointRelatedMonth" column="pointRelatedMonth" />
+		<result property="dateRelatedMonth" column="dateRelatedMonth" />
+		<result property="staDate" column="staDate" />
+		<result property="staMonth" column="staMonth" />
+  </resultMap>
+
+  <resultMap id="transferCenterMap" type="com.deppon.foss.module.transfer.platform.api.shared.dto.TransferCenterDto" >
+     <result property="TransferCenterName" column="TransferCenterName"/>
+     <result property="TransferCenterCode" column="TransferCenterCode"/>
+     <result property="orgName" column="orgName"/>
+     <result property="orgCode" column="orgCode"/>
+     <result property="parentCode" column="parentCode"/>
+  </resultMap>
+
+
+  
+
+ <resultMap id="allCategoryMap" type="com.deppon.foss.module.transfer.platform.api.shared.dto.PDAOnlineUsingDto">
+		<result property="hqCode" column="HQCODE" />
+		<result property="hqName" column="HQNAME" />
+		<result property="transferCenterCode" column="TRANSFERCENTERCODE" />
+		<result property="transferCenterName" column="TRANSFERCENTERNAME" />
+		<result property="staMonth" column="STAMONTH" />
+		<result property="staDate" column="STADATE" />
+		<result property="forkUesdPDACountDay" column="FORKUESDPDACOUNTDAY" />
+		<result property="forkUesdPDAOlineTimeDay" column="FORKUESDPDAOLINETIMEDAY" />
+		<result property="forkPDAMaxQtyMonth" column="FORKPDAMAXQTYMONTH" />
+		<result property="forkPointRelatedMonth" column="FORKPOINTRELATEDMONTH" />
+		<result property="forkDateRelatedMonth" column="FORKDATERELATEDMONTH" />
+		<result property="forkMonthDayPoingTime" column="FORKMONTHDAYPOINGTIME" />
+		
+		<result property="clerkUesdPDACountDay" column="CLERKUESDPDACOUNTDAY" />
+        <result property="clerkUesdPDAOlineTimeDay" column="CLERKUESDPDAOLINETIMEDAY" />
+		<result property="clerkPDAMaxQtyMonth" column="CLERKPDAMAXQTYMONTH" />
+		<result property="clerkPointRelatedMonth" column="CLERKPOINTRELATEDMONTH" />
+		<result property="clerkDateRelatedMonth" column="CLERKDATERELATEDMONTH" />
+		<result property="clerkMonthDayPoingTime" column="CLERKMONTHDAYPOINGTIME" />
+		
+		
+		<result property="allUesdPDACountDay" column="ALLUESDPDACOUNTDAY" />
+		<result property="allUesdPDAOlineTimeDay" column="ALLUESDPDAOLINETIMEDAY" />
+		<result property="allPDAMaxQtyMonth" column="ALLPDAMAXQTYMONTH" />
+		<result property="allPointRelatedMonth" column="ALLPOINTRELATEDMONTH" />
+		<result property="allDateRelatedMonth" column="ALLDATERELATEDMONTH" />
+		<result property="allMonthDayPoingTime" column="ALLMONTHDAYPOINGTIME" />
+		
+ 
+ </resultMap>
+
+
+  <sql id="base_sql_padOnline">
+     id, hq_code,hq_name ,transfer_center_code ,transfer_center_name ,
+     post_code ,pda_max_qty_day ,point_related_day ,pda_max_qty_month ,
+     point_related_month ,date_related_month ,sta_date ,sta_month 
+  </sql>
+
+  <sql id="base_category_sql">
+               hqcode,
+		       hqname,
+		       transfercentercode,
+		       transfercentername,
+		       max(forkuesdpdacountday) forkuesdpdacountday,
+		       max(forkuesdpdaolinetimeday) forkuesdpdaolinetimeday,
+		       max(forkpdamaxqtymonth) forkpdamaxqtymonth,
+		       max(forkpointrelatedmonth) forkpointrelatedmonth,
+		       to_char(max(forkdaterelatedmonth), 'yyyy-mm-dd') forkdaterelatedmonth,
+		       to_char(max(forkdaterelatedmonth), 'yyyy-mm-dd') || ' ' ||lpad(max(forkpointrelatedmonth), 2, 0) || ':00' forkmonthdaypoingtime,
+		       max(clerkuesdpdacountday) clerkuesdpdacountday,
+		       max(clerkuesdpdaolinetimeday) clerkuesdpdaolinetimeday,
+		       max(clerkpdamaxqtymonth) clerkpdamaxqtymonth,
+		       max(clerkpointrelatedmonth) clerkpointrelatedmonth,
+		       to_char(max(clerkdaterelatedmonth), 'yyyy-mm-dd') clerkdaterelatedmonth,
+		       to_char(max(clerkdaterelatedmonth), 'yyyy-mm-dd') || ' ' ||lpad(max(clerkpointrelatedmonth), 2, 0) || ':00' clerkmonthdaypoingtime,
+		       max(alluesdpdacountday) alluesdpdacountday,
+		       max(alluesdpdaolinetimeday) alluesdpdaolinetimeday,
+		       max(allpdamaxqtymonth) allpdamaxqtymonth,
+		       max(allpointrelatedmonth) allpointrelatedmonth,
+		       to_char(max(alldaterelatedmonth), 'yyyy-mm-dd') alldaterelatedmonth,
+		       to_char(stadate, 'yyyy-mm-dd') stadate,
+		       to_char(max(alldaterelatedmonth), 'yyyy-mm-dd') || ' ' ||lpad(max(allpointrelatedmonth), 2, 0) || ':00' allmonthdaypoingtime,
+		       stamonth
+               <!-- HQCODE,
+		       HQNAME,
+		       TRANSFERCENTERCODE,
+		       TRANSFERCENTERNAME,
+		       MAX(FORKUESDPDACOUNTDAY) FORKUESDPDACOUNTDAY,
+		       MAX(FORKUESDPDAOLINETIMEDAY) FORKUESDPDAOLINETIMEDAY,
+		       MAX(FORKPDAMAXQTYMONTH) FORKPDAMAXQTYMONTH,
+		       MAX(FORKPOINTRELATEDMONTH) FORKPOINTRELATEDMONTH,
+		       TO_CHAR(MAX(FORKDATERELATEDMONTH), 'yyyy-MM-dd hh24:mi:ss') FORKDATERELATEDMONTH,
+		       TO_CHAR(MAX(FORKDATERELATEDMONTH), 'yyyy-MM-dd ') ||MAX(FORKPOINTRELATEDMONTH) || ' 00 00' FORKMONTHDAYPOINGTIME,
+		       
+		       MAX(CLERKUESDPDACOUNTDAY) CLERKUESDPDACOUNTDAY,
+		       MAX(CLERKUESDPDAOLINETIMEDAY) CLERKUESDPDAOLINETIMEDAY,
+		       MAX(CLERKPDAMAXQTYMONTH) CLERKPDAMAXQTYMONTH,
+		       MAX(CLERKPOINTRELATEDMONTH) CLERKPOINTRELATEDMONTH,
+		       TO_CHAR(MAX(CLERKDATERELATEDMONTH), 'yyyy-MM-dd hh24:mi:ss') CLERKDATERELATEDMONTH,
+		       TO_CHAR(MAX(CLERKDATERELATEDMONTH), 'yyyy-MM-dd ') ||MAX(CLERKPDAMAXQTYMONTH) || ' 00 00' CLERKMONTHDAYPOINGTIME,
+		       
+		       MAX(ALLUESDPDACOUNTDAY) ALLUESDPDACOUNTDAY,
+		       MAX(ALLUESDPDAOLINETIMEDAY) ALLUESDPDAOLINETIMEDAY,
+		       MAX(ALLPDAMAXQTYMONTH) ALLPDAMAXQTYMONTH,
+		       MAX(ALLPOINTRELATEDMONTH) ALLPOINTRELATEDMONTH,
+		       TO_CHAR(MAX(ALLDATERELATEDMONTH), 'yyyy-MM-dd hh24:mi:ss') ALLDATERELATEDMONTH,
+		       TO_CHAR(STADATE, 'yyyy-MM-dd') STADATE,
+		       
+		       TO_CHAR(MAX(ALLDATERELATEDMONTH), 'yyyy-MM-dd ') || MAX(ALLPOINTRELATEDMONTH) || ' 00 00' ALLMONTHDAYPOINGTIME,
+		       STAMONTH -->
+  </sql>
+
+
+  <!-- 统计-pda某天的登入退出情况于 及 查询（理货员、电叉司机、电叉司机组长）所列岗位所属部门、工号、姓名、岗位 -->
+  <select id="countPDAEmpToPro" parameterType="map" statementType="CALLABLE">
+        {CALL TFR.pkg_opt_pda_usage.pro_pda_device_and_emp(#{ date,mode=IN,jdbcType=TIMESTAMP})}
+   </select>
+   
+   <!-- 统计在线PDA日高峰，月高峰 -->
+   <select id="calculatePDAOnline" parameterType="map" statementType="CALLABLE">
+        {CALL TFR.pkg_opt_pda_usage.pro_pda_usage(#{operateOrigCode,mode=IN,jdbcType=VARCHAR},
+        										  #{OperateOrigName,mode=IN,jdbcType=VARCHAR},
+        										  #{outfiledCode,mode=IN,jdbcType=VARCHAR},
+						        				  #{outfiledName,mode=IN,jdbcType=VARCHAR},
+						        				  #{date,mode=IN,jdbcType=TIMESTAMP}
+						        				)}
+   </select>
+ 
+  <!-- 查传入日期的数据 -->
+  <select id="queryPDAOnlineUsing" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.PDAOnlineUsingEntity" resultMap="pdaOnlineEntityMap">
+     SELECT 
+        <include refid="base_sql_padOnline"/>
+      FROM TFR.T_OPT_PDA_USAGE T
+		 WHERE  t.STA_DATE=#{staDate}
+		 <if test="hqCode!=null and hqCode!=''">
+			AND t.HQ_CODE = #{hqCode,jdbcType=VARCHAR}
+		</if>
+		<if test="transferCenterCode!=null and transferCenterCode!=''" >
+		   AND t.TRANSFER_CENTER_CODE =#{transferCenterCode,jdbcType=VARCHAR}
+		</if>
+		 <if test="postCode!=null and postCode!=''">
+		   AND T.POST_CODE = #{postCode,jdbcType=INTEGER}
+		 </if>
+  
+  </select>
+  
+  <!-- 查询全国外场剔除掉分部 -->
+  <select id="queryAllTransferCenter" resultMap="transferCenterMap">
+    select t.name TransferCenterName,
+           t.code TransferCenterCode
+        from bse.t_bas_org t
+         where t.transfer_center = 'Y'
+           and t.active = 'Y'
+           and  nvl(t.express_branch,'N') = 'N'
+  </select>
+  
+  <!-- 根据部门code查询部门信息 -->
+  <select id="queryOrgByOrgCode" parameterType="string" resultMap="transferCenterMap">
+    	SELECT 
+    	    T.NAME orgName, 
+    	    T.CODE orgCode,
+    	    T.PARENT_ORG_CODE parentCode
+		  FROM BSE.T_BAS_ORG T
+		 WHERE T.ACTIVE = 'Y'
+		   AND T.CODE = #{code}
+  </select> 
+ 
+ 
+  <!--查询理货员 叉车司机所有人员使用PDA的情况  -->
+  <select id="queryAllCategoryPDAUsing" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.PDAOnlineUsingEntity" resultMap="allCategoryMap"> 
+		SELECT 
+		   <include refid="base_category_sql"/>
+		  FROM (SELECT FORK.HQ_CODE              HQCODE,
+		               FORK.HQ_NAME              HQNAME,
+		               FORK.TRANSFER_CENTER_CODE TRANSFERCENTERCODE,
+		               FORK.TRANSFER_CENTER_NAME TRANSFERCENTERNAME,
+		               FORK.PDA_MAX_QTY_DAY      FORKUESDPDACOUNTDAY,
+		               FORK.POINT_RELATED_DAY    FORKUESDPDAOLINETIMEDAY,
+		               FORK.PDA_MAX_QTY_MONTH    FORKPDAMAXQTYMONTH,
+		               FORK.POINT_RELATED_MONTH  FORKPOINTRELATEDMONTH,
+		               FORK.DATE_RELATED_MONTH   FORKDATERELATEDMONTH,
+		               0                         CLERKUESDPDACOUNTDAY,
+		               0                         CLERKUESDPDAOLINETIMEDAY,
+		               0                         CLERKPDAMAXQTYMONTH,
+		               0                         CLERKPOINTRELATEDMONTH,
+		               NULL                      CLERKDATERELATEDMONTH,
+		               0                         ALLUESDPDACOUNTDAY,
+		               0                         ALLUESDPDAOLINETIMEDAY,
+		               0                         ALLPDAMAXQTYMONTH,
+		               0                         ALLPOINTRELATEDMONTH,
+		               NULL                      ALLDATERELATEDMONTH,
+		               FORK.STA_DATE             STADATE,
+		               FORK.STA_MONTH            STAMONTH
+		          FROM TFR.T_OPT_PDA_USAGE FORK
+		         WHERE FORK.POST_CODE = 1
+		          <if test="staDate!=null and staDate!=''">
+		           AND FORK.STA_DATE = #{staDate,jdbcType=TIMESTAMP}
+		          </if>
+	              <if test="hqCode!=null and hqCode!=''">
+				   AND FORK.HQ_CODE = #{hqCode,jdbcType=VARCHAR}
+				  </if>
+				 <if test="transferCenterCode!=null and transferCenterCode!=''" >
+				   AND FORK.TRANSFER_CENTER_CODE =#{transferCenterCode,jdbcType=VARCHAR}
+				 </if>
+				 <if test="staMonth!=null and staMonth!=0">
+                   AND FORK.STA_MONTH=#{staMonth,jdbcType=INTEGER}
+                 </if> 
+		        UNION ALL
+		        SELECT CLERK.HQ_CODE              HQCODE,
+		               CLERK.HQ_NAME              HQNAME,
+		               CLERK.TRANSFER_CENTER_CODE TRANSFERCENTERCODE,
+		               CLERK.TRANSFER_CENTER_NAME TRANSFERCENTERNAME,
+		               0                          FORKUESDPDACOUNTDAY,
+		               0                          FORKUESDPDAOLINETIMEDAY,
+		               0                          FORKPDAMAXQTYMONTH,
+		               0                          FORKPOINTRELATEDMONTH,
+		               NULL                       FORKDATERELATEDMONTH,
+		               CLERK.PDA_MAX_QTY_DAY      CLERKUESDPDACOUNTDAY,
+		               CLERK.POINT_RELATED_DAY    CLERKUESDPDAOLINETIMEDAY,
+		               CLERK.PDA_MAX_QTY_MONTH    CLERKPDAMAXQTYMONTH,
+		               CLERK.POINT_RELATED_MONTH  CLERKPOINTRELATEDMONTH,
+		               CLERK.DATE_RELATED_MONTH   CLERKDATERELATEDMONTH,
+		               0                          ALLUESDPDACOUNTDAY,
+		               0                          ALLUESDPDAOLINETIMEDAY,
+		               0                          ALLPDAMAXQTYMONTH,
+		               0                          ALLPOINTRELATEDMONTH,
+		               NULL                       ALLDATERELATEDMONTH,
+		               CLERK.STA_DATE             STADATE,
+		               CLERK.STA_MONTH            STAMONTH
+		          FROM TFR.T_OPT_PDA_USAGE CLERK
+		         WHERE CLERK.POST_CODE = 2
+		         <if test="staDate!=null and staDate!=''">
+		           AND CLERK.STA_DATE = #{staDate,jdbcType=TIMESTAMP}
+		          </if>
+	              <if test="hqCode!=null and hqCode!=''">
+				   AND CLERK.HQ_CODE = #{hqCode,jdbcType=VARCHAR}
+				  </if>
+				 <if test="transferCenterCode!=null and transferCenterCode!=''" >
+				   AND CLERK.TRANSFER_CENTER_CODE =#{transferCenterCode,jdbcType=VARCHAR}
+				 </if>
+				 <if test="staMonth!=null and staMonth!=0">
+                   AND CLERK.STA_MONTH=#{staMonth,jdbcType=INTEGER}
+                 </if> 
+		        UNION ALL
+		        SELECT AL.HQ_CODE              HQCODE,
+		               AL.HQ_NAME              HQNAME,
+		               AL.TRANSFER_CENTER_CODE TRANSFERCENTERCODE,
+		               AL.TRANSFER_CENTER_NAME TRANSFERCENTERNAME,
+		               0                       FORKUESDPDACOUNTDAY,
+		               0                       FORKUESDPDAOLINETIMEDAY,
+		               0                       FORKPDAMAXQTYMONTH,
+		               0                       FORKPOINTRELATEDMONTH,
+		               NULL                    FORKDATERELATEDMONTH,
+		               0                       CLERKUESDPDACOUNTDAY,
+		               0                       CLERKUESDPDAOLINETIMEDAY,
+		               0                       CLERKPDAMAXQTYMONTH,
+		               0                       CLERKPOINTRELATEDMONTH,
+		               NULL                    CLERKDATERELATEDMONTH,
+		               AL.PDA_MAX_QTY_DAY      ALLUESDPDACOUNTDAY,
+		               AL.POINT_RELATED_DAY    ALLUESDPDAOLINETIMEDAY,
+		               AL.PDA_MAX_QTY_MONTH    ALLPDAMAXQTYMONTH,
+		               AL.POINT_RELATED_MONTH  ALLPOINTRELATEDMONTH,
+		               AL.DATE_RELATED_MONTH   ALLDATERELATEDMONTH,
+		               AL.STA_DATE             STADATE,
+		               AL.STA_MONTH            STAMONTH
+		          FROM TFR.T_OPT_PDA_USAGE AL
+		         WHERE AL.POST_CODE = 99
+		        <if test="staDate!=null and staDate!=''">
+		           AND AL.STA_DATE = #{staDate,jdbcType=TIMESTAMP}
+		          </if>
+	              <if test="hqCode!=null and hqCode!=''">
+				   AND AL.HQ_CODE = #{hqCode,jdbcType=VARCHAR}
+				  </if>
+				 <if test="transferCenterCode!=null and transferCenterCode!=''" >
+				   AND AL.TRANSFER_CENTER_CODE =#{transferCenterCode,jdbcType=VARCHAR}
+				 </if>
+				 <if test="staMonth!=null and staMonth!=0">
+                   AND AL.STA_MONTH=#{staMonth,jdbcType=INTEGER}
+                 </if> 
+           )  
+		 GROUP BY HQCODE,
+		          HQNAME,
+		          TRANSFERCENTERCODE,
+		          TRANSFERCENTERNAME,
+		          STAMONTH,
+		          STADATE
+  </select> 
+  
+  
+  <!-- 查询某一个外场下面的从月初到查询日期的所有pda使用情况 -->
+  
+    <select id="queryAllCategoryPDAUsingDetail" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.PDAOnlineUsingEntity" resultMap="allCategoryMap"> 
+		SELECT 
+		       <include refid="base_category_sql"/>
+		  FROM (SELECT FORK.HQ_CODE              HQCODE,
+		               FORK.HQ_NAME              HQNAME,
+		               FORK.TRANSFER_CENTER_CODE TRANSFERCENTERCODE,
+		               FORK.TRANSFER_CENTER_NAME TRANSFERCENTERNAME,
+		               FORK.PDA_MAX_QTY_DAY      FORKUESDPDACOUNTDAY,
+		               FORK.POINT_RELATED_DAY    FORKUESDPDAOLINETIMEDAY,
+		               FORK.PDA_MAX_QTY_MONTH    FORKPDAMAXQTYMONTH,
+		               FORK.POINT_RELATED_MONTH  FORKPOINTRELATEDMONTH,
+		               FORK.DATE_RELATED_MONTH   FORKDATERELATEDMONTH,
+		               0                         CLERKUESDPDACOUNTDAY,
+		               0                         CLERKUESDPDAOLINETIMEDAY,
+		               0                         CLERKPDAMAXQTYMONTH,
+		               0                         CLERKPOINTRELATEDMONTH,
+		               NULL                      CLERKDATERELATEDMONTH,
+		               0                         ALLUESDPDACOUNTDAY,
+		               0                         ALLUESDPDAOLINETIMEDAY,
+		               0                         ALLPDAMAXQTYMONTH,
+		               0                         ALLPOINTRELATEDMONTH,
+		               NULL                      ALLDATERELATEDMONTH,
+		               FORK.STA_DATE             STADATE,
+		               FORK.STA_MONTH            STAMONTH
+		          FROM TFR.T_OPT_PDA_USAGE FORK
+		         WHERE FORK.POST_CODE = 1
+		         
+		           AND FORK.STA_DATE between #{staDateBegin,jdbcType=TIMESTAMP} and #{staDateEnd,jdbcType=TIMESTAMP}
+				 
+				   AND FORK.TRANSFER_CENTER_CODE =#{transferCenterCode,jdbcType=VARCHAR}
+		        UNION ALL
+		        SELECT CLERK.HQ_CODE              HQCODE,
+		               CLERK.HQ_NAME              HQNAME,
+		               CLERK.TRANSFER_CENTER_CODE TRANSFERCENTERCODE,
+		               CLERK.TRANSFER_CENTER_NAME TRANSFERCENTERNAME,
+		               0                          FORKUESDPDACOUNTDAY,
+		               0                          FORKUESDPDAOLINETIMEDAY,
+		               0                          FORKPDAMAXQTYMONTH,
+		               0                          FORKPOINTRELATEDMONTH,
+		               NULL                       FORKDATERELATEDMONTH,
+		               CLERK.PDA_MAX_QTY_DAY      CLERKUESDPDACOUNTDAY,
+		               CLERK.POINT_RELATED_DAY    CLERKUESDPDAOLINETIMEDAY,
+		               CLERK.PDA_MAX_QTY_MONTH    CLERKPDAMAXQTYMONTH,
+		               CLERK.POINT_RELATED_MONTH  CLERKPOINTRELATEDMONTH,
+		               CLERK.DATE_RELATED_MONTH   CLERKDATERELATEDMONTH,
+		               0                          ALLUESDPDACOUNTDAY,
+		               0                          ALLUESDPDAOLINETIMEDAY,
+		               0                          ALLPDAMAXQTYMONTH,
+		               0                          ALLPOINTRELATEDMONTH,
+		               NULL                       ALLDATERELATEDMONTH,
+		               CLERK.STA_DATE             STADATE,
+		               CLERK.STA_MONTH            STAMONTH
+		          FROM TFR.T_OPT_PDA_USAGE CLERK
+		         WHERE CLERK.POST_CODE = 2
+		           AND CLERK.STA_DATE between #{staDateBegin,jdbcType=TIMESTAMP} and #{staDateEnd,jdbcType=TIMESTAMP}
+				   AND CLERK.TRANSFER_CENTER_CODE =#{transferCenterCode,jdbcType=VARCHAR}
+		        UNION ALL
+		        SELECT AL.HQ_CODE              HQCODE,
+		               AL.HQ_NAME              HQNAME,
+		               AL.TRANSFER_CENTER_CODE TRANSFERCENTERCODE,
+		               AL.TRANSFER_CENTER_NAME TRANSFERCENTERNAME,
+		               0                       FORKUESDPDACOUNTDAY,
+		               0                       FORKUESDPDAOLINETIMEDAY,
+		               0                       FORKPDAMAXQTYMONTH,
+		               0                       FORKPOINTRELATEDMONTH,
+		               NULL                    FORKDATERELATEDMONTH,
+		               0                       CLERKUESDPDACOUNTDAY,
+		               0                       CLERKUESDPDAOLINETIMEDAY,
+		               0                       CLERKPDAMAXQTYMONTH,
+		               0                       CLERKPOINTRELATEDMONTH,
+		               NULL                    CLERKDATERELATEDMONTH,
+		               AL.PDA_MAX_QTY_DAY      ALLUESDPDACOUNTDAY,
+		               AL.POINT_RELATED_DAY    ALLUESDPDAOLINETIMEDAY,
+		               AL.PDA_MAX_QTY_MONTH    ALLPDAMAXQTYMONTH,
+		               AL.POINT_RELATED_MONTH  ALLPOINTRELATEDMONTH,
+		               AL.DATE_RELATED_MONTH   ALLDATERELATEDMONTH,
+		               AL.STA_DATE             STADATE,
+		               AL.STA_MONTH            STAMONTH
+		          FROM TFR.T_OPT_PDA_USAGE AL
+		         WHERE AL.POST_CODE = 99
+		           AND AL.STA_DATE between #{staDateBegin,jdbcType=TIMESTAMP} and #{staDateEnd,jdbcType=TIMESTAMP}
+				   AND AL.TRANSFER_CENTER_CODE =#{transferCenterCode,jdbcType=VARCHAR}
+           )  
+		 GROUP BY HQCODE,
+		          HQNAME,
+		          TRANSFERCENTERCODE,
+		          TRANSFERCENTERNAME,
+		          STAMONTH,
+		          STADATE
+  </select> 
+  
+  
+  
+
+</mapper>	
+	
+	

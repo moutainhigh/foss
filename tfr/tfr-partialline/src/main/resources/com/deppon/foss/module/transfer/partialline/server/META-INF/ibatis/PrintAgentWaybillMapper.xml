@@ -1,0 +1,578 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+	<!--代理面单打印mapper-->
+<mapper namespace="foss.partialline.printAgentWaybillMapper" >
+	<!--打印代理面单查询结果集-->
+	<resultMap id="PrintAgentWaybillResultMap" type="com.deppon.foss.module.transfer.partialline.api.shared.domain.PrintAgentWaybillEntity" >
+		<id column="id" property="id" jdbcType="VARCHAR" />      
+		<result column="waybillNo" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="agentWaybillNo" property="agentWaybillNo" jdbcType="VARCHAR" />
+		
+		<result column="deliverName" property="deliverName" jdbcType="VARCHAR" />
+		<result column="deliverTel" property="deliverTel" jdbcType="VARCHAR" />
+		<result column="goodsWeight" property="goodsWeight" jdbcType="VARCHAR" />
+		<result column="goodsVolume" property="goodsVolume" jdbcType="VARCHAR" />
+		<result column="deliverProv" property="deliverProv" jdbcType="VARCHAR" />
+		<result column="deliverCity" property="deliverCity" jdbcType="VARCHAR" />
+		<result column="deliverDist" property="deliverDist" jdbcType="VARCHAR" />
+		<result column="deliverAddr" property="deliverAddr" jdbcType="VARCHAR" />
+		
+		<result column="receiverName" property="receiverName" jdbcType="VARCHAR" />
+		<result column="receiverTel" property="receiverTel" jdbcType="VARCHAR" />
+		<result column="receiverProv" property="receiverProv" jdbcType="VARCHAR" />
+		<result column="receiverCity" property="receiverCity" jdbcType="VARCHAR" />
+		<result column="receiverDist" property="receiverDist" jdbcType="VARCHAR" />
+		<result column="receiverAddr" property="receiverAddr" jdbcType="VARCHAR" />
+		
+		<result column="goodsName" property="goodsName" jdbcType="VARCHAR" />
+		<result column="goodsQty" property="goodsQty" jdbcType="DECIMAL" />
+		<result column="insurance" property="insurance" jdbcType="DECIMAL" />
+		
+		<result column="printer" property="printer" jdbcType="VARCHAR" />
+		<result column="printTime" property="printTime" jdbcType="TIMESTAMP" />
+		<result column="printCount" property="printCount" jdbcType="DECIMAL" />
+		
+		<result column="serialNo" property="serialNo" jdbcType="VARCHAR" />
+		<result column="agentCmpanyName" property="agentCmpanyName" jdbcType="VARCHAR"/>
+		<result column="agentCompanyCode" property="agentCompanyCode" jdbcType="VARCHAR"/>
+		<result column="status" property="status"  jdbcType="VARCHAR"/>
+		<result column="ispush" property="ispush"  jdbcType="VARCHAR"/>
+	</resultMap>
+	<!-- chigo -->
+	<resultMap id="PrintAgentWaybillRecordResultMap" type="com.deppon.foss.module.transfer.partialline.api.shared.domain.PrintAgentWaybillRecordEntity" >
+		<id column="id" property="id" jdbcType="VARCHAR" />      
+		<result column="waybillNo" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="serialNo" property="serialNo" jdbcType="VARCHAR" />
+		<result column="agentWaybillNo" property="agentWaybillNo" jdbcType="VARCHAR" />
+		<result column="agentCompanyCode" property="agentCompanyCode" jdbcType="VARCHAR" />
+		<result column="agentCompanyName" property="agentCompanyName" jdbcType="VARCHAR" />
+		<result column="operatorCode" property="operatorCode" jdbcType="VARCHAR" />
+		<result column="operatorName" property="operatorName" jdbcType="VARCHAR" />
+		<result column="operatTime" property="operatTime" jdbcType="TIMESTAMP" />
+		<result column="orgCode" property="orgCode" jdbcType="VARCHAR" />
+		<result column="orgName" property="orgName" jdbcType="VARCHAR" />
+		<result column="depTelephone" property="depTelephone" jdbcType="VARCHAR" />
+		<result column="createTime" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="printCount" property="printCount" jdbcType="DECIMAL" />
+		<result column="active" property="active" jdbcType="VARCHAR" />	
+		<result column="type" property="printType" jdbcType="VARCHAR"/>
+		<result column="bundleState" property="bundleState" jdbcType="VARCHAR" />	
+		<result column="frightFee" property="frightFee" jdbcType="VARCHAR" />	
+		<result column="status" property="status" jdbcType="VARCHAR" />	
+		<result column="ispush" property="ispush" jdbcType="VARCHAR" />	
+	</resultMap>
+	<sql id="WaybillRecord_Column_List">
+   	   A.AGENT_COMPANY_NAME agentCompanyName,
+   	   A.AGENT_WAYBILL_NO agentWaybillNo,
+       A.PRINT_TIME operatTime,
+       A.PRINT_USER_NAME operatorName
+   	</sql>
+   	<sql id="Where_Record_Clause" >
+		<where >
+			A.WAYBILL_NO =  #{waybillNo,jdbcType=VARCHAR}
+			AND A.PRINT_TYPE = 'LDP'
+		</where>
+	</sql>
+	<select id="queryWaybillsRecord" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.domain.PrintAgentWaybillRecordEntity" resultMap="PrintAgentWaybillRecordResultMap">
+		select 
+			A.WAYBILL_NO waybillNo,
+			A.SERIAL_NO serialNo,
+			A.AGENT_WAYBILL_NO agentWaybillNo,
+			A.AGENT_COMPANY_NAME agentCompanyName,
+	        A.UPDATE_USER_NAME operatorName,
+	        A.UPDATE_ORG_NAME orgName,
+       		O.DEP_TELEPHONE depTelephone,
+	       A.UPDATE_TIME operatTime,
+	        CASE
+	         WHEN A.ACTIVE IS NULL THEN
+	          '未绑定'
+	         WHEN A.ACTIVE = 'Y' THEN
+	          '已绑定'
+	         WHEN A.ACTIVE = 'N' THEN
+	          '已解绑'
+	         ELSE
+	          '未绑定'
+	       END status,
+	       DECODE(A.IS_PUSH,'Y','已订阅','N','未订阅','B','已退订','未订阅') ispush
+		from TFR.T_OPT_PRINT_AGENTWAYBILL A 
+		LEFT JOIN BSE.T_BAS_ORG O
+    	  ON A.UPDATE_ORG_CODE = O.CODE
+         AND O.ACTIVE = 'Y'
+		 <include refid="Where_Record_Clause"/>
+	</select>
+	
+	<!-- chigo -->
+	
+   	<sql id="Waybill_Column_List">
+   		A.AGENT_WAYBILL_NO AGENTWAYBILLNO,
+   	   W.WAYBILL_NO WAYBILLNO,
+   	   S.SERIAL_NO SERIALNO,
+       W.RECEIVE_CUSTOMER_CONTACT RECEIVERNAME,
+       CASE WHEN W.RECEIVE_CUSTOMER_MOBILEPHONE IS NULL THEN
+     			W.RECEIVE_CUSTOMER_PHONE
+    		WHEN W.RECEIVE_CUSTOMER_PHONE IS NULL THEN
+    			W.RECEIVE_CUSTOMER_MOBILEPHONE
+    		ELSE W.RECEIVE_CUSTOMER_MOBILEPHONE || '/' || W.RECEIVE_CUSTOMER_PHONE
+  		END RECEIVERTEL,
+       W.RECEIVE_CUSTOMER_ADDRESS RECEIVERADDR,
+       W.GOODS_NAME GOODSNAME,
+<!--        W.GOODS_QTY_TOTAL GOODSQTY, -->
+       A.UPDATE_USER_NAME PRINTER,
+       A.UPDATE_TIME PRINTTIME,
+<!--        A.PRINT_COUNT PRINTCOUNT -->
+	   A.AGENT_COMPANY_NAME agentCmpanyName,
+	   A.AGENT_COMPANY_CODE agentCompanyCode,
+	   CASE
+         WHEN A.ACTIVE IS NULL THEN
+          '未绑定'
+         WHEN A.ACTIVE = 'Y' THEN
+          '已绑定'
+         WHEN A.ACTIVE = 'N' THEN
+          '已解绑'
+         ELSE
+          '未绑定'
+       END status,
+       DECODE(A.IS_PUSH,'Y','已订阅','N','未订阅','B','已退订','未订阅') ispush
+   	</sql>
+   	
+	<sql id="Where_Clause" >
+		<where >
+			w.active = 'Y'
+			and w.product_code in ('PACKAGE','RCP','EPEP')
+			<if test="waybillNoList !=null and waybillNoList.size > 0 ">
+				and w.waybill_no in 
+					<foreach collection="waybillNoList" item="item" index="index" open=" ("   separator="," close=")">                  
+		           		 #{item,jdbcType=VARCHAR} 
+					</foreach> 
+				and s.orgcode = #{deptCode,jdbcType=VARCHAR}
+			</if>
+			<if test="handOverBillList !=null and handOverBillList.size > 0 ">
+				and h.handoverbill_state in (10,20,30,40,50)
+				and h.handover_type = 'LDP_HANDOVER'
+				and h.handover_no in 
+					<foreach collection="handOverBillList" item="item" index="index" open=" ("   separator="," close=")">                  
+		           		 #{item,jdbcType=VARCHAR} 
+					</foreach> 
+			</if>
+			<if test="beginInStockTime !=null and endInStockTime != null ">
+				and s.org_code = #{deptCode,jdbcType=VARCHAR}
+				<![CDATA[and s.in_stock_time >= #{beginInStockTime,jdbcType=TIMESTAMP}]]>
+      			<![CDATA[and s.in_stock_time <= #{endInStockTime,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="beginHandOverTime !=null and endHandOverTime != null ">
+				and h.handoverbill_state in (10,20,30,40,50)
+				and h.handover_type = 'LDP_HANDOVER'
+				and h.orig_org_code = #{deptCode,jdbcType=VARCHAR}
+				<![CDATA[and h.create_time >= #{beginHandOverTime,jdbcType=TIMESTAMP}]]>
+      			<![CDATA[and h.create_time <= #{endHandOverTime,jdbcType=TIMESTAMP}]]>
+			</if>
+		</where>
+	</sql>
+	
+  	<select id="queryWaybills" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.PrintAgentWaybillDto" resultMap="PrintAgentWaybillResultMap">
+		select 
+			<include refid="Waybill_Column_List"/>
+		from pkp.t_srv_waybill w
+		<if test="waybillNoList !=null and waybillNoList.size > 0 ">
+			 inner join((select d.waybill_no,s.serial_no,h.orig_org_code orgcode
+			               from tfr.t_opt_handoverbill_serialno s
+               				inner join tfr.t_opt_handoverbill_detail d on s.handoverbill_no = d.handover_no
+                                                             				and s.waybill_no = d.waybill_no
+			               inner join tfr.t_opt_handoverbill h on d.handover_no =h.handover_no
+				              where h.handoverbill_state in (10, 20, 30, 40, 50)
+				                and h.handover_type = 'LDP_HANDOVER')
+						UNION (select s.waybill_no,s.serial_no,s.org_code orgcode
+						         from tfr.t_opt_stock s)
+						) s on s.waybill_no = w.waybill_no
+		</if>
+		<if test="(handOverBillList !=null and handOverBillList.size > 0)  or (beginHandOverTime !=null and endHandOverTime != null)">
+			inner join tfr.t_opt_handoverbill_detail d on d.waybill_no = w.waybill_no
+			inner join tfr.t_opt_handoverbill_serialno s on s.handoverbill_no = d.handover_no
+                                                             and s.waybill_no = d.waybill_no
+			inner join tfr.t_opt_handoverbill h on d.handover_no = h.handover_no
+		</if>
+		<if test="beginInStockTime !=null and endInStockTime != null ">
+			inner join tfr.t_opt_stock s on s.waybill_no = w.waybill_no
+		</if>
+		<!-- chigo -->
+		 LEFT JOIN (select t1.waybill_no,
+                    t1.active,
+                    t1.serial_no,
+                    t1.AGENT_WAYBILL_NO,
+                    t1.UPDATE_USER_NAME,
+                    t1.UPDATE_TIME,
+                    t1.AGENT_COMPANY_NAME,
+                    t1.AGENT_COMPANY_CODE,
+                    t1.IS_PUSH
+               from (select a.waybill_no,
+                            a.active,
+                            a.serial_no,
+                            A.AGENT_WAYBILL_NO,
+                            A.UPDATE_USER_NAME,
+                            A.UPDATE_TIME,
+                            A.AGENT_COMPANY_CODE,
+                            A.AGENT_COMPANY_NAME,
+                            A.IS_PUSH,
+                            row_number() over(partition by a.waybill_no,a.serial_no order by a.update_time desc) rn
+                       from tfr.t_opt_print_agentwaybill a
+                      where a.print_type = 'LDP') t1
+              where rn = 1) A ON A.WAYBILL_NO = W.WAYBILL_NO and a.serial_no = s.serial_no
+           INNER JOIN BSE.T_BAS_OUTER_BRANCH OB ON w.customer_pickup_org_code = ob.agent_dept_code and ob.ACTIVE = 'Y'   
+		<include refid="Where_Clause"/>
+	</select>
+	
+	<select id="queryWaybillCount" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.PrintAgentWaybillDto" resultType="Long">
+		select 
+			count(1)
+		from pkp.t_srv_waybill w
+		<if test="waybillNoList !=null and waybillNoList.size > 0 ">
+			 inner join((select d.waybill_no,s.serial_no,h.orig_org_code orgcode
+			               from tfr.t_opt_handoverbill_serialno s
+               				inner join tfr.t_opt_handoverbill_detail d on s.handoverbill_no = d.handover_no
+                                                             				and s.waybill_no = d.waybill_no
+			               inner join tfr.t_opt_handoverbill h on d.handover_no =h.handover_no
+				              where h.handoverbill_state in (10, 20, 30, 40, 50)
+				                and h.handover_type = 'LDP_HANDOVER')
+						UNION (select s.waybill_no,s.serial_no,s.org_code orgcode
+						         from tfr.t_opt_stock s)
+						) s on s.waybill_no = w.waybill_no
+		</if>
+		<if test="(handOverBillList !=null and handOverBillList.size > 0)  or (beginHandOverTime !=null and endHandOverTime != null)">
+			inner join tfr.t_opt_handoverbill_detail d on d.waybill_no = w.waybill_no
+			inner join tfr.t_opt_handoverbill_serialno s on s.handoverbill_no = d.handover_no
+                                                             and s.waybill_no = d.waybill_no
+			inner join tfr.t_opt_handoverbill h on d.handover_no = h.handover_no
+		</if>
+		<if test="beginInStockTime !=null and endInStockTime != null ">
+			inner join tfr.t_opt_stock s on s.waybill_no = w.waybill_no
+		</if>
+			 LEFT JOIN (select t1.waybill_no,
+                    t1.active,
+                    t1.serial_no,
+                    t1.AGENT_WAYBILL_NO,
+                    t1.UPDATE_USER_NAME,
+                    t1.UPDATE_TIME,
+                    t1.AGENT_COMPANY_NAME
+               from (select a.waybill_no,
+                            a.active,
+                            a.serial_no,
+                            A.AGENT_WAYBILL_NO,
+                            A.UPDATE_USER_NAME,
+                            A.UPDATE_TIME,
+                            A.AGENT_COMPANY_NAME,
+                            row_number() over(partition by a.waybill_no,a.serial_no order by a.update_time desc) rn
+                       from tfr.t_opt_print_agentwaybill a
+                      where a.print_type = 'LDP') t1
+              where rn = 1) A ON A.WAYBILL_NO = W.WAYBILL_NO and a.serial_no = s.serial_no
+             INNER JOIN BSE.T_BAS_OUTER_BRANCH OB ON w.customer_pickup_org_code = ob.agent_dept_code and ob.ACTIVE = 'Y'   
+
+		<include refid="Where_Clause"/>
+	</select>
+	
+
+	<insert id="insert" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.domain.PrintAgentWaybillRecordEntity" >
+    insert into TFR.T_OPT_PRINT_AGENTWAYBILL (ID,
+	  WAYBILL_NO,
+	  SERIAL_NO,
+	  AGENT_WAYBILL_NO,
+	  AGENT_COMPANY_CODE,
+	  AGENT_COMPANY_NAME,
+	  PRINT_USER_CODE,
+	  PRINT_USER_NAME,
+	  PRINT_ORG_CODE,
+	  PRINT_ORG_NAME,
+	  PRINT_TIME,
+	  PRINT_COUNT,
+	  ACTIVE,
+	  PRINT_TYPE,
+	  UPDATE_USER_CODE,
+      UPDATE_USER_NAME,
+      UPDATE_ORG_CODE,
+      UPDATE_ORG_NAME,
+      UPDATE_TIME
+	  )
+	values (#{id,jdbcType=VARCHAR}, #{waybillNo,jdbcType=VARCHAR}, #{serialNo,jdbcType=VARCHAR},#{agentWaybillNo,jdbcType=VARCHAR}, 
+      #{agentCompanyCode,jdbcType=VARCHAR}, #{agentCompanyName,jdbcType=VARCHAR}, 
+      #{operatorCode,jdbcType=VARCHAR}, #{operatorName,jdbcType=VARCHAR}, #{orgCode,jdbcType=VARCHAR}, 
+      #{orgName,jdbcType=VARCHAR}, #{operatTime,jdbcType=TIMESTAMP}, 
+      (SELECT NVL(MAX(print_count),0) FROM tfr.t_opt_print_agentwaybill p WHERE p.waybill_no =  #{waybillNo,jdbcType=VARCHAR})+1,
+      #{active,jdbcType=VARCHAR},'LDP',
+      #{operatorCode,jdbcType=VARCHAR}, #{operatorName,jdbcType=VARCHAR}, #{orgCode,jdbcType=VARCHAR}, 
+      #{orgName,jdbcType=VARCHAR}, #{operatTime,jdbcType=TIMESTAMP})
+	</insert>
+	
+	<update id="updateActive" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.domain.PrintAgentWaybillRecordEntity" >
+   	update TFR.T_OPT_PRINT_AGENTWAYBILL pa
+    set 
+      pa.ACTIVE = 'N'
+       where pa.WAYBILL_NO=#{waybillNo,jdbcType=VARCHAR} 
+       and pa.PRINT_TYPE = 'LDP'
+       and pa.PRINT_COUNT <![CDATA[<]]> (SELECT MAX(print_count) FROM tfr.t_opt_print_agentwaybill p WHERE p.waybill_no =  #{waybillNo,jdbcType=VARCHAR})
+	</update>
+	
+	<select id="queryRecordByAgentWaybillNo" parameterType="string" resultMap="PrintAgentWaybillRecordResultMap">
+		select 
+			 A.WAYBILL_NO waybillNo,
+      		 A.PRINT_TYPE type,
+           	 a.print_user_name  operatorName,
+           	 a.print_user_code operatorCode,
+             a.print_org_code orgCode,
+             a.print_org_name orgName
+		from TFR.T_OPT_PRINT_AGENTWAYBILL A 
+		where A.Agent_Waybill_No = #{agentWaybillNo,jdbcType=VARCHAR}
+		and a.active = 'Y'
+	</select>
+	
+	<select id="queryRecordByWaybillNo" parameterType="map" resultMap="PrintAgentWaybillRecordResultMap">
+		select 
+	      a.agent_waybill_no agentWaybillNo,
+          A.WAYBILL_NO waybillNo,
+          a.agent_company_name agentCompanyName,
+	      a.print_user_name operatorName,
+	      a.print_org_code orgCode,
+	      a.print_org_name orgName,
+	      a.print_time	   operatTime
+	    from TFR.T_OPT_PRINT_AGENTWAYBILL A 
+		where A.Waybill_No = #{waybillNo,jdbcType=VARCHAR}
+    	and a.print_type = #{type,jdbcType=VARCHAR}
+		and a.active = 'Y'
+	</select>
+	<!--营业部外发，查询相关绑定运单信息-->
+	<select id="queryBundleWaybills" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.PrintAgentWaybillDto" resultMap="PrintAgentWaybillRecordResultMap">
+		<if test="waybillNo != null">
+			select W.waybill_no waybillNo,A.AGENT_COMPANY_CODE agentCompanyCode ,A.ACTIVE bundleState,
+				BUNDLE.FRIGHT_FEE frightFee,<include refid="WaybillRecord_Column_List"/>
+			from pkp.t_srv_waybill w
+			inner join tfr.t_opt_waybill_stock s on s.waybill_no = w.waybill_no and s.stock_goods_qty = w.goods_qty_total
+			LEFT JOIN TFR.T_OPT_PRINT_AGENTWAYBILL A ON A.WAYBILL_NO = W.WAYBILL_NO  AND A.PRINT_TYPE = 'SD' and A.ACTIVE ='Y'
+		</if>
+		<if test="waybillNo == null">
+			select A.waybill_no waybillNo,A.AGENT_COMPANY_CODE agentCompanyCode ,A.ACTIVE bundleState,
+				BUNDLE.FRIGHT_FEE frightFee,<include refid = "WaybillRecord_Column_List"/>
+			from TFR.T_OPT_PRINT_AGENTWAYBILL A
+		</if>
+		 LEFT JOIN TFR.T_OPT_BUNDLE_FEE BUNDLE ON BUNDLE.WAYBILL_NO = A.WAYBILL_NO AND BUNDLE.ACTIVE = 'Y'
+		<include refid="Where_Bundle_Clause"/>
+	</select>
+	
+	<!--营业部外发，查询相关绑定运单信息-->
+	<select id="queryBundleWaybillsCount" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.PrintAgentWaybillDto" resultType="Long">
+		select count(1)
+		<if test="waybillNo != null">
+			from pkp.t_srv_waybill w
+			inner join tfr.t_opt_waybill_stock s on s.waybill_no = w.waybill_no and s.stock_goods_qty = w.goods_qty_total
+			LEFT JOIN TFR.T_OPT_PRINT_AGENTWAYBILL A ON A.WAYBILL_NO = W.WAYBILL_NO  AND A.PRINT_TYPE = 'SD' and A.ACTIVE ='Y'
+		</if>
+		<if test="waybillNo == null">
+			from TFR.T_OPT_PRINT_AGENTWAYBILL A
+		</if>
+		 LEFT JOIN TFR.T_OPT_BUNDLE_FEE BUNDLE ON BUNDLE.WAYBILL_NO = A.WAYBILL_NO AND BUNDLE.ACTIVE = 'Y'
+		<include refid="Where_Bundle_Clause"/>
+	</select>
+	<!--营业部绑定运单信息查询条件-->
+	<sql id="Where_Bundle_Clause" >
+		<where >
+			
+			<if test="waybillNo != null ">
+				w.active = 'Y'
+				and w.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+				and w.product_code in ('PACKAGE','RCP','EPEP')
+				and w.to_pay_amount = 0 
+				and w.cod_amount = 0
+				and w.return_bill_type = 'NONE'
+				and s.org_code = #{deptCode,jdbcType=VARCHAR}
+			</if>
+			<if test="waybillNo == null ">
+				A.PRINT_TYPE = 'SD' 
+      			and A.active = 'Y'
+				<if test="beginOperatTime !=null and endOperatTime != null">
+					<![CDATA[and a.print_time >= #{beginOperatTime,jdbcType=TIMESTAMP}]]>
+      				<![CDATA[and a.print_time <= #{endOperatTime,jdbcType=TIMESTAMP}]]>
+      				and a.PRINT_ORG_CODE = #{currentDeptCode,jdbcType=VARCHAR}
+				</if>
+				<if test="agentWaybillNo != null">
+					and a.agent_waybill_no = #{agentWaybillNo,jdbcType=VARCHAR}
+				</if>
+				
+			</if>
+			
+		</where>
+	</sql>
+	<insert id="bundleSdExternalBill" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.domain.PrintAgentWaybillRecordEntity" >
+    insert into TFR.T_OPT_PRINT_AGENTWAYBILL (ID,
+	  WAYBILL_NO,
+	  AGENT_WAYBILL_NO,
+	  AGENT_COMPANY_CODE,
+	  AGENT_COMPANY_NAME,
+	  PRINT_USER_CODE,
+	  PRINT_USER_NAME,
+	  PRINT_ORG_CODE,
+	  PRINT_ORG_NAME,
+	  PRINT_TIME,
+	  ACTIVE,
+	  PRINT_TYPE,
+	  SERIAL_NO,
+	  UPDATE_USER_CODE,
+      UPDATE_USER_NAME,
+      UPDATE_ORG_CODE,
+      UPDATE_ORG_NAME,
+      UPDATE_TIME)
+	values (#{id,jdbcType=VARCHAR}, #{waybillNo,jdbcType=VARCHAR}, #{agentWaybillNo,jdbcType=VARCHAR}, 
+      #{agentCompanyCode,jdbcType=VARCHAR}, #{agentCompanyName,jdbcType=VARCHAR}, 
+      #{operatorCode,jdbcType=VARCHAR}, #{operatorName,jdbcType=VARCHAR}, #{orgCode,jdbcType=VARCHAR}, 
+      #{orgName,jdbcType=VARCHAR}, #{operatTime,jdbcType=TIMESTAMP},#{active,jdbcType=VARCHAR},#{printType,jdbcType=VARCHAR},
+      '0001',#{operatorCode,jdbcType=VARCHAR}, #{operatorName,jdbcType=VARCHAR}, #{orgCode,jdbcType=VARCHAR}, 
+      #{orgName,jdbcType=VARCHAR}, #{operatTime,jdbcType=TIMESTAMP})
+	</insert>
+	<!--记录营业部绑定相关费用-->
+	<insert id="bundleFrightFee" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.domain.PrintAgentWaybillRecordEntity" >
+    	insert into TFR.T_OPT_BUNDLE_FEE (ID,
+	  		WAYBILL_NO,
+	  		FRIGHT_FEE,
+	  		ACTIVE)
+		values (#{id,jdbcType=VARCHAR}, #{waybillNo,jdbcType=VARCHAR},
+      		#{frightFee,jdbcType=DECIMAL},#{active,jdbcType=VARCHAR})
+	</insert>
+	<!--作废营业部绑定运单信息-->
+	<update id="unBundleSdExternalBill" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.domain.PrintAgentWaybillRecordEntity" >
+   	update TFR.T_OPT_PRINT_AGENTWAYBILL A
+    set 
+      A.ACTIVE = #{active,jdbcType=VARCHAR},
+      A.UPDATE_USER_CODE=#{operatorCode,jdbcType=VARCHAR},
+      A.UPDATE_USER_NAME=#{operatorName,jdbcType=VARCHAR},
+      A.UPDATE_ORG_CODE=#{orgCode,jdbcType=VARCHAR},
+      A.UPDATE_ORG_NAME=#{orgName,jdbcType=VARCHAR},
+      A.UPDATE_TIME=#{operatTime,jdbcType=VARCHAR}
+    where 
+    A.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR} 
+    and A.AGENT_WAYBILL_NO = #{agentWaybillNo,jdbcType=VARCHAR}
+    and A.PRINT_TYPE = #{printType,jdbcType=VARCHAR} 
+
+	</update>
+	<!--作废绑定相关费用-->
+	<update id="unBundleFrightFee" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.domain.PrintAgentWaybillRecordEntity" >
+   	update TFR.T_OPT_BUNDLE_FEE F
+    set 
+      F.ACTIVE = #{active,jdbcType=VARCHAR}
+    where 
+    F.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR} 
+    and F.ACTIVE = 'Y'
+	</update>
+	<!--绑定前验证该运单是否已绑定-->
+	<select id="validateBundle" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.domain.PrintAgentWaybillRecordEntity" resultType="Long">
+		select count(1)
+		from TFR.T_OPT_PRINT_AGENTWAYBILL A
+		where 
+		A.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+		AND A.PRINT_TYPE = 'SD'
+		AND A.ACTIVE = 'Y'
+	</select>
+
+	<update id="invalidLdpBindRecord" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.domain.PrintAgentWaybillRecordEntity">
+		UPDATE TFR.T_OPT_PRINT_AGENTWAYBILL A
+		SET A.ACTIVE = 'N',
+	    A.UPDATE_USER_CODE = #{operatorCode,jdbcType=VARCHAR},
+	    A.UPDATE_USER_NAME = #{operatorName,jdbcType=VARCHAR},
+	    A.UPDATE_ORG_CODE = #{orgCode,jdbcType=VARCHAR},
+	    A.UPDATE_ORG_NAME = #{orgName,jdbcType=VARCHAR},
+	    A.UPDATE_TIME = #{operatTime,jdbcType=VARCHAR}
+	   WHERE A.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+	   AND A.SERIAL_NO = #{serialNo,jdbcType=VARCHAR}
+	   AND A.AGENT_WAYBILL_NO = #{agentWaybillNo,jdbcType=VARCHAR}
+	   AND A.ACTIVE = 'Y'
+	   AND A.PRINT_TYPE = 'LDP'
+	</update>
+	
+	<select id="queryRecordByWaybillNoAndSerialNo" parameterType="map" resultMap="PrintAgentWaybillRecordResultMap">
+		select 
+	      a.agent_waybill_no agentWaybillNo,
+          A.WAYBILL_NO waybillNo,
+          a.agent_company_name agentCompanyName,
+	      a.print_user_name operatorName,
+	      a.print_org_code orgCode,
+	      a.print_org_name orgName,
+	      a.print_time	   operatTime
+	    from TFR.T_OPT_PRINT_AGENTWAYBILL A 
+		where A.Waybill_No = #{waybillNo,jdbcType=VARCHAR}
+    	and a.serial_no = #{serialNo,jdbcType=VARCHAR}
+    	and a.print_type = 'LDP'
+		and a.active = 'Y'
+	</select>
+	
+	<select id="queryStockAndHandOverBillCount" parameterType="map" resultType="int">
+		select count(1) from (
+			select d.waybill_no, s.serial_no, h.orig_org_code orgcode
+			  from tfr.t_opt_handoverbill_serialno s
+			 inner join tfr.t_opt_handoverbill_detail d on s.handoverbill_no =
+			                                               d.handover_no
+			                                           and s.waybill_no = d.waybill_no
+			 inner join tfr.t_opt_handoverbill h on d.handover_no = h.handover_no
+			 where h.handoverbill_state in (10, 20, 30, 40, 50)
+			   and h.handover_type = 'LDP_HANDOVER'
+			   UNION all
+			select s.waybill_no, s.serial_no, s.org_code orgcode from tfr.t_opt_stock s
+			) s
+			where s.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+			and s.serial_no = #{serialNo,jdbcType=VARCHAR}
+			and s.orgcode = #{deptCode,jdbcType=VARCHAR}
+	</select>
+	<select id="queryOuterNetWorkNumByWaybillNo" parameterType="string" resultType="int">
+		 select count(1) from pkp.t_srv_waybill w inner join bse.t_bas_outer_branch ob
+   		 on w.customer_pickup_org_code = ob.agent_dept_code and ob.active = 'Y'
+  		  where w.waybill_no=#{waybillNo,jdbctype=varchar}  and w.active='Y'
+	</select>
+	<!--查询订阅记录-->
+	<!--1，查询某代理公司的代理单号的订阅记录-->
+	<!--2，查询某件货物的订阅记录	-->
+	<select id="queryOrderedRecord" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.domain.PrintAgentWaybillRecordEntity" resultMap="PrintAgentWaybillRecordResultMap">
+	  select 
+		  w.agent_waybill_no agentwaybillno,
+          w.waybill_no waybillno,
+          w.serial_no serialno,
+          w.agent_company_name agentcmpanyname,
+          w.agent_company_code agentcompanycode
+      from tfr.t_opt_print_agentwaybill w where
+      ((w.agent_waybill_no = #{agentWaybillNo,jdbcType=VARCHAR} and w.agent_company_code = #{agentCompanyCode,jdbcType=VARCHAR}) or
+      (w.waybill_no = #{waybillNo,jdbcType=VARCHAR} and w.serial_no = #{serialNo,jdbcType=VARCHAR}))
+      and w.active = 'Y'
+      and w.is_push = 'Y'
+	</select>
+	<!--更新推送状态信息-->
+	<update id="updatePrintAgentPushState" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.domain.PrintAgentWaybillRecordEntity" >
+   		update tfr.t_opt_print_agentwaybill a
+       		set 
+	    a.update_user_code = #{operatorCode,jdbctype=varchar},
+      	a.update_user_name = #{operatorName,jdbctype=varchar},
+    	a.update_org_code = #{orgCode,jdbctype=varchar},
+	  	a.update_org_name = #{orgName,jdbctype=varchar},
+      	a.update_time = #{operatTime,jdbctype=varchar},
+      	a.is_push=#{ispush,jdbctype=varchar}
+    		where 
+	    a.waybill_no = #{waybillNo,jdbctype=varchar} 
+      	and a.agent_waybill_no = #{agentWaybillNo,jdbctype=varchar}
+      	and a.agent_company_code = #{agentCompanyCode,jdbctype=varchar}
+      	and a.serial_no = #{serialNo,jdbctype=varchar} 
+   	  	and a.active='Y'
+   	  	and a.print_type = 'LDP'
+	</update>
+	<!--根据代理单号与快递100定义的代理公司简称查询绑定信息-->
+	<select id="queryRecordByAgentWaybillNoAndCompany" parameterType="java.util.Map" resultMap="PrintAgentWaybillRecordResultMap">
+		select 
+			 a.waybill_no waybillno,
+			 a.serial_no serialNo,
+      		 a.print_type type,
+           	 a.print_user_name operatorname,
+           	 a.print_user_code operatorcode,
+             a.print_org_code  orgcode,
+             a.print_org_name  orgname,
+             a.is_push ispush
+		from tfr.t_opt_print_agentwaybill a 
+        left join bse.t_bas_data_dictionary_value v
+        on a.agent_company_code = v.value_code
+		where a.agent_waybill_no = #{agentWaybillNo,jdbcType=VARCHAR}
+		and v.extattribute1 = #{agentCompanyCode,jdbcType=VARCHAR}
+		and a.active = 'Y'
+		and v.terms_code='ABBREVIATION_OF_AGENCY_COMPANY'
+		and v.active = 'Y'
+	</select>
+</mapper>

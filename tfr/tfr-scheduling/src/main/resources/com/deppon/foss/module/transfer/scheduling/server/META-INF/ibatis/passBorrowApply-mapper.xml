@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.scheduling.PassBorrowApply" >
+	<resultMap type="com.deppon.foss.module.transfer.scheduling.api.shared.domain.PassBorrowApplyEntity" id="PassBorrowApplyResultMap">
+    	<id  property="id" column="ACCEPT_APPLY_ID"/>
+		<result property="borrowNo" column="BORROW_NO"/>
+		<result property="passStatus" column="PASS_STATUS"/>
+		<result property="vehicleNo" column="VEHICLE_NO"/>
+		<result property="passTime" column="PASS_TIME"/>
+		<result property="acceptOrgName" column="ACCEPT_ORG_NAME"/>
+		<result property="acceptOrgCode" column="ACCEPT_ORG_CODE"/>
+		<result property="acceptEmpName" column="ACCEPT_EMP_NAME"/>
+		<result property="acceptEmpCode" column="ACCEPT_EMP_CODE"/>
+	</resultMap>
+
+	<sql id="PassBorrowApplyall_column">
+		ACCEPT_APPLY_ID,
+		BORROW_NO,
+		PASS_STATUS,
+		VEHICLE_NO,
+		PASS_TIME,
+		ACCEPT_ORG_NAME,
+		ACCEPT_ORG_CODE,
+		ACCEPT_EMP_NAME,
+		ACCEPT_EMP_CODE
+	</sql>
+	
+	<!-- 新增  -->
+	<insert id="addPassBorrowApply" parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.PassBorrowApplyEntity">
+		INSERT INTO TFR.T_OPT_PASS_BORROW_APPLY(
+						ACCEPT_APPLY_ID, BORROW_NO, PASS_STATUS, 
+						VEHICLE_NO, PASS_TIME, ACCEPT_ORG_NAME, 
+						ACCEPT_ORG_CODE, ACCEPT_EMP_NAME, ACCEPT_EMP_CODE)
+		VALUES(
+						#{id jdbcType=VARCHAR}, #{borrowNo jdbcType=VARCHAR}, #{passStatus jdbcType=VARCHAR}, 
+						#{vehicleNo jdbcType=VARCHAR}, #{passTime}, #{acceptOrgName jdbcType=VARCHAR}, 
+						#{acceptOrgCode jdbcType=VARCHAR}, #{acceptEmpName jdbcType=VARCHAR}, #{acceptEmpCode jdbcType=VARCHAR}
+			   )
+	</insert>
+	
+	<!-- 修改  -->
+	<update id="updatePassBorrowApply"	parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.PassBorrowApplyEntity">
+		UPDATE TFR.T_OPT_PASS_BORROW_APPLY PassBorrowApply
+				SET
+					PassBorrowApply.BORROW_NO = #{borrowNo jdbcType=VARCHAR}, 
+					PassBorrowApply.PASS_STATUS = #{passStatus jdbcType=VARCHAR}, 
+					PassBorrowApply.VEHICLE_NO = #{vehicleNo jdbcType=VARCHAR}, 
+					PassBorrowApply.PASS_TIME = #{passTime}, 
+					PassBorrowApply.ACCEPT_ORG_NAME = #{acceptOrgName jdbcType=VARCHAR}, 
+					PassBorrowApply.ACCEPT_ORG_CODE = #{acceptOrgCode jdbcType=VARCHAR}, 
+					PassBorrowApply.ACCEPT_EMP_NAME = #{acceptEmpName jdbcType=VARCHAR}, 
+					PassBorrowApply.ACCEPT_EMP_CODE = #{acceptEmpCode jdbcType=VARCHAR}
+		WHERE PassBorrowApply.ACCEPT_APPLY_ID = #{id} 
+	</update>
+
+	<sql id="select_Where">
+		<where>
+			<if test="borrowNo != null and borrowNo !=''">
+				AND PassBorrowApply.BORROW_NO = #{borrowNo}   
+			</if>
+			<if test="passStatus != null and passStatus !=''">
+				AND PassBorrowApply.PASS_STATUS = #{passStatus}   
+			</if>
+			<if test="vehicleNo != null and vehicleNo !=''">
+				AND PassBorrowApply.VEHICLE_NO LIKE = #{vehicleNo}   
+			</if>
+			<if test="passTime != null and passTime !=''">
+				AND PassBorrowApply.PASS_TIME = #{passTime}    
+			</if>
+			<if test="acceptOrgName != null and acceptOrgName !=''">
+				AND PassBorrowApply.ACCEPT_ORG_NAME LIKE '%'||#{acceptOrgName}||'%'   
+			</if>
+			<if test="acceptOrgCode != null and acceptOrgCode !=''">
+				AND PassBorrowApply.ACCEPT_ORG_CODE = #{acceptOrgCode}   
+			</if>
+			<if test="acceptEmpName != null and acceptEmpName !=''">
+				AND PassBorrowApply.ACCEPT_EMP_NAME LIKE '%'||#{acceptEmpName}||'%'   
+			</if>
+			<if test="acceptEmpCode != null and acceptEmpCode !=''">
+				AND PassBorrowApply.ACCEPT_EMP_CODE  = #{acceptEmpCode}   
+			</if>
+		</where>
+	</sql>
+	
+	<!-- 查询集合  -->
+	<select id="queryPassBorrowApplyList"	resultMap="PassBorrowApplyResultMap"  parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.PassBorrowApplyEntity">
+		SELECT 
+			<include refid="PassBorrowApplyall_column"/>
+			FROM TFR.T_OPT_PASS_BORROW_APPLY PassBorrowApply  
+		<include refid="select_Where"/>
+	</select>
+	
+	<!-- getCount  -->
+	<select id="queryCount"  resultType="Long" parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.PassBorrowApplyEntity">
+		SELECT 
+			COUNT(ACCEPT_APPLY_ID)  
+        	FROM TFR.T_OPT_PASS_BORROW_APPLY PassBorrowApply 
+		<include refid="select_Where"/>
+	</select>
+	
+	<resultMap type="com.deppon.foss.module.transfer.scheduling.api.shared.dto.VehicleDriverWithDto" id="VehicleDriverWithDtoResultMap">
+		<result property="vehicleNo" column="VEHICLE_NO"/>
+		<result property="vehcleLengthName" column="VEHICLE_LENGTH_NAME"/>
+		<result property="vehcleLengthCode" column="VEHICLE_LENGHT_CODE"/>
+		<result property="borrowVehicleOrgCode" column="APPLY_ORG_CODE"/>
+		<result property="vehcleGroupCode" column="VEHCLEGROUPCODE"/>
+		<result property="vehcleGroupName" column="VEHCLEGROUPNAME"/>
+	</resultMap>
+	
+	<!-- 查询借车信息 -->
+	<select id="queryBorrowVehicle" resultMap="VehicleDriverWithDtoResultMap"  parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.dto.VehicleDriverWithDto">
+		SELECT 
+                  PASSBORROWAPPLY.BORROW_NO,
+                  OWN_TRUCK.VEHICLE_NO,
+                  OWN_TRUCK.ORG_ID AS VEHCLEGROUPCODE,
+                  OWN_TRUCK.VEHICLE_LENGHT_CODE,
+                  OWN_TRUCK_TYPE.VEHICLE_LENGTH_NAME,
+                  BORROWVEHICLE.APPLY_ORG_CODE,
+                  BAS_ORG.NAME AS VEHCLEGROUPNAME
+			FROM  TFR.T_OPT_PASS_BORROW_APPLY PASSBORROWAPPLY
+			INNER JOIN TFR.T_OPT_BORROW_VEHICLE BORROWVEHICLE ON PASSBORROWAPPLY.BORROW_NO = BORROWVEHICLE.BORROW_NO
+			                                                  AND BORROWVEHICLE.STATUS IN  
+				<foreach collection="borrowVehicleApplyStatus" close=")" index="index" item="item" open="(" separator=",">
+		                                                  	 #{item}		
+				</foreach>
+			                                                  AND BORROWVEHICLE.APPLY_ORG_CODE = #{borrowVehicleOrgCode}
+			INNER JOIN BSE.T_BAS_OWN_TRUCK OWN_TRUCK ON PASSBORROWAPPLY.VEHICLE_NO = OWN_TRUCK.Vehicle_No
+            INNER JOIN BSE.T_BAS_ORG BAS_ORG ON OWN_TRUCK.ORG_ID = BAS_ORG.CODE
+            LEFT  JOIN BSE.T_BAS_VEHICLE_TYPE_LENGTH OWN_TRUCK_TYPE ON OWN_TRUCK_TYPE.VEHICLE_LENGTH_CODE = OWN_TRUCK.VEHICLE_LENGHT_CODE
+			<where>
+				<if test="vehicleNo != null and vehicleNo !=''">
+					AND OWN_TRUCK.VEHICLE_NO = #{vehicleNo}	
+				</if>
+				<if test="vehcleLengthCode != null and vehcleLengthCode !=''">
+					AND OWN_TRUCK.VEHICLE_LENGHT_CODE = #{vehcleLengthCode}	
+				</if>
+				<if test="vehcleGroupCode != null and vehcleGroupCode !=''">
+					AND OWN_TRUCK.ORG_ID = #{vehcleGroupCode}	
+				</if>
+			</where>
+	</select>
+</mapper>

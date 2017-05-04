@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://www.springframework.org/schema/jee 
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+			http://www.springframework.org/schema/util 
+			http://www.springframework.org/schema/util/spring-util-3.0.xsd ">
+
+		
+	<bean id="serverContainer1"
+		class="org.springframework.jms.listener.DefaultMessageListenerContainer" lazy-init="true">
+		<property name="connectionFactory" ref="esbJmsConnectionFactory1" />
+		<property name="maxConcurrentConsumers" value="2" />
+		<property name="concurrentConsumers" value="5" />
+		<property name="messageListener" ref="serverListener1" />
+		<property name="destinationName" value="${booking.car.receive.request}" />
+		<property name="messageSelector" value="${booking.car.receive.request.messageSelector}"/>
+	</bean>
+
+	<bean id="esbServiceCodeToJmsTemplate1" class="com.deppon.esb.core.service.access.send.EsbServiceCodeToJmsTemplate">
+		<property name="serviceCodeToJmsTemplateMap">
+			<map>
+				<!--key为接口编码 value-ref 为需要发送请求/响应消息的jmsTemplate-->
+				<entry key="FOSS_ESB2FOSS_ORDER_ABOUT" value-ref="jmsTemplate1"></entry>
+				<entry key="ESB_FOSS2ESB_MODIFYORDER" value-ref="jmsTemplate1"></entry>
+				<entry key="ESB_FOSS2ESB_RECEIVE_ORDERSTATUS" value-ref="jmsTemplate1"></entry>
+			</map>
+		</property>
+		<property name="serviceCodeToResponseQueue">
+			<map>
+				<!--key为接口编码 value 为需要发送请求/响应消队列 -->
+				<entry key="FOSS_ESB2FOSS_ORDER_ABOUT" value="${booking.car.send.response}"></entry>
+				<entry key="ESB_FOSS2ESB_MODIFYORDER" value="${order.update.send.request}"></entry>
+				<entry key="ESB_FOSS2ESB_RECEIVE_ORDERSTATUS" value="${waybill.status.send.request}"></entry>
+			</map>
+		</property>
+	</bean>
+
+</beans>
+

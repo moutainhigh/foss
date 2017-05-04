@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.pkp.NetGroupEntityMapper" >
+
+  <resultMap id="netGroupResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.domain.NetGroupEntity" >
+        <id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="virtual_code" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="freight_route_virtual_code" property="freightRouteVirtualCode" jdbcType="VARCHAR" />
+		<result column="net_group_name" property="netGroupName" jdbcType="VARCHAR" />
+		<result column="SOURCE_ORG_CODE" property="sourceOrganizationCode" jdbcType="VARCHAR" />
+		<result column="TARGET_ORG_CODE" property="targetOrganizationCode" jdbcType="VARCHAR" />
+		<result column="active" property="active" jdbcType="CHAR" />
+		<result column="create_time" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="modify_time" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="VERSION_NO" property="version" jdbcType="DECIMAL" />
+  </resultMap>
+  
+  <sql id="netGroup_Column_List" >
+    id ,  net_group_name ,  target_org_code ,source_org_code ,create_time ,modify_time,active ,
+  	create_user_code ,  modify_user_code ,  virtual_code ,  freight_route_virtual_code, VERSION_NO
+  </sql>
+  
+  <select id="selectNetGroupByPrimaryKey" resultMap="netGroupResultMap" parameterType="java.lang.String" >
+    select 
+    <include refid="netGroup_Column_List" />
+    from BSE.T_BAS_NET_GROUP
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+  
+  <select id="selectNetGroupBySaleDept" resultMap="netGroupResultMap" parameterType="java.util.Map" >
+    select 
+    <include refid="netGroup_Column_List" />
+    from BSE.T_BAS_NET_GROUP
+    where ACTIVE = #{active,jdbcType=CHAR}
+    	and SALE_DEPARTMENT_ID = #{saleDepartmentId,jdbcType=VARCHAR}
+    	and TYPE = #{type,jdbcType=VARCHAR}
+  </select>
+
+	<select id="queryNetGroupBySourceTarget" resultMap="netGroupResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.NetGroupEntity">
+		select 
+		<include refid="netGroup_Column_List" />
+		from BSE.T_BAS_NET_GROUP
+		where SOURCE_ORG_CODE = #{sourceOrganizationCode}
+		and TARGET_ORG_CODE =
+		#{targetOrganizationCode}
+		and active = #{active}
+	</select>
+  
+  <delete id="deleteNetGroupByPrimaryKey" parameterType="java.lang.String" >
+    delete from BSE.T_BAS_NET_GROUP
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  
+  <insert id="insertSelective" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.NetGroupEntity">
+		insert into BSE.T_BAS_NET_GROUP (id,create_time, create_user_code, modify_time, modify_user_code, net_group_name, SOURCE_ORG_CODE, 
+		TARGET_ORG_CODE, active, virtual_code, freight_route_virtual_code,VERSION_NO) 
+		values ( #{id,jdbcType=VARCHAR},#{createDate,jdbcType=TIMESTAMP},#{createUser,jdbcType=VARCHAR},#{modifyDate,jdbcType=TIMESTAMP},
+		#{modifyUser,jdbcType=VARCHAR}, #{netGroupName,jdbcType=VARCHAR}, #{sourceOrganizationCode,jdbcType=VARCHAR}, #{targetOrganizationCode,jdbcType=VARCHAR}, 
+		#{active,jdbcType=CHAR}, #{virtualCode, jdbcType=VARCHAR}, #{freightRouteVirtualCode,jdbcType=VARCHAR}, #{version,jdbcType=DECIMAL})
+ </insert>
+  
+  <update id="updateByPrimaryKeySelective" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.NetGroupEntity" >
+    update BSE.T_BAS_NET_GROUP
+    <set >
+      <if test="netGroupName != null" >
+        NET_GROUP_NAME = #{netGroupName,jdbcType=VARCHAR},
+      </if>
+      <if test="targetOrganizationCode != null" >
+        TARGET_ORG_CODE = #{targetOrganizationCode,jdbcType=VARCHAR},
+      </if>
+      <if test="sourceOrganizationCode != null" >
+        SOURCE_ORG_CODE = #{sourceOrganizationCode,jdbcType=VARCHAR},
+      </if>
+      <if test="createDate != null" >
+        CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifyDate != null" >
+        MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="active != null" >
+        ACTIVE = #{active,jdbcType=CHAR},
+      </if>
+      <if test="createUser != null" >
+        CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyUser != null" >
+        MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+      </if>
+      <if test="virtualCode != null" >
+        VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR},
+      </if>
+      <if test="freightRouteVirtualCode != null" >
+        FREIGHT_ROUTE_VIRTUAL_CODE = #{freightRouteVirtualCode,jdbcType=VARCHAR},
+      </if>
+      <if test="version != null" >
+        VERSION_NO = #{version,jdbcType=DECIMAL},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  
+  <select id="selectById" resultType="String"
+		parameterType="java.util.Map">
+		<![CDATA[
+		SELECT 
+	        ID
+	    	FROM BSE.T_BAS_NET_GROUP
+		]]>
+		<where>
+			ID = #{id,jdbcType=VARCHAR}	
+		</where>
+	</select>
+  <delete id="delete" 
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.NetGroupEntity">
+		delete from BSE.T_BAS_NET_GROUP
+		 where ID =  #{id,jdbcType=VARCHAR}	
+	</delete>
+</mapper>

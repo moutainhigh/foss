@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tfr-load">
+	<!-- 查询未完成快递派送装车任务 -->
+	<select id="pda_queryUnfinishedExpressDeliverLoadTask" parameterType="HashMap" resultMap="pdaAssignLoadTaskResultMap">
+	<![CDATA[select t.task_no as taskNo,
+	 		t.task_state as state,
+	  		t.vehicle_no as vehicleNo,
+	  		t.platform_no as platformNo,
+       		t.task_type as loadTaskType,
+       		t.id as id
+			  from tfr.t_opt_load_task t
+			 inner join tfr.t_opt_loader_participation p on p.task_id = t.id
+			                                            and p.be_creator = 'Y'
+			 where t.task_state = 'LOADING'
+			   and t.task_type = 'DELIVER_LOAD'
+			   and t.DELIVERBILL_NO is null
+			   and p.loader_code = #{loaderCode}]]>
+	  <if test="queryTimeEnd !=null and queryTimeEnd !=''"><![CDATA[and t.load_start_time <= #{queryTimeEnd}]]></if>
+	  <if test="queryTimeBegin !=null and queryTimeBegin !=''"><![CDATA[and t.load_start_time >= #{queryTimeBegin}]]></if>
+	</select>
+	<!-- 查询理货员 -->
+	<select id="queryLoader" parameterType="HashMap" resultMap="foss.load.loadtask.loaderParticipationResultMap">
+		select l.loader_code, l.loader_name,l.LOAD_ORG_NAME,l.BE_CREATOR
+			  from tfr.t_opt_loader_participation l
+			 where l.task_id = #{taskId}
+	</select>
+	<!-- 查询运单装车件数 -->
+	<select id="queryLoadWayBillQty" parameterType="HashMap" resultMap="foss.load.loadtask.loadWaybillDetailResultMap">
+		select id,
+	       load_task_id,
+	       stock_qty,
+	       scan_qty,
+	       load_qty,
+	       waybill_no,
+	       notes,
+	       transport_type,
+	       goods_name,
+	       pack,
+	       receive_org_name,
+	       reach_org_name,
+	       task_begin_time,
+	       orig_org_code,
+	       be_join_car,
+	       load_weight_total,
+       	   load_volume_total
+	  from tfr.t_opt_load_waybill_detail 
+	 where load_task_id = #{loadTaskId}
+	   and load_qty>0
+	</select>
+	<update id="updateLoadWayBillQTYByScanTime" parameterType="HashMap">
+		update tfr.t_opt_load_waybill_detail w
+		   set 
+		   	   w.stock_qty = #{loadWayBill.stockQty,jdbcType=DECIMAL},
+		   	   w.scan_qty = w.scan_qty + #{loadWayBill.scanQty,jdbcType=DECIMAL},
+		       w.load_qty = w.load_qty + #{loadWayBill.loadQty,jdbcType=DECIMAL},
+		       w.load_weight_total = w.load_weight_total + #{loadWayBill.loadWeightTotal,jdbcType=DECIMAL},
+		       w.load_volume_total = w.load_volume_total + #{loadWayBill.loadVolumeTotal,jdbcType=DECIMAL},
+          	   w.modify_time = #{loadWayBill.modifyDate,jdbcType=TIMESTAMP}
+		 where w.id = #{loadWayBill.id,jdbcType=VARCHAR}
+		 		and not exists (select 1
+				  from tfr.t_opt_load_serialno s
+				 where s.load_waybill_detail_id = #{loadWayBill.id,jdbcType=VARCHAR}
+				   and s.serial_no = #{serialNo,jdbcType=VARCHAR}
+				   and <![CDATA[(s.load_time>#{scanTime,jdbcType=TIMESTAMP} 
+						or s.be_loaded=#{beLoaded,jdbcType=VARCHAR})]]>
+				   )
+	</update>
+	<update id="updateLoadSerialNoByLoadTime" parameterType="HashMap">
+		update tfr.t_opt_load_serialno s set 
+		 <if test="deviceNo != null and deviceNo != ''">
+		   s.device_no=#{deviceNo},
+		   </if>
+		 <if test="scanState != null and scanState != ''">
+		   s.scan_state=#{scanState},
+		   </if>
+		 <if test="beLoaded != null and beLoaded != ''">
+		   s.be_loaded=#{beLoaded},
+		   </if>
+		 <if test="createTime != null and createTime != ''">
+		   s.create_time=#{createTime,jdbcType=TIMESTAMP},
+		   </if>
+		 <if test="loadTime != null and loadTime != ''">
+		   s.load_time=#{loadTime,jdbcType=TIMESTAMP},
+		   </if>
+		   s.goods_state = #{goodsState}
+    	where s.id = #{id} and <![CDATA[(s.load_time < #{loadTime,jdbcType=TIMESTAMP} or s.load_time is null)]]>
+	</update>
+	
+	<!-- 查询运单到付金额+代收货款-->
+	<select id="queryWaybillAmount" parameterType="String" resultType="java.math.BigDecimal">
+		select NVL(w.to_pay_amount,0)/100 
+		from  pkp.t_srv_waybill w
+		WHERE w.waybill_no =#{waybillNo}
+		AND w.active = 'Y' 
+	</select>
+	
+	<insert id="insertLoadSendPieceEntity" 
+		parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.LoadWaybillSendPieceEntity" >
+			insert into /**二程接驳- 插入装车明细运单及派送单关系表 **/ 
+			 tfr.t_opt_load_sendPieces
+			  (ID,
+			   LOAD_WAYBILL_DETAIL_ID,
+			   LOAD_TASK_NO,
+			   WAYBILL_NO,
+			   DELIVERBILL_NO,
+			   CREATE_TIME)
+			values
+			  (#{id,jdbcType=VARCHAR},
+			   #{loadWaybillDetailId,jdbcType=VARCHAR},
+			   #{taskNo,jdbcType=VARCHAR},
+			   #{waybillNo,jdbcType=VARCHAR},
+			   #{deliverNo,jdbcType=VARCHAR},
+			   #{createDate,jdbcType=TIMESTAMP})
+	</insert>
+	
+	<select id="queryLoadWayBillAndDeliverNo" parameterType="HashMap" 
+		resultMap="foss.load.loadtask.loadWaybillDetailResultMap">
+		select /**二程接驳- 查询运单明细和派送单号 **/
+			 d.id,
+	         load_task_id,
+	         stock_qty,
+	         scan_qty,
+	         load_qty,
+	         d.waybill_no,
+	         notes,
+	         transport_type,
+	         goods_name,
+	         pack,
+	         receive_org_name,
+	         reach_org_name,
+	         task_begin_time,
+	         orig_org_code,
+	         be_join_car,
+	         load_weight_total,
+	         load_volume_total,
+	         deliverbill_no
+	    from tfr.t_opt_load_waybill_detail d
+	    LEFT JOIN tfr.t_opt_load_sendpieces sd on sd.load_waybill_detail_id = d.id
+	   where load_task_id = #{loadTaskId}
+	     and load_qty>0
+	</select>
+	
+	<select id="queryUnfinishedLoadTask" parameterType="HashMap" resultMap="pdaAssignLoadTaskResultMap">
+	<![CDATA[select distinct /**二程接驳- 查询未完成接驳装车任务 **/ 
+                t.task_no     as taskNo,
+                t.task_state  as state,
+                t.vehicle_no  as vehicleNo,
+                t.platform_no as platformNo,
+                t.task_type   as loadTaskType,
+                t.id          as id,
+                ap.name       accessPointName,
+                ap.code       as accessPointCode
+  			from tfr.t_opt_load_task t
+ 			inner join tfr.t_opt_loader_participation p on p.task_id = t.id
+                                            and p.be_creator = 'Y'
+  			left join tfr.t_opt_load_dest_org og on og.load_task_id = t.id
+  			left join bse.t_bas_acceptpointsales_dept ad on ad.sales_department_code =
+                                                  og.dest_org_code
+                                              and ad.active = 'Y'
+  			left join bse.t_bas_access_point ap on ap.code = ad.accept_point_code
+                                     and ap.active = 'Y'
+			 where t.task_state = 'LOADING'
+			   and t.task_type = 'EXPRESS_CONNECTION_LOAD'
+			   and p.loader_code = #{loaderCode}]]>
+	  	<if test="queryTransportTimeEnd !=null and queryTransportTimeEnd !=''">
+	  		<![CDATA[and t.load_start_time <= #{queryTransportTimeEnd}]]>
+	  	</if>
+	  	<if test="queryTransportTimeBegin !=null and queryTransportTimeBegin !=''">
+	  		<![CDATA[and t.load_start_time >= #{queryTransportTimeBegin}]]>
+	  	</if>
+	</select>
+	
+	<select id="queryUnfinishDriverLoadTask" parameterType="HashMap" resultMap="pdaAssignLoadTaskResultMap">
+	<![CDATA[
+		select /**二程接驳- 查询未完成装车任务 **/
+		       t.task_no as taskNo,
+		       max(t.task_state) as state,
+		       max(t.vehicle_no) as vehicleNo,
+		       max(t.platform_no) as platformNo,
+		       max(t.task_type) as loadTaskType,
+		       max(t.id) as id,
+		       nvl(sum(wd.scan_qty), 0) as scanQtyTotal,
+           	   max(ps.loader_code)  tayller
+		  from tfr.t_opt_load_task t
+		       inner join tfr.t_opt_loader_participation p on p.task_id = t.id
+		                                                  and p.be_creator = 'Y'
+		       inner join tfr.t_opt_loader_participation ps on ps.task_id = t.id
+		                                                  and ps.be_creator = 'S'
+		        left join tfr.t_opt_load_waybill_detail wd on wd.load_task_id = t.id
+		  where t.task_type =#{taskType,jdbcType=VARCHAR}
+			     and p.loader_code = #{loaderCode}]]>
+		<if test="states !=null and states !=''"> 
+			   	and t.task_state in
+			   <foreach 
+				collection="states" open="(" close=")" item="item" separator="," index="index"> 
+				#{item} 
+				</foreach>
+		</if> 
+	  	<if test="queryTransportTimeEnd !=null and queryTransportTimeEnd !=''">
+	  		<![CDATA[and t.load_start_time <= #{queryTransportTimeEnd}]]>
+	  	</if>
+	  	<if test="queryTransportTimeBegin !=null and queryTransportTimeBegin !=''">
+	  		<![CDATA[and t.load_start_time >= #{queryTransportTimeBegin}]]>
+	  	</if>
+	  		group by t.task_no
+	</select>
+	
+	<update id="updateLoadWayBillByScanTime" parameterType="HashMap">
+		update /**二程接驳- 更新装车明细，剔除beLoaded条件 **/ tfr.t_opt_load_waybill_detail w
+		   set 
+		   	   w.stock_qty = #{loadWayBill.stockQty,jdbcType=DECIMAL},
+		   	   w.scan_qty = w.scan_qty + #{loadWayBill.scanQty,jdbcType=DECIMAL},
+		       w.load_qty = w.load_qty + #{loadWayBill.loadQty,jdbcType=DECIMAL},
+		       w.load_weight_total = w.load_weight_total + #{loadWayBill.loadWeightTotal,jdbcType=DECIMAL},
+		       w.load_volume_total = w.load_volume_total + #{loadWayBill.loadVolumeTotal,jdbcType=DECIMAL},
+          	   w.modify_time = #{loadWayBill.modifyDate,jdbcType=TIMESTAMP}
+		 where w.id = #{loadWayBill.id,jdbcType=VARCHAR}
+		 		and not exists (select 1
+				  from tfr.t_opt_load_serialno s
+				 where s.load_waybill_detail_id = #{loadWayBill.id,jdbcType=VARCHAR}
+				   and s.serial_no = #{serialNo,jdbcType=VARCHAR}
+				   <![CDATA[and s.load_time>=#{scanTime,jdbcType=TIMESTAMP} 
+						]]>
+				   )
+	</update>
+</mapper>

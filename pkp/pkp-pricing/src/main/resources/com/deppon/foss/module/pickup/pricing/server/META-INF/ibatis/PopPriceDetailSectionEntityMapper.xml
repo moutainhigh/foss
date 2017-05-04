@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.pkp.pkp-pricing.PopPriceDetailSectionEntityMapper" >
+<!-- 计价方式分段明细resultMap -->
+    <resultMap type="com.deppon.foss.module.pickup.pricing.api.shared.domain.pop.PopPriceDetailSectionEntity" 
+       id="priceDetailSection">
+        <id property="id" column="ID" jdbcType="VARCHAR"/>
+        <result property="sectionID" column="SECTION_ID" jdbcType="VARCHAR"/>
+        <result property="caculateType" column="CACULATE_TYPE" jdbcType="VARCHAR"/>
+        <result property="fee" column="FEE" jdbcType="DECIMAL"/>
+        <result property="criticalValue" column="CRITICAL_VALUE" jdbcType="DECIMAL"/>
+        <result property="criteriaDetailID" column="CRITERIA_DETAIL_ID" jdbcType="VARCHAR"/>
+        <result property="description" column="DESCRIPTION"    jdbcType="VARCHAR"/>
+        <result property="modifyTime" column="MODIFY_TIME"   jdbcType="TIMESTAMP"/>
+        <result property="valuationId" column="PRICING_VALUATION_ID" jdbcType="VARCHAR"/>
+    </resultMap> 
+    <!-- 查询需要的列 -->
+    <sql id="column_List">
+                MASTER.ID as ID,
+               MASTER.SECTION_ID as SECTION_ID,
+               MASTER.CACULATE_TYPE as CACULATE_TYPE,
+               MASTER.FEE as FEE,
+               MASTER.CRITICAL_VALUE as CRITICAL_VALUE,
+               MASTER.CRITERIA_DETAIL_ID as CRITERIA_DETAIL_ID,
+               MASTER.DESCRIPTION as DESCRIPTION,
+               MASTER.MODIFY_TIME as MODIFY_TIME,
+               MASTER.PRICING_VALUATION_ID as PRICING_VALUATION_ID
+    </sql>
+    <!-- 基本查询条件   foss-148246-sunjianbo 2014-11-07 -->
+    <sql id="basic_where">
+		<where>
+			<if test="id !=null and id !=''">
+                AND MASTER.ID = #{id,jdbcType=VARCHAR}
+            </if>
+			<if test="sectionID !=null and sectionID !=''">
+                AND MASTER.SECTION_ID = #{sectionID,jdbcType=VARCHAR}
+            </if>
+            <if test="caculateType !=null and caculateType !=''">
+                AND MASTER.CACULATE_TYPE = #{caculateType,jdbcType=VARCHAR}
+            </if>
+            <if test="fee !=null and fee !=''">
+                AND MASTER.FEE = #{fee,jdbcType=DECIMAL}
+            </if>
+            <if test="criticalValue !=null and criticalValue !=''">
+                AND MASTER.CRITICAL_VALUE = #{criticalValue,jdbcType=DECIMAL}
+            </if>
+            <if test="criteriaDetailID !=null and criteriaDetailID !=''">
+                AND MASTER.CRITERIA_DETAIL_ID = #{criteriaDetailID,jdbcType=VARCHAR}
+            </if>
+            <if test="description !=null and description !=''">
+                AND MASTER.DESCRIPTION = #{description,jdbcType=VARCHAR}
+            </if>
+            <if test="valuationId !=null and valuationId !=''">
+                AND MASTER.PRICING_VALUATION_ID = #{valuationId,jdbcType=VARCHAR}
+            </if>
+            <if test="modifyTime !=null and modifyTime !=''">
+                AND MASTER.MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP}
+            </if>
+		</where>
+    </sql>
+    
+    <!-- 新增计价方式分段明细 -->
+    <insert id="insertPriceDetailSection" parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.pop.PopPriceDetailSectionEntity">
+         INSERT INTO PKP.T_POP_PRICING_DETAIL_SECTION(
+                ID,
+               SECTION_ID,
+               CACULATE_TYPE,
+               FEE,
+               CRITICAL_VALUE,
+               CRITERIA_DETAIL_ID,
+               DESCRIPTION,
+               MODIFY_TIME,
+               PRICING_VALUATION_ID
+               ) VALUES (
+                #{id,jdbcType=VARCHAR},
+                #{sectionID,jdbcType=VARCHAR},
+                #{caculateType,jdbcType=VARCHAR},
+                #{fee,jdbcType=DECIMAL},
+                #{criticalValue,jdbcType=DECIMAL},
+                #{criteriaDetailID,jdbcType=VARCHAR},
+                #{description,jdbcType=VARCHAR},
+                #{modifyTime,jdbcType=TIMESTAMP},
+                #{valuationId,jdbcType=VARCHAR}
+                )
+    </insert>
+    
+    <!-- 根据ID查询计价方式分段明细 记录-->
+    <select id="selectById" resultMap="priceDetailSection"
+       parameterType="java.lang.String">
+        SELECT
+        <include refid="column_List"/>
+        FROM  PKP.T_POP_PRICING_DETAIL_SECTION MASTER
+        WHERE MASTER.ID=#{id,jdbcType=VARCHAR}
+    </select>
+    
+    <!-- [POP]根据条件查询全部分段价格信息  foss-148246-sunjianbo 2014-11-07-->
+	  <select id="querySectionListByCondition" resultMap="priceDetailSection" parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.pop.PopPriceDetailSectionEntity" >
+		SELECT /*[POP]根据条件查询全部分段价格信息*/
+		<include refid="column_List"/>
+		FROM PKP.T_POP_PRICING_DETAIL_SECTION MASTER
+		<include refid="basic_where"/>
+	  </select>
+    
+    <!-- 根据计价规则ID查询计价方式分段明细 -->
+    <select id="selectByValuationId" resultMap="priceDetailSection"
+       parameterType="java.lang.String">
+           SELECT
+           <include refid="column_List"/>
+           FROM  PKP.T_POP_PRICING_DETAIL_SECTION MASTER
+          WHERE MASTER.PRICING_VALUATION_ID=#{valuationId,jdbcType=VARCHAR}
+    </select>
+    
+    <!-- 根据明细id查询分段信息 -->
+    <select id="selectByCriteriaId" resultMap="priceDetailSection"
+     parameterType="java.lang.String">
+        SELECT
+        <include refid="column_List"/>
+        FROM  PKP.T_POP_PRICING_DETAIL_SECTION MASTER
+        WHERE MASTER.CRITERIA_DETAIL_ID = #{criteriaDetailID,jdbcType=VARCHAR}
+    </select>
+    
+    <!-- 根据规则Id删除计价方式分段明细的信息 -->
+    <delete id="deleteByValuationId" parameterType="java.lang.String">
+        DELETE  
+        FROM    PKP.T_POP_PRICING_DETAIL_SECTION SECTION
+        WHERE SECTION.PRICING_VALUATION_ID=#{valuationId,jdbcType=VARCHAR}
+    </delete>
+    
+    <!-- 根据分段id删除计价分段明细信息 -->
+    <delete id="deleteBySectionId" parameterType="java.lang.String">
+        DELETE  
+        FROM    PKP.T_POP_PRICING_DETAIL_SECTION SECTION
+        WHERE SECTION.SECTION_ID=#{sectionID,jdbcType=VARCHAR}
+    </delete>
+    
+    <!-- 根据计价规则Id修改计价方式分段明细 -->
+    <update id="updateByValuationId" parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.pop.PopPriceDetailSectionEntity">
+        UPDATE  PKP.T_POP_PRICING_DETAIL_SECTION 
+        <set>
+            <if test="sectionID !=null and sectionID !=''">
+                SECTION_ID=#{sectionID,jdbcType=VARCHAR},
+            </if>
+            <if test="caculateType !=null and caculateType !=''">
+                CACULATE_TYPE=#{caculateType,jdbcType=VARCHAR},
+            </if>
+            <if test="fee !=null and fee !=''">
+                FEE=#{fee,jdbcType=DECIMAL},
+            </if>
+            <if test="criticalValue !=null and criticalValue !=''">
+                CRITICAL_VALUE=#{criticalValue,jdbcType=DECIMAL},
+            </if>
+            <if test="criteriaDetailID !=null and criteriaDetailID !=''">
+                CRITERIA_DETAIL_ID=#{criteriaDetailID,jdbcType=VARCHAR},
+            </if>
+            <if test="description !=null and description !=''">
+                DESCRIPTION=#{description,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyTime !=null and modifyTime !=''">
+                MODIFY_TIME=#{modifyTime,jdbcType=TIMESTAMP}
+            </if>
+        </set>
+        WHERE  PRICING_VALUATION_ID=#{valuationId,jdbcType=VARCHAR}  
+        AND  CACULATE_TYPE=#{caculateType,jdbcType=VARCHAR}
+        AND SECTION_ID=#{sectionID,jdbcType=VARCHAR}
+    </update>
+   
+    <!-- 修改操作的新增计价分段明细 -->
+    <insert id="insertSectionDetail" parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.pop.PopPriceDetailSectionEntity">
+         INSERT INTO PKP.T_POP_PRICING_DETAIL_SECTION(
+                ID,
+               SECTION_ID,
+               CACULATE_TYPE,
+               FEE,
+               CRITICAL_VALUE,
+               DESCRIPTION,
+               MODIFY_TIME,
+               PRICING_VALUATION_ID
+               ) VALUES (
+                #{id,jdbcType=VARCHAR},
+                #{sectionID,jdbcType=VARCHAR},
+                #{caculateType,jdbcType=VARCHAR},
+                #{fee,jdbcType=DECIMAL},
+                #{criticalValue,jdbcType=DECIMAL},
+                #{description,jdbcType=VARCHAR},
+                #{modifyTime,jdbcType=TIMESTAMP},
+                #{valuationId,jdbcType=VARCHAR}
+                )
+    </insert>
+    
+	<!-- 根据价格方案id查询出价格分段数最多的分段价格明细记录信息 148246 2015-2-5-->
+    <select id="querySectionScopeByPricePlanId" resultMap="priceDetailSection"
+       parameterType="java.lang.String">
+		SELECT * FROM ( /*根据价格方案id查询出价格分段数最多的目的地记录信息*/
+			SELECT * FROM (
+				SELECT S.*,
+				COUNT(S.PRICING_VALUATION_ID) OVER(PARTITION BY S.PRICING_VALUATION_ID) SN
+				FROM PKP.T_POP_PRICING_DETAIL_SECTION S
+				INNER JOIN PKP.T_SRV_PRICING_VALUATION V
+				ON V.ID = S.PRICING_VALUATION_ID
+				WHERE V.PRICE_PLAN_ID = #{pricePlanId,jdbcType=VARCHAR}
+			)
+			ORDER BY SN DESC , PRICING_VALUATION_ID  DESC
+		)
+		WHERE ROWNUM <![CDATA[ <= ]]> SN
+    </select>
+ 
+</mapper>

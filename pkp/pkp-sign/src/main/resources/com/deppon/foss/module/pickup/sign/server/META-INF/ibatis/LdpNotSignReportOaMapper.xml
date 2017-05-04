@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.foss.module.pickup.express.server.job.LdpNotSignReportOaJob">
+	<resultMap id="oaReportClearlessResultMap" type="com.deppon.foss.module.pickup.sign.api.shared.dto.LdpNotSignReportOaDto">
+		<result property="id" column="ID" jdbcType="VARCHAR"/>
+		<result property="wayBillId" column="WAYBILL_NO" jdbcType="VARCHAR"/>
+		<result property="replayBill" column="HANDOVER_NO" jdbcType="VARCHAR"/>
+		<result property="externalOrgCode" column="EXTERNAL_ORG_CODE" jdbcType="VARCHAR"/>
+		<result property="externalOrgName" column="EXTERNAL_ORG_NAME" jdbcType="VARCHAR"/>
+		<result property="externalUserCode" column="EXTERNAL_USER_CODE" jdbcType="VARCHAR"/>
+		<result property="registerTime" column="REGISTER_TIME" jdbcType="TIMESTAMP"/>
+		<result property="vehicleNo" column="VEHICLE_NO" jdbcType="VARCHAR"/>
+	</resultMap>
+	<sql id="Report_Column_List" >
+	   B.ID, /* TFR.T_OPT_LDP_EXTERNAL_BILL 的ID */
+       B.WAYBILL_NO, /*运单号*/
+       B.HANDOVER_NO, /*交接单号*/
+       B.EXTERNAL_ORG_CODE, /*外发部门编号*/
+       B.EXTERNAL_ORG_NAME, /*外发部门名称*/
+       B.EXTERNAL_USER_CODE, /*外发员工号*/
+       B.REGISTER_TIME, /*录入日期*/
+       
+       H.VEHICLE_NO /*车牌号*/
+  	</sql>
+	
+	<!--  根据超过上报时间 和 上线的历史数据开始时间 查询符合条件的运单-->
+	<select id="querybyRegisterTimeCondition" parameterType="map" resultMap="oaReportClearlessResultMap">
+		<![CDATA[
+	       	SELECT 
+	    ]]> 	
+	       	   <include refid="Report_Column_List" />
+	    <![CDATA[
+		  	FROM TFR.T_OPT_LDP_EXTERNAL_BILL B
+			 INNER JOIN TFR.T_OPT_HANDOVERBILL H ON H.HANDOVER_NO = B.HANDOVER_NO
+			 INNER JOIN TFR.T_OPT_HANDOVERBILL_DETAIL D ON B.HANDOVER_NO =
+			                                               D.HANDOVER_NO
+			                                           AND D.WAYBILL_NO = B.WAYBILL_NO
+			 /*
+			    TFR.T_OPT_LDP_EXTERNAL_BILL 和 TFR.T_OPT_HANDOVERBILL_DETAIL 关联原因：
+			    TFR.T_OPT_HANDOVERBILL表中的运单号有可能会被删除
+			 */
+			 WHERE B.AUDIT_STATUS <> 'INVALID'
+			   AND B.IS_TRANSFER_EXTERNAL = 'N' /** 是否中转外发 **/
+			   AND H.HANDOVER_TYPE = 'LDP_HANDOVER' /** 交接类型 **/
+			   AND H.HANDOVERBILL_STATE <> '90' /** 交接单状态 **/
+			   AND B.REGISTER_TIME >= TO_DATE(#{beginTime}, 'yyyy-mm-dd')  /** 录入日期 **/
+			 
+			   AND B.REGISTER_TIME <= SYSDATE - #{reportTime}
+			   AND (B.REPORT_OA IS NULL OR B.REPORT_OA = 'N')  /** 是否上报OA丢货 **/
+			  
+			   AND NOT EXISTS (SELECT 1
+			          FROM PKP.T_SRV_WAYBILL_SIGN_RESULT SR
+			         WHERE SR.WAYBILL_NO = B.WAYBILL_NO
+			           AND SR.ACTIVE = 'Y')
+			 ORDER BY B.REGISTER_TIME DESC
+	    ]]>
+	</select>
+	
+	
+</mapper>

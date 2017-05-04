@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.OrgMonthIncomeEntityDao" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.common.api.shared.domain.OrgMonthIncomeEntity" >
+    <result column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+    <result column="CT_MONTH" property="ctMonth" jdbcType="TIMESTAMP" />
+    <result column="INCOME_AMOUNT" property="incomeAmount" jdbcType="DECIMAL" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+  </resultMap>
+  
+  <sql id="Base_Column_List">
+  	ID,ORG_CODE,CT_MONTH,INCOME_AMOUNT,CREATE_TIME
+  </sql>
+  
+  <insert id="insert" parameterType="com.deppon.foss.module.settlement.common.api.shared.domain.OrgMonthIncomeEntity" >
+    INSERT INTO STL.T_STL_ORG_MONTH_INCOME (ID, ORG_CODE, CT_MONTH, 
+      INCOME_AMOUNT, CREATE_TIME)
+    VALUES (#{id,jdbcType=VARCHAR}, #{orgCode,jdbcType=VARCHAR}, #{ctMonth,jdbcType=DATE}, 
+      #{incomeAmount,jdbcType=DECIMAL}*100, #{createTime,jdbcType=TIMESTAMP})
+  </insert>
+  
+  <!-- 查询部门最近三个月内的最大收入金额   -->
+  <select id="selectByOrgCodes" parameterType="java.util.Map" resultMap="BaseResultMap">
+  	SELECT MAX(INCOME_AMOUNT)/100 INCOME_AMOUNT,ORG_CODE FROM STL.T_STL_ORG_MONTH_INCOME
+  	WHERE ORG_CODE IN
+  	<foreach collection="orgCodes"  index="index" item="item"  open="(" separator="," close=")">  
+		#{item,jdbcType=VARCHAR} 
+	</foreach>
+  	<![CDATA[ AND  CT_MONTH>=#{startDate,jdbcType=DATE}  AND CT_MONTH<#{endDate,jdbcType=DATE} ]]>
+ 	GROUP BY ORG_CODE
+  </select>
+  
+  <!-- 统计部门每个月的收入情况，查询现金收款单和应收单记录（应收单不包含代收货款应收单） -->
+  <select id="selectCashAndReceivableByOrgCode" parameterType="java.util.Map" resultMap="BaseResultMap">
+     SELECT SUM(INCOME_AMOUNT)/100 INCOME_AMOUNT, ORG_CODE
+	  FROM (
+				<!--  现金收款单表 -->
+				SELECT SUM(T.AMOUNT) INCOME_AMOUNT,T.GENERATING_ORG_CODE ORG_CODE 
+				FROM STL.T_STL_BILL_CASH_COLLECTION T
+				WHERE T.ACTIVE = #{active,jdbcType=CHAR} <!-- 有效状态  -->
+			    AND   T.IS_RED_BACK = #{isRedBack,jdbcType=CHAR}  <!-- 是否红单  -->
+				<![CDATA[ AND  T.ACCOUNT_DATE>=#{startDate,jdbcType=DATE}  AND T.ACCOUNT_DATE<#{endDate,jdbcType=DATE} ]]>
+				GROUP BY T.GENERATING_ORG_CODE
+				
+				UNION ALL
+				
+				<!-- 应收单表  -->
+				SELECT SUM(T.AMOUNT) INCOME_AMOUNT,T.GENERATING_ORG_CODE ORG_CODE
+					FROM STL.T_STL_BILL_RECEIVABLE T
+				WHERE T.ACTIVE = #{active,jdbcType=CHAR} <!-- 有效状态  -->
+			    AND   T.IS_RED_BACK = #{isRedBack,jdbcType=CHAR}  <!-- 是否红单  -->
+			    AND T.BILL_TYPE NOT IN('CR','AAC','DLC')
+				<![CDATA[ AND  T.ACCOUNT_DATE>=#{startDate,jdbcType=DATE}  AND T.ACCOUNT_DATE<#{endDate,jdbcType=DATE} ]]>
+				 GROUP BY T.GENERATING_ORG_CODE)
+ 		GROUP BY ORG_CODE
+  </select>
+</mapper>

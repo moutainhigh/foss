@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.pickup.vehicle.arrive.temp" >
+	<!-- 执行存储过程 更新运单附加表的到达数量和到达时间 CALCULATE_WAYBILL_ARRIVE_INFO-->
+	<select id="callProcedures" parameterType="String" statementType="CALLABLE">
+	    {call pkp.CALCULATE_WAYBILL_ARRIVE_INFO(#{jobId,jdbcType=VARCHAR})}   
+	</select>
+	<resultMap id="BaseResultMap" type="com.deppon.foss.module.pickup.predeliver.api.shared.domain.VehicleArriveNotifyEntity" >
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createTime" jdbcType="DATE" />
+		<result column="T_OPT_TRUCK_TASK_DETAIL_ID" property="truckTaskDetailId" jdbcType="VARCHAR" />
+		<result column="TASK_DETAIL_TYPE" property="taskDetailType" jdbcType="VARCHAR" />
+		<result column="status" property="status" jdbcType="VARCHAR" />
+		<result column="EXCEPTION_MESSAGE" property="exceptionMessage" jdbcType="VARCHAR" />
+		<result column="JOB_ID" property="jobId" jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="Base_Column_List" >
+    id, t_opt_truck_task_detail_id, task_detail_type, status, create_time, exception_message, job_id
+	</sql>
+	<!-- 查询符合条件的记录数量 -->
+	<select id="queryVehicleArriveNotifyCount" resultType="Long" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.domain.VehicleArriveNotifyEntity" >
+    select 
+		count(1)
+    from PKP.t_srv_vehicle_arrive_notify
+    where status = #{status, jdbcType="VARCHAR"}
+     <![CDATA[and CREATE_TIME <= #{createTime, jdbcType=TIMESTAMP} ]]>
+     and JOB_ID = 'N/A'
+	</select>
+	<select id="querySalesDepartmentCount" resultType="Long" parameterType="java.lang.String" >
+    	<![CDATA[
+		   SELECT COUNT(1)
+			  FROM (SELECT NVL(SC.CONF_VALUE, 'Y') CONF_VALUE
+			          FROM TFR.T_OPT_UNLOAD_TASK UT
+			         INNER JOIN BSE.T_BAS_SALES_DEPARTMENT SD ON UT.UNLOAD_ORG_CODE =
+			                                                     SD.CODE
+			          LEFT JOIN BSE.T_BAS_SYS_CONFIG SC ON SD.CODE = SC.ORG_CODE
+			                                           AND SC.CODE =
+			                                               'PKP_AUTO_NOTIFY_FLAG'
+			                                           AND SC.ACTIVE = 'Y'
+			         WHERE UT.ID = #{truckTaskDetailId,jdbcType=VARCHAR}
+			           AND SD.ACTIVE = 'Y'
+			           AND SD.STATION = 'N') TMP
+			 WHERE TMP.CONF_VALUE <> 'N'
+	   ]]>
+	</select>
+	<!-- 更新临时记录-->
+	<update id="updateByParam" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.domain.VehicleArriveNotifyEntity" >
+    update PKP.t_srv_vehicle_arrive_notify
+    set status = #{statusN,jdbcType=VARCHAR},
+      JOB_ID = #{jobIdN,jdbcType=VARCHAR}
+    <where>
+    	<if test="status != null and status != ''">	
+		   AND status = #{status,jdbcType=VARCHAR}
+		</if>
+    	<if test="jobId != null and jobId != ''">	
+		   AND JOB_ID = #{jobId,jdbcType=VARCHAR}
+		</if>
+    	<if test="createTime != null and createTime != ''">	
+		   <![CDATA[AND CREATE_TIME <= #{createTime, jdbcType=TIMESTAMP} ]]>
+		</if>
+    	<if test="id != null and id != ''">	
+		   AND ID = #{id,jdbcType=VARCHAR}
+		</if>
+    </where> 
+	</update>
+	<!-- 根据查询记录 -->
+	<select id="queryVehicleArriveNotify" resultMap="BaseResultMap" parameterType="java.util.Map" >
+    select 
+		<include refid="Base_Column_List" />
+    from PKP.t_srv_vehicle_arrive_notify
+   	<where> 
+     <if test="status != null and status != '' " >
+	   	 and status = #{status, jdbcType=VARCHAR}
+	 </if>
+     <if test="jobId != null and jobId != '' " >
+	     and JOB_ID = #{jobId, jdbcType=VARCHAR}
+	 </if>
+     <if test="rowNum != null and rowNum != '' " >
+		<![CDATA[  AND rownum <= #{rowNum,jdbcType=VARCHAR} ]]>
+	 </if>
+	</where>
+	</select>
+	<!-- 删除临时记录 -->
+	<delete id="deleteByPrimaryKey" parameterType="java.lang.String" >
+    delete from PKP.t_srv_vehicle_arrive_notify
+    where ID = #{id,jdbcType=VARCHAR}
+	</delete>
+	
+	<resultMap id="BaseAutoWaybillMap" type="com.deppon.foss.module.pickup.predeliver.api.shared.dto.NotifyCustomerDto" >
+		<id column="waybill_no" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="receive_method" property="receiveMethod" jdbcType="DATE" />
+		<result column="to_pay_amount" property="toPayAmount" jdbcType="DECIMAL" />
+		<result column="receive_customer_contact" property="receiveCustomerContact" jdbcType="VARCHAR" />
+		<result column="customer_pickup_org_code" property="customerPickupOrgCode" jdbcType="VARCHAR" />
+		<result column="goods_qty_total" property="goodsQtyTotal" jdbcType="DECIMAL" />
+		<result column="receive_customer_mobilephone" property="receiveCustomerMobilephone" jdbcType="VARCHAR" />
+		<result column="delivery_customer_contact" property="deliveryCustomerContact" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<!-- 查询符合条件的运单 -->
+	<select id='queryAutoWaybillInfo' resultMap="BaseAutoWaybillMap" parameterType="java.lang.String">
+	SELECT WB.WAYBILL_NO AS waybill_no,
+              WB.RECEIVE_METHOD AS receive_method,
+              WB.TO_PAY_AMOUNT / 100 AS to_pay_amount,
+              WB.RECEIVE_CUSTOMER_CONTACT AS receive_customer_contact,
+              WB.CUSTOMER_PICKUP_ORG_CODE AS customer_pickup_org_code,
+              WB.DELIVERY_CUSTOMER_CONTACT AS delivery_customer_contact,
+              WB.GOODS_QTY_TOTAL AS goods_qty_total,
+              WB.RECEIVE_CUSTOMER_MOBILEPHONE AS receive_customer_mobilephone
+         FROM TFR.T_OPT_UNLOAD_TASK T
+         JOIN TFR.T_OPT_UNLOAD_BILL_DETAIL B ON B.UNLOAD_TASK_ID = T.ID
+         JOIN TFR.T_OPT_HANDOVERBILL HB ON HB.HANDOVER_NO = B.BILL_NO
+        INNER JOIN TFR.T_OPT_HANDOVERBILL_DETAIL HBD -- 交接单明细表
+       ON HB.HANDOVER_NO = HBD.HANDOVER_NO
+        INNER JOIN PKP.T_SRV_WAYBILL WB -- 运单表
+       ON HBD.WAYBILL_NO = WB.WAYBILL_NO
+       AND T.UNLOAD_ORG_CODE = WB.CUSTOMER_PICKUP_ORG_CODE --卸车操作部门等于运单提货网点
+        WHERE T.ID = #{truckTaskDetailId,jdbcType=VARCHAR}
+          AND B.BILL_TYPE = 'HANDOVER' --单据类型=交接单
+          AND HBD.HANDOVER_GOODS_QTY = WB.GOODS_QTY_TOTAL
+          AND WB.PRODUCT_CODE NOT IN ('AF', 'PLF')
+          AND WB.IS_WHOLE_VEHICLE = 'N'
+          AND WB.RECEIVE_METHOD LIKE '%PICKUP%'
+          AND WB.ACTIVE = 'Y'
+             --车辆到达部门=附加最终转移中心 or = 提货网点
+          AND NOT EXISTS
+        (SELECT 1
+                 FROM PKP.T_SRV_NOTIFICATION NF
+                WHERE NF.WAYBILL_NO = WB.WAYBILL_NO
+                  AND NF.NOTICE_RESULT = 'SUCCESS'
+                  AND NF.OPERATE_ORG_CODE = T.UNLOAD_ORG_CODE)
+          AND NOT EXISTS (SELECT 1
+                 FROM PKP.T_SRV_WAYBILL_SIGN_RESULT WSR
+                WHERE WSR.WAYBILL_NO = WB.WAYBILL_NO
+                  AND WSR.SIGN_STATUS = 'SIGN_STATUS_ALL'
+                  AND WSR.ACTIVE = 'Y')
+	</select>
+	<!-- 更新车辆到达临时家装表中的卸车任务-->
+	<update id="updateJZWaybillByParam" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.domain.VehicleArriveNotifyJZEntity" >
+    update pkp.t_srv_vehicle_arrive_notify_jz 
+    set status = #{statusN,jdbcType=VARCHAR},
+      JOB_ID = #{jobIdN,jdbcType=VARCHAR}
+    <where>
+    	<if test="status != null and status != ''">	
+		   AND status = #{status,jdbcType=VARCHAR}
+		</if>
+    	<if test="jobId != null and jobId != ''">	
+		   AND JOB_ID = #{jobId,jdbcType=VARCHAR}
+		</if>
+		<!-- 查询的建立卸车任务时间>=（当前时间-180分钟）家装运单自动推送到货通知  by 243921 -->
+		<if test="createTimeTo != null and createTimeTo != ''">	
+		   <![CDATA[AND CREATE_TIME >= #{createTimeTo, jdbcType=TIMESTAMP} ]]>
+		</if>
+    	<if test="id != null and id != ''">	
+		   AND ID = #{id,jdbcType=VARCHAR}
+		</if>
+    </where> 
+	</update>
+	<!-- 查询符合条件的车辆到达临时家装表中的卸车任务 -->
+	<select id="queryVehicleArriveNotifyJZ" resultType="com.deppon.foss.module.pickup.predeliver.api.shared.domain.VehicleArriveNotifyJZEntity" parameterType="java.util.Map" >
+    select 
+		id as id, 
+		t_opt_truck_task_detail_id as truckTaskDetailId,
+		task_detail_type as taskDetailType,
+		status as status,
+		create_time as createTimeTo,
+		exception_message as exceptionMessage,
+		job_id as jobId 
+    from PKP.t_srv_vehicle_arrive_notify_jz 
+   	<where> 
+     <if test="status != null and status != '' " >
+	   	 and status = #{status, jdbcType=VARCHAR}
+	 </if>
+     <if test="jobId != null and jobId != '' " >
+	     and JOB_ID = #{jobId, jdbcType=VARCHAR}
+	 </if>
+     <if test="rowNum != null and rowNum != '' " >
+		<![CDATA[  AND rownum <= #{rowNum,jdbcType=VARCHAR} ]]>
+	 </if>
+	</where>
+	</select>
+	<!-- 根据id删除车辆到达临时家装表中的卸车任务-->
+	<delete id="deleteJZWaybillByPrimaryKey" parameterType="java.lang.String" >
+    delete from PKP.t_srv_vehicle_arrive_notify_jz 
+    where ID = #{id,jdbcType=VARCHAR}
+	</delete>
+	<sql id="ArrivalGoodsWaybill_Column_List">
+		<!-- 符合条件的家装运单返回字段 -->
+		WB.WAYBILL_NO AS waybillNo,
+        WB.GOODS_QTY_TOTAL AS goodsQtyTotal,
+    	AF.SPECIAL_VALUE_ADDED_SERVICE as specialValueAddedService,
+     	AF.ARRIVE_GOODS_QTY as arriveGoodsQty,
+     	W.OPERATION_GOODS_QTY as operationGoodsQty,
+    	WB.RECEIVE_METHOD AS receiveMethod,
+     	WB.RECEIVE_CUSTOMER_CONTACT AS receiveCustomerContact,
+      	WB.CUSTOMER_PICKUP_ORG_CODE AS customerPickUpOrgCode,
+      	WB.RECEIVE_CUSTOMER_MOBILEPHONE as receiveCustomerMobilePhone 
+	</sql>
+	<sql id="select_ArrivalGoodsWaybill_Where">
+		AND WB.PRODUCT_CODE NOT IN ('AF', 'PLF','PACKAGE','RCP','EPEP','DEAP')
+     	AND WB.IS_WHOLE_VEHICLE = 'N'
+     	AND AF.SPECIAL_VALUE_ADDED_SERVICE LIKE '%EQUIP%'
+      	AND WB.ACTIVE = 'Y'
+      	AND NOT EXISTS (SELECT 1
+        	FROM PKP.T_SRV_WAYBILL_SIGN_RESULT WSR
+        	WHERE WSR.WAYBILL_NO = WB.WAYBILL_NO
+         	AND WSR.SIGN_STATUS = 'SIGN_STATUS_ALL'
+       		AND WSR.ACTIVE = 'Y') 
+      	AND NOT EXISTS (SELECT 1
+           	FROM PKP.T_SRV_NOTIFICATION NF
+          	WHERE NF.WAYBILL_NO = WB.WAYBILL_NO
+          	AND NF.NOTICE_RESULT = 'SUCCESS'
+         	AND NF.OPERATE_ORG_CODE = WB.CUSTOMER_PICKUP_ORG_CODE)
+        <if test="orgCode != null and orgCode != '' ">
+        	and WB.CUSTOMER_PICKUP_ORG_CODE = #{orgCode,jdbcType=VARCHAR} 
+         </if>
+         <if test="orgCodes != null and orgCodes.size > 0">
+         	and WB.CUSTOMER_PICKUP_ORG_CODE in 
+           	<foreach collection="orgCodes" index="index" item="org_code" open="(" separator="," close=")">
+				#{org_code,jdbcType=VARCHAR}
+			</foreach>
+         </if>
+	</sql>
+	<!-- 按车辆任务ID查询符合条件的运单给dop推送到货信息 -->
+	<select id='queryAutoWaybillInfoForSendDop' resultType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.ArrivalGoodsWaybillDto" parameterType="java.util.Map">
+	SELECT 
+		<include refid="ArrivalGoodsWaybill_Column_List" />
+   		FROM TFR.T_OPT_UNLOAD_TASK T 
+   		JOIN TFR.T_OPT_UNLOAD_BILL_DETAIL B ON B.UNLOAD_TASK_ID = T.ID
+     	JOIN TFR.T_OPT_HANDOVERBILL HB ON HB.HANDOVER_NO = B.BILL_NO
+        INNER JOIN TFR.T_OPT_HANDOVERBILL_DETAIL HBD -- 交接单明细表
+       	ON HB.HANDOVER_NO = HBD.HANDOVER_NO 
+        INNER JOIN TFR.T_OPT_UNLOAD_WAYBILL_DETAIL W
+     	ON W.UNLOAD_TASK_ID = T.ID 
+      	AND HBD.WAYBILL_NO = W.WAYBILL_NO 
+        INNER JOIN PKP.T_SRV_WAYBILL WB -- 运单表
+       	ON HBD.WAYBILL_NO = WB.WAYBILL_NO
+       	<if test="isSaleDept != null and isSaleDept == 'SUCCESS'">
+       		AND T.UNLOAD_ORG_CODE = WB.CUSTOMER_PICKUP_ORG_CODE --卸车操作部门等于运单提货网点
+       	</if>
+       	INNER JOIN PKP.T_SRV_ACTUAL_FREIGHT AF 
+       	ON WB.WAYBILL_NO = AF.WAYBILL_NO 
+       	WHERE T.ID = #{truckTaskDetailId,jdbcType=VARCHAR}  
+      	AND B.BILL_TYPE = 'HANDOVER' --单据类型=交接单
+      	<include refid="select_ArrivalGoodsWaybill_Where" />
+     UNION
+     SELECT 
+		<include refid="ArrivalGoodsWaybill_Column_List" />
+   		FROM TFR.T_OPT_UNLOAD_TASK T 
+     	JOIN TFR.T_OPT_UNLOAD_BILL_DETAIL B ON B.UNLOAD_TASK_ID = T.ID
+       	JOIN TFR.T_OPT_VEHICLEASSEMBLEBILL V ON V.VEHICLEASSEMBLE_NO = B.BILL_NO
+      	JOIN TFR.T_OPT_VEHICLEASSEMBLE_DETAIL VD ON VD.VEHICLEASSEMBLEBILL_ID = V.ID
+       	JOIN TFR.T_OPT_HANDOVERBILL HB ON HB.HANDOVER_NO = VD.HANDOVER_NO 
+     	INNER JOIN TFR.T_OPT_HANDOVERBILL_DETAIL HBD -- 交接单明细表
+       	ON HB.HANDOVER_NO = HBD.HANDOVER_NO 
+        INNER JOIN TFR.T_OPT_UNLOAD_WAYBILL_DETAIL W
+      	ON W.UNLOAD_TASK_ID = T.ID 
+      	AND HBD.WAYBILL_NO = W.WAYBILL_NO 
+        INNER JOIN PKP.T_SRV_WAYBILL WB -- 运单表
+       	ON HBD.WAYBILL_NO = WB.WAYBILL_NO
+       	<if test="isSaleDept != null and isSaleDept == 'SUCCESS'">
+       		AND T.UNLOAD_ORG_CODE = WB.CUSTOMER_PICKUP_ORG_CODE --卸车操作部门等于运单提货网点
+       	</if>
+       	INNER JOIN PKP.T_SRV_ACTUAL_FREIGHT AF 
+       	ON WB.WAYBILL_NO = AF.WAYBILL_NO 
+       	WHERE T.ID = #{truckTaskDetailId,jdbcType=VARCHAR}  
+      	<include refid="select_ArrivalGoodsWaybill_Where" />
+	</select>
+</mapper>

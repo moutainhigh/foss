@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.deppon.foss.module.pickup.sign.api.shared.domain.ConsigneeAgentEntity" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.pickup.sign.api.shared.domain.ConsigneeAgentEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+    <result column="REAL_CONSIGNEE" property="realConsignee" jdbcType="VARCHAR" />
+    <result column="CONSIGNEE_PHONE" property="consigneePhone" jdbcType="VARCHAR" />
+    <result column="CREATE_USER_NAME" property="createUserName" jdbcType="VARCHAR" />
+    <result column="CREATE_USER_CODE" property="createUserCode" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    ID, WAYBILL_NO, REAL_CONSIGNEE, CONSIGNEE_PHONE, CREATE_USER_NAME, CREATE_USER_CODE, 
+    CREATE_TIME
+  </sql>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.String" >
+    select /*模块：接送货-处理他人收件-获得修改他人签收凭证 */
+    <include refid="Base_Column_List" />
+    from PKP.T_SRV_CONSIGNEE_AGENT
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+  <select id="selectByWaybillNo" resultMap="BaseResultMap" parameterType="java.lang.String" >
+    select /*模块：接送货-处理他人收件-获得修改他人签收凭证 */
+    <include refid="Base_Column_List" />
+    from PKP.T_SRV_CONSIGNEE_AGENT
+    where WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR} ORDER BY create_time DESC
+  </select>
+  
+   <select id="selectExistInStock" resultType="Long" parameterType="java.util.Map" >
+    select /*模块：接送货-处理他人收件-查询是否有库存*/
+    count(1) 
+    from PKP.T_SRV_WAYBILL waybill 
+     JOIN PKP.T_SRV_ACTUAL_FREIGHT af on waybill.waybill_no = af.waybill_no
+	 JOIN TFR.T_OPT_WAYBILL_STOCK s on waybill.waybill_no = s.waybill_no			
+     <where>
+     	 waybill.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}  AND  waybill.ACTIVE='Y' 
+    <!-- 最后库存code=库存的部门编码 -->
+	<if test="endStockOrgCode != null and endStockOrgCode !=''">	
+		<![CDATA[ and s.ORG_CODE  = #{endStockOrgCode, jdbcType=VARCHAR}]]>
+	</if>
+	<!-- 库区-->
+	<!--add by chenjunying DMANA-9499 判断保留之前的条件，新加多库区查询条件-->
+	<if test="goodsAreaCode != null and goodsAreaCode !=''">	
+		<![CDATA[ AND NVL(s.GOODS_AREA_CODE, 'N/A') = #{goodsAreaCode, jdbcType=VARCHAR}]]>
+	</if>
+	<if test="(goodsAreaCode != null and goodsAreaCode !='') or 
+	(goodsAreaCodeExpress != null and goodsAreaCodeExpress !='')">	
+		<![CDATA[ AND NVL(s.GOODS_AREA_CODE, 'N/A') in (#{goodsAreaCode, jdbcType=VARCHAR},
+		#{goodsAreaCodeExpress, jdbcType=VARCHAR})]]>
+	</if>
+     </where>
+  </select>
+  
+   <select id="selectWaybillExistInStock" resultType="Long" 
+   	parameterType="com.deppon.foss.module.pickup.sign.api.shared.dto.SearchWaybillSignByOtherDto" >
+    select /*模块：接送货-处理他人收件-查询是否运单存在 并且到达 并且入库*/
+    count(1) 
+    from PKP.T_SRV_WAYBILL waybill 
+    JOIN PKP.T_SRV_ACTUAL_FREIGHT af on waybill.waybill_no = af.waybill_no 
+	JOIN TFR.T_OPT_WAYBILL_STOCK s on waybill.waybill_no = s.waybill_no and s.org_code = af.end_stock_org_code  			
+    WHERE waybill.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}  AND  waybill.ACTIVE='Y'  
+    AND waybill.LAST_LOAD_ORG_CODE  =#{currentDeptCode,jdbcType=VARCHAR}
+  </select>
+  
+  
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String" >
+    delete from PKP.T_SRV_CONSIGNEE_AGENT
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  <insert id="insert" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.ConsigneeAgentEntity" >
+    insert into PKP.T_SRV_CONSIGNEE_AGENT (ID, WAYBILL_NO, REAL_CONSIGNEE, 
+      CONSIGNEE_PHONE, CREATE_USER_NAME, CREATE_USER_CODE, 
+      CREATE_TIME)
+    values (#{id,jdbcType=VARCHAR}, #{waybillNo,jdbcType=VARCHAR}, #{realConsignee,jdbcType=VARCHAR}, 
+      #{consigneePhone,jdbcType=VARCHAR}, #{createUserName,jdbcType=VARCHAR}, #{createUserCode,jdbcType=VARCHAR}, 
+      #{createTime,jdbcType=TIMESTAMP})
+  </insert>
+  <insert id="insertSelective" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.ConsigneeAgentEntity" >
+    insert into PKP.T_SRV_CONSIGNEE_AGENT
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="waybillNo != null" >
+        WAYBILL_NO,
+      </if>
+      <if test="realConsignee != null" >
+        REAL_CONSIGNEE,
+      </if>
+      <if test="consigneePhone != null" >
+        CONSIGNEE_PHONE,
+      </if>
+      <if test="createUserName != null" >
+        CREATE_USER_NAME,
+      </if>
+      <if test="createUserCode != null" >
+        CREATE_USER_CODE,
+      </if>
+      <if test="createTime != null" >
+        CREATE_TIME,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="waybillNo != null" >
+        #{waybillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="realConsignee != null" >
+        #{realConsignee,jdbcType=VARCHAR},
+      </if>
+      <if test="consigneePhone != null" >
+        #{consigneePhone,jdbcType=VARCHAR},
+      </if>
+      <if test="createUserName != null" >
+        #{createUserName,jdbcType=VARCHAR},
+      </if>
+      <if test="createUserCode != null" >
+        #{createUserCode,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null" >
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.ConsigneeAgentEntity" >
+    update PKP.T_SRV_CONSIGNEE_AGENT
+    <set >
+      <if test="waybillNo != null" >
+        WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="realConsignee != null" >
+        REAL_CONSIGNEE = #{realConsignee,jdbcType=VARCHAR},
+      </if>
+      <if test="consigneePhone != null" >
+        CONSIGNEE_PHONE = #{consigneePhone,jdbcType=VARCHAR},
+      </if>
+      <if test="createUserName != null" >
+        CREATE_USER_NAME = #{createUserName,jdbcType=VARCHAR},
+      </if>
+      <if test="createUserCode != null" >
+        CREATE_USER_CODE = #{createUserCode,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null" >
+        CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.ConsigneeAgentEntity" >
+    update PKP.T_SRV_CONSIGNEE_AGENT
+    set WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR},
+      REAL_CONSIGNEE = #{realConsignee,jdbcType=VARCHAR},
+      CONSIGNEE_PHONE = #{consigneePhone,jdbcType=VARCHAR},
+      CREATE_USER_NAME = #{createUserName,jdbcType=VARCHAR},
+      CREATE_USER_CODE = #{createUserCode,jdbcType=VARCHAR},
+      CREATE_TIME = #{createTime,jdbcType=TIMESTAMP}
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  
+  
+</mapper>

@@ -1,0 +1,846 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+  "-//mybatis.org//DTD Mapper 3.0//EN" 
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.foss.module.pickup.predeliver.api.shared.domain.ExceptionEntity" >
+    
+  <!-- 异常所需字段 -->
+  <sql id="ExceptionProcess_column">
+      E.ID E_ID,
+      E.WAYBILL_NO E_WAYBILL_NO,
+      E.STATUS E_STATUS,
+      W.RECEIVE_CUSTOMER_NAME W_RECEIVE_CUSTOMER_NAME,
+      W.RECEIVE_CUSTOMER_CONTACT W_RECEIVE_CUSTOMER_CONTACT,
+      W.RECEIVE_CUSTOMER_MOBILEPHONE W_RECEIVE_CUSTOMER_MOBILEPHONE,
+      W.RECEIVE_CUSTOMER_PHONE W_RECEIVE_CUSTOMER_PHONE,
+      E.EXCEPTION_TYPE E_EXCEPTION_TYPE,
+      E.EXCEPTION_LINK E_EXCEPTION_LINK,
+      E.SERIAL_NO E_SERIAL_NO,
+      W.RECEIVE_ORG_CODE W_RECEIVE_ORG_CODE,
+      E.CREATE_USER_NAME E_CREATE_USER_NAME,
+      E.EXCEPTION_TIME E_EXCEPTION_TIME,
+      W.LAST_LOAD_ORG_CODE W_LAST_LOAD_ORG_CODE,
+      F.STORAGE_DAY F_STORAGE_DAY
+<!--       ED.NOTES ED_NOTES -->
+  </sql>
+  
+  <sql id="ExceptionProcess_column_WithReceiveOrgName">
+      /*模块：接送货-异常-查询异常主表信息*/
+      E.ID E_ID,
+      E.WAYBILL_NO E_WAYBILL_NO,
+      E.STATUS E_STATUS,
+      W.RECEIVE_CUSTOMER_NAME W_RECEIVE_CUSTOMER_NAME,
+      W.RECEIVE_CUSTOMER_CONTACT W_RECEIVE_CUSTOMER_CONTACT,
+      W.RECEIVE_CUSTOMER_MOBILEPHONE W_RECEIVE_CUSTOMER_MOBILEPHONE,
+      W.RECEIVE_CUSTOMER_PHONE W_RECEIVE_CUSTOMER_PHONE,
+      E.EXCEPTION_TYPE E_EXCEPTION_TYPE,
+      E.EXCEPTION_LINK E_EXCEPTION_LINK,
+      E.SERIAL_NO E_SERIAL_NO,
+      E.NOTICE_CONTENT E_NOTICE_CONTENT,
+      W.RECEIVE_ORG_CODE W_RECEIVE_ORG_CODE,
+      O.NAME O_RECEIVE_ORG_NAME,
+      E.CREATE_USER_NAME E_CREATE_USER_NAME,
+      E.EXCEPTION_TIME E_EXCEPTION_TIME,
+      E.MODIFY_TIME E_MODIFY_TIME,
+      E.ARRIVE_SHEET_ID E_ARRIVE_SHEET_ID,
+      W.LAST_LOAD_ORG_CODE W_LAST_LOAD_ORG_CODE,
+      F.STORAGE_DAY F_STORAGE_DAY,
+<!--       E.EXCEPTION_REASON ED_NOTES, -->
+      E.COUNTY_NAME, 
+      W.RECEIVE_BIG_CUSTOMER as receiveBigCustomer,
+      E.EXCEPTION_OPERATE E_EXCEPTION_OPERATE,
+<!--       E.NOTIFICATION_CONTENT E_NOTIFICATION_CONTENT, -->
+<!--       E.DISPATCH_RETURN_REASON E_DISPATCH_RETURN_REASON, -->
+<!--       E.SEND_RETURN_REASON E_SEND_RETURN_REASON, -->
+      E.EXCEPTION_REASON E_EXCEPTION_REASON 
+      
+  </sql>
+  
+  <!-- 处理异常详细信息所需字段 -->
+  <sql id="ExceptionProcessDetail_column">
+      /*模块：接送货-异常-查询异常详细信息*/
+      D.ID D_ID,
+      D.T_SRV_EXCEPTION_ID D_T_SRV_EXCEPTION_ID,
+      D.NOTES D_NOTES,
+      D.OPERATOR D_OPERATOR,
+      D.OPERATOR_CODE D_OPERATOR_CODE,
+      D.OPERATE_ORG_NAME D_OPERATE_ORG_NAME,
+      D.OPERATE_ORG_CODE D_OPERATE_ORG_CODE,
+      D.OPERATE_TIME D_OPERATE_TIME
+  </sql>
+  
+  <!-- 处理异常历史信息所需字段 -->
+  <sql id="ExceptionProcessDetailhis_column">
+      /*模块：接送货-异常-查询异常历史*/
+      E.ID E_ID,
+      E.WAYBILL_NO E_WAYBILL_NO,
+      W.RECEIVE_CUSTOMER_CODE W_RECEIVE_CUSTOMER_CODE,
+      W.RECEIVE_CUSTOMER_CONTACT W_RECEIVE_CUSTOMER_CONTACT,
+      W.RECEIVE_CUSTOMER_NAME W_RECEIVE_CUSTOMER_NAME,
+      W.RECEIVE_CUSTOMER_CONTACT W_RECEIVE_CUSTOMER_CONTACT,
+      W.RECEIVE_CUSTOMER_MOBILEPHONE W_RECEIVE_CUSTOMER_MOBILEPHONE,
+      W.RECEIVE_CUSTOMER_PHONE W_RECEIVE_CUSTOMER_PHONE,
+<!--       W.PRE_CUSTOMER_PICKUP_TIME W_PRE_CUSTOMER_PICKUP_TIME, -->
+      E.EXCEPTION_TYPE E_EXCEPTION_TYPE,
+      E.EXCEPTION_LINK E_EXCEPTION_LINK,
+      E.SERIAL_NO E_SERIAL_NO,
+      E.CREATE_USER_NAME E_CREATE_USER_NAME,
+      E.ARRIVE_SHEET_ID E_ARRIVE_SHEET_ID,
+      W.RECEIVE_ORG_CODE W_RECEIVE_ORG_CODE,
+      AF.DELIVER_DATE AF_DELIVER_DATE,
+      E.EXCEPTION_REASON E_EXCEPTION_REASON
+  </sql>
+  
+     <sql id="Base_Column_List" >
+       /*模块：接送货-异常-查询异常*/
+      ID, WAYBILL_NO, EXCEPTION_TYPE, EXCEPTION_LINK, STATUS, SERIAL_NO, EXCEPTION_TIME, 
+      CREATE_USER_NAME, CREATE_USER_CODE, CREATE_ORG_NAME, CREATE_ORG_CODE, ARRIVE_SHEET_ID,MODIFY_TIME,
+      EXCEPTION_OPERATE,NOTICE_CONTENT 
+   </sql>
+   
+   <!-- 查询条件过滤是否存在签收记录的 -->
+   <sql id="sql_where_hasSignRecord">
+      <if test="signRecord == 'hr'.toString() ">
+        and exists (
+          select 1 from pkp.t_srv_waybill_sign_result r where r.waybill_no = e.waybill_no and r.active='Y'
+        )
+      </if>
+      <if test="signRecord == 'nr'.toString() ">
+        and not exists (
+          select 1 from pkp.t_srv_waybill_sign_result r where r.waybill_no = e.waybill_no and r.active='Y'
+        )
+      </if>
+   </sql>
+  
+  <!--处理异常历史返回map-->
+  <resultMap id="ExceptionProcesshisMap" type="com.deppon.foss.module.pickup.predeliver.api.shared.dto.ExceptionProcessDetailDto" >
+      <result column="E_ID" property="exceptionProcessId" jdbcType="VARCHAR" />
+      <result column="E_WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+      <result column="W_RECEIVE_CUSTOMER_CODE" property="receiveCustomerCode" jdbcType="VARCHAR"/>
+      <result column="W_RECEIVE_CUSTOMER_CONTACT" property="receiveCustomerContact" jdbcType="VARCHAR"/>
+      <result column="W_RECEIVE_CUSTOMER_CONTACT" property="receiveCustomerName" jdbcType="VARCHAR" />
+      <result column="W_RECEIVE_CUSTOMER_MOBILEPHONE" property="receiveCustomerMobilephone" jdbcType="VARCHAR" />
+      <result column="W_RECEIVE_CUSTOMER_PHONE" property="receiveCustomerPhone" jdbcType="VARCHAR" />
+<!--       <result column="W_PRE_CUSTOMER_PICKUP_TIME" property="preCustomerPickupTime" jdbcType="TIMESTAMP" /> -->
+      <result column="E_EXCEPTION_TYPE" property="exceptionType" jdbcType="VARCHAR" />
+      <result column="E_EXCEPTION_LINK" property="exceptionLink" jdbcType="VARCHAR" />
+      <result column="E_CREATE_USER_NAME" property="createUserName" jdbcType="VARCHAR" />
+      <result column="W_RECEIVE_ORG_CODE" property="receiveOrgCode" jdbcType="VARCHAR" />
+      <result column="E_SERIAL_NO" property="serialNo" jdbcType="VARCHAR" />
+      <result column="E_ARRIVE_SHEET_ID" property="arrivesheetId" jdbcType="VARCHAR" />
+      <result column="AF_DELIVER_DATE" property="deliverDate" jdbcType="TIMESTAMP" />
+      <result column="E_EXCEPTION_REASON" property="exceptionReason" jdbcType="VARCHAR" />
+  </resultMap>
+  
+  <!--处理异常返回map-->
+  <resultMap id="ExceptionProcessMap" type="com.deppon.foss.module.pickup.predeliver.api.shared.dto.ExceptionProcessDto" >
+      <id column="E_ID" property="exceptionProcessId" jdbcType="VARCHAR" />
+      <result column="E_WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+      <result column="E_STATUS" property="status" jdbcType="VARCHAR" />
+      <result column="W_RECEIVE_CUSTOMER_CONTACT" property="receiveCustomerName" jdbcType="VARCHAR" />
+      <result column="W_RECEIVE_CUSTOMER_MOBILEPHONE" property="receiveCustomerMobilephone" jdbcType="VARCHAR" />
+      <result column="W_RECEIVE_CUSTOMER_PHONE" property="receiveCustomerPhone" jdbcType="VARCHAR" />
+      <result column="E_EXCEPTION_TYPE" property="exceptionType" jdbcType="VARCHAR" />
+      <result column="E_EXCEPTION_LINK" property="exceptionLink" jdbcType="VARCHAR" />
+      <result column="E_SERIAL_NO" property="serialNo" jdbcType="VARCHAR" />
+      <result column="W_RECEIVE_ORG_CODE" property="receiveOrgCode" jdbcType="VARCHAR" />
+      <result column="O_RECEIVE_ORG_NAME" property="receiveOrgName" jdbcType="VARCHAR" />
+       <result column="E_CREATE_USER_NAME" property="createUserName" jdbcType="VARCHAR" />
+      <result column="E_EXCEPTION_TIME" property="exceptionTime" jdbcType="TIMESTAMP" />
+    <result column="W_LAST_LOAD_ORG_CODE" property="customerPickupOrgCode" jdbcType="VARCHAR" />
+      <result column="F_STORAGE_DAY" property="storageDay" jdbcType="NUMERIC" />
+<!--       <result column="ED_NOTES" property="notes" jdbcType="VARCHAR" /> -->
+    <collection property="exceptionProcessDetailEntityList" resultMap="ExceptionProcessDetailMap"/>
+  </resultMap>
+  
+  <!--处理异常返回map-->
+  <resultMap id="ExceptionProcessResultMap" type="com.deppon.foss.module.pickup.predeliver.api.shared.dto.ExceptionProcessDto" >
+      <id column="E_ID" property="exceptionProcessId" jdbcType="VARCHAR" />
+      <result column="E_WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+      <result column="E_STATUS" property="status" jdbcType="VARCHAR" />
+      <result column="W_RECEIVE_CUSTOMER_CONTACT" property="receiveCustomerName" jdbcType="VARCHAR" />
+      <result column="W_RECEIVE_CUSTOMER_MOBILEPHONE" property="receiveCustomerMobilephone" jdbcType="VARCHAR" />
+      <result column="W_RECEIVE_CUSTOMER_PHONE" property="receiveCustomerPhone" jdbcType="VARCHAR" />
+      <result column="E_EXCEPTION_TYPE" property="exceptionType" jdbcType="VARCHAR" />
+      <result column="E_EXCEPTION_LINK" property="exceptionLink" jdbcType="VARCHAR" />
+      <result column="E_SERIAL_NO" property="serialNo" jdbcType="VARCHAR" />
+      <result column="W_RECEIVE_ORG_CODE" property="receiveOrgCode" jdbcType="VARCHAR" />
+      <result column="O_RECEIVE_ORG_NAME" property="receiveOrgName" jdbcType="VARCHAR" />
+       <result column="E_CREATE_USER_NAME" property="createUserName" jdbcType="VARCHAR" />
+      <result column="E_EXCEPTION_TIME" property="exceptionTime" jdbcType="TIMESTAMP" />
+      <result column="E_MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+    <result column="E_ARRIVE_SHEET_ID" property="arrivesheetId" jdbcType="VARCHAR" />
+    <result column="W_LAST_LOAD_ORG_CODE" property="customerPickupOrgCode" jdbcType="VARCHAR" />
+      <result column="F_STORAGE_DAY" property="storageDay" jdbcType="NUMERIC" />
+<!--       <result column="ED_NOTES" property="notes" jdbcType="VARCHAR" /> -->
+      <result column="COUNTY_NAME" property="countyName" jdbcType="VARCHAR" />
+      <result column="E_EXCEPTION_OPERATE" property="exceptionOperate" jdbcType="VARCHAR" />
+<!--       <result column="E_NOTIFICATION_CONTENT" property="notificationContent" jdbcType="VARCHAR" /> -->
+<!--       <result column="E_DISPATCH_RETURN_REASON" property="dispatchReturnReason" jdbcType="VARCHAR" /> -->
+<!--       <result column="E_SEND_RETURN_REASON" property="sendReturnReason" jdbcType="VARCHAR" /> -->
+      <result column="E_EXCEPTION_REASON" property="exceptionReason" jdbcType="VARCHAR" />
+      <result column="E_NOTICE_CONTENT" property="noticeContext" jdbcType="VARCHAR" />
+      <result column="SIGNRECORD" property="signRecord" jdbcType="VARCHAR" />
+  </resultMap>
+  
+  <!--处理异常详细信息-->
+  <resultMap id="ExceptionProcessDetailMap" type="com.deppon.foss.module.pickup.predeliver.api.shared.domain.ExceptionProcessDetailEntity" >
+      <id column="D_ID" property="id" jdbcType="VARCHAR" />
+      <result column="D_T_SRV_EXCEPTION_ID" property="tSrvExceptionId" jdbcType="VARCHAR" />
+      <result column="D_NOTES" property="notes" jdbcType="VARCHAR" />
+      <result column="D_OPERATOR" property="operator" jdbcType="VARCHAR" />
+      <result column="D_OPERATOR_CODE" property="operatorCode" jdbcType="VARCHAR" />
+      <result column="D_OPERATE_ORG_NAME" property="operateOrgName" jdbcType="VARCHAR" />
+      <result column="D_OPERATE_ORG_CODE" property="operateOrgCode" jdbcType="VARCHAR" />
+      <result column="D_OPERATE_TIME" property="operateTime" jdbcType="TIMESTAMP" />
+  </resultMap>
+  
+    <resultMap id="BaseResultMap" type="com.deppon.foss.module.pickup.predeliver.api.shared.domain.ExceptionEntity" >
+      <id column="ID" property="id" jdbcType="VARCHAR" />
+      <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+      <result column="EXCEPTION_TYPE" property="exceptionType" jdbcType="VARCHAR" />
+      <result column="EXCEPTION_LINK" property="exceptionLink" jdbcType="VARCHAR" />
+      <result column="STATUS" property="status" jdbcType="VARCHAR" />
+      <result column="SERIAL_NO" property="serialNo" jdbcType="VARCHAR" />
+      <result column="EXCEPTION_TIME" property="exceptionTime" jdbcType="DATE" />
+      <result column="CREATE_USER_NAME" property="createUserName" jdbcType="VARCHAR" />
+      <result column="CREATE_USER_CODE" property="createUserCode" jdbcType="VARCHAR" />
+      <result column="CREATE_ORG_NAME" property="createOrgName" jdbcType="VARCHAR" />
+      <result column="CREATE_ORG_CODE" property="createOrgCode" jdbcType="VARCHAR" />
+      <result column="ARRIVE_SHEET_ID" property="arrivesheetId" jdbcType="VARCHAR" />
+      <result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP"/>
+      <result column="NOTICE_CONTENT" property="noticeContext" jdbcType="VARCHAR" />
+    </resultMap>
+    
+    <!--按照单号查询异常信息-->
+    <select id="queryExceptionProcessInfoByWaybillNo" resultMap="BaseResultMap">
+      select 
+      <include refid="Base_Column_List" />
+      from PKP.T_SRV_EXCEPTION
+      where WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+      and EXCEPTION_TYPE = #{exceptionType,jdbcType=VARCHAR}
+      and EXCEPTION_LINK = #{exceptionLink,jdbcType=VARCHAR}
+    </select>
+    
+    <!-- 根据运单号和状态查询异常处理信息 -->
+    <select id="queryExceptionProcessInfoByParams" resultMap="BaseResultMap">
+    	select 
+      	<include refid="Base_Column_List" />
+      	from PKP.T_SRV_EXCEPTION
+      	<where>
+      		<if test=" waybillNo != null  and waybillNo != ''">
+      			and WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+      		</if>
+      		<if test="status != null  and status != '' ">
+      			and STATUS = #{status,jdbcType=VARCHAR}
+      		</if>
+      	</where>
+    </select>
+    
+    <!--删除异常主表信息-->
+    <delete id="deleteExceptionProcessInfo" parameterType="java.lang.String" >
+      delete from PKP.T_SRV_EXCEPTION
+      where ID = #{id,jdbcType=VARCHAR}
+    </delete>
+    
+    <!--删除异常分录信息-->
+    <delete id="deleteExceptionProcessDetailInfo" parameterType="java.lang.String" >
+      delete from PKP.T_SRV_EXCEPTION_PROCESS_DETAIL
+      where T_SRV_EXCEPTION_ID = #{tSrvExceptionId,jdbcType=VARCHAR}
+    </delete>
+    
+    <!-- 异常查询用于分页 -->
+  <select id="queryExceptionProcessInfo" resultMap="ExceptionProcessResultMap">
+    SELECT
+        (select 'Y' from pkp.t_srv_waybill_sign_result r where r.waybill_no = e.waybill_no and r.active='Y' ) SIGNRECORD,
+        <include refid="ExceptionProcess_column_WithReceiveOrgName"/>
+      FROM 
+        PKP.T_SRV_EXCEPTION E 
+      INNER JOIN 
+        PKP.T_SRV_WAYBILL W  
+      ON 
+        W.WAYBILL_NO = E.WAYBILL_NO
+      INNER JOIN 
+        PKP.T_SRV_ACTUAL_FREIGHT F 
+      ON 
+        F.WAYBILL_NO = E.WAYBILL_NO
+      INNER JOIN
+        BSE.T_BAS_ORG O
+      ON
+        O.CODE = W.RECEIVE_ORG_CODE
+    <where>
+      <choose>
+        <when test=" waybillNo != null  and waybillNo != ''  ">
+          E.WAYBILL_NO IN
+				<foreach collection="arrayWaybillNos" index="index" item="waybillNo" open="(" separator="," close=")">
+					#{waybillNo}
+				</foreach>
+        </when>
+        <otherwise>  
+          <if test=" exceptionType != null  and exceptionType != ''  ">
+          <![CDATA[and E.EXCEPTION_TYPE=#{exceptionType,jdbcType=VARCHAR}]]>
+          </if>
+          <if test=" exceptionLink != null  and exceptionLink != ''  ">
+          <![CDATA[and E.EXCEPTION_LINK=#{exceptionLink,jdbcType=VARCHAR}]]>
+          </if>
+          <if test=" status != null  and status != ''  ">
+          <![CDATA[and E.STATUS=#{status,jdbcType=VARCHAR}]]>
+          </if>
+          <if test=" storageDayBegin != null  and storageDayBegin != ''  ">
+          <![CDATA[and F.STORAGE_DAY >= #{storageDayBegin,jdbcType=NUMERIC}]]>
+          </if>
+          <if test=" storageDayEnd != null  and storageDayEnd != ''  ">
+          <![CDATA[and F.STORAGE_DAY <= #{storageDayEnd,jdbcType=NUMERIC}]]>
+          </if>
+          <if test=" exceptionTimeBegin != null  and exceptionTimeBegin != ''  ">
+          <![CDATA[and E.EXCEPTION_TIME >= #{exceptionTimeBegin,jdbcType=TIMESTAMP}]]>
+          </if>
+          <if test=" exceptionTimeEnd != null  and exceptionTimeEnd != ''  ">
+          <![CDATA[and E.EXCEPTION_TIME <= #{exceptionTimeEnd,jdbcType=TIMESTAMP}]]>
+          </if>
+          <if test=" modifyTimeBegin != null  and modifyTimeBegin != ''  ">
+          <![CDATA[and E.MODIFY_TIME >= #{modifyTimeBegin,jdbcType=TIMESTAMP}]]>
+          </if>
+          <if test=" modifyTimeEnd != null  and modifyTimeEnd != ''  ">
+          <![CDATA[and E.MODIFY_TIME <= #{modifyTimeEnd,jdbcType=TIMESTAMP}]]>
+          </if>
+          <if test=" countyCode != null  and countyCode != ''  ">
+          <![CDATA[and E.COUNTY_CODE = #{countyCode,jdbcType=VARCHAR}]]>
+          </if>
+          <if test=" exceptionOperate != null  and exceptionOperate != ''  ">
+          <![CDATA[and E.EXCEPTION_OPERATE = #{exceptionOperate,jdbcType=VARCHAR}]]>
+          </if>
+          <include refid="sql_where_hasSignRecord"/>
+        </otherwise>
+      </choose>
+          <if test=" active != null  and active != ''  ">
+          and W.ACTIVE = #{active,jdbcType=VARCHAR}
+          </if>
+          <if test=" departmentCode != null  and departmentCode != ''  ">
+          and (W.RECEIVE_ORG_CODE = #{departmentCode} OR W.LAST_LOAD_ORG_CODE = #{departmentCode})
+          </if>
+          and o.active = 'Y'
+          ORDER BY E.WAYBILL_NO
+    </where>
+  </select>
+  
+   <!-- 异常查询王飞专用-->
+  <select id="queryExceptionProcessInfoToNotice" resultMap="ExceptionProcessResultMap">
+    SELECT
+        <include refid="ExceptionProcess_column_WithReceiveOrgName"/>
+      FROM 
+        PKP.T_SRV_EXCEPTION E
+      INNER JOIN 
+        PKP.T_SRV_WAYBILL W 
+      ON 
+        W.WAYBILL_NO = E.WAYBILL_NO
+      INNER JOIN 
+        PKP.T_SRV_ACTUAL_FREIGHT F 
+      ON 
+        F.WAYBILL_NO = E.WAYBILL_NO
+      INNER JOIN
+        BSE.T_BAS_ORG O
+      ON
+        O.CODE = W.RECEIVE_ORG_CODE
+    <where>
+    	<if test=" waybillNo != null  and waybillNo != ''  ">
+          <![CDATA[and E.WAYBILL_NO=#{waybillNo,jdbcType=VARCHAR}]]>
+        </if>
+   	  	<if test=" exceptionType != null  and exceptionType != ''  ">
+         <![CDATA[and E.EXCEPTION_TYPE=#{exceptionType,jdbcType=VARCHAR}]]>
+         </if>
+         <if test=" exceptionLink != null  and exceptionLink != ''  ">
+         <![CDATA[and E.EXCEPTION_LINK=#{exceptionLink,jdbcType=VARCHAR}]]>
+         </if>
+         <if test=" status != null  and status != ''  ">
+         <![CDATA[and E.STATUS=#{status,jdbcType=VARCHAR}]]>
+         </if>
+         <if test=" storageDayBegin != null  and storageDayBegin != ''  ">
+         <![CDATA[and F.STORAGE_DAY >= #{storageDayBegin,jdbcType=NUMERIC}]]>
+         </if>
+         <if test=" storageDayEnd != null  and storageDayEnd != ''  ">
+         <![CDATA[and F.STORAGE_DAY <= #{storageDayEnd,jdbcType=NUMERIC}]]>
+         </if>
+         <if test=" exceptionTimeBegin != null  and exceptionTimeBegin != ''  ">
+         <![CDATA[and E.EXCEPTION_TIME >= #{exceptionTimeBegin,jdbcType=TIMESTAMP}]]>
+         </if>
+         <if test=" exceptionTimeEnd != null  and exceptionTimeEnd != ''  ">
+         <![CDATA[and E.EXCEPTION_TIME <= #{exceptionTimeEnd,jdbcType=TIMESTAMP}]]>
+         </if>
+         <if test=" modifyTimeBegin != null  and modifyTimeBegin != ''  ">
+         <![CDATA[and E.MODIFY_TIME >= #{modifyTimeBegin,jdbcType=TIMESTAMP}]]>
+         </if>
+         <if test=" modifyTimeEnd != null  and modifyTimeEnd != ''  ">
+         <![CDATA[and E.MODIFY_TIME <= #{modifyTimeEnd,jdbcType=TIMESTAMP}]]>
+         </if>
+         <if test=" countyCode != null  and countyCode != ''  ">
+         <![CDATA[and E.COUNTY_CODE = #{countyCode,jdbcType=VARCHAR}]]>
+         </if>
+         <if test=" exceptionOperate != null  and exceptionOperate != ''  ">
+         <![CDATA[and E.EXCEPTION_OPERATE = #{exceptionOperate,jdbcType=VARCHAR}]]>
+         </if>
+      	<if test=" active != null  and active != ''  ">
+      		and W.ACTIVE = #{active,jdbcType=VARCHAR}
+      	</if>
+      	<if test=" departmentCode != null  and departmentCode != ''  ">
+      		and (W.RECEIVE_ORG_CODE = #{departmentCode} OR W.LAST_LOAD_ORG_CODE = #{departmentCode})
+      	</if>
+      	and o.active = 'Y'
+    </where>
+  </select>
+  
+    <!-- 异常信息总条数查询1 -->
+  <select id="queryExceptionProcessInfoCount"  resultType="Long">
+    SELECT
+        COUNT(1)
+      FROM 
+        PKP.T_SRV_EXCEPTION E
+      INNER JOIN 
+        PKP.T_SRV_WAYBILL W 
+      ON   
+        W.WAYBILL_NO = E.WAYBILL_NO
+      INNER JOIN 
+        PKP.T_SRV_ACTUAL_FREIGHT F 
+      ON 
+        F.WAYBILL_NO = E.WAYBILL_NO
+    <where>
+      <choose>
+        <when test=" waybillNo != null  and waybillNo != ''  ">
+          E.WAYBILL_NO IN
+				<foreach collection="arrayWaybillNos" index="index" item="waybillNo" open="(" separator="," close=")">
+					#{waybillNo}
+				</foreach>
+        </when>
+        <otherwise>  
+          <if test=" exceptionType != null  and exceptionType != ''  ">
+          <![CDATA[and E.EXCEPTION_TYPE=#{exceptionType,jdbcType=VARCHAR}]]>
+          </if>
+          <if test=" exceptionLink != null  and exceptionLink != ''  ">
+          <![CDATA[and E.EXCEPTION_LINK=#{exceptionLink,jdbcType=VARCHAR}]]>
+          </if>
+          <if test=" status != null  and status != ''  ">
+          <![CDATA[and E.STATUS=#{status,jdbcType=VARCHAR}]]>
+          </if>
+          <if test=" storageDayBegin != null  and storageDayBegin != ''  ">
+          <![CDATA[and F.STORAGE_DAY >= #{storageDayBegin,jdbcType=NUMERIC}]]>
+          </if>
+          <if test=" storageDayEnd != null  and storageDayEnd != ''  ">
+          <![CDATA[and F.STORAGE_DAY <= #{storageDayEnd,jdbcType=NUMERIC}]]>
+          </if>
+          <if test=" exceptionTimeBegin != null  and exceptionTimeBegin != ''  ">
+          <![CDATA[and E.EXCEPTION_TIME >= #{exceptionTimeBegin,jdbcType=TIMESTAMP}]]>
+          </if>
+          <if test=" exceptionTimeEnd != null  and exceptionTimeEnd != ''  ">
+          <![CDATA[and E.EXCEPTION_TIME <= #{exceptionTimeEnd,jdbcType=TIMESTAMP}]]>
+          </if>
+          <if test=" modifyTimeBegin != null  and modifyTimeBegin != ''  ">
+          <![CDATA[and E.MODIFY_TIME >= #{modifyTimeBegin,jdbcType=TIMESTAMP}]]>
+          </if>
+          <if test=" modifyTimeEnd != null  and modifyTimeEnd != ''  ">
+          <![CDATA[and E.MODIFY_TIME <= #{modifyTimeEnd,jdbcType=TIMESTAMP}]]>
+          </if>
+          <if test=" countyCode != null  and countyCode != ''  ">
+          <![CDATA[and E.COUNTY_CODE = #{countyCode,jdbcType=VARCHAR}]]>
+          </if>
+          <if test=" exceptionOperate != null  and exceptionOperate != ''  ">
+          <![CDATA[and E.EXCEPTION_OPERATE = #{exceptionOperate,jdbcType=VARCHAR}]]>
+          </if>
+          <include refid="sql_where_hasSignRecord"/>
+        </otherwise>
+      </choose>
+            <if test=" active != null  and active != ''  ">
+            and W.ACTIVE = #{active,jdbcType=VARCHAR}
+            </if>
+            <if test=" departmentCode != null  and departmentCode != ''  ">
+            and W.RECEIVE_ORG_CODE = #{departmentCode}           
+            </if>
+    </where>
+  </select>
+  
+  <!-- 异常信息总条数查询1 -->
+  <select id="queryExceptionProcessInfoCount_"  resultType="Long">
+    SELECT
+        COUNT(1)
+      FROM 
+        PKP.T_SRV_EXCEPTION E
+      INNER JOIN 
+        PKP.T_SRV_WAYBILL W 
+      ON   
+        W.WAYBILL_NO = E.WAYBILL_NO
+      INNER JOIN 
+        PKP.T_SRV_ACTUAL_FREIGHT F 
+      ON 
+        F.WAYBILL_NO = E.WAYBILL_NO
+    <where>
+      <choose>
+        <when test=" waybillNo != null  and waybillNo != ''  ">
+          E.WAYBILL_NO IN
+				<foreach collection="arrayWaybillNos" index="index" item="waybillNo" open="(" separator="," close=")">
+					#{waybillNo}
+				</foreach>
+        </when>
+        <otherwise>  
+          <if test=" exceptionType != null  and exceptionType != ''  ">
+          <![CDATA[and E.EXCEPTION_TYPE=#{exceptionType,jdbcType=VARCHAR}]]>
+          </if>
+          <if test=" exceptionLink != null  and exceptionLink != ''  ">
+          <![CDATA[and E.EXCEPTION_LINK=#{exceptionLink,jdbcType=VARCHAR}]]>
+          </if>
+          <if test=" status != null  and status != ''  ">
+          <![CDATA[and E.STATUS=#{status,jdbcType=VARCHAR}]]>
+          </if>
+          <if test=" storageDayBegin != null  and storageDayBegin != ''  ">
+          <![CDATA[and F.STORAGE_DAY >= #{storageDayBegin,jdbcType=NUMERIC}]]>
+          </if>
+          <if test=" storageDayEnd != null  and storageDayEnd != ''  ">
+          <![CDATA[and F.STORAGE_DAY <= #{storageDayEnd,jdbcType=NUMERIC}]]>
+          </if>
+          <if test=" exceptionTimeBegin != null  and exceptionTimeBegin != ''  ">
+          <![CDATA[and E.EXCEPTION_TIME >= #{exceptionTimeBegin,jdbcType=TIMESTAMP}]]>
+          </if>
+          <if test=" exceptionTimeEnd != null  and exceptionTimeEnd != ''  ">
+          <![CDATA[and E.EXCEPTION_TIME <= #{exceptionTimeEnd,jdbcType=TIMESTAMP}]]>
+          </if>
+          <if test=" modifyTimeBegin != null  and modifyTimeBegin != ''  ">
+          <![CDATA[and E.MODIFY_TIME >= #{modifyTimeBegin,jdbcType=TIMESTAMP}]]>
+          </if>
+          <if test=" modifyTimeEnd != null  and modifyTimeEnd != ''  ">
+          <![CDATA[and E.MODIFY_TIME <= #{modifyTimeEnd,jdbcType=TIMESTAMP}]]>
+          </if>
+          <if test=" countyCode != null  and countyCode != ''  ">
+          <![CDATA[and E.COUNTY_CODE = #{countyCode,jdbcType=VARCHAR}]]>
+          </if>
+          <if test=" exceptionOperate != null  and exceptionOperate != ''  ">
+          <![CDATA[and E.EXCEPTION_OPERATE = #{exceptionOperate,jdbcType=VARCHAR}]]>
+          </if>
+          <include refid="sql_where_hasSignRecord"/>
+        </otherwise>
+      </choose>
+            <if test=" active != null  and active != ''  ">
+            and W.ACTIVE = #{active,jdbcType=VARCHAR}
+            </if>
+            <if test=" departmentCode != null  and departmentCode != ''  ">
+            and W.Last_Load_Org_Code = #{departmentCode}           
+            </if>
+    </where>
+  </select>
+  
+  <select id="selectExceptionProcessDetailList" parameterType="java.lang.String" resultMap="ExceptionProcessDetailMap">
+  	select <include refid="ExceptionProcessDetail_column" />
+  	from PKP.T_SRV_EXCEPTION_PROCESS_DETAIL D
+  	where D.T_SRV_EXCEPTION_ID = #{exceptionProcessId} order by D.OPERATE_TIME desc nulls last
+  </select>
+  
+  <select id="selectExceptionProcessDetailOfEnd"  parameterType="java.lang.String" resultMap="ExceptionProcessDetailMap" >
+  	select * from (
+	  	select <include refid="ExceptionProcessDetail_column" /> 
+	  	from PKP.T_SRV_EXCEPTION_PROCESS_DETAIL D 
+	  	where D.T_SRV_EXCEPTION_ID = #{exceptionProcessId} order by D.OPERATE_TIME desc nulls last
+  	) where rownum=1 
+  </select>
+    
+    <!-- 异常处理详情查询 -->
+  <select id="queryExceptionProcessDetailInfo"  resultMap="ExceptionProcesshisMap">
+    SELECT  
+        <include refid="ExceptionProcessDetailhis_column"/>
+      FROM 
+        PKP.T_SRV_EXCEPTION E
+      LEFT JOIN
+      	PKP.T_SRV_ACTUAL_FREIGHT AF
+      ON 
+      	AF.WAYBILL_NO = E.WAYBILL_NO
+      INNER JOIN 
+        PKP.T_SRV_WAYBILL W 
+      ON 
+        W.WAYBILL_NO = E.WAYBILL_NO
+    <where>
+    <![CDATA[ 
+      E.ID=#{tSrvExceptionId,jdbcType=VARCHAR}
+      and W.ACTIVE = #{active,jdbcType=VARCHAR}
+      ]]>
+    </where>
+  </select>
+  
+  <!-- 异常处理详情  预计送货日期查询 -->
+   <select id="queryActualFreightInfo" resultType="java.util.Date" parameterType="java.lang.String">
+   		SELECT AF.DELIVER_DATE FROM (SELECT * FROM PKP.T_SRV_ACTUAL_FREIGHT WHERE WAYBILL_NO=#{waybillNo,jdbcType=VARCHAR} ORDER BY DELIVER_DATE DESC nulls last) AF WHERE ROWNUM=1
+   	</select>
+ 
+    
+    <!--新增异常信息 -->
+    <insert id="addExceptionProcessInfo" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.domain.ExceptionEntity" >
+          insert into PKP.T_SRV_EXCEPTION
+      <trim prefix="(" suffix=")" suffixOverrides="," >
+        <if test="id != null" >
+          ID,
+        </if>
+        <if test="waybillNo != null and waybillNo != '' ">
+          WAYBILL_NO,
+        </if>
+        <if test="exceptionType != null and exceptionType != '' " >
+          EXCEPTION_TYPE,
+        </if>
+        <if test="exceptionLink != null and exceptionLink != '' " >
+          EXCEPTION_LINK,
+        </if>
+        <if test="status != null and status != '' " >
+          STATUS,
+        </if>
+        <if test="serialNo != null and serialNo != '' " >
+          SERIAL_NO,
+        </if>
+        <if test="exceptionTime != null and exceptionTime != '' " >
+          EXCEPTION_TIME,
+        </if>
+        <if test="createUserName != null and createUserName != '' " >
+          CREATE_USER_NAME,
+        </if>
+        <if test="createUserCode != null and createUserCode != '' " >
+          CREATE_USER_CODE,
+        </if>
+        <if test="createOrgName != null and createOrgName != ''  " >
+          CREATE_ORG_NAME,
+        </if>
+        <if test="createOrgCode != null and createOrgCode != ''  " >
+          CREATE_ORG_CODE,
+        </if>
+        <if test="arrivesheetId != null and arrivesheetId != ''  " >
+          ARRIVE_SHEET_ID,
+        </if>
+        <if test="countyName != null and countyName != ''  " >
+          COUNTY_NAME,
+        </if>
+        <if test="countyCode != null and countyCode != ''  " >
+          COUNTY_CODE,
+        </if>
+        <if test="modifyDate != null" >
+          MODIFY_TIME,
+        </if>
+        <if test="exceptiOperate != null and exceptiOperate != ''  " >
+          EXCEPTION_OPERATE,
+        </if>
+        <if test="noticeContext != null and noticeContext != ''  " >
+          NOTICE_CONTENT,
+        </if>
+        <if test="exceptionReason != null and exceptionReason != '' " >
+        EXCEPTION_REASON,
+        </if>
+      </trim>
+      <trim prefix="values (" suffix=")" suffixOverrides="," >
+        <if test="id != null" >
+          #{id,jdbcType=VARCHAR},
+        </if>
+        <if test="waybillNo != null and waybillNo != '' " >
+          #{waybillNo,jdbcType=VARCHAR},
+        </if>
+        <if test="exceptionType != null and exceptionType != '' " >
+          #{exceptionType,jdbcType=VARCHAR},
+        </if>
+        <if test="exceptionLink != null and exceptionLink != '' " >
+          #{exceptionLink,jdbcType=VARCHAR},
+        </if>
+        <if test="status != null and status != '' " >
+          #{status,jdbcType=VARCHAR},
+        </if>
+        <if test="serialNo != null and serialNo != '' " >
+          #{serialNo,jdbcType=VARCHAR},
+        </if>
+        <if test="exceptionTime != null and exceptionTime != '' " >
+          #{exceptionTime,jdbcType=TIMESTAMP},
+        </if>
+        <if test="createUserName != null and createUserName != '' " >
+          #{createUserName,jdbcType=VARCHAR},
+        </if>
+        <if test="createUserCode != null and createUserCode != '' " >
+          #{createUserCode,jdbcType=VARCHAR},
+        </if>
+        <if test="createOrgName != null and createOrgName != '' " >
+          #{createOrgName,jdbcType=VARCHAR},
+        </if>
+        <if test="createOrgCode != null and createOrgCode != '' " >
+          #{createOrgCode,jdbcType=VARCHAR},
+        </if>
+        <if test="arrivesheetId != null and arrivesheetId != '' " >
+          #{arrivesheetId,jdbcType=VARCHAR},
+        </if>
+        <if test="countyName != null and countyName != ''  " >
+          #{countyName,jdbcType=VARCHAR},
+        </if>
+        <if test="countyCode != null and countyCode != ''  " >
+          #{countyCode,jdbcType=VARCHAR},
+        </if>
+        <if test="modifyDate != null" >
+          #{modifyDate,jdbcType=TIMESTAMP},
+        </if>
+         <if test="exceptiOperate != null and exceptiOperate != ''  " >
+          #{exceptiOperate,jdbcType=VARCHAR},
+        </if>
+        <if test="noticeContext != null and noticeContext != ''  " >
+         #{noticeContext,jdbcType=VARCHAR},
+        </if>
+        <if test="exceptionReason != null and exceptionReason != '' " >
+         #{exceptionReason,jdbcType=VARCHAR},
+        </if>
+      </trim>
+    </insert>
+  
+    <!--修改异常信息 -->
+  <update id="updateExceptionProcessInfo" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.domain.ExceptionEntity" >
+      update PKP.T_SRV_EXCEPTION
+      <set >
+        <if test="waybillNo != null and waybillNo != '' " >
+          WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR},
+        </if>
+        <if test="exceptionType != null and exceptionType != '' " >
+          EXCEPTION_TYPE = #{exceptionType,jdbcType=VARCHAR},
+        </if>
+        <if test="exceptionLink != null and exceptionLink != '' " >
+          EXCEPTION_LINK = #{exceptionLink,jdbcType=VARCHAR},
+        </if>
+        <if test="status != null and status != '' " >
+          STATUS = #{status,jdbcType=VARCHAR},
+        </if>
+        <if test="serialNo != null and serialNo != '' " >
+          SERIAL_NO = #{serialNo,jdbcType=VARCHAR},
+        </if>
+        <if test="exceptionTime != null and exceptionTime != '' " >
+          EXCEPTION_TIME = #{exceptionTime,jdbcType=TIMESTAMP},
+        </if>
+        <if test="createUserName != null and createUserName != '' " >
+          CREATE_USER_NAME = #{createUserName,jdbcType=VARCHAR},
+        </if>
+        <if test="createUserCode != null and createUserCode != '' " >
+          CREATE_USER_CODE = #{createUserCode,jdbcType=VARCHAR},
+        </if>
+        <if test="createOrgName != null and createOrgName != '' " >
+          CREATE_ORG_NAME = #{createOrgName,jdbcType=VARCHAR},
+        </if>
+        <if test="createOrgCode != null and createOrgCode != '' " >
+          CREATE_ORG_CODE = #{createOrgCode,jdbcType=VARCHAR},
+        </if>
+        <if test="exceptionReason != null and exceptionReason != '' " >
+          EXCEPTION_REASON = #{exceptionReason,jdbcType=VARCHAR},
+        </if>
+        <if test="modifyDate != null" >
+          MODIFY_TIME=#{modifyDate,jdbcType=TIMESTAMP},
+        </if>
+        <if test="exceptiOperate != null and exceptiOperate != ''  " >
+          EXCEPTION_OPERATE = #{exceptiOperate,jdbcType=VARCHAR},
+        </if>
+        <if test="noticeContext != null and noticeContext != ''  " >
+         NOTICE_CONTENT = #{noticeContext,jdbcType=VARCHAR},
+        </if>
+      </set>
+      where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  
+   <!--修改预计送货日期 -->
+  <update id="updateActualFreightInfo" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.ExceptionProcessConditionDto">
+      
+      <![CDATA[  update PKP.T_SRV_ACTUAL_FREIGHT set MODIFY_TIME=sysdate ]]>
+     
+      	<if test="deliverDate != null and deliverDate != '' " >
+          ,DELIVER_DATE = #{deliverDate,jdbcType=TIMESTAMP}
+        </if>
+      where WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+    </update>
+    
+    <!--新增处理详情-->
+    <insert id="addExceptionProcessDetailInfo" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.domain.ExceptionProcessDetailEntity" >
+          insert into PKP.T_SRV_EXCEPTION_PROCESS_DETAIL
+      <trim prefix="(" suffix=")" suffixOverrides="," >
+        <if test="id != null and id != '' " >
+          ID,
+        </if>
+        <if test="tSrvExceptionId != null and tSrvExceptionId != '' " >
+          T_SRV_EXCEPTION_ID,
+        </if>
+        <if test="notes != null and notes != '' " >
+          NOTES,
+        </if>
+        <if test="operator != null and operator != '' " >
+          OPERATOR,
+        </if>
+        <if test="operatorCode != null and operatorCode != '' " >
+          OPERATOR_CODE,
+        </if>
+        <if test="operateOrgName != null and operateOrgName != '' " >
+          OPERATE_ORG_NAME,
+        </if>
+        <if test="operateOrgCode != null and operateOrgCode != '' " >
+          OPERATE_ORG_CODE,
+        </if>
+        <if test="operateTime != null and operateTime != '' " >
+          OPERATE_TIME,
+        </if>
+        <if test="modifyDate != null" >
+          MODIFY_TIME,
+        </if>
+        
+      </trim>
+      <trim prefix="values (" suffix=")" suffixOverrides="," >
+        <if test="id != null and id != '' " >
+          #{id,jdbcType=VARCHAR},
+        </if>
+        <if test="tSrvExceptionId != null and tSrvExceptionId != '' " >
+          #{tSrvExceptionId,jdbcType=VARCHAR},
+        </if>
+        <if test="notes != null and notes != '' " >
+          #{notes,jdbcType=VARCHAR},
+        </if>
+        <if test="operator != null and operator != '' " >
+          #{operator,jdbcType=VARCHAR},
+        </if>
+        <if test="operatorCode != null and operatorCode != '' " >
+          #{operatorCode,jdbcType=VARCHAR},
+        </if>
+        <if test="operateOrgName != null and operateOrgName != '' " >
+          #{operateOrgName,jdbcType=VARCHAR},
+        </if>
+        <if test="operateOrgCode != null and operateOrgCode != '' " >
+          #{operateOrgCode,jdbcType=VARCHAR},
+        </if>
+        <if test="operateTime != null and operateTime != '' " >
+          #{operateTime,jdbcType=VARCHAR},
+        </if>
+        <if test="modifyDate != null" >
+          MODIFY_TIME=#{modifyDate,jdbcType=TIMESTAMP},
+        </if>
+      </trim>
+   </insert>
+   
+    <!--修改异常件数 -->
+  <update id="updateExceptionGoodsQty" parameterType="java.lang.String">
+      update PKP.T_SRV_ACTUAL_FREIGHT F
+      <set>
+        F.EXCEPTION_GOODS_QTY = F.EXCEPTION_GOODS_QTY+1,
+        F.MODIFY_TIME = sysdate
+      </set>
+      where F.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+    </update>
+    
+    <!-- 查询完结数据 -->
+  <select id="queryExceptionIsOperate"  resultMap="BaseResultMap">
+    SELECT  
+        <include refid="Base_Column_List"/>
+      FROM 
+        PKP.T_SRV_EXCEPTION E
+    <where>
+     <if test="id != null and id != '' " >
+      E.ID = #{id,jdbcType=VARCHAR}
+     </if>
+     <if test="status != null and status != '' " >
+      and E.STATUS = #{status,jdbcType=VARCHAR}
+     </if>
+    </where>
+  </select>
+  
+  <select id="queryhandlinginfo" resultType="java.lang.Integer" parameterType="java.util.Map">
+      select count(id) from 
+      pkp.t_srv_exception e 
+      where e.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+      and e.serial_no = #{serialNo,jdbcType=VARCHAR}
+      and e.status = #{status,jdbcType=VARCHAR}
+    </select>
+    
+</mapper>

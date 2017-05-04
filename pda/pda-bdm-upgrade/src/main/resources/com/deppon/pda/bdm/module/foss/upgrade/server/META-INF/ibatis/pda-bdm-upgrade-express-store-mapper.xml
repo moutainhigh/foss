@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.pda.bdm.module.foss.upgrade.server.dao.impl.ExpressStoreDataVerGenDao">
+	<!-- 库位信息 -->
+	<select id="queryLocalDatas" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.StoreEntity">
+		<![CDATA[
+			SELECT ID             as id,
+		       DEPTCODE       as deptCode,
+		       STORENUMBER    as storeNumber,
+		       STORELOCTYPE   as storeLocType,
+		       ASTERISK_CODE  as asterisk_code,
+		       OPERFLAG       as operFlag,
+		       LADINGSTATCODE as ladingStatCode,
+		       GOODSTYPE      as goodstype
+		  FROM T_BASE_STORE S
+		 WHERE (S.STORELOCTYPE = 'BSE_GOODSAREA_TYPE_EXPRESS' OR
+		       S.STORELOCTYPE = 'BSE_GOODSAREA_TYPE_STATION')
+		   AND s.OPERFLAG = '1'
+		    AND  not  exists ( SELECT 1 from T_BASE_EXPRESS_STORE ES
+						           WHERE (ES.STORELOCTYPE = 'BSE_GOODSAREA_TYPE_EXPRESS' OR
+						              ES.STORELOCTYPE = 'BSE_GOODSAREA_TYPE_STATION')
+						             AND ES.OPERFLAG = '1'
+						             and s.deptcode=es.deptcode
+						             and s.storenumber=es.storenumber
+						             and s.ladingstatcode=es.ladingstatcode
+						             and s.goodstype=es.goodstype
+						       )      
+		]]>
+		<if test="startTime != null and startTime != ''  ">
+			<![CDATA[ AND S.UPDTIME > #{startTime,jdbcType=TIMESTAMP}]]>
+		</if>
+		<if test="endTime != null and endTime != '' ">
+			<![CDATA[ AND S.UPDTIME <= #{endTime,jdbcType=TIMESTAMP}]]>
+		</if>
+		<![CDATA[
+		union
+		 SELECT ID             as id,
+           DEPTCODE       as deptCode,
+           STORENUMBER    as storeNumber,
+           STORELOCTYPE   as storeLocType,
+           ASTERISK_CODE  as asterisk_code,
+           OPERFLAG       as operFlag,
+           LADINGSTATCODE as ladingStatCode,
+           GOODSTYPE      as goodstype
+      FROM T_BASE_EXPRESS_STORE ES
+      WHERE (ES.STORELOCTYPE = 'BSE_GOODSAREA_TYPE_EXPRESS' OR
+             ES.STORELOCTYPE = 'BSE_GOODSAREA_TYPE_STATION')
+          AND es.OPERFLAG = '1'
+		]]>
+		<if test="startTime != null and startTime != ''  ">
+			<![CDATA[ AND ES.UPDTIME > #{startTime,jdbcType=TIMESTAMP}]]>
+		</if>
+		<if test="endTime != null and endTime != '' ">
+			<![CDATA[ AND ES.UPDTIME <= #{endTime,jdbcType=TIMESTAMP}]]>
+		</if>
+		
+		
+	</select>
+	
+	<select id="queryLocalDatasByDel" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.StoreEntity">
+		<![CDATA[
+			SELECT 
+				ID as id
+			FROM T_BASE_STORE S
+			WHERE (S.STORELOCTYPE = 'BSE_GOODSAREA_TYPE_EXPRESS' OR
+		       S.STORELOCTYPE = 'BSE_GOODSAREA_TYPE_STATION')
+		   AND S.OPERFLAG = '3'
+		   AND  not  exists ( SELECT 1 from T_BASE_EXPRESS_STORE ES
+						           WHERE (ES.STORELOCTYPE = 'BSE_GOODSAREA_TYPE_EXPRESS' OR
+						              ES.STORELOCTYPE = 'BSE_GOODSAREA_TYPE_STATION')
+						             AND ES.OPERFLAG = '3'
+						             and s.deptcode=es.deptcode
+						             and s.storenumber=es.storenumber
+						             and s.ladingstatcode=es.ladingstatcode
+						             and s.goodstype=es.goodstype
+						       )      
+			AND S.UPDTIME > #{startTime,jdbcType=TIMESTAMP}
+			AND S.UPDTIME <= #{endTime,jdbcType=TIMESTAMP}
+			union 
+			SELECT 
+				ID as id
+			FROM T_BASE_EXPRESS_STORE ES
+			WHERE (eS.STORELOCTYPE = 'BSE_GOODSAREA_TYPE_EXPRESS' OR
+		           eS.STORELOCTYPE = 'BSE_GOODSAREA_TYPE_STATION')
+		    AND es.OPERFLAG = '3'
+		    AND es.UPDTIME > #{startTime,jdbcType=TIMESTAMP}
+			AND es.UPDTIME <= #{endTime,jdbcType=TIMESTAMP}
+			
+			
+		]]>
+	</select>
+	
+	<select id="queryLocalIncDataList" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="int">
+		<![CDATA[
+		select sum(co.num) from (
+		
+			SELECT COUNT(*) num FROM T_BASE_STORE s		
+		]]>
+		<if test="startTime != null and startTime != ''  ">
+			<![CDATA[ WHERE
+			 s.UPDTIME >= #{startTime,jdbcType=TIMESTAMP}
+			 AND s.UPDTIME < #{endTime,jdbcType=TIMESTAMP}			 
+			]]>
+		</if>
+		<![CDATA[
+		union
+			select count(*) num from  T_BASE_express_STORE es
+			]]>
+		<if test="startTime != null and startTime != ''  ">
+			<![CDATA[ WHERE
+			 es.UPDTIME >= #{startTime,jdbcType=TIMESTAMP}
+			 AND ess.UPDTIME < #{endTime,jdbcType=TIMESTAMP}			 
+			]]>
+		</if>	
+		<![CDATA[ ) co	]]>
+	</select>
+</mapper>

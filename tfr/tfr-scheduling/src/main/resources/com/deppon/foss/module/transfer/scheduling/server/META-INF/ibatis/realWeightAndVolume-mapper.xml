@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="Foss.realWeightAndVolume" >
+	<resultMap id="BaseResultMap" type="com.deppon.foss.module.transfer.scheduling.api.shared.dto.RealWeightAndVolumeDto" >
+		<result column="TOTAL_WEIGHT" property="totalWeight" jdbcType="DECIMAL" />
+		<result column="TOTAL_VOLUME" property="totalVolume" jdbcType="DECIMAL" />
+		<result column="WAYBILL_QTY_TOTAL" property="waybillQtyTotal" jdbcType="NUMERIC" />
+		<result column="GOODS_QTY_TOTAL" property="goodsQtyTotal" jdbcType="NUMERIC" />
+	</resultMap>
+	
+	<!-- queryRealDepart -->
+	<select id="queryRealDepart" resultMap="BaseResultMap" parameterType="map" >
+   	SELECT SUM(H.WEIGHT_TOTAL) TOTAL_WEIGHT,SUM(H.VOLUME_TOTAL) TOTAL_VOLUME FROM TFR.T_OPT_TRUCK_TASK_DETAIL D
+	LEFT JOIN TFR.T_OPT_TRUCK_TASK_BILL B ON B.TRUCK_TASK_DETAIL_ID = D.ID
+	LEFT JOIN TFR.T_OPT_HANDOVERBILL H ON H.HANDOVER_NO = B.BILL_NO
+	WHERE D.STATUS !=#{status} AND B.BILL_TYPE=#{billType}
+	AND D.ORIG_ORG_CODE= #{origOrgCode} 
+	<![CDATA[
+		AND D.ACTUAL_DEPART_TIME < #{EndTime}
+		AND D.ACTUAL_DEPART_TIME >= #{StartTime}
+	]]>
+		<if test="destOrgCode!=null and destOrgCode!='' ">
+			AND D.DEST_ORG_CODE = #{destOrgCode}
+		</if>
+	</select>
+
+	<!-- queryRealArrive -->
+	<select id="queryRealArrive" resultMap="BaseResultMap" parameterType="map" >
+   	SELECT SUM(H.WEIGHT_TOTAL) TOTAL_WEIGHT,SUM(H.VOLUME_TOTAL) TOTAL_VOLUME FROM TFR.T_OPT_TRUCK_TASK_DETAIL D
+	LEFT JOIN TFR.T_OPT_TRUCK_TASK_BILL B ON B.TRUCK_TASK_DETAIL_ID = D.ID
+	LEFT JOIN TFR.T_OPT_HANDOVERBILL H ON H.HANDOVER_NO = B.BILL_NO
+	WHERE D.STATUS !=#{status} AND B.BILL_TYPE=#{billType}
+	AND D.DEST_ORG_CODE = #{destOrgCode}
+	<![CDATA[
+		AND D.ACTUAL_ARRIVE_TIME < #{EndTime}
+		AND D.ACTUAL_ARRIVE_TIME >= #{StartTime}
+	]]>
+		<if test="origOrgCode!=null and origOrgCode!='' ">
+			AND D.ORIG_ORG_CODE= #{origOrgCode} 
+		</if>
+	</select>
+	
+	<!-- queryAverage -->
+	<select id="queryAverage" resultMap="BaseResultMap" parameterType="map" >
+   	SELECT SUM(H.WEIGHT_TOTAL) TOTAL_WEIGHT,
+    SUM(H.VOLUME_TOTAL) TOTAL_VOLUME,
+    SUM(H.WAYBILL_QTY_TOTAL) WAYBILL_QTY_TOTAL,
+    SUM(H.GOODS_QTY_TOTAL) GOODS_QTY_TOTAL
+  	FROM TFR.T_OPT_HANDOVERBILL H
+ 	WHERE H.ORIG_ORG_CODE = #{origOrgCode}
+   	AND H.HANDOVERBILL_STATE != #{state}
+	<![CDATA[
+		AND H.CREATE_TIME < #{EndTime}
+		AND H.CREATE_TIME >= #{StartTime}
+	]]>
+	</select>
+	
+</mapper>

@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.comonExpressVehicle">
+	<resultMap id="expressVehicleResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.dto.ExpressVehicleDto">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+		<result column="VEHICLE_LENGHT_CODE" property="vehicleLengthCode" jdbcType="VARCHAR" />
+		<result column="VEHICLE_LENGTH_NAME" property="vehicleLengthName" jdbcType="VARCHAR" />
+		<result column="EMP_CODE" property="empCode" jdbcType="VARCHAR" />
+		<result column="EMP_NAME" property="empName" jdbcType="VARCHAR" />
+		<result column="waybillDeptCode" property="orgCode" jdbcType="VARCHAR" />
+		<result column="waybillDeptName" property="orgName" jdbcType="VARCHAR" />
+		<result column="ownDeptCode" property="ownDeptCode" jdbcType="VARCHAR" />
+		<result column="ownDeptName" property="ownDeptName" jdbcType="VARCHAR" />
+		<result column="MOBILE_PHONE" property="mobilePhone" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate"  jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="DESCRIPTION" property="description" jdbcType="VARCHAR" />
+	</resultMap>
+	<!-- 数据字段 -->
+	<sql id="expressVehicle_Column_List">
+	   V.ID,
+       V.VEHICLE_NO,
+       V.VEHICLE_LENGHT_CODE,
+       M.VEHICLE_LENGTH_NAME,
+       V.EMP_CODE,
+       E.EMP_NAME,
+       V.ORG_CODE waybillDeptCode,
+       O.NAME     waybillDeptName,
+       E.ORG_CODE ownDeptCode,
+       U.NAME     ownDeptName,
+       V.MOBILE_PHONE,
+       V.CREATE_TIME,
+       V.MODIFY_TIME,
+       V.ACTIVE,
+       V.CREATE_USER_CODE,
+       V.MODIFY_USER_CODE,
+       V.DESCRIPTION
+	</sql>
+	
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<if test="vehicleNo != null and vehicleNo != ''">
+				AND V.VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR}
+			</if>
+			<if test="empCode != null and empCode != ''">
+				AND (E.EMP_NAME = #{empCode,jdbcType=VARCHAR} OR E.EMP_CODE = #{empCode,jdbcType=VARCHAR})
+			</if>
+			<if test="empName != null and empName != ''">
+				AND E.EMP_NAME = #{empName,jdbcType=VARCHAR}
+			</if>
+		   <if test="orgName != null and orgName != ''">
+				AND O.NAME = #{orgName,jdbcType=VARCHAR}
+			</if>
+			<if test="orgCode != null and orgCode != ''">
+				AND V.ORG_CODE  = #{orgCode,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND V.ACTIVE = #{active,jdbcType=VARCHAR}
+			</if>
+			<if test="districtCodes != null ">
+				AND EXISTS (SELECT 1
+          				FROM BSE.T_BAS_EXPRESS_EMP_DISTRICT T
+        					 WHERE V.EMP_CODE = T.EMP_CODE
+        					 AND T.district_code in 
+        					 <foreach collection="districtCodes"  index="index" item="code"  open="(" separator="," close=")">  
+	           						 #{code} 
+	           				 </foreach>
+          					 AND T.ACTIVE = V.ACTIVE)
+			</if>
+			<if test="mobilePhone != null and mobilePhone != ''">
+				AND V.MOBILE_PHONE = #{mobilePhone,jdbcType=VARCHAR}
+			</if> 
+		</where>
+	</sql>
+
+	<!-- 查询所有快递车辆信息 -->
+	<select id="queryAllExpressVehicles"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.ExpressVehicleDto"
+		resultMap="expressVehicleResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有收款方信息 **/
+		]]>
+		<include refid="expressVehicle_Column_List" />
+		<![CDATA[
+			 FROM BSE.T_BAS_EXPRESS_VEHICLE V
+  			 LEFT JOIN BSE.T_BAS_EMPLOYEE E ON V.EMP_CODE = E.EMP_CODE
+                                AND E.ACTIVE = V.ACTIVE
+  			 LEFT JOIN BSE.T_BAS_ORG O ON V.ORG_CODE = O.CODE
+                           AND O.ACTIVE = V.ACTIVE
+  			 LEFT JOIN BSE.T_BAS_ORG U ON E.ORG_CODE = U.CODE
+                           AND U.ACTIVE = V.ACTIVE
+  			 LEFT JOIN BSE.T_BAS_VEHICLE_TYPE_LENGTH M ON V.VEHICLE_LENGHT_CODE =
+                                               M.VEHICLE_LENGTH_CODE
+                                               AND M.ACTIVE = V.ACTIVE
+		]]>
+		<include refid="queryWhere" />
+	</select>
+	<!-- 统计总记录数 -->
+	<select id="queryRecords" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.ExpressVehicleDto">
+	    <![CDATA[
+	       	SELECT/** 综合:统计总记录数 **/ COUNT(1) FROM BSE.T_BAS_EXPRESS_VEHICLE V
+  										 LEFT JOIN BSE.T_BAS_EMPLOYEE E ON V.EMP_CODE = E.EMP_CODE
+                               											    AND E.ACTIVE = V.ACTIVE
+  										 LEFT JOIN BSE.T_BAS_ORG O ON V.ORG_CODE = O.CODE
+                           													AND O.ACTIVE = V.ACTIVE
+  										 LEFT JOIN BSE.T_BAS_ORG U ON E.ORG_CODE = U.CODE
+                           													AND U.ACTIVE = V.ACTIVE
+  										 LEFT JOIN BSE.T_BAS_VEHICLE_TYPE_LENGTH M ON 
+  										 			V.VEHICLE_LENGHT_CODE = M.VEHICLE_LENGTH_CODE
+                                              		 AND M.ACTIVE = V.ACTIVE
+	    ]]>
+		<include refid="queryWhere" />
+	</select>
+</mapper>

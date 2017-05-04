@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-common.instationMsgDao" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.base.common.api.shared.dto.MessagesDto" >
+  	<id column="ID" property="id"  />
+    <result column="SEND_USER_CODE" property="sendUserCode" jdbcType="VARCHAR" />
+    <result column="SEND_USER_NAME" property="sendUserName" jdbcType="VARCHAR" />
+    <result column="SEND_ORG_CODE" property="sendOrgCode" jdbcType="VARCHAR" />
+    <result column="SEND_ORG_NAME" property="sendOrgName" jdbcType="VARCHAR" />
+    <result column="RECEIVE_USER_CODE" property="receiveUserCode" jdbcType="VARCHAR" />
+    <result column="RECEIVE_USER_NAME" property="receiveUserName" jdbcType="VARCHAR" />
+    <result column="CONTEXT" property="context" jdbcType="VARCHAR" />
+    <result column="MSG_TYPE" property="msgType" jdbcType="VARCHAR" />
+    <result column="ACTIVE" property="active" jdbcType="VARCHAR" />
+    <result column="CREATE_TYPE" property="createType" jdbcType="VARCHAR" />
+    <result column="IS_READED" property="isReaded" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" /> 
+    <result column="EXPIRE_TIME" property="expireTime" jdbcType="TIMESTAMP" />
+    <result column="NO_DEAL_NUM" property="noDealNum" jdbcType="NUMERIC"/> 
+    
+    <result column="RECEIVE_ORG_CODE" property="receiveOrgCode" jdbcType="VARCHAR" />
+    <result column="RECEIVE_ORG_NAME" property="receiveOrgName" jdbcType="VARCHAR" /> 
+    <result column="RECEIVE_SUB_ORG_CODE" property="receiveSubOrgCode" jdbcType="VARCHAR" />
+    <result column="RECEIVE_SUB_ORG_NAME" property="receiveSubOrgName" jdbcType="VARCHAR" /> 
+    <result column="RECEIVE_ROLE_CODE" property="receiveRoleCode" jdbcType="VARCHAR" />
+    <result column="RECEIVE_TYPE" property="receiveType" jdbcType="VARCHAR" /> 
+    <result column="STATUS" property="status" jdbcType="VARCHAR" />
+    <result column="MODIFY_TIME" property="modifyTime" jdbcType="VARCHAR" />
+    <result column="MODIFY_USER_CODE" property="modifyUserCode" jdbcType="VARCHAR" />
+    <result column="MODIFY_USER_NAME" property="modifyUserName" jdbcType="VARCHAR" /> 
+    <result column="SERIAL_NUMBER" property="serialNumber" jdbcType="VARCHAR" />  
+  </resultMap>
+  
+
+  
+ 
+	<!-- 查询字段 -->
+	<sql id="select_param">
+		ID,
+		SEND_USER_CODE, 
+		SEND_USER_NAME, 
+		SEND_ORG_CODE,
+		SEND_ORG_NAME,	
+		RECEIVE_USER_CODE,
+		RECEIVE_USER_NAME, 
+		CONTEXT, 
+		MSG_TYPE, 
+		ACTIVE, 
+		CREATE_TYPE, 
+	   	IS_READED, 
+	   	CREATE_TIME,
+	   	EXPIRE_TIME,
+	   	RECEIVE_ORG_CODE,
+	   	RECEIVE_ORG_NAME,
+	   	RECEIVE_SUB_ORG_CODE,
+	   	RECEIVE_SUB_ORG_NAME,
+	   	RECEIVE_ROLE_CODE,
+	   	RECEIVE_TYPE,
+	   	STATUS,
+	   	MODIFY_TIME,
+	   	MODIFY_USER_CODE,
+	   	MODIFY_USER_NAME,
+	   	SERIAL_NUMBER
+	</sql>
+	<sql id="queryWhereByEntity">
+		<if test="receiveSubOrgCode != null and receiveSubOrgCode != ''">
+			AND T.RECEIVE_SUB_ORG_CODE IN(#{receiveSubOrgCode,jdbcType=VARCHAR},'DIP')
+		</if>
+		<if test="sendUserCode != null and sendUserCode != ''">
+			AND T.SEND_USER_CODE = #{sendUserCode,jdbcType=VARCHAR}
+		</if>
+		<if test="sendUserCode != null and sendUserCode != ''">
+			AND T.SEND_USER_CODE = #{sendUserCode,jdbcType=VARCHAR}
+		</if>
+		<if test="serialNumber != null and serialNumber != ''">
+			AND T.SERIAL_NUMBER = #{serialNumber,jdbcType=VARCHAR}
+		</if>
+		<if test="msgType != null and msgType != ''">
+			AND T.MSG_TYPE = #{msgType,jdbcType=VARCHAR}
+		</if>
+		<if test="active != null and active != ''">
+			AND T.ACTIVE = #{active,jdbcType=VARCHAR}
+		</if>
+		<if test="createType != null and createType != ''">
+			AND T.CREATE_TYPE = #{createType,jdbcType=VARCHAR}
+		</if>
+		<if test="isReaded != null and isReaded != ''">
+			AND T.IS_READED = #{isReaded,jdbcType=VARCHAR}
+		</if>
+		<if test="createStartTime != null  and createEndTime != null ">
+			<![CDATA[ AND T.CREATE_TIME >=#{createStartTime,jdbcType=TIMESTAMP} and T.CREATE_TIME <#{createEndTime,jdbcType=TIMESTAMP} ]]>  
+		</if>
+	</sql>
+	<!-- 根据站内信实体查询出所有站内消息数据  -->
+	<select id="queryInstationMsgByEntity" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.base.common.api.shared.dto.MessagesDto">
+		SELECT 
+		/** 综合:根据站内信实体查询出所有站内消息数据 **/
+			<include refid="select_param" />
+		FROM BSE.T_BAS_INSTATION_MSG T
+		<where>
+			 <include refid="queryWhereByEntity"/>
+		</where> 
+	</select>
+	<!-- 根据站内信实体查询出所有站内消息数据总条数  -->
+	<select id="countQueryInstationMsgByEntity" resultType="Long" parameterType="com.deppon.foss.module.base.common.api.shared.dto.MessagesDto">
+	   SELECT/** 综合:根据站内信实体查询出所有站内消息数据总条数 **/ COUNT(1)
+		FROM BSE.T_BAS_INSTATION_MSG T 
+		<where>
+			 <include refid="queryWhereByEntity"/>
+		</where> 
+	</select>
+	<sql id="queryWhereByCurrentInfo">
+		(
+		   T.RECEIVE_SUB_ORG_CODE IN (#{receiveSubOrgCode,jdbcType=VARCHAR},#{systemConstant,jdbcType=VARCHAR})
+		 )
+		AND T.MSG_TYPE IN (#{msgType_allNet,jdbcType=VARCHAR},#{msgType_normal,jdbcType=VARCHAR})
+		AND T.ACTIVE = #{active,jdbcType=VARCHAR}
+		AND T.IS_READED = #{isReaded,jdbcType=VARCHAR} 
+	</sql>
+	<!-- 根据当前登录用户查询站内消数据  -->
+	<select id="queryInstationMsgByReceiveUserCode" resultMap="BaseResultMap" parameterType="java.util.Map">
+		SELECT 
+		/** 综合:根据当前登录用户查询站内消数据 **/
+			<include refid="select_param" />
+		FROM BSE.T_BAS_INSTATION_MSG T 
+		<where>
+			<include refid="queryWhereByCurrentInfo"/>		
+		</where>
+	</select>
+	<!-- 根据当前登录用户查询站内消数据 总条数  -->
+	<select id="countQueryInstationMsgByReceiveUserCode" resultType="Long" parameterType="java.util.Map">
+	   SELECT/** 综合:根据当前登录用户查询站内消数据 总条数 **/ COUNT(1)
+		FROM BSE.T_BAS_INSTATION_MSG T 
+		<where>
+			<include refid="queryWhereByCurrentInfo"/>		
+		</where>
+	</select>
+	
+  <!-- 新增人员对人员发的站内消息 -->
+  <insert id="insertInstationMsg" parameterType="com.deppon.foss.module.base.common.api.shared.domain.InstationMsgEntity" >
+    INSERT/** 综合:新增人员对人员发的站内消息 **/ INTO BSE.T_BAS_INSTATION_MSG(
+    	ID,
+		SEND_USER_CODE, 
+		SEND_USER_NAME, 
+		SEND_ORG_CODE,
+		SEND_ORG_NAME,
+		RECEIVE_USER_CODE,
+		RECEIVE_USER_NAME, 
+		CONTEXT, 
+		MSG_TYPE, 
+		ACTIVE, 
+		CREATE_TYPE, 
+	   	IS_READED, 
+	   	CREATE_TIME,
+	   	EXPIRE_TIME,
+	   	
+	   	RECEIVE_ORG_CODE,
+	   	RECEIVE_ORG_NAME,
+	   	RECEIVE_SUB_ORG_CODE,
+	   	RECEIVE_SUB_ORG_NAME,
+	   	RECEIVE_ROLE_CODE,
+	   	RECEIVE_TYPE,
+	   	STATUS, 
+	   	SERIAL_NUMBER
+     )
+    VALUES
+    (
+    	#{id,jdbcType=VARCHAR}, 
+    	#{sendUserCode,jdbcType=VARCHAR}, 
+    	#{sendUserName,jdbcType=VARCHAR}, 
+    	#{sendOrgCode,jdbcType=VARCHAR}, 
+    	#{sendOrgName,jdbcType=VARCHAR}, 
+    	#{receiveUserCode,jdbcType=VARCHAR}, 
+    	#{receiveUserName,jdbcType=VARCHAR}, 
+      	#{context,jdbcType=VARCHAR}, 
+      	#{msgType,jdbcType=VARCHAR},
+      	#{active,jdbcType=VARCHAR}, 
+    	#{createType,jdbcType=VARCHAR}, 
+    	#{isReaded,jdbcType=VARCHAR}, 
+      	#{createTime,jdbcType=TIMESTAMP},
+      	#{expireTime,jdbcType=TIMESTAMP},
+      	
+      	#{receiveOrgCode,jdbcType=VARCHAR}, 
+    	#{receiveOrgName,jdbcType=VARCHAR}, 
+    	#{receiveSubOrgCode,jdbcType=VARCHAR}, 
+    	#{receiveSubOrgName,jdbcType=VARCHAR}, 
+    	#{receiveRoleCode,jdbcType=VARCHAR}, 
+    	#{receiveType,jdbcType=VARCHAR},
+    	#{status,jdbcType=VARCHAR},
+      	#{serialNumber,jdbcType=VARCHAR}  
+     )
+  </insert>
+  
+   <!-- 更新站内消息的读取状态 -->
+  <update id="updateInstationMsg" parameterType="java.util.Map" >
+    UPDATE/** 综合:更新站内消息的读取状态 **/ BSE.T_BAS_INSTATION_MSG T SET 
+    	T.IS_READED=#{isReaded_R,jdbcType=VARCHAR},
+    	T.MODIFY_TIME=#{modifyTime,jdbcType=TIMESTAMP},
+        T.MODIFY_USER_CODE=#{modifyUserCode,jdbcType=VARCHAR},
+        T.MODIFY_USER_NAME=#{modifyUserName,jdbcType=VARCHAR} 
+    WHERE T.ACTIVE=#{active,jdbcType=VARCHAR}
+      AND T.IS_READED=#{isReaded_N,jdbcType=VARCHAR} 
+      AND T.SERIAL_NUMBER IN 
+      <foreach collection="ids"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+	  </foreach>
+  </update>
+  
+   <!-- 批量新增站内消息 -->
+  <!-- <insert id="batchSaveInstationMsg" parameterType="com.deppon.foss.module.base.common.api.shared.domain.InstationMsgEntity" >
+  	BEGIN
+  	/** 综合:批量新增站内消息**/
+  		<foreach  collection="list" item="item"  separator=";">
+		    INSERT INTO BSE.T_BAS_INSTATION_MSG(
+		    	ID,
+				SEND_USER_CODE, 
+				SEND_USER_NAME, 
+				SEND_ORG_CODE,
+				SEND_ORG_NAME,
+				RECEIVE_USER_CODE,
+				RECEIVE_USER_NAME, 
+				CONTEXT, 
+				MSG_TYPE, 
+				ACTIVE, 
+				CREATE_TYPE, 
+			   	IS_READED, 
+			   	CREATE_TIME,
+			   	EXPIRE_TIME
+		     )
+		    VALUES
+		    (
+		    	#{item.id,jdbcType=VARCHAR}, 
+		    	#{item.sendUserCode,jdbcType=VARCHAR}, 
+		    	#{item.sendUserName,jdbcType=VARCHAR}, 
+		    	#{item.sendOrgCode,jdbcType=VARCHAR}, 
+		    	#{item.sendOrgName,jdbcType=VARCHAR}, 
+		    	#{item.receiveUserCode,jdbcType=VARCHAR}, 
+		    	#{item.receiveUserName,jdbcType=VARCHAR}, 
+		      	#{item.context,jdbcType=VARCHAR}, 
+		      	#{item.msgType,jdbcType=VARCHAR},
+		      	#{item.active,jdbcType=VARCHAR}, 
+		    	#{item.createType,jdbcType=VARCHAR}, 
+		    	#{item.isReaded,jdbcType=VARCHAR}, 
+		      	#{item.createTime,jdbcType=TIMESTAMP},
+		      	#{item.expireTime,jdbcType=TIMESTAMP} 
+		     )
+	   </foreach>
+     ;END;
+  </insert> -->
+  
+    <!-- 统计未处理消息  -->
+	<select id="queryInstationMsgTotal" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.base.common.api.shared.dto.MessagesDto" >
+		<![CDATA[
+			SELECT/** 综合:统计未处理消息**/ MSG_TYPE,
+				   NO_DEAL_NUM
+		    FROM 
+			(
+				SELECT T.MSG_TYPE,
+				       COUNT(*) NO_DEAL_NUM 
+				FROM BSE.T_BAS_INSTATION_MSG T
+				WHERE T.ACTIVE =#{active,jdbcType=VARCHAR} 
+				  AND T.RECEIVE_SUB_ORG_CODE IN (#{receiveSubOrgCode,jdbcType=VARCHAR},#{systemConstant,jdbcType=VARCHAR})
+				  AND T.IS_READED = #{isReaded,jdbcType=VARCHAR} 
+				  AND T.MSG_TYPE=#{msgType,jdbcType=VARCHAR}
+				  ]]>  
+				  <if test="msgType == msgType_allNet ">
+					<![CDATA[ AND sysdate <= T.EXPIRE_TIME ]]>  
+				</if>
+				<![CDATA[ 
+				GROUP BY T.MSG_TYPE 
+			) 
+			  WHERE ROWNUM   < #{rowNum,jdbcType=NUMERIC}
+		]]>  
+	</select>
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		 AND T.RECEIVE_SUB_ORG_CODE IN (#{receiveSubOrgCode,jdbcType=VARCHAR},#{systemConstant,jdbcType=VARCHAR})
+		 AND T.IS_READED = #{isReaded,jdbcType=VARCHAR}
+		 AND T.MSG_TYPE = #{msgType,jdbcType=VARCHAR}
+		<if test="msgType == msgType_allNet ">
+			<![CDATA[ AND sysdate <= T.EXPIRE_TIME ]]>  
+		</if>
+	</sql>
+	<!-- 查询同类型消息数据  -->
+	<select id="queryMsgByMsgType" resultMap="BaseResultMap" parameterType="java.util.Map">
+		SELECT 
+		/** 综合:查询同类型消息数据**/
+			<include refid="select_param" />
+		FROM BSE.T_BAS_INSTATION_MSG T 
+		WHERE T.ACTIVE = #{active,jdbcType=VARCHAR}
+		<include refid="queryWhere"/>
+	</select>
+	<!-- 根据当前登录用户查询站内消数据 总条数  -->
+	<select id="countQueryMsgByMsgType" resultType="Long" parameterType="java.util.Map">
+	   SELECT/** 综合:根据当前登录用户查询站内消数据 总条数**/ COUNT(1)
+		FROM BSE.T_BAS_INSTATION_MSG T 
+		WHERE T.ACTIVE = #{active,jdbcType=VARCHAR}
+		<include refid="queryWhere"/>
+	</select>
+	
+	<select id="queryFailingInvoiceMsgTotal" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.base.common.api.shared.dto.MessagesDto" >
+		<![CDATA[
+			SELECT/** 综合:统计未处理消息**/ MSG_TYPE,
+				   NO_DEAL_NUM
+		    FROM 
+			(
+				SELECT T.MSG_TYPE,
+				       COUNT(*) NO_DEAL_NUM 
+				FROM BSE.T_BAS_INSTATION_MSG T
+				WHERE T.ACTIVE =#{active,jdbcType=VARCHAR} 
+				  AND T.SEND_ORG_CODE IN (#{currentDeptCode,jdbcType=VARCHAR})
+				  AND T.MSG_TYPE=#{msgType,jdbcType=VARCHAR}
+				  AND T.IS_READED = #{isReaded,jdbcType=VARCHAR}
+				GROUP BY T.MSG_TYPE 
+			)
+		]]>  
+	</select>
+
+	<select id="queryUnReconciliationMsgTotal" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.base.common.api.shared.dto.MessagesDto" >
+		<![CDATA[
+				SELECT 
+				/** 综合:统计未处理消息**/
+				T.MSG_TYPE MSG_TYPE,
+				       T.CONTEXT NO_DEAL_NUM
+				FROM BSE.T_BAS_INSTATION_MSG T
+				WHERE T.ACTIVE =#{active,jdbcType=VARCHAR} 
+				  AND T.SEND_ORG_CODE IN (#{currentDeptCode,jdbcType=VARCHAR})
+				  AND T.MSG_TYPE=#{msgType,jdbcType=VARCHAR}
+		]]>  
+	</select>
+	
+	<select id="queryNoRepaymentMsgTotal" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.base.common.api.shared.dto.MessagesDto" >
+		<![CDATA[
+				SELECT /** 综合:统计未处理消息**/
+				T.MSG_TYPE MSG_TYPE,
+				       T.CONTEXT NO_DEAL_NUM
+				FROM BSE.T_BAS_INSTATION_MSG T
+				WHERE T.ACTIVE =#{active,jdbcType=VARCHAR} 
+				  AND T.SEND_ORG_CODE IN (#{currentDeptCode,jdbcType=VARCHAR})
+				  AND T.MSG_TYPE=#{msgType,jdbcType=VARCHAR}
+		]]>  
+	</select>
+</mapper>

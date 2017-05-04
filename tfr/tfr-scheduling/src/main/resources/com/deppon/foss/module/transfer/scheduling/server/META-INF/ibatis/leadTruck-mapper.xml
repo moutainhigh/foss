@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="Foss.scheduling.LeadTruck" >
+	<!--排班表结果集-->
+	<resultMap id="LeadTruckEntityResultMap" type="com.deppon.foss.module.transfer.scheduling.api.shared.domain.LeadTruckEntity" >
+		<result column="ID" property="id"/>
+		<result column="INQUIRY_TIME" property="inquiryTimeDate"  />
+		<result column="ORIG_ORG_CODE" property="origOrgCode"  />
+		<result column="ORIG_ORG_NAME" property="origOrgName"  />
+		<result column="DEST_ORG_CODE" property="destOrgCode" />
+		<result column="DEST_ORG_NAME" property="destOrgName"  />
+		<result column="IS_CONTRACT_TRUCK" property="isContractTruck"  />
+		<result column="VEHICLE_LENGTH" property="vehicleLength"  />
+		<result column="VEHICLE_LENGTH_NAME" property="vehicleLengthName"  />
+		<result column="CONTAINER_STRUCTURE" property="containerStructure" />
+		<result column="FEE" property="fee"  />
+		<result column="DEAD_LOAD" property="deadLoad"  />
+		<result column="SELF_VOLUMN" property="selfVolumn"  />
+		<result column="SOURCES_OF_INFORMATION" property="sourceOfInformation"/>
+		<result column="TELE" property="tele"  />
+		<result column="NOTES" property="notes" />
+		<result column="CREATE_USER_CODE" property="createUserCode"  />
+		<result column="CREATE_USER_NAME" property="createUserName" />
+		<result column="CREATE_TIME" property="createTime" />
+		<result column="UPDATE_TIME" property="updateTime"  />
+	</resultMap>
+	<!-- 查询临时任务 -->
+	<select id="queryLeadTruckGrid" resultMap="LeadTruckEntityResultMap">
+	select 
+	   ID,
+	   INQUIRY_TIME,
+       ORIG_ORG_CODE,
+       ORIG_ORG_NAME,
+       DEST_ORG_CODE,
+       DEST_ORG_NAME,
+       IS_CONTRACT_TRUCK,
+       VEHICLE_LENGTH,
+       VEHICLE_LENGTH_NAME,
+       CONTAINER_STRUCTURE,
+       FEE,
+       DEAD_LOAD,
+       SELF_VOLUMN,
+       SOURCES_OF_INFORMATION,
+       TELE,
+       NOTES,
+       CREATE_USER_CODE,
+       CREATE_USER_NAME,
+       CREATE_TIME,
+       UPDATE_TIME
+  from tfr.T_OPT_LEASED_TRUCK_INQUIRY
+  <include refid="select_Where" />
+	</select>
+	
+	<!-- 查询临时任务 -->
+	<select id="getCount" resultType="Long">
+	select 
+	  count(1)
+  from tfr.T_OPT_LEASED_TRUCK_INQUIRY
+  <include refid="select_Where" />
+	</select>
+	
+	<sql id="select_Where">
+		<where>
+			<!-- 时间类型是出发时间 -->
+			    <if test="startTime!=null">
+				<![CDATA[
+			       AND CREATE_TIME>=#{startTime}
+				]]>
+			    </if>
+			    <if test="endTime!=null">
+			    <![CDATA[
+			       AND CREATE_TIME<=#{endTime}
+			       ]]>
+			    </if>
+			<!-- 出发部门-->
+			<if test="origOrgCode!=null and origOrgCode!='' ">
+				AND ORIG_ORG_CODE = #{origOrgCode}
+			</if>
+			<!-- 到达情况-->
+			<if test="destOrgCode!=null and destOrgCode!='' ">
+				AND DEST_ORG_CODE = #{destOrgCode}
+			</if>
+			<if test="ids!=null">
+				AND id IN
+				<foreach collection="ids" open="(" close=")"
+					separator="," index="index" item="item">
+					#{item}
+				</foreach>
+			</if>
+		</where>
+	</sql>
+	
+	<!-- 新增  -->
+	<insert id="addLeadTruck" parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.LeadTruckEntity">
+		INSERT INTO TFR.T_OPT_LEASED_TRUCK_INQUIRY(
+						   ID,
+						   INQUIRY_TIME,
+					       ORIG_ORG_CODE,
+					       ORIG_ORG_NAME,
+					       DEST_ORG_CODE,
+					       DEST_ORG_NAME,
+					       IS_CONTRACT_TRUCK,
+					       VEHICLE_LENGTH,
+					       CONTAINER_STRUCTURE,
+					       FEE,
+					       DEAD_LOAD,
+					       SELF_VOLUMN,
+					       SOURCES_OF_INFORMATION,
+					       TELE,
+					       NOTES,
+					       CREATE_USER_CODE,
+					       CREATE_USER_NAME,
+					       CREATE_TIME,
+					       UPDATE_TIME,
+					       VEHICLE_LENGTH_NAME
+						)
+		VALUES(
+						   #{id,jdbcType=VARCHAR},
+						   #{inquiryTimeDate,jdbcType=TIMESTAMP},
+					       #{origOrgCode,jdbcType=VARCHAR},
+					       #{origOrgName,jdbcType=VARCHAR},
+					       #{destOrgCode,jdbcType=VARCHAR},
+					       #{destOrgName,jdbcType=VARCHAR},
+					       #{isContractTruck,jdbcType=VARCHAR},
+					       #{vehicleLength,jdbcType=NUMERIC},
+					       #{containerStructure,jdbcType=VARCHAR},
+					       #{fee,jdbcType=NUMERIC},
+					       #{deadLoad,jdbcType=NUMERIC},
+					       #{selfVolumn,jdbcType=NUMERIC},
+					       #{sourceOfInformation,jdbcType=VARCHAR},
+					       #{tele,jdbcType=VARCHAR},
+					       #{notes,jdbcType=VARCHAR},
+					       #{createUserCode,jdbcType=VARCHAR},
+					       #{createUserName,jdbcType=VARCHAR},
+					       #{createTime,jdbcType=TIMESTAMP},
+					       #{updateTime,jdbcType=TIMESTAMP},
+					       #{vehicleLengthName,jdbcType=VARCHAR}
+						
+			   )
+	</insert>
+	
+	<update id="updateLeadTruck" parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.LeadTruckEntity">
+		UPDATE TFR.T_OPT_LEASED_TRUCK_INQUIRY
+				set    
+				   INQUIRY_TIME = #{inquiryTimeDate,jdbcType=TIMESTAMP},
+				   ORIG_ORG_CODE = #{origOrgCode,jdbcType=VARCHAR},
+				   ORIG_ORG_NAME =  #{origOrgName,jdbcType=VARCHAR},
+			       DEST_ORG_CODE =  #{destOrgCode,jdbcType=VARCHAR},
+			       DEST_ORG_NAME = #{destOrgName,jdbcType=VARCHAR},
+			       IS_CONTRACT_TRUCK = #{isContractTruck,jdbcType=VARCHAR},
+			       VEHICLE_LENGTH =  #{vehicleLength,jdbcType=NUMERIC},
+			       VEHICLE_LENGTH_NAME =  #{vehicleLengthName,jdbcType=VARCHAR},
+			       CONTAINER_STRUCTURE = #{containerStructure,jdbcType=VARCHAR},
+			       FEE = #{fee,jdbcType=NUMERIC},
+			       DEAD_LOAD =  #{deadLoad,jdbcType=NUMERIC},
+			       SELF_VOLUMN = #{selfVolumn,jdbcType=VARCHAR},
+			       SOURCES_OF_INFORMATION = #{sourceOfInformation,jdbcType=VARCHAR},
+			       TELE =  #{tele,jdbcType=VARCHAR},
+			       NOTES = #{notes,jdbcType=VARCHAR},
+			       UPDATE_TIME =  #{updateTime,jdbcType=TIMESTAMP}
+			    where id = #{id,jdbcType=VARCHAR}
+	</update>
+	
+</mapper>

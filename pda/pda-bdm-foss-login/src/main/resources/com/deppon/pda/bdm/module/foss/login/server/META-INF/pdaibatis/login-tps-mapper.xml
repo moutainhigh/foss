@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="com.deppon.pda.bdm.module.foss.login.server.dao.impl.DeviceBundleDao">
+
+	<resultMap id="BaseResultMap"
+		type="com.deppon.pda.bdm.module.foss.login.shared.domain.DeviceBundleEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<id column="DVCCODE" property="dvcCode" jdbcType="VARCHAR" />
+		<id column="TRUCKCODE" property="truckCode" jdbcType="VARCHAR" />
+		<id column="TOPFLEET" property="topFleet" jdbcType="VARCHAR" />
+		<id column="STATUS" property="status" jdbcType="VARCHAR" />
+		<id column="USERCODE" property="userCode" jdbcType="VARCHAR" />
+		<id column="USERNAME" property="userName" jdbcType="VARCHAR" />
+		<id column="SYSTEMTYPE" property="systemType" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 根据车牌号设备号查询绑定信息 -->
+	<select id="queryDeviceBundleMsg" parameterType="java.util.Map"
+		resultMap="BaseResultMap">
+    	<![CDATA[
+    	SELECT	 
+ 		    DVCCODE,
+            TRUCKCODE,
+            TOPFLEET,
+            STATUS,
+            USERCODE,
+            USERNAME,
+            SYSTEMTYPE 
+            FROM t_pda_TPSdevice
+            WHERE     
+            (TRUCKCODE=#{truckCode,jdbcType=VARCHAR} or DVCCODE=#{devCode,jdbcType=VARCHAR}) and status='Y' 
+    	]]>
+	</select>
+
+	<!-- 首次登陆系统自动将车车牌号与设备号绑定 -->
+	<insert id="boundDvcTruck"
+		parameterType="com.deppon.pda.bdm.module.foss.login.shared.domain.DeviceBundleEntity">
+		insert into
+		t_pda_TPSdevice(id,dvcCode,truckCode,topFleet,status,bindTime,systemType)
+		values(#{id},#{dvcCode},#{truckCode},#{topFleet},#{status},sysdate,#{systemType})
+	</insert>
+
+	<!-- 根据车队号码查询顶级车队名称 -->
+	<select id="findtopFleet" parameterType="string" resultType="string">
+		select deptname from t_svr_dept d where d.deptcode=#{orgCode} and
+		operflag=1
+	</select>
+
+</mapper>

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.pda.bdm.module.foss.upgrade.server.dao.impl.LadingStationDataVerGenDao">
+	<!-- 提货网点 -->
+	<select id="queryLocalDatas" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.LadingStationEntity">
+		<![CDATA[
+			SELECT 
+				ID                AS id,
+       			DEPTCODE          AS deptCode,
+       			FINALOUTFIELDCODE AS finalOutField,
+       			PICKAREA          AS pickArea,
+       			DELIVERARE        AS deliverAre,
+       			ISPICKUP          AS isPickup,
+       			ISDELIVERY        AS isDelivery,
+       			OPERFLAG          AS operFlag,
+       			' '	  AS salesDepartment,
+			  	' '	      AS signBill,
+			  	' '	  AS pickupToDoor,
+			  	' '	      AS delivery,
+			  	' '		  AS pickupself,
+			  	' '	  AS deliverAreadesc,
+			  	' '    AS pickupAreadesc
+			FROM T_BASE_LADINGSTATION
+			WHERE 
+			SALESDEPARTMENT = 'N'
+			AND OPERFLAG  = '1'
+		]]>
+		<if test="startTime != null and startTime != ''  ">
+			<![CDATA[ AND UPDTIME > #{startTime,jdbcType=TIMESTAMP}]]>
+		</if>
+		<if test="endTime != null and endTime != '' ">
+			<![CDATA[ AND UPDTIME <= #{endTime,jdbcType=TIMESTAMP}]]>
+		</if>
+	</select>
+	
+	<select id="queryLocalDatasByDel" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.LadingStationEntity">
+		<![CDATA[
+			SELECT 
+				ID AS id
+			FROM T_BASE_LADINGSTATION
+			WHERE 
+			SALESDEPARTMENT = 'N'
+			AND OPERFLAG = '3'
+			AND UPDTIME > #{startTime,jdbcType=TIMESTAMP}
+			AND UPDTIME <= #{endTime,jdbcType=TIMESTAMP}
+		]]>
+	</select>
+	
+	<select id="queryLocalIncDataList" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="int">
+		<![CDATA[
+			SELECT COUNT(*) FROM T_BASE_LADINGSTATION 
+		]]>
+		<where>
+			<if test="startTime != null and startTime != ''  ">
+				<![CDATA[ UPDTIME >= #{startTime,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="endTime != null and endTime != '' ">
+				<![CDATA[ AND UPDTIME < #{endTime,jdbcType=TIMESTAMP}]]>
+			</if>
+		</where>
+	</select>
+</mapper>

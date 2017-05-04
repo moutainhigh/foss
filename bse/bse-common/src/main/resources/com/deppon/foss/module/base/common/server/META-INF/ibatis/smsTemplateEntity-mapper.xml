@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-common.smstemplate">
+
+	<!-- 短信模板 -->
+	<resultMap id="smsTemplateResultMap"
+		type="com.deppon.foss.module.base.common.api.shared.domain.SMSTemplateEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="SMS_CODE" property="smsCode" jdbcType="VARCHAR" />
+		<result column="SMS_NAME" property="smsName" jdbcType="VARCHAR" />
+		<result column="SUB_SYSTEM" property="subSystem" jdbcType="VARCHAR" />
+		<result column="SUB_SYSTEM_MODULE" property="subSystemModule"
+			jdbcType="VARCHAR" />
+		<result column="CONTENT" property="content" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+		<result column="VIRTUAL_CODE" property="virtualCode" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 数据字段 -->
+	<sql id="smsTemplate_Column_List">
+		ID, SMS_CODE, SMS_NAME, SUB_SYSTEM, SUB_SYSTEM_MODULE,
+		CONTENT,
+		CREATE_TIME, MODIFY_TIME,
+		ACTIVE, CREATE_USER_CODE,
+		MODIFY_USER_CODE, VIRTUAL_CODE
+	</sql>
+
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<!--
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			-->
+			<if test="smsCode != null and smsCode != ''">
+				and SMS_CODE like
+				CONCAT(CONCAT('%',#{smsCode,jdbcType=VARCHAR}),'%')
+			</if>
+			<if test="smsName != null and smsName != ''">
+				and SMS_NAME like
+				CONCAT(CONCAT('%',#{smsName,jdbcType=VARCHAR}),'%')
+			</if>
+			<if test="subSystem != null and subSystem != ''">
+				and SUB_SYSTEM = #{subSystem,jdbcType=VARCHAR}
+			</if>
+			<if test="subSystemModule != null and subSystemModule != ''">
+				and SUB_SYSTEM_MODULE =
+				#{subSystemModule,jdbcType=VARCHAR}
+			</if>
+		</where>
+
+	</sql>
+
+	<!-- 查询短信模板信息 -->
+	<select id="getAllInfos"
+		parameterType="com.deppon.foss.module.base.common.api.shared.domain.SMSTemplateEntity"
+		resultMap="smsTemplateResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询短信模板信息 **/
+		]]>
+		<include refid="smsTemplate_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_SMS_TEMPLATE T
+		]]>
+		<include refid="queryWhere" />
+	</select>
+
+	<!-- 统计总记录数 -->
+	<select id="getCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.common.api.shared.domain.SMSTemplateEntity">
+	    <![CDATA[
+	       	select/** 综合:统计总记录数 **/ count(*) from BSE.T_BAS_SMS_TEMPLATE T
+	    ]]>
+		<include refid="queryWhere" />
+
+	</select>
+
+	<!-- 根据短信模板编码查询短信模板 -->
+	<select id="querySmsBySmsCode" parameterType="map"
+		resultMap="smsTemplateResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据短信模板编码查询短信模板 **/
+		]]>
+		<include refid="smsTemplate_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_SMS_TEMPLATE T
+		]]>
+		<where>
+		    <if test="smsCode != null and smsCode != ''">
+		     SMS_CODE = #{smsCode,jdbcType=VARCHAR}
+		    </if>
+		    <if test="active != null and active != ''">
+		     AND ACTIVE = #{active,jdbcType=CHAR}
+		    </if>
+		    <if test="smsId != null and smsId != ''">
+		     AND ID != #{smsId,jdbcType=CHAR}
+		    </if>
+		
+		</where>
+	</select>
+	
+	<!-- 根据虚拟编码查询短信模板 -->
+	<select id="querySmsByVirtualCode" parameterType="map"
+		resultMap="smsTemplateResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据虚拟编码查询短信模板 **/
+		]]>
+		<include refid="smsTemplate_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_SMS_TEMPLATE T
+		]]>
+		<where>
+		    <if test="virtualCode != null and virtualCode != ''">
+		     VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR}
+		    </if>
+		    <if test="active != null and active != ''">
+		     AND ACTIVE = #{active,jdbcType=CHAR}
+		    </if>
+		</where>
+	</select>
+	
+	<!-- 验证短信模板名称是否唯一 -->
+	<select id="querySmsTemplateByName" parameterType="map"
+		resultMap="smsTemplateResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:验证短信模板名称是否唯一 **/
+		]]>
+		<include refid="smsTemplate_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_SMS_TEMPLATE T
+		]]>
+		<where>
+		    <if test="smsName != null and smsName != ''">
+		     SMS_NAME = #{smsName,jdbcType=VARCHAR}
+		    </if>
+		    <if test="active != null and active != ''">
+		     AND ACTIVE = #{active,jdbcType=CHAR}
+		    </if>
+		    <if test="smsId != null and smsId != ''">
+		     AND ID != #{smsId,jdbcType=CHAR}
+		    </if>
+		
+		</where>
+	</select>
+
+	<!-- 新增信息 -->
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.base.common.api.shared.domain.SMSTemplateEntity">
+		
+		<![CDATA[
+			INSERT/** 综合:新增信息 **/ INTO BSE.T_BAS_SMS_TEMPLATE T	(
+		]]>
+		<include refid="smsTemplate_Column_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, #{smsCode,jdbcType=VARCHAR},
+		#{smsName,jdbcType=VARCHAR},
+		#{subSystem,jdbcType=VARCHAR},
+		#{subSystemModule,jdbcType=VARCHAR}, #{content,jdbcType=VARCHAR},
+		#{createDate,jdbcType=TIMESTAMP}, #{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=CHAR},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR}, #{virtualCode,jdbcType=VARCHAR}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+
+	<!-- 修改信息 -->
+	<update id="update"
+		parameterType="com.deppon.foss.module.base.common.api.shared.domain.SMSTemplateEntity">
+		update/** 综合:修改信息 **/ BSE.T_BAS_SMS_TEMPLATE
+		<set>
+			<if test="smsCode != null">
+				SMS_CODE = #{smsCode,jdbcType=VARCHAR},
+			</if>
+			<if test="smsName != null">
+				SMS_NAME = #{smsName,jdbcType=VARCHAR},
+			</if>
+			<if test="subSystem != null">
+				SUB_SYSTEM = #{subSystem,jdbcType=VARCHAR},
+			</if>
+			<if test="subSystemModule != null">
+				SUB_SYSTEM_MODULE = #{subSystemModule,jdbcType=VARCHAR},
+			</if>
+			<if test="content != null">
+				CONTENT = #{content,jdbcType=VARCHAR},
+			</if>
+			<!-- <if test="createDate != null"> CREATE_TIME = #{createDate,jdbcType=TIMESTAMP}, 
+				</if> -->
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="active != null">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<!-- <if test="createUser != null"> CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR}, 
+				</if> -->
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+		</set>
+
+		<where>
+			<if test="virtualCode != null">
+				VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR}
+			</if>
+		</where>
+
+	</update>
+
+	<!-- 作废信息 -->
+	<update id="deleteByCode" parameterType="map">
+		update/** 综合:作废信息 **/ BSE.T_BAS_SMS_TEMPLATE
+
+		<set>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				MODIFY_USER_CODE = #{modifyUser, jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+
+		</set>
+
+		<where>
+			<if test="codes!=null and codes.length > 0">
+				VIRTUAL_CODE in
+				<foreach collection="codes" index="index" item="code" open="("
+					separator="," close=")">
+					#{code}
+				</foreach>
+			</if>
+		</where>
+	</update>
+
+</mapper>

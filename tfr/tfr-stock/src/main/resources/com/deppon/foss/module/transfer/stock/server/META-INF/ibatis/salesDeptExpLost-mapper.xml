@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="com.deppon.foss.module.transfer.stock.api.server.dao.ISalesDeptExpLostDao">
+
+	<select id="truncateStock0amSnapshot" statementType="CALLABLE">
+		{CALL tfr.pro_trunc_stock_0am_snapshot}
+	</select>	
+
+	<insert id="saveStock0amSnapshot" parameterType="java.util.Date">
+	<![CDATA[
+	INSERT INTO tfr.t_opt_stock_0am_snapshot
+	  SELECT t.id,
+	         d.code,
+	         d.name,
+	         t.waybill_no,
+	         t.serial_no,
+	         w.product_code,
+	         #{date,jdbcType=TIMESTAMP},
+	         MAX(s.in_stock_time),
+	         CASE
+	           WHEN CAST(#{date,jdbcType=TIMESTAMP} AS DATE) -
+	                CAST(MAX(s.in_stock_time) AS DATE) <= 1 THEN
+	            '24H'
+	           WHEN (CAST(#{date,jdbcType=TIMESTAMP} AS DATE) -
+	                CAST(MAX(s.in_stock_time) AS DATE) > 1 AND
+	                CAST(#{date,jdbcType=TIMESTAMP} AS DATE) -
+	                CAST(MAX(s.in_stock_time) AS DATE) <= 2) THEN
+	            '48H'
+	           ELSE
+	            '72H'
+	         END
+	    FROM tfr.t_opt_stock t
+	   INNER JOIN pkp.t_srv_waybill w
+	      ON w.waybill_no = t.waybill_no
+	     AND w.product_code IN ('PACKAGE', 'RCP','EPEP')
+	     AND w.active = 'Y'
+	   INNER JOIN bse.t_bas_sales_department d
+	      ON d.code = t.org_code
+	     AND d.active = 'Y'
+	   INNER JOIN tfr.t_opt_in_stock s
+	      ON t.waybill_no = s.waybill_no
+	     AND t.serial_no = s.serial_no
+	     AND t.org_code = s.org_code
+	      where t.goods_area_code <> 'OPERATED_RETURN_CODE'
+	   GROUP BY t.id, d.code, d.name, t.waybill_no, t.serial_no, w.product_code
+	   ]]>
+	</insert>
+	
+	<select id="queryStockOrgCodes" parameterType="java.util.Map" resultType="java.lang.String">
+	SELECT t.org_code
+	  FROM tfr.t_opt_stock_0am_snapshot t
+	 WHERE ORA_HASH(t.org_code, #{threadCount,jdbcType=NUMERIC}) = #{threadNo,jdbcType=NUMERIC}
+	 GROUP BY t.org_code
+	</select>
+	
+	<insert id="insertSalesDeptExpLost2His" parameterType="java.lang.String">
+	INSERT INTO tfr.t_opt_sales_dept_exp_lost_his
+	  SELECT * FROM tfr.t_opt_sales_dept_exp_lost t
+	    WHERE t.org_code = #{orgCode,jdbcType=VARCHAR}
+	</insert>
+	
+	<delete id="deleteSalesDeptExpLost" parameterType="java.lang.String">
+	DELETE FROM tfr.t_opt_sales_dept_exp_lost t WHERE t.org_code = #{orgCode,jdbcType=VARCHAR}
+	</delete>
+	
+	<sql id="sql_query_st">
+		SELECT l.waybill_no, l.serial_no
+		  FROM tfr.t_opt_st_task t
+		 INNER JOIN tfr.t_opt_st_result_list l
+		    ON l.st_task_id = t.id
+		 WHERE t.task_status IN ('DONE', 'DOING')
+		   AND l.goods_status IN ('SURPLUS', 'OK')
+		   AND t.deptcode = #{orgCode,jdbcType=VARCHAR}
+		   AND t.createtime BETWEEN #{beginTime,jdbcType=TIMESTAMP} AND #{endTime,jdbcType=TIMESTAMP}
+	</sql>
+	
+	<sql id="sql_query_sign">
+		SELECT a.waybill_no, sd.serial_no
+		  FROM pkp.t_srv_arrivesheet a
+		 INNER JOIN pkp.t_srv_sign_detail sd
+		    ON a.arrivesheet_no = sd.arrivesheet_no
+		 WHERE a.active = 'Y'
+		   AND a.destroyed = 'N'
+		   AND a.status = 'SIGN'
+		   AND a.operate_org_code = #{orgCode,jdbcType=VARCHAR}
+		   AND a.sign_time BETWEEN #{beginTime,jdbcType=TIMESTAMP} AND #{endTime,jdbcType=TIMESTAMP}
+	</sql>
+	
+	<sql id="sql_query_deliver_load">
+		SELECT wd.waybill_no, s.serial_no
+		  FROM tfr.t_opt_load_task t
+		 INNER JOIN tfr.t_opt_load_waybill_detail wd
+		    ON wd.load_task_id = t.id
+		 INNER JOIN tfr.t_opt_load_serialno s
+		    ON s.load_waybill_detail_id = wd.id
+		 WHERE t.task_type = 'DELIVER_LOAD'
+		 <![CDATA[
+		   AND t.task_state <> 'CANCELED'
+		 ]]>
+		   AND t.orig_org_code = #{orgCode,jdbcType=VARCHAR}
+		   AND t.load_start_time BETWEEN #{beginTime,jdbcType=TIMESTAMP} AND #{endTime,jdbcType=TIMESTAMP}
+	</sql>
+	
+	<sql id="sql_query_goods_back">
+		SELECT a.waybill_no, hs.serailno
+		  FROM pkp.t_srv_arrivesheet a
+		 INNER JOIN pkp.t_srv_stay_handoverdetail hd
+		    ON hd.waybill_no = a.waybill_no
+		   AND hd.deliverbill_no IS NOT NULL
+		 INNER JOIN pkp.t_srv_stay_handoverserial hs
+		    ON hs.t_srv_stay_handoverdetail_id = hd.id
+		 WHERE a.active = 'Y'
+		   AND a.destroyed = 'N'
+		   AND a.status IN ('REFUSE', 'SIGN')
+		   AND a.arrive_sheet_goods_qty > a.sign_goods_qty
+		   AND a.operate_org_code = #{orgCode,jdbcType=VARCHAR}
+		   AND a.sign_time BETWEEN #{beginTime,jdbcType=TIMESTAMP} AND #{endTime,jdbcType=TIMESTAMP}
+	</sql>
+	
+	<sql id="sql_not_exists_caluse">
+	   AND NOT EXISTS
+	 (SELECT 1 from (
+		<include refid="sql_query_st"/>
+	  	UNION ALL
+	  	<include refid="sql_query_sign"/>
+	  	UNION ALL
+	  	<include refid="sql_query_deliver_load"/>
+	  	UNION ALL
+	  	<include refid="sql_query_goods_back"/>
+	  ) tmp
+	  WHERE tmp.waybill_no = r.waybill_no
+        AND tmp.serial_no = r.serial_no)
+	</sql>
+	
+	<insert id="insertReport24H" parameterType="java.util.Map">
+		INSERT INTO tfr.t_opt_sales_dept_exp_lost
+		  SELECT sys_guid(),
+		         r.org_code,
+		         r.org_name,
+		         r.waybill_no,
+		         r.serial_no,
+		         #{status,jdbcType=VARCHAR},
+		         'N',
+		         #{staTime,jdbcType=TIMESTAMP}
+		    FROM tfr.t_opt_stock_0am_snapshot r
+		   WHERE r.org_code = #{orgCode,jdbcType=VARCHAR}
+		    <include refid="sql_not_exists_caluse"/>
+	</insert>
+	
+	<insert id="updateStatus48or72H" parameterType="java.util.Map">
+		UPDATE (SELECT r.status
+		          FROM tfr.t_opt_sales_dept_exp_lost r
+		          JOIN tfr.t_opt_stock_0am_snapshot s
+		            ON r.org_code = s.org_code
+		           AND r.waybill_no = s.waybill_no
+		           AND r.serial_no = s.serial_no
+		           AND r.status = #{beforeStatus,jdbcType=VARCHAR}
+		           AND s.status IN (#{status,jdbcType=VARCHAR}, #{nextStatus,jdbcType=VARCHAR})
+		         WHERE r.org_code = #{orgCode,jdbcType=VARCHAR}
+		           AND s.org_code = #{orgCode,jdbcType=VARCHAR}
+		           <include refid="sql_not_exists_caluse"/>)
+		   SET status = #{status,jdbcType=VARCHAR}
+	</insert>
+	
+	<select id="queryReport"
+		parameterType="com.deppon.foss.module.transfer.stock.api.shared.domain.SalesDeptExpLostEntity"
+		resultType="com.deppon.foss.module.transfer.stock.api.shared.domain.SalesDeptExpLostEntity">
+		SELECT t.id         id,
+		       t.org_code   orgCode,
+		       t.org_name   orgName,
+		       t.waybill_no waybillNo,
+		       t.serial_no  serialNo,
+		       t.status     status,
+		       t.reported   reported,
+		       t.sta_time   staTime
+		  FROM tfr.t_opt_sales_dept_exp_lost t
+		 <where>
+		    <if test="orgCode != null and orgCode != ''">
+		      t.org_code = #{orgCode,jdbcType=VARCHAR}
+		    </if>
+		 	<if test="waybillNo != null and waybillNo != ''">
+		 	  AND t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		 	</if>
+		 	<if test="status != null and status != ''">
+		 	  AND t.status = #{status,jdbcType=VARCHAR}
+		 	</if>
+		 	<if test="reported != null and reported != ''">
+		 	  AND t.reported = #{reported,jdbcType=VARCHAR}
+		 	</if>
+		 </where>
+	</select>
+	
+	<update id="update72hReproted"
+		parameterType="com.deppon.foss.module.transfer.stock.api.shared.domain.SalesDeptExpLostEntity">
+		UPDATE tfr.t_opt_sales_dept_exp_lost t
+		   SET t.reported = #{reported,jdbcType=VARCHAR}
+		 WHERE t.org_code = #{orgCode,jdbcType=VARCHAR}
+		   AND t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		   AND t.status = #{status,jdbcType=VARCHAR}
+	</update>
+	
+	<select id="queryReportWaybillNo"
+		parameterType="com.deppon.foss.module.transfer.stock.api.shared.domain.SalesDeptExpLostEntity"
+		resultType="com.deppon.foss.module.transfer.stock.api.shared.domain.SalesDeptExpLostEntity">
+		SELECT DISTINCT t.org_code   orgCode,
+				        t.org_name   orgName,
+				        t.waybill_no waybillNo,
+				        t.status     status,
+				        t.reported   reported,
+				        t.sta_time   staTime
+		  FROM tfr.t_opt_sales_dept_exp_lost t
+		 WHERE t.org_code = #{orgCode,jdbcType=VARCHAR}
+		 	<if test="waybillNo != null and waybillNo != ''">
+		 	  AND t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		 	</if>
+		 	<if test="status != null and status != ''">
+		 	  AND t.status = #{status,jdbcType=VARCHAR}
+		 	</if>
+		 	<if test="reported != null and reported != ''">
+		 	  AND t.reported = #{reported,jdbcType=VARCHAR}
+		 	</if>
+	</select>
+	
+	<select id="queryReportWaybillNoCnt"
+		parameterType="com.deppon.foss.module.transfer.stock.api.shared.domain.SalesDeptExpLostEntity"
+		resultType="java.lang.Long">
+		SELECT COUNT(1)
+		  FROM (SELECT DISTINCT t.waybill_no
+		          FROM tfr.t_opt_sales_dept_exp_lost t
+		         WHERE t.org_code = #{orgCode,jdbcType=VARCHAR}
+			        <if test="waybillNo != null and waybillNo != ''">
+				 	  AND t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+				 	</if>
+				 	<if test="status != null and status != ''">
+				 	  AND t.status = #{status,jdbcType=VARCHAR}
+				 	</if>
+				 	<if test="reported != null and reported != ''">
+				 	  AND t.reported = #{reported,jdbcType=VARCHAR}
+				 	</if>)
+	</select>
+	
+	<select id="queryReportSerialNo"
+		parameterType="com.deppon.foss.module.transfer.stock.api.shared.domain.SalesDeptExpLostEntity"
+		resultType="com.deppon.foss.module.transfer.stock.api.shared.dto.SalesDeptExpLostWaybillSerialNosDto">
+		SELECT #{waybillNo,jdbcType=VARCHAR} waybillNo,
+		       t.serial_no  serialNo
+		  FROM tfr.t_opt_sales_dept_exp_lost t
+		 WHERE t.org_code = #{orgCode,jdbcType=VARCHAR}
+		   AND t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		   AND t.status = #{status,jdbcType=VARCHAR}
+		 <if test="reported != null and reported != ''">
+		   AND t.reported = #{reported,jdbcType=VARCHAR}
+		 </if>
+	</select>
+	
+	<insert id="insertReportOaLog" 
+		parameterType="com.deppon.foss.module.transfer.stock.api.shared.domain.SalesDeptExpLostOaLogEntity">
+		INSERT INTO tfr.t_opt_sales_dept_lost_oa_log
+		  (id,
+		   org_code,
+		   org_name,
+		   waybill_no,
+		   reported,
+		   sta_time,
+		   oa_error_no,
+		   message,
+		   operate_time)
+		values
+		  (#{id,jdbcType=VARCHAR}, 
+		  #{orgCode,jdbcType=VARCHAR}, 
+		  #{orgName,jdbcType=VARCHAR}, 
+		  #{waybillNo,jdbcType=VARCHAR}, 
+		  #{reported,jdbcType=VARCHAR}, 
+		  #{staTime,jdbcType=TIMESTAMP}, 
+		  #{oaErrorNo,jdbcType=VARCHAR}, 
+		  #{message,jdbcType=VARCHAR}, 
+		  #{operateTime,jdbcType=TIMESTAMP})
+	</insert>
+	
+</mapper>

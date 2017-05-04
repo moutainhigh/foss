@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.pda.bdm.module.core.server.dao.impl.PgmVerDao" >
+    
+	<resultMap id="pgmVerMap" type="com.deppon.pda.bdm.module.core.shared.domain.PgmVerEntity">
+    	<id property="id" column="ID"/>
+    	<result property="pgmVer" column="PGMVER"/>
+    	<result property="pdaModel" column="PDAMODEL"/>
+    	<result property="updateDept" column="UPDATEDEPT"/>
+    	<result property="activeTime" column="ACTIVETIME"/>
+    	<result property="updDate" column="UPDDATE"/>
+    	<result property="userCode" column="USERCODE"/>
+    	<result property="userNm" column="USERNM"/>
+    	<result property="forcFlag" column="FORCFLAG"/>
+    	<result property="remark" column="REMARK"/>
+    </resultMap>
+    
+    <!-- 最后修改时间 -->
+    <select id="getLastModifyTime" resultType="date">
+    	select max(UPDDATE) from t_SVR_version
+    </select>
+	
+	<!-- 通过设备号获取设备实体 -->
+	<select id="getEntityById" resultMap="pgmVerMap" parameterType="string">
+    	SELECT * FROM (
+	    	SELECT
+	    		ID,
+		    	PGMVER,
+		    	PDAMODEL,
+		    	UPDATEDEPT,
+		    	TO_CHAR(ACTIVETIME,'yyyy-mm-dd hh24:mi:ss') as ACTIVETIME,
+		    	UPDDATE,
+		    	USERCODE,
+		    	USERNM,
+		    	FORCFLAG,
+		    	REMARK 	
+	    	FROM t_SVR_version
+	    	WHERE PDAMODEL = #{pdaModel}
+	    	ORDER BY UPDDATE DESC
+	    ) WHERE ROWNUM <![CDATA[<]]>= 1	
+    </select>
+    <!-- 获取最后更新时间大于某个时间的实体 -->
+    <select id="getEntitiesByLastModifyTime" resultMap="pgmVerMap">
+    	SELECT 
+    		ID,
+	    	EMPCODE,
+	    	PASSWORD,
+	    	ISCARRIER,
+	    	ISCLEARER,
+	    	ISADMIN,
+	    	DEPTID,
+	    	USERNAME,
+	    	USERTYPE,
+	    	OPERFLAG,
+	    	UPDDATE,
+	    	ISACTIVE,
+	    	VERSION,
+	    	TO_CHAR(ACTIVETIME,'yyyy-mm-dd hh24:mi:ss') as ACTIVETIME
+    	FROM t_SVR_version
+    	WHERE UPDDATE > #{date}
+    </select>
+    
+    <!-- 通过一个PDA编号集合获取设备实体 -->
+    <select id="getEntityByIds" resultMap="pgmVerMap">
+    	SELECT 
+    		ID,
+	    	EMPCODE,
+	    	PASSWORD,
+	    	ISCARRIER,
+	    	ISCLEARER,
+	    	ISADMIN,
+	    	DEPTID,
+	    	USERNAME,
+	    	USERTYPE,
+	    	OPERFLAG,
+	    	UPDDATE,
+	    	ISACTIVE,
+	    	VERSION,
+	    	TO_CHAR(ACTIVETIME,'yyyy-mm-dd hh24:mi:ss') as ACTIVETIME
+    	FROM t_SVR_version
+    	WHERE PDAMODEL in
+    	<foreach collection="list" item="pdaModel" open="(" separator="," close=")">
+    		#{pdaModel}
+    	</foreach>
+    </select>
+</mapper>

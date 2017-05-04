@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.pda.bdm.module.foss.upgrade.server.dao.impl.RouteDataVerGenDao">
+	<!-- 路由信息 -->
+	<select id="queryLocalDatas" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.RouteEntity">
+		<![CDATA[
+			SELECT 
+				R.ID 			as id,
+       			R.DEPARTURECODE as departureCity,
+       			R.DESTCODE 		as destCity,
+       			R.TRANSMODE 	as transMode,
+       			R.OPERFLAG 		as operFlag,
+		       (CASE R.ISDEFAULT
+		         WHEN 'N' THEN
+		          '0'
+		         WHEN 'Y' THEN
+		          '1'
+		         ELSE
+		          '2'
+		       END) as isDefault
+	  		FROM T_BASE_ROUTE R
+ 			WHERE R.DEPARTURECODE = #{deptCode,jdbcType=VARCHAR}
+   			AND R.OPERFLAG = '1'
+		]]>
+		<if test="startTime != null and startTime != ''  ">
+			<![CDATA[ AND R.UPDTIME > #{startTime,jdbcType=TIMESTAMP}]]>
+		</if>
+		<if test="endTime != null and endTime != '' ">
+			<![CDATA[ AND R.UPDTIME <= #{endTime,jdbcType=TIMESTAMP}]]>
+		</if>
+	</select>
+	
+	<select id="queryLocalDatasByDel" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.RouteEntity">
+		<![CDATA[
+			SELECT 
+				R.ID as id
+	  		FROM T_BASE_ROUTE R
+ 			WHERE  R.DEPARTURECODE = #{deptCode,jdbcType=VARCHAR}
+   			AND R.OPERFLAG = '3'
+			AND R.UPDTIME > #{startTime,jdbcType=TIMESTAMP}
+			AND R.UPDTIME <= #{endTime,jdbcType=TIMESTAMP}
+		]]>
+	</select>
+
+	<select id="queryLocalIncDataList" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="int">
+		<![CDATA[
+			SELECT COUNT(*) FROM T_BASE_ROUTE 
+		]]>
+		<if test="startTime != null and startTime != ''  ">
+			<![CDATA[ WHERE UPDTIME >= #{startTime,jdbcType=TIMESTAMP}]]>
+		</if>
+		<if test="endTime != null and endTime != '' ">
+			<![CDATA[ AND UPDTIME < #{endTime,jdbcType=TIMESTAMP}]]>
+		</if>
+	</select>
+</mapper>

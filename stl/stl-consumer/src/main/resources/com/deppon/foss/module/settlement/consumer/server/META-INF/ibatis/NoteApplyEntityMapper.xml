@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	  "-//mybatis.org//DTD Mapper 3.0//EN" 
+	  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.stl.noteApplyDao">
+	<resultMap id="noteApplyResultMap"  type="com.deppon.foss.module.settlement.consumer.api.shared.domain.NoteApplicationEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="APPLY_ORG_CODE" property="applyOrgCode" jdbcType="VARCHAR" />
+    <result column="APPLY_ORG_NAME" property="applyOrgName" jdbcType="VARCHAR" />
+    <result column="APPLY_AMOUNT" property="applyAmount" jdbcType="DECIMAL" />
+    <result column="APPLY_TIME" property="applyTime" jdbcType="TIMESTAMP" />
+    <result column="APPLY_USER_NAME" property="applyUserName" jdbcType="VARCHAR" />
+    <result column="APPLY_USER_CODE" property="applyUserCode" jdbcType="VARCHAR" />
+    <result column="BUSINESS_DATE" property="businessDate" jdbcType="TIMESTAMP" />
+    <result column="STATUS" property="status" jdbcType="VARCHAR" />
+    <result column="APPROVE_STATUS" property="approveStatus" jdbcType="VARCHAR" />
+    <result column="APPROVE_USER_CODE" property="approveUserCode" jdbcType="VARCHAR" />
+    <result column="APPROVE_USER_NAME" property="approveUserName" jdbcType="VARCHAR" />
+    <result column="APPROVE_TIME" property="approveTime" jdbcType="TIMESTAMP" />
+    <result column="APPROVE_ORG_CODE" property="approveOrgCode" jdbcType="VARCHAR" />
+    <result column="APPROVE_ORG_NAME" property="approveOrgName" jdbcType="VARCHAR" />
+    <result column="APPROVE_NOTES" property="approveNotes" jdbcType="VARCHAR" />
+    <result column="ISSUED_USER_CODE" property="issuedUserCode" jdbcType="VARCHAR" />
+    <result column="ISSUED_TIME" property="issuedTime" jdbcType="TIMESTAMP" />
+    <result column="ISSUED_USER_NAME" property="issuedUserName" jdbcType="VARCHAR" />
+    <result column="ISSUED_ORG_CODE" property="issuedOrgCode" jdbcType="VARCHAR" />
+    <result column="ISSUED_ORG_NAME" property="issuedOrgName" jdbcType="VARCHAR" />
+    <result column="STORAGE_TIME" property="storageTime" jdbcType="TIMESTAMP" />
+    <result column="STORAGE_USER_CODE" property="storageUserCode" jdbcType="VARCHAR" />
+    <result column="STORAGE_USER_NAME" property="storageUserName" jdbcType="VARCHAR" />
+    <result column="WRITEOFF_TIME" property="writeoffTime" jdbcType="TIMESTAMP" />
+    <result column="WRITEOFF_USER_CODE" property="writeoffUserCode" jdbcType="VARCHAR" />
+    <result column="WRITEOFF_USER_NAME" property="writeoffUserName" jdbcType="VARCHAR" />
+    <result column="WRITEOFF_ORG_CODE" property="writeoffOrgCode" jdbcType="VARCHAR" />
+    <result column="WRITEOFF_ORG_NAME" property="writeoffOrgName" jdbcType="VARCHAR" />
+    <result column="WRITEOFF_STATUS" property="writeoffStatus" jdbcType="VARCHAR" />
+    <result column="WRITEOFF_NOTES" property="writeoffNotes" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+    <result column="MODIFY_USER_NAME" property="modifyUserName" jdbcType="VARCHAR" />
+    <result column="MODIFY_USER_CODE" property="modifyUserCode" jdbcType="VARCHAR" />
+    <result column="ACTIVE" property="active" jdbcType="CHAR" /> 
+	</resultMap>
+  <!-- 查询字段 -->
+	<sql id="select_param">
+	ID, APPLY_ORG_CODE, APPLY_ORG_NAME, APPLY_AMOUNT, APPLY_TIME, APPLY_USER_NAME, APPLY_USER_CODE, 
+    BUSINESS_DATE, STATUS, APPROVE_STATUS, APPROVE_USER_CODE, APPROVE_USER_NAME, APPROVE_TIME, 
+    APPROVE_ORG_CODE, APPROVE_ORG_NAME, APPROVE_NOTES, ISSUED_USER_CODE, ISSUED_TIME, 
+    ISSUED_USER_NAME, ISSUED_ORG_CODE, ISSUED_ORG_NAME, STORAGE_TIME, STORAGE_USER_CODE, 
+    STORAGE_USER_NAME, WRITEOFF_TIME, WRITEOFF_USER_CODE, WRITEOFF_USER_NAME, WRITEOFF_ORG_CODE, 
+    WRITEOFF_ORG_NAME, WRITEOFF_STATUS, WRITEOFF_NOTES, CREATE_TIME, MODIFY_TIME, 
+    MODIFY_USER_NAME, MODIFY_USER_CODE, ACTIVE
+	</sql>
+	 
+  
+  <!-- 根据条件查询单据 总条数-->
+	<select id="countNoteApplyByCondition" resultType="long" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.NoteApplyDto">
+		<![CDATA[
+			SELECT /*结算-客户管理- 根据条件查询单据 总条数   */COUNT(1)
+		]]>
+		<![CDATA[
+			FROM STL.T_STL_NOTE_APPLICATION T WHERE
+		]]>
+		<choose>
+			<when test="applyStartTime != null  and applyEndTime != null ">
+				<![CDATA[ T.APPLY_TIME >=#{ applyStartTime ,jdbcType=TIMESTAMP } and T.APPLY_TIME <#{applyEndTime ,jdbcType=TIMESTAMP} ]]>  
+			</when>
+			<when test="issuedStartTime != null and issuedEndTime != null ">
+				<![CDATA[ T.ISSUED_TIME >=#{ issuedStartTime ,jdbcType=TIMESTAMP} and T.ISSUED_TIME <#{issuedEndTime, jdbcType=TIMESTAMP} ]]>  
+			</when>
+			<when test="storageStartTime != null  and storageEndTime != null ">
+				<![CDATA[ T.STORAGE_TIME >=#{ storageStartTime ,jdbcType=TIMESTAMP } and T.STORAGE_TIME <#{storageEndTime ,jdbcType=TIMESTAMP} ]]>  
+			</when>
+			<when test="writeoffStartTime != null and writeoffEndTime != null ">
+				<![CDATA[ T.WRITEOFF_TIME >=#{ writeoffStartTime ,jdbcType=TIMESTAMP} and T.WRITEOFF_TIME <#{writeoffEndTime ,jdbcType=TIMESTAMP} ]]>  
+			</when>
+			<otherwise>
+				1 = 0
+			</otherwise>
+		</choose>
+		
+		<!-- 加入数据权限 -->
+		<if test="currentUserCode != null and currentUserCode != ''">
+			and exists (select 1
+	          from bse.mv_bas_user_org_auth_view uov
+	         where uov.emp_code = #{currentUserCode}
+	           and uov.Org_Code = t.apply_org_code)
+		</if>
+		
+		<if test="applyStartTime != null  and applyEndTime != null ">
+			<![CDATA[ AND T.APPLY_TIME >=#{ applyStartTime ,jdbcType=TIMESTAMP } and T.APPLY_TIME <#{applyEndTime ,jdbcType=TIMESTAMP} ]]>  
+		</if>
+		<if test="issuedStartTime != null and issuedEndTime != null ">
+			<![CDATA[ AND T.ISSUED_TIME >=#{ issuedStartTime ,jdbcType=TIMESTAMP} and T.ISSUED_TIME <#{issuedEndTime, jdbcType=TIMESTAMP} ]]>  
+		</if>
+		<if test="storageStartTime != null  and storageEndTime != null ">
+			<![CDATA[ AND T.STORAGE_TIME >=#{ storageStartTime ,jdbcType=TIMESTAMP } and T.STORAGE_TIME <#{storageEndTime ,jdbcType=TIMESTAMP} ]]>  
+		</if>
+		<if test="writeoffStartTime != null and writeoffEndTime != null ">
+			<![CDATA[ AND T.WRITEOFF_TIME >=#{ writeoffStartTime ,jdbcType=TIMESTAMP} and T.WRITEOFF_TIME <#{writeoffEndTime ,jdbcType=TIMESTAMP} ]]>  
+		</if>
+		<if test="applyOrgCode != null and applyOrgCode != ''">
+			 AND T.APPLY_ORG_CODE  = #{applyOrgCode}
+		</if>
+		<if test="applyUserCode != null and applyUserCode != ''">
+			AND T.APPLY_USER_CODE = #{applyUserCode}
+		</if>
+		<if test="status != null and status != ''">
+			AND T.STATUS = #{status}
+		</if>
+		<if test="writeoffStatus != null and writeoffStatus != ''">
+			AND T.WRITEOFF_STATUS = #{writeoffStatus}
+		</if>
+		<if test="approveStatus != null and approveStatus != ''">
+			AND T.APPROVE_STATUS = #{approveStatus}
+		</if>
+	</select>
+	<!-- 根据条件查询单据  -->
+	<select id="searchNoteApplyByCondition" resultMap="noteApplyResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.NoteApplyDto">
+		<![CDATA[
+			SELECT /*结算-客户管理- 根据条件查询单据     */
+		]]>
+		<include refid="select_param" />
+		<![CDATA[
+			FROM STL.T_STL_NOTE_APPLICATION T WHERE
+		]]>
+		<choose>
+			<when test="applyStartTime != null  and applyEndTime != null ">
+				<![CDATA[ T.APPLY_TIME >=#{ applyStartTime ,jdbcType=TIMESTAMP } and T.APPLY_TIME <#{applyEndTime ,jdbcType=TIMESTAMP} ]]>  
+			</when>
+			<when test="issuedStartTime != null and issuedEndTime != null ">
+				<![CDATA[ T.ISSUED_TIME >=#{ issuedStartTime ,jdbcType=TIMESTAMP} and T.ISSUED_TIME <#{issuedEndTime ,jdbcType=TIMESTAMP} ]]>  
+			</when>
+			<when test="storageStartTime != null  and storageEndTime != null ">
+				<![CDATA[ T.STORAGE_TIME >=#{ storageStartTime ,jdbcType=TIMESTAMP } and T.STORAGE_TIME <#{storageEndTime ,jdbcType=TIMESTAMP} ]]>  
+			</when>
+			<when test="writeoffStartTime != null and writeoffEndTime != null ">
+				<![CDATA[ T.WRITEOFF_TIME >=#{ writeoffStartTime ,jdbcType=TIMESTAMP} and T.WRITEOFF_TIME <#{writeoffEndTime ,jdbcType=TIMESTAMP} ]]>  
+			</when>
+			<otherwise>
+				1 = 0
+			</otherwise>
+		</choose>
+		
+		<!-- 加入数据权限 -->
+		<if test="currentUserCode != null and currentUserCode != ''">
+			and exists (select 1
+	          from bse.mv_bas_user_org_auth_view uov
+	         where uov.emp_code = #{currentUserCode}
+	           and uov.Org_Code = t.apply_org_code)
+		</if>
+		
+		<if test="applyStartTime != null  and applyEndTime != null ">
+			<![CDATA[ AND T.APPLY_TIME >=#{ applyStartTime ,jdbcType=TIMESTAMP } and T.APPLY_TIME <#{applyEndTime ,jdbcType=TIMESTAMP} ]]>  
+		</if>
+		<if test="issuedStartTime != null and issuedEndTime != null ">
+			<![CDATA[ AND T.ISSUED_TIME >=#{ issuedStartTime ,jdbcType=TIMESTAMP} and T.ISSUED_TIME <#{issuedEndTime, jdbcType=TIMESTAMP} ]]>  
+		</if>
+		<if test="storageStartTime != null  and storageEndTime != null ">
+			<![CDATA[ AND T.STORAGE_TIME >=#{ storageStartTime ,jdbcType=TIMESTAMP } and T.STORAGE_TIME <#{storageEndTime ,jdbcType=TIMESTAMP} ]]>  
+		</if>
+		<if test="writeoffStartTime != null and writeoffEndTime != null ">
+			<![CDATA[ AND T.WRITEOFF_TIME >=#{ writeoffStartTime ,jdbcType=TIMESTAMP} and T.WRITEOFF_TIME <#{writeoffEndTime ,jdbcType=TIMESTAMP} ]]>  
+		</if>
+		<if test="applyOrgCode != null and applyOrgCode != ''">
+			 AND T.APPLY_ORG_CODE  = #{applyOrgCode}
+		</if>
+		<if test="applyUserCode != null and applyUserCode != ''">
+			AND T.APPLY_USER_CODE = #{applyUserCode}
+		</if>
+		<if test="status != null and status != ''">
+			AND T.STATUS = #{status}
+		</if>
+		<if test="writeoffStatus != null and writeoffStatus != ''">
+			AND T.WRITEOFF_STATUS = #{writeoffStatus}
+		</if>
+		<if test="approveStatus != null and approveStatus != ''">
+			AND T.APPROVE_STATUS = #{approveStatus}
+		</if>
+	</select>
+	
+	<!-- 增加申请小票单据信息 -->
+	<insert id="addApplyNote" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.NoteApplyDto" >
+		INSERT /*结算-客户管理-增加申请小票单据信息    */INTO STL.T_STL_NOTE_APPLICATION
+		  (ID,
+		   APPLY_ORG_CODE,
+		   APPLY_ORG_NAME,
+		   APPLY_AMOUNT,
+		   APPLY_TIME,
+		   APPLY_USER_NAME,
+		   APPLY_USER_CODE,
+		   BUSINESS_DATE,
+		   STATUS,
+		   APPROVE_STATUS,  
+		   WRITEOFF_STATUS, 
+		   CREATE_TIME,
+		   MODIFY_TIME,
+		   MODIFY_USER_NAME,
+		   MODIFY_USER_CODE,
+		   ACTIVE)
+		VALUES (
+		   #{id,jdbcType=VARCHAR},
+		   #{applyOrgCode,jdbcType=VARCHAR},
+		   #{applyOrgName,jdbcType=VARCHAR},
+		   #{applyAmount,jdbcType=DECIMAL},
+		   #{applyTime,jdbcType=TIMESTAMP},
+		   #{applyUserName,jdbcType=VARCHAR},
+		   #{applyUserCode,jdbcType=VARCHAR},
+		   #{businessDate,jdbcType=TIMESTAMP},
+		   #{status,jdbcType=VARCHAR},    
+		   #{approveStatus,jdbcType=VARCHAR},
+		   #{writeoffStatus,jdbcType=VARCHAR}, 
+		   #{createTime,jdbcType=TIMESTAMP},
+		   #{modifyTime,jdbcType=TIMESTAMP},
+		   #{modifyUserName,jdbcType=VARCHAR},
+		   #{modifyUserCode,jdbcType=VARCHAR},
+		   #{active,jdbcType=CHAR}
+		  ) 
+  </insert> 
+  <!-- 审核操作 -->
+   <update id="updateApproveById" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.NoteApplyDto">
+		UPDATE/*结算-客户管理-审核操作    */ STL.T_STL_NOTE_APPLICATION T
+		 SET
+			T.STATUS = #{status, jdbcType=VARCHAR},
+			T.APPROVE_STATUS = #{approveStatus, jdbcType=VARCHAR},
+			T.APPROVE_USER_CODE = #{approveUserCode, jdbcType=VARCHAR},
+			T.APPROVE_USER_NAME = #{approveUserName, jdbcType=VARCHAR},
+			T.APPROVE_NOTES = #{approveNotes, jdbcType=VARCHAR},
+			T.APPROVE_TIME = #{approveTime, jdbcType=TIMESTAMP},
+			T.APPROVE_ORG_CODE = #{approveOrgCode, jdbcType=VARCHAR},
+			T.APPROVE_ORG_NAME = #{approveOrgName, jdbcType=VARCHAR},
+			T.MODIFY_USER_NAME = #{modifyUserName, jdbcType=VARCHAR},
+			T.MODIFY_USER_CODE = #{modifyUserCode,jdbcType=VARCHAR},
+			T.MODIFY_TIME = #{modifyTime, jdbcType=TIMESTAMP},
+			T.BUSINESS_DATE = #{businessDate, jdbcType=TIMESTAMP} 
+		WHERE T.ID = #{id,jdbcType=VARCHAR} 
+  </update>
+   <!-- 下发操作 -->
+   <update id="updateIssuedById" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.NoteApplyDto">
+		UPDATE /*结算-客户管理-下发操作    */STL.T_STL_NOTE_APPLICATION T
+		 SET
+			T.STATUS = #{status, jdbcType=VARCHAR},
+			T.ISSUED_USER_CODE = #{issuedUserCode, jdbcType=VARCHAR},
+			T.ISSUED_USER_NAME = #{issuedUserName, jdbcType=VARCHAR},
+			T.ISSUED_ORG_CODE = #{issuedOrgCode, jdbcType=VARCHAR},
+			T.ISSUED_ORG_NAME = #{issuedOrgName, jdbcType=VARCHAR},
+			T.ISSUED_TIME = #{issuedTime, jdbcType=TIMESTAMP},
+			T.MODIFY_USER_NAME = #{modifyUserName, jdbcType=VARCHAR},
+			T.MODIFY_USER_CODE = #{modifyUserCode,jdbcType=VARCHAR},
+			T.MODIFY_TIME = #{modifyTime, jdbcType=TIMESTAMP},
+			T.BUSINESS_DATE = #{businessDate, jdbcType=TIMESTAMP}
+		WHERE T.ID = #{id,jdbcType=VARCHAR} 
+  </update>
+  <!-- 入库操作 -->
+   <update id="updateStorageByIds" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.NoteApplyDto">
+		UPDATE /*结算-客户管理-入库操作    */STL.T_STL_NOTE_APPLICATION T
+		 SET
+			T.STATUS = #{status, jdbcType=VARCHAR},
+			T.STORAGE_TIME = #{storageTime, jdbcType=TIMESTAMP},
+			T.STORAGE_USER_CODE = #{storageUserCode, jdbcType=VARCHAR},
+			T.STORAGE_USER_NAME = #{storageUserName, jdbcType=VARCHAR},
+			T.MODIFY_USER_NAME = #{modifyUserName, jdbcType=VARCHAR},
+			T.MODIFY_USER_CODE = #{modifyUserCode,jdbcType=VARCHAR},
+			T.MODIFY_TIME = #{modifyTime, jdbcType=TIMESTAMP},
+			T.BUSINESS_DATE = #{businessDate, jdbcType=TIMESTAMP}
+	 	  WHERE  T.ID IN
+		<foreach collection="noteAppIds"  index="index" item="item"  open="(" separator="," close=")">  
+		        #{item} 
+		</foreach>
+  </update>
+   <!--核销操作 -->
+   <update id="updateWriteoffByIds" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.NoteApplyDto">
+		UPDATE /*结算-客户管理-核销操作    */STL.T_STL_NOTE_APPLICATION T
+		 SET
+				T.WRITEOFF_STATUS = #{writeoffStatus,jdbcType=VARCHAR},
+				T.WRITEOFF_TIME = #{writeoffTime,jdbcType=TIMESTAMP},
+				T.WRITEOFF_USER_CODE = #{writeoffUserCode,jdbcType=VARCHAR},
+				T.WRITEOFF_USER_NAME = #{writeoffUserName,jdbcType=VARCHAR},
+				T.WRITEOFF_ORG_CODE = #{writeoffOrgCode,jdbcType=VARCHAR},
+				T.WRITEOFF_ORG_NAME = #{writeoffOrgName,jdbcType=VARCHAR},
+				T.WRITEOFF_NOTES = #{writeoffNotes,jdbcType=VARCHAR},
+				T.MODIFY_USER_NAME = #{modifyUserName, jdbcType=VARCHAR},
+				T.MODIFY_USER_CODE = #{modifyUserCode,jdbcType=VARCHAR},
+				T.MODIFY_TIME = #{modifyTime, jdbcType=TIMESTAMP},
+				T.BUSINESS_DATE = #{businessDate, jdbcType=TIMESTAMP} 
+		  WHERE	T.ID IN
+		<foreach collection="noteAppIds"  index="index" item="item"  open="(" separator="," close=")">  
+		        #{item} 
+		</foreach>
+  </update>
+  
+  <select id="queryNoteApplyEntityID" resultMap="noteApplyResultMap" parameterType="string">
+  	SELECT /*结算-小票申请-查询操作 */
+  	
+  	<include refid="select_param" />
+  	
+  	FROM STL.T_STL_NOTE_APPLICATION T 
+  	WHERE T.ID = #{idNoteApply}
+  </select>	
+</mapper>

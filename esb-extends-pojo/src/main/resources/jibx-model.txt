@@ -1,0 +1,53 @@
+package com.deppon.esb.pojo.transformer;
+
+import java.io.StringReader;
+import java.io.StringWriter;
+
+import org.jibx.runtime.BindingDirectory;
+import org.jibx.runtime.IBindingFactory;
+import org.jibx.runtime.IMarshallingContext;
+import org.jibx.runtime.IUnmarshallingContext;
+import org.jibx.runtime.JiBXException;
+
+import com.deppon.esb.core.data.IMessageTransform;
+import com.deppon.esb.core.exception.ESBConvertException;
+import ${fullClassName};
+
+/**
+ * ${className}的转换类
+ * 
+ * @author HuangHua
+ * 
+ */
+public class ${className}Trans implements IMessageTransform {
+
+	@Override
+	public Object toMessage(String string) throws ESBConvertException {
+		${className} result = null;
+		try {
+			IBindingFactory factory = BindingDirectory.getFactory(${className}.class);
+			IUnmarshallingContext umctx = factory.createUnmarshallingContext();
+			result = (${className}) umctx.unmarshalDocument(new StringReader(
+					string));
+		} catch (JiBXException e) {
+			throw new ESBConvertException("反序列化${className}时失败！", e);
+		}
+		return result;
+	}
+
+	@Override
+	public String fromMessage(Object message) throws ESBConvertException {
+		${className} result = (${className}) message;
+		StringWriter writer = new StringWriter();
+		try {
+			IBindingFactory factory = BindingDirectory.getFactory(${className}.class);
+			IMarshallingContext mctx = factory.createMarshallingContext();
+			mctx.setIndent(2);
+			mctx.marshalDocument(result, "UTF-8", null, writer);
+		} catch (JiBXException e) {
+			throw new ESBConvertException("序列化${className}时失败！", e);
+		}
+		return writer.toString();
+	}
+
+}

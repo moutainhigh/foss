@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.customerCreditQueryDao">
+
+	<!-- 基础结果Map -->
+	<resultMap
+		type="com.deppon.foss.module.settlement.consumer.api.shared.dto.CustomerCreditGridDto"
+		id="baseResultType">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="code" property="code" jdbcType="VARCHAR" />
+		<result column="name" property="name" jdbcType="VARCHAR" />
+		<!-- 总的信用额度 -->
+		<result column="CREDIT_AMOUNT" property="creditAmount"
+			jdbcType="VARCHAR" />
+
+	</resultMap>
+
+	<!--查找客户的总行数 -->
+	<select id="queryTotalCustomerRows" resultType="int"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CustomerCreditQueryDto">
+		SELECT/*结算-客户管理-查找客户的总行数   */ count(1)
+		as totalRows
+		FROM BSE.T_BAS_CUSTOMER
+		where
+		active = #{active}
+	</select>
+
+
+	<!--统计组织的总行数 -->
+	<select id="queryTotalOrgRows" resultType="int"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CustomerCreditQueryDto">
+		SELECT/*结算-客户管理-统计组织的总行数   */ count(1)
+		as
+		totalRows
+		FROM
+		BSE.T_BAS_SALES_DEPARTMENT
+		where active = #{active}
+	</select>
+
+
+	<!--通过分页的形式查询客户信息 -->
+	<select id="queryCustomer" resultMap="baseResultType"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CustomerCreditQueryDto">
+		select/*结算-客户管理-通过分页的形式查询客户信息   */
+		id,name,code,CREDIT_AMOUNT/100 as CREDIT_AMOUNT
+		FROM BSE.T_BAS_CUSTOMER
+		where active =
+		#{active}
+		<![CDATA[
+		AND CREATE_TIME >= #{startCreateTime,jdbcType=TIMESTAMP}
+		AND CREATE_TIME < #{endCreateTime,jdbcType=TIMESTAMP}
+		]]>
+	</select>
+
+
+	<!--统计组织的总行数 -->
+	<select id="queryOrg" resultMap="baseResultType"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CustomerCreditQueryDto">
+		SELECT /*结算-客户管理-统计组织的总行数   */id,name,code
+		FROM
+		BSE.T_BAS_SALES_DEPARTMENT
+		where
+		active = #{active}
+	</select>
+
+	<!-- 获得超期欠款的月结运单 -->
+	<select id="queryCreditOverdueNumber" resultType="String"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.BillReceivableQueryDto">
+		select /*结算-客户管理-获得超期欠款的月结运单   */WAYBILL_NO
+		from STL.T_STL_BILL_RECEIVABLE
+		where
+		<!-- 客户编码 -->
+		CUSTOMER_CODE =
+		#{customerCode,jdbcType=VARCHAR}
+		<!-- 付款方式 -->
+		and PAYMENT_TYPE = #{paymentType,jdbcType=VARCHAR}
+
+		<!-- 是否红单 -->
+		and IS_RED_BACK = #{isRedBack,jdbcType=VARCHAR}
+
+		<!-- 有效的应收 -->
+		and active = #{active,jdbcType=VARCHAR}
+		<!-- 小于最大超期天数，认为超期 -->
+		<![CDATA[
+			and BUSINESS_DATE <= #{overdueDate,jdbcType=DATE}
+		]]>
+	</select>
+
+	<!-- 获得月结的红冲发生额之和 -->
+	<select id="queryCreditWriteBackAmount" resultType="BigDecimal"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.BillReceivableQueryDto">
+		select /*结算-客户管理-获得月结的红冲发生额之和   */sum(amount) /100 as writeBackAmount
+		from
+		STL.T_STL_BILL_RECEIVABLE
+		where
+		<!-- 客户编码 -->
+		CUSTOMER_CODE =
+		#{customerCode,jdbcType=VARCHAR}
+		<!-- 付款方式 -->
+		and PAYMENT_TYPE = #{paymentType,jdbcType=VARCHAR}
+
+		<!-- 是否红单 -->
+		and IS_RED_BACK = #{isRedBack,jdbcType=VARCHAR}
+
+		<!--按记账日期范围进行查询 -->
+		<![CDATA[
+			and ACCOUNT_DATE >= #{inceptDate,jdbcType=DATE}
+			and ACCOUNT_DATE < #{endDate,jdbcType=DATE}
+		]]>
+	</select>
+
+
+	<!-- 获得超期欠款的临时欠款应收单 -->
+	<select id="queryDebtOverdueReceivable" resultType="com.deppon.foss.module.settlement.common.api.shared.domain.BillReceivableEntity"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.BillReceivableQueryDto">
+		select /*结算-客户管理-获得超期欠款的临时欠款应收单  */waybillNo,businessDate from
+		(select WAYBILL_NO    AS WAYBILLNO,
+							 BUSINESS_DATE AS BUSINESSDATE,
+							 ROWNUM        AS ROW_NUM
+		from STL.T_STL_BILL_RECEIVABLE
+		where
+		<!-- 组织编码 -->
+		RECEIVABLE_ORG_CODE =
+		#{customerCode,jdbcType=VARCHAR}
+		
+		<!-- 付款方式 -->
+		and PAYMENT_TYPE = #{paymentType,jdbcType=VARCHAR}
+		
+		<!-- 未核销金额大于0 -->
+		and UNVERIFY_AMOUNT > 0
+
+		<!-- 是否红单 -->
+		and IS_RED_BACK = #{isRedBack,jdbcType=VARCHAR}
+
+		<!-- 有效的应收 -->
+		and active = #{active,jdbcType=VARCHAR}
+		
+		<!-- 是否初始化 -->
+		and is_init = #{isInit,jdbcType=VARCHAR}
+		
+		<!-- 小于最大超期天数，认为超期 -->
+		<!-- 不计算迁移过来的数据 -->
+		<![CDATA[
+			and BUSINESS_DATE <= #{overdueDate,jdbcType=DATE}
+			
+			and BUSINESS_DATE >= #{inceptDate,jdbcType=DATE}
+		]]>
+		
+		<!-- 取最早的记录 -->
+		order by BUSINESS_DATE ASC)
+		<![CDATA[
+			where row_num <= 1
+		]]>
+		
+	</select>
+
+	<!-- 获得临欠的红冲发生额之和 -->
+	<select id="queryDebtWriteBackAmount" resultType="BigDecimal"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.BillReceivableQueryDto">
+		select /*结算-客户管理-获得临欠的红冲发生额之和   */sum(amount) /100 as writeBackAmount
+		from
+		STL.T_STL_BILL_RECEIVABLE
+		where
+		<!-- 组织编码 -->
+		RECEIVABLE_ORG_CODE =
+		#{customerCode,jdbcType=VARCHAR}
+		<!-- 付款方式 -->
+		and PAYMENT_TYPE = #{paymentType,jdbcType=VARCHAR}
+
+		<!-- 是否红单 -->
+		and IS_RED_BACK = #{isRedBack,jdbcType=VARCHAR}
+		
+		and IS_INIT = #{isInit,jdbcType=VARCHAR}
+
+		<!--按记账日期范围进行查询 -->
+		<![CDATA[
+			and ACCOUNT_DATE >= #{inceptDate,jdbcType=DATE}
+			and ACCOUNT_DATE < #{endDate,jdbcType=DATE}
+		]]>
+	</select>
+
+</mapper>

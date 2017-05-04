@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.PODEntityDao" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.common.api.shared.domain.PODEntity" >
+    <result column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+    <result column="POD_DATE" property="podDate" jdbcType="TIMESTAMP" />
+    <result column="POD_TYPE" property="podType" jdbcType="VARCHAR" />
+    <result column="POD_USER_CODE" property="podUserCode" jdbcType="VARCHAR" />
+    <result column="POD_USER_NAME" property="podUserName" jdbcType="VARCHAR" />
+    <result column="POD_ORG_CODE" property="podOrgCode" jdbcType="VARCHAR" />
+    <result column="POD_ORG_NAME" property="podOrgName" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+  </resultMap>
+  
+   <sql id="Base_Column_List">
+  	ID,WAYBILL_NO,POD_DATE,POD_TYPE,POD_USER_CODE,POD_USER_NAME,
+  	POD_ORG_CODE,POD_ORG_NAME,CREATE_TIME
+  </sql>
+  <insert id="insert" parameterType="com.deppon.foss.module.settlement.common.api.shared.domain.PODEntity" >
+    insert into STL.T_STL_POD (ID, WAYBILL_NO, POD_DATE, 
+      POD_TYPE, POD_USER_CODE, POD_USER_NAME, 
+      POD_ORG_CODE, POD_ORG_NAME, CREATE_TIME
+      )
+    values (#{id,jdbcType=VARCHAR}, #{waybillNo,jdbcType=VARCHAR}, #{podDate,jdbcType=TIMESTAMP}, 
+      #{podType,jdbcType=VARCHAR}, #{podUserCode,jdbcType=VARCHAR}, #{podUserName,jdbcType=VARCHAR}, 
+      #{podOrgCode,jdbcType=VARCHAR}, #{podOrgName,jdbcType=VARCHAR}, #{createTime,jdbcType=TIMESTAMP}
+      )
+  </insert>
+ 
+  <select id="selectByWaybillNo" resultMap="BaseResultMap" parameterType="Map">
+  	SELECT <include refid="Base_Column_List"/> FROM
+  	STL.T_STL_POD WHERE
+  	WAYBILL_NO=#{waybillNo} 
+  	<if test="podType!=null and  podType!='' ">
+  		AND POD_TYPE=#{podType}
+  	</if> 
+  </select>
+  
+  <select id="selectNewestPOD" resultMap="BaseResultMap" parameterType="String">
+  	SELECT * FROM (
+	  	SELECT <include refid="Base_Column_List"/> FROM
+	  	STL.T_STL_POD WHERE
+	  	WAYBILL_NO=#{waybillNo} 
+	  	ORDER BY POD_DATE DESC ) 
+	WHERE ROWNUM <![CDATA[ < 2]]>
+  </select>
+</mapper>

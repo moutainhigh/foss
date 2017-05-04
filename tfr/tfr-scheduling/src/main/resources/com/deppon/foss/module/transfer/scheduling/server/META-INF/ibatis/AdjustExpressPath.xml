@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Foss.adjustExpress" >
+	<resultMap id="adjustResultMap" type="com.deppon.foss.module.transfer.scheduling.api.shared.domain.AdjustEntity" >
+		<result column="GOODS_AREA_CODE" property="goodsAreaCode" jdbcType="VARCHAR" />
+		<result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+		<result column="AREA_WEIGHT_TOTAL" property="areaWeightTotal" jdbcType="NUMERIC" />
+		<result column="AREA_VOLUME_TOTAL" property="areaVolumeTotal" jdbcType="NUMERIC" />
+		<result column="AREA_LINE" property="areaLine" jdbcType="VARCHAR" />
+		<result column="AREA_WAYBILL_QTY" property="areaWaybillQty" jdbcType="INTEGER" />
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="PRODUCT_CODE" property="productCode" jdbcType="VARCHAR"/>
+		<result column="STOCK_GOODS_QTY" property="stockGoodsQTY" jdbcType="INTEGER" />
+		<result column="GOODS_QTY_TOTAL" property="goodsQtyTotal" jdbcType="INTEGER" />
+		<result column="GOODS_WEIGHT_TOTAL" property="goodsWeightTotal" jdbcType="NUMERIC" />
+		<result column="GOODS_VOLUME_TOTAL" property="goodsVolumeTotal" jdbcType="NUMERIC" />
+		<result column="BEFORE_LINE" property="beforeLine" jdbcType="VARCHAR" />
+		<result column="AFTER_LINE" property="afterLine" jdbcType="VARCHAR" />
+		<result column="SERIAL_NO" property="serialNo" jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="Base_Column_List" >
+   	GOODS_AREA_CODE, ORG_CODE, AREA_WEIGHT_TOTAL, AREA_VOLUME_TOTAL, AREA_LINE, AREA_WAYBILL_QTY,
+   	WAYBILL_NO, STOCK_GOODS_QTY, GOODS_QTY_TOTAL, GOODS_WEIGHT_TOTAL, GOODS_VOLUME_TOTAL, BEFORE_LINE, AFTER_LINE, 
+   	SERIAL_NO
+	</sql>
+	
+	<!-- 查询快递修改的走货路径集合 -->
+	<select id="queryExpressByParamMap"  parameterType="map" resultMap="adjustResultMap">
+			SELECT
+			    ORG_CODE, GOODS_AREA_CODE, COUNT(WAYBILL_NO) AS AREA_WAYBILL_QTY 
+			 from  
+			 (SELECT WS.ORG_CODE,
+                      WS.GOODS_AREA_CODE,
+                      ws.waybill_no
+                  FROM TFR.T_OPT_WAYBILL_STOCK WS
+                  JOIN PKP.T_SRV_WAYBILL W
+				    ON WS.WAYBILL_NO = W.WAYBILL_NO
+				    AND W.ACTIVE = 'Y'
+                  join tfr.t_opt_stock s
+                    on s.waybill_no = ws.waybill_no
+                   and s.org_code = ws.org_code
+                  join tfr.t_opt_path_detail p1
+                    on ws.waybill_no = p1.waybill_no
+                   and ws.org_code = p1.orig_org_code
+                  join tfr.t_opt_path_detail p2
+                    on ws.waybill_no = p2.waybill_no
+                 WHERE WS.GOODS_AREA_CODE != 'BULK_GOODS_AREA'
+                   AND WS.GOODS_AREA_CODE != 'WHOLE_GOODS_AREA'
+                   and p2.route_no>=p1.route_no
+                   and p1.route_no = (select max(p.route_no)
+                        from tfr.t_opt_path_detail p
+                       where p.waybill_no = s.waybill_no
+                         and p.orig_org_code = ws.org_code)
+                 <if test="orgCode!=null and orgCode!=''">
+					AND WS.ORG_CODE = #{orgCode}
+				</if>
+					and WS.GOODS_AREA_CODE in
+	            <foreach collection="goodsAreaCodesList"  index="index" item="item"  open="(" separator="," close=")">  
+		            	#{item} 
+		         </foreach>
+		         <if test="objectiveOrgCode!=null and objectiveOrgCode!=''">
+					AND p2.OBJECTIVE_ORG_CODE = #{objectiveOrgCode}
+				</if>
+                 GROUP BY WS.ORG_CODE, WS.GOODS_AREA_CODE,ws.waybill_no)
+               GROUP BY ORG_CODE, GOODS_AREA_CODE
+               ORDER BY AREA_WAYBILL_QTY DESC
+	</select>
+	
+	<!-- 查询快递运单对应的走货路径集合 -->
+	<select id="queryExpressWaybillListByParamMap"  parameterType="map" resultMap="adjustResultMap">
+       SELECT
+        distinct WS.WAYBILL_NO,
+         WS.GOODS_AREA_CODE,
+         WS.ORG_CODE,
+         WS.STOCK_GOODS_QTY,
+         W.GOODS_QTY_TOTAL,
+         W.GOODS_WEIGHT_TOTAL,
+         W.GOODS_VOLUME_TOTAL
+	  FROM TFR.T_OPT_WAYBILL_STOCK WS
+	  JOIN PKP.T_SRV_WAYBILL W
+	    ON WS.WAYBILL_NO = W.WAYBILL_NO
+	   AND W.ACTIVE = 'Y'
+	  join tfr.t_opt_stock s
+	    on s.waybill_no = ws.waybill_no
+	   and s.org_code = ws.org_code
+	  join tfr.t_opt_path_detail p1
+	    on ws.waybill_no = p1.waybill_no
+	   and ws.org_code = p1.orig_org_code
+	  join tfr.t_opt_path_detail p2
+	    on ws.waybill_no = p2.waybill_no
+	 WHERE WS.GOODS_AREA_CODE != 'BULK_GOODS_AREA'
+	   AND WS.GOODS_AREA_CODE != 'WHOLE_GOODS_AREA'
+	   and p2.route_no>=p1.route_no
+	   and p1.route_no = (select max(p.route_no)
+                        from tfr.t_opt_path_detail p
+                       where p.waybill_no = s.waybill_no
+                         and p.orig_org_code = ws.org_code)
+	        <if test="orgCode!=null and orgCode!=''">
+					AND WS.ORG_CODE = #{orgCode}
+			</if>
+					and WS.GOODS_AREA_CODE in
+	        <foreach collection="goodsAreaCodesList"  index="index" item="item"  open="(" separator="," close=")">  
+		            	#{item} 
+		    </foreach>
+		    <if test="objectiveOrgCode!=null and objectiveOrgCode!=''">
+					AND p2.OBJECTIVE_ORG_CODE = #{objectiveOrgCode}
+		    </if>	
+
+	</select>
+	
+	<!-- waybill List -->
+	<select id="queryExpressWaybillList"  parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.AdjustEntity" resultMap="adjustResultMap">
+			SELECT distinct WS.WAYBILL_NO, WS.GOODS_AREA_CODE, WS.ORG_CODE, WS.STOCK_GOODS_QTY, W.GOODS_QTY_TOTAL, W.GOODS_WEIGHT_TOTAL, W.GOODS_VOLUME_TOTAL,W.PRODUCT_CODE
+			    FROM TFR.T_OPT_WAYBILL_STOCK WS 
+			JOIN PKP.T_SRV_WAYBILL W ON WS.WAYBILL_NO = W.WAYBILL_NO AND W.ACTIVE = 'Y'
+			join tfr.t_opt_stock t
+              on ws.waybill_no = t.waybill_no
+              and ws.org_code = t.org_code
+            join tfr.t_opt_path_detail p1
+	           on ws.waybill_no = p1.waybill_no
+	           and ws.org_code = p1.orig_org_code
+	        join tfr.t_opt_path_detail p2
+	           on ws.waybill_no = p2.waybill_no  
+			where  WS.GOODS_AREA_CODE !='BULK_GOODS_AREA' 
+			      AND WS.GOODS_AREA_CODE !='WHOLE_GOODS_AREA'
+			      and p2.route_no>=p1.route_no
+			      and p1.route_no = (select max(p.route_no)
+                        from tfr.t_opt_path_detail p
+                       where p.waybill_no = s.waybill_no
+                         and p.orig_org_code = ws.org_code)
+			      <if test="orgCode!=null and orgCode!=''">
+					  AND WS.ORG_CODE = #{orgCode}
+				  </if>
+					  and WS.GOODS_AREA_CODE in
+			       <foreach collection="goodsAreaCodesList"  index="index" item="item"  open="(" separator="," close=")">  
+				           #{item} 
+				    </foreach>
+				    <if test="objectiveOrgCode!=null and objectiveOrgCode!=''">
+							AND p2.OBJECTIVE_ORG_CODE = #{objectiveOrgCode}
+				    </if>	
+	</select>
+	
+</mapper>

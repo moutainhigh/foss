@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.cusAccount">
+	<!-- 客户开户银行 -->
+	<resultMap id="cusAccountResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusAccountEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="OTHER_BRANCH_BANK_NAME" property="otherBranchBankName"
+			jdbcType="VARCHAR" />
+		<result column="ACCOUNT_NO" property="accountNo" jdbcType="VARCHAR" />
+		<result column="ACCOUNT_NAME" property="accountName" jdbcType="VARCHAR" />
+		<result column="CITY_CODE" property="cityCode" jdbcType="VARCHAR" />
+		<result column="PROV_CODE" property="provCode" jdbcType="VARCHAR" />
+		<result column="BANK_CODE" property="bankCode" jdbcType="VARCHAR" />
+		<result column="MOBILE_PHONE" property="mobilePhone" jdbcType="VARCHAR" />
+		<result column="CUSTOMER" property="customer" jdbcType="VARCHAR" />
+		<result column="DEFAULT_ACCOUNT" property="defaultAccount"
+			jdbcType="CHAR" />
+		<result column="BRANCH_BANK_CODE" property="branchBankCode"
+			jdbcType="VARCHAR" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+		<result column="VIRTUAL_CODE" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="ACCOUNTNATURE" property="accountNature"
+			jdbcType="VARCHAR" />
+		<result column="CRM_ID" property="crmId" jdbcType="DECIMAL" />
+		<result column="CITYNAME" property="cityName" jdbcType="VARCHAR" />
+		<result column="PROVINCENAME" property="provinceName" jdbcType="VARCHAR" />
+		<result column="OPENING_BANK_NAME" property="openingBankName"
+			jdbcType="VARCHAR" />
+		<result column="BRANCH_BANK_NAME" property="branchBankName"
+			jdbcType="VARCHAR" />
+		<!-- BELONGCUSTOM 字段重命名为：CRM_CUS_ID 实体属性 belongCustom 未作更改-->
+		<result column="CRM_CUS_ID" property="belongCustom" jdbcType="DECIMAL" />
+		<result column="FINANCELINKMAN" property="financeLinkman"
+			jdbcType="VARCHAR" />
+		<result column="ACCOUNTUSE" property="accountUse" jdbcType="VARCHAR" />
+	</resultMap>
+	<!-- 数据字段 -->
+	<sql id="cusAccount_Column_List">
+		ID, OTHER_BRANCH_BANK_NAME, ACCOUNT_NO, ACCOUNT_NAME,
+		CITY_CODE,
+		PROV_CODE, BANK_CODE,
+		MOBILE_PHONE, CUSTOMER,
+		DEFAULT_ACCOUNT, BRANCH_BANK_CODE, NOTES, CREATE_TIME,
+		MODIFY_TIME,
+		ACTIVE, CREATE_USER_CODE, MODIFY_USER_CODE, VIRTUAL_CODE,
+		ACCOUNTNATURE,CRM_ID,CITYNAME, PROVINCENAME, OPENING_BANK_NAME,
+		BRANCH_BANK_NAME,CRM_CUS_ID, FINANCELINKMAN,ACCOUNTUSE
+	</sql>
+
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<if test="active != null and active != ''">
+				and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</sql>
+
+	<!-- 查询所有客户开户银行信息 -->
+	<select id="queryAllInfos"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusAccountEntity"
+		resultMap="cusAccountResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有客户开户银行信息 **/
+		]]>
+		<include refid="cusAccount_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUS_ACCOUNT T
+		]]>
+		<include refid="queryWhere" />
+	</select>
+
+	<!-- 验证客户开户银行信息是否存在 -->
+	<select id="queryCusAccountByCrmId" parameterType="map"
+		resultMap="cusAccountResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:验证客户开户银行信息是否存在 **/
+		]]>
+		<include refid="cusAccount_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUS_ACCOUNT 
+		]]>
+		<where>
+			<if test="crmId != null and crmId != ''">
+				CRM_ID = #{crmId,jdbcType=DECIMAL}
+			</if>
+			<if test="modifyDate != null and modifyDate != ''">
+				AND MODIFY_TIME <![CDATA[  >=  ]]> #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="active != null and active != ''">
+				AND active = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 根据客户编码查询时间最近的客户银行账户 -->
+	<select id="queryAccountInfoByCustCode" parameterType="map"
+		resultMap="cusAccountResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据客户编码查询时间最近的客户银行账户 **/
+		]]>
+		<include refid="cusAccount_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUS_ACCOUNT
+		]]>
+		<where>
+			<if test="custCode != null and custCode != ''">
+				CRM_CUS_ID =  (SELECT T.CRM_CUS_ID FROM BSE.T_BAS_CUSTOMER T WHERE T.CODE = #{custCode,jdbcType=VARCHAR}
+				AND T.MODIFY_TIME = (SELECT MAX(B.MODIFY_TIME) FROM BSE.T_BAS_CUSTOMER B WHERE B.CODE= #{custCode,jdbcType=VARCHAR}))
+			</if>
+			<if test="active != null and active != ''">
+				AND active = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 根据客户编码查询客户银行账户信息 -->
+	<select id="queryAccountLatestNewInfoByCustCode" parameterType="map"
+		resultMap="cusAccountResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据客户编码查询客户银行账户信息 **/
+		]]>
+		<include refid="cusAccount_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUS_ACCOUNT
+		]]>
+		<where>
+			<if test="custCode != null and custCode != ''">
+				CRM_CUS_ID =  (SELECT T.CRM_CUS_ID FROM BSE.T_BAS_CUSTOMER T WHERE T.CODE = #{custCode,jdbcType=VARCHAR}
+				AND T.ACTIVE = 'Y')
+			</if>
+			<if test="active != null and active != ''">
+				AND active = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+
+	<!-- 统计总记录数 -->
+	<select id="queryCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusAccountEntity">
+	    <![CDATA[
+	       	select/** 综合:统计总记录数 **/ count(*) from BSE.T_BAS_CUS_ACCOUNT T
+	    ]]>
+		<include refid="queryWhere" />
+
+	</select>
+
+	<!-- 新增信息 -->
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusAccountEntity">
+		
+		<![CDATA[
+			INSERT/** 综合:新增信息 **/ INTO BSE.T_BAS_CUS_ACCOUNT T	(
+		]]>
+		<include refid="cusAccount_Column_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, #{otherBranchBankName,jdbcType=VARCHAR},
+		#{accountNo,jdbcType=VARCHAR},
+		#{accountName,jdbcType=VARCHAR},
+		#{cityCode,jdbcType=VARCHAR}, #{provCode,jdbcType=VARCHAR},
+		#{bankCode,jdbcType=VARCHAR}, #{mobilePhone,jdbcType=VARCHAR},
+		#{customer,jdbcType=VARCHAR},
+		#{defaultAccount,jdbcType=CHAR},
+		#{branchBankCode,jdbcType=VARCHAR}, #{notes,jdbcType=VARCHAR},
+		#{createDate,jdbcType=TIMESTAMP}, #{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=CHAR},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR}, #{virtualCode,jdbcType=VARCHAR},
+		#{accountNature,jdbcType=VARCHAR},
+		#{crmId,jdbcType=DECIMAL},
+		#{cityName,jdbcType=VARCHAR},
+		#{provinceName,jdbcType=VARCHAR},
+		#{openingBankName,jdbcType=VARCHAR},
+		#{branchBankName,jdbcType=VARCHAR},
+		#{belongCustom,jdbcType=DECIMAL},
+		#{financeLinkman,jdbcType=VARCHAR}, #{accountUse,jdbcType=VARCHAR}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+
+	<!-- 修改信息 -->
+	<update id="update"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusAccountEntity">
+		update/** 综合:修改信息 **/ BSE.T_BAS_CUS_ACCOUNT
+		<set>
+				OTHER_BRANCH_BANK_NAME =
+				#{otherBranchBankName,jdbcType=VARCHAR},
+				ACCOUNT_NO = #{accountNo,jdbcType=VARCHAR},
+				ACCOUNT_NAME = #{accountName,jdbcType=VARCHAR},
+				CITY_CODE = #{cityCode,jdbcType=VARCHAR},
+				PROV_CODE = #{provCode,jdbcType=VARCHAR},
+				BANK_CODE = #{bankCode,jdbcType=VARCHAR},
+				MOBILE_PHONE = #{mobilePhone,jdbcType=VARCHAR},
+				CUSTOMER = #{customer,jdbcType=VARCHAR},
+				DEFAULT_ACCOUNT = #{defaultAccount,jdbcType=CHAR},
+				BRANCH_BANK_CODE = #{branchBankCode,jdbcType=VARCHAR},
+				NOTES = #{notes,jdbcType=VARCHAR},
+				CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			 	ACTIVE = #{active,jdbcType=CHAR}, 
+			 	CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR}, 
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			<!-- <if test="virtualCode != null"> VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR}, 
+				</if> -->
+				ACCOUNTNATURE = #{accountNature,jdbcType=VARCHAR},
+			<!-- <if test="crmId != null"> CRM_ID = #{crmId,jdbcType=DECIMAL}, </if> -->
+				CITYNAME = #{cityName,jdbcType=VARCHAR},
+				PROVINCENAME = #{provinceName,jdbcType=VARCHAR},
+				OPENING_BANK_NAME = #{openingBankName,jdbcType=VARCHAR},
+				BRANCH_BANK_NAME = #{branchBankName,jdbcType=VARCHAR},
+				CRM_CUS_ID = #{belongCustom,jdbcType=DECIMAL},
+				FINANCELINKMAN = #{financeLinkman,jdbcType=VARCHAR},
+				ACCOUNTUSE = #{accountUse,jdbcType=VARCHAR}
+		</set>
+
+		<where>
+			<if test="crmId != null and crmId != ''">
+				CRM_ID = #{crmId,jdbcType=DECIMAL}
+			</if>
+		</where>
+
+	</update>
+
+	<!-- 作废信息 -->
+	<update id="deleteByCode" parameterType="map">
+		update/** 综合:作废信息 **/ BSE.T_BAS_CUS_ACCOUNT
+
+		<set>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				MODIFY_USER_CODE = #{modifyUser, jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+		</set>
+
+		<where>
+			<if test="code !=null and code != ''">
+				CRM_ID = #{code,jdbcType=DECIMAL}
+			</if>
+			<if test="active0 != null and active0 != ''">
+				AND ACTIVE = #{active0,jdbcType=CHAR}
+			</if>
+		</where>
+	</update>
+
+</mapper>

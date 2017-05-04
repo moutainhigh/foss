@@ -1,0 +1,77 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<wsdl:definitions name="ISyncDataService" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+	targetNamespace="http://www.deppon.com/foss/ws/syncdata" 
+	xmlns:tns="http://www.deppon.com/foss/ws/syncdata"
+	xmlns:tns_exception="http://www.deppon.com/esb/exception"
+	xmlns:tns_domain="http://www.deppon.com/foss/ws/syncdata/domain"
+	xmlns:tns_esbHeader="http://www.deppon.com/esb/header"
+	xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" 
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+	<wsdl:types>
+		<xs:schema targetNamespace="http://www.deppon.com/foss/ws/syncdata/domain"
+			xmlns:ns1="http://www.deppon.com/foss/ws/syncdata/domain" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+			<xs:element name="sync" type="ns1:sync" />
+			<xs:element name="syncResponse" type="ns1:syncResponse" />
+			<xs:complexType name="sync">
+				<xs:sequence>
+					<xs:element minOccurs="0" name="jsonRequest" type="xs:string" />
+				</xs:sequence>
+			</xs:complexType>
+			<xs:complexType name="syncResponse">
+				<xs:sequence>
+					<xs:element minOccurs="0" name="return" type="xs:boolean" />
+				</xs:sequence>
+			</xs:complexType>
+		</xs:schema>
+		<xsd:schema targetNamespace="http://www.deppon.com/esb/exception">
+			<xsd:include schemaLocation="CommonException.xsd"></xsd:include>
+		</xsd:schema>
+		<xsd:schema targetNamespace="http://www.deppon.com/esb/header">
+			<xsd:include schemaLocation="ESBHeader.xsd"></xsd:include>
+		</xsd:schema>
+	</wsdl:types>
+	<wsdl:message name="syncRequest">
+		<wsdl:part element="tns_domain:sync" name="syncRequest"></wsdl:part>
+		<wsdl:part name="esbHeader" element="tns_esbHeader:esbHeader"></wsdl:part>
+	</wsdl:message>
+	<wsdl:message name="syncResponse">
+		<wsdl:part element="tns_domain:syncResponse" name="syncResponse"></wsdl:part>
+		<wsdl:part name="esbHeader" element="tns_esbHeader:esbHeader"></wsdl:part>
+	</wsdl:message>
+	<wsdl:message name="CommonException">
+		<wsdl:part element="tns_exception:commonExceptionInfo" name="commonException">
+		</wsdl:part>
+	</wsdl:message>
+	<wsdl:portType name="ISyncDataService">
+		<wsdl:operation name="sync">
+			<wsdl:input message="tns:syncRequest" name="sync">
+			</wsdl:input>
+			<wsdl:output message="tns:syncResponse" name="syncResponse">
+			</wsdl:output>
+			<wsdl:fault message="tns:CommonException" name="commonException">
+			</wsdl:fault>
+		</wsdl:operation>
+	</wsdl:portType>
+	<wsdl:binding name="SyncDataServiceImplServiceSoapBinding"
+		type="tns:ISyncDataService">
+		<soap:binding style="document"
+			transport="http://schemas.xmlsoap.org/soap/http" />
+		<wsdl:operation name="sync">
+			<soap:operation soapAction="http://www.deppon.com/foss/ws/syncdata" style="document" />
+			<wsdl:input name="sync">
+				<soap:header use="literal" part="esbHeader" message="tns:syncRequest"></soap:header>
+				<soap:body use="literal" parts="syncRequest" />
+			</wsdl:input>
+			<wsdl:output name="syncResponse">
+				<soap:header use="literal" part="esbHeader" message="tns:syncResponse"></soap:header>
+				<soap:body use="literal" />
+			</wsdl:output>
+		</wsdl:operation>
+	</wsdl:binding>
+	<wsdl:service name="SyncDataServiceImplService">
+		<wsdl:port binding="tns:SyncDataServiceImplServiceSoapBinding"
+			name="SyncDataServiceImplPort">
+			<soap:address location="http://www.depppon.com/foss/ws/syncdata" />
+		</wsdl:port>
+	</wsdl:service>
+</wsdl:definitions>

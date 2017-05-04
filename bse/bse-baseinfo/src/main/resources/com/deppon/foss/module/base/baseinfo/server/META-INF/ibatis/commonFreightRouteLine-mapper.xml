@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.commonFreightRouteLine">
+
+	<resultMap id="freightRouteLineResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.FreightRouteLineEntity">
+		<id column="L_ID" property="id" jdbcType="VARCHAR" />
+		<result column="L_SEQ" property="sequence" jdbcType="NUMERIC" />
+		<result column="L_VIRTUAL_CODE" property="virtualCode"
+			jdbcType="VARCHAR" />
+		<result column="L_FREIGHT_ROUTE_VIRTUAL_CODE" property="freightRouteVirtualCode"
+			jdbcType="VARCHAR" />
+		<result column="L_LINE_VIRTUAL_CODE" property="lineVirtualCode"
+			jdbcType="VARCHAR" />
+		<result column="L_ORIG_ORG_CODE" property="orginalOrganizationCode"
+			jdbcType="VARCHAR" />
+		<result column="L_DEST_ORG_CODE" property="destinationOrganizationCode"
+			jdbcType="VARCHAR" />
+		<result column="L_AGING" property="aging" jdbcType="NUMERIC" />
+		<result column="L_PASSBY_TIME" property="passbyAging" jdbcType="NUMERIC" />
+		<result column="L_ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="L_CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="L_MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="L_CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="L_MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+	</resultMap>
+
+	<resultMap id="freightRouteLineAllResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.dto.CommonFreightRouteLineDto">
+		<association property="destOrg"
+			javaType="com.deppon.foss.module.base.baseinfo.api.shared.domain.OrgAdministrativeInfoEntity">
+			<result column="DEST_ID" property="id" jdbcType="VARCHAR" />
+			<result column="DEST_CODE" property="code" jdbcType="VARCHAR" />
+			<result column="DEST_NAME" property="name" jdbcType="VARCHAR" />
+		</association>
+		<association property="origOrg"
+			javaType="com.deppon.foss.module.base.baseinfo.api.shared.domain.OrgAdministrativeInfoEntity">
+			<result column="ORIG_ID" property="id" jdbcType="VARCHAR" />
+			<result column="ORIG_CODE" property="code" jdbcType="VARCHAR" />
+			<result column="ORIG_NAME" property="name" jdbcType="VARCHAR" />
+			<result />
+		</association>
+		<association property="freightRouteLineEntity" resultMap="freightRouteLineResultMap"></association>
+	</resultMap>
+
+	<sql id="columns">
+		L.ID AS L_ID,
+		L.SEQ AS L_SEQ,
+		L.ORIG_ORG_CODE AS
+		L_ORIG_ORG_CODE,
+		L.DEST_ORG_CODE AS L_LDEST_ORG_CODE,
+		L.AGING AS
+		L_AGING,
+		L.PASSBY_TIME AS L_PASSBY_TIME,
+		L.CREATE_TIME AS L_CREATE_TIME,
+		L.MODIFY_TIME AS L_MODIFY_TIME,
+		L.ACTIVE AS L_ACTIVE,
+		L.CREATE_USER_CODE AS L_CREATE_USER_CODE,
+		L.MODIFY_USER_CODE AS
+		L_MODIFY_USER_CODE,
+		L.VIRTUAL_CODE AS L_VIRTUAL_CODE,
+		L.FREIGHT_ROUTE_VIRTUAL_CODE AS L_FREIGHT_ROUTE_VIRTUAL_CODE,
+		L.LINE_VIRTUAL_CODE AS L_LINE_VIRTUAL_CODE,
+		ORIG.ID AS ORIG_ID,
+		ORIG.CODE AS ORIG_CODE,
+		ORIG.NAME AS ORIG_NAME,
+		DEST.ID AS DEST_ID,
+		DEST.CODE AS DEST_CODE,
+		DEST.NAME AS DEST_NAME
+	</sql>
+	<sql id="condtion">
+		FROM BSE.T_BAS_FREIGHT_ROUTE_LINE L
+		LEFT JOIN BSE.T_BAS_ORG ORIG
+		ON
+		L.ORIG_ORG_CODE=ORIG.CODE
+		LEFT JOIN BSE.T_BAS_ORG DEST
+		ON
+		L.DEST_ORG_CODE=DEST.CODE
+		<where>
+			<if test="active != null">
+				AND L.ACTIVE = #{active}
+			</if>
+			<if test="destName != null and destName != ''">
+				AND ( 
+						DEST.NAME LIKE CONCAT(CONCAT('%', #{destName}),'%')
+					OR	
+						DEST.CODE LIKE CONCAT(CONCAT('%', #{destName}),'%')
+					)
+			</if>
+			<if test="destCode != null and destCode!='' ">
+				AND DEST.CODE = #{destCode}
+			</if>
+			<if test="ogirName != null and ogirName != ''">
+				AND (
+						ORIG.NAME LIKE CONCAT(CONCAT('%', #{ogirName}),'%')
+					OR
+						ORIG.CODE LIKE CONCAT(CONCAT('%', #{ogirName}),'%')
+					)
+			</if>
+			<if test="orgCode != null and orgCode !='' ">
+				AND ORIG.CODE = #{orgCode}
+			</if> 
+		</where>
+	</sql>
+	<!-- 查询走货路径线路信息 -->
+	<select id="queryFreightRouteLineByCondition" resultMap="freightRouteLineAllResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.CommonReightRouteLineCondition">
+		SELECT
+		/** 综合:查询查询走货路径线路信息**/
+		<include refid="columns" />
+		<include refid="condtion" />
+	</select>
+	<!-- 统计总记录数 -->
+	<select id="countFreightRouteLineByCondition" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.CommonReightRouteLineCondition">
+		SELECT
+		/** 综合:统计总记录数**/
+		COUNT(*)
+		<include refid="condtion" />
+	</select>
+</mapper>

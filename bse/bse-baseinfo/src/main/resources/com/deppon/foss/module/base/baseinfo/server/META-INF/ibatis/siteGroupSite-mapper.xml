@@ -1,0 +1,260 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.sitegroupsite">
+
+	<!-- 站点组站点 -->
+	<resultMap id="groupSiteResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.SiteGroupSiteEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="SEQ" property="seq" jdbcType="DECIMAL" />
+		<result column="SITE" property="site" jdbcType="VARCHAR" />
+		<result column="PARENT_ORG_CODE" property="parentOrgCode"
+			jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+		<result column="VIRTUAL_CODE" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="SITECODE" property="siteCode" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 数据字段 -->
+	<sql id="groupSite_Column_List">
+		ID, SEQ, SITE, PARENT_ORG_CODE, CREATE_TIME, MODIFY_TIME,
+		ACTIVE,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE, VIRTUAL_CODE,SITECODE
+	</sql>
+
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<if test="parentOrgCode != null and parentOrgCode != ''">
+				PARENT_ORG_CODE = #{parentOrgCode,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+
+	</sql>
+
+	<!-- 查询所有站点组站点信息 -->
+	<select id="queryAllInfos"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SiteGroupSiteEntity"
+		resultMap="groupSiteResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有站点组站点信息**/
+		]]>
+		<include refid="groupSite_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_SITEGROUP_SITE T
+		]]>
+		<include refid="queryWhere" />
+	</select>
+
+	<!-- 根据站点组编码查询该站点组下所有站点信息 -->
+	<select id="querySitsByCode" parameterType="java.lang.String"
+		resultMap="groupSiteResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据站点组编码查询该站点组下所有站点信息**/
+		]]>
+		<include refid="groupSite_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_SITEGROUP_SITE T
+		]]>
+		<where>
+			PARENT_ORG_CODE = #{virtualCode,jdbcType=VARCHAR}
+			AND ACTIVE = 'Y'
+		</where>
+		order by SEQ 
+	</select>
+	
+	<!-- 根据站点组编码查询该站点组下所有站点信息 -->
+	<select id="queryAllSitesByCode" parameterType="map"
+		resultMap="groupSiteResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据站点组编码查询该站点组下所有站点信息 **/
+		]]>
+		<include refid="groupSite_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_SITEGROUP_SITE T
+		]]>
+		<where>
+		    <if test="siteGroupCode != null and siteGroupCode != ''">
+		        PARENT_ORG_CODE = #{siteGroupCode,jdbcType=VARCHAR}
+		    </if>
+		    <if test="active != null and active != ''">
+		        AND ACTIVE = #{active,jdbcType=VARCHAR}
+		    </if>
+		</where>
+		
+	</select>
+
+	<!-- 统计总记录数 -->
+	<select id="queryCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SiteGroupSiteEntity">
+	    <![CDATA[
+	       	select/** 综合:统计总记录数 **/ count(*) from BSE.T_BAS_SITEGROUP_SITE T
+	    ]]>
+		<include refid="queryWhere" />
+
+	</select>
+	
+	<!-- 验证所属站点组虚拟编码、站点序号是否唯一 -->
+	<select id="queryGroupSiteBySeqVirtualCode" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SiteGroupSiteEntity"
+		resultMap="groupSiteResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:验证所属站点组虚拟编码、站点序号是否唯一 **/
+		]]>
+		<include refid="groupSite_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_SITEGROUP_SITE T
+		]]>
+		<where>
+		    <if test="parentOrgCode != null and parentOrgCode != ''">
+		        PARENT_ORG_CODE = #{parentOrgCode,jdbcType=VARCHAR}
+		    </if>
+		    <if test="seq != null and seq != ''">
+		        AND SEQ = #{seq,jdbcType=VARCHAR}
+		    </if>
+		    <if test="active != null and active != ''">
+		        AND ACTIVE = #{active,jdbcType=VARCHAR}
+		    </if>
+		</where>
+		
+	</select>
+	
+	<!-- 验证所属站点组站点是否重复 -->
+	<select id="queryGroupSiteBySiteCode" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SiteGroupSiteEntity"
+		resultMap="groupSiteResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:验证所属站点组站点是否重复**/
+		]]>
+		<include refid="groupSite_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_SITEGROUP_SITE T
+		]]>
+		<where>
+		    <if test="parentOrgCode != null and parentOrgCode != ''">
+		        PARENT_ORG_CODE = #{parentOrgCode,jdbcType=VARCHAR}
+		    </if>
+		     <if test="siteCode != null and siteCode != ''">
+		        AND SITECODE = #{siteCode,jdbcType=VARCHAR}
+		    </if>
+		    <if test="active != null and active != ''">
+		        AND ACTIVE = #{active,jdbcType=VARCHAR}
+		    </if>
+		</where>
+		
+	</select>
+
+	<!-- 新增 站点组站点信息 -->
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SiteGroupSiteEntity">
+		
+		<![CDATA[
+			INSERT/** 综合:新增 站点组站点信息 **/ INTO BSE.T_BAS_SITEGROUP_SITE T	(
+		]]>
+		<include refid="groupSite_Column_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR},
+		#{seq,jdbcType=DECIMAL},
+		#{site,jdbcType=VARCHAR},
+		#{parentOrgCode,jdbcType=VARCHAR},
+		#{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=CHAR},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR},
+		#{virtualCode,jdbcType=VARCHAR},
+		#{siteCode,jdbcType=VARCHAR}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+
+	<!-- 修改 站点组站点信息 -->
+	<update id="update"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SiteGroupSiteEntity">
+		update/** 综合:修改 站点组站点信息 **/ BSE.T_BAS_SITEGROUP_SITE
+		<set>
+			<if test="seq != null">
+				SEQ = #{seq,jdbcType=DECIMAL},
+			</if>
+			<if test="siteCode != null">
+				SITE = #{siteCode,jdbcType=VARCHAR},
+			</if>
+			<if test="site != null">
+				SITE = #{site,jdbcType=VARCHAR},
+			</if>
+			<if test="parentOrgCode != null">
+				PARENT_ORG_CODE = #{parentOrgCode,jdbcType=VARCHAR},
+			</if>
+			<!-- <if test="createDate != null"> CREATE_TIME = #{createDate,jdbcType=TIMESTAMP}, 
+				</if> -->
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<!-- <if test="active != null"> ACTIVE = #{active,jdbcType=CHAR}, </if> -->
+			<!-- <if test="createUser != null"> CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR}, 
+				</if> -->
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<!-- <if test="virtualCode != null"> VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR}, 
+				</if> -->
+		</set>
+
+		<where>
+			<if test="virtualCode != null">
+				VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active0 != ''">
+				and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+
+	</update>
+
+	<!-- 作废 站点组站点信息 -->
+	<update id="deleteByCode" parameterType="map">
+		update/** 综合:作废 站点组站点信息 **/ BSE.T_BAS_SITEGROUP_SITE
+
+		<set>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				MODIFY_USER_CODE = #{modifyUser, jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+
+		</set>
+
+		<where>
+			<if test="codes!=null and codes.length > 0">
+				VIRTUAL_CODE in
+				<foreach collection="codes" index="index" item="code" open="("
+					separator="," close=")">
+					#{code}
+				</foreach>
+			</if>
+			<if test="active0 != null and active0 != ''">
+				and ACTIVE = #{active0,jdbcType=CHAR}
+			</if>
+		</where>
+	</update>
+
+</mapper>

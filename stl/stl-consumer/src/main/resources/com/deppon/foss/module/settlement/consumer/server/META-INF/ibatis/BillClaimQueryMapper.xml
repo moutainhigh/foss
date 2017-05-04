@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.BillClaimEntityDao" >
+  
+  	<!-- 根据运单号查询理赔等实体 -->
+	<select id="selectBillClaimByWaybillNo" resultMap="BaseResultMap"
+		parameterType="java.util.Map">
+		SELECT/*结算-客户管理- 根据运单号查询理赔等实体 */
+		<include refid="Base_Column_List" />
+		FROM STL.T_STL_BILL_CLAIM
+		WHERE WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+		AND ACTIVE = #{active,jdbcType=CHAR}
+	</select>
+	
+	<!-- 根据参数查询理赔信息总条数 -->
+	<select id="queryBillClaimCount" resultType="long" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.BillClaimQueryDto">
+		SELECT /*结算-客户管理- 根据参数查询理赔信息总条数 */COUNT(1)
+		FROM STL.T_STL_BILL_CLAIM C,STL.T_STL_BILL_PAYABLE P
+		WHERE C.WAYBILL_NO = P.WAYBILL_NO
+		AND P.BILL_TYPE = #{payableBillType,jdbcType=VARCHAR}
+    	AND P.VERIFY_AMOUNT = 0
+    	AND P.ACTIVE = #{active,jdbcType=CHAR}
+    	AND C.ACTIVE = #{active,jdbcType=CHAR}
+    	AND P.PAY_STATUS = #{payStatus,jdbcType=VARCHAR}
+    	AND <![CDATA[C.CREATE_TIME >=#{ startCreateTime ,jdbcType=TIMESTAMP}
+    	AND C.CREATE_TIME <#{endCreateTime ,jdbcType=TIMESTAMP} ]]>
+    	
+    	<if test="paymentCategories != null and paymentCategories != ''">
+				AND C.PAYMENT_CATEGORIES = #{paymentCategories,jdbcType=VARCHAR}
+		</if>
+		<if test="type != null and type != ''">
+				AND C.TYPE = #{type,jdbcType=VARCHAR}
+		</if>
+		<if test="customerCode != null and customerCode != ''">
+				AND C.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+		</if>
+		<if test="payableOrgCode != null and payableOrgCode != ''">
+				AND C.PAYABLE_ORG_CODE = #{payableOrgCode,jdbcType=VARCHAR}
+		</if>
+		<if test="productCode != null and productCode.size() > 0 ">
+			AND P.PRODUCT_CODE IN
+			<foreach collection="productCode"  index="index" item="item"  open="(" separator="," close=")">  
+		    	#{item} 
+			</foreach>				
+		</if>	
+		AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = C.PAYABLE_ORG_CODE<!-- 登录者部门等于理赔应付部门过滤 -->
+     			)
+	</select>
+	
+	<!-- 根据参数查询理赔信息 -->
+	<select id="selectBillClaimListByParam" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.BillClaimQueryDto">
+		SELECT/*结算-客户管理- 根据参数查询理赔信息 */ C.ID,
+       		C.WAYBILL_NO,
+       		C.CUSTOMER_CODE,
+       		C.CUSTOMER_NAME,
+       		C.AMOUNT/100 AS AMOUNT,
+       		C.PAYMENT_CATEGORIES,
+       		C.PAYABLE_ORG_CODE,
+       		C.PAYABLE_ORG_NAME,
+       		C.CREATE_TIME,
+       		C.CREATE_USER_CODE,
+       		C.CREATE_USER_NAME,
+       		C.MODIFY_TIME,
+       		C.MODIFY_USER_CODE,
+       		C.MODIFY_USER_NAME,
+       		C.TYPE,
+       		C.ACTIVE,
+       		C.STATUS,
+       		P.PRODUCT_CODE PRODUCT_CODE,
+            C.APPLY_ORG_TYPE
+		FROM STL.T_STL_BILL_CLAIM C,STL.T_STL_BILL_PAYABLE P
+		WHERE C.WAYBILL_NO = P.WAYBILL_NO
+		AND P.BILL_TYPE = #{payableBillType,jdbcType=VARCHAR}
+    	AND P.VERIFY_AMOUNT = 0
+    	AND P.ACTIVE = #{active,jdbcType=CHAR}
+    	AND C.ACTIVE = #{active,jdbcType=CHAR}
+    	AND P.PAY_STATUS = #{payStatus,jdbcType=VARCHAR}
+    	AND <![CDATA[C.CREATE_TIME >=#{ startCreateTime ,jdbcType=TIMESTAMP} AND C.CREATE_TIME <#{endCreateTime ,jdbcType=TIMESTAMP} ]]>
+    	
+    	<if test="paymentCategories != null and paymentCategories != ''">
+				AND C.PAYMENT_CATEGORIES = #{paymentCategories,jdbcType=VARCHAR}
+		</if>
+		<if test="type != null and type != ''">
+				AND C.TYPE = #{type,jdbcType=VARCHAR}
+		</if>
+		<if test="customerCode != null and customerCode != ''">
+				AND C.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+		</if>
+		<if test="payableOrgCode != null and payableOrgCode != ''">
+				AND C.PAYABLE_ORG_CODE = #{payableOrgCode,jdbcType=VARCHAR}
+		</if>
+		<if test="productCode != null and productCode.size() > 0 ">
+			AND P.PRODUCT_CODE IN
+			<foreach collection="productCode"  index="index" item="item"  open="(" separator="," close=")">  
+		    	#{item} 
+			</foreach>				
+		</if>		
+		AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = C.PAYABLE_ORG_CODE<!-- 登录者部门等于理赔应付部门过滤 -->
+     			)
+	</select>
+	
+	<!-- 根据运单号查询理赔信息 -->
+	<select id="selectBillClaimListByWayBillNos" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.BillClaimQueryDto">
+		SELECT /*结算-客户管理- 根据运单号查询理赔信息 */C.ID,
+       		C.WAYBILL_NO,
+       		C.CUSTOMER_CODE,
+       		C.CUSTOMER_NAME,
+       		C.AMOUNT/100 AS AMOUNT,
+       		C.PAYMENT_CATEGORIES,
+       		C.PAYABLE_ORG_CODE,
+       		C.PAYABLE_ORG_NAME,
+       		C.CREATE_TIME,
+       		C.CREATE_USER_CODE,
+       		C.CREATE_USER_NAME,
+       		C.MODIFY_TIME,
+       		C.MODIFY_USER_CODE,
+       		C.MODIFY_USER_NAME,
+       		C.TYPE,
+       		C.ACTIVE,
+       		C.STATUS,
+       		P.PRODUCT_CODE PRODUCT_CODE,
+            C.APPLY_ORG_TYPE
+		FROM STL.T_STL_BILL_CLAIM C,STL.T_STL_BILL_PAYABLE P
+		WHERE C.WAYBILL_NO = P.WAYBILL_NO
+		AND P.BILL_TYPE = #{payableBillType,jdbcType=VARCHAR}
+    	AND P.VERIFY_AMOUNT = 0
+    	AND P.ACTIVE = #{active,jdbcType=CHAR}
+    	AND C.ACTIVE = #{active,jdbcType=CHAR}
+    	AND P.PAY_STATUS = #{payStatus,jdbcType=VARCHAR}
+    	AND C.WAYBILL_NO IN 
+    		<foreach collection="wayBillNos"  index="index" item="item"  open="(" separator="," close=")">  
+			  	#{item} 
+			</foreach>
+		AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = C.PAYABLE_ORG_CODE<!-- 登录者部门等于理赔应付部门过滤 -->
+     			)	
+	</select>
+</mapper>

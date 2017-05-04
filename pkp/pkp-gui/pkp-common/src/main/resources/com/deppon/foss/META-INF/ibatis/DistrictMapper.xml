@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="pkp.districtMapper">
+
+	<resultMap id="districtResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.AdministrativeRegionsEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="CODE" property="code" jdbcType="VARCHAR" />
+		<result column="NAME" property="name" jdbcType="VARCHAR" />
+		<result column="SIMPLE_NAME" property="simpleName" jdbcType="VARCHAR" />
+		<result column="AVAILABLE_NAME" property="availableName"
+			jdbcType="VARCHAR" />
+		<result column="PARENT_DISTRICT_NAME" property="parentDistrictName"
+			jdbcType="VARCHAR" />
+		<result column="VIRTUAL_DISTRICT_ID" property="virtualDistrictId"
+			jdbcType="VARCHAR" />
+		<result column="DEGREE" property="degree" jdbcType="VARCHAR" />
+		<result column="PARENT_DISTRICT_CODE" property="parentDistrictCode"
+			jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+		<result column="REGIONSUFFIX" property="regionsuffix" jdbcType="VARCHAR" />
+		<result column="PINYIN" property="pinYin" jdbcType="VARCHAR" />
+		<result column="PINYIN_ABBR" property="pinYinAbbr" jdbcType="VARCHAR" />
+		<result column="IS_HOT_CITY" property="isHotCity" jdbcType="CHAR" />
+		
+	</resultMap>
+
+	<sql id="district_Column_List">
+		ID, CODE, NAME, SIMPLE_NAME, AVAILABLE_NAME, PARENT_DISTRICT_NAME,
+		VIRTUAL_DISTRICT_ID,
+		DEGREE, PARENT_DISTRICT_CODE, CREATE_TIME, MODIFY_TIME, ACTIVE,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE, REGIONSUFFIX, PINYIN, PINYIN_ABBR, IS_HOT_CITY
+	</sql>
+
+	<select id="selectDistrictByPrimaryKey" resultMap="districtResultMap"
+		parameterType="java.lang.String">
+		select
+		<include refid="district_Column_List" />
+		from BSE.T_BAS_DISTRICT
+		where ID = #{id,jdbcType=VARCHAR}
+	</select>
+
+	<!--zxy 20130924 BUG-55661 修改: 条件name=''改成name like 。有些地址比如 江苏，库里面是江苏省 用等号则查不到-->
+	<select id="selectDistrictByName" resultMap="districtResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AdministrativeRegionsEntity">
+		select
+		<include refid="district_Column_List" />
+		from BSE.T_BAS_DISTRICT
+		where ACTIVE = #{active,jdbcType=CHAR}
+			<![CDATA[and name like '%' || #{name,jdbcType=VARCHAR} || '%']]>
+			and DEGREE = #{degree,jdbcType=VARCHAR}
+			<if test="parentDistrictCode != null">
+				and PARENT_DISTRICT_CODE = #{parentDistrictCode,jdbcType=VARCHAR}
+			</if>
+	</select>
+
+	<select id="selectDistrictByDegree" resultMap="districtResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AdministrativeRegionsEntity">
+		select
+		<include refid="district_Column_List" />
+		from BSE.T_BAS_DISTRICT
+		where ACTIVE = #{active,jdbcType=CHAR}
+		and DEGREE = #{degree,jdbcType=VARCHAR}
+	</select>
+
+	<select id="selectDistrictByParentDistCode" resultMap="districtResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AdministrativeRegionsEntity">
+		select
+		<include refid="district_Column_List" />
+		from BSE.T_BAS_DISTRICT
+		where ACTIVE = #{active,jdbcType=CHAR}
+		and PARENT_DISTRICT_CODE = #{parentDistrictCode,jdbcType=VARCHAR}
+	</select>
+
+	<delete id="deleteDistrictByPrimaryKey" parameterType="java.lang.String">
+		delete from BSE.T_BAS_DISTRICT
+		where ID = #{id,jdbcType=VARCHAR}
+	</delete>
+
+	<insert id="insertDistrict"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AdministrativeRegionsEntity">
+		insert into BSE.T_BAS_DISTRICT (ID, CODE, NAME,
+		SIMPLE_NAME, AVAILABLE_NAME, PARENT_DISTRICT_NAME,
+		VIRTUAL_DISTRICT_ID, DEGREE, PARENT_DISTRICT_CODE,
+		CREATE_TIME, MODIFY_TIME, ACTIVE,
+		CREATE_USER_CODE, MODIFY_USER_CODE, REGIONSUFFIX, 
+		PINYIN, PINYIN_ABBR, IS_HOT_CITY
+		)
+		values (#{id,jdbcType=VARCHAR}, #{code,jdbcType=VARCHAR},
+		#{name,jdbcType=VARCHAR},
+		#{simpleName,jdbcType=VARCHAR}, #{availableName,jdbcType=VARCHAR},
+		#{parentDistrictId,jdbcType=VARCHAR},
+		#{virtualDistrictId,jdbcType=VARCHAR}, #{degree,jdbcType=VARCHAR},
+		#{parentDistrictCode,jdbcType=VARCHAR},
+		#{createDate,jdbcType=TIMESTAMP}, #{modifyDate,jdbcType=TIMESTAMP}, #{active,jdbcType=CHAR},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR}, #{regionsuffix,jdbcType=VARCHAR},
+		#{pinYin,jdbcType=VARCHAR},   #{pinYinAbbr,jdbcType=VARCHAR}, #{isHotCity,jdbcType=VARCHAR}
+		
+		)
+	</insert>
+
+	<insert id="insertDistrictSelective"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AdministrativeRegionsEntity">
+		insert into BSE.T_BAS_DISTRICT
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				ID,
+			</if>
+			<if test="code != null">
+				CODE,
+			</if>
+			<if test="name != null">
+				NAME,
+			</if>
+			<if test="simpleName != null">
+				SIMPLE_NAME,
+			</if>
+			<if test="availableName != null">
+				AVAILABLE_NAME,
+			</if>
+			<if test="parentDistrictName != null">
+				PARENT_DISTRICT_NAME,
+			</if>
+			<if test="virtualDistrictId != null">
+				VIRTUAL_DISTRICT_ID,
+			</if>
+			<if test="degree != null">
+				DEGREE,
+			</if>
+			<if test="parentDistrictCode != null">
+				PARENT_DISTRICT_CODE,
+			</if>
+			<if test="createDate != null">
+				CREATE_TIME,
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME,
+			</if>
+			<if test="active != null">
+				ACTIVE,
+			</if>
+			<if test="createUser != null">
+				CREATE_USER_CODE,
+			</if>
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE,
+			</if>
+			<if test="regionsuffix != null">
+				REGIONSUFFIX,
+			</if>
+			<if test="pinYin != null">
+				PINYIN,
+			</if>
+			<if test="pinYinAbbr != null">
+				PINYIN_ABBR,
+			</if>
+			<if test="isHotCity != null">
+				IS_HOT_CITY,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id,jdbcType=VARCHAR},
+			</if>
+			<if test="code != null">
+				#{code,jdbcType=VARCHAR},
+			</if>
+			<if test="name != null">
+				#{name,jdbcType=VARCHAR},
+			</if>
+			<if test="simpleName != null">
+				#{simpleName,jdbcType=VARCHAR},
+			</if>
+			<if test="availableName != null">
+				#{availableName,jdbcType=VARCHAR},
+			</if>
+			<if test="parentDistrictId != null">
+				#{parentDistrictId,jdbcType=VARCHAR},
+			</if>
+			<if test="virtualDistrictId != null">
+				#{virtualDistrictId,jdbcType=VARCHAR},
+			</if>
+			<if test="degree != null">
+				#{degree,jdbcType=VARCHAR},
+			</if>
+			<if test="parentDistrictCode != null">
+				#{parentDistrictCode,jdbcType=VARCHAR},
+			</if>
+			<if test="createDate != null">
+				#{createDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyDate != null">
+				#{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="active != null">
+				#{active,jdbcType=CHAR},
+			</if>
+			<if test="createUser != null">
+				#{createUser,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyUser != null">
+				#{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="regionsuffix != null">
+				#{regionsuffix,jdbcType=VARCHAR},
+			</if>
+			<if test="pinYin != null">
+				#{pinYin,jdbcType=VARCHAR},
+			
+			</if>
+			<if test="pinYinAbbr != null">
+				#{pinYinAbbr,jdbcType=VARCHAR},
+			</if>
+			<if test="isHotCity != null">
+				#{isHotCity,jdbcType=CHAR},
+			</if>
+		</trim>
+	</insert>
+
+	<update id="updateDistrictByPrimaryKeySelective"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AdministrativeRegionsEntity">
+		update BSE.T_BAS_DISTRICT
+		<set>
+			<if test="code != null">
+				CODE = #{code,jdbcType=VARCHAR},
+			</if>
+			<if test="name != null">
+				NAME = #{name,jdbcType=VARCHAR},
+			</if>
+			<if test="simpleName != null">
+				SIMPLE_NAME = #{simpleName,jdbcType=VARCHAR},
+			</if>
+			<if test="availableName != null">
+				AVAILABLE_NAME = #{availableName,jdbcType=VARCHAR},
+			</if>
+			<if test="parentDistrictName != null">
+				PARENT_DISTRICT_NAME = #{parentDistrictName,jdbcType=VARCHAR},
+			</if>
+			<if test="virtualDistrictId != null">
+				VIRTUAL_DISTRICT_ID = #{virtualDistrictId,jdbcType=VARCHAR},
+			</if>
+			<if test="degree != null">
+				DEGREE = #{degree,jdbcType=VARCHAR},
+			</if>
+			<if test="parentDistrictCode != null">
+				PARENT_DISTRICT_CODE = #{parentDistrictCode,jdbcType=VARCHAR},
+			</if>
+			<if test="createDate != null">
+				CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="active != null">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="createUser != null">
+				CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="regionsuffix != null">
+				REGIONSUFFIX = #{regionsuffix,jdbcType=VARCHAR},
+			</if>
+			<if test="pinYin != null">
+				PINYIN = #{pinYin,jdbcType=VARCHAR},
+			</if>
+			<if test="pinYinAbbr != null">
+				PINYIN_ABBR = #{pinYinAbbr,jdbcType=VARCHAR},
+			</if>
+			<if test="isHotCity != null">
+				IS_HOT_CITY = #{isHotCity,jdbcType=CHAR},
+			</if>
+		</set>
+		where ID = #{id,jdbcType=VARCHAR}
+	</update>
+
+	<update id="updateDistrictByPrimaryKey"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AdministrativeRegionsEntity">
+		update BSE.T_BAS_DISTRICT
+		set CODE = #{code,jdbcType=VARCHAR},
+		NAME = #{name,jdbcType=VARCHAR},
+		SIMPLE_NAME = #{simpleName,jdbcType=VARCHAR},
+		AVAILABLE_NAME = #{availableName,jdbcType=VARCHAR},
+		PARENT_DISTRICT_NAME = #{parentDistrictName,jdbcType=VARCHAR},
+		VIRTUAL_DISTRICT_ID = #{virtualDistrictId,jdbcType=VARCHAR},
+		DEGREE = #{degree,jdbcType=VARCHAR},
+		PARENT_DISTRICT_CODE = #{parentDistrictCode,jdbcType=VARCHAR},
+		CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+		MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+		ACTIVE = #{active,jdbcType=CHAR},
+		CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+		MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+		REGIONSUFFIX = #{regionsuffix,jdbcType=VARCHAR},
+		PINYIN = #{pinYin,jdbcType=VARCHAR},
+		PINYIN_ABBR = #{pinYinAbbr,jdbcType=VARCHAR},
+		IS_HOT_CITY = #{isHotCity,jdbcType=CHAR}, 
+		where ID = #{id,jdbcType=VARCHAR}
+	</update>
+
+</mapper>

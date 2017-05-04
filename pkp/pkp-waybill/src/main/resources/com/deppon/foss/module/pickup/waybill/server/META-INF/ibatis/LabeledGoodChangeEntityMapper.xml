@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!--zxy 20131118 ISSUE-4391 增加木托字段 ：PACKAGE_SALVER-->
+<mapper namespace="foss.pkp.LabeledGoodChangeEntityMapper" >
+
+  <resultMap id="labeledGoodChangeResultMap" type="com.deppon.foss.module.pickup.waybill.shared.domain.LabeledGoodChangeEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+    <result column="LABELED_GOOD_ID" property="labeledGoodId" jdbcType="VARCHAR" />
+    <result column="SERIAL_NO" property="serialNo" jdbcType="VARCHAR" />
+    <result column="CHANGE_TYPE" property="changeType" jdbcType="VARCHAR" />
+    <result column="RECEIVE_ORG_CODE" property="receiveOrgCode" jdbcType="VARCHAR" />
+    <result column="RECEIVE_ORG_NAME" property="receiveOrgName" jdbcType="VARCHAR" />
+    <result column="FLOW_STATUS" property="flowStatus" jdbcType="VARCHAR" />
+    <result column="CHANGE_TIMES" property="changeTimes" jdbcType="VARCHAR" />
+    <result column="NEEDINVOKE_TRFINTERFACE" property="needInvokeTrfInterface" jdbcType="VARCHAR" />
+    <result column="PACKAGE_SALVER" property="packageSalver" jdbcType="VARCHAR" />
+  </resultMap>
+  
+  <sql id="base_Column_List" >
+    ID, WAYBILL_NO, LABELED_GOOD_ID, SERIAL_NO, CHANGE_TYPE, RECEIVE_ORG_CODE, RECEIVE_ORG_NAME, FLOW_STATUS, CHANGE_TIMES,PACKAGE_SALVER 
+  </sql>
+  
+  
+  
+  <insert id="insertLabeledGoodChangeSelective" 
+  		parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.LabeledGoodChangeEntity" >
+    insert into PKP.T_SRV_LABELED_GOOD_CHANGE (
+    	ID, WAYBILL_NO, LABELED_GOOD_ID, SERIAL_NO, CHANGE_TYPE, RECEIVE_ORG_CODE, RECEIVE_ORG_NAME, FLOW_STATUS, CHANGE_TIMES,PACKAGE_SALVER
+    )
+    values (#{id,jdbcType=VARCHAR}, #{waybillNo,jdbcType=VARCHAR}, #{labeledGoodId,jdbcType=VARCHAR}, 
+      #{serialNo,jdbcType=VARCHAR}, #{changeType,jdbcType=VARCHAR}, #{receiveOrgCode,jdbcType=VARCHAR}, 
+      #{receiveOrgName,jdbcType=VARCHAR}, #{flowStatus,jdbcType=VARCHAR}, #{changeTimes,jdbcType=VARCHAR},#{packageSalver,jdbcType=VARCHAR})
+  </insert>
+  
+  <insert id="insertLabeledGoodChangeBatch" parameterType="java.util.List" >
+  	begin
+  	<foreach collection="list" item="item" index="index" separator=";" >
+	    insert into PKP.T_SRV_LABELED_GOOD_CHANGE
+	    <trim prefix="(" suffix=")" suffixOverrides="," >
+	      <if test="item.id != null" >
+	        ID,
+	      </if>
+	      <if test="item.waybillNo != null" >
+	        WAYBILL_NO,
+	      </if>
+	      <if test="item.labeledGoodId != null" >
+	        LABELED_GOOD_ID,
+	      </if>
+	      <if test="item.serialNo != null" >
+	        SERIAL_NO,
+	      </if>
+	      <if test="item.changeType != null" >
+	        CHANGE_TYPE,
+	      </if>
+	      <if test="item.receiveOrgCode != null" >
+	        RECEIVE_ORG_CODE,
+	      </if>
+	      <if test="item.receiveOrgName != null" >
+	        RECEIVE_ORG_NAME,
+	      </if>
+	      <if test="item.flowStatus != null" >
+	        FLOW_STATUS,
+	      </if>
+	      <if test="item.changeTimes != null" >
+	        CHANGE_TIMES,
+	      </if>
+	     
+	    </trim>
+	    <trim prefix="values (" suffix=")" suffixOverrides="," >
+	      <if test="item.id != null" >
+	        #{item.id,jdbcType=VARCHAR},
+	      </if>
+	      <if test="item.waybillNo != null" >
+	        #{item.waybillNo,jdbcType=VARCHAR},
+	      </if>
+	      <if test="item.labeledGoodId != null" >
+	        #{item.labeledGoodId,jdbcType=VARCHAR},
+	      </if>
+	      <if test="item.serialNo != null" >
+	        #{item.serialNo,jdbcType=VARCHAR},
+	      </if>
+	      <if test="item.changeType != null" >
+	        #{item.changeType,jdbcType=VARCHAR},
+	      </if>
+	      <if test="item.receiveOrgCode != null" >
+	        #{item.receiveOrgCode,jdbcType=VARCHAR},
+	      </if>
+	      <if test="item.receiveOrgName != null" >
+	        #{item.receiveOrgName,jdbcType=VARCHAR},
+	      </if>
+	      <if test="item.flowStatus != null" >
+	        #{item.flowStatus,jdbcType=VARCHAR},
+	      </if>
+	      <if test="item.changeTimes != null" >
+	        #{item.changeTimes,jdbcType=VARCHAR},
+	      </if>
+	   
+	    </trim>
+	</foreach>
+	;end;
+  </insert>
+  
+ 
+ <select id="queryInProcessLabelGoodChangeHistory" 
+ 	resultMap="labeledGoodChangeResultMap" parameterType="java.util.Map" >
+    select  /*模块：接送货-运单-根据运单号查询冗余信息表*/
+    	<include refid="base_Column_List" />
+    from  PKP.T_SRV_LABELED_GOOD_CHANGE
+    where WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR} 
+    and FLOW_STATUS = #{flowStatus,jdbcType=VARCHAR}  
+    order by CHANGE_TIMES desc, SERIAL_NO asc
+  </select>
+ 
+ 
+ <select id="queryLastApprovedLabelGoodChange" 
+ 	resultMap="labeledGoodChangeResultMap" parameterType="java.util.Map" >
+    select  /*模块：接送货-运单-根据运单号查询冗余信息表*/
+    	<include refid="base_Column_List" />
+    from  PKP.T_SRV_LABELED_GOOD_CHANGE
+    where WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR} 
+    and FLOW_STATUS = #{flowStatus,jdbcType=VARCHAR} 
+    and CHANGE_TYPE != #{changeType,jdbcType=VARCHAR} 
+    order by CHANGE_TIMES desc, SERIAL_NO asc
+  </select>
+  
+  <update id="updateLabeledGoodChangeToApprove" 
+ 	parameterType="java.util.Map" >
+    UPDATE   PKP.T_SRV_LABELED_GOOD_CHANGE 
+     SET FLOW_STATUS = #{flowStatus,jdbcType=VARCHAR}  
+    WHERE WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR} 
+    and FLOW_STATUS = #{flowStatusBefore,jdbcType=VARCHAR}  
+  </update>
+  
+   <update id="deleteLabeledGoodChangeInProcessByWaybillNo" 
+ 	parameterType="java.util.Map" >
+    DELETE FROM   PKP.T_SRV_LABELED_GOOD_CHANGE 
+    WHERE WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR} 
+    and FLOW_STATUS = #{flowStatus,jdbcType=VARCHAR}  
+  </update>
+  
+  <update id="updateLabeledGoodChangeToNeedInvokeTfr" parameterType="java.lang.String">
+  	UPDATE  PKP.T_SRV_LABELED_GOOD_CHANGE SET NEEDINVOKE_TRFINTERFACE='Y' 
+  	WHERE ID = #{labledGoodChangeId,jdbcType=VARCHAR}  
+  </update>
+   <update id="updateLabeledGoodChangeToNoNeedInVokeInterface" parameterType="java.lang.String">
+  	UPDATE  PKP.T_SRV_LABELED_GOOD_CHANGE SET NEEDINVOKE_TRFINTERFACE='N' 
+  	WHERE ID = #{labledGoodChangeId,jdbcType=VARCHAR}  
+  </update>
+  
+  
+  
+   <select id="queryLastApprovedChange" 
+ 	resultMap="labeledGoodChangeResultMap" parameterType="java.util.Map" >
+    select  /*模块：接送货-运单-查询最近一次审批通过的所有记录*/
+    	  ID, WAYBILL_NO, LABELED_GOOD_ID, SERIAL_NO, CHANGE_TYPE, 
+    	  RECEIVE_ORG_CODE, RECEIVE_ORG_NAME, FLOW_STATUS, CHANGE_TIMES, NEEDINVOKE_TRFINTERFACE 
+    from  PKP.T_SRV_LABELED_GOOD_CHANGE
+    where WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR} 
+    order by CHANGE_TIMES desc, SERIAL_NO asc
+  </select>
+  
+  <update id="modifyWaybillNo" parameterType="java.util.Map">
+  	UPDATE  PKP.T_SRV_LABELED_GOOD_CHANGE  
+  		set WAYBILL_NO =#{newWaybill,jdbcType=VARCHAR} 
+  	WHERE WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+  	  
+  </update>
+   
+  
+</mapper>

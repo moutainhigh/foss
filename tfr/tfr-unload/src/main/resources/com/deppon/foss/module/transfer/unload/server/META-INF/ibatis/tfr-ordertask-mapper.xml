@@ -1,0 +1,681 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.unload.ordertask" >
+		<!-- 用于分配点单任务时，根据交接单编号获取交接单信息 -->
+	<resultMap id="queryBillInfoResultMap"
+		type="com.deppon.foss.module.transfer.unload.api.shared.domain.OtHandOverBillDetailEntity">
+		<result property="id" column="id" />
+		<result property="handoverNo" column="handoverNo" />
+		<result property="waybillNo" column="waybillNo" />
+		<result property="transportType" column="transportType" />
+		<result property="orderGoodsQty" column="orderGoodsQty" />
+		<result property="createBillQty" column="createBillQty" />
+		<result property="alAssembleQty" column="alAssembleQty" />
+		<result property="alAssembleWeight" column="alAssembleWeight" />
+		<result property="alAssembleVolume" column="alAssembleVolume" />
+		<result property="goodsName" column="goodsName" />
+		<result property="packing" column="packing" />
+		<result property="departCode" column="departCode" />
+		<result property="departName" column="departName" />
+		<result property="ArriveCode" column="ArriveCode" />
+		<result property="ArriveName" column="ArriveName" />
+		<result property="createUserCode" column="createUserCode" />
+	</resultMap>
+	
+	<!--点单任务基本信息ResultMap-->
+	<resultMap id="orderTaskResultMap" type="com.deppon.foss.module.transfer.unload.api.shared.domain.OrderTaskEntity" >
+		<id column="id" property="id" />
+		<result column="orderTaskNo" property="orderTaskNo" />
+		<result column="vehicleNo" property="vehicleNo" />
+		<result column="orderCode" property="orderCode" />
+		<result column="orderName" property="orderName" />
+		<result column="orderTaskState" property="orderTaskState" />
+		<result column="reportState" property="reportState" />
+		<result column="departCode" property="departCode" />
+		<result column="departName" property="departName" />
+		<result column="ArriveCode" property="ArriveCode" />
+		<result column="ArriveName" property="ArriveName" />
+		<result column="totGoodsQty" property="totGoodsQty" />
+		<result column="totWaybillQty" property="totWaybillQty" />
+		<result column="totWeight" property="totWeight" />
+		<result column="totVolume" property="totVolume" />
+		<result column="createOrgCode" property="createOrgCode" />
+		<result column="createOrgName" property="createOrgName" />
+		<result column="orderStartTime" property="orderStartTime" />
+		<result column="orderEndTime" property="orderEndTime" />
+		<result column="createTime" property="createTime" />
+		<result column="modifyTime" property="modifyTime" />
+		<result column="modifyUser" property="modifyUser" />
+	</resultMap>
+	
+	  <resultMap id="orderTaskDtoResultMap" 
+		type="com.deppon.foss.module.transfer.unload.api.shared.dto.OrderTaskDto" extends="orderTaskResultMap">
+			<result property="reportNo" column="reportNo" />
+  </resultMap>
+	
+		<!-- 点单任务查询流水明细 -->
+	<resultMap id="getOrderSerialNoDetailsByBillNoResultMap" 
+		type = "com.deppon.foss.module.transfer.unload.api.shared.domain.OrderSerialNoDetailEntity" >
+		<result property="id" column="id" />
+		<result property="waybillNo" column="waybillNo" />
+		<result property="serialNo" column="serialNo" />
+		<result property="handoverNo" column="handoverNo" />
+		<result property="orderReportType" column="orderReportType" />
+		<result property="orderTaskDetailId" column="orderTaskDetailId" />
+	</resultMap>
+	
+	<!-- 点单任务查询流水明细和流水数量 -->
+	<resultMap id="getOrderSerialNoDetailsByTskNumResultMap" 
+		type = "com.deppon.foss.module.transfer.unload.api.shared.dto.QuerySerialListByTskNumDto" >
+		<result property="id" column="id" />
+		<result property="waybillNo" column="waybillNo" />
+		<result property="serialNo" column="serialNo" />
+		<result property="handoverNo" column="handoverNo" />
+		<result property="orderReportType" column="orderReportType" />
+		<result property="orderTaskDetailId" column="orderTaskDetailId" />
+	</resultMap>
+	
+	<!-- 根据明细ID查询对应点单任务流水 数量 272681 2016-4-6 14:21:44 -->
+	<resultMap id="getSerialCountsByDetailIDResultMap" 
+		type = "com.deppon.foss.module.transfer.unload.api.shared.dto.QuerySerialListByTskNumDto" >
+		<result property="orderTaskDetailId" column="orderTaskDetailId" />
+		<result property="serialcounts" column="counts" />
+	</resultMap>
+	
+	<!-- 点单任务查询流水明细 -->
+	<resultMap id="getSerialNoInfoByWaybillNoResultMap" 
+		type = "com.deppon.foss.module.transfer.unload.api.shared.dto.QuerySerialInfoBywaybillNoDto" >
+		<result property="waybillNo" column="waybillNo" />
+		<result property="serialNo" column="serialNo" />
+		<result property="transportType" column="transportType" />
+		<result property="createBillQty" column="createBillQty" />
+	</resultMap>
+	
+	<!--用于分配点单任务时，根据交接单号获取交接单信息-->
+	<select id="queryOrderTaskByHandoverNo" parameterType="String"
+		resultMap="queryBillInfoResultMap">
+		select 
+		    ot.order_task_no orderTaskNo
+			from tfr.t_Opt_Order_Task_Detail td,
+            tfr.t_opt_order_task ot
+		<where>
+			td.order_task_no = ot.order_task_no(+) 
+      		and td.handover_no = #{handoverNo}
+    	</where>
+	</select>
+	
+	<!--用于分配点单任务时，根据交接单号获取点单任务信息-->
+	<select id="queryHandOverBillInfo" parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.OtHandOverBillDetailEntity"
+		resultMap="queryBillInfoResultMap">
+		select 
+		    hd.handover_no handoverNo,
+		    d.waybill_no waybillNo,
+		    d.transport_type transportType,
+		    d.goods_qty createBillQty,
+		    d.handover_goods_qty alAssembleQty,
+		    d.handover_weight alAssembleWeight,
+		    d.handover_volume alAssembleVolume,
+		    d.packing packing,
+		    d.goods_name goodsName,
+		    hd.orig_org_code departCode,
+		    hd.orig_org_name departName,
+		    hd.dest_org_code ArriveCode,
+		    hd.dest_org_name ArriveName
+			from tfr.t_opt_handoverbill hd,
+			tfr.t_opt_handoverbill_detail d
+		<where>
+			hd.handover_no = d.handover_no(+) 
+			and ( hd.orig_org_name  like '【H】%' or hd.dest_org_name like '【H】%')
+      		and hd.handover_no = #{handoverNo} 
+    	</where>
+	</select>
+	
+	
+	<!--新增点单任务时，将点单任务基本信息插入点单任务表-->
+	<insert id="saveOrderTaskBaseInfo" parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.OrderTaskEntity">
+		insert into tfr.t_opt_order_task
+		  (ID,
+		   ORDER_TASK_NO,
+		   VEHICLE_NO,
+		   ORDER_MAN_CODE,
+		   ORDER_MAN_NAME,
+		   ORDER_TASK_STATE,
+		   REPORT_STATE,
+		   ORIG_ORG_CODE,
+		   ORIG_ORG_NAME,
+		   DEST_ORG_CODE,
+		   DEST_ORG_NAME,
+		   GOODS_QTY_TOTAL,
+		   WAYBILL_QTY_TOTAL,
+		   WEIGHT_TOTAL,
+		   VOLUME_TOTAL,
+		   CTEATE_ORG_CODE,
+		   CTEATE_ORG_NAME,
+		   ORDER_START_TIME,
+		   ORDER_END_TIME,
+		   CREATE_TIME)
+		   values(
+		   #{id,jdbcType=VARCHAR},
+		   #{orderTaskNo,jdbcType=VARCHAR},
+		   #{vehicleNo,jdbcType=VARCHAR},
+		   #{orderCode,jdbcType=VARCHAR},
+		   #{orderName,jdbcType=VARCHAR},
+		   #{orderTaskState,jdbcType=TIMESTAMP},
+		   #{reportState,jdbcType=TIMESTAMP},
+		   #{departCode,jdbcType=VARCHAR},
+		   #{departName,jdbcType=VARCHAR},
+		   #{ArriveCode,jdbcType=VARCHAR},
+		   #{ArriveName,jdbcType=VARCHAR},
+		   #{totGoodsQty,jdbcType=VARCHAR},
+		   #{totWaybillQty,jdbcType=VARCHAR},
+		   #{totWeight,jdbcType=VARCHAR},
+		   #{totVolume,jdbcType=VARCHAR},
+		   #{createOrgCode,jdbcType=VARCHAR},
+		   #{createOrgName,jdbcType=VARCHAR},
+		   #{orderStartTime,jdbcType=TIMESTAMP},
+		   #{orderEndTime,jdbcType=TIMESTAMP},
+		   #{createTime,jdbcType=TIMESTAMP}
+		   )
+	</insert>
+	
+	<!--新增点单任务时，批量插入点单任务明细信息-->
+	<insert id="saveOrderBillDetailList"  parameterType="java.util.List">
+		begin
+		<foreach collection="list" item="item" separator=";">
+			insert into tfr.t_opt_order_task_detail
+			  (ID,
+			   ORDER_TASK_NO,
+			   HANDOVER_NO,
+			   WAYBILL_NO,
+			   ORIG_ORG_CODE,
+			   ORIG_ORG_NAME,
+			   DEST_ORG_CODE,
+			   DEST_ORG_NAME,
+			   TRANSPORT_TYPE,
+			   ORDER_GOODS_QTY,
+			   GOODS_QTY,
+			   HANDOVER_GOODS_QTY,
+			   HANDOVER_WEIGHT,
+			   HANDOVER_VOLUME,
+			   PACKING,
+			   GOODS_NAME,
+			   CREATE_TIME,
+			   MODIFY_TIME
+			)
+			values
+				(#{item.id,jdbcType=VARCHAR},
+				#{item.orderTaskNo,jdbcType=VARCHAR},
+				#{item.handoverNo,jdbcType=VARCHAR},
+				#{item.waybillNo,jdbcType=VARCHAR},
+				#{item.departCode,jdbcType=VARCHAR},
+				#{item.departName,jdbcType=VARCHAR},
+				#{item.ArriveCode,jdbcType=VARCHAR},
+				#{item.ArriveName,jdbcType=VARCHAR},
+				#{item.transportType,jdbcType=VARCHAR},
+				#{item.orderGoodsQty,jdbcType=DECIMAL},  
+				#{item.createBillQty,jdbcType=DECIMAL},
+				#{item.alAssembleQty,jdbcType=DECIMAL},
+				#{item.alAssembleWeight,jdbcType=DECIMAL},
+				#{item.alAssembleVolume,jdbcType=DECIMAL},
+				#{item.packing,jdbcType=VARCHAR},
+				#{item.goodsName,jdbcType=VARCHAR},
+				#{item.createDate,jdbcType=TIMESTAMP},
+				#{item.modifyDate,jdbcType=TIMESTAMP}
+				)
+		</foreach>
+		;end;
+	</insert>
+	
+		<!--分配点单任务时，批量插入流水号明细信息-->
+	<insert id="saveOrderSerialNoDetailList"  parameterType="java.util.List">
+		begin
+		<foreach collection="list" item="item" separator=";">
+		insert into tfr.T_OPT_ORDER_TASK_SERIALNO
+		  (ID,
+		   SERIAL_NO,
+		   HANDOVER_NO,
+		   WAYBILL_NO,
+		   ORDER_REPORT_TYPE,
+		   TASK_DETAIL_ID,
+		   CREATE_TIME
+		   )
+		values
+			(#{item.id,jdbcType=VARCHAR},
+			#{item.serialNo,jdbcType=VARCHAR},
+			#{item.handoverNo,jdbcType=VARCHAR},
+			#{item.waybillNo,jdbcType=VARCHAR},
+			#{item.orderReportType,jdbcType=VARCHAR},
+			#{item.orderTaskDetailId,jdbcType=VARCHAR},
+			sysdate
+			)
+			</foreach>
+		;end;
+	</insert>
+	
+	<!--查询点单任务-->
+	 <select id="queryOrderTask" resultMap="orderTaskDtoResultMap" parameterType="com.deppon.foss.module.transfer.unload.api.shared.dto.OrderTaskDto">
+  		select 
+           ot.id id,
+           ot.order_task_no orderTaskNo,
+           ot.vehicle_no vehicleNo,
+           ot.order_man_name orderName,
+           ot.order_man_code orderCode,
+           ot.order_task_state orderTaskState,
+           dr.report_state reportState,
+           dr.report_no reportNo,
+           ot.order_start_time orderStartTime,
+           ot.order_end_time orderEndTime
+          from tfr.t_opt_order_task ot
+          left join tfr.t_opt_order_differ_report dr
+          on ot.order_task_no = dr.order_task_no
+         <where>
+         <if test="orderTaskNo !=null and orderTaskNo != '' ">	
+			and ot.order_task_no = #{orderTaskNo}
+		</if>
+		<if test="orderName !=null and orderName != '' ">	
+			and ot.order_man_code = #{orderName}
+		</if>
+		<if test="orderTaskState !=null and orderTaskState != '' and orderTaskState != 'ALL'">	
+			and ot.order_task_state = #{orderTaskState}
+		</if>
+		<if test="createOrgCode!=null and createOrgCode!=''">
+			and ot.CTEATE_ORG_CODE = #{createOrgCode}
+		</if>
+		<if test="orderStartTime!=null and orderStartTime!=''">
+			<![CDATA[and ot.order_start_time >= #{orderStartTime,jdbcType=TIMESTAMP}]]>
+		</if>
+		<if test="orderEndTime!=null and orderEndTime!=''">
+			<![CDATA[and ot.order_start_time <= #{orderEndTime,jdbcType=TIMESTAMP}]]>
+		</if>
+         </where>
+         order by ot.CREATE_TIME desc
+  </select>
+  
+  <select id="getTotCount" parameterType="com.deppon.foss.module.transfer.unload.api.shared.dto.OrderTaskDto" resultType="Long">
+		select 
+		  count(ot.id)
+		  from tfr.t_opt_order_task ot
+          left join  tfr.t_opt_order_differ_report dr
+          on ot.order_task_no = dr.order_task_no
+        <where>
+		<if test="orderTaskNo !=null and orderTaskNo != '' ">	
+			and ot.order_task_no = #{orderTaskNo}
+		</if>
+		<if test="orderName !=null and orderName != '' ">	
+			and ot.order_man_code = #{orderName}
+		</if>
+		<if test="orderTaskState !=null and orderTaskState != '' and orderTaskState != 'ALL'">	
+			and ot.order_task_state = #{orderTaskState}
+		</if>
+		<if test="createOrgCode!=null and createOrgCode!=''">
+			and ot.CTEATE_ORG_CODE = #{createOrgCode}
+		</if>
+		<if test="orderStartTime!=null and orderStartTime!=''">
+			<![CDATA[and ot.order_start_time >= #{orderStartTime,jdbcType=TIMESTAMP}]]>
+		</if>
+		<if test="orderEndTime!=null and orderEndTime!=''">
+			<![CDATA[and ot.order_start_time <= #{orderEndTime,jdbcType=TIMESTAMP}]]>
+		</if>
+        </where>
+  </select>
+  
+  <!--用于处理点单任务时，根据点单任务号加载基本信息-->
+	<select id="queryOrderTaskBaseInfoByNo" parameterType="String"
+			resultMap="orderTaskResultMap">
+		  select task.id,
+                 task.order_task_no orderTaskNo,
+                 task.vehicle_no vehicleNo,
+                 task.goods_qty_total totGoodsQty,
+                 task.waybill_qty_total totWaybillQty,
+                 task.weight_total totWeight,
+                 task.volume_total totVolume,
+                 task.order_task_state orderTaskState,
+                 task.orig_org_name  departName,
+                 task.dest_org_name  ArriveName,
+                 task.ORDER_MAN_CODE orderCode
+       from tfr.t_opt_order_task task 
+    	<where>
+    		task.order_task_no = #{orderTaskNo}
+    	</where>
+	</select>
+	
+	<!--用于处理点单任务时，根据点单任务号加载已有的单据列表-->
+	<select id="queryOrderTaskBillDetailListByNo" parameterType="String"
+			resultMap="queryBillInfoResultMap">
+		 select detail.id id,
+		        detail.order_task_no orderTaskNo,
+                detail.handover_no handoverNo,
+                detail.waybill_no waybillNo,
+                detail.transport_type transportType,
+                detail.goods_qty createBillQty,
+                detail.handover_goods_qty alAssembleQty,
+                detail.handover_volume alAssembleVolume,
+                detail.handover_weight alAssembleWeight,
+                detail.order_goods_qty orderGoodsQty          
+         from tfr.t_opt_order_task_detail detail
+    	<where>
+			 detail.order_task_no = #{order_task_no}
+    	</where>
+	</select>
+	
+	<select id="queryOrderTaskSerialNoListByBillNo" resultMap="getOrderSerialNoDetailsByBillNoResultMap"
+		parameterType="String">
+	<![CDATA[
+		select 
+		    serialNo.id,
+		    serialNo.task_detail_id  orderTaskDetailId,
+			serialNo.serial_no serialNo,
+			serialNo.handover_no handoverNo,
+			serialNo.waybill_no waybillNo,
+			serialNo.order_report_type orderReportType
+			from tfr.t_opt_order_task_serialno serialNo
+	]]>
+		<where>
+			serialNo.TASK_DETAIL_ID= #{orderTaskDetailId}
+   				order by serialNo.serial_no asc
+		</where>
+	</select>
+	
+	<select id="queryValidateWaybillNoAndSerialNo" resultMap="getSerialNoInfoByWaybillNoResultMap"
+		parameterType="String">
+	<![CDATA[
+       select lg.serial_no serialNo,
+       lg.waybill_no waybillNo,
+       sp.name transportType,
+       sw.goods_qty_total createBillQty
+       from pkp.t_srv_labeled_good lg
+       left join  pkp.t_srv_waybill sw
+       on lg.waybill_no = sw.waybill_no  and sw.active = 'Y'	
+       left join  pkp.t_srv_product sp
+       on sp.code = sw.product_code 
+	]]>
+		<where> 
+			    lg.waybill_no =#{waybillNo}
+			    order by lg.serial_no asc
+		</where>
+	</select>
+	
+	<!--更新点单任务基本信息，可能修改的字段为：车牌号,点单任务状态,任务完成时间-->
+	<update id="updateOrderTaskBasicInfo" 
+			parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.OrderTaskEntity">
+		update tfr.t_opt_order_task task
+		<set>
+      		<if test="vehicleNo != null and vehicleNo != ''">
+	        	task.VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR},
+	      	</if>
+	      	<if test="orderTaskState != null and orderTaskState != ''">
+	        	task.ORDER_TASK_STATE = #{orderTaskState,jdbcType=VARCHAR},
+	      	</if>
+	      	<if test="orderEndTime != null and orderEndTime != ''">
+	        	task.ORDER_END_TIME = #{orderEndTime,jdbcType=TIMESTAMP},
+	      	</if>
+	      	<if test="totWaybillQty != null and totWaybillQty != ''">
+	        	task.WAYBILL_QTY_TOTAL = #{totWaybillQty,jdbcType=VARCHAR},
+	      	</if>
+	      	<if test="modifyTime != null and modifyTime != ''">
+	        	task.MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP},
+	      	</if>
+	      	<if test="modifyUser != null and modifyUser != ''">
+	        	task.MODIFY_USER_CODE = #{modifyUser,jdbcType=TIMESTAMP},
+	      	</if>
+		</set>
+		<where>
+			task.ORDER_TASK_NO = #{orderTaskNo}
+		</where>
+	</update>
+	<!-- 批量更新点单流水信息 -->
+	<update id="updateOrderSerialInfo" 	parameterType="HashMap"  >
+		update tfr.t_opt_order_task_serialno t
+		<set>
+      		t.order_report_type = #{reportType,jdbcType=VARCHAR},
+      		<if test="modifyTime != null and modifyTime != ''">
+	        	t.MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP},
+	      	</if>
+	      	<if test="createTime != null and createTime != ''">
+	        	t.CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+	      	</if>
+		</set>
+		<where>
+			t.id in
+			<foreach item="item" index="index" collection="idList" 
+                     open="(" separator="," close=")">
+                    #{item}
+            </foreach>
+		</where>
+	</update>
+	
+	<!-- 批量更新点单任务明细信息 -->
+	<update id="updateOrderTaskDetailById" 	parameterType="HashMap"  >
+		update tfr.t_opt_order_task_detail t
+		<set>
+      		t.order_goods_qty = #{orderGoodsQty,jdbcType=VARCHAR}
+		</set>
+		<where>
+			t.id = #{id,jdbcType=VARCHAR}
+		</where>
+	</update>
+	
+	<!--处理点单任务时，批量插入多货流水号明细信息-->
+	<insert id="insertMoreSerialNo"  parameterType="java.util.List">
+		begin
+		<foreach collection="list" item="item" separator=";">
+		insert into tfr.T_OPT_ORDER_TASK_SERIALNO
+		  (ID,
+		   SERIAL_NO,
+		   WAYBILL_NO,
+		   ORDER_REPORT_TYPE,
+		   TASK_DETAIL_ID,
+		   MODIFY_TIME
+		   )
+		values
+			(#{item.id,jdbcType=VARCHAR},
+			#{item.serialNo,jdbcType=VARCHAR},
+			#{item.waybillNo,jdbcType=VARCHAR},
+			#{item.orderReportType,jdbcType=VARCHAR},
+			#{item.orderTaskDetailId,jdbcType=VARCHAR},
+			sysdate
+			)
+			</foreach>
+		;end;
+	</insert>
+	
+		<!--处理点单任务时，将点单任务基本单据信息插入点单任务表明细-->
+	<insert id="insertMoreBillNoInfo" parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.OtHandOverBillDetailEntity">
+		insert into tfr.t_opt_order_task_detail
+			  (ID,
+			   ORDER_TASK_NO,
+			   WAYBILL_NO,
+			   TRANSPORT_TYPE,
+			   ORDER_GOODS_QTY,
+			   GOODS_QTY,
+			   CREATE_TIME,
+			   MODIFY_TIME,
+			   CREATE_USER_CODE
+			)
+			values
+				(#{id,jdbcType=VARCHAR},
+				#{orderTaskNo,jdbcType=VARCHAR},
+				#{waybillNo,jdbcType=VARCHAR},
+				#{transportType,jdbcType=VARCHAR},
+				#{orderGoodsQty,jdbcType=DECIMAL},  
+				#{createBillQty,jdbcType=DECIMAL},
+				#{createDate,jdbcType=TIMESTAMP},
+				#{modifyDate,jdbcType=TIMESTAMP},
+				#{createUserCode,jdbcType=VARCHAR}
+				)
+	</insert>
+	
+	<select id="querySerialInfoBywaybillNoDto" resultMap="getOrderSerialNoDetailsByTskNumResultMap"
+		parameterType="String">
+				SELECT ts.id id,
+			       ts.serial_no serialno,
+			       ts.handover_no handoverno,
+			       ts.waybill_no waybillno,
+			       ts.order_report_type orderreporttype,
+			       ts.task_detail_id orderTaskDetailId
+			  FROM tfr.t_opt_order_task_serialno ts
+			  JOIN tfr.t_opt_order_task_detail td
+			    ON ts.task_detail_id = td.id
+			 WHERE td.order_task_no =#{orderTaskNo,jdbcType=VARCHAR}
+			   and ts.order_report_type in ('NORMAL','LOSE')
+	</select>
+	
+	<!-- 根据明细ID查询对应点单任务流水 数量 272681 2016-4-6 14:21:44 -->
+	<select id="querySerialCountsByDetailID" resultMap="getSerialCountsByDetailIDResultMap"
+		parameterType="String">
+			SELECT ts.task_detail_id as orderTaskDetailId, COUNT(1) AS counts
+			FROM tfr.t_opt_order_task_serialno ts
+			WHERE ts.task_detail_id IN
+			<foreach item="item" index="index" collection="detailIDList" 
+                     open="(" separator="," close=")">
+                    #{item}
+            </foreach>
+			GROUP BY ts.task_detail_id 
+	</select>
+	
+	<!--查询点单中的点单任务-->
+	<select id="queryUnfinishOrderTask" resultMap="orderTaskResultMap">
+		select  
+        t.id id,
+		t.order_task_no orderTaskNo,
+		t.vehicle_no vehicleNo,
+		t.order_man_code orderCode,
+		t.order_man_name orderName,
+		t.order_task_state orderTaskState,
+		t.report_state reportState,
+		t.orig_org_code departCode,
+		t.orig_org_name departName,
+		t.dest_org_code ArriveCode,
+		t.dest_org_name ArriveName,
+		t.goods_qty_total totGoodsQty,
+		t.waybill_qty_total totWaybillQty,
+		t.weight_total totWeight,
+		t.volume_total totVolume,
+		t.order_start_time orderStartTime,
+		t.order_end_time orderEndTime,
+		t.create_time createTime
+		from tfr.t_opt_order_task  t 
+		where  <![CDATA[ t.order_start_time < sysdate-4/24 ]]>
+        and t.order_task_state='IN'	 
+	</select>
+	
+	<select id="queryMoreSerialNoInfoByWaybillNo" resultMap="getOrderSerialNoDetailsByBillNoResultMap"
+		parameterType="HashMap">
+	<![CDATA[
+		select 
+		    serialNo.id,
+		    serialNo.task_detail_id  orderTaskDetailId,
+			serialNo.serial_no serialNo,
+			serialNo.handover_no handoverNo,
+			serialNo.waybill_no waybillNo,
+			serialNo.order_report_type orderReportType
+			from tfr.t_opt_order_task_serialno serialNo,
+			tfr.t_opt_order_task_detail detail
+			
+	]]>
+		<where>
+			detail.id = serialNo.task_detail_id
+			and serialNo.waybill_no = #{waybillNo}
+			and (serialNo.handover_no= #{handoverNo} or serialNo.handover_no is null)
+			and detail.order_task_no = #{orderTaskNo}
+		</where>
+	</select>
+	
+		<select id="queryOrderTaskMoreSerialNoListByNo" resultMap="getOrderSerialNoDetailsByBillNoResultMap"
+		parameterType="HashMap">
+	<![CDATA[
+		select 
+		    serialNo.id,
+		    serialNo.task_detail_id  orderTaskDetailId,
+			serialNo.serial_no serialNo,
+			serialNo.handover_no handoverNo,
+			serialNo.waybill_no waybillNo,
+			serialNo.order_report_type orderReportType
+			from tfr.t_opt_order_task_serialno serialNo,
+			tfr.t_opt_order_task_detail detail
+			
+	]]>
+		<where>
+			detail.id = serialNo.task_detail_id
+			and serialNo.waybill_no = #{waybillNo}
+
+			and detail.order_task_no = #{orderTaskNo}
+			
+		</where>
+	</select>
+	
+		 <!--pda扫描点单任务上传，根据运单号和流水号获得点单任务流水明细-->
+	<select id="queryOrderTaskSerialNoBaseInfoByNo" parameterType="HashMap"
+			resultMap="getOrderSerialNoDetailsByBillNoResultMap">
+		 select 
+		    serialNo.id,
+		    serialNo.task_detail_id  orderTaskDetailId,
+			serialNo.serial_no serialNo,
+			serialNo.handover_no handoverNo,
+			serialNo.waybill_no waybillNo,
+			serialNo.order_report_type orderReportType
+			from tfr.t_opt_order_task_serialno serialNo
+			left join tfr.t_opt_order_task_detail t
+            on serialNo.Task_Detail_Id = t.id
+    	<where>	
+    	 serialNo.waybill_no = #{waybillNo}
+    	 and serialNo.serial_no = #{serialNo}
+    	 and t.order_task_no = #{orderTaskNo}
+    	</where>
+	</select>
+	
+	<!--pda扫描任务上传，根据运单号和点单任务编号点查询单任务明细-->
+	<select id="queryOrderTaskDetailByNo" parameterType="HashMap"
+			resultMap="queryBillInfoResultMap">
+		select 
+	        detail.id id,
+	        detail.order_task_no orderTaskNo,
+	        detail.handover_no handoverNo,
+	        detail.waybill_no waybillNo,
+	        detail.transport_type transportType,
+	        detail.goods_qty createBillQty,
+	        detail.handover_goods_qty alAssembleQty,
+	        detail.handover_volume alAssembleVolume,
+	        detail.handover_weight alAssembleWeight,
+	        detail.order_goods_qty orderGoodsQty  
+			from tfr.t_opt_order_task_detail detail
+    	<where>	
+          detail.order_task_no = #{orderTaskNo}
+          and detail.waybill_no = #{waybillNo}
+    	</where>
+	</select>
+	
+	<!-- 根据id 查询点单任务明细-->
+		<select id="queryOrderTaskDetailById" parameterType="String"
+			resultMap="queryBillInfoResultMap">
+		select 
+	        detail.id id,
+	        detail.order_task_no orderTaskNo,
+	        detail.handover_no handoverNo,
+	        detail.waybill_no waybillNo,
+	        detail.transport_type transportType,
+	        detail.goods_qty createBillQty,
+	        detail.handover_goods_qty alAssembleQty,
+	        detail.handover_volume alAssembleVolume,
+	        detail.handover_weight alAssembleWeight,
+	        detail.order_goods_qty orderGoodsQty  
+			from tfr.t_opt_order_task_detail detail
+    	<where>	
+          detail.id = #{id}
+    	</where>
+	</select>
+	
+	<select id="queryOrderTaskByHandoverNoStrs" parameterType="HashMap"
+		resultType="Long">
+		select count(1)
+			from tfr.t_Opt_Order_Task_Detail td,
+            tfr.t_opt_order_task ot
+		<where>
+			td.order_task_no = ot.order_task_no(+) 
+      		and td.handover_no in ( ${handOverNoStrs} )
+    	</where>
+	</select>
+	
+</mapper>

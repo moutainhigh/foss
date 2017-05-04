@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.pkp.WaybillPaymentEntityMapper" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillPaymentEntity" >
+    <result column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="TYPE" property="type" jdbcType="VARCHAR" />
+    <result column="AMOUNT" property="amount" jdbcType="DECIMAL" />
+    <result column="PAYMENT_TIME" property="paymentTime" jdbcType="TIMESTAMP" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+    <result column="ACTIVE" property="active" jdbcType="VARCHAR" />
+    <result column="BILL_TIME" property="billTime" jdbcType="TIMESTAMP" />
+    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+    <result column="CURRENCY_CODE" property="currencyCode" jdbcType="VARCHAR"/>
+  </resultMap>
+  
+  <sql id="Base_Column_List" >
+    ID, TYPE, AMOUNT, PAYMENT_TIME, CREATE_TIME, MODIFY_TIME, ACTIVE, BILL_TIME,WAYBILL_NO,CURRENCY_CODE  
+  </sql>
+  <!-- 用于查询的字段：主要是在金额的字段上除以100 -->
+  <sql id="Base_Column_List_Select" >
+    ID, TYPE, AMOUNT/100 as AMOUNT, PAYMENT_TIME, CREATE_TIME, MODIFY_TIME, ACTIVE, BILL_TIME,WAYBILL_NO,CURRENCY_CODE  
+  </sql>
+  
+  <insert id="insert" parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillPaymentEntity" >
+    insert into PKP.T_SRV_PAYMENT (ID, TYPE, AMOUNT, 
+      PAYMENT_TIME, CREATE_TIME, MODIFY_TIME, 
+      ACTIVE, BILL_TIME,WAYBILL_NO,CURRENCY_CODE)
+    values (#{id,jdbcType=VARCHAR}, #{type,jdbcType=VARCHAR}, #{amount,jdbcType=DECIMAL}*100, 
+      #{paymentTime,jdbcType=TIMESTAMP}, #{createTime,jdbcType=TIMESTAMP}, #{modifyTime,jdbcType=TIMESTAMP}, 
+      #{active,jdbcType=VARCHAR}, #{billTime,jdbcType=TIMESTAMP},#{waybillNo,jdbcType=VARCHAR}),
+      #{currencyCode,jdbcType=VARCHAR}
+  </insert>
+  <insert id="insertSelective" parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillPaymentEntity" >
+    insert into PKP.T_SRV_PAYMENT
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="type != null" >
+        TYPE,
+      </if>
+      <if test="amount != null" >
+        AMOUNT,
+      </if>
+      <if test="paymentTime != null" >
+        PAYMENT_TIME,
+      </if>
+      <if test="createTime != null" >
+        CREATE_TIME,
+      </if>
+      <if test="modifyTime != null" >
+        MODIFY_TIME,
+      </if>
+      <if test="active != null" >
+        ACTIVE,
+      </if>
+      <if test="billTime != null" >
+        BILL_TIME,
+      </if>
+      <if test="id != null" >
+        WAYBILL_NO,
+      </if>
+      <if test="currencyCode != null" >
+        CURRENCY_CODE,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="type != null" >
+        #{type,jdbcType=VARCHAR},
+      </if>
+      <if test="amount != null" >
+        #{amount,jdbcType=DECIMAL}*100,
+      </if>
+      <if test="paymentTime != null" >
+        #{paymentTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="createTime != null" >
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifyTime != null" >
+        #{modifyTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="active != null" >
+        #{active,jdbcType=VARCHAR},
+      </if>
+      <if test="billTime != null" >
+        #{billTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="waybillNo != null" >
+        #{waybillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="currencyCode != null" >
+        #{currencyCode,jdbcType=VARCHAR},
+      </if>
+      
+    </trim>
+  </insert>
+
+	<!-- 批量插入WaybillPaymentEntity数据 -->
+	<insert id="insertBatch" parameterType="java.util.List">
+		begin
+		<choose>
+			<when test="list.size() == 0">
+				null
+			</when>
+			<otherwise>
+				<foreach collection="list" item="item" index="index"
+					separator=";">
+					insert into PKP.T_SRV_PAYMENT (ID, TYPE, AMOUNT,
+					PAYMENT_TIME, CREATE_TIME, MODIFY_TIME, ACTIVE,
+					BILL_TIME,WAYBILL_NO,CURRENCY_CODE)
+					values
+					(#{item.id,jdbcType=VARCHAR}, #{item.type,jdbcType=VARCHAR},
+					#{item.amount,jdbcType=DECIMAL}*100,
+					#{item.paymentTime,jdbcType=TIMESTAMP},
+					#{item.createTime,jdbcType=TIMESTAMP},
+					#{item.modifyTime,jdbcType=TIMESTAMP},
+					#{item.active,jdbcType=VARCHAR},
+					#{item.billTime,jdbcType=TIMESTAMP},#{item.waybillNo,jdbcType=VARCHAR},
+					#{item.currencyCode,jdbcType=VARCHAR})
+				</foreach>
+			</otherwise>
+		</choose>
+		;end;
+	</insert>
+  
+  <!-- 根据运单号查询出付款明细实体列表 -->
+  <select id="selectEntityListByNo" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.pickup.waybill.shared.dto.WaybillQueryArgsDto">
+  	select /*模块：接送货-运单-根据运单号查询出付款明细*/
+    <include refid="Base_Column_List_Select" />
+    from PKP.T_SRV_PAYMENT
+    <where>
+    	<if test="active != null">
+    		AND ACTIVE = #{active,jdbcType=VARCHAR}
+    	</if>
+    	<if test="waybillNo != null">
+    		AND WAYBILL_NO = #{waybillNo,jdbcType=DATE}
+    	</if>
+    </where>
+  </select>
+  
+  <!-- 查询新版付款方式实体列表 -->
+  <select id="queryNewWaybillPaymentEntityByNo" resultMap="BaseResultMap" 
+  			parameterType="com.deppon.foss.module.pickup.waybill.shared.dto.LastWaybillRfcQueryDto">
+  	select /*模块：接送货-运单-查询新版付款方式*/
+    <include refid="Base_Column_List_Select" />
+    from PKP.T_SRV_PAYMENT
+    <where>
+    	<![CDATA[
+    		WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+    		AND Create_Time = #{createTime,jdbcType=TIMESTAMP}
+    		AND MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP}
+    		AND ACTIVE = #{active,jdbcType=VARCHAR}
+    	]]>
+    </where>
+  </select>
+  <!-- 更新 -->
+  <update id="updateWaybillPayment" parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillPaymentEntity">
+  	update PKP.T_SRV_PAYMENT 
+  	<set>
+  		<if test="type!=null">
+  			TYPE = #{type,jdbcType=VARCHAR},
+  		</if>
+  		<if test="amount!=null">
+  			AMOUNT = #{amount,jdbcType=NUMERIC},
+  		</if>
+  		<if test="paymentTime!=null">
+  			PAYMENT_TIME = #{paymentTime,jdbcType=TIMESTAMP},
+  		</if>
+  		<if test="createTime!=null">
+  			CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+  		</if>
+  		<if test="modifyTime!=null">
+  			MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP},
+  		</if>
+  		<if test="active!=null">
+  			ACTIVE = #{active,jdbcType=VARCHAR},
+  		</if>
+  		<if test="billTime!=null">
+  			BILL_TIME = #{billTime,jdbcType=TIMESTAMP},
+  		</if>
+  		<if test="waybillNo!=null">
+  			WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR},
+  		</if>
+  		<if test="currencyCode!=null">
+  			CURRENCY_CODE = #{currencyCode,jdbcType=VARCHAR}
+  		</if>
+  	</set>
+  	WHERE ID = #{id,jdbcType=VARCHAR}
+  </update>
+  <!-- 删除付款对象 -->
+  <delete id="deleteWaybillPaymentEntityById" parameterType="String">
+  	DELETE FROM PKP.T_SRV_PAYMENT WHERE ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  <delete id="deleteWaybillPaymentEntityByWaybillNo" parameterType="String">
+  	DELETE FROM PKP.T_SRV_PAYMENT WHERE WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+  </delete>
+</mapper>

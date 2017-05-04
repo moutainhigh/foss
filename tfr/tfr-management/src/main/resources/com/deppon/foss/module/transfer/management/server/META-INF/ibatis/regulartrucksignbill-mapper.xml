@@ -1,0 +1,362 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.management.regulartrucksignbill" >
+  <resultMap id="RegularTruckSignBillResultMap" type="com.deppon.foss.module.transfer.management.api.shared.domain.RegularTruckSignBillEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="SIGN_BILL_NO" property="signBillNo" jdbcType="VARCHAR" />
+    <result column="HANDOVER_NO" property="handoverNo" jdbcType="VARCHAR" />
+    <result column="ARRV_REGION_NAME" property="arrvRegionName" jdbcType="VARCHAR" />
+    <result column="USE_TRUCK_ORG_CODE" property="useTruckOrgCode" jdbcType="VARCHAR" />
+    <result column="USE_TRUCK_ORG_NAME" property="useTruckOrgName" jdbcType="VARCHAR" />
+    <result column="MOTORCADE_CODE" property="motorcadeCode" jdbcType="VARCHAR" />
+    <result column="MOTORCADE_NAME" property="motorcadeName" jdbcType="VARCHAR" />
+    <result column="SCHEDULING_SIGN" property="schedulingSign" jdbcType="VARCHAR" />
+    <result column="DRIVER_CODE" property="driverCode" jdbcType="VARCHAR" />
+    <result column="DRIVER_NAME" property="driverName" jdbcType="VARCHAR" />
+    <result column="SIGN_BILL_DATE" property="signBillDate" jdbcType="TIMESTAMP" />
+    <result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+    <result column="VEHICLE_TYPE_LENGTH" property="vehicleTypeLength" jdbcType="VARCHAR" />
+    <result column="VEHICLE_TYPE_LENGTH_NAME" property="vehicleTypeLengthName" jdbcType="VARCHAR" />
+    <result column="LINE_CODE" property="lineCode" jdbcType="VARCHAR" />
+    <result column="LINE_NAME" property="lineName" jdbcType="VARCHAR" />
+    <result column="VOLUME" property="volume" jdbcType="DECIMAL" />
+    <result column="WEIGHT" property="weight" jdbcType="DECIMAL" />
+    <result column="LINE_DISTANCE" property="lineDistance" jdbcType="DECIMAL" />
+    <result column="MSLD_ROYALTY" property="msldRoyalty" jdbcType="DECIMAL" />
+    <result column="EMSLD_ROYALTY" property="emsldRoyalty" jdbcType="DECIMAL" />
+    <result column="DRIVER_ROYALTY_AMOUNT" property="driverRoyaltyAmount" jdbcType="DECIMAL" />
+    <result column="ISEMPTY" property="isEmpty" jdbcType="CHAR" />
+    <result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+    <result column="ORG_NAME" property="orgName" jdbcType="VARCHAR" />
+  </resultMap>
+  
+ <resultMap id="RegularTruckSignBillDtoResultMap" type="com.deppon.foss.module.transfer.management.api.shared.dto.RegularTruckSignBillDto" >
+    <result column="DRIVER_COUNT" property="driverCount"  />
+    <result column="LINE_DISTANCE_TOTAL" property="lineDistanceTotal"  />
+    <result column="VOLUME_TOTAL" property="volumeTotal" />
+    <result column="WEIGHT_TOTAL" property="weightTotal"  />
+  </resultMap>
+  
+  <sql id="RegularTruck_Column_List" >
+    T.ID,T.SIGN_BILL_NO,T.HANDOVER_NO,T.ARRV_REGION_NAME,T.USE_TRUCK_ORG_CODE,T.USE_TRUCK_ORG_NAME,
+ 	T.DRIVER_CODE,T.DRIVER_NAME,T.SIGN_BILL_DATE,T.VEHICLE_NO,T.VEHICLE_TYPE_LENGTH,T.LINE_CODE,
+ 	T.LINE_NAME,T.VOLUME,T.WEIGHT,T.LINE_DISTANCE,T.MSLD_ROYALTY/100 AS MSLD_ROYALTY ,T.EMSLD_ROYALTY/100 AS EMSLD_ROYALTY,
+ 	T.DRIVER_ROYALTY_AMOUNT/100 DRIVER_ROYALTY_AMOUNT,VL.Vehicle_Length_Name AS VEHICLE_TYPE_LENGTH_NAME,
+ 	T.MOTORCADE_CODE, T.MOTORCADE_NAME, T.SCHEDULING_SIGN, T.ISEMPTY
+  </sql>
+  
+  
+  <select id="queryRegularTruckSignBillById" resultMap="RegularTruckSignBillResultMap" parameterType="java.lang.String" >
+     select 
+    <include refid="RegularTruck_Column_List" />
+    from TFR.T_OPT_REGULAR_TRUCK_SIGN_BILL  T  LEFT JOIN  bse.t_bas_vehicle_type_length VL on  VL.Vehicle_Length_Code=T.VEHICLE_TYPE_LENGTH 
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+  
+   <select id="queryRegularTruckSignBill" resultMap="RegularTruckSignBillResultMap" parameterType="com.deppon.foss.module.transfer.management.api.shared.dto.RegularTruckSignBillDto" >
+    select 
+    <include refid="RegularTruck_Column_List" />
+    from TFR.T_OPT_REGULAR_TRUCK_SIGN_BILL  T  LEFT JOIN  bse.t_bas_vehicle_type_length VL on  VL.Vehicle_Length_Code=T.VEHICLE_TYPE_LENGTH 
+    
+    <include refid="regularTruckSignBill_where"/>
+  </select>
+  
+  <select id="queryCount" resultType="Long" parameterType="com.deppon.foss.module.transfer.management.api.shared.dto.RegularTruckSignBillDto" >
+    select   count(ID)  from TFR.T_OPT_REGULAR_TRUCK_SIGN_BILL  
+    <include refid="regularTruckSignBill_where"/> 
+  </select>
+  
+  <select id="queryRegularTruckSignBillByFee" resultMap="RegularTruckSignBillDtoResultMap" parameterType="com.deppon.foss.module.transfer.management.api.shared.dto.RegularTruckSignBillDto">
+     select count(DISTINCT DRIVER_CODE) AS  DRIVER_COUNT ,sum(LINE_DISTANCE) AS LINE_DISTANCE_TOTAL,sum(VOLUME) AS VOLUME_TOTAL ,sum(WEIGHT) AS WEIGHT_TOTAL
+      from TFR.T_OPT_REGULAR_TRUCK_SIGN_BILL
+   <include refid="regularTruckSignBill_where"/>
+  </select>
+  
+	<select id="queryExportRegularTruckSignBill" resultMap="RegularTruckSignBillResultMap" parameterType="com.deppon.foss.module.transfer.management.api.shared.dto.RegularTruckSignBillDto" >
+    select 
+    <include refid="RegularTruck_Column_List" />
+    from TFR.T_OPT_REGULAR_TRUCK_SIGN_BILL  T  LEFT JOIN  bse.t_bas_vehicle_type_length VL on  VL.Vehicle_Length_Code=T.VEHICLE_TYPE_LENGTH 
+    
+    <include refid="regularTruckSignBill_where"/>
+  </select>
+  
+  <sql id="regularTruckSignBill_where">
+ 	 <where>
+			<if test="useTruckOrgCode!=null and useTruckOrgCode!='' ">	
+					AND USE_TRUCK_ORG_CODE=#{useTruckOrgCode} 				
+			</if>
+			<if test="orgCodes!=null">	
+			AND ORG_CODE IN
+			<foreach 
+				collection="orgCodes" open="(" close=")" item="item" separator="," index="index"> 
+				#{item} 
+			</foreach>
+			</if>
+			<if test="motorcadeCode!=null and motorcadeCode!='' ">	
+					AND MOTORCADE_CODE=#{motorcadeCode} 				
+			</if>
+			<if test="isEmpty!=null and isEmpty!='' and isEmpty != 'ALL' ">	
+					AND ISEMPTY=#{isEmpty} 				
+			</if>
+			<if test="driverCode!=null and driverCode!='' ">	
+					AND  DRIVER_CODE = #{driverCode}
+			</if>					 
+			<if test="vehicleNo!=null and  vehicleNo!=''">
+				AND  VEHICLE_NO = #{vehicleNo}					
+			</if>
+			<if test="vehicleTypeLength!=null and  vehicleTypeLength!=''">
+				AND VEHICLE_TYPE_LENGTH = #{vehicleTypeLength}					
+			</if> 
+			<if test="beginSignBillDate!=null and beginSignBillDate!=''">
+				<![CDATA[ AND  SIGN_BILL_DATE>= to_date(#{beginSignBillDate},'yyyy-mm-dd hh24:mi:ss')	 ]]> 
+			</if>
+			<if test="endSignBillDate!=null  and endSignBillDate!=''">
+				<![CDATA[ AND  SIGN_BILL_DATE<= to_date(#{endSignBillDate}||'23:59:59','yyyy-mm-dd hh24:mi:ss')	 ]]> 									
+			</if>		
+	</where>
+  </sql>
+  
+  <delete id="deleteRegularTruckSignBill" parameterType="java.lang.String" >
+    delete from TFR.T_OPT_REGULAR_TRUCK_SIGN_BILL
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  <insert id="addRegularTruckSignBill" parameterType="com.deppon.foss.module.transfer.management.api.shared.domain.RegularTruckSignBillEntity" >
+    insert into TFR.T_OPT_REGULAR_TRUCK_SIGN_BILL
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="signBillNo != null" >
+        SIGN_BILL_NO,
+      </if>
+      <if test="handoverNo != null" >
+        HANDOVER_NO,
+      </if>
+      <if test="arrvRegionName != null" >
+        ARRV_REGION_NAME,
+      </if>
+      <if test="useTruckOrgCode != null" >
+        USE_TRUCK_ORG_CODE,
+      </if>
+      <if test="useTruckOrgName != null" >
+        USE_TRUCK_ORG_NAME,
+      </if>
+      <if test="orgCode != null" >
+        ORG_CODE,
+      </if>
+      <if test="orgName != null" >
+        ORG_Name,
+      </if>
+      <if test="driverCode != null" >
+        DRIVER_CODE,
+      </if>
+      <if test="driverName != null" >
+        DRIVER_NAME,
+      </if>
+      <if test="signBillDate != null" >
+        SIGN_BILL_DATE,
+      </if>
+      <if test="vehicleNo != null" >
+        VEHICLE_NO,
+      </if>
+      <if test="vehicleTypeLength != null" >
+        VEHICLE_TYPE_LENGTH,
+      </if>
+      <if test="lineCode != null" >
+        LINE_CODE,
+      </if>
+      <if test="lineName != null" >
+        LINE_NAME,
+      </if>
+      <if test="volume != null" >
+        VOLUME,
+      </if>
+      <if test="weight != null" >
+        WEIGHT,
+      </if>
+      <if test="lineDistance != null" >
+        LINE_DISTANCE,
+      </if>
+      <if test="msldRoyalty != null" >
+        MSLD_ROYALTY,
+      </if>
+      <if test="emsldRoyalty != null" >
+        EMSLD_ROYALTY,
+      </if>
+      <if test="driverRoyaltyAmount != null" >
+        DRIVER_ROYALTY_AMOUNT,
+      </if>
+      <if test="currencyCode != null" >
+        CURRENCY_CODE,
+      </if>
+      <if test="motorcadeCode != null" >
+        MOTORCADE_CODE,
+      </if>
+      <if test="motorcadeName != null" >
+        MOTORCADE_NAME,
+      </if>
+      <if test="schedulingSign != null" >
+        SCHEDULING_SIGN,
+      </if>
+      <if test="isEmpty != null" >
+        ISEMPTY
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="signBillNo != null" >
+        #{signBillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="handoverNo != null" >
+        #{handoverNo,jdbcType=VARCHAR},
+      </if>
+      <if test="arrvRegionName != null" >
+        #{arrvRegionName,jdbcType=VARCHAR},
+      </if>
+      <if test="useTruckOrgCode != null" >
+        #{useTruckOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="useTruckOrgName != null" >
+        #{useTruckOrgName,jdbcType=VARCHAR},
+      </if>
+      <if test="orgCode != null" >
+        #{orgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="orgName != null" >
+        #{orgName,jdbcType=VARCHAR},
+      </if>
+      <if test="driverCode != null" >
+        #{driverCode,jdbcType=VARCHAR},
+      </if>
+      <if test="driverName != null" >
+        #{driverName,jdbcType=VARCHAR},
+      </if>
+      <if test="signBillDate != null" >
+        #{signBillDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="vehicleNo != null" >
+        #{vehicleNo,jdbcType=VARCHAR},
+      </if>
+      <if test="vehicleTypeLength != null" >
+        #{vehicleTypeLength,jdbcType=VARCHAR},
+      </if>
+      <if test="lineCode != null" >
+        #{lineCode,jdbcType=VARCHAR},
+      </if>
+      <if test="lineName != null" >
+        #{lineName,jdbcType=VARCHAR},
+      </if>
+      <if test="volume != null" >
+        #{volume,jdbcType=DECIMAL},
+      </if>
+      <if test="weight != null" >
+        #{weight,jdbcType=DECIMAL},
+      </if>
+      <if test="lineDistance != null" >
+        #{lineDistance,jdbcType=DECIMAL},
+      </if>
+      <if test="msldRoyalty != null" >
+        #{msldRoyalty,jdbcType=DECIMAL},
+      </if>
+      <if test="emsldRoyalty != null" >
+        #{emsldRoyalty,jdbcType=DECIMAL},
+      </if>
+      <if test="driverRoyaltyAmount != null" >
+        #{driverRoyaltyAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="currencyCode != null" >
+        #{currencyCode},
+      </if>
+      <if test="motorcadeCode != null" >
+        #{motorcadeCode},
+      </if>
+      <if test="motorcadeName != null" >
+        #{motorcadeName},
+      </if>
+      <if test="schedulingSign != null" >
+        #{schedulingSign},
+      </if>
+      <if test="isEmpty != null" >
+        #{isEmpty}
+      </if>
+    </trim>
+  </insert>
+  <update id="updateRegularTruckSignBill" parameterType="com.deppon.foss.module.transfer.management.api.shared.domain.RegularTruckSignBillEntity" >
+    update TFR.T_OPT_REGULAR_TRUCK_SIGN_BILL
+    <set >
+      <if test="signBillNo != null" >
+        SIGN_BILL_NO = #{signBillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="handoverNo != null" >
+        HANDOVER_NO = #{handoverNo,jdbcType=VARCHAR},
+      </if>
+      <if test="arrvRegionName != null" >
+        ARRV_REGION_NAME = #{arrvRegionName,jdbcType=VARCHAR},
+      </if>
+      <if test="useTruckOrgCode != null" >
+        USE_TRUCK_ORG_CODE = #{useTruckOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="useTruckOrgName != null" >
+        USE_TRUCK_ORG_NAME = #{useTruckOrgName,jdbcType=VARCHAR},
+      </if>
+      <if test="driverCode != null" >
+        DRIVER_CODE = #{driverCode,jdbcType=VARCHAR},
+      </if>
+      <if test="driverName != null" >
+        DRIVER_NAME = #{driverName,jdbcType=VARCHAR},
+      </if>
+      <if test="signBillDate != null" >
+        SIGN_BILL_DATE = #{signBillDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="vehicleNo != null" >
+        VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR},
+      </if>
+      <if test="vehicleTypeLength != null" >
+        VEHICLE_TYPE_LENGTH = #{vehicleTypeLength,jdbcType=VARCHAR},
+      </if>
+      <if test="lineCode != null" >
+        LINE_CODE = #{lineCode,jdbcType=VARCHAR},
+      </if>
+      <if test="lineName != null" >
+        LINE_NAME = #{lineName,jdbcType=VARCHAR},
+      </if>
+      <if test="volume != null" >
+        VOLUME = #{volume,jdbcType=DECIMAL},
+      </if>
+      <if test="weight != null" >
+        WEIGHT = #{weight,jdbcType=DECIMAL},
+      </if>
+      <if test="lineDistance != null" >
+        LINE_DISTANCE = #{lineDistance,jdbcType=DECIMAL},
+      </if>
+      <if test="msldRoyalty != null" >
+        MSLD_ROYALTY = #{msldRoyalty,jdbcType=DECIMAL},
+      </if>
+      <if test="emsldRoyalty != null" >
+        EMSLD_ROYALTY = #{emsldRoyalty,jdbcType=DECIMAL},
+      </if>
+      <if test="driverRoyaltyAmount != null" >
+        DRIVER_ROYALTY_AMOUNT = #{driverRoyaltyAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="currencyCode != null" >
+        CURRENCY_CODE= #{currencyCode},
+      </if>
+      <if test="motorcadeCode != null" >
+        MOTORCADE_CODE= #{motorcadeCode},
+      </if>
+      <if test="motorcadeName != null" >
+        MOTORCADE_NAME= #{motorcadeName},
+      </if>
+      <if test="schedulingSign != null" >
+        SCHEDULING_SIGN= #{schedulingSign},
+      </if>
+      <if test="isEmpty != null" >
+        ISEMPTY= #{isEmpty}
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+ 
+</mapper>

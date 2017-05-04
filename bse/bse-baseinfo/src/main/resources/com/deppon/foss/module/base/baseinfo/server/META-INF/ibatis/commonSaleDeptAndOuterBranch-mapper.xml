@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.commonSaleDeptAndOuterBranch">
+	<!-- 查询营业部和偏线代理网点 -->
+	<resultMap id="resultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.dto.CommonSaleDeptAndOuterBranchDto">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="CODE" property="code" jdbcType="VARCHAR" />
+		<result column="NAME" property="name" jdbcType="VARCHAR" />
+		<result column="TYPE" property="type" jdbcType="VARCHAR" />
+		<result column="SIMPLENAME" property="simpleName" jdbcType="VARCHAR" />
+		<result column="PINYIN" property="pinYin" jdbcType="VARCHAR" />
+		<result column="LEAVE" property="leave" jdbcType="VARCHAR" />
+		<result column="ARRIVE" property="arrive" jdbcType="VARCHAR" />
+		<result column="STATION" property="station" jdbcType="VARCHAR" />
+		<result column="TRANSFER" property="transfer" jdbcType="VARCHAR" />
+		<result column="BILLINGROUP" property="billingGroup" jdbcType="VARCHAR" />
+		<result column="TRANSFER_CENTER" property="transferCenter" jdbcType="VARCHAR" />
+		<result column="PICKUP_SELF" property="pickupSelf" jdbcType="VARCHAR" />
+		<result column="DELIVERY" property="delivery" jdbcType="CHAR" />
+		<result column="AIR_ARRIVE" property="airArrive" jdbcType="CHAR" />
+		<result column="TRUCK_ARRIVE" property="truckArrive" jdbcType="CHAR" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="IN_CENTRALIZED_SHUTTLE" property="inCentralizedShuttle" jdbcType="VARCHAR" />
+		<result column="CAN_PAY_SERVICE_FEE" property="canPayServiceFee" jdbcType="VARCHAR" />
+		<result column="CAN_RETURN_SIGN_BILL" property="canReturnSignBill" jdbcType="VARCHAR" />
+		<result column="CAN_CASH_ON_DELIVERY" property="canCashOnDelivery" jdbcType="VARCHAR" />
+		<result column="CAN_AGENT_COLLECTED" property="canAgentCollected" jdbcType="VARCHAR" />
+		<result column="TRANSFER_GOOD_DEPT" property="transferGoodDept" jdbcType="VARCHAR" />
+		<result column="STATION_NUMBER" property="stationNumber" jdbcType="VARCHAR" />
+	</resultMap>
+	<!-- 营业部数据字段 -->
+	<sql id="saleDept_Column_List">
+	   ID,
+       CODE,
+       NAME,
+       'ORG' AS TYPE,
+       '' AS SIMPLENAME,
+       PINYIN AS PINYIN,
+       LEAVE, 
+       ARRIVE, 
+       STATION, 
+       '' AS TRANSFER, 
+       BILLING_GROUP,
+       TRANSFER_CENTER,
+       PICKUP_SELF,
+       DELIVERY,
+       AIR_ARRIVE,
+       TRUCK_ARRIVE,
+       ACTIVE,
+       IN_CENTRALIZED_SHUTTLE,
+       CAN_PAY_SERVICE_FEE,
+       CAN_RETURN_SIGN_BILL,
+       CAN_CASH_ON_DELIVERY,
+       CAN_AGENT_COLLECTED, 
+       TRANSFER_GOOD_DEPT,
+       STATION_NUMBER
+	</sql>
+<!-- 数据字段 -->
+	<sql id="outerBranch_Column_List">
+	   ID,
+       AGENT_DEPT_CODE AS CODE,
+       AGENT_DEPT_NAME AS NAME, 
+       BRANCHTYPE AS TYPE,
+       SIMPLENAME AS SIMPLENAME,
+       PINYIN AS PINYIN,
+       LEAVE,
+       ARRIVE,
+       '' AS STATION,
+       TRANSFER, 
+       '' AS BILLING_GROUP,
+       '' AS TRANSFER_CENTER,
+       PICKUP_SELF ,
+       PICKUP_TO_DOOR AS DELIVERY,
+       '' AS AIR_ARRIVE,
+       '' AS TRUCK_ARRIVE,
+       ACTIVE,
+       '' AS IN_CENTRALIZED_SHUTTLE,
+       '' AS CAN_PAY_SERVICE_FEE,
+       RETURN_BILL AS CAN_RETURN_SIGN_BILL,
+       ARRIVE_CHARGE AS CAN_CASH_ON_DELIVERY,
+       HELP_CHARGE  AS CAN_AGENT_COLLECTED, 
+       '' AS TRANSFER_GOOD_DEPT,
+       '' AS STATION_NUMBER 
+	</sql>
+	<!-- 偏线代理查询条件 -->
+	<sql id="queryOuterBranchCondition">
+		<where>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="queryParam != null and queryParam != ''">
+				AND 
+					(
+						AGENT_DEPT_CODE LIKE CONCAT(CONCAT('%', #{queryParam,jdbcType=VARCHAR}),'%')
+					 OR 
+					 	AGENT_DEPT_NAME LIKE CONCAT(CONCAT('%', #{queryParam,jdbcType=VARCHAR}),'%')
+					)
+			</if>
+			<if test="codes != null and  types.size()>0">
+				  AND  AGENT_DEPT_CODE IN
+					<foreach collection="codes" index="index" item="code" open="(" separator="," close=")">
+						#{code}
+					</foreach>
+			</if>
+			<if test="code != null and code != ''">
+				AND AGENT_DEPT_CODE LIKE CONCAT(CONCAT('%', #{code,jdbcType=VARCHAR}),'%') 
+			</if>
+			<if test="name != null and name != ''">
+				AND AGENT_DEPT_NAME LIKE CONCAT(CONCAT('%', #{name,jdbcType=VARCHAR}),'%') 
+			</if>
+		</where>
+	</sql>
+	
+	<!-- 营业部查询条件 -->
+	<sql id="querySaleDeptCondition">
+		<where>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="queryParam != null and queryParam != ''">
+				AND 
+					(
+						CODE LIKE CONCAT(CONCAT('%', #{queryParam,jdbcType=VARCHAR}),'%')
+					 OR 
+					 	NAME LIKE CONCAT(CONCAT('%', #{queryParam,jdbcType=VARCHAR}),'%')
+					)
+			</if>
+			<if test="code != null and code != ''">
+				AND CODE LIKE CONCAT(CONCAT('%', #{code,jdbcType=VARCHAR}),'%') 
+			</if>
+			<if test="codes != null and  types.size()>0">
+				  AND  CODE IN
+					<foreach collection="codes" index="index" item="code" open="(" separator="," close=")">
+						#{code}
+					</foreach>
+			</if>
+			<if test="name != null and name != ''">
+				AND NAME LIKE CONCAT(CONCAT('%', #{name,jdbcType=VARCHAR}),'%') 
+			</if>
+			<if test="leave != null and leave != ''">
+				AND LEAVE = #{leave,jdbcType=VARCHAR}
+			</if>
+			<if test="arrive != null and arrive != ''">
+				AND ARRIVE = #{arrive,jdbcType=VARCHAR}
+			</if>
+			<if test="station != null and leave != ''">
+				AND STATION = #{station,jdbcType=VARCHAR}
+			</if>
+			<if test="billingGroup != null and station != ''">
+				AND BILLING_GROUP = #{billingGroup,jdbcType=VARCHAR}
+			</if>
+			<if test="transferCenter != null and transferCenter != ''">
+				AND TRANSFER_CENTER = #{transferCenter,jdbcType=VARCHAR}
+			</if>
+			<if test="pickupSelf != null and pickupSelf != ''">
+				AND PICKUP_SELF = #{pickupSelf,jdbcType=VARCHAR}
+			</if>
+			<if test="delivery != null and delivery != ''">
+				AND DELIVERY = #{delivery,jdbcType=VARCHAR}
+			</if>
+			<if test="airArrive != null and airArrive != ''">
+				AND AIR_ARRIVE = #{airArrive,jdbcType=VARCHAR}
+			</if>
+			<if test="truckArrive != null and truckArrive != ''">
+				AND TRUCK_ARRIVE = #{truckArrive,jdbcType=VARCHAR}
+			</if>
+			<if test="inCentralizedShuttle != null and inCentralizedShuttle != ''">
+				AND IN_CENTRALIZED_SHUTTLE = #{inCentralizedShuttle,jdbcType=VARCHAR}
+			</if>
+			<if test="canPayServiceFee != null and canPayServiceFee != ''">
+				AND CAN_PAY_SERVICE_FEE = #{canPayServiceFee,jdbcType=VARCHAR}
+			</if>
+			<if test="canReturnSignBill != null and canReturnSignBill != ''">
+				AND CAN_RETURN_SIGN_BILL = #{canReturnSignBill,jdbcType=VARCHAR}
+			</if>
+
+			<if test="canCashOnDelivery != null and canCashOnDelivery != ''">
+				AND CAN_CASH_ON_DELIVERY = #{canCashOnDelivery,jdbcType=VARCHAR}
+			</if>
+			<if test="canAgentCollected != null and canAgentCollected != ''">
+				AND CAN_AGENT_COLLECTED = #{canAgentCollected,jdbcType=VARCHAR}
+			</if>
+			<if test="transferGoodDept != null and transferGoodDept != ''">
+				AND TRANSFER_GOOD_DEPT = #{transferGoodDept,jdbcType=VARCHAR}
+			</if>
+			<if test="productCode != null and productCode != ''">
+				AND EXISTS
+                         (SELECT 1
+                                  FROM BSE.T_BAS_PRO_SALESDEPT M
+                                 WHERE M.SALES_DEPT_CODE = T.CODE
+                                   AND M.SALES_TYPE = 'ORG_ARRIVE'
+                                   AND M.PRODUCT_CODE = #{productCode,jdbcType=VARCHAR}
+                                   AND M.ACTIVE = 'Y')
+                           AND (T.PICKUP_SELF = 'Y' OR T.DELIVERY = 'Y')
+			</if>
+		</where>
+	</sql>
+	
+	<!-- 查询营业部和偏线代理网点信息 -->
+	<select id="querySaleDeptAndOuterBranchInfo"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.CommonSaleDeptAndOuterBranchDto"
+		resultMap="resultMap">
+		SELECT * FROM (
+		/** 综合:查询营业部和偏线代理网点信息 **/
+			SELECT
+			  <include refid="saleDept_Column_List" />
+			FROM BSE.T_BAS_SALES_DEPARTMENT T
+			  <include refid="querySaleDeptCondition" />
+		UNION   
+			SELECT
+			  <include refid="outerBranch_Column_List" />
+			FROM BSE.T_BAS_OUTER_BRANCH T
+			  <include refid="queryOuterBranchCondition" />
+		 ) 
+		 <where>
+			<if test="types != null and  types.size()>0">
+				  AND  TYPE IN
+					<foreach collection="types" index="index" item="item" open="(" separator="," close=")">
+						#{item}
+					</foreach>
+			</if>
+			<if test="type != null and type != ''">
+				AND TYPE = #{type,jdbcType=VARCHAR}
+			</if>
+		</where> 
+	</select>
+	
+	<!-- 统计查询营业部和偏线代理网点总记录数 -->
+	<select id="countQuerySaleDeptAndOuterBranchInfo" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.CommonSaleDeptAndOuterBranchDto">
+	  SELECT COUNT(*) FROM(
+	  /** 综合:统计查询营业部和偏线代理网点总记录数 **/
+	  	SELECT * FROM ( 
+		   SELECT 
+		   		<include refid="saleDept_Column_List" />
+		   FROM BSE.T_BAS_SALES_DEPARTMENT T
+			  <include refid="querySaleDeptCondition" />
+		  UNION   
+			SELECT 
+				<include refid="outerBranch_Column_List" />
+			FROM BSE.T_BAS_OUTER_BRANCH T
+			  <include refid="queryOuterBranchCondition" />
+		)
+		 <where>
+			<if test="types != null and  types.size()>0">
+				  AND  TYPE IN
+					<foreach collection="types" index="index" item="item" open="(" separator="," close=")">
+						#{item}
+					</foreach>
+			</if>
+			<if test="type != null and type != ''">
+				AND TYPE = #{type,jdbcType=VARCHAR}
+			</if>
+		</where> 
+	)
+	</select>
+</mapper>

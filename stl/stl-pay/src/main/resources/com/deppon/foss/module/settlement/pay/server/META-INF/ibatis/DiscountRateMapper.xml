@@ -1,0 +1,417 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="stl.pay.discountRate" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.pay.api.shared.domain.DiscountRateEntity" >
+    <result column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+    <result column="COD_AMOUNT" property="codAmount" jdbcType="DECIMAL" />
+    <result column="INSURANCE_AMOUNT" property="insuranceAmount" jdbcType="DECIMAL" />
+    <result column="TRANSPORT_AMOUNT" property="transportAmount" jdbcType="DECIMAL" />
+    <result column="COD_RATE" property="codRate" jdbcType="DECIMAL" />
+    <result column="INSURANCE_RATE" property="insuranceRate" jdbcType="DECIMAL" />
+    <result column="TRANSPORT_RATE" property="transportRate" jdbcType="DECIMAL" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="COD_CRM_ID" property="codCrmId" jdbcType="DECIMAL" />
+    <result column="INSURANCE_CRM_ID" property="insuranceCrmId" jdbcType="DECIMAL" />
+    <result column="TRANSPORT_CRM_ID" property="transportCrmId" jdbcType="DECIMAL" />
+    <result column="CREATE_TYPE" property="createType" jdbcType="VARCHAR" />
+    <result column="ACTIVE" property="active" jdbcType="CHAR" />
+    <result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+    <result column="MODIFY_USER_CODE" property="modifyUserCode" jdbcType="VARCHAR" />
+    <result column="MODIFY_USER_NAME" property="modifyUserName" jdbcType="VARCHAR" />
+    <result column="CREATE_USER_CODE" property="createUserCode" jdbcType="VARCHAR" />
+    <result column="CREATE_USER_NAME" property="createUserName" jdbcType="VARCHAR" />
+    <result column="EFFECT_MONTH" property="effectMonth" jdbcType="TIMESTAMP" />
+  </resultMap>
+
+  <sql id="Base_Column_List" >
+    ID, CUSTOMER_CODE, CUSTOMER_NAME, COD_AMOUNT, INSURANCE_AMOUNT, TRANSPORT_AMOUNT,
+    COD_RATE, INSURANCE_RATE, TRANSPORT_RATE, CREATE_TIME, COD_CRM_ID, INSURANCE_CRM_ID,
+    TRANSPORT_CRM_ID, CREATE_TYPE, ACTIVE, MODIFY_TIME, MODIFY_USER_CODE, MODIFY_USER_NAME,
+    CREATE_USER_CODE, CREATE_USER_NAME, EFFECT_MONTH
+  </sql>
+
+
+  <select id="makeDiscountRate" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.DiscountRateDto"
+          resultMap="BaseResultMap">
+    select sys_guid() as ID,
+    YS.customer_code as CUSTOMER_CODE,
+    customer.name as CUSTOMER_NAME,
+    YS.cod_amount as COD_AMOUNT ,
+    ys.insurance_amount as INSURANCE_AMOUNT,
+    ys.transport_amount as TRANSPORT_AMOUNT,
+    cod.rate as COD_RATE,
+    insure.rate as INSURANCE_RATE,
+    trans.rate as TRANSPORT_RATE,
+    systimestamp as CREATE_TIME,
+    cod.crm_id as COD_CRM_ID,
+    insure.crm_id as INSURANCE_CRM_ID,
+    trans.crm_id as TRANSPORT_CRM_ID,
+    'M' as CREATE_TYPE,
+    'Y' as ACTIVE,
+    add_months( #{endDate,jdbcType=DATE}, -1) as EFFECT_MONTH
+    from (select re.customer_code,
+    sum(re.cod_fee) cod_amount,
+    sum(re.transport_fee) transport_amount,
+    sum(re.insurance_fee) insurance_amount
+    from stl.t_stl_bill_receivable re
+    where re.customer_code = #{customerCode,jdbcType=VARCHAR}
+    <![CDATA[and re.business_date >=]]> add_months( #{endDate,jdbcType=DATE}, -1)
+    <![CDATA[and re.business_date <]]>  #{endDate,jdbcType=DATE}
+    and re.bill_type in
+    <foreach collection="billTypes" open="(" close=")" item="item" separator="," index="index">
+      #{item}
+    </foreach>
+    and re.payment_type IN
+    <foreach collection="paymentTypes" open="(" index="index" separator="," item="item" close=")">
+      #{item}
+    </foreach>
+    and re.product_code in
+    <foreach collection="productCodes" open="(" index="index" separator="," item="item" close=")">
+      #{item}
+    </foreach>
+          and re.active = 'Y'
+          group by re.customer_code) YS --应收单
+    left join (select item.rate,
+    dis.cus_code,
+    dis.crm_id,
+    item.min_money,
+    item.max_money
+    from BSE.T_BAS_CUS_DISCOUNTBACK dis
+    join BSE.T_BAS_CUS_DISCOUNTBACK_ITEM item
+    on dis.crm_id = item.discount_crm_id
+
+    where
+    <![CDATA[dis.begin_time<=]]>   #{endDate,jdbcType=DATE}
+    <![CDATA[and dis.end_time > ]]> #{endDate,jdbcType=DATE} - 1
+    and dis.prefer_type = #{COD_CRM_CODE,jdbcType=VARCHAR}) cod
+    on cod.cus_code = YS.customer_code
+    and <![CDATA[cod.min_money<=]]> YS.cod_amount
+    and <![CDATA[cod.max_money >]]> YS.cod_amount --代收货款折扣率
+    left join (select item.rate,
+    dis.cus_code,
+    dis.crm_id,
+    item.min_money,
+    item.max_money
+    from BSE.T_BAS_CUS_DISCOUNTBACK dis
+    join BSE.T_BAS_CUS_DISCOUNTBACK_ITEM item
+    on dis.crm_id = item.discount_crm_id
+    where
+    <![CDATA[dis.begin_time<=]]>   #{endDate,jdbcType=DATE}
+    <![CDATA[and dis.end_time > ]]> #{endDate,jdbcType=DATE} - 1
+    and dis.prefer_type = #{INSURANCE_CRM_CODE,jdbcType=VARCHAR}) insure
+    on insure.cus_code =YS.customer_code
+    and <![CDATA[insure.min_money <=]]>  YS.insurance_amount
+    and   <![CDATA[insure.max_money >]]> YS.insurance_amount --保价费折扣率
+    left join (select item.rate,
+    dis.cus_code,
+    dis.crm_id,
+    item.min_money,
+    item.max_money
+    from BSE.T_BAS_CUS_DISCOUNTBACK dis
+    join BSE.T_BAS_CUS_DISCOUNTBACK_ITEM item
+    on dis.crm_id = item.discount_crm_id
+    where
+    <![CDATA[dis.begin_time<=]]>   #{endDate,jdbcType=DATE}
+    <![CDATA[and dis.end_time > ]]> #{endDate,jdbcType=DATE} - 1
+    and dis.prefer_type = #{TRANSPORT_CRM_CODE,jdbcType=VARCHAR}) trans
+    on trans.cus_code =YS.customer_code
+    and  <![CDATA[trans.min_money <=]]>  YS.transport_amount
+    and <![CDATA[trans.max_money >]]>  YS.transport_amount
+    left join bse.t_bas_customer customer on customer.code = YS.customer_code and active = 'Y'
+  </select>
+
+  <!-- add by 329757 查询零担的折扣率 -->
+  <select id="makeDisCountRateNoExe" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.DiscountRateDto"
+          resultMap="BaseResultMap">
+        SELECT SYS_GUID() as ID,
+               CUS.CODE as CUSTOMER_CODE,
+               CUS.NAME as CUSTOMER_NAME,
+               YS.COD_AMOUNT as COD_AMOUNT,
+               YS.INSURANCE_AMOUNT as INSURANCE_AMOUNT,
+               YS.TRANSPORT_AMOUNT as TRANSPORT_AMOUNT,
+               0,
+    	       0, 
+               TRANS.CARRIAGE_REBATE as TRANSPORT_RATE,
+               SYSTIMESTAMP as CREATE_TIME,
+               NULL,
+               NULL,
+               TRANS.CRM_ID,
+               'A' as CREATE_TYPE,
+               'Y' as ACTIVE,
+               add_months( #{endDate,jdbcType=DATE}, -1) as EFFECT_MONTH
+          FROM (SELECT WB.DELIVERY_CUSTOMER_CODE CUSTOMER_CODE,
+                       0 COD_AMOUNT,
+                       NVL(SUM(WB.TRANSPORT_FEE), 0) TRANSPORT_AMOUNT,
+                       0 INSURANCE_AMOUNT
+                  FROM PKP.T_SRV_WAYBILL WB
+                 INNER JOIN STV.T_STL_PRODUCT P
+                    ON P.PRODUCT_CODE = WB.PRODUCT_CODE
+                 WHERE WB.DELIVERY_CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+                   AND P.IS_BELONG_PACKAGE = 'N'
+                   AND <![CDATA[WB.BILL_TIME >=]]> add_months( #{endDate,jdbcType=DATE}, -1)
+                   AND <![CDATA[WB.BILL_TIME <]]> #{endDate,jdbcType=DATE}
+                 GROUP BY WB.DELIVERY_CUSTOMER_CODE) YS --运单
+         INNER JOIN (SELECT ITEM.CARRIAGE_REBATE,
+                            DIS.CUSTOMER_CODE,
+                            DIS.CRM_ID,
+                            ITEM.MIN_MONEY       MIN_MONEY,
+                            ITEM.MAX_MONEY       MAX_MONEY
+                       FROM BSE.T_BAS_CUS_LTDISCOUNTAFTER DIS
+                       JOIN BSE.T_BAS_CUS_LTDISCOUNTAFTER_ITEM ITEM
+                         ON DIS.CRM_ID = ITEM.DISCOUNT_CRM_ID
+                      WHERE DIS.ID IN(SELECT ID
+                       FROM (SELECT T.ID,
+                                    RANK() OVER(PARTITION BY T.CUSTOMER_CODE ORDER BY T.FAILURE_TIME DESC) R
+                               FROM BSE.T_BAS_CUS_LTDISCOUNTAFTER T
+                              WHERE <![CDATA[TRUNC(T.EFFECTIVE_TIME, 'MM') <=]]>
+                                    TRUNC(TRUNC(#{endDate,jdbcType=DATE}, 'MM')-1, 'MM')
+                                AND <![CDATA[(TRUNC(T.FAILURE_TIME, 'MM') >=]]>
+                                     TRUNC(TRUNC(#{endDate,jdbcType=DATE}, 'MM')-1, 'MM') OR
+                                     T.FAILURE_TIME IS NULL)
+                                AND T.PROGRAM_STATUS IN (0, 2)) TT
+                      WHERE TT.R = 1)
+                        AND DIS.CUSTOMER_CODE IN(SELECT CUSTOMER_CODE
+                       FROM (SELECT T.CUSTOMER_CODE,
+                                    RANK() OVER(PARTITION BY T.CUSTOMER_CODE ORDER BY T.FAILURE_TIME DESC) R
+                               FROM BSE.T_BAS_CUS_LTDISCOUNTAFTER T
+                              WHERE <![CDATA[TRUNC(T.EFFECTIVE_TIME, 'MM') <=]]>
+                                    TRUNC(TRUNC(#{endDate,jdbcType=DATE}, 'MM')-1, 'MM')
+                                AND <![CDATA[(TRUNC(T.FAILURE_TIME, 'MM') >=]]>
+                                     TRUNC(TRUNC(#{endDate,jdbcType=DATE}, 'MM')-1, 'MM') OR
+                                     T.FAILURE_TIME IS NULL)
+                                AND T.PROGRAM_STATUS IN (0, 2)) TT
+                      WHERE TT.R = 1)
+                        AND DIS.PROGRAM_STATUS IN (0, 2)) TRANS
+            ON TRANS.CUSTOMER_CODE = YS.CUSTOMER_CODE
+           AND <![CDATA[TRANS.MIN_MONEY <=]]> YS.TRANSPORT_AMOUNT
+           AND <![CDATA[TRANS.MAX_MONEY >]]> YS.TRANSPORT_AMOUNT
+          LEFT JOIN BSE.T_BAS_CUSTOMER CUS
+            ON CUS.CODE = YS.CUSTOMER_CODE
+           AND CUS.ACTIVE = 'Y'
+  </select>
+
+
+  <select id="selectByCondition" resultMap="BaseResultMap"
+          parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.DiscountRateDto" >
+    select
+    <include refid="Base_Column_List" />
+    from STL.T_STL_DISCOUNT_RATE
+    where
+    CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+    <if test="Active!=null">
+      and active = #{active,jdbcType=VARCHAR}
+    </if>
+    <if test="createType != null">
+      and CREATE_TYPE = #{createType,jdbcType=VARCHAR}
+    </if>
+    <if test="effectMonth != null">
+      and EFFECT_MONTH = #{endDate,jdbcType=TIMESTAMP}
+    </if>
+  </select>
+
+
+  <insert id="insertDiscountRate"
+          parameterType="com.deppon.foss.module.settlement.pay.api.shared.domain.DiscountRateEntity" >
+    insert into STL.T_STL_DISCOUNT_RATE
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="customerCode != null" >
+        CUSTOMER_CODE,
+      </if>
+      <if test="customerName != null" >
+        CUSTOMER_NAME,
+      </if>
+      <if test="codAmount != null" >
+        COD_AMOUNT,
+      </if>
+      <if test="insuranceAmount != null" >
+        INSURANCE_AMOUNT,
+      </if>
+      <if test="transportAmount != null" >
+        TRANSPORT_AMOUNT,
+      </if>
+      <if test="codRate != null" >
+        COD_RATE,
+      </if>
+      <if test="insuranceRate != null" >
+        INSURANCE_RATE,
+      </if>
+      <if test="transportRate != null" >
+        TRANSPORT_RATE,
+      </if>
+      <if test="createTime != null" >
+        CREATE_TIME,
+      </if>
+      <if test="codCrmId != null" >
+        COD_CRM_ID,
+      </if>
+      <if test="insuranceCrmId != null" >
+        INSURANCE_CRM_ID,
+      </if>
+      <if test="transportCrmId != null" >
+        TRANSPORT_CRM_ID,
+      </if>
+      <if test="createType != null" >
+        CREATE_TYPE,
+      </if>
+      <if test="active != null" >
+        ACTIVE,
+      </if>
+      <if test="modifyTime != null" >
+        MODIFY_TIME,
+      </if>
+      <if test="modifyUserCode != null" >
+        MODIFY_USER_CODE,
+      </if>
+      <if test="modifyUserName != null" >
+        MODIFY_USER_NAME,
+      </if>
+      <if test="createUserCode != null" >
+        CREATE_USER_CODE,
+      </if>
+      <if test="createUserName != null" >
+        CREATE_USER_NAME,
+      </if>
+      <if test="effectMonth != null" >
+        EFFECT_MONTH,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="customerCode != null" >
+        #{customerCode,jdbcType=VARCHAR},
+      </if>
+      <if test="customerName != null" >
+        #{customerName,jdbcType=VARCHAR},
+      </if>
+      <if test="codAmount != null" >
+        #{codAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="insuranceAmount != null" >
+        #{insuranceAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="transportAmount != null" >
+        #{transportAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="codRate != null" >
+        #{codRate,jdbcType=DECIMAL},
+      </if>
+      <if test="insuranceRate != null" >
+        #{insuranceRate,jdbcType=DECIMAL},
+      </if>
+      <if test="transportRate != null" >
+        #{transportRate,jdbcType=DECIMAL},
+      </if>
+      <if test="createTime != null" >
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="codCrmId != null" >
+        #{codCrmId,jdbcType=DECIMAL},
+      </if>
+      <if test="insuranceCrmId != null" >
+        #{insuranceCrmId,jdbcType=DECIMAL},
+      </if>
+      <if test="transportCrmId != null" >
+        #{transportCrmId,jdbcType=DECIMAL},
+      </if>
+      <if test="createType != null" >
+        #{createType,jdbcType=VARCHAR},
+      </if>
+      <if test="active != null" >
+        #{active,jdbcType=CHAR},
+      </if>
+      <if test="modifyTime != null" >
+        #{modifyTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifyUserCode != null" >
+        #{modifyUserCode,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyUserName != null" >
+        #{modifyUserName,jdbcType=VARCHAR},
+      </if>
+      <if test="createUserCode != null" >
+        #{createUserCode,jdbcType=VARCHAR},
+      </if>
+      <if test="createUserName != null" >
+        #{createUserName,jdbcType=VARCHAR},
+      </if>
+      <if test="effectMonth != null" >
+        #{effectMonth,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
+  <update id="cancelDiscountRate"
+          parameterType="com.deppon.foss.module.settlement.pay.api.shared.domain.DiscountRateEntity" >
+    update STL.T_STL_DISCOUNT_RATE
+    <set >
+      <if test="customerCode != null" >
+        CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR},
+      </if>
+      <if test="customerName != null" >
+        CUSTOMER_NAME = #{customerName,jdbcType=VARCHAR},
+      </if>
+      <if test="codAmount != null" >
+        COD_AMOUNT = #{codAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="insuranceAmount != null" >
+        INSURANCE_AMOUNT = #{insuranceAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="transportAmount != null" >
+        TRANSPORT_AMOUNT = #{transportAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="codRate != null" >
+        COD_RATE = #{codRate,jdbcType=DECIMAL},
+      </if>
+      <if test="insuranceRate != null" >
+        INSURANCE_RATE = #{insuranceRate,jdbcType=DECIMAL},
+      </if>
+      <if test="transportRate != null" >
+        TRANSPORT_RATE = #{transportRate,jdbcType=DECIMAL},
+      </if>
+      <if test="createTime != null" >
+        CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="codCrmId != null" >
+        COD_CRM_ID = #{codCrmId,jdbcType=DECIMAL},
+      </if>
+      <if test="insuranceCrmId != null" >
+        INSURANCE_CRM_ID = #{insuranceCrmId,jdbcType=DECIMAL},
+      </if>
+      <if test="transportCrmId != null" >
+        TRANSPORT_CRM_ID = #{transportCrmId,jdbcType=DECIMAL},
+      </if>
+      <if test="createType != null" >
+        CREATE_TYPE = #{createType,jdbcType=VARCHAR},
+      </if>
+      <if test="active != null" >
+        ACTIVE = #{active,jdbcType=CHAR},
+      </if>
+      <if test="modifyTime != null" >
+        MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifyUserCode != null" >
+        MODIFY_USER_CODE = #{modifyUserCode,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyUserName != null" >
+        MODIFY_USER_NAME = #{modifyUserName,jdbcType=VARCHAR},
+      </if>
+      <if test="createUserCode != null" >
+        CREATE_USER_CODE = #{createUserCode,jdbcType=VARCHAR},
+      </if>
+      <if test="createUserName != null" >
+        CREATE_USER_NAME = #{createUserName,jdbcType=VARCHAR},
+      </if>
+      <if test="effectMonth != null" >
+        EFFECT_MONTH = #{effectMonth,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  
+</mapper>

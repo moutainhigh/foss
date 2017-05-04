@@ -1,0 +1,735 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.stl.HomeStatementDao">
+	<!-- 家装明细实体映射 -->
+	<resultMap
+		type="com.deppon.foss.module.settlement.writeoff.api.shared.domain.HomeStatementDEntity"
+		id="HomeStatementResultMap">
+		<result column="PAYABLE_NO" property="payableNo" jdbcType="VARCHAR" />
+		<result column="BUSINESS_DATE" property="businessDate"
+			jdbcType="TIMESTAMP" />
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+		<result column="ORG_NAME" property="orgName" jdbcType="VARCHAR" />
+		<result column="SUB_COMPANYCODE" property="subCompanyCode"
+			jdbcType="VARCHAR" />
+		<result column="SUB_COMPANYNAME" property="subCompanyName"
+			jdbcType="VARCHAR" />
+		<result column="BILL_TYPE" property="billType" jdbcType="VARCHAR" />
+		<result column="HOME_SUPPLY_NAME" property="homeSupplyName"
+			jdbcType="VARCHAR" />
+		<result column="HOME_SUPPLY_CODE" property="homeSupplyCode"
+			jdbcType="VARCHAR" />
+		<result column="AMOUNT" property="amount" jdbcType="DECIMAL" />
+		<result column="VERIFY_AMOUNT" property="verifyAmount"
+			jdbcType="DECIMAL" />
+		<result column="UNVERIFY_AMOUNT" property="unverifyAmount"
+			jdbcType="DECIMAL" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 查询应付单 -->
+	<sql id="queryPayable">
+		select 
+			/********家装对账单查询应付单************/
+		pa.payable_no PAYABLE_NO,  
+		pa.business_date BUSINESS_DATE,  
+		pa.waybill_no WAYBILL_NO,  
+		pa.payable_org_code ORG_CODE,  
+		pa.payable_org_name ORG_NAME, 
+		pa.payable_com_code SUB_COMPANYCODE,  
+		pa.payable_com_name SUB_COMPANYNAME,  
+		pa.bill_type BILL_TYPE,  
+		pa.customer_code HOME_SUPPLY_CODE,  
+		pa.customer_name HOME_SUPPLY_NAME,  
+		pa.verify_amount / 100 VERIFY_AMOUNT, 
+		pa.unverify_amount / 100 UNVERIFY_AMOUNT,  
+		pa.amount / 100 AMOUNT,  
+		pa.notes NOTES  
+		from stl.t_stl_bill_payable pa
+		where pa.ACTIVE = 'Y'
+		AND pa.IS_RED_BACK = 'N'
+		AND pa.BILL_TYPE = 'HIP'  
+		AND PA.APPROVE_STATUS = 'AA'
+		AND PA.EFFECTIVE_STATUS = 'Y'  
+		AND PA.PAY_STATUS = 'N' 
+		AND PA.UNVERIFY_AMOUNT > 0   
+		AND (PA.STATEMENT_BILL_NO = 'N/A' OR PA.STATEMENT_BILL_NO IS NULL) 
+		<if test="subCompanyCode !=null and subCompanyCode != ''">
+	        AND pa.payable_com_code = #{subCompanyCode,jdbcType=VARCHAR} 
+		</if>
+          <![CDATA[
+           AND PA.BUSINESS_DATE>=#{periodBeginDate,jdbcType=TIMESTAMP} 
+           AND PA.BUSINESS_DATE<#{periodEndDate,jdbcType=TIMESTAMP}
+          ]]>
+		<if test="customerCode!=null and customerCode!='' ">
+		   AND PA.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+		</if>
+	</sql>
+
+	<!-- 查询应收单 -->
+	<sql id="queryReceive">
+		select
+		/********家装对账单查询应收单************/
+		re.receivable_no PAYABLE_NO,  
+		re.business_date BUSINESS_DATE,  
+		re.waybill_no WAYBILL_NO,  
+		re.generating_org_code ORG_CODE,  
+		re.generating_org_name ORG_NAME,  
+		re.generating_com_code SUB_COMPANYCODE,  
+		re.generating_com_name SUB_COMPANYNAME,  
+		re.bill_type BILL_TYPE, 		 
+		re.customer_code HOME_SUPPLY_CODE,  
+		re.customer_name HOME_SUPPLY_NAME,  
+		re.verify_amount / 100 VERIFY_AMOUNT,  
+		re.unverify_amount / 100 UNVERIFY_AMOUNT, 
+		re.amount / 100 AMOUNT,  
+		re.notes NOTES  
+		from stl.t_stl_bill_receivable re
+		WHERE RE.ACTIVE = 'Y'
+		AND RE.IS_RED_BACK = 'N'
+		AND RE.BILL_TYPE = 'HIR'  
+		AND RE.APPROVE_STATUS = 'AA'  
+		AND RE.UNVERIFY_AMOUNT > 0
+		AND (RE.STATEMENT_BILL_NO = 'N/A' OR RE.STATEMENT_BILL_NO IS NULL)
+		<if test="subCompanyCode !=null and subCompanyCode != ''">
+			AND re.GENERATING_COM_CODE = #{subCompanyCode,jdbcType=VARCHAR} 
+		</if>
+         <![CDATA[
+	          AND RE.BUSINESS_DATE >= #{periodBeginDate,jdbcType=TIMESTAMP}
+	          AND RE.BUSINESS_DATE < #{periodEndDate,jdbcType=TIMESTAMP}
+         ]]>
+		<if test="customerCode!=null and customerCode!='' ">
+		  	AND RE.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+		</if>
+	</sql>
+
+	<!-- 按客户去查询应收单应付单 -->
+	<select id="queryHomeStatementByCust"
+		parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.HomeStatementDto"
+		resultMap="HomeStatementResultMap">
+		<if test="queryReceive !=null and queryReceive == 'true' and queryPayable != null and queryPayable =='true' ">
+			<include refid="queryPayable"></include>
+				union all
+			<include refid="queryReceive"></include>
+		</if>
+		
+		<if test="queryReceive !=null and queryReceive == 'false' and queryPayable != null and queryPayable =='true'  ">
+			<include refid="queryPayable"></include>
+		</if>
+		<if test="queryReceive !=null and queryReceive == 'true' and queryPayable != null and queryPayable =='false'">
+			<include refid="queryReceive"></include>
+		</if>
+	</select>
+
+	<!-- 按客户查询获取总行数 -->
+	<select id="getCountByCust"
+		parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.HomeStatementDto"
+		resultType="int">
+		select count(1) from (
+			<if test="queryReceive !=null and queryReceive == 'true' and queryPayable != null and queryPayable =='true' ">
+			<include refid="queryPayable"></include>
+				union all
+			<include refid="queryReceive"></include>
+			</if>
+			
+			<if test="queryReceive !=null and queryReceive == 'false' and queryPayable != null and queryPayable =='true'  ">
+				<include refid="queryPayable"></include>
+			</if>
+			<if test="queryReceive !=null and queryReceive == 'true' and queryPayable != null and queryPayable =='false'">
+				<include refid="queryReceive"></include>
+			</if>	
+		)
+	</select>
+
+	<!-- 按应收单号和应付单号去查询应收单和应付单 -->
+	<select id="queryHomeStatementByNumbers"
+		parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.HomeStatementDto"
+		resultMap="HomeStatementResultMap">
+		select pa.payable_no PAYABLE_NO, 
+		pa.business_date BUSINESS_DATE, 
+		pa.waybill_no WAYBILL_NO, 
+		pa.payable_org_code ORG_CODE,
+		pa.payable_org_name ORG_NAME, 
+		pa.payable_com_code SUB_COMPANYCODE, 
+		pa.payable_com_name SUB_COMPANYNAME, 
+		pa.bill_type BILL_TYPE, 
+		pa.customer_code HOME_SUPPLY_CODE,
+		pa.customer_name HOME_SUPPLY_NAME,
+		pa.verify_amount / 100 VERIFY_AMOUNT,
+		pa.unverify_amount / 100 UNVERIFY_AMOUNT, 
+		pa.amount / 100 AMOUNT,
+		pa.notes NOTES 
+		from stl.t_stl_bill_payable pa
+		where pa.ACTIVE = 'Y'
+		AND pa.IS_RED_BACK = 'N'
+		AND pa.BILL_TYPE  = 'HIP' 
+		AND PA.APPROVE_STATUS = 'AA'
+		AND PA.EFFECTIVE_STATUS = 'Y'
+		AND PA.PAY_STATUS = 'N'
+		AND PA.UNVERIFY_AMOUNT > 0
+		AND (PA.STATEMENT_BILL_NO = 'N/A' OR PA.STATEMENT_BILL_NO IS NULL)
+        and pa.payable_no in
+        <foreach collection="numbers" item="items" index="index" open="("  close=")" separator=",">
+        	#{items,jdbcType=VARCHAR}
+        </foreach> 
+		union all
+		select re.receivable_no PAYABLE_NO, 
+		re.business_date BUSINESS_DATE, 
+		re.waybill_no WAYBILL_NO, 
+		re.generating_org_code ORG_CODE, 
+		re.generating_org_name ORG_NAME, 
+		re.generating_com_code SUB_COMPANYCODE,
+		re.generating_com_name SUB_COMPANYNAME,
+		re.bill_type BILL_TYPE, 
+		re.customer_code HOME_SUPPLY_CODE, 
+		re.customer_name HOME_SUPPLY_NAME, 
+		re.verify_amount / 100 VERIFY_AMOUNT, 
+		re.unverify_amount / 100 UNVERIFY_AMOUNT,
+		re.amount / 100 AMOUNT, 
+		re.notes NOTES 
+		from stl.t_stl_bill_receivable re
+		WHERE RE.ACTIVE = 'Y'
+		AND RE.IS_RED_BACK = 'N'
+		AND RE.BILL_TYPE = 'HIR'
+		AND RE.APPROVE_STATUS = 'AA' 
+		AND RE.UNVERIFY_AMOUNT > 0
+		AND (RE.STATEMENT_BILL_NO = 'N/A' OR RE.STATEMENT_BILL_NO IS NULL)
+        AND re.receivable_no in
+        <foreach collection="numbers" item="items" index="index" open="("  close=")" separator=",">
+        	#{items,jdbcType=VARCHAR}
+        </foreach> 
+	</select>
+	
+	<!-- 按时间客户去保存对账单明细 -->
+	<insert id="homeStatementDSaveByCustomer"
+		parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.HomeStatementDto">
+		<if test="queryReceive !=null and queryReceive == 'true' and queryPayable != null and queryPayable =='true' ">
+			insert into stl.t_stl_statement_of_home_d(
+			ID,
+			STATEMENT_BILL_NO,
+			BUSINESS_DATE,
+			PAYABLE_NO,
+			WAYBILL_NO,
+			ORG_NAME,
+			ORG_CODE,
+			SUB_COMPANY_NAME,
+			SUB_COMPANY_CODE,
+			BILL_TYPE,
+			HOME_SUPPLY_NAME,
+			HOME_SUPPLY_CODE,
+			AMOUNT,
+			VERIFY_AMOUNT,
+			UNVERIFY_AMOUNT,
+			NOTES,
+			ACTIVE
+			)	 
+			select 
+			    /********家装对账单查询应付单************/
+			    SYS_GUID() ID,
+				#{statementBillNo,jdbcType=VARCHAR} STATEMENT_BILL_NO,
+				pa.business_date BUSINESS_DATE, 
+				pa.payable_no PAYABLE_NO,
+				pa.waybill_no WAYBILL_NO,
+				pa.payable_org_name ORG_NAME, 
+				pa.payable_org_code ORG_CODE, 
+				pa.payable_com_name SUB_COMPANY_NAME, 
+				pa.payable_com_code SUB_COMPANY_CODE, 
+				pa.bill_type BILL_TYPE,
+				pa.customer_name HOME_SUPPLY_NAME,
+				pa.customer_code HOME_SUPPLY_CODE,
+				pa.amount AMOUNT, 
+				pa.verify_amount VERIFY_AMOUNT,
+				pa.unverify_amount UNVERIFY_AMOUNT,
+				pa.notes NOTES, 
+				'Y' ACTIVE
+				from stl.t_stl_bill_payable pa
+				where pa.ACTIVE = 'Y'
+				AND pa.IS_RED_BACK = 'N'
+				AND pa.BILL_TYPE   ='HIP' 
+				AND PA.APPROVE_STATUS = 'AA'
+				AND PA.EFFECTIVE_STATUS = 'Y' 
+				AND PA.PAY_STATUS = 'N' 
+				AND PA.UNVERIFY_AMOUNT > 0 
+				AND (PA.STATEMENT_BILL_NO = 'N/A' OR PA.STATEMENT_BILL_NO IS NULL)
+				<if test="subCompanyCode !=null and subCompanyCode != ''">
+			        AND pa.payable_com_code = #{subCompanyCode,jdbcType=VARCHAR}
+				</if>
+		          <![CDATA[
+		           AND PA.BUSINESS_DATE>=#{periodBeginDate,jdbcType=TIMESTAMP} 
+		           AND PA.BUSINESS_DATE<#{periodEndDate,jdbcType=TIMESTAMP}
+		          ]]>
+				<if test="customerCode!=null and customerCode!='' ">
+					AND PA.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+				</if>
+			union all
+			select
+			    /********家装对账单查询应收单************/
+				SYS_GUID() ID,
+				#{statementBillNo,jdbcType=VARCHAR} STATEMENT_BILL_NO,
+				re.business_date BUSINESS_DATE, 
+			    re.receivable_no PAYABLE_NO, 
+				re.waybill_no WAYBILL_NO, 
+				re.generating_org_name ORG_NAME, 
+				re.generating_org_code ORG_CODE,
+				re.generating_com_name SUB_COMPANY_NAME, 
+				re.generating_com_code SUB_COMPANY_CODE, 
+				re.bill_type BILL_TYPE,
+				re.customer_name HOME_SUPPLY_NAME ,
+				re.customer_code HOME_SUPPLY_CODE, 
+				re.amount AMOUNT, 
+				re.verify_amount VERIFY_AMOUNT, 
+				re.unverify_amount UNVERIFY_AMOUNT, 
+				re.notes NOTES,
+				'Y' ACTIVE
+				from stl.t_stl_bill_receivable re
+				WHERE RE.ACTIVE = 'Y'
+				AND RE.IS_RED_BACK = 'N'
+				AND RE.BILL_TYPE = 'HIR'
+				AND RE.APPROVE_STATUS = 'AA' 
+				AND RE.UNVERIFY_AMOUNT > 0
+				AND (RE.STATEMENT_BILL_NO = 'N/A' OR RE.STATEMENT_BILL_NO IS NULL)
+				<if test="subCompanyCode !=null and subCompanyCode != ''">
+					AND re.generating_com_code = #{subCompanyCode,jdbcType=VARCHAR}
+				</if>
+		         <![CDATA[
+		          AND RE.BUSINESS_DATE >= #{periodBeginDate,jdbcType=TIMESTAMP}
+		          AND RE.BUSINESS_DATE < #{periodEndDate,jdbcType=TIMESTAMP}
+		         ]]>
+				<if test="customerCode!=null and customerCode!='' ">
+					AND RE.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+				</if>
+		</if>
+		
+		<if test="queryReceive !=null and queryReceive == 'false' and queryPayable != null and queryPayable =='true'  ">
+			insert into stl.t_stl_statement_of_home_d(
+					ID,
+					STATEMENT_BILL_NO,
+					BUSINESS_DATE,
+					PAYABLE_NO,
+					WAYBILL_NO,
+					ORG_NAME,
+					ORG_CODE,
+					SUB_COMPANY_NAME,
+					SUB_COMPANY_CODE,
+					BILL_TYPE,
+					HOME_SUPPLY_NAME,
+					HOME_SUPPLY_CODE,
+					AMOUNT,
+					VERIFY_AMOUNT,
+					UNVERIFY_AMOUNT,
+					NOTES,
+					ACTIVE
+			)	  
+			select 
+			    /********家装对账单查询应付单************/
+			    SYS_GUID() ID,
+				#{statementBillNo,jdbcType=VARCHAR} STATEMENT_BILL_NO,
+				pa.business_date BUSINESS_DATE,
+				pa.payable_no PAYABLE_NO, 
+				pa.waybill_no WAYBILL_NO, 
+				pa.payable_org_name ORG_NAME, 
+				pa.payable_org_code ORG_CODE, 
+				pa.payable_com_name SUB_COMPANY_NAME, 
+				pa.payable_com_code SUB_COMPANY_CODE, 
+				pa.bill_type BILL_TYPE, 
+				pa.customer_name HOME_SUPPLY_NAME,
+				pa.customer_code HOME_SUPPLY_CODE, 
+				pa.amount AMOUNT,
+				pa.verify_amount VERIFY_AMOUNT,
+				pa.unverify_amount UNVERIFY_AMOUNT, 
+				pa.notes NOTES,
+				'Y' ACTIVE
+				from stl.t_stl_bill_payable pa
+				where pa.ACTIVE = 'Y'
+				AND pa.IS_RED_BACK = 'N'
+				AND pa.BILL_TYPE = 'HIP'
+				AND PA.APPROVE_STATUS = 'AA'
+				AND PA.EFFECTIVE_STATUS = 'Y' 
+				AND PA.PAY_STATUS = 'N' 
+				AND PA.UNVERIFY_AMOUNT > 0 
+				AND (PA.STATEMENT_BILL_NO = 'N/A' OR PA.STATEMENT_BILL_NO IS NULL)
+				<if test="subCompanyCode !=null and subCompanyCode != ''">
+			        AND pa.payable_com_code = #{subCompanyCode,jdbcType=VARCHAR}
+				</if>
+		          <![CDATA[
+		           AND PA.BUSINESS_DATE>=#{periodBeginDate,jdbcType=TIMESTAMP} 
+		           AND PA.BUSINESS_DATE<#{periodEndDate,jdbcType=TIMESTAMP}
+		          ]]>
+				<if test="customerCode!=null and customerCode!='' ">
+					AND PA.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+				</if>
+		</if>
+		<if test="queryReceive !=null and queryReceive == 'true' and queryPayable != null and queryPayable =='false'">
+			insert into stl.t_stl_statement_of_home_d(
+			ID,
+			STATEMENT_BILL_NO,
+			BUSINESS_DATE,
+			PAYABLE_NO,
+			WAYBILL_NO,
+			ORG_NAME,
+			ORG_CODE,
+			SUB_COMPANY_NAME,
+			SUB_COMPANY_CODE,
+			BILL_TYPE,
+			HOME_SUPPLY_NAME,
+			HOME_SUPPLY_CODE,
+			AMOUNT,
+			VERIFY_AMOUNT,
+			UNVERIFY_AMOUNT,
+			NOTES,
+			ACTIVE
+			)	 
+			select
+			    /********家装对账单查询应收单************/
+				SYS_GUID() ID,
+				#{statementBillNo,jdbcType=VARCHAR} STATEMENT_BILL_NO,
+				re.business_date BUSINESS_DATE, 
+			    re.receivable_no PAYABLE_NO,
+				re.waybill_no WAYBILL_NO, 
+				re.generating_org_name ORG_NAME, 
+				re.generating_org_code ORG_CODE, 
+				re.generating_com_name SUB_COMPANY_NAME, 
+				re.generating_com_code SUB_COMPANY_CODE, 
+				re.bill_type BILL_TYPE, 
+				re.customer_name HOME_SUPPLY_NAME ,
+				re.customer_code HOME_SUPPLY_CODE, 
+				re.amount AMOUNT, 
+				re.verify_amount VERIFY_AMOUNT,
+				re.unverify_amount UNVERIFY_AMOUNT, 
+				re.notes NOTES, 
+				'Y' ACTIVE
+				from stl.t_stl_bill_receivable re
+				WHERE RE.ACTIVE = 'Y'
+				AND RE.IS_RED_BACK = 'N'
+				AND RE.BILL_TYPE = 'HIR'
+				AND RE.APPROVE_STATUS = 'AA' 
+				AND RE.UNVERIFY_AMOUNT > 0
+				AND (RE.STATEMENT_BILL_NO = 'N/A' OR RE.STATEMENT_BILL_NO IS NULL)
+				<if test="subCompanyCode !=null and subCompanyCode != ''">
+					AND re.generating_com_code = #{subCompanyCode,jdbcType=VARCHAR}
+				</if>
+		        <![CDATA[
+		          AND RE.BUSINESS_DATE >= #{periodBeginDate,jdbcType=TIMESTAMP}
+		          AND RE.BUSINESS_DATE < #{periodEndDate,jdbcType=TIMESTAMP}
+		         ]]>
+				<if test="customerCode!=null and customerCode!='' ">
+					AND RE.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+				</if>
+		</if>
+	</insert>
+	
+	<!-- 按应付单号或应收单号去保存对账单明细 -->
+	<insert id="homeStatementDSaveByNumbers" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.HomeStatementDto">
+		insert into stl.t_stl_statement_of_home_d(
+			ID,
+			STATEMENT_BILL_NO,
+			BUSINESS_DATE,
+			PAYABLE_NO,
+			WAYBILL_NO,
+			ORG_NAME,
+			ORG_CODE,
+			SUB_COMPANY_NAME,
+			SUB_COMPANY_CODE,
+			BILL_TYPE,
+			HOME_SUPPLY_NAME,
+			HOME_SUPPLY_CODE,
+			AMOUNT,
+			VERIFY_AMOUNT,
+			UNVERIFY_AMOUNT,
+			NOTES,
+			ACTIVE
+		)
+		/**根据对账单号去家装对账单明细里面去查询数据**/
+		select
+			SYS_GUID() ID,
+			#{statementBillNo,jdbcType=VARCHAR} STATEMENT_BILL_NO,
+			pa.business_date BUSINESS_DATE, 
+			pa.payable_no PAYABLE_NO, 
+			pa.waybill_no WAYBILL_NO, 
+			pa.payable_org_name ORG_NAME, 
+			pa.payable_org_code ORG_CODE,
+			pa.payable_com_name SUB_COMPANY_NAME, 
+			pa.payable_com_code SUB_COMPANY_CODE, 
+			pa.bill_type BILL_TYPE, 
+			pa.customer_name HOME_SUPPLY_NAME,
+			pa.customer_code HOME_SUPPLY_CODE, 
+			pa.amount AMOUNT,
+			pa.verify_amount VERIFY_AMOUNT, 
+			pa.unverify_amount UNVERIFY_AMOUNT,
+			pa.notes NOTES,
+			'Y' ACTIVE
+			from stl.t_stl_bill_payable pa
+			where pa.ACTIVE = 'Y'
+			AND pa.IS_RED_BACK = 'N'
+			AND pa.BILL_TYPE   = 'HIP' 
+			AND PA.APPROVE_STATUS = 'AA'
+			AND PA.EFFECTIVE_STATUS = 'Y'
+			AND PA.PAY_STATUS = 'N' 
+			AND PA.UNVERIFY_AMOUNT > 0 
+			AND (PA.STATEMENT_BILL_NO = 'N/A' OR PA.STATEMENT_BILL_NO IS NULL)
+	        and pa.payable_no in
+	        <foreach collection="numbers" item="items" index="index" open="("  close=")" separator=",">
+	        	#{items}
+	        </foreach> 
+		union all
+		select
+			SYS_GUID() ID,
+			#{statementBillNo,jdbcType=VARCHAR} STATEMENT_BILL_NO,
+			re.business_date BUSINESS_DATE, 
+		    re.receivable_no PAYABLE_NO, 
+			re.waybill_no WAYBILL_NO,
+			re.generating_org_name ORG_NAME, 
+			re.generating_org_code ORG_CODE, 
+			re.generating_com_name SUB_COMPANY_NAME, 
+			re.generating_com_code SUB_COMPANY_CODE, 
+			re.bill_type BILL_TYPE, 
+			re.customer_name HOME_SUPPLY_NAME ,
+			re.customer_code HOME_SUPPLY_CODE, 
+			re.amount AMOUNT,
+			re.verify_amount VERIFY_AMOUNT, 
+			re.unverify_amount UNVERIFY_AMOUNT, 
+			re.notes NOTES, 
+			'Y' ACTIVE
+			from stl.t_stl_bill_receivable re
+			WHERE RE.ACTIVE = 'Y'
+			AND RE.IS_RED_BACK = 'N'
+			AND RE.BILL_TYPE = 'HIR'
+			AND RE.APPROVE_STATUS = 'AA' 
+			AND RE.UNVERIFY_AMOUNT > 0
+			AND (RE.STATEMENT_BILL_NO = 'N/A' OR RE.STATEMENT_BILL_NO IS NULL)
+	        AND re.receivable_no in
+	        <foreach collection="numbers" item="items" index="index" open="("  close=")" separator=",">
+	        	#{items}
+	        </foreach>
+	</insert>
+	
+	<!-- 根据对账单号去查询所有对账单明细-->
+	<select id="queryHomeDByStatementBillNo" resultMap="HomeStatementResultMap" 
+		parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.HomeStatementDto">
+		/*根据对账单号去查询所有对账单明细*/
+		select
+			  d.payable_no PAYABLE_NO, 
+		      d.business_date BUSINESS_DATE, 
+		      d.waybill_no WAYBILL_NO, 
+		      d.org_code ORG_CODE, 
+		      d.org_name ORG_NAME, 
+		      d.sub_company_code SUB_COMPANYCODE, 
+		      d.sub_company_name SUB_COMPANYNAME, 
+		      d.bill_type BILL_TYPE, 
+		      d.home_supply_code HOME_SUPPLY_CODE， 
+		      d.home_supply_name HOME_SUPPLY_NAME,
+		      d.verify_amount / 100 VERIFY_AMOUNT, 
+		      d.unverify_amount / 100 UNVERIFY_AMOUNT, 
+		      d.amount / 100 AMOUNT, 
+		      d.notes NOTES 
+		from stl.t_stl_statement_of_home_d d 
+		where　d.statement_bill_no = #{statementBillNo,jdbcType=VARCHAR}--对账单号
+		AND d.ACTIVE = 'Y'
+	 	AND	d.IS_DELETE = 'N'
+	</select>
+	
+	<!-- 生成对账单 -->
+	<insert id="homeStatementSaveByStatementBillNo" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.HomeStatementDto">
+		/*生成对账单*/
+		insert into stl.t_stl_statement_of_home(
+			ID,  
+			STATEMENT_BILL_NO,
+			ORG_CODE, 
+			ORG_NAME, 
+			SUB_COMPANY_CODE, 
+			SUB_COMPANY_NAME, 
+			HOME_SUPPLY_NAME, 
+			HOME_SUPPLY_CODE, 
+			BILL_TYPE, 
+			AMOUNT, 
+			VERIFY_AMOUNT, 
+			UNVERIFY_AMOUNT, 
+			CREATE_USER_NAME, 
+			CREATE_USER_CODE, 
+			CREATE_TIME, 
+			BUSINESS_DATE, 
+			CONFIRM_STATUS, 
+			PERIODAMOUNT,
+			PERIODRECAMOUNT,
+			PERIODPAYAMOUNT,
+			VERSION_NO
+		)
+		select 
+			   SYS_GUID() ID,
+			   #{statementBillNo,jdbcType=VARCHAR} STATEMENT_BILL_NO, 
+			   'N/A', 
+			   'N/A',
+			   hd.SUB_COMPANY_CODE SUB_COMPANY_CODE,
+			   hd.SUB_COMPANY_NAME SUB_COMPANY_NAME,
+			   hd.HOME_SUPPLY_NAME HOME_SUPPLY_NAME,
+			   hd.HOME_SUPPLY_CODE HOME_SUPPLY_CODE,
+			   #{billType,jdbcType=VARCHAR} BILL_TYPE, 
+			   #{amount}*100 AMOUNT, 
+			   #{sumVerifyAmount}*100 VERIFY_AMOUNT,  
+			   #{sumUnverifyAmount}*100 UNVERIFY_AMOUNT, 
+			   #{empName,jdbcType=VARCHAR} CREATE_USER_NAME,
+			   #{empCode,jdbcType=VARCHAR} CREATE_USER_CODE,
+			   SYSDATE CREATE_TIME,
+			   SYSDATE BUSINESS_DATE,
+			   'N',
+			   #{periodAmount,jdbcType=DECIMAL}*100 PERIODAMOUNT,
+			   #{periodRecAmount,jdbcType=DECIMAL}*100 PERIODRECAMOUNT,
+			   #{periodPayAmount,jdbcType=DECIMAL}*100 PERIODPAYAMOUNT,
+			   '1' VERSION_NO
+			   from stl.t_stl_statement_of_home_d hd
+			   where hd.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR} 
+			   		 AND hd.ACTIVE = 'Y'
+			   		 AND hd.IS_DELETE = 'N'
+			   group by 
+			         hd.sub_company_name,
+			         hd.sub_company_code,
+			         hd.home_supply_name,
+			         hd.home_supply_code 
+	</insert>
+	
+	<!-- 更新应付单 -->
+	<update id="homePayUpdateByStatementBillNo" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.HomeStatementDto">
+		UPDATE STL.T_STL_BILL_PAYABLE P
+			/*跟新应付单*/
+		   SET P.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}, 
+		       P.MODIFY_TIME       = SYSDATE,
+		       P.MODIFY_USER_CODE  = #{empCode,jdbcType=VARCHAR},
+		       P.MODIFY_USER_NAME  = #{empName,jdbcType=VARCHAR},
+		       P.VERSION_NO        = P.VERSION_NO + 1
+		   WHERE P.ACTIVE = 'Y'
+		   AND p.IS_RED_BACK = 'N'
+		   AND P.BILL_TYPE = 'HIP'  
+		   AND (P.STATEMENT_BILL_NO = 'N/A' OR P.STATEMENT_BILL_NO IS NULL)
+		   AND P.PAYABLE_NO IN (SELECT hd.PAYABLE_NO 
+		                         FROM STL.T_STL_STATEMENT_OF_HOME_D hd
+		                         WHERE hd.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+		                         AND hd.Active = 'Y')
+	</update>
+	
+	<!-- 更新应收单 -->
+	<update id="homeRecUpdateByStatementBillNo" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.HomeStatementDto">
+		update stl.t_stl_bill_receivable re
+		    set /*更新应收单*/ 
+		   	re.statement_bill_no = #{statementBillNo,jdbcType=VARCHAR},  
+		       re.modify_time       = SYSDATE,
+		       re.modify_user_code  = #{empCode,jdbcType=VARCHAR},
+		       re.modify_user_name  = #{empCode,jdbcType=VARCHAR},
+		       re.version_no        = re.VERSION_NO + 1
+		    where re.Active = 'Y'
+  			    and re.IS_RED_BACK = 'N'
+  			    and re.bill_type = 'HIR'
+ 			    and (re.statement_bill_no = 'N/A' OR re.STATEMENT_BILL_NO IS NULL)
+ 			    and re.receivable_no in (select hd.payable_no from  
+                           stl.t_stl_statement_of_home_d hd
+                           where hd.statement_bill_no = #{statementBillNo,jdbcType=VARCHAR}
+                           and hd.Active = 'Y')
+	</update>
+		<!-- *****************************************  对账单管理    *************************************************** -->
+	<!-- 对账单管理查询对账单明细 -->
+	<sql id="Base_Column_List">
+    	d.payable_no PAYABLE_NO, --应付单号
+		d.business_date BUSINESS_DATE, --业务日期
+		d.waybill_no WAYBILL_NO, --运单号
+		d.org_code ORG_CODE, --部门编码(取供应商对账清单里的部门编码,应付单中的部门编码)
+		d.org_name ORG_NAME, --部门名称(取供应商对账清单里的部门名称,应付单中的部门名称)
+		d.sub_company_code SUB_COMPANYCODE, --所属子公司编码(取部门所属子公司名称编码)
+		d.sub_company_name SUB_COMPANYNAME, --所属子公司名称（取部门所属子公司名称）
+		d.bill_type BILL_TYPE, --单据子类型
+		d.home_supply_code HOME_SUPPLY_CODE， --家装供应商编码（取DOP“供家装对账运单费用管理”中的家装供应商的编码，应付单中的客户编码）
+		d.home_supply_name HOME_SUPPLY_NAME,--家装供应商名称（取DOP“供家装对账运单费用管理”中的家装供应商的名称，应付单中的客户名称）
+		d.verify_amount / 100 VERIFY_AMOUNT, --已核销金额
+		d.unverify_amount / 100 UNVERIFY_AMOUNT, --未核销金额
+		d.amount / 100 AMOUNT, --金额
+		d.notes NOTES --明细(取供应商对账清单中的应收明细)
+  	</sql>
+	
+	<!--按对账单单号查询对账单明细总条数-->
+    <select id="countHomeStatementBillNo" resultType="Integer"
+                parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.HomeItemDto">
+                SELECT
+                count(1)
+                FROM stl.t_stl_statement_of_home_d d
+                where　d.statement_bill_no = #{statementBillNo,jdbcType=VARCHAR}--对账单号
+				AND d.ACTIVE = 'Y'
+				AND d.IS_DELETE = 'N'
+        </select>
+	
+	<!-- *****************************************  添加明细     *************************************************** -->
+	<!-- 按应付或应收单号查询对账单明细 -->
+	<select id="queryAddHomeBillNo" 
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.HomeItemDto" 
+	    resultMap="HomeStatementResultMap">
+	      SELECT
+	      <include refid="Base_Column_List" />
+	      FROM stl.t_stl_statement_of_home_d D
+	     WHERE D.IS_DELETE = 'N'
+	       AND D.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+	       AND D.PAYABLE_NO IN
+			<foreach collection="numbers" index="index" item="item" open="(" separator="," close=")">
+	         #{item}
+	        </foreach>
+	</select>
+	
+	<!-- *****************************************  删除明细     *************************************************** -->
+	<!-- 按单号删除对账单明细 -->
+	<update id="delHomeStatement"
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.HomeItemDto">
+	    UPDATE stl.t_stl_statement_of_home_d WD
+		   SET WD.IS_DELETE = 'Y', WD.DISABLE_TIME = SYSDATE, WD.ACTIVE='N'
+		 WHERE WD.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+		   AND WD.IS_DELETE = 'N'
+		   <if test="numbers!=null and numbers.size>0">
+		   AND WD.PAYABLE_NO IN
+		    <foreach collection="numbers" index="index" item="item" open="(" separator="," close=")">
+	         #{item}
+	        </foreach>
+	       </if>
+	</update>
+	<!-- 按对账单单号更新应付单 -->
+	<update id="updatePayable"
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.HomeItemDto">
+		UPDATE STL.T_STL_BILL_PAYABLE P
+		   SET P.STATEMENT_BILL_NO = 'N/A',
+		       P.MODIFY_TIME       = SYSDATE,
+		       P.MODIFY_USER_CODE  = #{empCode,jdbcType=VARCHAR},
+		       P.MODIFY_USER_NAME  = #{empName,jdbcType=VARCHAR},
+		       P.VERSION_NO        = P.VERSION_NO + 1
+		 WHERE P.ACTIVE = 'Y'
+		   AND P.BILL_TYPE = 'HIP'
+		   AND P.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+		   <if test="numbers!=null and numbers.size>0">
+		   AND P.PAYABLE_NO IN 
+		    <foreach collection="numbers" index="index" item="item" open="(" separator="," close=")">
+	         #{item}
+	        </foreach>
+	       </if>
+	</update>
+	<!-- 按对账单单号更新应收单 -->
+	<update id="updateReceivable"
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.HomeItemDto">
+		UPDATE STL.T_STL_BILL_RECEIVABLE R
+		   SET R.STATEMENT_BILL_NO = 'N/A',
+		       R.MODIFY_TIME       = SYSDATE,
+		       R.MODIFY_USER_CODE  = #{empCode,jdbcType=VARCHAR},
+		       R.MODIFY_USER_NAME  = #{empName,jdbcType=VARCHAR},
+		       R.VERSION_NO        = R.VERSION_NO + 1
+		 WHERE R.ACTIVE = 'Y'
+		   AND R.BILL_TYPE = 'HIR'
+		   AND R.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+		   <if test="numbers!=null and numbers.size>0">
+		   AND R.RECEIVABLE_NO IN 
+		    <foreach collection="numbers" index="index" item="item" open="(" separator="," close=")">
+	         #{item}
+	        </foreach>
+	       </if>
+	</update>
+	
+	<!-- 根据日期去分组查询部门编号 
+	<select id="getOrgCodeByParam" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.HomeStatementDto"
+		resultMap="com.deppon.foss.module.settlement.writeoff.api.shared.dto.HomeStatementDto">
+		
+	</select>-->
+</mapper>

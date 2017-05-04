@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.CodBatchEntityDao" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.consumer.api.shared.domain.CODBatchEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="OPERATE_TIME" property="operateTime" jdbcType="TIMESTAMP" />
+    <result column="OPERATOR_CODE" property="operatorCode" jdbcType="VARCHAR" />
+    <result column="OPERATOR_NAME" property="operatorName" jdbcType="VARCHAR" />
+    <result column="BATCH_NO" property="batchNo" jdbcType="VARCHAR" />
+    <result column="STATUS" property="status" jdbcType="VARCHAR" />
+    <result column="FAIL_NOTES" property="failNotes" jdbcType="VARCHAR"/>
+  </resultMap>
+  
+  <sql id="Base_Column_List" >
+    ID, OPERATE_TIME, OPERATOR_CODE, OPERATOR_NAME, BATCH_NO, STATUS,FAIL_NOTES
+  </sql>
+  
+  <!-- 根据批次号查询 -->
+  <select id="selectByBatchNo" resultMap="BaseResultMap" parameterType="java.lang.String" >
+    select  /*结算-客户管理-根据批次号查询 */
+    <include refid="Base_Column_List" />
+    from STL.T_STL_COD_BATCH
+    where BATCH_NO = #{batchNo,jdbcType=VARCHAR}
+  </select>
+  
+  <!-- 生成代收货款批次号SEQ -->
+  <select id="selectBatchNoSeq" resultType="long">
+  	select /*结算-客户管理-生成代收货款批次号SEQ */ STL.SQ_COD_BATCH.Nextval from dual
+  </select>
+  
+  <!-- 插入代收货款批次号 -->
+  <insert id="insert" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.domain.CODBatchEntity" >
+    insert  /*结算-客户管理-插入代收货款批次号 */into STL.T_STL_COD_BATCH (ID, OPERATE_TIME, OPERATOR_CODE, 
+      OPERATOR_NAME, BATCH_NO, STATUS,FAIL_NOTES
+      )
+    values (#{id,jdbcType=VARCHAR}, #{operateTime,jdbcType=TIMESTAMP}, #{operatorCode,jdbcType=VARCHAR}, 
+      #{operatorName,jdbcType=VARCHAR}, #{batchNo,jdbcType=VARCHAR}, #{status,jdbcType=VARCHAR},#{failNotes,jdbcType=VARCHAR}
+      )
+  </insert>
+  
+  <!-- 更新代收货款批次号状态 -->
+  <update id="updateCODBatchStatus" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CODBatchDto">
+  	update  /*结算-客户管理-更新代收货款批次号状态 */ stl.t_stl_cod_batch t
+	   set t.status = #{status,jdbcType=VARCHAR}, t.fail_notes = #{failNotes,jdbcType=VARCHAR}
+	 where t.batch_no = #{batchNo}
+	 <if test="oldStatus != null and oldStatus != ''">
+	  and t.status = #{oldStatus}
+	 </if> 
+  </update>
+</mapper>

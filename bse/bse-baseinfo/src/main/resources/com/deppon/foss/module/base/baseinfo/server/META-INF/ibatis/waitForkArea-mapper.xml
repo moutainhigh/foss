@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.waitForkArea">
+<!-- 	待叉区 -->
+	<resultMap type="com.deppon.foss.module.base.baseinfo.api.shared.domain.WaitForkAreaEntity" id="waitForkAreaEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="ORG_CODE" property="organizationCode" jdbcType="VARCHAR" />
+		<result column="ORG_NAME" property="organizationName" jdbcType="VARCHAR" />
+		<result column="TRANSFER_CODE" property="transferCode" jdbcType="VARCHAR" />
+		<result column="WAITFORKAREA_CODE" property="waitForkAreaCode" jdbcType="VARCHAR" />
+		<result column="VIRTUAL_CODE" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="ABSCISSA" property="abscissa" jdbcType="VARCHAR" />
+		<result column="ORDINATE" property="ordinate" jdbcType="VARCHAR" />
+		<result column="WAITFORKAREA_LENGTH" property="waitForkAreaLength" jdbcType="VARCHAR" />
+		<result column="WAITFORKAREA_WIDTH" property="waitForkAreaWidth" jdbcType="VARCHAR" />
+		<result column="WAITFROAREA_HEIGHT" property="waitForkAreaHeight" jdbcType="VARCHAR" />
+		<result column="REMARK" property="remark" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+	</resultMap>
+	<resultMap type="com.deppon.foss.module.base.baseinfo.api.shared.domain.WaitForkAreaDistanceEntity" id="waitForkAreaDistance">
+		<id column="ID" property="id" jdbcType="VARCHAR"/>
+		<result column="TRANSFER_CODE" property="transferCode" jdbcType="VARCHAR" />
+		<result column="WAITFORKAREA_CODE" property="waitForkAreaCode" jdbcType="VARCHAR" />
+		<result column="TARGET_CODE" property="targetCode" jdbcType="VARCHAR" />
+		<result column="TARGET_TYPE" property="targetType" jdbcType="VARCHAR" />
+		<result column="DISTANCE" property="distance" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+	</resultMap>
+	
+	<sql id="waitForkArea_Column">
+		T.ID,T.ORG_CODE,T.ORG_NAME,T.TRANSFER_CODE,T.WAITFORKAREA_CODE,T.VIRTUAL_CODE,
+		T.ABSCISSA,T.ORDINATE,T.WAITFORKAREA_LENGTH,T.WAITFORKAREA_WIDTH,T.WAITFROAREA_HEIGHT,
+		T.REMARK,T.ACTIVE,T.CREATE_USER_CODE,T.MODIFY_USER_CODE
+	</sql>
+	
+	<sql id="waiForkAreaDistance_Column">
+		T.ID,T.TRANSFER_CODE,T.WAITFORKAREA_CODE,T.TARGET_CODE,T.TARGET_TYPE,T.DISTANCE,T.ACTIVE
+	</sql>
+	
+<!-- 	根据外场编码查询待叉区 -->
+	<select id="queryWaitForkAreaByTransferCode" parameterType="map" resultMap="waitForkAreaEntity">
+		<![CDATA[
+			SELECT
+			/** 综合:根据外场编码查询该外场的待叉区  **/
+		]]>
+		<include refid="waitForkArea_Column" />
+		<![CDATA[
+			FROM BSE.T_BAS_WAITFORKAREA T
+		]]>
+		<where>
+			<if test="organizationCode != null and organizationCode!=''">
+				T.ORG_CODE = #{organizationCode,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+<!-- 	新增待叉区 -->
+	<insert id="addWaitForkArea" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.WaitForkAreaEntity">
+		<![CDATA[
+		INSERT/** 综合:新增待叉区  **/ INTO BSE.T_BAS_WAITFORKAREA T	(
+		]]>
+		<include refid="waitForkArea_Column" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, #{organizationCode,jdbcType=VARCHAR},
+		#{organizationName,jdbcType=VARCHAR},
+		#{transferCode,jdbcType=VARCHAR},
+		#{waitForkAreaCode,jdbcType=VARCHAR}, #{virtualCode,jdbcType=VARCHAR},
+		#{abscissa,jdbcType=VARCHAR}, #{ordinate,jdbcType=VARCHAR},
+		#{waitForkAreaLength,jdbcType=VARCHAR},
+		#{waitForkAreaWidth,jdbcType=VARCHAR},
+		#{waitForkAreaHeight,jdbcType=VARCHAR},
+		#{remark,jdbcType=VARCHAR},
+		#{active,jdbcType=CHAR},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+<!-- 	根据虚拟编码删除待叉区 -->
+	<update id="deleteWaitForkAreaByVirtualCode" parameterType="map">
+		UPDATE/** 综合:作废待叉区  **/ BSE.T_BAS_WAITFORKAREA
+		<set>
+				ACTIVE = 'N'
+		</set>
+		<where>
+				 ACTIVE ='Y'
+			<if test="virtualCode!=null and virtualCode != ''">
+				AND VIRTUAL_CODE=#{virtualCode,jdbcType=VARCHAR}
+			</if>
+				
+		</where>
+	</update>
+<!-- 	新增待叉区与月台、货区距离 -->
+	<insert id="addWaitForkAreaDistance" parameterType="map">
+		<![CDATA[
+		INSERT/** 综合:新增待叉区与月台、货区距离  **/ INTO BSE.T_BAS_WAITFORKAREA_DISTANCE T	(
+		]]>
+		<include refid="waiForkAreaDistance_Column" />
+		<![CDATA[
+		)
+		]]>
+		<foreach collection="distanceEntityList" item="item" index="index" separator="union all">
+			SELECT
+			<if test="item.id!=null and item.id!=''">
+				#{item.id,jdbcType=VARCHAR},
+			</if>
+			<if test="item.transferCode!=null and item.transferCode!=''">
+				#{item.transferCode,jdbcType=CHAR},
+			</if>
+			<if test="item.waitForkAreaCode!=null and item.waitForkAreaCode!=''">
+				#{item.waitForkAreaCode,jdbcType=VARCHAR},
+			</if>
+			<if test="item.targetCode!=null and item.targetCode!=''">
+				#{item.targetCode,jdbcType=VARCHAR},
+			</if>
+			<if test="item.targetType!=null and item.targetType!=''">
+				#{item.targetType,jdbcType=VARCHAR},
+			</if>
+			<if test="item.distance!=null and item.distance!=''">
+				#{item.distance,jdbcType=VARCHAR},
+			</if>
+			<if test="item.active!=null and item.active!=''">
+				#{item.active,jdbcType=CHAR}
+			</if>
+			
+			FROM DUAL
+		</foreach>
+	</insert>
+<!-- 	根据外场编码、待叉区编码删除待叉区与月台、货区距离 -->
+	<update id="deleteWaitForkAreaDistanceByCode" parameterType="map">
+		UPDATE/** 综合:根据待叉区编码删除待叉区与月台、货区距离  **/ BSE.T_BAS_WAITFORKAREA_DISTANCE
+		<set>
+				ACTIVE = 'N',
+		</set>
+		<where>
+		 		ACTIVE = 'Y'
+			<if test="waitForkAreaCode!=null and waitForkAreaCode != ''">
+				AND WAITFORKAREA_CODE=#{waitForkAreaCode,jdbcType=VARCHAR}
+			</if>
+			<if test="transferCode!=null and transferCode != ''">
+				AND TRANSFER_CODE=#{transferCode,jdbcType=VARCHAR}
+			</if>
+			<if test="targetCode!=null and targetCode != ''">
+				AND TARGET_CODE=#{targetCode,jdbcType=VARCHAR}
+			</if>
+			<if test="targetType!=null and targetType != ''">
+				AND TARGET_TYPE=#{targetType,jdbcType=VARCHAR}
+			</if>	
+		</where>
+	</update>
+<!-- 	根据待叉区虚拟编码查询待叉区 -->
+	<select id="queryWaitForkAreaByCode" parameterType="map" resultMap="waitForkAreaEntity">
+		<![CDATA[
+			SELECT
+			/** 综合:根据待叉区编码查询该待叉区  **/
+		]]>
+		<include refid="waitForkArea_Column" />
+		<![CDATA[
+			FROM BSE.T_BAS_WAITFORKAREA T
+		]]>
+		<where>
+			<if test="active != null and active != ''">
+				 T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="waitForkAreaCode != null and waitForkAreaCode!=''">
+				AND T.WAITFORKAREA_CODE = #{waitForkAreaCode,jdbcType=VARCHAR}
+			</if>
+			<if test="virtualCode!=null and virtualCode != ''">
+				AND T.VIRTUAL_CODE=#{virtualCode,jdbcType=VARCHAR}
+			</if>
+			
+		</where>
+	</select>
+	<!-- 	根据待叉区外场编码查询待叉区 -->
+	<select id="queryWaitForkAreaByTransferCodeAndWaitForkAreaCode" parameterType="map" resultMap="waitForkAreaEntity">
+		<![CDATA[
+			SELECT
+			/** 综合:根据待叉区编码查询该待叉区  **/
+		]]>
+		<include refid="waitForkArea_Column" />
+		<![CDATA[
+			FROM BSE.T_BAS_WAITFORKAREA T
+		]]>
+		<where>
+			<if test="active != null and active != ''">
+				 T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="waitForkAreaCode != null and waitForkAreaCode!=''">
+				AND T.WAITFORKAREA_CODE = #{waitForkAreaCode,jdbcType=VARCHAR}
+			</if>
+			<if test="transferCode!=null and transferCode != ''">
+				AND T.TRANSFER_CODE=#{transferCode,jdbcType=VARCHAR}
+			</if>
+			
+		</where>
+	</select>
+<!-- 	根据待叉区编码查询待叉区与月台、货区的距离 -->
+	<select id="queryWaitForkAreaDistanceByCode" parameterType="map" resultMap="waitForkAreaDistance">
+		<![CDATA[
+			SELECT
+			/** 综合:根据待叉区编码查询待叉区与月台、货区的距离 **/
+		]]>
+		<include refid="waiForkAreaDistance_Column" />
+		<![CDATA[
+			FROM BSE.T_BAS_WAITFORKAREA_DISTANCE T
+		]]>
+		<where>
+				T.ACTIVE = #{active,jdbcType=CHAR}
+			<if test="waitForkAreaCode != null and waitForkAreaCode!=''">
+				AND T.WAITFORKAREA_CODE = #{waitForkAreaCode,jdbcType=VARCHAR}
+			</if>
+			<if test="transferCode!=null and transferCode != ''">
+				AND T.TRANSFER_CODE=#{transferCode,jdbcType=VARCHAR}
+			</if>
+<!-- 			<if test="active != null and active != ''"> -->
+<!-- 				AND T.ACTIVE = #{active,jdbcType=CHAR} -->
+<!-- 			</if> -->
+		</where>
+	</select>
+<!-- 	根据外场编码查询待叉区总量 -->
+	<select id="countWaitForkAreaByTransferCode" parameterType="map"  resultType="Long">
+		<![CDATA[
+			SELECT
+			/** 综合:根据外场编码查询待叉区总量  **/
+			COUNT(1)
+			FROM BSE.T_BAS_WAITFORKAREA T
+		]]>
+		<where>
+			<if test="transferCode != null and transferCode!=''">
+				T.ORG_CODE = #{transferCode,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+	
+<!-- 	根据外场编码、月台查询待叉区与月台的距离 -->
+	<select id="queryDistanceBetweenPlatform" parameterType="map"  resultMap="waitForkAreaDistance">
+		<![CDATA[
+			SELECT
+			/** 综合:根据外场编码、月台查询待叉区与月台的距离  **/
+		]]>
+		<include refid="waiForkAreaDistance_Column" />
+			FROM BSE.T_BAS_WAITFORKAREA_DISTANCE T
+		<where>
+			<if test="targetType != null and targetType!=''">
+				T.TARGET_TYPE = #{targetType,jdbcType=VARCHAR}
+			</if>
+			<if test="transferCode != null and transferCode!=''">
+				AND  T.TRANSFER_CODE = #{transferCode,jdbcType=VARCHAR}
+			</if>
+			<if test="platformCode != null and platformCode!=''">
+				AND  T.TARGET_CODE = #{platformCode,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+	
+<!-- 	根据外场编码、待叉区编码库区编码查询待叉区与库区的距离 -->
+<!-- 	<select id="queryDistanceBetweenGoodsArea" parameterType="map"  resultMap="waitForkAreaDistance"> -->
+<!-- 		<![CDATA[ -->
+<!-- 			SELECT -->
+<!-- 			/** 综合:根据外场编码、月台查询待叉区与月台的距离  **/ -->
+<!-- 		]]> -->
+<!-- 		<include refid="waiForkAreaDistance_Column" /> -->
+<!-- 			FROM BSE.T_BAS_WAITFORKAREA T -->
+<!-- 		<where> -->
+<!-- 			<if test="transferCode != null and transferCode!=''"> -->
+<!-- 				T.TRANSFER_CODE = #{transferCode,jdbcType=VARCHAR} -->
+<!-- 			</if> -->
+<!-- 			<if test="platformCode != null and platformCode!=''"> -->
+<!-- 				T.TARGET_CODE = #{platformCode,jdbcType=VARCHAR} -->
+<!-- 			</if> -->
+<!-- 			<if test="targetType != null and targetType!=''"> -->
+<!-- 				T.TARGET_TYPE = #{targetType,jdbcType=VARCHAR} -->
+<!-- 			</if> -->
+<!-- 			<if test="active != null and active != ''"> -->
+<!-- 				AND T.ACTIVE = #{active,jdbcType=CHAR} -->
+<!-- 			</if> -->
+<!-- 		</where> -->
+<!-- 	</select> -->
+	
+<!-- 	根据外场编码、待叉区编码、库区编码查询待叉区与库区距离 -->
+	<select id="queryDistanceBetweenGoodsArea" parameterType="map"  resultMap="waitForkAreaDistance">
+		<![CDATA[
+			SELECT
+			/** 综合:根据外场编码、待叉区编码、库区编码查询待叉区与库区距离  **/
+		]]>
+		<include refid="waiForkAreaDistance_Column" />
+			FROM BSE.T_BAS_WAITFORKAREA_DISTANCE T
+		<where>
+			<if test="active != null and active != ''">
+				 T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="transferCode != null and transferCode!=''">
+				 AND T.TRANSFER_CODE = #{transferCode,jdbcType=VARCHAR}
+			</if>
+			<if test="goodsAreaCode != null and goodsAreaCode!=''">
+				 AND T.TARGET_CODE = #{goodsAreaCode,jdbcType=VARCHAR}
+			</if>
+			<if test="waitForkAreaCode != null and waitForkAreaCode!=''">
+				 AND T.WAITFORKAREA_CODE = #{waitForkAreaCode,jdbcType=VARCHAR}
+			</if>
+			<if test="targetType != null and targetType!=''">
+				 AND T.TARGET_TYPE = #{targetType,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</select>
+</mapper>

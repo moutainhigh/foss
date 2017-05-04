@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cxf="http://cxf.apache.org/core"
+	xmlns:jaxws="http://cxf.apache.org/jaxws" xmlns:jaxrs="http://cxf.apache.org/jaxrs"
+	xsi:schemaLocation="
+		      http://www.springframework.org/schema/beans
+		      http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		      http://cxf.apache.org/core
+		      http://cxf.apache.org/schemas/core.xsd
+		      http://cxf.apache.org/jaxws
+		      http://cxf.apache.org/schemas/jaxws.xsd
+		      http://cxf.apache.org/jaxrs
+		      http://cxf.apache.org/schemas/jaxrs.xsd "
+	default-autowire="byName">
+
+	<!-- Load CXF modules from cxf.jar -->
+    <import resource="classpath:META-INF/cxf/cxf.xml"/>
+    <import resource="classpath:META-INF/cxf/cxf-servlet.xml"/>
+
+ 	<bean id="accountService" class="com.deppon.foss.service.AccountServiceImpl">
+		<property name="waybillQueryService" ref="waybillQueryService"></property>
+		<property name="freightRouteService" ref="freightRouteService"></property>
+		<property name="orgAdministrativeInfoService" ref="orgAdministrativeInfoService"></property>
+		<property name="administrativeRegionsService" ref="administrativeRegionsService"></property>
+		<property name="ewaybillService" ref="ewaybillService"></property>
+		
+	</bean> 
+	<bean id="crmWaybillService" class="com.deppon.foss.service.CrmWaybillService">
+		<property name="waybillManagerService" ref="waybillManagerService"></property>
+	</bean>
+	<bean id="waybillServiceImpl" class="com.deppon.foss.service.WaybillServiceImpl">
+		<property name="waybillQueryService" ref="waybillQueryService"></property>
+		<property name="waybillManagerService" ref="waybillManagerService"></property>
+	</bean>
+	<bean id="ccWaybillService" class="com.deppon.foss.service.CCWaybillServiceImpl">
+		<property name="waybillQueryService" ref="waybillQueryService"></property>
+	</bean>
+	<bean id = "crmTaskOrgService" class="com.deppon.foss.service.impl.CrmTaskOrgService">
+		<property name="matchTaskOrgService" ref="matchTaskOrgService"></property>
+	</bean>
+
+<bean id = "crmStockService" class="com.deppon.foss.service.impl.CrmStockService">
+		<property name="stockService" ref="stockService"></property>
+	</bean>
+
+	<!-- restfull -->
+	<jaxrs:server id="crmToFossStockService" address="/crmStockInfoUrl">
+		<jaxrs:serviceBeans>
+			<ref bean="crmStockService"/>
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+
+
+	<!-- restfull -->
+	<jaxrs:server id="fossToCrmTaskOrgService" address="/crmTaskOrgUrl">
+		<jaxrs:serviceBeans>
+			<ref bean="crmTaskOrgService"/>
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+		<!-- restfull -->
+	<jaxrs:server id="TPSToFOSSService" address="/tpsToFossUrl">
+		<jaxrs:serviceBeans>
+			<ref bean="tpsToFOSSService"/>
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	    <!-- web service -->
+ 	<jaxws:endpoint id="accountServiceWS" implementor="#accountService" address="/accountService">
+		<jaxws:inInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingInInterceptor"/>
+		</jaxws:inInterceptors>
+		<jaxws:outInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingOutInterceptor"/>
+		</jaxws:outInterceptors>
+	</jaxws:endpoint> 
+	
+	<jaxws:endpoint id="crmWaybillServiceWS" implementor="#crmWaybillService" address="/crmWaybillService">
+		<jaxws:inInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingInInterceptor"/>
+		</jaxws:inInterceptors>
+		<jaxws:outInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingOutInterceptor"/>
+		</jaxws:outInterceptors>
+	</jaxws:endpoint>
+	
+	<!-- zxy 20140625 cc-foss -->
+	<jaxws:endpoint id="ccWaybillServiceImplWS" implementor="#ccWaybillService" address="/ccWaybillServiceImpl">
+		<jaxws:features>
+			<bean class="org.apache.cxf.feature.LoggingFeature"></bean>
+		</jaxws:features>
+		<jaxws:inInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingInInterceptor"/>
+		</jaxws:inInterceptors>
+		<jaxws:outInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingOutInterceptor"/>
+		</jaxws:outInterceptors>
+	</jaxws:endpoint>
+	<jaxws:endpoint id="waybillServiceImplWS" implementor="#waybillServiceImpl" address="/waybillServiceImpl">
+		<jaxws:inInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingInInterceptor"/>
+		</jaxws:inInterceptors>
+		<jaxws:outInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingOutInterceptor"/>
+		</jaxws:outInterceptors>
+	</jaxws:endpoint>
+	<!--同步责任部门给CRM，FOSS的组织坐标 restful方式的web服务-->
+	<jaxrs:server id="crmMatchResponbilityOrg" address="/crmUrl">
+		<jaxrs:serviceBeans>
+			<ref bean="fossToCRMService"/>
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	<jaxrs:server id="restWaybill" address="/rest">
+		<jaxrs:serviceBeans>
+			<ref bean="restWaybillServiceImpl" />
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors>
+		  <bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+		   <bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	<jaxrs:server id="crmWaybill" address="/crmRest">
+		<jaxrs:serviceBeans>
+			<ref bean="crmWaybillServiceImpl" />
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors>
+		  <bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+		   <bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	
+	<bean id="restWaybillServiceImpl" class="com.deppon.foss.service.RestWaybillServiceImpl"></bean>
+	<jaxrs:server id="qmsWaybill" address="/qmsUrl">
+		<jaxrs:serviceBeans>
+			<ref bean="qmsWaybillServiceImpl" />
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors>
+		  <bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+		   <bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	
+	<jaxrs:server id="dopGXGOrder" address="/dopRest">
+		<jaxrs:serviceBeans>
+			<ref bean="dopGXGOrderServiceImpl" />
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors>
+		  <bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+		   <bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	
+	<bean id="crmWaybillServiceImpl" class="com.deppon.foss.service.RestCrmWaybillService"></bean>
+    <bean id="qmsWaybillServiceImpl" class="com.deppon.foss.service.QmsWaybillServiceImpl"></bean>
+	<bean id="dopGXGOrderServiceImpl" class="com.deppon.foss.service.RestDopGXGOrderService"></bean>
+</beans>

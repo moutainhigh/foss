@@ -1,0 +1,456 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.unload.queryForkliftEfficient" >
+	
+  <resultMap id="queryForkliftDataMap" type="com.deppon.foss.module.transfer.unload.api.shared.domain.ForkliftEfficientEntity" >
+    <result column="id" property="id" /><!--id-->
+    <result column="transfFieldName" property="transfFieldName" /><!--转运场-->
+    <result column="transfFieldCode" property="transfFieldCode" /><!--转运场编码-->
+    <result column="forkliftCount" property="forkliftCount" /><!--叉车数量-->
+    <result column="configDate" property="configDate" /><!--叉车数量-->
+    <result column="workFromDate" property="workFromDate" /><!--生效日期-->
+    <result column="workToDate" property="workToDate" /><!--截至日期-->
+    <result column="createPerson" property="createPerson" /><!--创建人-->
+    <result column="createPersonCode" property="createPersonCode" /><!--创建人代码-->
+    <result column="createDate" property="createDate" /><!--创建时间-->	
+    <result column="modifyPerson" property="modifyPerson" /><!--修改人-->
+    <result column="modifyPersonCode" property="modifyPersonCode" /><!--修改人代码-->
+    <result column="modifyDate" property="modifyDate" /><!--修改时间-->
+  </resultMap>
+  <!--叉车数量信息查询-->
+  <select id="queryForkliftData" resultMap="queryForkliftDataMap" parameterType="com.deppon.foss.module.transfer.unload.api.shared.vo.ForkliftEfficientVo">
+  		select 
+  			tc.id id,
+		    tc.transf_field_name transfFieldName,
+		    tc.transf_field_code transfFieldCode,
+		    tc.forklift_count forkliftCount,
+		    tc.config_date configDate,
+		    tc.work_from_date workFromDate,
+		    tc.work_to_date workToDate,
+		    tc.create_user_name createPerson,
+		    tc.create_user_code createPersonCode,
+		    tc.create_date createDate,
+		    tc.modify_user_name modifyPerson,
+		    tc.modify_user_code modifyPersonCode,
+		    tc.modify_date modifyDate
+		from tfr.t_opt_forkliftcount_config tc  
+    <where> 
+    	tc.active='Y' 
+    	<if test="transfField!=null and transfField!=''">
+    		and tc.transf_field_code=#{transfField}
+    	</if>
+    	<if test="configDate!=null and configDate!=''">
+    		and tc.config_date=#{configDate}
+    	</if>
+  	</where>
+  		order by tc.transf_field_code,tc.work_from_date desc
+  </select>
+  <select id="queryForkliftDataCount" resultType="Long" parameterType="com.deppon.foss.module.transfer.unload.api.shared.vo.ForkliftEfficientVo" >
+  	select 
+  			count(*)
+		from tfr.t_opt_forkliftcount_config tc  
+    <where> 
+    	tc.active='Y' 
+    	<if test="transfField!=null and transfField!=''">
+    		and tc.transf_field_code=#{transfField}
+    	</if>
+    	<if test="configDate!=null and configDate!=''">
+    		and tc.config_date=#{configDate}
+    	</if>
+  	</where>
+  </select>
+  <!--添加电叉数量配置信息-->
+	<insert id="addForkliftData" parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.ForkliftEfficientEntity">
+		insert into 
+			TFR.T_OPT_FORKLIFTCOUNT_CONFIG(
+				Id,TRANSF_FIELD_NAME,TRANSF_FIELD_CODE,FORKLIFT_COUNT,CONFIG_DATE,WORK_FROM_DATE,
+				WORK_TO_DATE,CREATE_USER_NAME,CREATE_USER_CODE,CREATE_DATE,MODIFY_USER_NAME,
+				MODIFY_USER_CODE,MODIFY_DATE,ACTIVE
+				)
+		values
+			(
+			#{id jdbcType=VARCHAR},#{transfFieldName jdbcType=VARCHAR},#{transfFieldCode jdbcType=VARCHAR},
+			#{forkliftCount jdbcType=NUMERIC},#{configDate jdbcType=DATE},#{workFromDate jdbcType=DATE},#{workToDate jdbcType=DATE},
+			#{createPerson jdbcType=VARCHAR},#{createPersonCode jdbcType=VARCHAR},#{createDate jdbcType=DATE},
+			#{modifyPerson jdbcType=VARCHAR},#{modifyPersonCode jdbcType=VARCHAR},#{modifyDate jdbcType=DATE},
+			#{active jdbcType=VARCHAR}
+			)
+	</insert>
+	<!--修改电叉数量配置信息-->
+	<update id="updateForkliftData" parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.ForkliftEfficientEntity">
+		
+		update TFR.T_OPT_FORKLIFTCOUNT_CONFIG tc
+		   set tc.transf_field_name = #{transfFieldName jdbcType=VARCHAR}, 
+		       tc.transf_field_code = #{transfFieldCode jdbcType=VARCHAR},
+		       tc.forklift_count=#{forkliftCount jdbcType=NUMERIC},
+		       tc.modify_user_name=#{modifyPerson jdbcType=VARCHAR},
+		       tc.modify_user_code=#{modifyPersonCode jdbcType=VARCHAR},
+		       tc.modify_date=#{modifyDate jdbcType=DATE},
+		       tc.active=#{active jdbcType=VARCHAR}
+		 <where>
+		 	tc.id = #{id jdbcType=VARCHAR}
+		 </where> 
+	</update>
+	<!--查询该转运长是否已经存在-->
+	 <select id="queryTransfFieldExist" resultType="Long" parameterType="java.lang.String">
+  		select 
+  			count(*)
+		from tfr.t_opt_forkliftcount_config tc  
+    <where> 
+    	tc.active='Y' 
+    		and tc.transf_field_code=#{transfFieldCode}
+  	</where>
+  </select>
+  <!--作废电叉数配置信息,设置截至日期-->
+  <update id="invalidForkliftData" parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.ForkliftEfficientEntity">
+		
+		update TFR.T_OPT_FORKLIFTCOUNT_CONFIG tc
+		   set 
+		       tc.work_to_date=#{workToDate jdbcType=DATE},
+		       tc.modify_user_name=#{modifyPerson jdbcType=VARCHAR},
+		       tc.modify_user_code=#{modifyPersonCode jdbcType=VARCHAR},
+		       tc.modify_date=#{modifyDate jdbcType=DATE}
+		 <where>
+		 	tc.id = #{id jdbcType=VARCHAR}
+		 </where> 
+	</update>
+	<!--叉车司机数据信息-->
+	<resultMap id="queryForkliftDriverMap" type="com.deppon.foss.module.transfer.unload.api.shared.domain.ForkliftDriverEntity" >
+    <result column="forkliftDriverName" property="forkliftDriverName" /><!--司机姓名-->
+    <result column="forkliftDriverCode" property="forkliftDriverCode" /><!--司机工号-->
+    <result column="queryDate" property="queryDate" /><!--查询日期-->
+    <result column="dayBoardsEfficiency" property="dayBoardsEfficiency" /><!--日板均效率-->
+    <result column="dayTicketsEfficiency" property="dayTicketsEfficiency" /><!--日票效率-->
+    <result column="monthBoardsEfficiency" property="monthBoardsEfficiency" /><!--月板均效率-->
+    <result column="monthTicketsEfficiency" property="monthTicketsEfficiency" /><!--月票效率-->
+  </resultMap>
+	<select id="queryForkliftDriverData" resultMap="queryForkliftDriverMap" 
+			parameterType="com.deppon.foss.module.transfer.unload.api.shared.vo.ForkliftEfficientVo">
+		select  
+			   month1.forkliftDriverName forkliftDriverName,
+		       day1.forkliftDriverCode forkliftDriverCode,
+		       day1.queryDate queryDate,
+		       day1.dayBoardsEfficiency dayBoardsEfficiency,
+		       day1.dayTicketsEfficiency dayTicketsEfficiency,
+		       month1.monthBoardsEfficiency monthBoardsEfficiency,
+		       month1.monthTicketsEfficiency monthTicketsEfficiency
+	   from (
+	          select 
+	          		te.emp_name forkliftDriverName,
+		      		te.emp_code forkliftDriverCode,
+		       		te.efficiency_date queryDate,
+		       		to_char(decode(te.tray_qty,0,0,round((te.scan_time/60)/te.tray_qty,3)),'FM99999990.000') dayBoardsEfficiency,
+		       		to_char(decode(te.waybill_qty,0,0,round((te.scan_time*1.0/60)/te.waybill_qty,3)),'FM99999990.000') dayTicketsEfficiency
+		       
+			  from tfr.t_opt_trayscan_efficiency te 
+			<where> 
+				te.dept_code=#{orgCode}
+				<if test="queryDate!=null and queryDate!=''">
+					and to_char(#{queryDate},'yyyy-mm-dd')=to_char(te.efficiency_date,'yyyy-mm-dd')
+				</if>
+				<if test="forkliftDriverCode!=null and forkliftDriverCode!=''">
+					and te.emp_code=#{forkliftDriverCode}
+				</if>
+			</where>
+		  )day1
+		  
+		right join
+		
+		(
+			select te.emp_code forkliftDriverCode,
+				   te.emp_name forkliftDriverName,
+				   to_char(decode(sum(te.tray_qty),0,0,round(sum(te.scan_time*1.0/60)/sum(te.tray_qty*1.0),3)),'FM99999990.000') monthBoardsEfficiency,
+		       	   to_char(decode(sum(te.waybill_qty),0,0,round(sum(te.scan_time/60)/sum(te.waybill_qty),3)),'FM99999990.000') monthTicketsEfficiency                                                              
+		    from tfr.t_opt_trayscan_efficiency te 
+			<where> 
+				te.dept_code=#{orgCode}
+				and	last_day(add_months(#{queryDate},-1))+1 <![CDATA[<=]]> te.efficiency_date
+			 	and te.efficiency_date<![CDATA[<=]]>#{queryDate}
+			 	<if test="forkliftDriverCode!=null and forkliftDriverCode!=''">
+					and te.emp_code=#{forkliftDriverCode}
+				</if>
+		 	</where>
+			group by te.emp_code,te.emp_name) month1 
+		on day1.forkliftDriverCode=month1.forkliftDriverCode 
+	</select>
+	<!--叉车司机数据信息数-->
+	<select id="queryForkliftDriverDataCount" resultType="Long" 
+			parameterType="com.deppon.foss.module.transfer.unload.api.shared.vo.ForkliftEfficientVo">
+		select  
+			   count(*)
+	    from (
+	          select 
+	          		te.emp_name forkliftDriverName,
+		      		te.emp_code forkliftDriverCode,
+		       		te.efficiency_date queryDate,
+		       		decode(te.tray_qty,0,0,round((te.scan_time/60)/te.tray_qty,3)) dayBoardsEfficiency,
+		       		decode(te.waybill_qty,0,0,round((te.scan_time*1.0/60)/te.waybill_qty,3)) dayTicketsEfficiency
+		       
+			  from tfr.t_opt_trayscan_efficiency te 
+			<where> 
+				te.dept_code=#{orgCode}
+				<if test="queryDate!=null and queryDate!=''">
+					and to_char(#{queryDate},'yyyy-mm-dd')=to_char(te.efficiency_date,'yyyy-mm-dd')
+				</if>
+				<if test="forkliftDriverCode!=null and forkliftDriverCode!=''">
+					and te.emp_code=#{forkliftDriverCode}
+				</if>
+			</where>
+		  )day1
+		  
+		right join
+		
+		(
+			select te.emp_code forkliftDriverCode,
+				   te.emp_name forkliftDriverName,
+				   decode(sum(te.tray_qty),0,0,round(sum(te.scan_time*1.0/60)/sum(te.tray_qty*1.0),3)) monthBoardsEfficiency,
+		       	   decode(sum(te.waybill_qty),0,0,round(sum(te.scan_time/60)/sum(te.waybill_qty),3)) monthTicketsEfficiency                                                              
+		    from tfr.t_opt_trayscan_efficiency te 
+			<where> 
+				te.dept_code=#{orgCode}
+				and	last_day(add_months(#{queryDate},-1))+1 <![CDATA[<=]]> te.efficiency_date
+			 	and te.efficiency_date<![CDATA[<=]]>#{queryDate}
+			 	<if test="forkliftDriverCode!=null and forkliftDriverCode!=''">
+					and te.emp_code=#{forkliftDriverCode}
+				</if>
+		 	</where>
+			group by te.emp_code,te.emp_name) month1 
+		on day1.forkliftDriverCode=month1.forkliftDriverCode 
+		
+	</select>
+	
+	<!--转运场数据信息-->
+	<resultMap id="queryTransferFieldMap" type="com.deppon.foss.module.transfer.unload.api.shared.domain.TransferFieldEntity" >
+    <result column="transfFieldCode" property="transfFieldCode" /><!--转运场编码-->
+    <result column="transfFieldName" property="transfFieldName" /><!--转运场-->
+    <result column="queryDate" property="queryDate" /><!--查询日期-->
+    <result column="dayBoardsEfficiency" property="dayBoardsEfficiency" /><!--日板均效率-->
+    <result column="dayTicketsEfficiency" property="dayTicketsEfficiency" /><!--日票效率-->
+    <result column="dayCarCount" property="dayCarCount" />  <!--日车均效率-->
+    <result column="dayPeopleEfficiency" property="dayPeopleEfficiency" /><!--日人均效率-->
+    <result column="dayWaitTime" property="dayWaitTime" /><!--日等待时长-->
+    <result column="monthBoardsEfficiency" property="monthBoardsEfficiency" /><!--月板均效率-->
+    <result column="monthTicketsEfficiency" property="monthTicketsEfficiency" /><!--月票效率-->
+    <result column="monthCarCount" property="monthCarCount" /><!--月车票数-->
+    <result column="monthPeopleEfficiency" property="monthPeopleEfficiency" /><!--月人均效率-->
+    <result column="monthWaitTime" property="monthWaitTime" /><!--月等待时长-->
+    <result column="forkliftCount" property="forkliftCount"/><!--日叉车数量  -->
+    <result column="sumCount" property="sumCount"/><!--月叉车总数量  -->
+  </resultMap>
+	<select id="queryTransferFieldData" resultMap="queryTransferFieldMap" 
+			parameterType="com.deppon.foss.module.transfer.unload.api.shared.vo.ForkliftEfficientVo">
+			select month1.dcptCode transfFieldCode,
+                        tb.name transfFieldName,
+                        #{queryDate} queryDate,
+                        day1.dayBoardsEfficiency dayBoardsEfficiency,
+                        day1.dayTicketsEfficiency dayTicketsEfficiency,
+                        day1.dayCarCount dayCarCount,
+                        day1.dayPeopleEfficiency dayPeopleEfficiency,
+                        day1.dayWaitTime dayWaitTime,
+                        month1.monthBoardsEfficiency monthBoardsEfficiency,
+                        month1.monthTicketsEfficiency monthTicketsEfficiency,
+                        month1.monthCarCount monthCarCount,
+                        month1.monthPeopleEfficiency monthPeopleEfficiency,
+                        month1.monthWaitTime monthWaitTime,
+                       t4.forkliftCount forkliftCount,
+                        t4.sumCount         sumCount
+                   from (select te.dept_code dcptCode,
+                   				to_char(decode(sum(te.tray_qty),0,0,round(sum(te.scan_time)/60/sum(te.tray_qty),3)),'FM99999990.000') dayBoardsEfficiency,
+                                to_char(decode(sum(te.waybill_qty),0,0, round(sum(te.scan_time)/60/sum(te.waybill_qty),3)),'FM99999990.000') dayTicketsEfficiency,
+                                sum(te.ticks_qty) dayCarCount,
+                                to_char(decode(count(te.emp_code),0,0,round(sum(te.ticks_qty)/count(te.emp_code),3)),'FM99999990.000') dayPeopleEfficiency,
+                                to_char(decode(sum(te.task_qty),0,0,round(sum(te.wait_time)/60/sum(te.task_qty),3)),'FM99999990.000') dayWaitTime
+                           from tfr.t_opt_trayscan_efficiency te
+                          WHERE to_char(te.efficiency_date, 'yyyy-mm-dd') =
+                                to_char(#{queryDate},'yyyy-mm-dd')
+                            <if test="transfField!=null and transfField!=''">
+									and te.dept_code=#{transfField,jdbcType=VARCHAR}
+							</if>     
+                          group by te.dept_code) day1
+                  right join (select te.dept_code dcptCode,
+                                   to_char(decode(sum(te.tray_qty),0,0,round(sum(te.scan_time/60)/sum(te.tray_qty),3)),'FM99999990.000') monthBoardsEfficiency,
+                                    to_char(decode(sum(te.waybill_qty),0,0,round(sum(te.scan_time/60)/sum(te.waybill_qty),3)),'FM99999990.000') monthTicketsEfficiency,
+                                    to_char(decode(count(te.emp_code),0,0,round(sum(te.ticks_qty)/count(te.emp_code),3)),'FM99999990.000') monthPeopleEfficiency,
+                                    sum(te.ticks_qty) monthCarCount,
+                                    to_char(round(decode(sum(te.task_qty),0,0,sum(te.wait_time)/60/sum(te.task_qty)),3),'FM99999990.000') monthWaitTime
+                               from tfr.t_opt_trayscan_efficiency te
+                              WHERE last_day(add_months(#{queryDate},-1))+1<![CDATA[<=]]>te.efficiency_date
+                                and te.efficiency_date <![CDATA[<=]]>#{queryDate}
+                                <if test="transfField!=null and transfField!=''">
+									and te.dept_code=#{transfField,jdbcType=VARCHAR}
+								</if> 
+                              group by te.dept_code) month1 on day1.dcptCode =month1.dcptCode
+                  inner join bse.t_bas_org tb on tb.code = month1.dcptCode and tb.active = 'Y'
+                                          
+                  inner join ( select t2.tfcode   transfFieldCode,
+                                      decode(t2.sumCount,null,0,t2.sumCount) sumCount,
+                                      decode(t3.ffcount,null,0,t3.ffcount)  forkliftCount
+                                        from (select tfc tfcode, sum(counts) sumCount
+                                                     from (select t.transf_field_code tfc,
+                                                              case
+                                                              /**当生效日期大于查询日期则是0**/
+                                                                when t.work_from_date<![CDATA[>]]>#{queryDate}
+                                                                       then 0
+                                                              /**当截止日期为空,生效日期大于等于当月一号**/
+                                                                when  (t.work_to_date is null) and t.work_from_date<![CDATA[>=]]>trunc(last_day(add_months(#{queryDate},-1))+ 1)
+                                                                       then t.forklift_count*(1+trunc(#{queryDate}) - trunc(t.work_from_date))
+                                                               /** 当截止日期为空,生效日期小于等于当月一号**/
+                                                               when (t.work_to_date is null)  and t.work_from_date<![CDATA[<=]]>trunc(last_day(add_months(#{queryDate},-1))+ 1)
+                                                                       then t.forklift_count*(1+trunc(#{queryDate})-trunc(last_day(add_months(#{queryDate}, -1)) + 1))
+                                                              /**当截止日期不为空，且生效日期大于等于当月一号 ，截止日期大于查询日期**/
+                                                               when (t.work_to_date is not null) and t.work_from_date<![CDATA[>]]>trunc(last_day(add_months(#{queryDate},-1))+ 1)
+                                                                  and t.work_to_date<![CDATA[>]]>#{queryDate}
+                                                                       then  t.forklift_count*(1+trunc(#{queryDate})-trunc(t.work_from_date))
+                                                              /**当截止日期不为空，且生效日期大于等于当月一日，截止日期小于查询日期**/
+                                                               when (t.work_to_date is not null) and t.work_from_date<![CDATA[>]]>trunc(last_day(add_months(#{queryDate},-1))+ 1)
+                                                                  and t.work_to_date<![CDATA[<]]>#{queryDate} 
+                                                                       then  t.forklift_count*(trunc(t.work_to_date)-trunc(t.work_from_date))
+                                                              /**当截止日期不为空，且生效日期大于等于当月一日，截止日期等于查询日期**/
+		                                                       when  (t.work_to_date is not null) and t.work_from_date<![CDATA[>]]>trunc(last_day(add_months(#{queryDate},-1))+ 1)
+		                                                           and t.work_to_date=#{queryDate}
+		                                                               then  t.forklift_count*(trunc(t.work_to_date)-trunc(t.work_from_date)) 
+                                                              /**当截止日期不为空，且生效日期小于当月一日，截止日期大于查询日期**/
+                                                               when (t.work_to_date is not null) and t.work_from_date<![CDATA[<]]>trunc(last_day(add_months(#{queryDate},-1))+ 1)
+                                                                  and t.work_to_date<![CDATA[>]]>#{queryDate} 
+                                                                       then  t.forklift_count*(1+trunc(#{queryDate})-trunc(last_day(add_months(#{queryDate}, -1)) + 1))
+                                                              /**当截至日期不为空，且生效日期小于当月一日, 截止日期小于查询日期，截止日期大于当月一日**/
+                                                               when (t.work_to_date is not null)
+                                                               	 and t.work_from_date<![CDATA[<]]>trunc(last_day(add_months(#{queryDate},-1))+ 1)
+                                                                  and t.work_to_date<![CDATA[<]]>#{queryDate} 
+                                                                  and t.work_to_date <![CDATA[>]]>trunc(last_day(add_months(#{queryDate},-1))+ 1)
+                                                                then t.forklift_count*(trunc(t.work_to_date)-trunc(last_day(add_months(#{queryDate}, -1)) + 1))
+                                                              /**当截止日期不为空，且生效日期小于当月一日,截止日期等于查询日期**/
+                                                               when (t.work_to_date is not null) and t.work_from_date<![CDATA[<]]>trunc(last_day(add_months(#{queryDate},-1))+ 1)        
+                                                                    and t.work_to_date=#{queryDate} 
+                                                                  	and t.work_to_date <![CDATA[>]]>trunc(last_day(add_months(#{queryDate},-1))+ 1)
+                                                                  then t.forklift_count*(trunc(t.work_to_date)-trunc(last_day(add_months(#{queryDate}, -1)) + 1))
+                                                                else
+                                                                 0
+                                                              end counts
+                                                      
+                                                         from TFR.T_OPT_FORKLIFTCOUNT_CONFIG t
+                                               <if test="transfField!=null and transfField!=''">
+														where t.transf_field_code=#{transfField,jdbcType=VARCHAR}
+												</if>          
+                                                         
+                                                         ) t1
+                                                         group by t1.tfc) t2
+                              left join (select tc.transf_field_code tfcode, tc.forklift_count ffcount
+                                            from TFR.T_OPT_FORKLIFTCOUNT_CONFIG tc
+                                           where (
+                                                ((tc.work_to_date is not null) and #{queryDate} <![CDATA[>=]]> tc.work_from_date 
+                                                  and #{queryDate} <![CDATA[<]]> tc.work_to_date )
+                                                  or
+                                                 ((tc.work_to_date is null) and #{queryDate} <![CDATA[>=]]> tc.work_from_date )
+                                                 )
+                                                 ) t3 on t2.tfcode = t3.tfcode
+                        )t4  on t4.transfFieldCode=month1.dcptCode
+              <if test="transfField!=null and transfField!=''">
+				where tb.code=#{transfField,jdbcType=VARCHAR}
+			</if>
+	</select>
+	
+	<select id="queryTransferFieldDataCount" resultType="Long" 
+			parameterType="com.deppon.foss.module.transfer.unload.api.shared.vo.ForkliftEfficientVo">
+			select count(1)
+                   from (select te.dept_code dcptCode,
+                   				to_char(decode(sum(te.tray_qty),0,0,round(sum(te.scan_time)/60/sum(te.tray_qty),3)),'FM99999990.000') dayBoardsEfficiency,
+                                to_char(decode(sum(te.waybill_qty),0,0, round(sum(te.scan_time)/60/sum(te.waybill_qty),3)),'FM99999990.000') dayTicketsEfficiency,
+                                sum(te.ticks_qty) dayCarCount,
+                                to_char(decode(count(te.emp_code),0,0,round(sum(te.ticks_qty)/count(te.emp_code),3)),'FM99999990.000') dayPeopleEfficiency,
+                                to_char(decode(sum(te.task_qty),0,0,round(sum(te.wait_time)/60/sum(te.task_qty),3)),'FM99999990.000') dayWaitTime
+                           from tfr.t_opt_trayscan_efficiency te
+                          WHERE to_char(te.efficiency_date, 'yyyy-mm-dd') =
+                                to_char(#{queryDate},'yyyy-mm-dd')
+                                
+                            <if test="transfField!=null and transfField!=''">
+									and te.dept_code=#{transfField,jdbcType=VARCHAR}
+								</if>      
+                          group by te.dept_code) day1
+                  right join (select te.dept_code dcptCode,
+                                   to_char(decode(sum(te.tray_qty),0,0,round(sum(te.scan_time/60)/sum(te.tray_qty),3)),'FM99999990.000') monthBoardsEfficiency,
+                                    to_char(decode(sum(te.waybill_qty),0,0,round(sum(te.scan_time/60)/sum(te.waybill_qty),3)),'FM99999990.000') monthTicketsEfficiency,
+                                    to_char(decode(count(te.emp_code),0,0,round(sum(te.ticks_qty)/count(te.emp_code),3)),'FM99999990.000') monthPeopleEfficiency,
+                                    sum(te.ticks_qty) monthCarCount,
+                                    to_char(round(decode(sum(te.task_qty),0,0,sum(te.wait_time)/60/sum(te.task_qty)),3),'FM99999990.000') monthWaitTime
+                               from tfr.t_opt_trayscan_efficiency te
+                              WHERE last_day(add_months(#{queryDate},-1))+1<![CDATA[<=]]>te.efficiency_date
+                                and te.efficiency_date <![CDATA[<=]]>#{queryDate}
+                               <if test="transfField!=null and transfField!=''">
+									and te.dept_code=#{transfField,jdbcType=VARCHAR}
+								</if>  
+                              group by te.dept_code) month1 on day1.dcptCode =month1.dcptCode
+                  inner join bse.t_bas_org tb on tb.code = month1.dcptCode and tb.active = 'Y'
+                                          
+                  inner join ( select t2.tfcode   transfFieldCode,
+                                      decode(t2.sumCount,null,0,t2.sumCount) sumCount,
+                                      decode(t3.ffcount,null,0,t3.ffcount)  forkliftCount
+                                        from (select tfc tfcode, sum(counts) sumCount
+                                                     from (select t.transf_field_code tfc,
+                                                              case
+                                                              /**当生效日期大于查询日期则是0**/
+                                                                when t.work_from_date<![CDATA[>]]>#{queryDate}
+                                                                       then 0
+                                                              /**当截止日期为空,生效日期大于等于当月一号**/
+                                                                when  (t.work_to_date is null) and t.work_from_date<![CDATA[>=]]>trunc(last_day(add_months(#{queryDate},-1))+ 1)
+                                                                       then t.forklift_count*(1+trunc(#{queryDate}) - trunc(t.work_from_date))
+                                                               /** 当截止日期为空,生效日期小于等于当月一号**/
+                                                               when (t.work_to_date is null)  and t.work_from_date<![CDATA[<=]]>trunc(last_day(add_months(#{queryDate},-1))+ 1)
+                                                                       then t.forklift_count*(1+trunc(#{queryDate})-trunc(last_day(add_months(#{queryDate}, -1)) + 1))
+                                                              /**当截止日期不为空，且生效日期大于等于当月一号 ，截止日期大于查询日期**/
+                                                               when (t.work_to_date is not null) and t.work_from_date<![CDATA[>]]>trunc(last_day(add_months(#{queryDate},-1))+ 1)
+                                                                  and t.work_to_date<![CDATA[>]]>#{queryDate}
+                                                                       then  t.forklift_count*(1+trunc(#{queryDate})-trunc(t.work_from_date))
+                                                              /**当截止日期不为空，且生效日期大于等于当月一日，截止日期小于查询日期**/
+                                                               when (t.work_to_date is not null) and t.work_from_date<![CDATA[>]]>trunc(last_day(add_months(#{queryDate},-1))+ 1)
+                                                                  and t.work_to_date<![CDATA[<]]>#{queryDate} 
+                                                                       then  t.forklift_count*(trunc(t.work_to_date)-trunc(t.work_from_date))
+                                                              /**当截止日期不为空，且生效日期大于等于当月一日，截止日期等于查询日期**/
+		                                                       when  (t.work_to_date is not null) and t.work_from_date<![CDATA[>]]>trunc(last_day(add_months(#{queryDate},-1))+ 1)
+		                                                           and t.work_to_date=#{queryDate}
+		                                                               then  t.forklift_count*(trunc(t.work_to_date)-trunc(t.work_from_date)) 
+                                                              /**当截止日期不为空，且生效日期小于当月一日，截止日期大于查询日期**/
+                                                               when (t.work_to_date is not null) and t.work_from_date<![CDATA[<]]>trunc(last_day(add_months(#{queryDate},-1))+ 1)
+                                                                  and t.work_to_date<![CDATA[>]]>#{queryDate} 
+                                                                       then  t.forklift_count*(1+trunc(#{queryDate})-trunc(last_day(add_months(#{queryDate}, -1)) + 1))
+                                                              /**当截至日期不为空，且生效日期小于当月一日, 截止日期小于查询日期，截止日期大于当月一日**/
+                                                               when (t.work_to_date is not null)
+                                                               	 and t.work_from_date<![CDATA[<]]>trunc(last_day(add_months(#{queryDate},-1))+ 1)
+                                                                  and t.work_to_date<![CDATA[<]]>#{queryDate} 
+                                                                  and t.work_to_date <![CDATA[>]]>trunc(last_day(add_months(#{queryDate},-1))+ 1)
+                                                                then t.forklift_count*(trunc(t.work_to_date)-trunc(last_day(add_months(#{queryDate}, -1)) + 1))
+                                                              /**当截止日期不为空，且生效日期小于当月一日,截止日期等于查询日期**/
+                                                               when (t.work_to_date is not null) and t.work_from_date<![CDATA[<]]>trunc(last_day(add_months(#{queryDate},-1))+ 1)        
+                                                                    and t.work_to_date=#{queryDate} 
+                                                                  	and t.work_to_date <![CDATA[>]]>trunc(last_day(add_months(#{queryDate},-1))+ 1)
+                                                                  then t.forklift_count*(trunc(t.work_to_date)-trunc(last_day(add_months(#{queryDate}, -1)) + 1))
+                                                                else
+                                                                 0
+                                                              end counts
+                                                      
+                                                         from TFR.T_OPT_FORKLIFTCOUNT_CONFIG t
+                                               <if test="transfField!=null and transfField!=''">
+														where t.transf_field_code=#{transfField,jdbcType=VARCHAR}
+												</if>          
+                                                         
+                                                         ) t1
+                                                         group by t1.tfc) t2
+                              left join (select tc.transf_field_code tfcode, tc.forklift_count ffcount
+                                            from TFR.T_OPT_FORKLIFTCOUNT_CONFIG tc
+                                           where (
+                                                ((tc.work_to_date is not null) and #{queryDate} <![CDATA[>=]]> tc.work_from_date 
+                                                  and #{queryDate} <![CDATA[<]]> tc.work_to_date )
+                                                  or
+                                                 ((tc.work_to_date is null) and #{queryDate} <![CDATA[>=]]> tc.work_from_date )
+                                                 )
+                                                 ) t3 on t2.tfcode = t3.tfcode
+                        )t4  on t4.transfFieldCode=month1.dcptCode
+              <if test="transfField!=null and transfField!=''">
+				where tb.code=#{transfField,jdbcType=VARCHAR}
+			</if>
+	</select>
+	<!-- 叉车票数统计 -->
+	<select id="queryForkliftEfficiency" statementType="CALLABLE">   
+		{call tfr.pro_forklift_efficiency(#{exceptionInfo,mode=OUT,jdbcType=VARCHAR})}
+	</select> 
+</mapper>

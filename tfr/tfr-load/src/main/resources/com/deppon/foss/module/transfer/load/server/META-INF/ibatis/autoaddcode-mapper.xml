@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.foss.module.transfer.load.api.shared.domain.AutoAddCodeEntity">
+
+	<resultMap id="AutoAddCodeEntityResultMap" type="com.deppon.foss.module.transfer.load.api.shared.domain.AutoAddCodeEntity">
+		<id property="tbid" column="id" jdbcType="VARCHAR" />
+		<result property="waybillNO" column="WAYBILL_NO" jdbcType="VARCHAR" />
+		<result property="waybillID" column="WAYBILL_ID" jdbcType="VARCHAR" />
+		<result property="receiveCustomerProvCode" column="RECEIVE_CUSTOMER_PROV_CODE" jdbcType="VARCHAR" />
+		<result property="receiveCustomerCityCode" column="RECEIVE_CUSTOMER_CITY_CODE" jdbcType="VARCHAR" />
+		<result property="receiveCustomerDistCode" column="RECEIVE_CUSTOMER_DIST_CODE" jdbcType="VARCHAR" />
+		<result property="receiveCustomerTownCode" column="RECEIVE_CUSTOMER_TOWN_CODE" jdbcType="VARCHAR" />
+		<result property="receiveCustomerAddress" column="RECEIVE_CUSTOMER_ADDRESS" jdbcType="VARCHAR" />
+		<result property="targetOrgCode" column="TARGET_ORG_CODE" jdbcType="VARCHAR" />
+		<result property="customerPickupOrgCode" column="CUSTOMER_PICKUP_ORG_CODE" jdbcType="VARCHAR" />
+		<result property="billTime" column="BILL_TIME" jdbcType="TIMESTAMP" />
+		<result property="createOrgCode" column="CREATE_ORG_CODE" jdbcType="VARCHAR" />
+		<result property="createTime" column="CREATE_TIME" jdbcType="TIMESTAMP" />
+	</resultMap>
+	
+	<insert id="insert" parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.AutoAddCodeEntity">
+		INSERT INTO tfr.T_OPT_AUTO_ADD_CODE
+			(ID,
+			WAYBILL_NO,
+			WAYBILL_ID,
+			RECEIVE_CUSTOMER_PROV_CODE,
+			RECEIVE_CUSTOMER_CITY_CODE,
+			RECEIVE_CUSTOMER_DIST_CODE,
+			RECEIVE_CUSTOMER_TOWN_CODE,
+			RECEIVE_CUSTOMER_ADDRESS,
+			TARGET_ORG_CODE,
+			CUSTOMER_PICKUP_ORG_CODE,
+			BILL_TIME,
+			CREATE_ORG_CODE,
+			CREATE_TIME)
+		VALUES
+			(#{id,jdbcType=VARCHAR},
+			#{waybillNO,jdbcType=VARCHAR},
+			#{waybillID,jdbcType=VARCHAR},
+			#{receiveCustomerProvCode,jdbcType=VARCHAR},
+			#{receiveCustomerCityCode,jdbcType=VARCHAR},
+			#{receiveCustomerDistCode,jdbcType=VARCHAR},
+			#{receiveCustomerTownCode,jdbcType=VARCHAR},
+			#{receiveCustomerAddress,jdbcType=VARCHAR},
+			#{targetOrgCode,jdbcType=VARCHAR},
+			#{customerPickupOrgCode,jdbcType=VARCHAR},
+			#{billTime,jdbcType=TIMESTAMP},
+			#{createOrgCode,jdbcType=VARCHAR},
+			sysdate)
+	</insert>
+	
+	<update id="updateByPrimaryKey" parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.AutoAddCodeEntity">
+		UPDATE tfr.T_OPT_AUTO_ADD_CODE
+			SET 
+			WAYBILL_NO = #{waybillNO,jdbcType=VARCHAR},
+			WAYBILL_ID = #{waybillID,jdbcType=VARCHAR},
+			RECEIVE_CUSTOMER_PROV_CODE = #{receiveCustomerProvCode,jdbcType=VARCHAR},
+			RECEIVE_CUSTOMER_CITY_CODE = #{receiveCustomerCityCode,jdbcType=VARCHAR},
+			RECEIVE_CUSTOMER_DIST_CODE = #{receiveCustomerDistCode,jdbcType=VARCHAR},
+			RECEIVE_CUSTOMER_TOWN_CODE = #{receiveCustomerTownCode,jdbcType=VARCHAR},
+			RECEIVE_CUSTOMER_ADDRESS = #{receiveCustomerAddress,jdbcType=VARCHAR},
+			TARGET_ORG_CODE = #{targetOrgCode,jdbcType=VARCHAR},
+			CUSTOMER_PICKUP_ORG_CODE = #{customerPickupOrgCode,jdbcType=VARCHAR},
+			BILL_TIME = #{billTime,jdbcType=TIMESTAMP},
+			CREATE_ORG_CODE = #{createOrgCode,jdbcType=VARCHAR}
+		WHERE ID = #{id,jdbcType=VARCHAR}
+	</update>
+	
+	<select id="selectByPrimaryKey" resultMap="AutoAddCodeEntityResultMap" parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.AutoAddCodeEntity">
+		SELECT
+			<include refid="Base_Column_List" />
+		FROM 
+			tfr.T_OPT_AUTO_ADD_CODE
+		WHERE 
+			ID = #{id,jdbcType=VARCHAR}
+	</select>
+	
+    <delete id="deleteEntityByPrimaryKey" parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.AutoAddCodeEntity">
+		DELETE
+			tfr.T_OPT_AUTO_ADD_CODE
+		WHERE 
+			id = #{tbid,jdbcType=VARCHAR}
+	</delete>
+	
+	<sql id="Base_Column_List">
+			ID,WAYBILL_NO,WAYBILL_ID,
+			RECEIVE_CUSTOMER_PROV_CODE,RECEIVE_CUSTOMER_CITY_CODE,RECEIVE_CUSTOMER_DIST_CODE,
+			RECEIVE_CUSTOMER_TOWN_CODE,RECEIVE_CUSTOMER_ADDRESS,TARGET_ORG_CODE,
+			CUSTOMER_PICKUP_ORG_CODE,BILL_TIME,CREATE_ORG_CODE,
+			CREATE_TIME
+	</sql>
+	
+	<update id="updateAndGetJobIdAuto" parameterType="map">
+		update tfr.t_opt_auto_add_code a
+		/*中转-自动补码，更新待补码记录的jobid*/
+		set a.job_id = #{jobId}
+		where a.job_id = 'N/A'
+		and rownum <![CDATA[ <= ]]> #{limit}
+	</update>
+	
+	<select id="queryListJobIdForReset" resultMap="AutoAddCodeEntityResultMap">
+		select 
+		/* 中转-自动补码，根据30分钟之前jobid不为空的数据 */
+		<include refid="Base_Column_List"/>
+		from tfr.t_opt_auto_add_code a 
+		where  a.create_time<![CDATA[ <= ]]>sysdate-1/2/24 And a.job_id Is Not Null
+	</select>
+	
+	<select id="queryAutoAddCodeEntityByJodId" parameterType="java.lang.String" resultMap="AutoAddCodeEntityResultMap">
+		select 
+		/*中转-自动补码，根据jobid查询待补码记录*/
+		<include refid="Base_Column_List"/>
+		from tfr.t_opt_auto_add_code a 
+		where a.job_id = #{jobId}
+	</select>
+	
+	<update id="resetDataByJobId" parameterType="java.lang.String" >
+		update tfr.t_opt_auto_add_code a 
+		set a.job_id = 'N/A'
+		where a.job_id = #{jobId}
+	</update>
+	
+	<update id="resetDataById" parameterType="java.lang.String" >
+		update tfr.t_opt_auto_add_code a 
+		set a.job_id = 'N/A'
+		where a.id = #{id}
+	</update>
+	
+	
+	<update id="resetData">
+		update tfr.t_opt_auto_add_code a 
+		set a.job_id = 'N/A'
+		where a.job_id != 'N/A'
+	</update>
+</mapper>

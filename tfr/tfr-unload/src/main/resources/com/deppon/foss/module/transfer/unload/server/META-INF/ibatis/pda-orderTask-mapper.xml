@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	<mapper namespace="foss.unload.pdaOrderTask" >
+	<!--点单任务基本信息ResultMap-->
+	<resultMap id="pdaOrderTaskResultMap" type="com.deppon.foss.module.transfer.pda.api.shared.domain.PDAOrderTaskEntity" >
+		<result column="orderTaskNo" property="orderTaskNo" />
+		<result column="orderCode" property="orderCode" />
+		<result column="orderName" property="orderName" />
+		<result column="orderTaskState" property="orderTaskState" />
+	</resultMap>
+		
+	<!-- 点单任务查询流水明细 -->
+	<resultMap id="getOrderSerialNoDetailsByBillNoResultMap" 
+		type = "com.deppon.foss.module.transfer.pda.api.shared.domain.PDAOrderSerialNoDetailEntity" >
+		<result property="serialNo" column="serialNo" />
+		<result property="orderReportType" column="orderReportType" />
+	</resultMap>
+		
+	<resultMap id="queryBillInfoResultMap"
+		type="com.deppon.foss.module.transfer.pda.api.shared.domain.PDAOrderTaskBillEntity">
+		<result property="id" column="id" />
+		<result property="waybillNo" column="waybillNo" />
+		<result property="orderGoodsQty" column="orderGoodsQty" />
+		<result property="createBillQty" column="createBillQty" />
+		<result property="alAssembleQty" column="alAssembleQty" />
+	</resultMap>
+	
+	 <!--传给PDA查询点单任务-->
+	 <select id="refreshOrderTaskByPDA" resultMap="pdaOrderTaskResultMap" parameterType="HashMap">
+  		select 
+           ot.order_task_no orderTaskNo,
+           ot.order_man_name orderName,
+           ot.order_man_code orderCode,
+           ot.order_task_state orderTaskState
+          from tfr.t_opt_order_task ot
+          where ot.order_task_state = 'IN'
+          and ot.cteate_org_code = #{orgCode}
+          and ot.order_man_code = #{operator}
+         order by ot.CREATE_TIME desc
+    </select>
+    
+    <!--传给PDA点单任务明细-->
+   <select id="queryOrderTaskDetailByOrderTaskNo" resultMap="queryBillInfoResultMap" parameterType="String">
+  		select  detail.id id,
+  		        detail.waybill_no waybillNo,
+  		        detail.goods_qty createBillQty,
+                detail.handover_goods_qty alAssembleQty,
+                detail.order_goods_qty orderGoodsQty
+  		    from 
+			tfr.t_opt_order_task_detail detail
+			where detail.order_task_no = #{orderTaskNo}
+		
+  </select>
+	
+	<select id="queryPDAOrderTaskSerialNoListByBillNo" resultMap="getOrderSerialNoDetailsByBillNoResultMap"
+		parameterType="String">
+	<![CDATA[
+		select 
+			serialNo.serial_no serialNo,
+			serialNo.order_report_type orderReportType
+			from tfr.t_opt_order_task_serialno serialNo
+	]]>
+		<where>
+			serialNo.TASK_DETAIL_ID= #{orderTaskDetailId}
+   				order by serialNo.serial_no asc
+		</where>
+	</select>
+</mapper>

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.PartnerStatementPaymentDao" >
+  <!-- 付款添加付款单明细 -->
+  <insert id="addBillPaymentD" parameterType="java.util.Map">
+	  INSERT INTO /*合伙人付款对账单管理-付款添加付款单明细*/  STL.T_STL_BILL_PAYMENT_D
+	      (ID,
+	       PAYMENT_NO,
+	       PAYMENT_ACCOUNT_DATE,
+	       SOURCE_BILL_NO,
+	       WAYBILL_NO,
+	       SOURCE_BILL_TYPE,
+	       SOURCE_ACCOUNT_DATE,
+	       CREATE_TIME,
+	       SRC_SOURCE_BILL_NO,
+	       PAY_AMOUNT)
+	      SELECT SYS_GUID(),
+	             #{paymentNum,JDBCTYPE=VARCHAR},
+	             SYSDATE,
+	             P.PAYABLE_NO,
+	             P.WAYBILL_NO,
+	             'P',
+	             P.ACCOUNT_DATE,
+	             SYSDATE,
+	             P.SOURCE_BILL_NO,
+	             P.UNVERIFY_AMOUNT
+	        FROM STL.T_STL_BILL_PAYABLE P
+	       WHERE P.ACTIVE = 'Y'
+	         AND P.BILL_TYPE IN ('PDFP', 'PDDF')
+	         AND P.UNVERIFY_AMOUNT > 0
+	         AND P.PAYABLE_NO IN
+	             (SELECT PD.PAYABLE_NO
+	                FROM STL.T_STL_STATEMENT_PARTNER_PAY_D PD
+	               WHERE 
+	               		PD.STATEMENT_BILL_NO IN
+	               		 <foreach collection="statementBillNos" index="index" item="item" open="(" separator="," close=")">
+					      	 #{item}
+					      </foreach>
+					      AND
+					    NVL(PD.IS_DELETE, 'N') != 'Y'
+	                )
+	</insert>
+  	<!-- 付款更新应付单信息 -->
+  	<update id="payForBillPayable" parameterType="java.util.Map">
+		UPDATE /*合伙人付款对账单管理-付款更新应付单信息*/ 
+		STL.T_STL_BILL_PAYABLE P
+	   	   SET P.VERSION_NO = VERSION_NO + 1,
+		   	   P.PAY_STATUS = 'Y',
+		       P.PAYMENT_NO= #{paymentNum,jdbcType=VARCHAR},
+		       P.MODIFY_TIME = SYSDATE,
+		       P.MODIFY_USER_CODE = #{modifyUserCode,jdbcType=VARCHAR},
+		       P.MODIFY_USER_NAME = #{modifyUserName,jdbcType=VARCHAR},
+		       P.PAYMENT_NOTES = #{paymentNotes,jdbcType=VARCHAR},
+		       P.PAYMENT_AMOUNT = P.UNVERIFY_AMOUNT
+		      <!--  P.VERIFY_AMOUNT = P.AMOUNT, -->
+		       <!-- P.UNVERIFY_AMOUNT = 0 -->
+		 WHERE P.ACTIVE = 'Y'
+		   AND P.BILL_TYPE IN ('PDFP', 'PDDF')
+		   AND P.UNVERIFY_AMOUNT > 0
+		   AND P.PAYABLE_NO IN (SELECT PD.PAYABLE_NO
+		                         FROM STL.T_STL_STATEMENT_PARTNER_PAY_D PD
+		                        WHERE PD.STATEMENT_BILL_NO IN
+		                        	 <foreach collection="statementBillNos" index="index" item="item" open="(" separator="," close=")">
+				      			 	  #{item}
+				      				 </foreach>
+					     			 AND
+					  				  NVL(PD.IS_DELETE, 'N') != 'Y'
+		                       )
+	</update>
+	<!-- 回调更新应付单信息 -->
+	<update id="updatePayableForRollBack" parameterType="java.util.Map">
+		UPDATE /*合伙人付款对账单管理-回调更新应付单信息*/  
+		STL.T_STL_BILL_PAYABLE P
+	   	   SET P.VERSION_NO = VERSION_NO + 1,
+		   	   P.PAY_STATUS = 'N',
+		       P.PAYMENT_NO= 'N/A',
+		       P.MODIFY_TIME = SYSDATE,
+		       P.MODIFY_USER_CODE = #{modifyUserCode,jdbcType=VARCHAR},
+		       P.MODIFY_USER_NAME = #{modifyUserName,jdbcType=VARCHAR},
+		       P.PAYMENT_AMOUNT = null
+		       <!-- P.VERIFY_AMOUNT = 0, -->
+		       <!-- P.UNVERIFY_AMOUNT = P.AMOUNT -->
+		 WHERE P.ACTIVE = 'Y'
+		   AND P.BILL_TYPE IN ('PDFP', 'PDDF')
+		   AND P.VERIFY_AMOUNT > 0
+		   AND P.PAYABLE_NO IN (SELECT PD.PAYABLE_NO
+		                         FROM STL.T_STL_STATEMENT_PARTNER_PAY_D PD
+		                        WHERE PD.STATEMENT_BILL_NO IN
+		                        	 <foreach collection="statementBillNos" index="index" item="item" open="(" separator="," close=")">
+				      			 	  #{item}
+				      				 </foreach>
+					     			 AND
+					  				  NVL(PD.IS_DELETE, 'N') != 'Y'
+		                       )
+	</update>
+	<!-- 删除明细更新应付单信息 -->
+	<update id="updatePayableForDel" parameterType="java.util.Map">
+		UPDATE /*合伙人付款对账单管理-删除明细更新应付单信息*/ 
+		STL.T_STL_BILL_PAYABLE P
+	   	   SET P.VERSION_NO = VERSION_NO + 1,
+		       P.MODIFY_TIME = SYSDATE,
+		       P.MODIFY_USER_CODE = #{modifyUserCode,jdbcType=VARCHAR},
+		       P.MODIFY_USER_NAME = #{modifyUserName,jdbcType=VARCHAR},
+		       P.STATEMENT_BILL_NO = #{statementBillNo, jdbcType=VARCHAR}
+		 WHERE P.PAYABLE_NO= #{paymentNum,jdbcType=VARCHAR} 
+		 and P.ACTIVE = 'Y'
+	</update>
+  
+  	<!-- 批量更新应付单中的对账单号 -->
+  	<update id="batchUpdatePayableStatementBillNo" parameterType="map">
+  		UPDATE /*合伙人付款对账单管理-批量删除明细更新应付单信息*/ 
+		STL.T_STL_BILL_PAYABLE P
+	   	   SET P.VERSION_NO = VERSION_NO + 1,
+		       P.MODIFY_TIME = SYSDATE,
+		       P.MODIFY_USER_CODE = #{modifyUserCode,jdbcType=VARCHAR},
+		       P.MODIFY_USER_NAME = #{modifyUserName,jdbcType=VARCHAR},
+		       P.STATEMENT_BILL_NO = #{statementBillNo, jdbcType=VARCHAR}
+		 <where>
+		 	P.ACTIVE = 'Y'
+		 	and P.PAYABLE_NO in
+		 	<foreach collection="detailList" index="index" item="item" open="(" separator="," close=")">
+       			#{item.payableNo}
+    	  	</foreach>
+		 </where>
+  	</update>
+  </mapper>

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://www.springframework.org/schema/jee 
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+			http://www.springframework.org/schema/aop 
+			http://www.springframework.org/schema/aop/spring-aop-3.0.xsd" default-autowire="byName">
+
+	<bean id="dataSource"
+		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver" />
+		<property name="url" value="jdbc:oracle:thin:@192.168.10.11:1521:FOSSDB" />
+		<property name="username" value="stl" />
+		<property name="password" value="fossdev" />
+	</bean>
+
+	<!-- 数据连接管理 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	<!-- 事务注解支持 -->
+	<tx:annotation-driven transaction-manager="transactionManager" />
+	<!-- myBatis文件 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="mapperLocations"
+			value="classpath*:com/deppon/**/META-INF/ibatis/*.xml" />
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<!-- 因为综合管理继承的mybatisDao不一样，里面的sqlSession配置不同，故增加 下面的sqlSession  add by wujiangtao -->
+	<bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg index="0" ref="sqlSessionFactory" />
+	</bean>
+
+	<!-- 客户信息dao -->
+	<bean id="customerDao"
+		class="com.deppon.foss.module.base.baseinfo.server.dao.impl.CustomerDao" >
+		<property name="sqlSession" ref="sqlSession"></property>
+		</bean>
+
+	<!-- Service配置 -->
+	<!-- 客户信息Service -->
+	<bean id="customerService"
+		class="com.deppon.foss.module.base.baseinfo.server.service.impl.CustomerService" />
+		
+	<!-- 综合管理行政区域 -->
+	<!-- 数据访问层 -->
+	<bean id="orgAdministrativeInfoDao" 
+		  class="com.deppon.foss.module.base.baseinfo.server.dao.impl.OrgAdministrativeInfoDao">
+	</bean>	
+	<!-- 业务服务层 -->
+	<bean id="orgAdministrativeInfoService" 
+		  class="com.deppon.foss.module.base.baseinfo.server.service.impl.OrgAdministrativeInfoService">
+		<property name="orgAdministrativeInfoDao" ref="orgAdministrativeInfoDao" />
+		<property name="financialOrganizationsService" ref="financialOrganizationsService" /> 
+	</bean>	
+	
+	<!-- 数据访问层  财务组织  -->
+	<bean id="financialOrganizationsDao" 
+			class="com.deppon.foss.module.base.baseinfo.server.dao.impl.FinancialOrganizationsDao">
+	</bean>	
+	<!-- 业务服务层  财务组织  -->
+	<bean id="financialOrganizationsService" 
+		  class="com.deppon.foss.module.base.baseinfo.server.service.impl.FinancialOrganizationsService">
+		<property name="financialOrganizationsDao" ref="financialOrganizationsDao" />
+	</bean>	
+	
+	<!-- 数据访问层 -->
+	<bean id="administrativeRegionsDao" 
+		  class="com.deppon.foss.module.base.baseinfo.server.dao.impl.AdministrativeRegionsDao">
+	</bean>	
+	<!-- 业务服务层 -->
+	<bean id="administrativeRegionsService" 
+		  class="com.deppon.foss.module.base.baseinfo.server.service.impl.AdministrativeRegionsService">
+	</bean>	
+</beans>

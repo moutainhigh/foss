@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.packaging.outpack" >
+	<!-- PDA查询需要包装的货物信息 -->
+	<resultMap id="queryUnpack" 
+		type="com.deppon.foss.module.transfer.pda.api.shared.domain.QueryPDAUnpackResEntity">
+		
+		<result property="wayBillNumber" column="wayBillNumber" />
+		<result property="waybillNum" column="waybillNum" />
+		<!-- <result property="packStockNum" column="packStockNum" /> -->
+		<result property="transportationType" column="transportationType" />
+		<result property="waybillCreateDept" column="waybillCreateDept" />
+		<result property="packRequire" column="packRequire" />
+		<result property="predictDepartDate" column="predictDepartDate" />
+		<collection property="serialNoAreaDto" column="waybill_no" ofType="com.deppon.foss.module.transfer.pda.api.shared.dto.SerialNoAreaDto">
+			<result property="serialNo" column="serialNo" />
+			<result property="orgCode" column="orgCode" />
+			<result property="areaCode" column="areaCode" />
+			<result property="isPacked" column="isPacked" />
+			<result property="packageType" column="packageType" />
+		</collection>
+	</resultMap>
+	
+	<resultMap id="querySerialArea" 
+		type="com.deppon.foss.module.transfer.pda.api.shared.dto.SerialNoAreaDto">
+		<result property="serialNo" column="serialNo" />
+		<result property="orgCode" column="orgCode" />
+		<result property="areaCode" column="areaCode" />
+		<result property="isPacked" column="isPacked" />
+		<result property="packageType" column="packageType" />
+	</resultMap>
+	
+	<!-- 查询营业部代打包装信息 -->
+	<select id="selectPDAUnpack" resultMap="queryUnpack"
+		parameterType="com.deppon.foss.module.transfer.pda.api.shared.domain.QueryPDAUnpackConEntity">
+  		select    /*模块：中转-包装PDA-查询*/
+  				  re.WAYBILL_NO         wayBillNumber,
+  				  re.goods_qty_total		 waybillNum,
+                  re.CREATE_ORG_NAME   waybillCreateDept,
+                  product.name       transportationType,
+                  re.PACKAGE_REQUIREMENT packRequire,
+                  pa.plan_start_time     predictDepartDate,
+                  case when st.STOCK_GOODS_QTY is null then 0 end packStockNum 
+             from tfr.T_OPT_PACKAGE_REQUIRE re
+        left join tfr.t_opt_transport_path pa on pa.waybill_no = re.waybill_no 
+        left join pkp.T_SRV_PRODUCT product on product.code = re.PRODUCT_CODE 
+       
+        left join tfr.t_opt_waybill_stock st on re.waybill_no = st.waybill_no
+        										 <if test="packDept!=null and packDept!='' ">	
+													 AND st.org_code = #{packDept}
+												 </if>
+												 <if test="areaCode!=null and areaCode!='' ">
+												 	 AND st.goods_area_code =#{areaCode}												 
+												 </if>                                                                       
+            where re.PACKAGE_ORG_CODE = #{packDept} 
+            and re.IS_PACKED = 'N'
+            order by pa.plan_start_time asc,product.seq asc
+            
+	</select >
+	
+	<!-- 查询营业部代打包装信息 ,一对多 -->
+	<select id="selectPDAUnpackArea" resultMap="queryUnpack"
+		parameterType="com.deppon.foss.module.transfer.pda.api.shared.domain.QueryPDAUnpackConEntity">
+  		select    /*模块：中转-包装PDA-查询*/
+            re.WAYBILL_NO         wayBillNumber,
+            re.goods_qty_total     waybillNum,
+                  re.CREATE_ORG_NAME   waybillCreateDept,
+                  product.name       transportationType,
+                  re.PACKAGE_REQUIREMENT packRequire,
+                  pa.plan_start_time     predictDepartDate,
+                  de.serial_no serialNo, 
+                  de.is_packed isPacked,
+       		      stock.org_code orgCode, 
+       		      stock.goods_area_code areaCode,
+       		      de.package_type packageType
+             from tfr.T_OPT_PACKAGE_REQUIRE re
+        left join tfr.t_opt_transport_path pa on pa.waybill_no = re.waybill_no 
+        left join pkp.T_SRV_PRODUCT product on product.code = re.PRODUCT_CODE 
+        left join tfr.t_opt_package_request_detail de on de.waybill_no=re.waybill_no
+        left join tfr.t_opt_stock stock on stock.waybill_no = de.waybill_no
+                                             and stock.serial_no = de.serial_no                                 
+            where re.PACKAGE_ORG_CODE = #{packDept}
+              and re.IS_PACKED = 'N'  
+              and stock.org_code = #{packDept}
+         order by pa.plan_start_time asc,product.seq asc
+            
+	</select >
+	
+	<select id="selectSerialArea" resultMap="querySerialArea"
+		parameterType="Map">
+		select /*模块：中转-包装PDA-已包装流水号*/
+			   pa.serial_no serialNo, 
+			   pa.is_packed          isPacked,
+       		   stock.org_code orgCode, 
+       		   stock.goods_area_code areaCode,
+       		   pa.package_type packageType
+  		  from tfr.t_opt_package_request_detail pa
+     left join tfr.t_opt_stock stock on stock.waybill_no = pa.waybill_no
+                                 and stock.serial_no = pa.serial_no
+                                 <if test="packDept!=null and packDept!='' ">	
+									and stock.org_code = #{packDept}
+	  							 </if>
+ 	where PA.waybill_NO = #{waybillNo}
+      <if test="isPacked!=null and isPacked!='' ">	
+		    and pa.IS_PACKED = #{isPacked}
+	  </if>
+	  
+
+	</select>
+	
+	<!-- 保存需要包装的运单号信息-->
+	<insert id="insertPackagingRequireEntity"
+		parameterType="com.deppon.foss.module.transfer.packaging.api.shared.domain.PackagingRequireEntity">
+				 insert into tfr.T_OPT_PACKAGE_REQUIRE(
+					ID,
+					WAYBILL_NO,
+					CREATE_ORG_CODE,
+					GOODS_QTY_TOTAL,
+					GOODS_VOLUME_TOTAL,
+					BILL_TIME,
+					PRODUCT_CODE,
+					GOODS_NAME,
+					PACKAGE_VOLUME,
+					PACKAGE_NEEDNUM,
+					PACKAGE_ORG_CODE,
+					PACKAGE_REQUIREMENT,
+					PACKED_NUM,
+					IS_DISABLE,
+					PACKAGE_ORG_NAME,
+					CREATE_ORG_NAME,
+					IS_PACKED,
+					CREATE_TIME,
+					MODIFY_TIME
+				 ) values(
+				 #{id,jdbcType=VARCHAR},
+				 #{waybillNo,jdbcType=VARCHAR},
+				 #{waybillCreateDeptCode,jdbcType=VARCHAR},
+				 #{waybillNumber,jdbcType=DECIMAL},
+				 #{waybillVolume,jdbcType=DECIMAL},
+				 #{waybillCreateDate,jdbcType=TIMESTAMP},
+				 #{productType,jdbcType=VARCHAR},
+				 #{goodsName,jdbcType=VARCHAR},
+				 #{needPackVolume,jdbcType=DECIMAL},
+				 #{needPackNum,jdbcType=DECIMAL},
+				 #{packagingDeptCode,jdbcType=VARCHAR},
+				 #{packagingRequire,jdbcType=VARCHAR},
+				 #{packedNum,jdbcType=DECIMAL},
+				 #{isDisable,jdbcType=VARCHAR},
+				 #{packagingDept,jdbcType=VARCHAR},
+				 #{waybillCreateDept,jdbcType=VARCHAR},
+				 #{packedStatus,jdbcType=VARCHAR},
+				 #{createDate,jdbcType=TIMESTAMP},
+				 #{modifyDate,jdbcType=TIMESTAMP}
+				 )
+	</insert>	
+	
+	<!-- 修改需要包装的运单信息-->
+	<update id="updatePackagingRequireEntity"
+		parameterType="com.deppon.foss.module.transfer.packaging.api.shared.domain.PackagingRequireEntity">
+			 update tfr.T_OPT_PACKAGE_REQUIRE re
+			    set 
+					CREATE_ORG_CODE = #{waybillCreateDeptCode,jdbcType=VARCHAR},
+					GOODS_QTY_TOTAL = #{waybillNumber,jdbcType=DECIMAL},
+					GOODS_VOLUME_TOTAL = #{waybillVolume,jdbcType=DECIMAL},
+					BILL_TIME = #{waybillCreateDate,jdbcType=TIMESTAMP},
+					PRODUCT_CODE = #{productType,jdbcType=VARCHAR},
+					GOODS_NAME = #{goodsName,jdbcType=VARCHAR},
+					PACKAGE_VOLUME = #{needPackVolume,jdbcType=DECIMAL},
+					PACKAGE_NEEDNUM = #{needPackNum,jdbcType=DECIMAL},
+					PACKAGE_ORG_CODE = #{packagingDeptCode,jdbcType=VARCHAR},
+					PACKAGE_REQUIREMENT = #{packagingRequire,jdbcType=VARCHAR},
+					PACKAGE_ORG_NAME = #{packagingDept,jdbcType=VARCHAR},
+					CREATE_ORG_NAME = #{waybillCreateDept,jdbcType=VARCHAR},
+					MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+			where   WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+	</update>
+	
+	<!--作废需要包装的运单号信息，未实现-->
+	<update id="disablePackagingRequireEntity"
+		parameterType="HashMap">
+			 update tfr.T_OPT_PACKAGE_REQUIRE re
+			    set 
+					IS_DISABLE = 'Y',
+					MODIFY_TIME = #{modifyDate}
+			where   WAYBILL_NO = #{waybillNo}
+	</update>
+	
+		<!-- 保存需要包装的流水号明细    批量
+	<insert id="insertSerialList" parameterType="java.util.List">
+		begin
+		<foreach collection="list" item="item" separator=";">
+				insert into tfr.t_opt_package_request_detail(
+					id,
+					waybill_no,
+					serial_no,
+					billing_time,
+					packagerequest_id,
+					is_packed,
+					
+				 ) values(
+				 #{item.id,jdbcType=VARCHAR},
+				 #{item.waybillNo,jdbcType=VARCHAR},
+				 #{item.serialNo,jdbcType=VARCHAR},
+				 #{item.waybillCreateDate,jdbcType=TIMESTAMP},
+				 #{item.requireId,jdbcType=VARCHAR},
+				 #{item.isPacked,jdbcType=VARCHAR})
+		</foreach>
+		;end;			 
+	</insert>
+		-->
+	<!-- 保存需要包装的流水号明细    单条-->
+	<insert id="insertSerialEntity" 
+		parameterType="com.deppon.foss.module.transfer.packaging.api.shared.domain.PackagingRequireDetailsEntity">
+				insert into tfr.t_opt_package_request_detail(
+					id,
+					waybill_no,
+					serial_no,
+					billing_time,
+					packagerequest_id,
+					is_packed,
+					package_type,
+					actual_package_id,
+					CREATE_TIME,
+					MODIFY_TIME
+				 ) values(
+				 #{id,jdbcType=VARCHAR},
+				 #{waybillNo,jdbcType=VARCHAR},
+				 #{serialNo,jdbcType=VARCHAR},
+				 #{waybillCreateDate,jdbcType=TIMESTAMP},
+				 #{requireId,jdbcType=VARCHAR},
+				 #{isPacked,jdbcType=VARCHAR},
+				 #{packageType,jdbcType=VARCHAR},
+				 #{actualPackageId,jdbcType=VARCHAR},
+				 #{createDate,jdbcType=TIMESTAMP},
+				 #{modifyDate,jdbcType=TIMESTAMP}
+				 )		 
+	</insert>
+	
+			<!-- 删除不需要包装的流水号明细-->
+	<delete id="deleteSerialList" parameterType="java.util.List">
+		begin
+		<foreach collection="list" item="item" separator=";">
+				delete from tfr.t_opt_package_request_detail 
+				      where	waybill_no=#{item.waybillNo}
+				        and serial_no=#{item.serialNo}
+				        and package_type=#{item.packageType}
+		</foreach>
+		;end;			 
+	</delete>
+	
+	<!-- 查询运单流水号个数 ,waybillNo 为运单号，1 表明是有效的-->
+	<select id="selectRequireCount" resultType="int"
+		parameterType="string">
+  		  select /*模块：中转-包装(接送货)-统计*/
+  		  		 count(*)
+  			from tfr.t_opt_package_require re
+ 		   where re.waybill_no=#{waybillNo}
+	</select>
+	<!-- 查询运单流水号个数 ,waybillNo 为运单号，1 表明是有效的-->
+	<select id="selectPackagingRequireWithId" resultType="com.deppon.foss.module.transfer.packaging.api.shared.domain.PackagingRequireEntity"
+		parameterType="String">
+  		  select /*模块：中转-包装返回主表ID*/
+  		  		 re.id AS id,
+  		  		 re.BILL_TIME AS waybillCreateDate
+  			from tfr.t_opt_package_require re
+ 		   where re.waybill_no=#{waybillNo}
+	</select>
+	
+	<!-- 查询运单流水号是否存在未包装 ,waybillNo 为运单号，serialNo为流水号，isPacked 表明是无效的-->
+	<select id="selectSerialUnpack" resultMap="querySerialArea"
+		parameterType="HashMap">
+  		  select /*模块：中转-包装PDA-统计*/
+  		  		 de.serial_no,
+             	stock.org_code,
+             	stock.goods_area_code
+			from tfr.t_opt_package_request_detail de
+			left join tfr.t_opt_stock stock on de.waybill_no = stock.waybill_no
+		   where de.waybill_no= #{waybillNo}
+		     and de.serial_no= #{serialNo}
+		      <if test="isPacked!=null and isPacked!='' ">	
+					and de.IS_PACKED = #{isPacked}
+			  </if>
+			   <if test="packDept!=null and packDept!='' ">	
+					and stock.org_code = #{packDept}
+			  </if>
+			 
+	</select>
+	
+	<!-- 修改包装信息的运单号-->
+	<update id="updateWaybillNo"
+		parameterType="HashMap">
+			 update tfr.T_OPT_PACKAGE_REQUIRE re
+			    set 
+					WAYBILL_NO = #{newWaybillNo},
+					MODIFY_TIME = #{modifyDate}
+			where   WAYBILL_NO = #{origWaybillNo}
+	</update>
+	
+	
+   <!--更改包装需求表中需要包装件数(更改单修改)-->
+	<update id="updateNeedPackNum" parameterType="HashMap">
+		 update tfr.t_opt_package_require set PACKAGE_NEEDNUM = 
+ 	               (select count(1) from (select de.serial_no from tfr.t_opt_package_request_detail de 
+                     where de.waybill_no=#{waybillNo}
+                     group by de.serial_no)),
+					MODIFY_TIME = #{modifyDate}
+          where waybill_no=#{waybillNo}		 
+	</update>
+	
+	<!--插入包装货物登入货区时间-->
+	<update id="insertWaybillNoLoginTime" 
+		parameterType="com.deppon.foss.module.transfer.packaging.api.shared.dto.WaybillNoLogingDateDto">
+		update tfr.t_opt_package_require re
+		   set re.login_time=#{logingDate},
+					re.MODIFY_TIME = #{modifyDate}
+		 where re.waybill_no=#{waybillNo}
+	</update>
+	<!--插入包装货物登出货区时间-->
+	<update id="insertWaybillNoLogoutTime" 
+		parameterType="com.deppon.foss.module.transfer.packaging.api.shared.dto.WaybillNoLogingDateDto">
+		update tfr.t_opt_package_require re
+		   set re.logout_time=#{logingDate},
+					re.MODIFY_TIME = #{modifyDate}
+		 where re.waybill_no=#{waybillNo}
+	</update>
+	
+</mapper>

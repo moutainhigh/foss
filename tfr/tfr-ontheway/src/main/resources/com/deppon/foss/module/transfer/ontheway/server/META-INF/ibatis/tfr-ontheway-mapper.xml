@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tfr-ontheway" >
+
+	<resultMap id="OnthewayResultMap"
+		type="com.deppon.foss.module.transfer.ontheway.api.shared.domain.OnthewayEntity">
+		<id column="idd" property="id" />
+		<result column="vehicle_no" property="vehicleNo" />
+		<result column="current_status" property="currentStatus" />
+		<result column="cruuent_sppend" property="currentSppend" />
+		<result column="line_name" property="lineName" />
+		<result column="orig_org_code" property="origOrgCode" />
+		<result column="orig_org_name" property="origOrgName" />
+		<result column="dest_org_code" property="destOrgCode" />
+		<result column="dest_org_name" property="destOrgName" />
+		<result column="plan_arrive_time" property="planArriveTime" />
+		<result column="ACTUAL_DEPART_TIME" property="actualDepartTime" />
+		<result column="current_place" property="currentPlace" />
+		<result column="tracking_time" property="trackingTime" />
+		<result column="vehicle_org_name" property="vehicleOrgName" />
+		<result column="tracking_type" property="trackingType" />
+		<result column="tracking_user_name" property="trackingUserName" />
+		<result column="notes" property="notes" />
+		<result column="status" property="vehicleStatus" />
+		<result column="truckTaskDetailId" property="truckTaskDetailId" />
+		<result column="trackingUserName" property="trackingUserName" />
+		<result column="business_Type" property="businessType" />
+		<result column="vehicle_owner_type" property="vehicleOwnerType" />
+	</resultMap>
+	
+	<!-- 查询临时任务 -->
+	<select id="queryOnthewayGrid" resultMap="OnthewayResultMap">
+		select t.id,
+        d.vehicle_no,
+        t.current_status,
+        t.truck_task_detail_id,
+        d.line_name,
+        d.orig_org_code,
+        d.orig_org_name,
+        d.dest_org_code,
+        d.dest_org_name,
+        d.plan_arrive_time,
+        t.current_place,
+        t.tracking_time as tracking_time,
+        d.vehicle_org_code,
+        d.vehicle_org_name,
+        t.tracking_type,
+        e.EMP_NAME as tracking_user_name,
+        t.notes,
+        d.status,
+        t.CRUUENT_SPPEND,
+        d.id as truckTaskDetailId,
+        d.ACTUAL_DEPART_TIME,
+        d.business_Type,
+        d.vehicle_owner_type
+   from tfr.t_opt_truck_task_detail d
+   left join tfr.t_opt_truck_task_tracking t
+     on d.id = t.truck_task_detail_id and t.IS_LATEST='Y'
+     left join
+		bse.T_BAS_EMPLOYEE e on
+		t.tracking_user_code = e.emp_code and e.active='Y'
+     <include refid="select_Where" />
+	</select>
+	
+	<select id="getOnthewayCount" resultType="Long" 
+	parameterType="com.deppon.foss.module.transfer.ontheway.api.shared.domain.OnthewayEntity">
+		select count(1)
+		from tfr.t_opt_truck_task_detail d
+   		left join tfr.t_opt_truck_task_tracking t
+     	on d.id = t.truck_task_detail_id and t.IS_LATEST='Y'
+		<include refid="select_Where" />
+	</select>
+	<!-- 查询到达界面数据的条件 -->
+	<sql id="select_Where">
+		<where>
+			<if test="vehicleNo!=null and vehicleNo!='' ">
+				AND d.VEHICLE_NO = #{vehicleNo}
+			</if>
+			<!-- 出发部门-->
+			<if test="origOrgCode!=null and origOrgCode!='' ">
+				AND d.ORIG_ORG_CODE = #{origOrgCode}
+			</if>
+			<!-- 到达部门-->
+			<if test="destOrgCode!=null and destOrgCode!='' ">
+				AND d.DEST_ORG_CODE = #{destOrgCode}
+			</if>
+			<!-- 车辆业务类型 -->
+			<if test="businessType!=null and businessType!='ALL' ">
+				AND d.business_Type = #{businessType}
+			</if>
+			<!-- <if test="startTime!=null">
+				AND t.tracking_time between #{startTime} and #{endTime}
+			</if> -->
+			<if test="startTime!=null">
+				<![CDATA[
+			       AND t.tracking_time>=#{startTime}
+				]]>
+			    </if>
+			    <if test="endTime!=null">
+			    <![CDATA[
+			       AND t.tracking_time<=#{endTime}
+			       ]]>
+			    </if>
+			<if test="departStartTime!=null">
+				<![CDATA[
+			       AND d.ACTUAL_DEPART_TIME>=#{departStartTime}
+				]]>
+			    </if>
+			    <if test="departEndTime!=null">
+			    <![CDATA[
+			       AND d.ACTUAL_DEPART_TIME<=#{departEndTime}
+			       ]]>
+			    </if>
+			<!-- 事故车辆 -->
+			<if test="runStatus!=null and runStatus!='ALL' ">
+				AND t.current_status = #{runStatus}
+			</if>
+			<!--车辆归属类型-->
+			<if test="truckType!=null and truckType!='ALL' ">
+				AND d.vehicle_owner_type = #{truckType}
+			</if>
+			<!-- 车辆归属部门 -->
+			<if test="truckOrgCode!=null and truckOrgCode!='' ">
+				AND d.VEHICLE_ORG_CODE = #{truckOrgCode}
+			</if>
+			<!-- 跟踪方式-->
+			<if test="trackingType!=null and trackingType!='ALL' ">
+				AND t.TRACKING_TYPE = #{trackingType}
+			</if>
+			<!-- 车辆归属部门 -->
+			<if test="vehicleStatus!=null and vehicleStatus!='ALL' ">
+				AND d.STATUS = #{vehicleStatus}
+			</if>
+			<if test="currentStatuslist!=null">
+				AND current_status IN
+				<foreach collection="currentStatuslist" open="(" close=")"
+					separator="," index="index" item="item">
+					#{item}
+				</foreach>
+			</if>
+			<if test="ids!=null">
+				AND d.id IN
+				<foreach collection="ids" open="(" close=")"
+					separator="," index="index" item="item">
+					#{item}
+				</foreach>
+			</if>
+			<if test="currentOrgCodes!=null">
+				AND (d.DEST_ORG_CODE IN
+				<foreach collection="currentOrgCodes" open="(" close=")"
+					separator="," index="index" item="item">
+					#{item}
+				</foreach>
+				or d.ORIG_ORG_CODE IN
+				<foreach collection="currentOrgCodes" open="(" close=")"
+					separator="," index="index" item="item">
+					#{item}
+				</foreach>
+				)
+			</if>
+		</where>
+	</sql>
+	<!-- 手动增加一条车辆跟踪明细 -->
+	<insert id="addManual"
+		parameterType="com.deppon.foss.module.transfer.ontheway.api.shared.domain.ManualEntity">
+		begin
+		<if test="planArriveTime!=null">
+			update tfr.T_OPT_TRUCK_TASK_DETAIL
+					set plan_arrive_time=#{planArriveTime,jdbcType=TIMESTAMP},
+					modify_time = sysdate
+			where id=#{truckTaskDetailId,jdbcType=VARCHAR};
+			
+			<!--update tfr.T_OPT_PATH_DETAIL pd
+			 set pd.modity_arrive_time  = #{planArriveTime,jdbcType=TIMESTAMP}
+			 , pd.modify_time = sysdate
+			 where truck_detail_id = #{truckTaskDetailId,jdbcType=VARCHAR};-->
+		</if>
+		insert into tfr.T_OPT_TRUCK_TASK_TRACKING
+  (id,
+   truck_task_detail_id,
+   vehicle_no,
+   current_status,
+   current_place,
+   estimate_depart_time,
+   tracking_type,
+   notes,
+   tracking_user_code,
+   tracking_org_code,
+   tracking_time,
+   is_latest)
+	values (
+		#{id,jdbcType=VARCHAR},
+		#{truckTaskDetailId,jdbcType=VARCHAR},
+		#{vehicleNo,jdbcType=VARCHAR},
+		#{currentStatus,jdbcType=VARCHAR},
+		#{currentPlace,jdbcType=VARCHAR},
+		#{planArriveTime,jdbcType=TIMESTAMP}
+		,#{trackingType,jdbcType=VARCHAR},
+		#{notes,jdbcType=VARCHAR},
+		#{trackingUserCode,jdbcType=VARCHAR},
+		#{trackingOrgCode,jdbcType=VARCHAR},
+		#{trackingTime,jdbcType=TIMESTAMP},
+		#{isLatest,jdbcType=VARCHAR}
+		);
+		end;
+	</insert>
+	<!-- 手动增加一条车辆跟踪明细 -->
+	<update id="updateManualStatus"
+		parameterType="com.deppon.foss.module.transfer.ontheway.api.shared.domain.ManualEntity">
+		update  tfr.T_OPT_TRUCK_TASK_TRACKING
+  		set is_latest=#{isLatest}
+  		where truck_task_detail_id= #{truckTaskDetailId}
+	</update>
+	
+	<!-- 通过任务车辆明细ID查询所有的跟踪明细-->
+	<select id="queryOnthewayGridById" resultMap="OnthewayResultMap">
+		select t.id,
+        t.current_status,
+        t.truck_task_detail_id,
+        t.current_place,
+        t.tracking_time as tracking_time,
+        t.tracking_type,
+        t.notes,
+        t.ESTIMATE_DEPART_TIME as plan_arrive_time,
+        t.cruuent_sppend,
+        e.emp_name as trackingUserName
+       from  tfr.t_opt_truck_task_tracking t
+       left join	bse.T_BAS_EMPLOYEE e on	t.TRACKING_USER_CODE = e.emp_code
+		   where t.truck_task_detail_id = #{truckTaskDetailId}  AND e.active='Y'
+		   order by t.tracking_time desc
+	</select>
+</mapper>

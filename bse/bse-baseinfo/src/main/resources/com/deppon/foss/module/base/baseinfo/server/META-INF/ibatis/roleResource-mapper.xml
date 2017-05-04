@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- roleResource roleResource-mapper.xml 角色权限 -->
+<mapper namespace="foss.bse.bse-baseinfo.roleResource" >
+
+	<resultMap id="roleResourceQueryResultMap"
+   			type="com.deppon.foss.module.base.baseinfo.api.shared.domain.RoleResourceEntity">
+		<result property="id" column="ID"  jdbcType="VARCHAR" />
+		<result property="virtualCode" column="VIRTUAL_CODE"  jdbcType="VARCHAR" />
+		<result property="roleCode" column="ROLE_CODE"  jdbcType="VARCHAR" />
+		<result property="resourceCode" column="RESOURCE_CODE"  jdbcType="VARCHAR" />
+		<result property="roleName" column="ROLE_NAME"  jdbcType="VARCHAR" />
+		<result property="resourceName" column="RESOURCE_NAME"  jdbcType="VARCHAR" />
+		<result property="versionNo" column="VERSION_NO"  jdbcType="NUMERIC" />
+		
+		<result property="createDate" column="CREATE_TIME"  jdbcType="TIMESTAMP" />
+		<result property="modifyDate" column="MODIFY_TIME"  jdbcType="TIMESTAMP" />
+		<result property="active" column="ACTIVE"  jdbcType="CHAR" />
+		<result property="createUser" column="CREATE_USER_CODE"  jdbcType="VARCHAR" />
+		<result property="modifyUser" column="MODIFY_USER_CODE"  jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 插入数据 ： -->
+	<insert id="addRoleResource"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.RoleResourceEntity">
+		INSERT/** 综合:插入数据  **/ INTO BSE.T_BAS_ROLE_RESOURCES(
+		ID,
+		VIRTUAL_CODE,
+		ROLE_CODE,
+		RESOURCE_CODE,
+		CREATE_TIME,
+		MODIFY_TIME,
+		VERSION_NO,
+		ACTIVE,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE) VALUES	
+	(
+		#{id, jdbcType=VARCHAR},
+		#{virtualCode, jdbcType=VARCHAR},
+		#{roleCode, jdbcType=VARCHAR},
+		#{resourceCode, jdbcType=VARCHAR},
+		#{createDate, jdbcType=TIMESTAMP},
+		#{modifyDate, jdbcType=TIMESTAMP},
+		#{versionNo, jdbcType=NUMERIC},
+		#{active, jdbcType=CHAR},
+		#{createUser, jdbcType=VARCHAR},
+		#{modifyUser, jdbcType=VARCHAR}
+	)
+	</insert> 
+
+	<!-- 根据VIRTUAL_CODE 作废数据： -->
+	<update id="deleteRoleResource" 
+		parameterType="map">
+		UPDATE/** 综合:根据VIRTUAL_CODE 作废数据  **/ BSE.T_BAS_ROLE_RESOURCES A 
+		SET A.ACTIVE=#{entity.active,jdbcType=CHAR},
+			A.MODIFY_USER_CODE=#{entity.modifyUser,jdbcType=VARCHAR}, 
+			A.MODIFY_TIME = #{entity.modifyDate,jdbcType=TIMESTAMP},
+			A.VERSION_NO = #{versionNo, jdbcType=NUMERIC} 
+		<where>
+			A.VIRTUAL_CODE=#{entity.virtualCode,jdbcType=VARCHAR} 
+			AND  A.ACTIVE=#{conditionActive,jdbcType=CHAR}
+		</where>
+	</update>
+
+	<!-- 根据VIRTUAL_CODE批量作废 -->
+	<update id="deleteRoleResourceMore"
+		parameterType="map">
+		UPDATE/** 综合:根据VIRTUAL_CODE批量作废  **/ BSE.T_BAS_ROLE_RESOURCES A 
+		SET A.ACTIVE=#{entity.active,jdbcType=CHAR},
+			A.MODIFY_USER_CODE=#{entity.modifyUser,jdbcType=VARCHAR}, 
+			A.MODIFY_TIME = #{entity.modifyDate,jdbcType=TIMESTAMP},
+			A.VERSION_NO = #{entity.versionNo, jdbcType=NUMERIC}  
+        <where>
+            <if test="codes!=null and codes.length > 0">
+                A.VIRTUAL_CODE in
+                <foreach collection="codes"  index="index" item="code"  open="(" separator="," close=")">  
+	            #{code} 
+	            </foreach>
+            </if>
+            AND  A.ACTIVE=#{conditionActive,jdbcType=CHAR}
+        </where>       
+	</update>
+
+	<!-- 根据VIRTUAL_CODE 更新数据：由于更新是先作废再插入，所以这个映射用不上： -->
+	<update id="updateRoleResource" 
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.RoleResourceEntity">
+		UPDATE/** 综合:根据VIRTUAL_CODE 更新数据：由于更新是先作废再插入，所以这个映射用不上  **/ BSE.T_BAS_ROLE_RESOURCES A SET 
+		A.ID = #{id, jdbcType=VARCHAR},
+		A.VIRTUAL_CODE = #{virtualCode, jdbcType=VARCHAR},
+		A.ROLE_CODE = #{roleCode, jdbcType=VARCHAR},
+		A.RESOURCE_CODE = #{resourceCode, jdbcType=VARCHAR},
+		A.CREATE_TIME = #{createDate, jdbcType=TIMESTAMP},
+		A.MODIFY_TIME = #{modifyDate, jdbcType=TIMESTAMP},
+		A.VERSION_NO = #{versionNo, jdbcType=NUMERIC},
+		A.ACTIVE = #{active, jdbcType=CHAR},
+		A.CREATE_USER_CODE = #{createUser, jdbcType=VARCHAR},
+		A.MODIFY_USER_CODE = #{modifyUser, jdbcType=VARCHAR}
+		<where>
+			A.VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR}	
+		</where>
+	</update>
+
+
+	<!-- 以下全为查询 -->
+
+	<sql id="query_roleResource_param">
+		A.ID AS ID,		/** ID     **/ 
+		A.VIRTUAL_CODE AS VIRTUAL_CODE,		/** 虚拟编码     **/ 
+		A.ROLE_CODE AS ROLE_CODE,		/** 角色     **/ 
+		A.RESOURCE_CODE AS RESOURCE_CODE,		/** 权限     **/ 
+		A.CREATE_TIME AS CREATE_TIME,		/** 创建时间     **/ 
+		A.MODIFY_TIME AS MODIFY_TIME,		/** 更新时间     **/
+		A.VERSION_NO AS VERSION_NO,		/** 数据版本号     **/  
+		A.ACTIVE AS ACTIVE,		/** 是否启用     **/ 
+		A.CREATE_USER_CODE AS CREATE_USER_CODE,		/** 创建人     **/ 
+		A.MODIFY_USER_CODE AS MODIFY_USER_CODE,		/** 更新人     **/
+		
+		C.NAME AS ROLE_NAME,	/** 角色名称     **/
+		D.NAME AS RESOURCE_NAME 	/** 角色名称     **/
+	</sql>
+
+	<!-- 根据 VIRTUAL_CODE 精确查询数据 -->
+	<select id="queryRoleResourceByVirtualCode" resultMap="roleResourceQueryResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.RoleResourceEntity">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据 VIRTUAL_CODE 精确查询数据  **/
+		]]>
+		<include refid="query_roleResource_param" />
+
+    	FROM BSE.T_BAS_ROLE_RESOURCES A 
+    		LEFT JOIN BSE.T_BAS_ROLE C  ON A.ROLE_CODE=C.CODE AND C.ACTIVE = #{active,jdbcType=CHAR}
+			LEFT JOIN BSE.T_BAS_RESOURCES D  ON A.ROLE_CODE=D.CODE AND D.ACTIVE = #{active,jdbcType=CHAR}
+		<where>
+			A.VIRTUAL_CODE=#{virtualCode} 
+			AND A.ACTIVE= #{active,jdbcType=CHAR}
+		</where>
+	</select>
+
+	<!-- 根据 VIRTUAL_CODE 批量精确查询数据 -->
+	<select id="queryRoleResourceBatchByVirtualCode" resultMap="roleResourceQueryResultMap"
+		parameterType="map">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据 VIRTUAL_CODE 批量精确查询数据  **/
+		]]>
+		<include refid="query_roleResource_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_ROLE_RESOURCES A     
+	    		LEFT JOIN BSE.T_BAS_ROLE C  ON A.ROLE_CODE=C.CODE AND C.ACTIVE = #{active,jdbcType=CHAR}
+				LEFT JOIN BSE.T_BAS_RESOURCES D  ON A.ROLE_CODE=D.CODE AND D.ACTIVE = #{active,jdbcType=CHAR}
+
+		]]>
+		<where>
+			<if test="codes!=null and codes.length > 0">
+                A.VIRTUAL_CODE in
+                <foreach collection="codes"  index="index" item="code"  open="(" separator="," close=")">  
+	            #{code,jdbcType=VARCHAR} 
+	            </foreach>
+            </if> 
+			AND A.ACTIVE= #{active,jdbcType=CHAR}
+		</where>
+	</select>
+
+	<!-- 根据entity精确查询的查询条件 ，如果属性为空，则此属性不作为条件-->
+	<sql id="query_queryRoleResourceExactByEntity_condition_param">		
+		<where>
+	      	<if test="id!=null and id != ''">
+	        	AND A.ID = #{id,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="virtualCode!=null and virtualCode != ''">
+	        	AND A.VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="roleCode!=null and roleCode != ''">
+	        	AND A.ROLE_CODE = #{roleCode,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="resourceCode!=null and resourceCode != ''">
+	        	AND A.RESOURCE_CODE = #{resourceCode,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="versionNo!=null and versionNo != ''">
+	        	AND A.VERSION_NO = #{versionNo,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="belongSystemType!=null and belongSystemType != ''">
+	        	AND D.BELONG_SYSTEM_TYPE = #{belongSystemType,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="resType!=null and resType != ''">
+	        	<![CDATA[ AND D.RES_TYPE <> #{resType,jdbcType=VARCHAR} ]]>
+	      	</if>
+	      	  AND A.ACTIVE =  #{active,jdbcType=CHAR} 
+	      	  AND C.ACTIVE = #{active,jdbcType=CHAR}
+	      	  AND D.ACTIVE = #{active,jdbcType=CHAR}
+		</where>
+	</sql>
+	<!-- 根据实体动态条件精确查询,如果属性的值为null或者空白则无效： -->
+	<select id="queryRoleResourceExactByEntity" resultMap="roleResourceQueryResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.RoleResourceEntity">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据实体动态条件精确查询,如果属性的值为null或者空白则无效  **/
+		]]>
+		<include refid="query_roleResource_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_ROLE_RESOURCES A 
+	    		LEFT JOIN BSE.T_BAS_ROLE C  ON A.ROLE_CODE=C.CODE
+				LEFT JOIN BSE.T_BAS_RESOURCES D  ON A.RESOURCE_CODE=D.CODE  
+		]]>
+		<include refid="query_queryRoleResourceExactByEntity_condition_param" />
+	</select>
+	<!-- 根据实体动态条件精确查询总数,如果属性的值为null或者空白则无效： -->
+	<select id="queryRoleResourceExactByEntityCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.RoleResourceEntity">
+		<![CDATA[
+			 SELECT/** 综合:根据实体动态条件精确查询总数,如果属性的值为null或者空白则无效  **/ count(*) 
+			 FROM BSE.T_BAS_ROLE_RESOURCES A 
+	    		LEFT JOIN BSE.T_BAS_ROLE C  ON A.ROLE_CODE=C.CODE AND C.ACTIVE = #{active,jdbcType=CHAR}
+				LEFT JOIN BSE.T_BAS_RESOURCES D  ON A.ROLE_CODE=D.CODE AND D.ACTIVE = #{active,jdbcType=CHAR}
+
+		]]>
+		<include refid="query_queryRoleResourceExactByEntity_condition_param" />
+	</select>
+
+	<!-- 根据entity模糊查询,如果属性的值为null或者空白则无效： -->
+	<sql id="query_queryRoleResourceByEntity_condition_param">		
+		<where>
+	      	<if test="id!=null and id != ''">
+	        	AND A.ID like CONCAT(CONCAT('%', #{id,jdbcType=VARCHAR}), '%') 
+	      	</if>
+	      	<if test="virtualCode!=null and virtualCode != ''">
+	        	AND A.VIRTUAL_CODE like CONCAT(CONCAT('%', #{virtualCode,jdbcType=VARCHAR}), '%') 
+	      	</if>
+	      	<if test="roleCode!=null and roleCode != ''">
+	        	AND A.ROLE_CODE like CONCAT(CONCAT('%', #{roleCode,jdbcType=VARCHAR}), '%') 
+	      	</if>
+	      	<if test="resourceCode!=null and resourceCode != ''">
+	        	AND A.RESOURCE_CODE like CONCAT(CONCAT('%', #{resourceCode,jdbcType=VARCHAR}), '%') 
+	      	</if>
+	      	<if test="versionNo!=null and versionNo != ''">
+	        	AND A.VERSION_NO like CONCAT(CONCAT('%', #{versionNo,jdbcType=VARCHAR}), '%') 
+	      	</if>
+			AND A.ACTIVE= #{active,jdbcType=CHAR}
+		</where>
+	</sql>
+	<!-- 根据实体动态条件模糊查询,如果属性的值为null或者空白则无效： -->
+	<select id="queryRoleResourceByEntity" resultMap="roleResourceQueryResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.RoleResourceEntity">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据实体动态条件模糊查询,如果属性的值为null或者空白则无效  **/
+		]]>
+		<include refid="query_roleResource_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_ROLE_RESOURCES A 
+	    		LEFT JOIN BSE.T_BAS_ROLE C  ON A.ROLE_CODE=C.CODE AND C.ACTIVE = #{active,jdbcType=CHAR}
+				LEFT JOIN BSE.T_BAS_RESOURCES D  ON A.ROLE_CODE=D.CODE AND D.ACTIVE = #{active,jdbcType=CHAR}
+
+		]]>
+		<include refid="query_queryRoleResourceByEntity_condition_param" />
+	</select>
+	<!-- 根据实体动态条件模糊查询总数,如果属性的值为null或者空白则无效： -->
+	<select id="queryRoleResourceByEntityCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.RoleResourceEntity">
+		<![CDATA[
+			 SELECT/** 综合:根据实体动态条件模糊查询总数,如果属性的值为null或者空白则无效  **/ count(*) 
+			 FROM BSE.T_BAS_ROLE_RESOURCES A 
+	    		LEFT JOIN BSE.T_BAS_ROLE C  ON A.ROLE_CODE=C.CODE AND C.ACTIVE = #{active,jdbcType=CHAR}
+				LEFT JOIN BSE.T_BAS_RESOURCES D  ON A.ROLE_CODE=D.CODE AND D.ACTIVE = #{active,jdbcType=CHAR}
+
+					 
+		]]>
+		<include refid="query_queryRoleResourceByEntity_condition_param" />
+	</select>
+	
+	<!-- 查询所有 角色权限 信息 以供下载 -->
+	<select id="queryRoleResourceForDownload"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.RoleResourceEntity"
+		resultMap="roleResourceQueryResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有 角色权限 信息 以供下载  **/
+		]]>
+		<include refid="query_roleResource_param" />
+		<![CDATA[
+			FROM BSE.T_BAS_ROLE_RESOURCES A	    
+				LEFT JOIN BSE.T_BAS_ROLE C  ON A.ROLE_CODE=C.CODE AND C.ACTIVE = #{active,jdbcType=CHAR}
+				LEFT JOIN BSE.T_BAS_RESOURCES D  ON A.ROLE_CODE=D.CODE AND D.ACTIVE = #{active,jdbcType=CHAR}
+
+		
+		]]>
+		<where>
+			<if test="versionNo != null">
+				AND A.VERSION_NO >= #{versionNo,jdbcType=NUMERIC}
+			</if>
+			<if test="active != null and active != ''">
+				AND A.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+		<![CDATA[
+			ORDER BY A.VERSION_NO,A.ID ASC
+		]]>
+	</select>
+	
+	
+	
+	<!-- 下面为特殊方法 -->
+	
+	<!-- 特殊删除 根据ROLE_CODE 删除数据： -->
+	<update id="deleteRoleResourceByRoleCode" 
+		parameterType="map">
+		UPDATE/** 综合:特殊删除 根据ROLE_CODE 删除数据  **/ BSE.T_BAS_ROLE_RESOURCES A 
+		SET A.ACTIVE=#{entity.active,jdbcType=CHAR},
+			A.CREATE_TIME=#{entity.createDate,jdbcType=TIMESTAMP}, 
+			A.MODIFY_TIME = #{entity.modifyDate,jdbcType=TIMESTAMP},
+			A.VERSION_NO = #{versionNo, jdbcType=NUMERIC} 
+		<where>
+			A.ROLE_CODE=#{entity.roleCode,jdbcType=VARCHAR} 
+			AND  A.ACTIVE=#{conditionActive,jdbcType=CHAR}
+		</where>
+	</update>
+	
+	
+	<!-- 根据ROLE_CODE, RESOURCE_CODE删除 -->
+	<update id="deleteRoleResourceByRoleResource" 
+		parameterType="map">
+		UPDATE/** 综合:根据ROLE_CODE, RESOURCE_CODE删除  **/ BSE.T_BAS_ROLE_RESOURCES A 
+		SET A.ACTIVE=#{entity.active,jdbcType=CHAR},
+			A.CREATE_TIME=#{entity.createDate,jdbcType=TIMESTAMP}, 
+			A.MODIFY_TIME = #{entity.modifyDate,jdbcType=TIMESTAMP},
+			A.VERSION_NO = #{versionNo, jdbcType=NUMERIC} 
+		<where>
+			A.ROLE_CODE=#{entity.roleCode,jdbcType=VARCHAR} 
+			AND A.RESOURCE_CODE=#{entity.resourceCode,jdbcType=VARCHAR} 
+			AND A.ACTIVE=#{conditionActive,jdbcType=CHAR}
+		</where>
+	</update>
+	
+	
+	
+	<!-- 根据指定的列批量查询 -->
+	<select id="queryRoleResourceMoreByColumnName"
+		resultMap="roleResourceQueryResultMap"
+		parameterType="map">
+		<![CDATA[
+			SELECT
+			/** 综合:根据指定的列批量查询  **/
+		]]>
+		<include refid="query_roleResource_param" />
+		<![CDATA[
+			FROM BSE.T_BAS_ROLE_RESOURCES A	    
+				RIGHT JOIN BSE.T_BAS_ROLE C  ON A.ROLE_CODE=C.CODE AND C.ACTIVE = #{conditionActive,jdbcType=CHAR}
+				RIGHT JOIN BSE.T_BAS_RESOURCES D  ON A.RESOURCE_CODE=D.CODE AND D.ACTIVE = #{conditionActive,jdbcType=CHAR}
+		
+		]]>
+        <where>
+            <if test="codes!=null and codes.length > 0">
+               A.ROLE_CODE in 
+                <foreach collection="codes"  index="index" item="code"  open="(" separator="," close=")">  
+	            #{code} 
+	            </foreach>
+            </if>
+            AND  A.ACTIVE=#{conditionActive,jdbcType=CHAR}
+        </where>       
+	</select>
+
+</mapper>

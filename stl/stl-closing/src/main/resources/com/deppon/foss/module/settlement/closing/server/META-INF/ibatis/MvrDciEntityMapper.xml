@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stv.MvrDciMapper">
+    <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.closing.api.shared.domain.MvrDciEntity">
+        <!--<id column="ID" property="id" jdbcType="VARCHAR" />-->
+        <result column="PERIOD" property="period" jdbcType="VARCHAR" />
+        <result column="PRODUCT_CODE" property="productCode" jdbcType="VARCHAR" />
+        <result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+        <result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+        <result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+        <result column="ORG_NAME" property="orgName" jdbcType="VARCHAR" />
+        <result column="ORG_TYPE" property="orgType" jdbcType="VARCHAR" />
+        <result column="INVOICE_MARK" property="invoiceMark" jdbcType="VARCHAR" />
+        <result column="DCI_DEST_APPLY_WO_INCOME_NUS" property="dciDestApplyWoIncomeNus" jdbcType="DECIMAL"/>
+        <result column="DCI_DEST_APPLY_WO_INCOME_US" property="dciDestApplyWoIncomeUs" jdbcType="DECIMAL"/>
+        <result column="LDCI_DEST_INCOMEO_NUS" property="ldciDestIncomeoNus" jdbcType="DECIMAL"/>
+        <result column="LDCI_DEST_INCOMEO_US" property="ldciDestIncomeoUs" jdbcType="DECIMAL"/>
+    </resultMap>
+
+
+    <sql id="Base_Column_List">
+    PERIOD,
+    PRODUCT_CODE,
+    CUSTOMER_CODE,
+    CUSTOMER_NAME,
+    ORG_CODE,
+    ORG_NAME,
+    ORG_TYPE,
+    INVOICE_MARK,
+    DCI_DEST_APPLY_WO_INCOME_NUS /100 DCI_DEST_APPLY_WO_INCOME_NUS,
+    DCI_DEST_APPLY_WO_INCOME_US /100 DCI_DEST_APPLY_WO_INCOME_US,
+    LDCI_DEST_INCOMEO_NUS /100 LDCI_DEST_INCOMEO_NUS,
+    LDCI_DEST_INCOMEO_US /100 LDCI_DEST_INCOMEO_US
+ </sql>
+
+    <!-- 按条件查询列表 -->
+    <select id="query" resultMap="BaseResultMap"
+            parameterType="com.deppon.foss.module.settlement.closing.api.shared.dto.MvrDciQueryDto">
+        SELECT /*结算-凭证报表-根据条件查询折扣调整往来月报表*/
+        <include refid="Base_Column_List"/>
+        FROM STV.T_STL_MVR_DCI T
+        <where>
+            t.PERIOD= #{period}
+            <!-- 运输性质 -->
+            <if test="productCodeList != null">
+                and t.PRODUCT_CODE in
+                <foreach collection="productCodeList" item="productCode"
+                         open="(" close=")" separator=",">
+                    #{productCode,jdbcType=VARCHAR}
+                </foreach>
+            </if>
+
+            <if test="customerCode!=null and customerCode!='' ">
+                AND t.CUSTOMER_CODE=#{customerCode}
+            </if>
+            <!-- 始发部门编码 -->
+            <if test="origOrgCode != null and origOrgCode != ''">
+                and t.ORIG_ORG_CODE =#{origOrgCode}
+            </if>
+            <if test="destOrgCode!=null and destOrgCode!='' ">
+                AND t.DEST_ORG_CODE=#{destOrgCode}
+            </if>
+        </where>
+    </select>
+
+    <!-- 按条件查询汇总 -->
+    <select id="queryTotal" resultType="com.deppon.foss.module.settlement.closing.api.shared.dto.MvrDciResultDto"
+            parameterType="com.deppon.foss.module.settlement.closing.api.shared.dto.MvrDciResultDto">
+        SELECT /*结算-凭证报表-根据条件查询折扣调整往来月报表总条数，总金额*/
+        --总条数
+        COUNT(1) count,
+        SUM(DCI_DEST_APPLY_WO_INCOME_NUS) /100 dciDestApplyWoIncomeNus,
+        SUM(DCI_DEST_APPLY_WO_INCOME_US) /100 dciDestApplyWoIncomeUs,
+        SUM(LDCI_DEST_INCOMEO_NUS) /100 ldciDestIncomeoNus,
+        SUM(LDCI_DEST_INCOMEO_US) /100 ldciDestIncomeoUs
+        FROM STV.T_STL_MVR_DCI T
+        <where>
+            t.PERIOD= #{period}
+            <!-- 运输性质 -->
+            <if test="productCodeList != null">
+                and t.PRODUCT_CODE in
+                <foreach collection="productCodeList" item="productCode"
+                         open="(" close=")" separator=",">
+                    #{productCode,jdbcType=VARCHAR}
+                </foreach>
+            </if>
+
+            <if test="customerCode!=null and customerCode!='' ">
+                AND t.CUSTOMER_CODE=#{customerCode}
+            </if>
+            <!-- 始发部门编码 -->
+            <if test="origOrgCode != null and origOrgCode!='' ">
+                and t.ORIG_ORG_CODE =#{origOrgCode}
+            </if>
+            <if test="destOrgCode!=null and destOrgCode!='' ">
+                AND t.DEST_ORG_CODE=#{destOrgCode}
+            </if>
+        </where>
+    </select>
+</mapper>

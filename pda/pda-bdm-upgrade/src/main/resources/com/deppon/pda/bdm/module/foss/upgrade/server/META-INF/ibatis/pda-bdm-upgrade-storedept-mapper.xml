@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.pda.bdm.module.foss.upgrade.server.dao.impl.StoreDeptDataVerGenDao">
+	<!-- 库位部门信息 -->
+	<select id="queryLocalDatas" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.StoreDeptEntity">
+		<![CDATA[
+			SELECT 
+				ID,
+				STORELOCCODE,
+				LADINGSTATCODE,
+				OPERFLAG as operFlag
+			FROM T_SVR_STOREDEPT
+			WHERE OPERFLAG <> '3'
+		]]>
+		<if test="start_version_no != null and start_version_no != ''  ">
+			<![CDATA[ AND VERSION > #{start_version_no}]]>
+		</if>
+		<if test="end_version_no != null and end_version_no != '' ">
+			<![CDATA[ AND VERSION <= #{end_version_no}]]>
+		</if>
+	</select>
+	
+	<select id="queryLocalDatasByDel" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.StoreDeptEntity">
+		<![CDATA[
+			SELECT 
+				ID
+			FROM T_SVR_STOREDEPT
+			WHERE OPERFLAG = '3'
+			AND VERSION > #{start_version_no}
+			AND VERSION <= #{end_version_no}
+		]]>
+	</select>
+	
+	<select id="queryLocalIncDataList" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="int">
+		<![CDATA[
+			SELECT COUNT(*) FROM T_SVR_STOREDEPT 
+		]]>
+		<if test="start_version_no != null and start_version_no != ''  ">
+			<![CDATA[ WHERE VERSION > #{start_version_no}]]>
+		</if>
+		<if test="end_version_no != null and end_version_no != '' ">
+			<![CDATA[ AND VERSION <= #{end_version_no}]]>
+		</if>
+	</select>
+</mapper>

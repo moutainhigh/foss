@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper
+	namespace="com.deppon.foss.module.pickup.order.api.shared.domain.DispatchOrderActionHistoryEntityEntity">
+	<resultMap id="BaseResultMap"
+		type="com.deppon.foss.module.pickup.order.api.shared.domain.DispatchOrderActionHistoryEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="T_SRV_DISPATCH_ORDER_ID" property="tSrvDispatchOrderId"
+			jdbcType="VARCHAR" />
+		<result column="ORDER_STATUS" property="orderStatus" jdbcType="VARCHAR" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+		<result column="OPERATOR" property="operator" jdbcType="VARCHAR" />
+		<result column="OPERATOR_CODE" property="operatorCode"
+			jdbcType="VARCHAR" />
+		<result column="OPERATE_TIME" property="operateTime" jdbcType="TIMESTAMP" />
+	</resultMap>
+	<sql id="Action_History_Column">
+		ID, T_SRV_DISPATCH_ORDER_ID, ORDER_STATUS, NOTES, OPERATOR,
+		OPERATOR_CODE, OPERATE_TIME
+	</sql>
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap"
+		parameterType="java.lang.String">
+		select
+		<include refid="Action_History_Column" />
+		from PKP.T_SRV_ORDERACTION_HISTORY
+		where ID = #{id,jdbcType=VARCHAR}
+	</select>
+	<!--14.7.3 gcl  查询已分配记录  8.25 ON-868   -->
+	<select id="selectOperatorByorderid" resultType="java.lang.String" >
+		SELECT wmsys.wm_concat(EMP_NAME) EMP_NAME
+  from (select *
+          FROM (SELECT decode(H.OPERATOR, NULL, E.EMP_NAME, H.OPERATOR) EMP_NAME,
+                       H.OPERATE_TIME
+                  FROM PKP.T_SRV_ORDERACTION_HISTORY H
+                 INNER JOIN BSE.T_BAS_EMPLOYEE E
+                    ON H.OPERATOR_CODE = E.EMP_CODE
+                   AND E.ACTIVE = 'Y'
+                   and exists
+                 (SELECT 1
+                          FROM BSE.T_BAS_ORG O
+                         WHERE E.UNIFIELD_CODE = O.UNIFIED_CODE
+                           AND O.ACTIVE = 'Y'
+                        AND O.EXPRESS_PART = 'Y')
+                 WHERE H.T_SRV_DISPATCH_ORDER_ID =#{id,jdbcType=VARCHAR}  
+                   AND H.ORDER_STATUS IN ('RETURN', 'AGAIN_PICKUP')
+                 ORDER BY H.OPERATE_TIME ASC)
+         <![CDATA[ where rownum<=5 ]]> ) h
+ order by H.OPERATE_TIME desc
+	</select>
+	<!--14.9.4 gcl  查询已分配记录 ON-1012   -->
+	<select id="ldSelectOperatorByorderid" resultType="java.lang.String" >
+		SELECT wmsys.wm_concat(EMP_NAME) EMP_NAME
+  from (select *
+          FROM (SELECT decode(H.OPERATOR, NULL, e.EMP_NAME, H.OPERATOR) EMP_NAME,
+                       H.OPERATE_TIME
+                  FROM PKP.T_SRV_ORDERACTION_HISTORY H
+                  INNER JOIN bse.t_bas_owndriver e
+                    ON H.OPERATOR_CODE = e.emp_code
+                   AND e.ACTIVE = 'Y'
+                 WHERE H.T_SRV_DISPATCH_ORDER_ID =#{id,jdbcType=VARCHAR}  
+                   AND H.ORDER_STATUS IN ('RETURN', 'AGAIN_PICKUP')
+                 ORDER BY H.OPERATE_TIME ASC)
+         <![CDATA[ where rownum<=5 ]]> ) h
+ order by H.OPERATE_TIME desc
+	</select>
+	<delete id="deleteByPrimaryKey" parameterType="java.lang.String">
+		delete from
+		PKP.T_SRV_ORDERACTION_HISTORY
+		where ID = #{id,jdbcType=VARCHAR}
+	</delete>
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.domain.DispatchOrderActionHistoryEntity">
+		insert into PKP.T_SRV_ORDERACTION_HISTORY (ID,
+		T_SRV_DISPATCH_ORDER_ID, ORDER_STATUS,
+		NOTES, OPERATOR, OPERATOR_CODE,
+		OPERATE_TIME)
+		values (#{id,jdbcType=VARCHAR},
+		#{tSrvDispatchOrderId,jdbcType=VARCHAR},
+		#{orderStatus,jdbcType=VARCHAR},
+		#{notes,jdbcType=VARCHAR},
+		#{operator,jdbcType=VARCHAR}, #{operatorCode,jdbcType=VARCHAR},
+		#{operateTime,jdbcType=TIMESTAMP})
+	</insert>
+	<!-- 添加调度操作历史 -->
+	<insert id="addDispatchOrderActionHistory"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.domain.DispatchOrderActionHistoryEntity">
+		insert into /*模块：接送货-处理订单*/PKP.T_SRV_ORDERACTION_HISTORY
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				ID,
+			</if>
+			<if test="tSrvDispatchOrderId != null">
+				T_SRV_DISPATCH_ORDER_ID,
+			</if>
+			<if test="orderStatus != null">
+				ORDER_STATUS,
+			</if>
+			<if test="notes != null">
+				NOTES,
+			</if>
+			<if test="operator != null">
+				OPERATOR,
+			</if>
+			<if test="operatorCode != null">
+				OPERATOR_CODE,
+			</if>
+			<if test="operateTime != null">
+				OPERATE_TIME
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id,jdbcType=VARCHAR},
+			</if>
+			<if test="tSrvDispatchOrderId != null">
+				#{tSrvDispatchOrderId,jdbcType=VARCHAR},
+			</if>
+			<if test="orderStatus != null">
+				#{orderStatus,jdbcType=VARCHAR},
+			</if>
+			<if test="notes != null">
+				#{notes,jdbcType=VARCHAR},
+			</if>
+			<if test="operator != null">
+				#{operator,jdbcType=VARCHAR},
+			</if>
+			<if test="operatorCode != null">
+				#{operatorCode,jdbcType=VARCHAR},
+			</if>
+			<if test="operateTime != null">
+				#{operateTime,jdbcType=TIMESTAMP}
+			</if>
+		</trim>
+	</insert>
+	<update id="updateByPrimaryKeySelective"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.domain.DispatchOrderActionHistoryEntity">
+		update /*模块：接送货-处理订单*/PKP.T_SRV_ORDERACTION_HISTORY
+		<set>
+			<if test="tSrvDispatchOrderId != null">
+				T_SRV_DISPATCH_ORDER_ID =
+				#{tSrvDispatchOrderId,jdbcType=VARCHAR},
+			</if>
+			<if test="orderStatus != null">
+				ORDER_STATUS = #{orderStatus,jdbcType=VARCHAR},
+			</if>
+			<if test="notes != null">
+				NOTES = #{notes,jdbcType=VARCHAR},
+			</if>
+			<if test="operator != null">
+				OPERATOR = #{operator,jdbcType=VARCHAR},
+			</if>
+			<if test="operatorCode != null">
+				OPERATOR_CODE = #{operatorCode,jdbcType=VARCHAR},
+			</if>
+			<if test="operateTime != null">
+				OPERATE_TIME = #{operateTime,jdbcType=TIMESTAMP},
+			</if>
+		</set>
+		where ID = #{id,jdbcType=VARCHAR}
+	</update>
+	<update id="updateByPrimaryKey"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.domain.DispatchOrderActionHistoryEntity">
+		update /*模块：接送货-处理订单*/PKP.T_SRV_ORDERACTION_HISTORY
+		set
+		T_SRV_DISPATCH_ORDER_ID = #{tSrvDispatchOrderId,jdbcType=VARCHAR},
+		ORDER_STATUS = #{orderStatus,jdbcType=VARCHAR},
+		NOTES =
+		#{notes,jdbcType=VARCHAR},
+		OPERATOR = #{operator,jdbcType=VARCHAR},
+		OPERATOR_CODE = #{operatorCode,jdbcType=VARCHAR},
+		OPERATE_TIME =
+		#{operateTime,jdbcType=TIMESTAMP}
+		where ID = #{id,jdbcType=VARCHAR}
+	</update>
+
+	<!-- 批量增加调度订单操作历史 -->
+	<insert id="batchAddDispatchOrderActionHistory">
+		BEGIN
+		<foreach collection="list" item="item" separator=";">
+			insert into /*模块：接送货-处理订单*/PKP.T_SRV_ORDERACTION_HISTORY(
+			<include refid="Action_History_Column" />
+			) values (
+			#{item.id,jdbcType=VARCHAR}, #{item.tSrvDispatchOrderId,jdbcType=VARCHAR},
+			#{item.orderStatus,jdbcType=VARCHAR},
+			#{item.notes,jdbcType=VARCHAR}, #{item.operator,jdbcType=VARCHAR}, #{item.operatorCode,jdbcType=VARCHAR},
+			#{item.operateTime,jdbcType=TIMESTAMP}
+			)
+		</foreach>
+		;END;
+	</insert>
+</mapper>

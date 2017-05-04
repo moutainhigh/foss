@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.management.othersignbill" >
+  <resultMap id="OtherSignBillResultMap" type="com.deppon.foss.module.transfer.management.api.shared.domain.OtherSignBillEntity">
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="SIGN_BILL_NO" property="signBillNo" jdbcType="VARCHAR" />
+    <result column="USE_TRUCK_TYPE" property="useTruckType" jdbcType="VARCHAR" />
+    <result column="SIGN_BILL_TYPE" property="signBillType" jdbcType="VARCHAR" />
+    <result column="DRIVER_CODE" property="driverCode" jdbcType="VARCHAR" />
+    <result column="DRIVER_NAME" property="driverName" jdbcType="VARCHAR" />
+    <result column="ARRV_REGION_NAME" property="arrvRegionName" jdbcType="VARCHAR" />
+    <result column="SIGN_BILL_DATE" property="signBillDate" jdbcType="TIMESTAMP" />
+    <result column="USE_TRUCK_ORG_CODE" property="useTruckOrgCode" jdbcType="VARCHAR" />
+    <result column="USE_TRUCK_ORG_NAME" property="useTruckOrgName" jdbcType="VARCHAR" />
+    <result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+    <result column="VEHICLE_TYPE_LENGTH" property="vehicleTypeLength" jdbcType="VARCHAR" />
+    <result column="VEHICLE_TYPE_LENGTH_NAME" property="vehicleTypeLengthName" jdbcType="VARCHAR" />
+    <result column="VOLUME" property="volume" jdbcType="DECIMAL" />
+     <result column="WEIGHT" property="weight" jdbcType="DECIMAL" />
+    <result column="BILL_QTY" property="billQty" jdbcType="DECIMAL" />
+    <result column="LINE_DISTANCE" property="lineDistance" jdbcType="DECIMAL" />
+    <result column="USE_TRUCK_DURATION" property="useTruckDuration" jdbcType="DECIMAL" />
+    <result column="OTHER_FEE" property="otherFee" jdbcType="DECIMAL" />
+    <result column="DRIVER_ROYALTY" property="driverRoyalty" jdbcType="DECIMAL" />
+    <result column="USE_TRUCK_FEE" property="useTruckFee" jdbcType="DECIMAL" />
+    <result column="NOTES" property="notes" jdbcType="VARCHAR" />
+    <result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+    <result column="ORG_NAME" property="orgName" jdbcType="VARCHAR" />
+  </resultMap>
+  
+  <resultMap id="OtherSignBillDtoResultMap" type="com.deppon.foss.module.transfer.management.api.shared.dto.OtherSignBillDto" >
+    <result column="DRIVER_COUNT" property="driverCount"  />
+    <result column="LINE_DISTANCE_TOTAL" property="lineDistanceTotal"  />
+    <result column="VOLUME_TOTAL" property="volumeTotal" />
+    <result column="WEIGHT_TOTAL" property="weightTotal"  />
+    <result column="USE_TRUCK_DURATION_TOAAL" property="useTruckDurationTotal"  />
+    <result column="BILL_QTY_COUNT" property="billQtyCount"  />
+    <result column="OTHER_FEE_TOAAL" property="otherFeeTotal"  /> 
+  </resultMap>
+  
+  <sql id="OtherSignBill_Column_List" >
+    T.ID,T.SIGN_BILL_NO,T.USE_TRUCK_TYPE,T.SIGN_BILL_TYPE,T.DRIVER_CODE,T.DRIVER_NAME,T.ARRV_REGION_NAME,
+    T. SIGN_BILL_DATE,T.USE_TRUCK_ORG_CODE,T.USE_TRUCK_ORG_NAME,T.VEHICLE_NO,T.VEHICLE_TYPE_LENGTH,
+    T.VOLUME,WEIGHT,T.BILL_QTY,T.LINE_DISTANCE,T.USE_TRUCK_DURATION,T.OTHER_FEE/100 AS OTHER_FEE,T.DRIVER_ROYALTY/100 AS DRIVER_ROYALTY,T.USE_TRUCK_FEE/100 AS USE_TRUCK_FEE ,NOTES,VL.Vehicle_Length_Name AS VEHICLE_TYPE_LENGTH_NAME
+  </sql>
+  
+   <select id="queryOtherSignBill" resultMap="OtherSignBillResultMap" parameterType="com.deppon.foss.module.transfer.management.api.shared.dto.OtherSignBillDto" >
+    select 
+    <include refid="OtherSignBill_Column_List" />
+     from TFR.T_OPT_OTHER_SIGN_BILL  T  LEFT JOIN  bse.t_bas_vehicle_type_length VL on  VL.Vehicle_Length_Code=T.VEHICLE_TYPE_LENGTH   
+       
+    <include refid="otherSignBill_Where" />
+  </select>
+  
+  <select id="queryCount" resultType="Long" parameterType="com.deppon.foss.module.transfer.management.api.shared.dto.OtherSignBillDto" >
+    select   count(ID)  from TFR.T_OPT_OTHER_SIGN_BILL   
+    <include refid="otherSignBill_Where" />
+  </select>
+  
+  <select id="queryOtherSignBillByFee" resultMap="OtherSignBillDtoResultMap" parameterType="com.deppon.foss.module.transfer.management.api.shared.dto.OtherSignBillDto" >
+    select count(DISTINCT DRIVER_CODE) AS DRIVER_COUNT,
+       sum(LINE_DISTANCE) AS LINE_DISTANCE_TOTAL,
+       sum(VOLUME) AS VOLUME_TOTAL,
+       sum(WEIGHT) AS WEIGHT_TOTAL,
+       sum(USE_TRUCK_DURATION) AS USE_TRUCK_DURATION_TOAAL,
+       sum(BILL_QTY) AS BILL_QTY_COUNT,
+       sum(OTHER_FEE/100) AS OTHER_FEE_TOAAL
+  from TFR.T_OPT_OTHER_SIGN_BILL
+ 	<include refid="otherSignBill_Where" />
+  </select>
+  
+  <select id="queryExportOtherSignBill" resultMap="OtherSignBillResultMap" parameterType="com.deppon.foss.module.transfer.management.api.shared.dto.OtherSignBillDto" >
+    select 
+    <include refid="OtherSignBill_Column_List" />
+     from TFR.T_OPT_OTHER_SIGN_BILL  T  LEFT JOIN  bse.t_bas_vehicle_type_length VL on  VL.Vehicle_Length_Code=T.VEHICLE_TYPE_LENGTH   
+      
+    <include refid="otherSignBill_Where" />
+  </select>  
+  
+  <!-- 查询条件 -->
+  <sql id="otherSignBill_Where">
+		<where>
+			<if test="useTruckOrgCode!=null and useTruckOrgCode!='' ">	
+					AND USE_TRUCK_ORG_CODE=#{useTruckOrgCode} 				
+			</if>
+			<if test="orgCodes != null">
+		      AND ORG_CODE IN
+				<foreach 
+					collection="orgCodes" open="(" close=")" item="item" separator="," index="index"> 
+					#{item} 
+				</foreach>
+		    </if>
+			<if test="driverCode!=null and driverCode!='' ">	
+					AND  DRIVER_CODE = #{driverCode}
+			</if>					 
+			<if test="vehicleNo!=null and  vehicleNo!=''">
+				AND  VEHICLE_NO = #{vehicleNo}					
+			</if>
+			<if test="vehicleTypeLength!=null and  vehicleTypeLength!=''">
+				AND VEHICLE_TYPE_LENGTH = #{vehicleTypeLength}					
+			</if> 
+			<if test="beginSignBillDate!=null and beginSignBillDate!=''">
+				<![CDATA[ AND  SIGN_BILL_DATE>= to_date(#{beginSignBillDate},'yyyy-mm-dd hh24:mi:ss')	 ]]> 
+			</if>
+			<if test="endSignBillDate!=null  and endSignBillDate!=''">
+				<![CDATA[ AND  SIGN_BILL_DATE<= to_date(#{endSignBillDate}||'23:59:59','yyyy-mm-dd hh24:mi:ss')	 ]]> 									
+			</if>		
+		</where>
+	</sql>
+  
+  <select id="queryOtherSignBillById" resultMap="OtherSignBillResultMap" parameterType="java.lang.String" >
+    select 
+    <include refid="OtherSignBill_Column_List" />
+     from TFR.T_OPT_OTHER_SIGN_BILL  T  LEFT JOIN  bse.t_bas_vehicle_type_length VL on  VL.Vehicle_Length_Code=T.VEHICLE_TYPE_LENGTH   
+     
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+  <delete id="deleteOtherSignBill" parameterType="java.lang.String" >
+    delete from TFR.T_OPT_OTHER_SIGN_BILL
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  
+  <insert id="addOtherSignBill" parameterType="com.deppon.foss.module.transfer.management.api.shared.domain.OtherSignBillEntity" >
+    insert into TFR.T_OPT_OTHER_SIGN_BILL
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="signBillNo != null" >
+        SIGN_BILL_NO,
+      </if>
+      <if test="useTruckType != null" >
+        USE_TRUCK_TYPE,
+      </if>
+      <if test="signBillType != null" >
+        SIGN_BILL_TYPE,
+      </if>
+      <if test="driverCode != null" >
+        DRIVER_CODE,
+      </if>
+      <if test="driverName != null" >
+        DRIVER_NAME,
+      </if>
+      <if test="arrvRegionName != null" >
+        ARRV_REGION_NAME,
+      </if>
+      <if test="signBillDate != null" >
+        SIGN_BILL_DATE,
+      </if>
+      <if test="useTruckOrgCode != null" >
+        USE_TRUCK_ORG_CODE,
+      </if>
+      <if test="useTruckOrgName != null" >
+        USE_TRUCK_ORG_NAME,
+      </if>
+      <if test="orgCode != null" >
+        ORG_CODE,
+      </if>
+      <if test="orgName != null" >
+        ORG_NAME,
+      </if>
+      <if test="vehicleNo != null" >
+        VEHICLE_NO,
+      </if>
+      <if test="vehicleTypeLength != null" >
+        VEHICLE_TYPE_LENGTH,
+      </if>
+       <if test="weight != null" >
+        WEIGHT,
+      </if>      
+      <if test="volume != null" >
+        VOLUME,
+      </if>
+      <if test="billQty != null" >
+        BILL_QTY,
+      </if>
+      <if test="lineDistance != null" >
+        LINE_DISTANCE,
+      </if>
+      <if test="useTruckDuration != null" >
+        USE_TRUCK_DURATION,
+      </if>
+      <if test="otherFee != null" >
+        OTHER_FEE,
+      </if>
+      <if test="driverRoyalty != null" >
+        DRIVER_ROYALTY,
+      </if>
+      <if test="useTruckFee != null" >
+        USE_TRUCK_FEE,
+      </if>
+      <if test="currencyCode != null" >
+        CURRENCY_CODE,
+      </if>
+      <if test="notes != null" >
+        NOTES,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="signBillNo != null" >
+        #{signBillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="useTruckType != null" >
+        #{useTruckType,jdbcType=VARCHAR},
+      </if>
+      <if test="signBillType != null" >
+        #{signBillType,jdbcType=VARCHAR},
+      </if>
+      <if test="driverCode != null" >
+        #{driverCode,jdbcType=VARCHAR},
+      </if>
+      <if test="driverName != null" >
+        #{driverName,jdbcType=VARCHAR},
+      </if>
+      <if test="arrvRegionName != null" >
+        #{arrvRegionName,jdbcType=VARCHAR},
+      </if>
+      <if test="signBillDate != null" >
+        #{signBillDate,jdbcType=DATE},
+      </if>
+      <if test="useTruckOrgCode != null" >
+        #{useTruckOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="useTruckOrgName != null" >
+        #{useTruckOrgName,jdbcType=VARCHAR},
+      </if>
+      <if test="orgCode != null" >
+        #{orgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="orgName != null" >
+        #{orgName,jdbcType=VARCHAR},
+      </if>
+      <if test="vehicleNo != null" >
+        #{vehicleNo,jdbcType=VARCHAR},
+      </if>
+      <if test="vehicleTypeLength != null" >
+        #{vehicleTypeLength,jdbcType=VARCHAR},
+      </if>
+      <if test="volume != null" >
+        #{volume,jdbcType=DECIMAL},
+      </if>
+       <if test="weight != null" >
+        #{weight,jdbcType=DECIMAL},
+      </if>
+      <if test="billQty != null" >
+        #{billQty,jdbcType=DECIMAL},
+      </if>
+      <if test="lineDistance != null" >
+        #{lineDistance,jdbcType=DECIMAL},
+      </if>
+      <if test="useTruckDuration != null" >
+        #{useTruckDuration,jdbcType=DECIMAL},
+      </if>
+      <if test="otherFee != null" >
+        #{otherFee,jdbcType=DECIMAL},
+      </if>
+      <if test="driverRoyalty != null" >
+        #{driverRoyalty,jdbcType=DECIMAL},
+      </if>
+      <if test="useTruckFee != null" >
+        #{useTruckFee,jdbcType=DECIMAL},
+      </if>
+      <if test="currencyCode != null" >
+         #{currencyCode},
+      </if>
+      <if test="notes != null" >
+         #{notes},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateOtherSignBill" parameterType="com.deppon.foss.module.transfer.management.api.shared.domain.OtherSignBillEntity" >
+    update TFR.T_OPT_OTHER_SIGN_BILL
+    <set >
+      <if test="signBillNo != null" >
+        SIGN_BILL_NO = #{signBillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="useTruckType != null" >
+        USE_TRUCK_TYPE = #{useTruckType,jdbcType=VARCHAR},
+      </if>
+      <if test="signBillType != null" >
+        SIGN_BILL_TYPE = #{signBillType,jdbcType=VARCHAR},
+      </if>
+      <if test="driverCode != null" >
+        DRIVER_CODE = #{driverCode,jdbcType=VARCHAR},
+      </if>
+      <if test="driverName != null" >
+        DRIVER_NAME = #{driverName,jdbcType=VARCHAR},
+      </if>
+      <if test="arrvRegionName != null" >
+        ARRV_REGION_NAME = #{arrvRegionName,jdbcType=VARCHAR},
+      </if>
+      <if test="signBillDate != null" >
+        SIGN_BILL_DATE = #{signBillDate,jdbcType=DATE},
+      </if>
+      <if test="useTruckOrgCode != null" >
+        USE_TRUCK_ORG_CODE = #{useTruckOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="useTruckOrgName != null" >
+        USE_TRUCK_ORG_NAME = #{useTruckOrgName,jdbcType=VARCHAR},
+      </if>
+      <if test="vehicleNo != null" >
+        VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR},
+      </if>
+      <if test="vehicleTypeLength != null" >
+        VEHICLE_TYPE_LENGTH = #{vehicleTypeLength,jdbcType=VARCHAR},
+      </if>
+      <if test="volume != null" >
+        VOLUME = #{volume,jdbcType=DECIMAL},
+      </if>
+        <if test="weight != null" >
+        WEIGHT = #{weight,jdbcType=DECIMAL},
+      </if>
+      <if test="billQty != null" >
+        BILL_QTY = #{billQty,jdbcType=DECIMAL},
+      </if>
+      <if test="lineDistance != null" >
+        LINE_DISTANCE = #{lineDistance,jdbcType=DECIMAL},
+      </if>
+      <if test="useTruckDuration != null" >
+        USE_TRUCK_DURATION = #{useTruckDuration,jdbcType=DECIMAL},
+      </if>
+      <if test="otherFee != null" >
+        OTHER_FEE = #{otherFee,jdbcType=DECIMAL},
+      </if>
+      <if test="driverRoyalty != null" >
+        DRIVER_ROYALTY = #{driverRoyalty,jdbcType=DECIMAL},
+      </if>
+      <if test="useTruckFee != null" >
+        USE_TRUCK_FEE = #{useTruckFee,jdbcType=DECIMAL},
+      </if>
+      <if test="currencyCode != null" >
+        CURRENCY_CODE= #{currencyCode},
+      </if>
+      <if test="notes != null" >
+        NOTES= #{notes},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+ 
+</mapper>

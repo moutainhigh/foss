@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.tfr.StResultListDao" >
+  <resultMap id="stResultListResultMap" type="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StResultListEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+    <result column="SERIAL_NO" property="serialNo" jdbcType="VARCHAR" />
+    <result column="ST_TASK_ID" property="stTaskId" jdbcType="VARCHAR" />
+    <result column="SCAN_STATUS" property="scanStatus" jdbcType="VARCHAR" />
+    <result column="GOODS_STATUS" property="goodsStatus" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="PDA_UPLOAD_TIME" property="pdaUploadTime" jdbcType="TIMESTAMP" />
+    <result column="PDA_NO" property="pdaNo" jdbcType="VARCHAR" />
+    <result column="POSITION_NO" property="positionNo" jdbcType="VARCHAR" />
+  </resultMap>
+  <sql id="StResultList_Column_List" >
+    ID, WAYBILL_NO, SERIAL_NO, ST_TASK_ID, SCAN_STATUS, GOODS_STATUS, CREATE_TIME, PDA_UPLOAD_TIME, PDA_NO, POSITION_NO
+  </sql>
+  <select id="selectStResultListByPrimaryKey" resultMap="stResultListResultMap" parameterType="java.lang.String" >
+    select 
+    <include refid="StResultList_Column_List" />
+    from TFR.T_OPT_ST_RESULT_LIST
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+  <select id="queryScanDetailInStTask" resultType="com.deppon.foss.module.transfer.common.api.shared.dto.ScanDetailDto" parameterType="map">
+    select SERIAL_NO as serialNo, SCAN_STATUS as scanStatus, SCAN_STATUS as scanStatusDesc, GOODS_STATUS as goodsStatus, GOODS_STATUS as goodsStatusDesc, PDA_UPLOAD_TIME as uploadTime
+      from tfr.T_OPT_ST_RESULT_LIST
+        where ST_TASK_ID = #{stTaskId,jdbcType=VARCHAR}
+          and WAYBILL_NO = #{waybillNo, jdbcType=VARCHAR}
+        order by PDA_UPLOAD_TIME
+  </select>
+  <select id="queryScanDoneCountByWaybillNo" resultType="int" parameterType="map">
+    select count(*)
+	  from tfr.T_OPT_ST_RESULT_LIST a
+	      ,tfr.T_OPT_ST_TASK b
+	    where a.ST_TASK_ID = b.ID 
+	      and a.WAYBILL_NO = #{waybillNo, jdbcType=VARCHAR}
+	      and b.TASK_NO = #{stTaskNo,jdbcType=VARCHAR}
+	      and a.SCAN_STATUS = #{scanDoneStatus,jdbcType=VARCHAR}
+  </select>
+  <select id="queryStResultEntity" resultMap="stResultListResultMap" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StResultListEntity">
+    select <include refid="StResultList_Column_List" />
+      from tfr.T_OPT_ST_RESULT_LIST
+        where ST_TASK_ID = #{stTaskId,jdbcType=VARCHAR}
+          and WAYBILL_NO = #{waybillNo, jdbcType=VARCHAR}
+          and SERIAL_NO = #{serialNo, jdbcType=VARCHAR}
+  </select>
+  <select id="queryGapList" resultType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StTaskListEntity" parameterType="java.lang.String" >
+    select PACKAGE_NO as packageNo 
+    	  ,WAYBILL_NO as waybillNo
+          ,SERIAL_NO as serialNo
+          ,POSITION_NO as positionNo
+      from TFR.T_OPT_ST_RESULT_LIST
+        where ST_TASK_ID = #{stTaskId,jdbcType=VARCHAR} 
+          and GOODS_STATUS = #{goodsStatus}
+          order by WAYBILL_NO, SERIAL_NO
+  </select>
+  <select id="queryStResultListCount" resultType="long" parameterType="map" >
+    select count(*)
+      from TFR.T_OPT_ST_RESULT_LIST
+        where ST_TASK_ID = #{stTaskId,jdbcType=VARCHAR} 
+          and WAYBILL_NO = #{waybillNo}
+          and SERIAL_NO = #{serialNo}
+  </select>
+  <select id="queryFinishedScanCountInTask" resultType="long" parameterType="map" >
+    select count(SERIAL_NO)
+      from tfr.T_OPT_ST_RESULT_LIST
+        where ST_TASK_ID = #{stTaskId}
+          and WAYBILL_NO = #{waybillNo}
+          and SCAN_STATUS in 
+          <foreach item="item" index="index" collection="scanStatusArray" open="(" separator="," close=")">
+		    #{item}
+		  </foreach>
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String" >
+    delete from TFR.T_OPT_ST_RESULT_LIST
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  <insert id="addStResultListEntity" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StResultListEntity" >
+    insert into TFR.T_OPT_ST_RESULT_LIST (ID, PACKAGE_NO, WAYBILL_NO, SERIAL_NO, 
+      ST_TASK_ID, SCAN_STATUS, GOODS_STATUS, 
+      CREATE_TIME, PDA_UPLOAD_TIME, PDA_NO, POSITION_NO)
+    values (#{id,jdbcType=VARCHAR}, #{packageNo,jdbcType=VARCHAR}, #{waybillNo,jdbcType=VARCHAR}, #{serialNo,jdbcType=VARCHAR}, 
+      #{stTaskId,jdbcType=VARCHAR}, #{scanStatus,jdbcType=VARCHAR}, #{goodsStatus,jdbcType=VARCHAR}, 
+      #{createTime,jdbcType=TIMESTAMP}, #{pdaUploadTime,jdbcType=TIMESTAMP}, #{pdaNo,jdbcType=VARCHAR},#{positionNo,jdbcType=VARCHAR}
+      )
+  </insert>
+  <insert id="addStResultListBatch" parameterType="java.util.List">
+  	begin
+	<foreach collection="list" item="item" separator=";">
+    insert into TFR.T_OPT_ST_RESULT_LIST (ID, WAYBILL_NO, SERIAL_NO, 
+      ST_TASK_ID, SCAN_STATUS, GOODS_STATUS, 
+      CREATE_TIME, PDA_UPLOAD_TIME, PDA_NO)
+    values (#{item.id,jdbcType=VARCHAR}, #{item.waybillNo,jdbcType=VARCHAR}, #{item.serialNo,jdbcType=VARCHAR}, 
+      #{item.stTaskId,jdbcType=VARCHAR}, #{item.scanStatus,jdbcType=VARCHAR}, #{item.goodsStatus,jdbcType=VARCHAR}, 
+      #{item.createTime,jdbcType=TIMESTAMP}, #{item.pdaUploadTime,jdbcType=TIMESTAMP}, #{item.pdaNo,jdbcType=VARCHAR}
+      )
+    </foreach>
+	;end;
+  </insert>
+  <insert id="insertSelective" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StResultListEntity" >
+    insert into TFR.T_OPT_ST_RESULT_LIST
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="waybillNo != null" >
+        WAYBILL_NO,
+      </if>
+      <if test="serialNo != null" >
+        SERIAL_NO,
+      </if>
+      <if test="stTaskId != null" >
+        ST_TASK_ID,
+      </if>
+      <if test="scanStatus != null" >
+        SCAN_STATUS,
+      </if>
+      <if test="goodsStatus != null" >
+        GOODS_STATUS,
+      </if>
+      <if test="createTime != null" >
+        CREATE_TIME,
+      </if>
+      <if test="pdaUploadTime != null" >
+        PDA_UPLOAD_TIME,
+      </if>
+      <if test="pdaNo != null" >
+        PDA_NO,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="waybillNo != null" >
+        #{waybillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="serialNo != null" >
+        #{serialNo,jdbcType=VARCHAR},
+      </if>
+      <if test="stTaskId != null" >
+        #{stTaskId,jdbcType=VARCHAR},
+      </if>
+      <if test="scanStatus != null" >
+        #{scanStatus,jdbcType=VARCHAR},
+      </if>
+      <if test="goodsStatus != null" >
+        #{goodsStatus,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null" >
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="pdaUploadTime != null" >
+        #{pdaUploadTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="pdaNo != null" >
+        #{pdaNo,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StResultListEntity" >
+    update TFR.T_OPT_ST_RESULT_LIST
+    <set >
+      <if test="packageNo != null" >
+        PACKAGE_NO = #{packageNo,jdbcType=VARCHAR},
+      </if>
+      <if test="waybillNo != null" >
+        WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="serialNo != null" >
+        SERIAL_NO = #{serialNo,jdbcType=VARCHAR},
+      </if>
+      <if test="stTaskId != null" >
+        ST_TASK_ID = #{stTaskId,jdbcType=VARCHAR},
+      </if>
+      <if test="scanStatus != null" >
+        SCAN_STATUS = #{scanStatus,jdbcType=VARCHAR},
+      </if>
+      <if test="goodsStatus != null" >
+        GOODS_STATUS = #{goodsStatus,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null" >
+        CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="pdaUploadTime != null" >
+        PDA_UPLOAD_TIME = #{pdaUploadTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="pdaNo != null" >
+        PDA_NO = #{pdaNo,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StResultListEntity" >
+    update TFR.T_OPT_ST_RESULT_LIST
+    set WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR},
+      SERIAL_NO = #{serialNo,jdbcType=VARCHAR},
+      ST_TASK_ID = #{stTaskId,jdbcType=VARCHAR},
+      SCAN_STATUS = #{scanStatus,jdbcType=VARCHAR},
+      GOODS_STATUS = #{goodsStatus,jdbcType=VARCHAR},
+      CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+      PDA_UPLOAD_TIME = #{pdaUploadTime,jdbcType=TIMESTAMP},
+      PDA_NO = #{pdaNo,jdbcType=VARCHAR}
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  <!--生成清仓差异报告时，判断多货是否出库，少货是否入库-->
+  <select id = "queryInStockNumForLack" parameterType = "map" resultType = "int">
+	 select count(1) as num
+  	 from tfr.t_opt_in_stock st
+ 	 where st.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+     and st.serial_no = #{serialNo,jdbcType=VARCHAR}
+     and st.org_code = #{deptCode,jdbcType=VARCHAR}
+    <![CDATA[
+     and st.in_stock_time >= #{taskTime,jdbcType=TIMESTAMP} - #{beforeTime,jdbcType=INTEGER}/1440       
+     and st.in_stock_time <= sysdate 
+     ]]>
+     and st.is_valid = 'Y'
+  </select>
+  <select id = "queryOutStockNumForSurplus" parameterType = "map" resultType = "int">
+	 select count(1) as num
+  	 from tfr.t_opt_out_stock st
+     where st.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+     and st.serial_no = #{serialNo,jdbcType=VARCHAR}
+     and st.org_code = #{deptCode,jdbcType=VARCHAR}
+     <![CDATA[
+     and st.out_stock_time >= #{taskTime,jdbcType=TIMESTAMP} - #{beforeTime,jdbcType=INTEGER}/1440
+     and st.out_stock_time <= sysdate
+     ]]>
+     and st.is_valid = 'Y'
+  </select>
+  
+  <select id="selectStResultListByTaskId" resultMap="stResultListResultMap" parameterType="java.lang.String" >
+    select 
+    <include refid="StResultList_Column_List" />
+    from tfr.t_opt_st_result_list l
+	 where l.st_task_id = #{stTaskId,jdbcType=VARCHAR}
+	 and l.scan_status in ('MANUAL','DONE')
+	 order by l.waybill_no,l.serial_no
+  </select>
+  
+  <select id="querySecScanDetail" parameterType="map" resultType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StTaskEntity" >
+  	select t.task_no as taskNo,t.creator_code as creatorCode,t.creator_name as creatorName
+	 from tfr.t_opt_st_result_list l
+	inner join tfr.t_opt_st_task t on t.id = l.st_task_id
+	where l.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+	and l.serial_no = #{serialNo,jdbcType=VARCHAR}
+	and t.deptcode = #{deptCode,jdbcType=VARCHAR}
+	and l.goods_status = 'OK'
+	 <![CDATA[
+	and l.create_time > #{handleTime,jdbcType=TIMESTAMP}
+	and l.create_time < #{handleTime,jdbcType=TIMESTAMP} + #{oaReportHourRule,jdbcType=INTEGER}/24
+	]]>
+  </select>
+  <!--下拉包的运单明细-->
+  <select id="queryPackageDetail" parameterType="java.lang.String" resultType="com.deppon.foss.module.transfer.unload.api.shared.dto.PcakageWayBillDto">
+		select pd.waybill_no wayBillNo
+			,pd.serial_no serialNo
+			from tfr.t_opt_package p
+			inner join tfr.t_opt_package_detail pd on pd.package_no=p.package_no 
+			where 
+			p.package_no=#{packageNo,jdbcType=VARCHAR}
+			and p.status in ('UNSTART','FINISHED','PROGRESS','CREATED_BILL')
+	</select>
+	<!--查询运单是否确认交货（德邦家装）-->
+  <select id="querySalesDeptDelivery" parameterType="java.lang.String" resultType="java.lang.String">
+		select d.waystaus 
+			from BSE.T_BAS_SALESDEPT_DELIVERYPROC d 
+			where d.active='Y' 
+			and d.waybill_no=#{wayBillNo,jdbcType=VARCHAR}
+	</select>
+</mapper>

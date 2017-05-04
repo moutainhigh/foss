@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="foss.bse.bse-baseinfo.commonvehicledrivingentity">
+	<resultMap id="vehicleDrivingEntityResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.domain.VehicleDrivingEntity">
+	<id column="ID" property="id" jdbcType="VARCHAR"/>
+	<!--长途车队编码  -->
+	<result column="LONGHAUL_FLEET_CODE" property="longHaulFleetCode" jdbcType="VARCHAR" />
+	<!--长途车队名称  -->
+	<result column="LONGHAUL_FLEET_NAME" property="longHaulFleetName" jdbcType="VARCHAR"/>
+	<!--下辖部门编码 -->
+	<result column="DEPARTMENT_CODE" property="departmentCode" jdbcType="VARCHAR"/>
+	<!--下辖部门名称  -->
+	<result column="DEPARTMENT_NAME" property="departmentName" jdbcType="VARCHAR" />
+	<!--行车编码简称  -->
+	<result column="TRAFFIC_CODE" property="trafficCode" jdbcType="VARCHAR" />
+	<!-- 是否有效 -->
+	<result column="ACTIVE" property="active" jdbcType="VARCHAR" />
+	</resultMap> 
+
+	
+	<!-- 查询公共选择器total -->
+	
+	<select id="queryVehicleDrivingCount" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.VehicleDrivingEntity" resultType="Long">
+		select count(*)
+		from (select  distinct
+					  vd.longhaul_fleet_code   LONGHAUL_FLEET_CODE,
+					  o.name				   LONGHAUL_FLEET_NAME
+		      from BSE.T_BAS_VEHICLE_DRIVING vd
+		      right join bse.t_bas_org o on vd.longhaul_fleet_code = o.code and o.active = 'Y'
+		      right join bse.t_bas_org b on vd.department_code = b.code and b.active='Y'
+		      where vd.active = 'Y'  		
+				<if test="longHaulFleetName != null and longHaulFleetName != ''">
+					AND o.name like CONCAT(CONCAT('%',
+						#{longHaulFleetName,jdbcType=VARCHAR}),
+						'%')
+				</if>
+			)
+	</select>
+		
+	<!--公共选择器模糊查询出长途车队编码及名称  -->
+	<select id="queryVehicleDriving" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.VehicleDrivingEntity"
+			resultMap="vehicleDrivingEntityResultMap">
+	select  distinct  vd.longhaul_fleet_code    LONGHAUL_FLEET_CODE,
+			          o.name					LONGHAUL_FLEET_NAME
+	from BSE.T_BAS_VEHICLE_DRIVING vd
+	right join bse.t_bas_org o on vd.longhaul_fleet_code = o.code and o.active = 'Y'
+	right join bse.t_bas_org b on vd.department_code = b.code and b.active='Y'
+	where vd.active = 'Y' 
+      	<if test="longHaulFleetName !=null and longHaulFleetName !=''">
+      		AND o.name like CONCAT(CONCAT('%',
+				#{longHaulFleetName,jdbcType=VARCHAR}),
+				'%')
+      	</if>	
+	</select>
+</mapper>
+

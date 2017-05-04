@@ -1,0 +1,88 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.pkp.WaybillLogEntityMapper">
+	<resultMap id="BaseResultMap" type="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillLogEntity" >
+	    <result column="ID" property="id" jdbcType="VARCHAR" />
+	    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+	    <result column="VERSION_NO" property="versionNo" jdbcType="DECIMAL" />
+	    <result column="CODE" property="code" jdbcType="VARCHAR" />
+	    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+	    <result column="STATU" property="statu" jdbcType="VARCHAR" />
+	    <result column="DESC1" property="desc1" jdbcType="VARCHAR" />
+	    <result column="DESC2" property="desc2" jdbcType="VARCHAR" />
+	    <result column="ACTIVE" property="active" jdbcType="CHAR" />
+	    <result column="REQUEST_CONTENT" property="requestContent" jdbcType="CLOB" />
+	    <result column="RESPONSE_CONTENT" property="responseContent" jdbcType="CLOB" />
+	    <result column="ERROR_MSG" property="errorMsg" jdbcType="CLOB" />
+  	</resultMap>
+	
+	<sql id="Base_Column" >
+	 	ID,
+	 	WAYBILL_NO,
+	 	VERSION_NO,
+	 	CODE,
+	 	CREATE_TIME,
+	 	STATU,
+	 	DESC1,
+	 	DESC2,
+	 	ACTIVE,
+	 	REQUEST_CONTENT,
+	 	RESPONSE_CONTENT,
+	 	ERROR_MSG
+  	</sql>
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillLogEntity">
+		insert into PKP.T_SRV_PUSH_WAYBILL_LOG(ID,WAYBILL_NO,REQUEST_CONTENT,RESPONSE_CONTENT,
+  			VERSION_NO,CODE,CREATE_TIME,STATU,ERROR_MSG,DESC1,DESC2,ACTIVE) VALUES
+  			(#{id,jdbcType=VARCHAR},#{waybillNo,jdbcType=VARCHAR},#{requestContent,jdbcType=VARCHAR},#{responseContent,jdbcType=VARCHAR},#{versionNo,jdbcType=BIGINT},
+  			 #{code,jdbcType=VARCHAR},#{createTime,jdbcType=TIMESTAMP},#{statu,jdbcType=VARCHAR},#{errorMsg,jdbcType=VARCHAR},
+  			 #{desc1,jdbcType=VARCHAR},#{desc2,jdbcType=VARCHAR},#{active,jdbcType=VARCHAR})
+	</insert>
+	
+	<update id="deleteById" parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillLogEntity" >
+	    update PKP.T_SRV_PUSH_WAYBILL_LOG 
+	    set  ACTIVE = 'N' 
+	    where  ID = #{id,jdbcType=VARCHAR}
+	</update>
+	
+	<update id="updateById" parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillLogEntity" >
+	    update PKP.T_SRV_PUSH_WAYBILL_LOG 
+	    set  STATU = #{statu,jdbcType=VARCHAR},
+	    RESPONSE_CONTENT = #{responseContent,jdbcType=VARCHAR}
+	    where  ID = #{id,jdbcType=VARCHAR}
+	</update>
+	
+	<select id="queryCUBCLogEntityStatusByWaybillNo" parameterType="com.deppon.foss.module.pickup.waybill.shared.dto.WaybillLogEntityQueryDto" resultMap="BaseResultMap">
+	  select /** 根据运单号查询推送CUBC接口日志**/
+		<include refid="Base_Column"/>
+	  from PKP.T_SRV_PUSH_WAYBILL_LOG O
+	  where O.ACTIVE = 'Y'
+	  		AND (O.STATU='fail' OR O.STATU='sync_pending')
+    	<choose>
+		   	<when test="waybillNos != null and waybillNos.size()>0">
+				AND O.WAYBILL_NO IN
+				<foreach collection="waybillNos" item="waybillNo"
+					index="index" open="(" separator="," close=")">
+					#{waybillNo,jdbcType=VARCHAR}
+				</foreach>
+			</when>
+		   	<otherwise>
+				<if test="startTime != null and startTime !=''">
+		        	<![CDATA[ AND O.CREATE_TIME >= #{startTime,jdbcType=TIMESTAMP} ]]>
+			    </if>
+			    <if test="endTime != null and endTime !=''">
+		        	 <![CDATA[ AND O.CREATE_TIME <= #{endTime,jdbcType=TIMESTAMP} ]]>
+			    </if>
+		   	</otherwise>
+		</choose>
+		<choose>
+		   	<when test="code != null ">
+				AND O.CODE =#{code,jdbcType=VARCHAR}
+			</when>
+			<otherwise>
+				AND (O.CODE ='ESB_FOSS2ESB_SYN_BILL_INFO' or O.CODE ='ESB_FOSS2ESB_FOSS_CUBC_MODIFY_SYN')
+		   	</otherwise>
+	   	</choose>
+	   	order by O.CREATE_TIME DESC
+  	</select>
+</mapper>

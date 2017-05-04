@@ -1,0 +1,334 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!-- 
+	机场信息
+ -->
+<mapper namespace="foss.bse.bse-baseinfo.airport">
+	<resultMap id="airportResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.AirportEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="AIRPORT_NAME" property="airportName" jdbcType="VARCHAR" />
+		<result column="AIRPORT_CODE" property="airportCode" jdbcType="VARCHAR" />
+		<result column="CITY_CODE" property="cityCode" jdbcType="VARCHAR" />
+		<result column="COUNTY_CODE" property="countyCode" jdbcType="VARCHAR" />
+		<result column="CONTACT" property="contact" jdbcType="VARCHAR" />
+		<result column="CONTACT_PHONE" property="contactPhone" jdbcType="VARCHAR" />
+		<result column="PICKUP_ADDRESS" property="pickupAddress" jdbcType="VARCHAR" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="SIMPLENAME" property="simplename" jdbcType="VARCHAR" />
+		<result column="PROV_CODE" property="provCode" jdbcType="VARCHAR" />
+		<result column="PINYIN" property="pinyin" jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="airport_Column_List">
+		ID, AIRPORT_NAME, AIRPORT_CODE, CITY_CODE, COUNTY_CODE, CONTACT,
+		CONTACT_PHONE, PICKUP_ADDRESS,
+		NOTES, CREATE_TIME, MODIFY_TIME, ACTIVE, CREATE_USER_CODE, MODIFY_USER_CODE,
+		SIMPLENAME,PROV_CODE,PINYIN
+	</sql>
+	<!-- 根据entity精确查询的查询条件 ，如果属性为空，则此属性不作为条件 -->
+	<sql id="airport_Pagination_Where_Base_Param">
+		<if test="id != null and id != ''">
+			ID = #{id,jdbcType=VARCHAR}
+		</if>
+		<if test="countyCode != null and countyCode != ''">
+			AND COUNTY_CODE = #{countyCode,jdbcType=VARCHAR}
+		</if>
+		<if test="cityCode != null and cityCode != ''">
+			AND CITY_CODE = #{cityCode,jdbcType=VARCHAR}
+		</if>
+		<if test="contact != null and contact != ''">
+			AND CONTACT = #{contact,jdbcType=VARCHAR}
+		</if>
+		<if test="contactPhone != null and contactPhone != ''">
+			AND CONTACT_PHONE = #{contactPhone,jdbcType=VARCHAR}
+		</if>
+		<if test="pickupAddress != null and pickupAddress != ''">
+			AND PICKUP_ADDRESS = #{pickupAddress,jdbcType=VARCHAR}
+		</if>
+		<if test="notes != null and notes != ''">
+			AND NOTES = #{notes,jdbcType=VARCHAR}
+		</if>
+		<if test="createDate != null">
+			AND CREATE_TIME = #{createDate,jdbcType=TIMESTAMP}
+		</if>
+		<if test="modifyDate != null">
+			AND MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+		</if>
+		<if test="active != null and active != ''">
+			AND ACTIVE = #{active,jdbcType=CHAR}
+		</if>
+		<if test="createUser != null and createUser != ''">
+			AND CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR}
+		</if>
+		<if test="modifyUser != null and modifyUser != ''">
+			AND MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR}
+		</if>
+		<if test="simplename != null and simplename != ''">
+			AND SIMPLENAME = #{simplename,jdbcType=VARCHAR}
+		</if>
+		<if test="provCode != null and provCode != ''">
+			AND PROV_CODE = #{provCode,jdbcType=VARCHAR}
+		</if>
+		<if test="pinyin != null and pinyin != ''">
+			AND PINYIN = #{pinyin,jdbcType=VARCHAR}
+		</if>
+	</sql>
+	<sql id="airport_Pagination_Where_Equals_Param">
+		<trim prefix="WHERE" prefixOverrides="AND | OR">
+			<include refid="airport_Pagination_Where_Base_Param"/>
+			<if test="airportName != null and airportName != ''">
+				AND AIRPORT_NAME = #{airportName,jdbcType=VARCHAR}
+			</if>
+			<if test="airportCode != null and airportCode != ''">
+				AND AIRPORT_CODE = #{airportCode,jdbcType=VARCHAR}
+			</if>
+		</trim>
+	</sql>
+	<sql id="airport_Pagination_Where_Like_Param">
+		<trim prefix="WHERE" prefixOverrides="AND | OR">
+			<include refid="airport_Pagination_Where_Base_Param"/>
+			<if test="airportName != null and airportName != ''">
+				AND AIRPORT_NAME like CONCAT(CONCAT('%', #{airportName,jdbcType=VARCHAR}), '%')
+			</if>
+			<if test="airportCode != null and airportCode != ''">
+				AND AIRPORT_CODE like CONCAT(CONCAT('%', #{airportCode,jdbcType=VARCHAR}), '%')
+			</if>
+		</trim>
+	</sql>
+	<!-- 查询机场信息 -->
+	<select id="queryAirportListBySelective" resultMap="airportResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AirportEntity">
+		select
+		/** 综合:查询机场信息**/
+		<include refid="airport_Column_List" />
+		from BSE.T_BAS_AIRPORT
+		<include refid="airport_Pagination_Where_Equals_Param"/>
+	</select>
+	<select id="queryAirportCountBySelectiveCondition" resultType="java.lang.Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AirportEntity">
+		<![CDATA[ select count(*) from BSE.T_BAS_AIRPORT ]]>
+		<include refid="airport_Pagination_Where_Like_Param"/>
+	</select>
+	<select id="queryAirportListBySelectiveCondition" resultMap="airportResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AirportEntity">
+		select
+		<include refid="airport_Column_List" />
+		from BSE.T_BAS_AIRPORT
+		<include refid="airport_Pagination_Where_Like_Param"/>
+	</select>
+	<!-- 删除机场信息 -->
+	<delete id="deleteAirport" parameterType="java.lang.String">
+		delete/** 综合:删除机场信息**/ from BSE.T_BAS_AIRPORT
+		where ID = #{id,jdbcType=VARCHAR}
+	</delete>
+	<!-- 新增机场信息 -->
+	<insert id="addAirport"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AirportEntity">
+		insert/** 综合:新增机场信息**/ into BSE.T_BAS_AIRPORT (ID, AIRPORT_NAME, AIRPORT_CODE,
+		CITY_CODE, COUNTY_CODE, CONTACT,
+		CONTACT_PHONE, PICKUP_ADDRESS, NOTES,
+		CREATE_TIME, MODIFY_TIME, ACTIVE,
+		CREATE_USER_CODE, MODIFY_USER_CODE,
+		SIMPLENAME,PROV_CODE,PINYIN)
+		values (#{id,jdbcType=VARCHAR}, #{airportName,jdbcType=VARCHAR},
+		#{airportCode,jdbcType=VARCHAR},
+		#{cityCode,jdbcType=VARCHAR}, #{countyCode,jdbcType=VARCHAR}, #{contact,jdbcType=VARCHAR},
+		#{contactPhone,jdbcType=VARCHAR}, #{pickupAddress,jdbcType=VARCHAR},
+		#{notes,jdbcType=VARCHAR},
+		#{createDate,jdbcType=TIMESTAMP}, #{modifyDate,jdbcType=TIMESTAMP}, #{active,jdbcType=CHAR},
+		#{createUser,jdbcType=VARCHAR}, #{modifyUser,jdbcType=VARCHAR}, 
+		#{simplename,jdbcType=VARCHAR}, #{provCode,jdbcType=VARCHAR}, #{pinyin,jdbcType=VARCHAR})
+	</insert>
+	<insert id="addAirportBySelective"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AirportEntity">
+		insert into BSE.T_BAS_AIRPORT
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				ID,
+			</if>
+			<if test="airportName != null">
+				AIRPORT_NAME,
+			</if>
+			<if test="airportCode != null">
+				AIRPORT_CODE,
+			</if>
+			<if test="cityCode != null">
+				CITY_CODE,
+			</if>
+			<if test="countyCode != null">
+				COUNTY_CODE,
+			</if>
+			<if test="contact != null">
+				CONTACT,
+			</if>
+			<if test="contactPhone != null">
+				CONTACT_PHONE,
+			</if>
+			<if test="pickupAddress != null">
+				PICKUP_ADDRESS,
+			</if>
+			<if test="notes != null">
+				NOTES,
+			</if>
+			<if test="createDate != null">
+				CREATE_TIME,
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME,
+			</if>
+			<if test="active != null">
+				ACTIVE,
+			</if>
+			<if test="createUser != null">
+				CREATE_USER_CODE,
+			</if>
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE,
+			</if>
+			<if test="simplename != null">
+				SIMPLENAME,
+			</if>
+			<if test="provCode != null">
+				PROV_CODE,
+			</if>
+			<if test="pinyin != null">
+				PINYIN,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id,jdbcType=VARCHAR},
+			</if>
+			<if test="airportName != null">
+				#{airportName,jdbcType=VARCHAR},
+			</if>
+			<if test="airportCode != null">
+				#{airportCode,jdbcType=VARCHAR},
+			</if>
+			<if test="cityCode != null">
+				#{cityCode,jdbcType=VARCHAR},
+			</if>
+			<if test="countyCode != null">
+				#{countyCode,jdbcType=VARCHAR},
+			</if>
+			<if test="contact != null">
+				#{contact,jdbcType=VARCHAR},
+			</if>
+			<if test="contactPhone != null">
+				#{contactPhone,jdbcType=VARCHAR},
+			</if>
+			<if test="pickupAddress != null">
+				#{pickupAddress,jdbcType=VARCHAR},
+			</if>
+			<if test="notes != null">
+				#{notes,jdbcType=VARCHAR},
+			</if>
+			<if test="createDate != null">
+				#{createDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyDate != null">
+				#{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="active != null">
+				#{active,jdbcType=CHAR},
+			</if>
+			<if test="createUser != null">
+				#{createUser,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyUser != null">
+				#{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="simplename != null">
+				#{simplename,jdbcType=VARCHAR},
+			</if>
+			<if test="provCode != null">
+				#{provCode,jdbcType=VARCHAR},
+			</if>
+			<if test="pinyin != null">
+				#{pinyin,jdbcType=VARCHAR},
+			</if>
+		</trim>
+	</insert>
+	<!-- 修改机场信息 -->
+	<update id="updateAirportBySelective"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AirportEntity">
+		update/** 综合:修改机场信息**/ BSE.T_BAS_AIRPORT
+		<set>
+			<if test="airportName != null">
+				AIRPORT_NAME = #{airportName,jdbcType=VARCHAR},
+			</if>
+			<if test="airportCode != null">
+				AIRPORT_CODE = #{airportCode,jdbcType=VARCHAR},
+			</if>
+			<if test="cityCode != null">
+				CITY_CODE = #{cityCode,jdbcType=VARCHAR},
+			</if>
+			<if test="countyCode != null">
+				COUNTY_CODE = #{countyCode,jdbcType=VARCHAR},
+			</if>
+			<if test="contact != null">
+				CONTACT = #{contact,jdbcType=VARCHAR},
+			</if>
+			<if test="contactPhone != null">
+				CONTACT_PHONE = #{contactPhone,jdbcType=VARCHAR},
+			</if>
+			<if test="pickupAddress != null">
+				PICKUP_ADDRESS = #{pickupAddress,jdbcType=VARCHAR},
+			</if>
+			<if test="notes != null">
+				NOTES = #{notes,jdbcType=VARCHAR},
+			</if>
+			<if test="createDate != null">
+				CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="active != null">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="createUser != null">
+				CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="simplename != null">
+				SIMPLENAME = #{simplename,jdbcType=VARCHAR},
+			</if>
+			<if test="provCode != null">
+				PROV_CODE = #{provCode,jdbcType=VARCHAR},
+			</if>
+			<if test="pinyin != null">
+				PINYIN = #{pinyin,jdbcType=VARCHAR},
+			</if>
+		</set>
+		where ID = #{id,jdbcType=VARCHAR}
+	</update>
+	<update id="updateAirport"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AirportEntity">
+		update BSE.T_BAS_AIRPORT
+		set AIRPORT_NAME = #{airportName,jdbcType=VARCHAR},
+		AIRPORT_CODE = #{airportCode,jdbcType=VARCHAR},
+		CITY_CODE = #{cityCode,jdbcType=VARCHAR},
+		COUNTY_CODE = #{countyCode,jdbcType=VARCHAR},
+		CONTACT = #{contact,jdbcType=VARCHAR},
+		CONTACT_PHONE = #{contactPhone,jdbcType=VARCHAR},
+		PICKUP_ADDRESS = #{pickupAddress,jdbcType=VARCHAR},
+		NOTES = #{notes,jdbcType=VARCHAR},
+		CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+		MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+		ACTIVE = #{active,jdbcType=CHAR},
+		CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+		MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+		SIMPLENAME = #{simplename,jdbcType=VARCHAR},
+		PROV_CODE = #{provCode,jdbcType=VARCHAR},
+		PINYIN = #{pinyin,jdbcType=VARCHAR}
+		where ID = #{id,jdbcType=VARCHAR}
+	</update>
+</mapper>

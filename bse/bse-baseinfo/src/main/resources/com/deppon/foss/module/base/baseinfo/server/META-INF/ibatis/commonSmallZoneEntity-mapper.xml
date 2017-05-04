@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.commonSmallzone">
+	<!-- 集中接送货小区 --> 
+	<resultMap id="resultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.SmallZoneEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="REGION_CODE" property="regionCode" jdbcType="VARCHAR" />
+		<result column="REGION_NAME" property="regionName" jdbcType="VARCHAR" />
+		<result column="MANAGEMENT" property="management" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+		<result column="VIRTUAL_CODE" jdbcType="VARCHAR" property="virtualCode" />
+		<result column="REGION_TYPE" property="regionType" jdbcType="VARCHAR" />
+		<result column="GISID" property="gisid" jdbcType="VARCHAR" />
+		<result column="BIGZONECODE" property="bigzonecode" jdbcType="VARCHAR" />
+		<result column="PROVCODE" property="provCode" jdbcType="VARCHAR" />
+		<result column="CITYCODE" property="cityCode" jdbcType="VARCHAR" />
+		<result column="COUNTYCODE" property="countyCode" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 数据字段 -->
+	<sql id="query_columns">
+		ID, 
+		REGION_CODE, 
+		REGION_NAME, 
+		MANAGEMENT,
+		CREATE_TIME,
+		MODIFY_TIME,
+		ACTIVE, 
+		CREATE_USER_CODE, 
+		MODIFY_USER_CODE,
+		NOTES,
+		VIRTUAL_CODE,
+		REGION_TYPE, 
+		GISID,
+		BIGZONECODE,
+		PROVCODE,
+		CITYCODE,
+		COUNTYCODE
+	</sql>
+
+	<!-- 分页查询条件 -->
+	<sql id="query_params">
+		<where> 
+			AND ACTIVE = #{active,jdbcType=CHAR}
+			<if test="queryParam != null and queryParam != ''">
+				AND 
+				( 
+					REGION_CODE like CONCAT(CONCAT('%',#{queryParam}),'%')
+				 OR 	
+				 	REGION_NAME like CONCAT(CONCAT('%',#{queryParam}),'%')
+				) 
+			</if> 
+			<if test="bigzonecode != null and bigzonecode != ''">
+				AND BIGZONECODE = #{bigzonecode,jdbcType=VARCHAR}
+			</if>
+			<if test="orgCodes != null and  orgCodes.size()>0">
+				  AND  MANAGEMENT IN
+					<foreach collection="orgCodes" index="index" item="item" open="(" separator="," close=")">
+						#{item}
+					</foreach>
+				</if>
+			<if test="management != null and management != ''">
+				AND MANAGEMENT = #{management,jdbcType=VARCHAR}
+			</if> 
+			<if test="regionType != null and regionType != ''">
+				AND REGION_TYPE = #{regionType,jdbcType=VARCHAR}
+			</if>
+			<if test="virtualCode != null and virtualCode != ''">
+				AND VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR}
+			</if>
+			<if test="provCode != null and provCode != ''">
+				AND PROVCODE = #{provCode,jdbcType=VARCHAR}
+			</if> 
+			<if test="cityCode != null and cityCode != ''">
+				AND CITYCODE = #{cityCode,jdbcType=VARCHAR}
+			</if>
+			<if test="countyCode != null and countyCode != ''">
+				AND COUNTYCODE = #{countyCode,jdbcType=VARCHAR}
+			</if>
+		</where> 
+	</sql>
+
+	<!--根据条件查询接送货小区总条数-->
+	<select id="queryRecordCount" resultType="Long"	parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.CommonSmallZoneDto">
+	       	select/** 综合:根据条件查询接送货小区总条数  **/ count(*) from BSE.T_BAS_SERVICE_SMALLZONE T
+		<include refid="query_params" />
+	</select>
+	
+	<!-- 根据条件查询接送货小区 -->
+	<select id="querySmallZoneByCondition" resultMap="resultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.CommonSmallZoneDto"	>
+			SELECT
+			/** 综合:根据条件查询接送货小区  **/
+		<include refid="query_columns" />
+			FROM BSE.T_BAS_SERVICE_SMALLZONE T
+		<include refid="query_params" />
+	</select> 
+</mapper>

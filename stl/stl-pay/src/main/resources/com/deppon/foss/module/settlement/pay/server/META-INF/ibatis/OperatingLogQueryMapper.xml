@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.OperatingLogEntityDao">
+	
+	<!-- 按时间查询操作日志 -->
+	<select id="queryOperatingLogListByDate" resultMap="BaseResultMap"
+		parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.OperatingLogQueryDto">
+		select
+			/*按时间查询操作日志*/
+		<include refid="Base_Column_List" />
+		from STL.T_STL_OPERATING_LOG T
+		 <where> 
+		 	<![CDATA[ OPERATE_TIME >=#{startOperateTime} AND OPERATE_TIME <#{endOperateTime} ]]>
+		 	<if test="operateOrgCode!=null and operateOrgCode!='' ">
+				AND OPERATE_ORG_CODE = #{operateOrgCode}
+	 		</if>
+	 		<if test="operatorCode!=null and operatorCode!='' ">
+				AND OPERATOR_CODE = #{operatorCode}
+	 		</if>
+	 		<if test="businessRegionCodeList!=null and businessRegionCodeList.size()>0">
+				AND OPERATE_ORG_CODE IN
+     			<foreach collection="businessRegionCodeList"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		</if>
+	 		AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = T.OPERATE_ORG_CODE<!-- 登录者部门等于日志操作部门过滤 -->
+     			)	
+		 </where>
+	</select>
+	
+	<!-- 按时间查询操作日志总条数 -->
+	<select id="queryOperatingLogTotalByDate" resultType="long"
+		parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.OperatingLogQueryDto">
+		select
+		/*按时间查询操作日志总条数*/ 
+		count(1)
+		from STL.T_STL_OPERATING_LOG T
+		 <where> 
+		 	<![CDATA[ OPERATE_TIME >=#{startOperateTime} AND OPERATE_TIME <#{endOperateTime} ]]>
+		 	<if test="operateOrgCode!=null and operateOrgCode!='' ">
+				AND OPERATE_ORG_CODE = #{operateOrgCode}
+	 		</if>
+	 		<if test="operatorCode!=null and operatorCode!='' ">
+				AND OPERATOR_CODE = #{operatorCode}
+	 		</if>
+	 		<if test="businessRegionCodeList!=null and businessRegionCodeList.size()>0">
+				AND OPERATE_ORG_CODE IN
+     			<foreach collection="businessRegionCodeList"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		</if>
+	 		AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = T.OPERATE_ORG_CODE<!-- 登录者部门等于日志操作部门过滤 -->
+     			)		
+		 </where>
+	</select>
+</mapper>

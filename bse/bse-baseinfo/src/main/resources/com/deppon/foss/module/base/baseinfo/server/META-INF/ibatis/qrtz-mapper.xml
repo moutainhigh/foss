@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="foss.qrtz">
+	<resultMap id="jobMonitortMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.JobMonitor">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="JOB_MODULE" property="jobModule" jdbcType="VARCHAR" />
+		<result column="JOB_NAME" property="jobName" jdbcType="VARCHAR" />
+		<result column="JOB_DESC" property="jobDesc" jdbcType="VARCHAR" />
+		<result column="WARNING_RECEIVER" property="warningReceiver"
+			jdbcType="VARCHAR" />
+		<result column="MAX_ACCUMULATION" property="maxAccumulation"
+			jdbcType="NUMERIC" />
+		<result column="QUERY_SQL" property="querySql" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="VARCHAR" />
+	</resultMap>
+	<resultMap id="jobDataAccumulationRecord"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.JobDataAccumulationRecord">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="JOB_NAME" property="jobName" jdbcType="VARCHAR" />
+		<result column="JOB_ACCUMULATION" property="dataAccumulation"
+			jdbcType="NUMERIC" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+	</resultMap>
+	<sql id="jobMonitor_condition">
+		<where>
+			<if test="jobModule!=null and jobModule != ''">
+				AND JOB_MODULE = #{jobModule,jdbcType=VARCHAR}
+			</if>
+			<if test="jobName!=null and jobName !=''">
+				AND (JOB_NAME like CONCAT(CONCAT('%', #{jobName,jdbcType=VARCHAR}), '%')
+				or Job_desc like CONCAT(CONCAT('%', #{jobName,jdbcType=VARCHAR}), '%'))
+			</if>
+			<if test="active !=null and active !=''">
+				AND ACTIVE = #{active,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</sql>
+	<select id="selectJobMonitorByCondition"  parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.JobMonitor" resultMap="jobMonitortMap">
+		select * from
+		bse.t_bas_job_monitor r
+		<include refid="jobMonitor_condition"></include>
+	</select>
+	<select id="countJobMonitorByCondition" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.JobMonitor" resultType="long">
+		select count(1) from
+		bse.t_bas_job_monitor r
+		<include refid="jobMonitor_condition"></include>
+	</select>
+	
+	 
+	<select id="selectAllJobMonitor" resultMap="jobMonitortMap">
+		select * from
+		bse.t_bas_job_monitor r where r.active = 'Y'
+	</select>
+	<insert id="addMonitorJob"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.JobMonitor">
+		insert into bse.t_bas_job_monitor(
+		ID,
+		JOB_MODULE,
+		JOB_NAME,
+		JOB_DESC,
+		WARNING_RECEIVER,
+		MAX_ACCUMULATION,
+		QUERY_SQL,
+		ACTIVE 
+		)values(
+		sys_guid(),
+		#{jobModule,jdbcType=VARCHAR},
+		#{jobName,jdbcType=VARCHAR},
+		#{jobDesc,jdbcType=VARCHAR},
+		#{warningReceiver,jdbcType=VARCHAR},
+		#{maxAccumulation,jdbcType=NUMERIC},
+		#{querySql,jdbcType=VARCHAR},
+		'Y'
+		)
+	</insert>
+	<update id="modifyMonitorJob"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.JobMonitor">
+ 	 	update bse.t_bas_job_monitor 
+ 	 	<set>
+ 	 	 <if test="jobModule!=null">
+ 	 	  JOB_MODULE  =#{jobModule,jdbcType=VARCHAR},
+ 	 	 </if>
+ 	 	  <if test="jobDesc!=null">
+ 	 	  JOB_DESC  =#{jobDesc,jdbcType=VARCHAR},
+ 	 	 </if>
+ 	 	  <if test="warningReceiver!=null">
+ 	 	  WARNING_RECEIVER  =#{warningReceiver,jdbcType=VARCHAR},
+ 	 	 </if>
+ 	 	  MAX_ACCUMULATION  =#{maxAccumulation,jdbcType=NUMERIC},
+ 	 	<if test="querySql!=null">
+ 	 	  QUERY_SQL  =#{querySql,jdbcType=VARCHAR},
+ 	 	 </if>
+ 	 	 <if test="active!=null">
+ 	 	  ACTIVE  =#{active,jdbcType=VARCHAR},
+ 	 	 </if>
+ 	 	</set>
+       where id =#{id,jdbcType=VARCHAR}
+	</update>
+	<insert id="addDataAccumulationRecord"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.JobDataAccumulationRecord">
+		insert into bse.t_bas_job_accumulation_record(
+		ID ,
+		JOB_NAME ,
+		JOB_ACCUMULATION ,
+		CREATE_TIME
+		)values(
+		sys_guid(),
+		#{jobName,jdbcType=VARCHAR},
+		#{dataAccumulation,jdbcType=NUMERIC},
+		#{createDate,jdbcType=TIMESTAMP})
+	</insert>
+	<select id="QueryBySql" parameterType="map" resultType="long">
+		${sql}
+	</select>
+
+
+</mapper>

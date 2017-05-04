@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.DopStatementPaymentDao" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.common.api.shared.domain.BillPaymentEntity" >
+    <result column="AMOUNT" property="amount" jdbcType="DECIMAL" />
+    <result column="PAYABLENO" property="paymentNo" jdbcType="VARCHAR" />
+    <result column="PAYMENT_ORG_CODE" property="paymentOrgCode" jdbcType="VARCHAR" />
+    <result column="PAYMENT_ORG_NAME" property="paymentOrgName" jdbcType="VARCHAR" />
+  </resultMap>
+  <insert id="addBillPaymentD" parameterType="com.deppon.foss.module.settlement.common.api.shared.domain.BillPaymentDEntity">
+	 <!-- INSERT /*插入付款单明细*/INTO STL.T_STL_BILL_PAYMENT_D
+	      (ID,
+	       PAYMENT_NO,
+	       PAYMENT_ACCOUNT_DATE,
+	       SOURCE_BILL_NO,
+	       WAYBILL_NO,
+	       SOURCE_BILL_TYPE,
+	       SOURCE_ACCOUNT_DATE,
+	       CREATE_TIME,
+	       SRC_SOURCE_BILL_NO,
+	       PAY_AMOUNT)
+	       <foreach collection="list" item="item" index="index" separator="union all" >
+	       		 ( select SYS_GUID(),
+	       		 #{item.paymentNo,jdbcType=VARCHAR},
+	       		 sysdate,
+	       		 #{item.sourceBillNo,jdbcType=VARCHAR},
+	       		 #{item.waybillNo,jdbcType=VARCHAR},
+	       		 #{item.sourceBillType,jdbcType=VARCHAR},
+	       		 #{item.sourceAccountDate,jdbcType=VARCHAR},
+	       		 sysdate,
+				 #{item.srcSourceBillNo,jdbcType=VARCHAR},
+				 #{item.payAmount,jdbcType=VARCHAR}*100
+	       		 from dual)
+        </foreach> -->
+	
+	  INSERT /*插入付款单明细*/INTO STL.T_STL_BILL_PAYMENT_D
+	      (ID,
+	       PAYMENT_NO,
+	       PAYMENT_ACCOUNT_DATE,
+	       SOURCE_BILL_NO,
+	       WAYBILL_NO,
+	       SOURCE_BILL_TYPE,
+	       SOURCE_ACCOUNT_DATE,
+	       CREATE_TIME,
+	       SRC_SOURCE_BILL_NO,
+	       PAY_AMOUNT)
+	      SELECT SYS_GUID(),
+	             #{paymentNum,JDBCTYPE=VARCHAR},
+	             SYSDATE,
+	             P.PAYABLE_NO,
+	             P.WAYBILL_NO,
+	             'P',
+	             P.ACCOUNT_DATE,
+	             SYSDATE,
+	             P.SOURCE_BILL_NO,
+	             P.UNVERIFY_AMOUNT
+	        FROM STL.T_STL_BILL_PAYABLE P
+	       WHERE P.ACTIVE = 'Y'
+	         AND P.BILL_TYPE IN ('HIP')
+	         AND P.UNVERIFY_AMOUNT > 0
+	         AND P.PAYABLE_NO IN
+	             (SELECT HD.PAYABLE_NO
+	                FROM STL.T_STL_STATEMENT_OF_HOME_D HD
+	               WHERE HD.STATEMENT_BILL_NO = #{statementBillNo,JDBCTYPE=VARCHAR}
+	                 AND HD.IS_DELETE = 'N')
+	    
+	</insert>
+	
+	<!-- 另一个插入付款单明细的方法 -->
+	<insert id="addBillPaymentDetails" parameterType="java.util.Map">
+	  INSERT /*插入付款单明细*/INTO STL.T_STL_BILL_PAYMENT_D
+	      (ID,
+	       PAYMENT_NO,
+	       PAYMENT_ACCOUNT_DATE,
+	       SOURCE_BILL_NO,
+	       WAYBILL_NO,
+	       SOURCE_BILL_TYPE,
+	       SOURCE_ACCOUNT_DATE,
+	       CREATE_TIME,
+	       SRC_SOURCE_BILL_NO,
+	       PAY_AMOUNT)
+	      SELECT SYS_GUID(),
+	             #{paymentNum,JDBCTYPE=VARCHAR},
+	             SYSDATE,
+	             P.PAYABLE_NO,
+	             P.WAYBILL_NO,
+	             'P',
+	             P.ACCOUNT_DATE,
+	             SYSDATE,
+	             P.SOURCE_BILL_NO,
+	             P.UNVERIFY_AMOUNT
+	        FROM STL.T_STL_BILL_PAYABLE P
+	       WHERE P.ACTIVE = 'Y'
+	         AND P.BILL_TYPE IN ('HIP')
+	         AND P.UNVERIFY_AMOUNT > 0
+	         AND P.PAYABLE_NO IN  
+	         <foreach collection="payableNos" item="item" open="(" close=")" index="index" separator=",">
+	         	#{item,JDBCTYPE=VARCHAR}
+	         </foreach>
+	</insert>
+  	
+  	<!-- 跟新应付单 -->
+  	<update id="payForBillPayable" parameterType="java.util.Map">
+		UPDATE /*更新应付单*/STL.T_STL_BILL_PAYABLE P
+	   	   SET P.VERSION_NO = VERSION_NO + 1,
+		   	   P.PAY_STATUS = 'Y',
+		       P.PAYMENT_NO= #{paymentNum,jdbcType=VARCHAR},
+		       P.MODIFY_TIME = SYSDATE,
+		       P.MODIFY_USER_CODE = #{modifyUserCode,jdbcType=VARCHAR},
+		       P.MODIFY_USER_NAME = #{modifyUserName,jdbcType=VARCHAR},
+		       P.PAYMENT_NOTES = #{paymentNotes,jdbcType=VARCHAR},
+		       P.PAYMENT_AMOUNT = p.UNVERIFY_AMOUNT
+		 WHERE P.ACTIVE = 'Y'
+		   AND P.BILL_TYPE IN ('HIP')
+		   AND P.UNVERIFY_AMOUNT > 0
+		   AND P.PAYABLE_NO IN 
+		   <foreach collection="payableNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item,jdbcType=VARCHAR} 
+		   </foreach>
+	</update>
+  	
+  	<!-- 更具应付单号去查询部门和该部门的总金额 -->
+    <select id="queryOrgAndAmountbyNo" parameterType="java.util.List" resultMap="BaseResultMap">
+      select/*根据应付单号去查询部门和该部门的总金额*/ 
+           p.payable_org_code PAYMENT_ORG_CODE,
+           p.payable_org_name PAYMENT_ORG_NAME,
+           sum(p.unverify_amount)/100 AMOUNT
+           from stl.t_stl_bill_payable p 
+           where p.active ='Y'
+           And   p.is_red_back = 'N'
+           and   p.unverify_amount >0
+           and   p.payable_no in 
+           <foreach collection="list"  index="index" item="item"  open="(" separator="," close=")">  
+              #{item.payableNo} 
+         </foreach>
+           group by p.payable_org_code,
+               p.payable_org_name
+    </select>
+  	
+  	<!-- 根据部门编号去查询应付单号 -->
+  	<select id="queryPayableByOrgCode" parameterType ="java.util.Map" resultMap="BaseResultMap">
+  		 select 
+      		hd.payable_no PAYABLENO
+		 from stl.t_Stl_Statement_Of_Home_d hd
+		 where hd.org_code =  #{orgCode,jdbcType=VARCHAR}
+		 and hd.statement_bill_no = #{statementBillNo,jdbcType=VARCHAR}
+		 and hd.active ='Y'
+		 and hd.is_delete ='N'
+		 and hd.unverify_amount >0
+  	</select>
+  </mapper>

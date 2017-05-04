@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://www.springframework.org/schema/jee 
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+			http://www.springframework.org/schema/aop 
+			http://www.springframework.org/schema/aop/spring-aop-3.0.xsd"
+	default-autowire="byName" default-lazy-init="true">
+	
+	<!-- @218392 zhangyongxue VTS开单生成财务单据异步接口 -->
+	<bean id="vtsWaybillFinanceBillProcess" class="com.deppon.foss.module.settlement.vtsitf.server.esb.VtsWaybillFinanceBillProcess">
+	</bean>
+	
+	<!-- 同步运单数据process -->
+	<bean id="vtsSyncWayBillMessProcess" class="com.deppon.foss.module.settlement.vtsitf.server.esb.VtsSyncWayBillMessProcess"></bean>
+
+	
+	<bean id="vtsPayableFinanceBillProcess" class="com.deppon.foss.module.settlement.vtsitf.server.esb.VtsPayableFinanceBillProcess"></bean>
+	
+	<!-- 同步实际承运表process -->
+	<bean id="vtsSyncActualFreightMessProcess" class="com.deppon.foss.module.settlement.vtsitf.server.esb.VtsSyncActualFreightMessProcess"> </bean>
+	
+	<!--add by 309603 yangqiang -->
+    <!--待刷卡单据的生成以及修改操作-->
+	<bean id="wscWayBillProcess" class="com.deppon.foss.module.settlement.vtsitf.server.esb.WscWayBillProcess"/>
+	
+	 <!--同步运单更改表:306579 guoxinru-->
+	<bean id="vtsWayBillRfcProcess" class="com.deppon.foss.module.settlement.vtsitf.server.esb.VtsWayBillRfcProcess"/>
+	
+    <!--同步签收结果表:306579 guoxinru-->
+	<bean id="vtsWaybillSignResultProcess" class="com.deppon.foss.module.settlement.vtsitf.server.esb.VtsWaybillSignResultProcess"/>
+	
+	<!-- 启动ESB，加载SERVICE CODE -->
+ 	<bean id="esbInitUtil" class="com.deppon.esb.api.util.ESBInitUtil" init-method="process" lazy-init="false">
+ 		<property name="processMap">
+			<map>
+			 	<!-- 218392 VTS开单生成财务单据，不包括开单银行卡 -->
+			    <entry key="FOSS_ESB2FOSS_SYNC_VTSFOSS_NOCARDBILL" value-ref="vtsWaybillFinanceBillProcess" />
+			    <!-- 310970 VTS传入数据生效应付单 -->
+ 				<entry  key="FOSS_ESB2FOSS_SYNC_VTSFOSS_VTSPAYABLE"  value-ref="vtsPayableFinanceBillProcess" />
+				<entry key="FOSS_ESB2FOSS_SYNC_VTSFOSS_VTSWAYBILL" value-ref="vtsSyncWayBillMessProcess" /> 
+				<entry key="FOSS_ESB2FOSS_SYNC_VTSFOSS_VTSACTUALWAYBILL" value-ref="vtsSyncActualFreightMessProcess"/>
+				<entry key="FOSS_ESB2FOSS_SYNC_VTSFOSS_CARDBILL" value-ref="wscWayBillProcess" /> 
+				<!-- vts同步运单更改表 306579 guoxinru -->
+				<entry key="FOSS_ESB2FOSS_SYNC_VTSFOSS_VTSWAYBILLRFC" value-ref="vtsWayBillRfcProcess" /> 
+				<!-- vts同步签收结果表表 306579 guoxinru -->
+				<entry key="FOSS_ESB2FOSS_SYNC_VTSFOSS_VTSWAYBILLRESULT" value-ref="vtsWaybillSignResultProcess" />
+			</map>
+		</property>
+ 	</bean>
+</beans>

@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.partialline.UninputedPartillineMapper" >
+	<!--本映射mapper专门提供查询未录入外发单查询-->
+	<!--偏线外发交接单明细结果集-->
+	<resultMap id="PartiallineHandoverBillDetailResultMap" type="com.deppon.foss.module.transfer.partialline.api.shared.dto.HandoverBillDetailDto" >
+		<id column="ID" property="detailId" jdbcType="VARCHAR" />      
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="HANDOVER_NO" property="handoverNo" jdbcType="VARCHAR" />
+		<result column="HANDOVER_GOODS_QTY" property="handoverGoodsQty" jdbcType="DECIMAL" />
+		<result column="HANDOVER_WEIGHT" property="handoverWeight" jdbcType="DECIMAL" />
+		<result column="HANDOVER_VOLUME" property="handoverVolume" jdbcType="DECIMAL" />
+		<result column="DEST_ORG_CODE" property="destOrgCode" jdbcType="VARCHAR" />
+		<result column="DEST_ORG_NAME" property="destOrgName" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="handoverTime" jdbcType="TIMESTAMP" />
+	</resultMap>
+  
+  
+	<!--  查询未录入偏线外发单的交接单明细 where 条件SQL #PARTIALLINE_HANDOVER表示偏线类型 #AUDIT_STATUS大于0表示非废除的 -->
+	<sql id="Uninput_Handoverbill_Where_Clause" >
+		<where >
+	       not exists
+	        (select EBILL.WAYBILL_NO
+	         from tfr.T_OPT_EXTERNAL_BILL EBILL 
+	         where 
+	         HDETIAL.WAYBILL_NO = EBILL.WAYBILL_NO 
+	         and HDETIAL.HANDOVER_NO=EBILL.HANDOVER_NO
+	         and EBILL.AUDIT_STATUS in
+	         	<foreach collection="list" item="item" index="index" open=" ("   separator="," close=")">                  
+		            #{item,jdbcType=VARCHAR} 
+				</foreach> 
+	         )
+	        and HDETIAL.HANDOVER_TYPE = #{handoverType}     
+			<if test="waybillNo!=null and waybillNo!=''">
+			and HDETIAL.WAYBILL_NO=#{waybillNo}
+			</if>  				
+			<if test="handoverNo!=null and handoverNo!=''">
+			and HDETIAL.HANDOVER_NO=#{handoverNo}
+			</if>  				
+			<if test="destOrgCode!=null and destOrgCode!=''">
+			and HBILL.DEST_ORG_CODE = #{destOrgCode}
+			</if>  				
+			<if test="handoverTimeFrom!=null and handoverTimeFrom!=''">
+				<![CDATA[ and HDETIAL.CREATE_TIME > to_date(#{handoverTimeFrom},'YYYY-MM-DD HH24:MI:SS')]]>		
+			</if>  				
+			<if test="handoverTimeTo!=null and handoverTimeTo!=''">
+				<![CDATA[ and HDETIAL.CREATE_TIME < to_date(#{handoverTimeTo},'YYYY-MM-DD HH24:MI:SS')]]>	
+			</if>  				
+			<if test="filterOrgCode!=null and filterOrgCode!=''">
+				and HDETIAL.ORIG_ORG_CODE=#{filterOrgCode}
+			</if> 				
+			<if test="orgCodes!=null and orgCodes!=''">
+				and HDETIAL.ORIG_ORG_CODE in 
+				<foreach collection="orgCodes" item="item" index="index" open=" ("   separator="," close=")">                  
+		            #{item,jdbcType=VARCHAR} 
+				</foreach> 
+			</if> 				
+		</where>
+	</sql>
+	
+  
+	<!-- 按交接时间降序查询(1.最新生成的 2.未产生交接单 3.非废除的)交接单明细-->
+	<select id="queryLastHandoverBillDetial" resultMap="PartiallineHandoverBillDetailResultMap" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.HandoverBillDetailDto" >
+     select HDETIAL.WAYBILL_NO,
+       HDETIAL.HANDOVER_NO,
+       HDETIAL.HANDOVER_GOODS_QTY,
+       HDETIAL.HANDOVER_WEIGHT,
+       HDETIAL.HANDOVER_VOLUME,
+       HDETIAL.CREATE_TIME
+	  from TFR.T_OPT_HANDOVERBILL_DETAIL HDETIAL
+	  join TFR.T_OPT_HANDOVERBILL HBILL 
+   	  on  HBILL.HANDOVER_NO=HDETIAL.HANDOVER_NO 
+   	  and HBILL.HANDOVERBILL_STATE in
+   	 			<foreach collection="billStatuslist" item="item" index="index" open=" ("   separator="," close=")">                  
+		            #{item,jdbcType=DECIMAL} 
+				</foreach> 
+	 where HDETIAL.WAYBILL_NO = #{waybillNo}
+	   and HDETIAL.HANDOVER_TYPE = #{handoverType}
+	   and not exists
+	 (select 1
+	          from tfr.T_OPT_LDP_EXTERNAL_BILL EBILL
+	         where EBILL.HANDOVER_NO = HDETIAL.HANDOVER_NO
+	           and EBILL.WAYBILL_NO = HDETIAL.WAYBILL_NO
+	           and EBILL.AUDIT_STATUS in 
+				<foreach collection="list" item="item" index="index" open=" ("   separator="," close=")">                  
+		            #{item,jdbcType=VARCHAR} 
+				</foreach> 
+	           and EBILL.IS_TRANSFER_EXTERNAL=#{isTransferExternal}
+	           )
+	    <if test="filterOrgCode!=null and filterOrgCode!=''">
+				and HDETIAL.ORIG_ORG_CODE=#{filterOrgCode}
+		</if>
+		<if test="orgCodes!=null and orgCodes!=''">
+				and HDETIAL.ORIG_ORG_CODE in 
+				<foreach collection="orgCodes" item="item" index="index" open=" ("   separator="," close=")">                  
+		            #{item,jdbcType=VARCHAR} 
+				</foreach> 
+		</if> 
+	 order by HDETIAL.CREATE_TIME desc
+	</select>
+	
+	
+	<!-- 查询未录入偏线外发单的交接单明细（已经做过交接）-->
+	<select id="queryHandedUninputedHandoverbillDetails" resultMap="PartiallineHandoverBillDetailResultMap" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.HandoverBillDetailDto" >
+     select 
+         HDETIAL.WAYBILL_NO,
+         HDETIAL.HANDOVER_NO,
+         HDETIAL.HANDOVER_GOODS_QTY,
+         HDETIAL.HANDOVER_WEIGHT,
+         HDETIAL.HANDOVER_VOLUME,
+         HBILL.DEST_ORG_CODE,
+         HBILL.DEST_ORG_NAME,
+         HDETIAL.CREATE_TIME
+     from  TFR.T_OPT_HANDOVERBILL_DETAIL HDETIAL
+   	 join TFR.T_OPT_HANDOVERBILL HBILL 
+   	 on HBILL.HANDOVER_NO=HDETIAL.HANDOVER_NO 
+   	 and HBILL.HANDOVERBILL_STATE in
+		<foreach collection="billStatuslist" item="item" index="index" open=" ("   separator="," close=")">                  
+            #{item,jdbcType=DECIMAL} 
+		</foreach> 
+		<include refid="Uninput_Handoverbill_Where_Clause" />		
+		order by HDETIAL.CREATE_TIME asc
+	</select>
+  	
+	<!-- 查询未录入偏线外发单的交接单明细（已经做过交接）条数 -->
+	<select id="queryHandedUninputedHandoverbillCount" resultType="Long"
+		parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.ExternalBillDto">
+		select count(HDETIAL.WAYBILL_NO) 
+		 from  tfr.T_OPT_HANDOVERBILL_DETAIL HDETIAL 
+		 join tfr.T_OPT_HANDOVERBILL HBILL on HBILL.HANDOVER_NO=HDETIAL.HANDOVER_NO 
+		 and HBILL.HANDOVERBILL_STATE in
+		  	<foreach collection="billStatuslist" item="item" index="index" open=" ("   separator="," close=")">                  
+	            #{item,jdbcType=DECIMAL} 
+			</foreach> 
+		<include refid="Uninput_Handoverbill_Where_Clause" />	    
+	</select>	
+</mapper>
+
+

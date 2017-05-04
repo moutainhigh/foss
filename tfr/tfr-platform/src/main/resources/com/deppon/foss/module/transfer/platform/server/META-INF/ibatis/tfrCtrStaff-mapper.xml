@@ -1,0 +1,458 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="com.deppon.foss.module.transfer.platform.api.server.dao.ITfrCtrStaffDao">
+
+	<resultMap id="tfrCtrStaffDto"
+		type="com.deppon.foss.module.transfer.platform.api.shared.dto.TfrCtrStaffDto">
+		<result property="statisticDate" column="statisticDate" />
+		<result property="transferCenterCode" column="transferCenterCode" />
+		<result property="transferCenterName" column="transferCenterName" />
+		<result property="totalQtyBudeget" column="totalQtyBudeget" />
+		<result property="loaderBudget" column="loaderBudget" />
+		<result property="driverBudget" column="driverBudget" />
+		<result property="totalQtyActual" column="totalQtyActual" />
+		<result property="totalQtyActualFirstDay" column="totalQtyActualFirstDay" />
+		<result property="loaderActual" column="loaderActual" />
+		<result property="driverActual" column="driverActual" />
+		<result property="totalRemainder" column="totalRemainder" />
+		<result property="loaderRemainder" column="loaderRemainder" />
+		<result property="driverRemainder" column="driverRemainder" />
+		<result property="absenteeDayCnt" column="absenteeDayCnt" />
+		<result property="absenteeAccumulatedCnt" column="absenteeAccumulatedCnt" />
+		<result property="absentRate" column="absentRate" />
+		<result property="dimission" column="dimission" />
+		<result property="dimissionAccumulated" column="dimissionAccumulated" />
+		<result property="dimissionRate" column="dimissionRate" />
+		<result property="onDutyCnt" column="onDutyCnt" />
+		<result property="noDutyCnt" column="noDutyCnt" />
+		<result property="noDuty3DayCnt" column="noDuty3DayCnt" />
+	</resultMap>
+	
+	<resultMap id="tfrCtrStaffNoDutyEntity"
+		type="com.deppon.foss.module.transfer.platform.api.shared.domain.TfrCtrStaffNoDutyEntity">
+		<result property="transferCenterCode" column="transferCenterCode" />
+		<result property="transferCenterName" column="transferCenterName" />
+		<result property="orgName" column="orgName" />
+		<result property="empCode" column="empCode" />
+		<result property="empName" column="empName" />
+		<result property="postName" column="postName" />
+		<result property="statisticDate" column="statisticDate" />
+	</resultMap>
+
+	<resultMap id="employee"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.EmployeeEntity">
+		<result property="empCode" column="empCode" />
+		<result property="empName" column="empName" />
+		<result property="orgCode" column="orgCode" />
+		<result property="orgName" column="orgName" />
+		<result property="title" column="title" />
+		<result property="titleName" column="titleName" />
+	</resultMap>
+	
+	<!-- 查询对应岗位的雇员 -->
+	<select id="getEmployeesByPosts" resultMap="employee"
+		parameterType="java.util.List">
+		SELECT e.emp_code   empCode,
+		       e.emp_name   empName,
+		       d.value_code title,
+		       d.value_name titleName,
+		       o.code       orgCode,
+		       o.name       orgName
+		  FROM bse.t_bas_employee e
+		 INNER JOIN bse.t_bas_data_postion_degree d
+		    ON d.active = 'Y'
+		   AND d.value_code = e.title
+		 INNER JOIN bse.t_bas_org o
+		    ON o.active = 'Y'
+		   AND o.code = e.org_code
+		 WHERE e.active = 'Y'
+		   AND e.title IN
+		<foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+			#{item,jdbcType=VARCHAR}
+		</foreach>
+	</select>
+
+	<!-- 查询装卸车员是否有货量 -->
+	<select id="selectOneWorkLoad" resultType="Long"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.TfrCtrStaffNoDutyEntity">
+		SELECT COUNT(1)
+		  FROM tfr.t_opt_loader_workload t
+		 WHERE t.loader_code = #{empCode,jdbcType=VARCHAR}
+		   AND t.loader_org_code = #{orgCode,jdbcType=VARCHAR}
+		   AND t.leave_time BETWEEN #{beginQueryDate,jdbcType=TIMESTAMP} AND #{endQueryDate,jdbcType=TIMESTAMP}
+		   AND rownum = 1
+	</select>
+
+	<!-- 查询叉车司机是否有叉车票数 -->
+	<select id="selectOneTrayScan" resultType="Long"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.TfrCtrStaffNoDutyEntity">
+		SELECT COUNT(1)
+		  FROM tfr.t_opt_trayscan_task t
+		 WHERE t.forklift_driver_code = #{empCode,jdbcType=VARCHAR}
+		   AND t.outfield_org_code = #{transferCenterCode,jdbcType=VARCHAR}
+		   AND t.trayscan_time BETWEEN #{beginQueryDate,jdbcType=TIMESTAMP} AND #{endQueryDate,jdbcType=TIMESTAMP}
+		   AND t.statu = 'SCANNED'
+		   AND rownum = 1
+	</select>
+
+	<!-- 判断未出勤员工在统计日期当月是否存在连续3天未出勤的记录 -->
+	<select id="selectOneStaff3DayNoDuty" resultType="Long"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.TfrCtrStaffNoDutyEntity">
+		SELECT COUNT(1)
+		  FROM tfr.t_opt_tc_staff_3day_no_duty t
+		 WHERE t.emp_code = #{empCode,jdbcType=VARCHAR}
+		   AND t.transfer_center_code = #{transferCenterCode,jdbcType=VARCHAR}
+		   AND t.statistic_month = #{statisticMonth,jdbcType=VARCHAR}
+		   AND rownum = 1
+	</select>
+
+	<!-- 查询统计日期前两天，该人员工号的未出勤记录数 -->
+	<select id="selectCntStaffNoDutyInPre2Day" resultType="Long"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.TfrCtrStaffNoDutyEntity">
+		SELECT COUNT(1)
+		  FROM tfr.t_opt_tc_staff_no_duty t
+		 WHERE t.emp_code = #{empCode,jdbcType=VARCHAR}
+		   AND t.transfer_center_code = #{transferCenterCode,jdbcType=VARCHAR}
+		   AND t.statistic_date BETWEEN #{statisticDate,jdbcType=TIMESTAMP} - 2
+		   AND #{statisticDate,jdbcType=TIMESTAMP} - 1
+		   AND t.statistic_month = #{statisticMonth,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="queryTfrCtrActual" resultType="Integer" parameterType="java.util.Map">
+		 <![CDATA[
+		SELECT t.total_qty
+		  FROM tfr.t_opt_tc_personnel_actual t
+		 WHERE t.transfer_center_code = #{transferCenterCode,jdbcType=VARCHAR}
+		   AND t.begin_effective_date <= #{firstMomOfQueryMonth,jdbcType=TIMESTAMP}
+		   AND t.end_effective_date >= #{firstMomOfQueryMonth,jdbcType=TIMESTAMP}
+		   ]]>
+	</select>
+
+	<!-- 保存未出勤的装卸车员(叉车司机) -->
+	<insert id="insertStaffNoDuty"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.TfrCtrStaffNoDutyEntity">
+		INSERT INTO tfr.t_opt_tc_staff_no_duty
+		  (id,
+		   emp_code,
+		   emp_name,
+		   post_code,
+		   post_name,
+		   org_code,
+		   org_name,
+		   transfer_center_code,
+		   transfer_center_name,
+		   statistic_date,
+		   statistic_month)
+		VALUES
+		  (#{id,jdbcType=VARCHAR},
+		  #{empCode,jdbcType=VARCHAR},
+		  #{empName,jdbcType=VARCHAR}, 
+		  #{postCode,jdbcType=VARCHAR}, 
+		  #{postName,jdbcType=VARCHAR}, 
+		  #{orgCode,jdbcType=VARCHAR}, 
+		  #{orgName,jdbcType=VARCHAR}, 
+		  #{transferCenterCode,jdbcType=VARCHAR}, 
+		  #{transferCenterName,jdbcType=VARCHAR}, 
+		  #{statisticDate,jdbcType=TIMESTAMP}, 
+		  #{statisticMonth,jdbcType=VARCHAR})
+	</insert>
+
+	<!-- 保存连续3天未出出勤的装卸车员(叉车司机) -->
+	<insert id="insertStaff3DayNoDuty"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.TfrCtrStaffNoDutyEntity">
+		INSERT INTO tfr.t_opt_tc_staff_3day_no_duty
+		  (id,
+		   emp_code,
+		   emp_name,
+		   post_code,
+		   post_name,
+		   org_code,
+		   org_name,
+		   transfer_center_code,
+		   transfer_center_name,
+		   statistic_date,
+		   statistic_month)
+		VALUES
+		  (#{id,jdbcType=VARCHAR},
+		  #{empCode,jdbcType=VARCHAR},
+		  #{empName,jdbcType=VARCHAR}, 
+		  #{postCode,jdbcType=VARCHAR}, 
+		  #{postName,jdbcType=VARCHAR}, 
+		  #{orgCode,jdbcType=VARCHAR}, 
+		  #{orgName,jdbcType=VARCHAR}, 
+		  #{transferCenterCode,jdbcType=VARCHAR}, 
+		  #{transferCenterName,jdbcType=VARCHAR}, 
+		  #{statisticDate,jdbcType=TIMESTAMP}, 
+		  #{statisticMonth,jdbcType=VARCHAR})
+	</insert>
+	
+	<!-- 保存出勤的装卸车员(叉车司机) -->
+	<insert id="insertStaffOnDuty"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.TfrCtrStaffNoDutyEntity">
+		INSERT INTO tfr.t_opt_tc_staff_on_duty
+		  (id,
+		   emp_code,
+		   emp_name,
+		   post_code,
+		   post_name,
+		   org_code,
+		   org_name,
+		   transfer_center_code,
+		   transfer_center_name,
+		   statistic_date,
+		   statistic_month)
+		VALUES
+		  (#{id,jdbcType=VARCHAR},
+		  #{empCode,jdbcType=VARCHAR},
+		  #{empName,jdbcType=VARCHAR}, 
+		  #{postCode,jdbcType=VARCHAR}, 
+		  #{postName,jdbcType=VARCHAR}, 
+		  #{orgCode,jdbcType=VARCHAR}, 
+		  #{orgName,jdbcType=VARCHAR}, 
+		  #{transferCenterCode,jdbcType=VARCHAR}, 
+		  #{transferCenterName,jdbcType=VARCHAR}, 
+		  #{statisticDate,jdbcType=TIMESTAMP}, 
+		  #{statisticMonth,jdbcType=VARCHAR})
+	</insert>
+	
+	<select id="queryTfrCtrStaff3DayNoDuty" resultMap="tfrCtrStaffNoDutyEntity"
+		parameterType="java.util.Map">
+		SELECT t.transfer_center_code transferCenterCode,
+			   t.transfer_center_name transferCenterName,
+		       t.org_name             orgName,
+		       t.emp_code             empCode,
+		       t.emp_name             empName,
+		       t.post_name            postName,
+		       t.statistic_date       statisticDate
+		  FROM tfr.t_opt_tc_staff_3day_no_duty t
+		 WHERE t.transfer_center_code = #{transferCenterCode,jdbcType=VARCHAR}
+		   AND t.statistic_month = #{statisticMonth,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="queryTfrCtrStaffDtos" resultMap="tfrCtrStaffDto"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.TfrCtrStaffQcDto">
+	SELECT nvl(temp3.transferCenterCode, noDuty3Day.transferCenterCode) transferCenterCode,
+	       nvl(temp3.transferCenterName, noDuty3Day.transferCenterName) transferCenterName,
+	       temp3.totalQtyBudeget,
+	       temp3.loaderBudget,
+	       temp3.driverBudget,
+	       temp3.totalQtyActual,
+	       temp3.loaderActual,
+	       temp3.driverActual,
+	       temp3.totalRemainder,
+	       temp3.loaderRemainder,
+	       temp3.driverRemainder,
+	       temp3.absenteeDayCnt,
+	       temp3.absenteeAccumulatedCnt,
+	       temp3.absentRate,
+	       temp3.dimission,
+	       temp3.dimissionAccumulated,
+	       temp3.onDutyCnt,
+	       temp3.noDutyCnt,
+	       nvl(noDuty3Day.noDuty3DayCnt, 0) noDuty3DayCnt
+  FROM (SELECT nvl(temp2.transferCenterCode, noDuty.transferCenterCode) transferCenterCode,
+               nvl(temp2.transferCenterName, noDuty.transferCenterName) transferCenterName,
+               temp2.totalQtyBudeget,
+               temp2.loaderBudget,
+               temp2.driverBudget,
+               temp2.totalQtyActual,
+               temp2.loaderActual,
+               temp2.driverActual,
+               temp2.totalRemainder,
+               temp2.loaderRemainder,
+               temp2.driverRemainder,
+               temp2.absenteeDayCnt,
+               temp2.absenteeAccumulatedCnt,
+               temp2.absentRate,
+               temp2.dimission,
+               temp2.dimissionAccumulated,
+               temp2.onDutyCnt,
+               nvl(noDuty.noDutyCnt, 0) noDutyCnt
+          FROM (SELECT nvl(temp.transferCenterCode, onDuty.transferCenterCode) transferCenterCode,
+                       nvl(temp.transferCenterName, onDuty.transferCenterName) transferCenterName,
+                       temp.totalQtyBudeget,
+                       temp.loaderBudget,
+                       temp.driverBudget,
+                       temp.totalQtyActual,
+                       temp.loaderActual,
+                       temp.driverActual,
+                       temp.totalRemainder,
+                       temp.loaderRemainder,
+                       temp.driverRemainder,
+                       temp.absenteeDayCnt,
+                       temp.absenteeAccumulatedCnt,
+                       temp.absentRate,
+                       temp.dimission,
+                       temp.dimissionAccumulated,
+                       nvl(onDuty.onDutyCnt, 0) onDutyCnt
+                  FROM (SELECT nvl(ba.transferCenterCode,absent.transferCenterCode) transferCenterCode,
+                               nvl(ba.transferCenterName,absent.transferCenterName) transferCenterName,
+                               ba.totalQtyBudeget,
+                               ba.loaderBudget,
+                               ba.driverBudget,
+                               ba.totalQtyActual,
+                               ba.loaderActual,
+                               ba.driverActual,
+                               ba.totalRemainder,
+                               ba.loaderRemainder,
+                               ba.driverRemainder,
+                               absent.absenteeDayCnt,
+                               absent.absenteeAccumulatedCnt,
+                               CASE
+                                 WHEN ba.totalQtyActual IS NULL or ba.totalqtyactual = 0 THEN
+                                  NULL
+                                 ELSE
+                                  round(nvl(absent.absenteeAccumulatedCnt, 0) * 100 /
+                                        ba.totalQtyActual,
+                                        2) || '%'
+                               END absentRate,
+                               ba.dimission,
+                               ba.dimissionAccumulated
+                          FROM (SELECT t.*, t2.dimissionAccumulated, nvl(t3.dimission, 0) dimission
+                                  FROM (SELECT nvl(b.transferCenterCode,a.transferCenterCode) transferCenterCode,
+                                               nvl(b.transferCenterName,a.transferCenterName) transferCenterName,
+                                               b.totalQtyBudeget,
+                                               b.loaderBudget,
+                                               b.driverBudget,
+                                               a.totalQtyActual,
+                                               a.loaderActual,
+                                               a.driverActual,
+                                               nvl(b.totalQtyBudeget, 0) - nvl(a.totalQtyActual, 0) totalRemainder,
+                                               nvl(b.loaderBudget, 0) - nvl(a.loaderActual, 0) loaderRemainder,
+                                               nvl(b.driverBudget, 0) - nvl(a.driverActual, 0) driverRemainder
+                                          FROM (SELECT budget.total_qty totalQtyBudeget,
+                                                       budget.tally_clerk loaderBudget,
+                                                       (budget.electric_forklift_driver +
+                                                       budget.machine_forklift_driver) driverBudget,
+                                                       budget.transfer_center_code transferCenterCode,
+                                                       budget.transfer_center_name transferCenterName
+                                                  FROM tfr.t_opt_tc_personnel_budget budget
+                                             <where>
+                                                 <if test="transferCenterCode != null and transferCenterCode !=''">
+                                                 	budget.transfer_center_code = #{transferCenterCode,jdbcType=VARCHAR}
+                                                 </if>	
+                                                  <![CDATA[
+                                                   AND budget.begin_effective_date <= #{queryDate,jdbcType=TIMESTAMP}
+                                                   AND budget.end_effective_date >= #{queryDate,jdbcType=TIMESTAMP}) b
+                                                  ]]>
+                                              </where>
+                                          FULL JOIN (SELECT actual.total_qty totalQtyActual,
+                                                           actual.tally_clerk loaderActual,
+                                                           (actual.electric_forklift_driver +
+                                                           actual.machine_forklift_driver) driverActual,
+                                                           actual.transfer_center_code transferCenterCode,
+                                                           actual.transfer_center_name transferCenterName
+                                                      FROM tfr.t_opt_tc_personnel_actual actual
+                                                  <where>
+                                                      <if test="transferCenterCode != null and transferCenterCode !=''">
+                                                     	actual.transfer_center_code = #{transferCenterCode,jdbcType=VARCHAR}
+                                                      </if>
+                                                     <![CDATA[
+                                                       AND actual.begin_effective_date <= #{queryDate,jdbcType=TIMESTAMP}
+                                                       AND actual.end_effective_date >= #{queryDate,jdbcType=TIMESTAMP}) a
+                                                     ]]>
+                                                  </where>
+                                            ON b.transferCenterCode = a.transferCenterCode) t
+                                  LEFT JOIN (SELECT s.transfer_center_code transferCenterCode,
+                                                   SUM(s.dimission) dimissionAccumulated
+                                              FROM tfr.t_opt_tc_personnel_actual s
+                                            <where>
+                                              <if test="transferCenterCode != null and transferCenterCode !=''">
+                                               s.transfer_center_code = #{transferCenterCode,jdbcType=VARCHAR}
+                                              </if>
+                                               AND s.begin_effective_date between #{firstMomOfQueryMonth,jdbcType=TIMESTAMP} and #{lastMomOfQueryDate,jdbcType=TIMESTAMP}
+                                              </where>
+                                             GROUP BY s.transfer_center_code) t2
+                                    ON t.transferCenterCode = t2.transferCenterCode
+                                  LEFT JOIN (SELECT transfer_center_code transferCenterCode,
+                                                   dimission
+                                              FROM tfr.t_opt_tc_personnel_actual
+                                              <where>
+	                                            <if test="transferCenterCode != null and transferCenterCode !=''">
+	                                               	transfer_center_code = #{transferCenterCode,jdbcType=VARCHAR}
+	                                            </if>
+	                                             	AND begin_effective_date = #{queryDate,jdbcType=TIMESTAMP}) t3
+                                              </where>
+                                    ON t3.transferCenterCode =
+                                       t2.transferCenterCode) ba
+                          FULL JOIN (SELECT absenteeAccumulated.*,
+                                           absenteeDay.absenteeDayCnt
+                                      FROM (SELECT transferCenterCode, transferCenterName, COUNT(1) absenteeAccumulatedCnt
+													  FROM (SELECT a.transfer_center_code transferCenterCode,
+													               a.transfer_center_name transferCenterName,
+													               a.absentee_code
+													          FROM tfr.t_opt_tc_absentee_info a
+													         <where>
+															<if test="transferCenterCode != null and transferCenterCode !=''">
+																a.transfer_center_code = #{transferCenterCode,jdbcType=VARCHAR}
+															</if>		 
+															 <![CDATA[
+													           AND ((a.absent_begin_date >= #{firstMomOfQueryMonth,jdbcType=TIMESTAMP} AND a.absent_begin_date <= #{queryDate,jdbcType=TIMESTAMP}) OR
+													               (a.absent_begin_date <= #{firstMomOfQueryMonth,jdbcType=TIMESTAMP} AND a.absent_end_date >= #{firstMomOfQueryMonth,jdbcType=TIMESTAMP}))
+														     ]]>
+															 </where>
+													         GROUP BY a.transfer_center_code, a.transfer_center_name,a.absentee_code)
+													 GROUP BY transferCenterCode, transferCenterName) absenteeAccumulated
+                                      LEFT JOIN (SELECT a.transfer_center_code transferCenterCode,
+                                                       COUNT(1) absenteeDayCnt
+                                                  FROM tfr.t_opt_tc_absentee_info a
+                                              <where>
+                                                   <if test="transferCenterCode != null and transferCenterCode !=''">
+                                                 	a.transfer_center_code = #{transferCenterCode,jdbcType=VARCHAR}
+                                                   </if>
+                                                 <![CDATA[
+                                                   AND a.absent_begin_date <= #{queryDate,jdbcType=TIMESTAMP}
+                                                   AND a.absent_end_date >= #{queryDate,jdbcType=TIMESTAMP}
+                                                 ]]>
+                                               </where>
+                                                 GROUP BY a.transfer_center_code) absenteeDay
+                                        ON absenteeDay.transferCenterCode =
+                                           absenteeAccumulated.transferCenterCode) absent
+                            ON ba.transferCenterCode =
+                               absent.transferCenterCode) temp
+                  FULL JOIN (SELECT d1.transfer_center_code transferCenterCode,
+                                   d1.transfer_center_name transferCenterName,
+                                   COUNT(1) onDutyCnt
+                              FROM tfr.t_opt_tc_staff_on_duty d1
+                           <where>
+                               <if test="transferCenterCode != null and transferCenterCode !=''">
+                             	d1.transfer_center_code = #{transferCenterCode,jdbcType=VARCHAR}
+                               </if>
+                               AND d1.statistic_date = #{queryDate,jdbcType=TIMESTAMP}
+                           </where>
+                             GROUP BY d1.transfer_center_code,d1.transfer_center_name) onDuty
+                    ON (onDuty.transferCenterCode = temp.transferCenterCode)) temp2
+          FULL JOIN (SELECT d2.transfer_center_code transferCenterCode,
+                           d2.transfer_center_name transferCenterName,
+                           COUNT(1) noDutyCnt
+                      FROM tfr.t_opt_tc_staff_no_duty d2
+                   <where>
+                       <if test="transferCenterCode != null and transferCenterCode !=''">
+                     	d2.transfer_center_code = #{transferCenterCode,jdbcType=VARCHAR}
+                       </if>
+                       AND d2.statistic_date = #{queryDate,jdbcType=TIMESTAMP}
+                   </where>
+                     GROUP BY d2.transfer_center_code,d2.transfer_center_name) noDuty
+            ON (noDuty.transferCenterCode = temp2.transferCenterCode)) temp3
+  FULL JOIN (SELECT d3.transfer_center_code transferCenterCode,
+                    d3.transfer_center_name transferCenterName,
+                    COUNT(1) noDuty3DayCnt
+               FROM tfr.t_opt_tc_staff_3day_no_duty d3
+             <where>
+                <if test="transferCenterCode != null and transferCenterCode !=''">
+              	d3.transfer_center_code = #{transferCenterCode,jdbcType=VARCHAR}
+                </if>
+                <![CDATA[
+                AND d3.statistic_date >= #{firstMomOfQueryMonth,jdbcType=TIMESTAMP}
+                AND d3.statistic_date <= #{lastMomOfQueryDate,jdbcType=TIMESTAMP}
+                ]]>
+                AND d3.statistic_month = #{queryMonth,jdbcType=VARCHAR}
+             </where>
+              GROUP BY d3.transfer_center_code, d3.transfer_center_name) noDuty3Day
+    ON noDuty3Day.transferCenterCode = temp3.transferCenterCode
+	</select>
+
+</mapper>

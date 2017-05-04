@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cxf="http://cxf.apache.org/core"
+	xmlns:jaxws="http://cxf.apache.org/jaxws" xmlns:jaxrs="http://cxf.apache.org/jaxrs"
+	xsi:schemaLocation="
+		      http://www.springframework.org/schema/beans
+		      http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		      http://cxf.apache.org/core
+		      http://cxf.apache.org/schemas/core.xsd
+		      http://cxf.apache.org/jaxws
+		      http://cxf.apache.org/schemas/jaxws.xsd
+		      http://cxf.apache.org/jaxrs
+		      http://cxf.apache.org/schemas/jaxrs.xsd"
+	default-autowire="byName">
+
+	<!-- Load CXF modules from cxf.jar -->
+    <import resource="classpath:META-INF/cxf/cxf.xml"/>
+    <import resource="classpath:META-INF/cxf/cxf-servlet.xml"/>
+
+	<!-- 装卸费状态修改服务 -->
+	<bean id="customerServiceImpl" class="com.deppon.foss.module.settlement.crmitf.server.ws.CustomerServiceImpl"/>
+	
+	<!-- web service -->
+	<jaxws:endpoint id="customerServiceImplWS" implementor="#customerServiceImpl" address="/stlCustomerService">
+		<jaxws:inInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingInInterceptor"/>
+		</jaxws:inInterceptors>
+		<jaxws:outInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingOutInterceptor"/>
+		</jaxws:outInterceptors>
+	</jaxws:endpoint>
+	
+	
+
+  <!-- restful@author218392 zhangyongxue 2015-09-07 14:26:50代收货款清单查询接口(供CRM调用) -->
+	<bean id="synCollectingPaymentList" class="com.deppon.foss.module.settlement.closing.server.service.impl.SynCollectingPaymentList"/>
+	
+	<jaxrs:server id="syncGradientDiscountRs" address="/collectingPayment">
+		<jaxrs:serviceBeans>
+			<ref bean="synCollectingPaymentList"/>
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+		<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	
+	<bean id="generatePayableBill" class="com.deppon.foss.module.settlement.crmitf.server.rs.impl.GeneratePayableBill" />
+	<jaxrs:server id="generatePayableBillRs" address="/generatePayableBill">
+		<jaxrs:serviceBeans>
+			<ref bean="generatePayableBill" />
+		</jaxrs:serviceBeans>
+		<jaxrs:extensionMappings>
+			<entry key="json" value="application/json" />
+		</jaxrs:extensionMappings>
+	    <jaxrs:languageMappings>
+			<entry key="en" value="en-gb" />
+		</jaxrs:languageMappings> 
+		<jaxrs:inInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	<!-- 信用额度    268217 -->
+	<bean id="canDebitIsBeBebt" class="com.deppon.foss.module.settlement.vtsitf.server.ws.CanDebitIsBeBebt" />
+	<jaxrs:server id="canDebitIsBeBebtRs" address="/v1/foss/canDebitIsBeBebt">
+		<jaxrs:serviceBeans>
+			<ref bean="canDebitIsBeBebt" />
+		</jaxrs:serviceBeans>
+		<jaxrs:extensionMappings>
+			<entry key="json" value="application/json" />
+		</jaxrs:extensionMappings>
+	    <jaxrs:languageMappings>
+			<entry key="en" value="en-gb" />
+		</jaxrs:languageMappings> 
+		<jaxrs:inInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	
+    <!-- VTS-FOSS结清货款：配置restful方式的web服务：306579 guoxinru -->
+   	<bean id="settlementToVtsService"
+	class="com.deppon.foss.module.settlement.vtsitf.server.ws.SettlementToVtsService" />	
+	<jaxrs:server id="settlementToVtsServiceRs" address="/v1/foss/settlementToVtsService">
+		<jaxrs:serviceBeans>
+			<ref bean="settlementToVtsService" />
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors><!-- 加入消息拦截器 -->
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	<!-- rest end -->
+	
+	<!-- 310970 caopeng 生效尾款单tl2Amount  2016-5-18 -->
+	<bean id="vtsEffectTl2Service"
+	class="com.deppon.foss.module.settlement.vtsitf.server.ws.VtsEffectTl2Service" />	
+	<jaxrs:server id="vtsEffectTl2ServiceRs" address="/v1/foss/vtsEffectTl2Service">
+		<jaxrs:serviceBeans>
+			<ref bean="vtsEffectTl2Service" />
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors><!-- 加入消息拦截器 -->
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	
+	<!-- VTS-FOSS根据运单号查询财务单据信息：配置restful方式的web服务 -->
+
+	<!-- VTS-FOSS根据运单号查询财务单据信息：配置restful方式的web服务：306579 guoxinru -->
+
+   	<bean id="queryToVtsService"
+	class="com.deppon.foss.module.settlement.vtsitf.server.ws.QueryToVtsService" />	
+	<jaxrs:server id="queryToVtsServiceRs" address="/v1/foss/queryToVtsService">
+		<jaxrs:serviceBeans>
+			<ref bean="queryToVtsService" />
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors><!-- 加入消息拦截器 -->
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	<!-- rest end -->
+
+    <!-- VTS-FOSS银行卡POS校验流水查询：配置restful方式的web服务 -->
+    <bean id="queryPosCardForVTS" class="com.deppon.foss.module.settlement.vtsitf.server.ws.QueryPosCardForVTS">
+    </bean>
+    <jaxrs:server id="queryPosCardForVTSRs" address="/queryPosCardForVTS">
+        <jaxrs:serviceBeans>
+            <ref bean="queryPosCardForVTS"/>
+        </jaxrs:serviceBeans>
+        <jaxrs:inInterceptors>
+            <bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+        </jaxrs:inInterceptors>
+        <jaxrs:outInterceptors>
+            <bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+        </jaxrs:outInterceptors>
+    </jaxrs:server>
+    <!-- rest end -->
+    
+   	<!-- VTS-FOSS运单更改、作废财务单据规则校验：配置restful方式的web服务：306579 guoxinru -->
+   	<bean id="validateRfcAndCancelToVts"
+	class="com.deppon.foss.module.settlement.vtsitf.server.ws.ValidateRfcAndCancelToVts" />	
+	<jaxrs:server id="validateRfcAndCancelToVtsRs" address="/v1/foss/validateToVts">
+		<jaxrs:serviceBeans>
+			<ref bean="validateRfcAndCancelToVts" />
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors><!-- 加入消息拦截器 -->
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	<!-- rest end -->
+	
+	<!-- VTS外请车费用调整同意之后调用结算重生成整车尾款应付单restful接口：@author 218392 zhangyongxue -->
+   	<bean id="vtsOutvehicleFeeAdjust" 
+   		class="com.deppon.foss.module.settlement.vtsitf.server.ws.VtsOutvehicleFeeAdjust" />	
+	<jaxrs:server id="vtsOutvehicleFeeAdjustRs" address="/outvehicleFee">
+		<jaxrs:serviceBeans>
+			<ref bean="vtsOutvehicleFeeAdjust" />
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors><!-- 加入消息拦截器 -->
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	
+   <!-- VTS查询反结清restful接口：@author 218392  张永雪  2016-06-17 06:25:30 -->
+   	<bean id="queryReverseSignSettleForVTS" 
+   		class="com.deppon.foss.module.settlement.vtsitf.server.ws.QueryReverseSignSettleForVTS" />	
+	<jaxrs:server id="queryReverseSignSettleForVTSSyn" address="/reverseSettle">
+		<jaxrs:serviceBeans>
+			<ref bean="queryReverseSignSettleForVTS" />
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors><!-- 加入消息拦截器 -->
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	
+	<!-- VTS自动反签收校验处理和自动反结清校验处理restful接口：@author 218392  张永雪  2016-06-13 20:01:15 -->
+   	<bean id="autoReverseSignSettleForVTS" 
+   		class="com.deppon.foss.module.settlement.vtsitf.server.ws.AutoReverseSignSettleForVTS" />	
+	<jaxrs:server id="autoReverseSignSettleForVTSSyn" address="/autoReverseSignSettle">
+		<jaxrs:serviceBeans>
+			<ref bean="autoReverseSignSettleForVTS" />
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors><!-- 加入消息拦截器 -->
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	
+    <!--VTS-FOSS外请车费用调整应付单支付状态财务校验： 配置restful方式的web服务：331556 fanjingwei  -->
+   <bean id="billPayableQueryForVTS"
+    class="com.deppon.foss.module.settlement.vtsitf.server.ws.BillPayableQueryForVTS" />
+    <jaxrs:server id="billPayableQueryForVTSRs" address="/billPayableQueryForVTS">
+    <jaxrs:serviceBeans>
+       <ref bean="billPayableQueryForVTS" />
+    </jaxrs:serviceBeans>
+    <jaxrs:inInterceptors><!-- 加入消息拦截器 -->
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+    </jaxrs:server>	
+	<!--rest end  -->
+	
+	<!-- VTS修改运单状态 -->
+	<bean id="waybillModifyServiceImpl"
+		class="com.deppon.foss.module.settlement.vtsitf.server.ws.WaybillModifyServiceImpl" />
+
+	<jaxrs:server id="waybillModifyServiceImplWS" address="/v1/foss/waybillMofifyForVts">
+		<jaxrs:serviceBeans>
+			<ref bean="waybillModifyServiceImpl" />
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors><!-- 加入消息拦截器 -->
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	
+	<!-- 对接CUBC实现 -->
+	<bean id="payInfoManagerServiceImpl"
+		class="com.deppon.foss.module.settlement.cubcitf.server.ws.PayInfoManagerServiceImpl"/>
+
+	<jaxrs:server id="payInfoManagerServiceImplWS" address="/v1/foss/PayInfoManager">
+		<jaxrs:serviceBeans>
+			<ref bean="payInfoManagerServiceImpl" />
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors><!-- 加入消息拦截器 -->
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	<!-- 将CUBC的pos机刷卡记录保存到foss的付款记录表里面：@author 378375  于新锋 @date 2017-01-20 16:47:43  -->
+   	<bean id="posSettleForCUBC" 
+   		class="com.deppon.foss.module.settlement.positf.server.ws.PosSettleForCUBC" />	
+	<jaxrs:server id="posSettleForCUBCWS" address="/posSettleCubc">
+		<jaxrs:serviceBeans>
+			<ref bean="posSettleForCUBC" />
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors><!-- 加入消息拦截器 -->
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	<!-- 将更改单信息传给CUBC  @author 378375  @date 2017年3月7日 00:52:17 -->
+   	<bean id="queryWaybillrfcToCUBC" 
+   		class="com.deppon.foss.module.settlement.waybillrfc.server.ws.QueryWaybillrfcToCUBC" />	
+	<jaxrs:server id="queryWaybillrfcToCUBCWS" address="/queryWaybillrfcToCUBC">
+		<jaxrs:serviceBeans>
+			<ref bean="queryWaybillrfcToCUBC" />
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors><!-- 加入消息拦截器 -->
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	
+	<!-- cubc将财务完结的pod记录同步过来 269044-zhurongrong 2017-04-21 -->
+   	<bean id="syncPodEntityServiceImpl" 
+   		class="com.deppon.foss.module.settlement.cubcitf.server.ws.SyncPodEntityServiceImpl" />	
+	<jaxrs:server id="syncPodEntityServiceImplWS" address="/v1/foss/syncPodEntityService">
+		<jaxrs:serviceBeans>
+			<ref bean="syncPodEntityServiceImpl" />
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors><!-- 加入消息拦截器 -->
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+</beans>

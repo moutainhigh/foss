@@ -1,0 +1,38 @@
+package com.deppon.pda.bdm.module.foss.unload.shared.domain;
+
+/** 
+  * @ClassName QryClearExceReportEntity 
+  * @Description TODO 
+  * @author 092038 
+  * @date 2014-6-9 上午8:50:15 
+*/ 
+public class QryUnldExceReportEntity {
+   /**
+    *  差异报告编码
+    */
+     private String reportCode;
+     /***
+      * 操作标识
+      */
+     private String handInputFlg;
+
+public String getReportCode() {
+    return reportCode;
+}
+
+public void setReportCode(String reportCode) {
+    this.reportCode = reportCode;
+}
+
+public String getHandInputFlg() {
+	return handInputFlg;
+}
+
+public void setHandInputFlg(String handInputFlg) {
+	this.handInputFlg = handInputFlg;
+}
+
+
+     
+     
+}

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tfr-artificial">
+	<resultMap id="TemporaryAssignmentsResultMap"
+		type="com.deppon.foss.module.transfer.departure.api.shared.domain.LmsTruckDepartPlanEntity">
+		<id column="ID" property="id" />
+		<result column="VEHICLE_NO" property="vehicleNo" />
+		<result column="TRUCK_ORG_CODE" property="truckOrgCode" />
+		<result column="TRUCK_TYPE" property="truckType" />
+		<result column="DRIVER_CODE" property="driverCode" />
+		<result column="DRIVER_NAME" property="driverName" />
+		<result column="DRIVER_PHONE" property="driverPhone" />
+		<result column="DEPART_PLAN_TYPE" property="departPlanType" />
+		<result column="PLAN_DEPART_TIME" property="planDepartTime" />
+		<result column="PLAN_END_TIME" property="planEndTime" />
+		<result column="TRUCK_DEPART_ID" property="truckDepartId" />
+		<result column="CREATE_TIME" property="createTime" />
+		<result column="NAME" property="truckOrgName" />
+	</resultMap>
+	
+	<resultMap id="RelationInfoEntityResultMap"
+		type="com.deppon.foss.module.transfer.departure.api.shared.domain.RelationInfoEntity">
+		<id column="ID" property="id" />
+		<result column="EMP_NAME" property="driverName" />
+		<result column="EMP_CODE" property="driverCode" />
+		<result column="EMP_PHONE" property="driverPhone" />
+	</resultMap>
+
+	
+	<!-- 查询临时任务 -->
+	<select id="queryTemporaryAssignments" resultMap="TemporaryAssignmentsResultMap">
+	select lms.id,
+		  lms.VEHICLE_NO,
+		  lms.DEPART_PLAN_TYPE,
+		  lms.CREATE_TIME,
+		  lms.DRIVER_PHONE,
+		  lms.TRUCK_ORG_CODE,
+		  lms.TRUCK_TYPE,
+		  lms.PLAN_DEPART_TIME,
+		  lms.PLAN_END_TIME,
+		  org.NAME
+		  from tfr.T_OPT_LMS_TRUCK_DEPART_PLAN lms
+		  left join  bse.t_bas_org org on lms.TRUCK_ORG_CODE = org.CODE
+		  <include refid="select_Where" />
+	</select>
+	
+	<!-- 通过车牌号查找公司司机的信息（放行计划）-->
+	<select id="queryDriverInfoByVehicleNoFormDepartPlan" resultMap="RelationInfoEntityResultMap">
+	select d.driver_code1 as emp_code,  d.driver_name1 as emp_name,  d.driver_phone1 as emp_phone, o.org_id
+  		from tfr.t_opt_truck_depart_plan_detail d
+ 		left join bse.t_bas_owndriver o
+    	on d.driver_code1 = o.emp_code
+    	where d.VEHICLE_NO = #{vehicleNo} 
+    	order by d.create_time desc  
+	</select>
+	
+	<!-- 通过车牌号查找接送货司机的信息-->
+	<select id="queryDriverInfoByVehicleNoFormBSE" resultMap="RelationInfoEntityResultMap">
+	select o.emp_code, o.emp_name, o.emp_phone, o.org_id
+	  from pkp.T_SRV_PDA_SIGN s
+	  left join bse.t_bas_owndriver o
+    	on s.driver_code = o.emp_code
+    	where s.VEHICLE_NO = #{vehicleNo}
+    	      and s.STATUS=#{status}
+	</select>
+	
+	<!-- 通过任务车辆明细ID查找任务车辆司机的信息-->
+	<select id="queryDriverInfoByTruckTaskDetailId" resultMap="RelationInfoEntityResultMap">
+	select o.emp_code, o.emp_name, o.emp_phone, o.org_id
+	  from bse.t_bas_owndriver         o,
+	       tfr.t_opt_truck_task        t,
+	       tfr.t_opt_truck_task_detail d
+	 where t.driver_code1 = o.emp_code
+	   and t.id = d.truck_task_id
+	   and o.active = 'Y'
+	   and d.id = #{id}
+	</select>
+
+
+	<select id="getCount" resultType="Long"
+		parameterType="com.deppon.foss.module.transfer.departure.api.shared.domain.QueryDepartEntity">
+		SELECT COUNT(lms.ID) FROM tfr.T_OPT_LMS_TRUCK_DEPART_PLAN lms
+		<include refid="select_Where" />
+	</select>
+
+	<sql id="select_Where">
+		<where>
+		    lms.truck_depart_id is null
+			<if test="vehicleNo!=null and vehicleNo!='' ">
+				AND lms.VEHICLE_NO = #{vehicleNo}
+			</if>
+			<if test="truckOrgCode!=null and truckOrgCode!='' ">
+				AND lms.TRUCK_ORG_CODE = #{truckOrgCode}
+			</if>
+			<if test="departPlanType!=null">
+				AND lms.DEPART_PLAN_TYPE IN
+				<foreach collection="departPlanType" open="(" close=")"
+					separator="," index="index" item="item">
+					#{item}
+				</foreach>
+			</if>
+			<if test="beginTime!=null">
+			<![CDATA[
+			    AND lms.PLAN_DEPART_TIME  <= #{beginTime}
+			    AND lms.PLAN_END_TIME  >= #{beginTime}
+			 ]]>
+		    </if>
+		</where>
+	</sql>
+	
+	<!-- 更新LMS表 -->
+	<update id="updateLMS"
+		parameterType="com.deppon.foss.module.transfer.departure.api.shared.domain.LmsTruckDepartPlanEntity">
+		UPDATE tfr.T_OPT_LMS_TRUCK_DEPART_PLAN
+		<set>
+			<if test="truckDepartId!=null">
+				TRUCK_DEPART_ID = #{truckDepartId},
+			</if>
+		</set>
+		WHERE ID =#{id}
+	</update>
+
+	
+</mapper>

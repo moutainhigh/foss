@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.foss.module.pickup.pricing.api.server.dao.ToAddPartnerProgramEntityMapper" >
+	<!-- 基础ResultMap -->
+	<resultMap  id="toAddPartnerProgramBaseMap" type="com.deppon.foss.module.pickup.pricing.api.shared.domain.ToAddPartnerProgramEntity">
+		<id property="toAddPartnerProgramid" column="ID"/>
+		<result property="versionNo" column="VERSION_NO"/>
+		<result property="planName" column="PLAN_NAME"/>
+		<result property="name" column="NAME"/>
+		<result property="orgCode" column="ORG_CODE"/>
+		<result property="transportFlag" column="TRANSPORT_FLAG"/>
+		<result property="heavyPrice" column="HEAVY_PRICE"/>
+		<result property="lightPrice" column="LIGHT_PRICE"/>
+		<result property="lowestPrice" column="LOWEST_PRICE"/>
+		<result property="beginTime" column="BEGIN_TIME"/>
+		<result property="endTime" column="END_TIME"/>
+		<result property="active" column="ACTIVE"/>
+		<result property="createTime" column="CREATE_TIME"/>
+		<result property="createUserCode" column="CREATE_USER_CODE"/>
+		<result property="createOrgCode" column="CREATE_ORG_CODE"/>
+		<result property="modifyTime" column="MODIFY_TIME"/>
+		<result property="modifyUserCode" column="MODIFY_USER_CODE"/>
+		<result property="modifyOrgCode" column="MODIFY_ORG_CODE"/>
+		<result property="currencyCode" column="CURRENCY_CODE"/>
+		<result property="networkModel" column="NETWORK_MODEL"/>
+		<result property="networkModelName" column="value_name"/>
+
+		
+
+	</resultMap>
+	<sql id="selectBaseColumns">
+		 ID,PLAN_NAME,ORG_CODE,TRANSPORT_FLAG,HEAVY_PRICE,LIGHT_PRICE,LOWEST_PRICE,
+		 BEGIN_TIME,END_TIME,ACTIVE,CREATE_TIME,CREATE_USER_CODE,CREATE_ORG_CODE,MODIFY_TIME,MODIFY_USER_CODE,
+		 MODIFY_ORG_CODE,CURRENCY_CODE,VERSION_NO
+	</sql>
+	
+	<select id="queryToAddPartnerProgramByName" resultMap="toAddPartnerProgramBaseMap"
+		parameterType="String">
+		SELECT /** 接送货-价格-查询合伙人到达加收方案 **/  
+		<include refid="selectBaseColumns" />
+		FROM pkp.t_srv_partners_added_plan T
+		WHERE T.PLAN_NAME = #{planname,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="queryToAddPartnerProgramVoBatchInfoCount" resultType="Long"
+		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.dto.ToAddPartnerProgramCondtionDto">
+		SELECT /*接送货-价格-查询合伙人到达加收方案总数*/ 
+			   COUNT(1)
+        FROM pkp.t_srv_partners_added_plan pap
+	    LEFT JOIN bse.t_bas_sales_department depa_name
+		    ON pap.ORG_CODE = depa_name.CODE
+		       and depa_name.ACTIVE = 'Y'
+	     LEFT JOIN bse.t_bas_sales_department depa
+		    ON pap.ORG_CODE = depa.CODE
+		       and depa.ACTIVE = 'Y' 
+		       and depa.IS_TWO_LEVEL_NETWORK ='Y'
+	     left join bse.t_bas_data_dictionary_value dic
+	     on depa.network_model = dic.value_code
+	     	   and dic.active = 'Y'    
+		 WHERE 1=1 
+	 	<if test="orgCode != null and orgCode != '' ">
+		  	AND pap.ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+		</if>
+		<if test="startDate != null and endDate !=null and startDate !='' and endDate != '' " >
+		    and   pap.BEGIN_TIME<![CDATA[>=]]> #{startDate,jdbcType=TIMESTAMP}
+		    and   pap.BEGIN_TIME<![CDATA[<=]]> #{endDate,jdbcType=TIMESTAMP}
+		</if>
+		<if test="active != null and active != '' ">
+		  	AND pap.ACTIVE = #{active,jdbcType=VARCHAR}
+		</if>
+	</select>
+	
+	<insert id="insertSelective" parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.ToAddPartnerProgramEntity" >
+		    insert /*接送货-价格-合伙人到达加收方案 */ 
+		    into pkp.t_srv_partners_added_plan 
+		    <trim prefix="(" suffix=")" suffixOverrides="," >
+		      <if test="toAddPartnerProgramid != null and toAddPartnerProgramid != ''" >
+		        ID,
+		      </if>
+		      <if test="planName != null and planName != ''" >
+		        PLAN_NAME,
+		      </if>
+		      <if test="versionNo != null and versionNo != ''" >
+		        VERSION_NO,
+		      </if>
+		      <if test="active != null" >
+		        ACTIVE,
+		      </if>
+		      <if test="orgCode != null" >
+		        ORG_CODE,
+		      </if>
+		      <if test="transportFlag != null" >
+		        TRANSPORT_FLAG,
+		      </if>
+		      <if test="heavyPrice != null" >
+		        HEAVY_PRICE,
+		      </if>
+		      <if test="lightPrice != null" >
+		        LIGHT_PRICE,
+		      </if>
+		      <if test="lowestPrice != null and lowestPrice != ''" >
+		        LOWEST_PRICE,
+		      </if>
+		      <if test="currencyCode != null and currencyCode != ''" >
+		        CURRENCY_CODE,
+		      </if>
+		       <if test="beginTime != null and beginTime != ''" >
+		        BEGIN_TIME,
+		      </if>
+		      <if test="endTime != null and endTime != ''" >
+		        END_TIME,
+		      </if>
+		      <if test="createTime != null and createTime != ''" >
+		        CREATE_TIME,
+		      </if>
+		      <if test="modifyTime != null and modifyTime != ''" >
+		        MODIFY_TIME,
+		      </if>
+		      <if test="createUserCode != null and createUserCode != ''" >
+		        CREATE_USER_CODE,
+		      </if>
+		      <if test="createOrgCode != null and createOrgCode != ''" >
+		        CREATE_ORG_CODE,
+		      </if>
+		      <if test="modifyUserCode != null and modifyUserCode != ''" >
+		        MODIFY_USER_CODE,
+		      </if>
+		      <if test="modifyOrgCode != null and modifyOrgCode != ''" >
+		        MODIFY_ORG_CODE,
+		      </if>    
+		   </trim>
+		   <trim prefix="values (" suffix=")" suffixOverrides="," >      
+		      <if test="toAddPartnerProgramid != null and toAddPartnerProgramid != ''" >
+		        #{toAddPartnerProgramid,jdbcType=VARCHAR},
+		      </if>
+		      <if test="planName != null and planName != ''" >
+		        #{planName,jdbcType=VARCHAR},
+		      </if>
+		      <if test="versionNo != null and versionNo != ''" >
+		        #{versionNo,jdbcType=VARCHAR},
+		      </if>
+		      <if test="active != null" >
+		        #{active,jdbcType=VARCHAR},
+		      </if>
+		      <if test="orgCode != null" >
+		        #{orgCode,jdbcType=VARCHAR},
+		      </if>
+		      <if test="transportFlag != null" >
+		        #{transportFlag,jdbcType=VARCHAR},
+		      </if>
+		      <if test="heavyPrice != null" >
+		        #{heavyPrice,jdbcType=VARCHAR},
+		      </if>
+		      <if test="lightPrice != null" >
+		        #{lightPrice,jdbcType=VARCHAR},
+		      </if>
+		      <if test="lowestPrice != null and lowestPrice != ''" >
+		        #{lowestPrice,jdbcType=VARCHAR},
+		      </if>
+		      <if test="currencyCode != null and currencyCode != ''" >
+		        #{currencyCode,jdbcType=VARCHAR},
+		      </if>
+		       <if test="beginTime != null and beginTime != ''" >
+		        #{beginTime,jdbcType=TIMESTAMP},
+		      </if>
+		      <if test="endTime != null and endTime != ''" >
+		        #{endTime,jdbcType=TIMESTAMP},
+		      </if>
+		      <if test="createTime != null and createTime != ''" >
+		        #{createTime,jdbcType=TIMESTAMP},
+		      </if>
+		      <if test="modifyTime != null and modifyTime != ''" >
+		        #{modifyTime,jdbcType=TIMESTAMP},
+		      </if>
+		      <if test="createUserCode != null and createUserCode != ''" >
+		        #{createUserCode,jdbcType=VARCHAR},
+		      </if>
+		      <if test="createOrgCode != null and createOrgCode != ''" >
+		        #{createOrgCode,jdbcType=VARCHAR},
+		      </if>
+		      <if test="modifyUserCode != null and modifyUserCode != ''" >
+		        #{modifyUserCode,jdbcType=VARCHAR},
+		      </if>
+		      <if test="modifyOrgCode != null and modifyOrgCode != ''" >
+		        #{modifyOrgCode,jdbcType=VARCHAR}
+		      </if>
+		    </trim>
+  </insert>
+  
+  <select id="queryToAddPartnerProgramVoBatchInfo" resultMap="toAddPartnerProgramBaseMap"
+		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.dto.ToAddPartnerProgramCondtionDto">
+	SELECT pap.ID ID,pap.PLAN_NAME PLAN_NAME,pap.ORG_CODE ORG_CODE,
+       pap.TRANSPORT_FLAG TRANSPORT_FLAG,pap.HEAVY_PRICE HEAVY_PRICE,pap.LIGHT_PRICE LIGHT_PRICE,
+       pap.LOWEST_PRICE LOWEST_PRICE,pap.BEGIN_TIME BEGIN_TIME,pap.END_TIME END_TIME,
+       pap.ACTIVE ACTIVE,pap.CREATE_TIME CREATE_TIME,pap.CREATE_USER_CODE CREATE_USER_CODE,
+       pap.CREATE_ORG_CODE CREATE_ORG_CODE,pap.MODIFY_TIME MODIFY_TIME,pap.MODIFY_USER_CODE MODIFY_USER_CODE,
+       pap.MODIFY_ORG_CODE MODIFY_ORG_CODE,pap.CURRENCY_CODE CURRENCY_CODE,
+       pap.VERSION_NO VERSION_NO,depa.NETWORK_MODEL NETWORK_MODEL,depa_name.NAME NAME,dic.value_name
+    FROM pkp.t_srv_partners_added_plan pap
+    LEFT JOIN bse.t_bas_sales_department depa_name
+	    ON pap.ORG_CODE = depa_name.CODE
+	       and depa_name.ACTIVE = 'Y'
+     LEFT JOIN bse.t_bas_sales_department depa
+	    ON pap.ORG_CODE = depa.CODE
+	       and depa.ACTIVE = 'Y' 
+	       and depa.IS_TWO_LEVEL_NETWORK ='Y'
+     left join bse.t_bas_data_dictionary_value dic
+     on depa.network_model = dic.value_code
+     	   and dic.active = 'Y'    
+	 WHERE 1=1 
+    <if test="orgCode != null and orgCode != '' ">
+	  	AND pap.ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+	</if>
+	<if test="startDate != null and endDate !=null and startDate !='' and endDate != '' " >
+	    and   pap.BEGIN_TIME<![CDATA[>=]]> #{startDate,jdbcType=TIMESTAMP}
+	    and   pap.BEGIN_TIME<![CDATA[<=]]> #{endDate,jdbcType=TIMESTAMP}
+	</if>
+	<if test="active != null and active != '' ">
+	  	AND pap.ACTIVE = #{active,jdbcType=VARCHAR}
+	</if>		   
+  </select>
+		
+	
+
+
+	<select id="selectById" resultMap="toAddPartnerProgramBaseMap" parameterType="java.lang.String" >
+		SELECT pap.ID ID,pap.PLAN_NAME PLAN_NAME,pap.ORG_CODE ORG_CODE,
+       pap.TRANSPORT_FLAG TRANSPORT_FLAG,pap.HEAVY_PRICE HEAVY_PRICE,pap.LIGHT_PRICE LIGHT_PRICE,
+       pap.LOWEST_PRICE LOWEST_PRICE,pap.BEGIN_TIME BEGIN_TIME,pap.END_TIME END_TIME,
+       pap.ACTIVE ACTIVE,pap.CREATE_TIME CREATE_TIME,pap.CREATE_USER_CODE CREATE_USER_CODE,
+       pap.CREATE_ORG_CODE CREATE_ORG_CODE,pap.MODIFY_TIME MODIFY_TIME,pap.MODIFY_USER_CODE MODIFY_USER_CODE,
+       pap.MODIFY_ORG_CODE MODIFY_ORG_CODE,pap.CURRENCY_CODE CURRENCY_CODE,
+       pap.VERSION_NO VERSION_NO,depa.NETWORK_MODEL NETWORK_MODEL,depa_name.NAME NAME,dic.value_name
+    FROM pkp.t_srv_partners_added_plan pap
+    LEFT JOIN bse.t_bas_sales_department depa_name
+	    ON pap.ORG_CODE = depa_name.CODE
+	       and depa_name.ACTIVE = 'Y'
+     LEFT JOIN bse.t_bas_sales_department depa
+	    ON pap.ORG_CODE = depa.CODE
+	       and depa.ACTIVE = 'Y' 
+	       and depa.IS_TWO_LEVEL_NETWORK ='Y'
+     left join bse.t_bas_data_dictionary_value dic
+     on depa.network_model = dic.value_code
+     	   and dic.active = 'Y'           
+	 WHERE 1=1 	 AND pap.ID = #{id,jdbcType=VARCHAR}
+  	</select>
+
+
+  	
+  	<select id="queryAddedFeePlanCaculate" resultMap="toAddPartnerProgramBaseMap" 
+		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.dto.ToAddPartnerProgramCondtionDto">
+		SELECT pap.ID ID,pap.PLAN_NAME PLAN_NAME,pap.ORG_CODE ORG_CODE,
+			   pap.TRANSPORT_FLAG TRANSPORT_FLAG,pap.HEAVY_PRICE HEAVY_PRICE,pap.LIGHT_PRICE LIGHT_PRICE,
+			   pap.LOWEST_PRICE LOWEST_PRICE,pap.BEGIN_TIME BEGIN_TIME,pap.END_TIME END_TIME,
+			   pap.ACTIVE ACTIVE,pap.CREATE_TIME CREATE_TIME,pap.CREATE_USER_CODE CREATE_USER_CODE,
+			   pap.CREATE_ORG_CODE CREATE_ORG_CODE,pap.MODIFY_TIME MODIFY_TIME,pap.MODIFY_USER_CODE MODIFY_USER_CODE,
+			   pap.MODIFY_ORG_CODE MODIFY_ORG_CODE,pap.CURRENCY_CODE CURRENCY_CODE,
+			   pap.VERSION_NO VERSION_NO
+		  FROM pkp.t_srv_partners_added_plan pap
+		  WHERE 1=1 
+	    <if test="orgCode != null and orgCode != '' ">
+		  	AND pap.ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+		</if>
+		<if test="billTime !='' and billTime != '' " >
+		    and   pap.BEGIN_TIME<![CDATA[<=]]> #{billTime,jdbcType=TIMESTAMP}
+		    and   pap.END_TIME<![CDATA[>]]> #{billTime,jdbcType=TIMESTAMP}
+		</if>
+		<if test="active != null and active != '' ">
+		  	AND pap.ACTIVE = #{active,jdbcType=VARCHAR}
+		</if>		   
+	</select>
+  
+
+	
+  <update id="updateByToAddPartnerProgramPrimaryKey" 
+  		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.dto.ToAddPartnerProgramCondtionDto" >
+
+    <![CDATA[
+			UPDATE  /** 接送货-合伙人到达加收方案   **/ 
+			pkp.t_srv_partners_added_plan
+		]]>
+    <set >
+      <if test="planName != null and planName != ''" >
+        PLAN_NAME = #{planName,jdbcType=VARCHAR},
+      </if>
+      <if test="versionNo != null and versionNo != ''" >
+        VERSION_NO = #{versionNo,jdbcType=VARCHAR},
+      </if>
+      <if test="active != null" >
+        ACTIVE = #{active,jdbcType=VARCHAR},
+      </if>
+      <if test="orgCode != null" >
+        ORG_CODE = #{orgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="transportFlag != null" >
+        TRANSPORT_FLAG = #{transportFlag,jdbcType=VARCHAR},
+      </if>
+       <if test="beginTime != null and beginTime != ''" >
+        BEGIN_TIME = #{beginTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="endTime != null and endTime != ''" >
+        END_TIME = #{endTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="createTime != null and createTime != ''" >
+        CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifyTime != null and modifyTime != ''" >
+        MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="createUserCode != null and createUserCode != ''" >
+        CREATE_USER_CODE = #{createUserCode,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyUserCode != null" >
+        MODIFY_USER_CODE = #{modifyUserCode,jdbcType=VARCHAR},
+      </if>
+      <if test="createOrgCode != null" >
+        CREATE_ORG_CODE = #{createOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyOrgCode != null and modifyUserCode != ''" >
+        MODIFY_ORG_CODE = #{modifyOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="heavyPrice != null" >
+        HEAVY_PRICE = #{heavyPrice,jdbcType=VARCHAR} ,
+      </if>
+      <if test="lightPrice != null" >
+        LIGHT_PRICE = #{lightPrice,jdbcType=VARCHAR},
+      </if>
+      <if test="lowestPrice != null" >
+        LOWEST_PRICE = #{lowestPrice,jdbcType=VARCHAR},
+      </if>
+    </set>
+    <![CDATA[
+ 			WHERE ID = #{toAddPartnerProgramid,jdbcType=VARCHAR}
+ 		]]>
+  </update>
+  
+  <delete id="deleteByPrimaryKey" parameterType="java.util.Map">
+		<![CDATA[
+			DELETE /*接送货-价格-删除合伙人到达加收方案*/ 
+			FROM pkp.t_srv_partners_added_plan T
+		]]>
+		<![CDATA[WHERE T.ID IN ]]>
+			<foreach collection="ids" open="(" close=")" separator=","
+				item="toAddPartnerProgramid">
+			<![CDATA[	#{toAddPartnerProgramid,jdbcType=VARCHAR}  ]]>
+			</foreach>
+  </delete>
+  
+  	<select id="selectByPrimaryKey" resultMap="toAddPartnerProgramBaseMap" parameterType="java.lang.String" >
+    	select /** 接送货-价格-查询合伙人到达加收方案 **/
+    	<include refid="selectBaseColumns" />
+    	from pkp.t_srv_partners_added_plan
+    	where ID = #{toAddPartnerProgramid,jdbcType=VARCHAR}
+  	</select>
+  	
+  		
+  <update id="updateToAddPartnerProgramEndTime" 
+  		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.ToAddPartnerProgramEntity" >
+
+	UPDATE  /** 接送货-价格-合伙人到达加收方案截止时间  **/ 
+		pkp.t_srv_partners_added_plan price 
+	  SET
+    	END_TIME = #{endTime,jdbcType=TIMESTAMP}
+	WHERE price.ORG_CODE = #{orgCode,jdbcType=VARCHAR}	
+  	  AND price.ACTIVE = #{active,jdbcType=VARCHAR}
+  	  AND price.TRANSPORT_FLAG = #{transportFlag,jdbcType=VARCHAR}
+	  AND price.END_TIME <![CDATA[ >= ]]> #{endTime,jdbcType=TIMESTAMP}
+  </update>
+  
+  	<select id="searchToAddPartnerProgramByArgument" resultMap="toAddPartnerProgramBaseMap" parameterType="java.util.Map">
+		select /*接送货-价格-根据 编码 ，一级产品， 业务 日期 查询唯一 合伙人到达加收方案*/ 
+		  <include refid="selectBaseColumns" />
+		  	from pkp.t_srv_partners_added_plan price
+		  <where>
+		  		 price.ORG_CODE = #{orgCode,jdbcType=VARCHAR}	
+		  	AND  price.ACTIVE = #{active,jdbcType=VARCHAR}
+		  	AND  price.TRANSPORT_FLAG = #{transportFlag,jdbcType=VARCHAR}
+		  	AND #{receiveDate,jdbcType=TIMESTAMP} <![CDATA[ >= ]]>  price.BEGIN_TIME 
+			AND #{receiveDate,jdbcType=TIMESTAMP} <![CDATA[ < ]]>   price.END_TIME
+		  </where> 
+	</select> 
+
+	<update id="updateToAddPartnerProgramActiveById" parameterType="java.util.Map">
+		<![CDATA[
+			UPDATE /*综合-价格-激活合伙人到达加收方案*/ 
+			PKP.t_srv_partners_added_plan T
+			SET T.ACTIVE = #{active,jdbcType=VARCHAR},
+			T.VERSION_NO = #{versionNo,jdbcType=DECIMAL} 
+		]]>
+		<![CDATA[WHERE T.ID IN ]]>
+			<foreach collection="ids" open="(" close=")" separator=","
+				item="outPriceId">
+			<![CDATA[#{outPriceId,jdbcType=VARCHAR} ]]>
+			</foreach>	
+	</update>
+</mapper>

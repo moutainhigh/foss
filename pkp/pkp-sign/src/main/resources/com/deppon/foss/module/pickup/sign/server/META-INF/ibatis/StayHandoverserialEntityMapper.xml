@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.deppon.foss.module.pickup.sign.api.shared.domain.StayHandoverserialEntity" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.pickup.sign.api.shared.domain.StayHandoverserialEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="T_SRV_STAY_HANDOVERDETAIL_ID" property="tSrvStayHandoverdetailId" jdbcType="VARCHAR" />
+    <result column="SERAILNO" property="serailno" jdbcType="VARCHAR" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    ID, T_SRV_STAY_HANDOVERDETAIL_ID, SERAILNO
+  </sql>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.String" >
+    select  /*模块：接送货+派送处理+查询交接流水号信息*/
+    <include refid="Base_Column_List" />
+    from PKP.T_SRV_STAY_HANDOVERSERIAL
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String" >
+    delete from PKP.T_SRV_STAY_HANDOVERSERIAL
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  <insert id="insert" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.StayHandoverserialEntity" >
+    insert into PKP.T_SRV_STAY_HANDOVERSERIAL (ID, T_SRV_STAY_HANDOVERDETAIL_ID, SERAILNO
+      )
+    values (#{id,jdbcType=VARCHAR}, #{tSrvStayHandoverdetailId,jdbcType=VARCHAR}, #{serailno,jdbcType=VARCHAR}
+      )
+  </insert>
+  <insert id="insertSelective" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.StayHandoverserialEntity" >
+    insert into PKP.T_SRV_STAY_HANDOVERSERIAL
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="tSrvStayHandoverdetailId != null" >
+        T_SRV_STAY_HANDOVERDETAIL_ID,
+      </if>
+      <if test="serailno != null" >
+        SERAILNO,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="tSrvStayHandoverdetailId != null" >
+        #{tSrvStayHandoverdetailId,jdbcType=VARCHAR},
+      </if>
+      <if test="serailno != null" >
+        #{serailno,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.StayHandoverserialEntity" >
+    update PKP.T_SRV_STAY_HANDOVERSERIAL
+    <set >
+      <if test="tSrvStayHandoverdetailId != null" >
+        T_SRV_STAY_HANDOVERDETAIL_ID = #{tSrvStayHandoverdetailId,jdbcType=VARCHAR},
+      </if>
+      <if test="serailno != null" >
+        SERAILNO = #{serailno,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.StayHandoverserialEntity" >
+    update PKP.T_SRV_STAY_HANDOVERSERIAL
+    set T_SRV_STAY_HANDOVERDETAIL_ID = #{tSrvStayHandoverdetailId,jdbcType=VARCHAR},
+      SERAILNO = #{serailno,jdbcType=VARCHAR}
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  
+  <select id="selectSerialNosByWaybillNo" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.pickup.sign.api.shared.dto.StayHandoverDetailDto" >
+     select /*模块：接送货+pda完成接货接口+查询pda货件信息*/
+      distinct(serial_no) SERAILNO from pkp.t_srv_labeled_good_pda 
+  	  where active = #{active,jdbcType=VARCHAR}
+     and waybill_no = #{waybillNo,jdbcType=VARCHAR}
+  </select>
+  <!--根据交接明细id 流水号集合删除满足条件的信息-->
+    <delete id="deleteByStayHandoverIdAndSerialNos" parameterType="java.lang.String" >
+    delete from PKP.T_SRV_STAY_HANDOVERSERIAL
+    <where>
+     <if test="stayHandoverDetailId != null" >
+       and  T_SRV_STAY_HANDOVERDETAIL_ID = #{stayHandoverDetailId,jdbcType=VARCHAR}
+      </if>
+      <if test="serialNos != null" >
+      and SERAILNO in
+			<foreach collection="serialNos" open="(" close=")" separator=","
+				item="serialno">
+				<if test="serialno!=null and serialno != ''">
+        	      <![CDATA[	#{serialno,jdbcType=VARCHAR} ]]>
+                </if>
+			</foreach>
+      </if>
+      </where>
+  </delete>
+  
+  <!--保存交接流水号信息 -->
+	<insert id="addStayHandoverserialList" parameterType="java.util.List">
+		<foreach collection="list" item="item" separator=";">
+			insert into PKP.T_SRV_STAY_HANDOVERSERIAL
+			<trim prefix="(" suffix=")" suffixOverrides="," >
+				<if test="item.id != null" >
+        ID,
+				</if>
+				<if test="item.tSrvStayHandoverdetailId != null" >
+        T_SRV_STAY_HANDOVERDETAIL_ID,
+				</if>
+				<if test="item.serailno != null" >
+        SERAILNO,
+				</if>
+			</trim>
+			<trim prefix="values (" suffix=")" suffixOverrides="," >
+				<if test="item.id != null" >
+        #{item.id,jdbcType=VARCHAR},
+				</if>
+				<if test="item.tSrvStayHandoverdetailId != null" >
+        #{item.tSrvStayHandoverdetailId,jdbcType=VARCHAR},
+				</if>
+				<if test="item.serailno != null" >
+        #{item.serailno,jdbcType=VARCHAR},
+				</if>
+			</trim>
+		</foreach>
+	</insert>
+</mapper>

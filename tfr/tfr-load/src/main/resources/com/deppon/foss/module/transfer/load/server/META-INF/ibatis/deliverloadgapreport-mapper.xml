@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tfr-load">
+	<resultMap id="deliverLoadGapReportResultMap"
+			type="com.deppon.foss.module.transfer.load.api.shared.domain.DeliverLoadGapReportEntity">
+			<result property="id" column="id" />
+			<result property="taskNo" column="taskNo" />
+			<result property="reportNo" column="reportNo" />
+			<result property="taskId" column="taskId" />
+			<result property="deliverBillNo" column="deliverBillNo"/>
+			<result property="createTime" column="createTime" />
+			<result property="state" column="state" />
+			<result property="beValid" column="beValid" />
+			<result property="planLoadGoodsQty" column="planLoadGoodsQty"/>
+			<result property="actualLoadGoodsQty" column="actualLoadGoodsQty"/>
+			<result property="lackGoodsQty" column="lackGoodsQty" />
+			<result property="vehicleNo" column="vehicleNo"/>
+	</resultMap>
+	<resultMap id="deliverLoadGapReportSerialResultMap"
+			type="com.deppon.foss.module.transfer.load.api.shared.domain.DeliverLoadGapReportSerialEntity">
+			<result property="id" column="id" />
+			<result property="wayBillNo" column="wayBillNo" />
+			<result property="serialNo" column="serialNo" />
+			<result property="scanState" column="scanState" />
+			<result property="goodsState" column="goodsState"/>
+			<result property="reportId" column="reportId" />
+			<result property="notes" column="notes" />
+			<result property="scanTime" column="scanTime" />
+			<result property="createTime" column="createTime"/>
+	</resultMap>
+	<resultMap id="deliverLoadGapReportWayBillResultMap"
+			type="com.deppon.foss.module.transfer.load.api.shared.domain.DeliverLoadGapReportWayBillEntity">
+			<result property="wayBillNo" column="wayBillNo" />
+			<result property="reportId" column="reportId" />
+			<result property="gapType" column="gapType" />
+			<result property="planLoadQty" column="planLoadQty"/>
+			<result property="actualLoadQty" column="actualLoadQty" />
+			<result property="lackGoodsQty" column="lackGoodsQty" />
+			<result property="stockQty" column="stockQty" />
+			<result property="notes" column="notes" />
+			<result property="transportType" column="transportType"/>
+			<result property="loadWayBillDetailId" column="loadWayBillDetailId"/>
+			<result property="goodsName" column="goodsName"/>
+			<result property="pack" column="pack"/>
+			<result property="receiveOrgName" column="receiveOrgName"/>
+			<result property="reachOrgName" column="reachOrgName"/>
+			<result property="loadVolumeTotal" column="loadVolumeTotal"/>
+			<result property="loadWeightTotal" column="loadWeightTotal"/>
+			<result property="loadQty" column="loadQty"/>
+			<result property="scanQty" column="scanQty"/>
+	</resultMap>
+	<resultMap id="deliverLoadGapReportWayBillDtoResultMap"
+			type="com.deppon.foss.module.transfer.load.api.shared.dto.DeliverLoadGapReportWayBillDto" extends="deliverLoadGapReportWayBillResultMap">
+			<result property="destination" column="destination"/>
+	</resultMap>
+	<!--根据运单查派送装车差异报告，显示出其中运单差异报告类型为“少货”、“退回”和预计装车件数的记录-->
+	<resultMap id="diffReportByWayBillResultMap"
+			type="com.deppon.foss.module.transfer.load.api.shared.domain.QueryDiffReportByWayBillEntity">
+			<result property="deliverBillNo" column="deliverBillNo" />
+			<result property="notes" column="notes" />
+			<result property="planLoadQty" column="planLoadQty"/>
+			<result property="gapType" column="gapType"/>
+			
+	</resultMap>
+	
+	<resultMap id="diffReportReturnNumResultMap"
+			type="com.deppon.foss.module.transfer.load.api.shared.domain.DiffReportReturnNumEntity">
+			<result property="returnNum" column="returnNum" />
+			<result property="loseNum" column="loseNum" />
+			<result property="waybillNo" column="waybillNo"/>
+			<result property="surrenderTime" column="surrenderTime" javaType="java.util.Date"/>
+			
+	</resultMap>
+	
+	<select id="selectByProcCreateLoadGapRep" statementType="CALLABLE">   
+		{call TFR.PKG_OPT_JOB_BUSINESS.P_OPT_CREATE_DE_LOAD_GAPREP}
+	</select> 
+	<!--根据派送单号，或装车任务id查询全部派送装车差异报告 -->
+	<select id="queryAllDeliverLoadGapRepByDeliverNo" parameterType="HashMap" resultMap="deliverLoadGapReportResultMap">
+		<![CDATA[
+				select r.id as id,
+			       r.gaprep_no as reportNo,
+			       r.load_task_no as taskNo,
+			       r.deliverbill_no as deliverBillNo,
+			       r.gaprep_status as state,
+			       r.be_valid as beValid,
+			       r.plan_load_goods_qty_total as planLoadGoodsQty,
+			       r.actual_load_goods_qty_total as actualLoadGoodsQty,
+			       r.GAP_GOODS_QTY as lackGoodsQty,
+			       to_char(r.create_time,'yyyy-mm-dd hh24:mi:ss') as createTime,
+			       r.vehicle_no as vehicleNo,
+			       r.load_task_id as taskId
+			  from tfr.t_opt_de_load_gaprep r
+		]]>
+		<where>
+			<if test="taskId !=null and taskId !=''">
+				r.load_task_id=#{taskId}
+			</if>
+			<if test="deliverBillNo !=null and deliverBillNo !=''">
+				and r.deliverbill_no=#{deliverBillNo}
+			</if>
+		</where>
+	</select>
+	<!--查询派送装车差异报告 -->
+	<select id="queryDeliverLoadGapReport" parameterType="HashMap" resultMap="deliverLoadGapReportResultMap">
+		<![CDATA[
+				select r.id as id,
+			       r.gaprep_no as reportNo,
+			       r.load_task_no as taskNo,
+			       r.deliverbill_no as deliverBillNo,
+			       r.gaprep_status as state,
+			       r.be_valid as beValid,
+			       r.plan_load_goods_qty_total as planLoadGoodsQty,
+			       r.actual_load_goods_qty_total as actualLoadGoodsQty,
+			       r.GAP_GOODS_QTY as lackGoodsQty,
+			       to_char(r.create_time,'yyyy-mm-dd hh24:mi:ss') as createTime,
+			       r.vehicle_no as vehicleNo
+			  from tfr.t_opt_de_load_gaprep r
+		]]>
+		 <if test="report.waybillNo!=null and report.waybillNo!='' ">
+			inner join tfr.t_opt_load_waybill_detail d on d.load_task_id = r.load_task_id 
+	     </if>
+		<include refid="selectDeliverLoadGapReport_Where"/>
+		ORDER BY r.create_time
+	</select>
+	<!--查询派送装车差异报告条数 -->
+	<select id="queryDeliverLoadGapReportCount" parameterType="HashMap" resultType="Long">
+		<![CDATA[
+				select count(r.id) 
+			  from tfr.t_opt_de_load_gaprep r
+		]]>
+		 <if test="report.waybillNo!=null and report.waybillNo!='' ">
+			inner join tfr.t_opt_load_waybill_detail d on d.load_task_id = r.load_task_id 
+	     </if>
+		<include refid="selectDeliverLoadGapReport_Where"/>
+	</select>
+	<!-- 查询条件 -->
+	<sql id="selectDeliverLoadGapReport_Where">
+		<where>
+			<if test="report != null">
+				<if test="report.state !=null and report.state !=''"><![CDATA[r.gaprep_status =#{report.state}]]></if>
+				<if test="report.beValid !=null and report.beValid !=''"><![CDATA[ and r.be_valid =#{report.beValid}]]></if>
+			</if>
+			<choose>
+				<when test="report.waybillNo!=null and report.waybillNo!='' ">
+					<![CDATA[and d.waybill_no = #{report.waybillNo, jdbcType=VARCHAR}]]>
+				</when>
+				<otherwise>
+					<if test="queryTimeEnd !=null and queryTimeEnd !=''">
+						<![CDATA[ and r.create_time <= to_date(#{queryTimeEnd}, 'yyyy-mm-dd hh24:mi:ss')]]>
+					</if>
+					<if test="queryTimeBegin != null  and queryTimeBegin !=''" >
+						<![CDATA[ and r.create_time >=to_date(#{queryTimeBegin}, 'yyyy-mm-dd hh24:mi:ss')]]>
+					</if>
+				</otherwise>
+			</choose>
+			<if test="report != null">
+				<if test="report.origOrgCode !=null and report.origOrgCode !=''"><![CDATA[ and r.orig_org_code =#{report.origOrgCode}]]></if>
+				<if test="report.orgCodes !=null and report.orgCodes !=''">
+				    and r.orig_org_code in 
+				 <foreach 
+					collection="report.orgCodes" open="(" close=")" item="item" separator="," index="index"> 
+					#{item} 
+				</foreach></if>
+				<if test="report.vehicleNo !=null and report.vehicleNo !=''"><![CDATA[ and r.vehicle_no =#{report.vehicleNo}]]></if>
+				<if test="report.deliverBillNo !=null and report.deliverBillNo !=''"><![CDATA[ and r.deliverbill_no =#{report.deliverBillNo}]]></if>
+				<if test="report.taskNo !=null and report.taskNo !=''"><![CDATA[ and r.load_task_no =#{report.taskNo}]]></if>
+				<if test="report.reportNo !=null and report.reportNo !=''"><![CDATA[ and r.gaprep_no =#{report.reportNo}]]></if>
+			</if>
+		</where>
+	</sql>
+	<!-- 查询运单明细 接送货接口-->
+		<select id="queryDeliverLoadGapReportWayBills" parameterType="HashMap" resultMap="deliverLoadGapReportWayBillResultMap">
+		<![CDATA[
+				select w.waybill_no as wayBillNo,
+			       case
+			         when w.stock_qty > w.load_qty then
+			          '少货'
+			         else
+			          '多货'
+			       end as gapType,
+			       w.transport_type as transportType,
+			       w.load_qty as actualLoadQty,
+			       w.stock_qty as planLoadQty,
+			       w.stock_qty - w.load_qty as lackGoodsQty,
+			       w.notes as notes
+			  from tfr.t_opt_load_task t
+			 inner join tfr.t_opt_load_waybill_detail w on w.load_task_id = t.id
+		]]>
+		<where>
+		 t.deliverbill_no = #{deliverBillNo}
+		<![CDATA[ and t.TASK_STATE<>'CANCELED'
+		 and w.stock_qty <> w.load_qty]]>
+		</where>
+	</select>
+	<!-- 查询运单明细 -->
+		<select id="queryDeliverLoadGapReportWayBillsById" parameterType="HashMap" resultMap="deliverLoadGapReportWayBillResultMap">
+		<![CDATA[
+				select d.waybill_no as wayBillNo,
+				       d.gap_type as gapType,
+				       d.transport_type as transportType,
+				       d.actual_load_qty as actualLoadQty,
+				       d.plan_load_qty as planLoadQty,
+				       abs(d.actual_load_qty - d.plan_load_qty) as lackGoodsQty,
+				       d.notes as notes,
+				       d.de_load_gaprep_id as reportId
+				  from tfr.t_opt_de_load_gaprep_detail d
+		]]>
+		<where>
+		 d.de_load_gaprep_id = #{id}
+		</where>
+		union all     
+    	<![CDATA[
+    			select r.waybill_no as wayBillNo,
+           			  '退回'as gapType，
+                	  r.transport_type as transportType,
+                      r.operate_qty as actualLoadQty,
+                      r.stock_qty as planLoadQty,
+                      abs(r.operate_qty - r.stock_qty) as lackGoodsQty,
+                      r.return_Reason as notes,
+                      g.id as reportId
+               from tfr.t_opt_load_waybill_return r,
+                    tfr.T_OPT_DE_LOAD_GAPREP g
+               where r.LOAD_TASK_NO = g.load_task_no
+                    and g.id = #{id}
+        ]]>  
+	</select>
+	<!--查询派送装车运单退回件数 -->
+		<select id="querySumWaybillReturn" parameterType="String" resultType="Integer">
+			select sum(r.stock_qty)
+  				from tfr.t_opt_load_waybill_return r
+			 	where r.load_task_no = #{taskNo}
+		</select>
+	<!-- 查询导出运单明细 -->
+		<select id="queryExportDeliverLoadGapDetail" parameterType="HashMap" resultMap="deliverLoadGapReportWayBillDtoResultMap">
+		<![CDATA[
+				select gd.waybill_no as wayBillNo,
+				       gd.notes as notes,
+				       gd.transport_type as transportType,
+				       gd.gap_type as gapType,
+				       gd.plan_load_qty as planLoadQty,
+				       gd.actual_load_qty as actualLoadQty,
+				       abs(gd.plan_load_qty - gd.actual_load_qty) as lackGoodsQty,
+				       w.TARGET_ORG_CODE as destination
+				  from tfr.t_opt_de_load_gaprep g
+				 inner join tfr.t_opt_de_load_gaprep_detail gd on gd.de_load_gaprep_id = g.id
+				 inner join pkp.t_srv_waybill w on w.waybill_no = gd.waybill_no
+				                               and w.active = 'Y'
+				 where g.load_task_no = #{taskNo}
+				   and g.be_valid = 'Y'
+		]]>
+	</select>
+	<!-- 更新派送差异报告状态 -->
+	<update id="updateReportState" parameterType="HashMap">
+		update tfr.t_opt_de_load_gaprep r set r.gaprep_status=#{state} 
+		where r.deliverbill_no=#{deliverBillNo} and r.be_valid=#{beValid} and r.gaprep_status = 'GENERATED'<!-- 只有已生成的派送装车差异报告才能打回、确认 -->
+	</update>
+	<select id="queryTransferCenterByMotorcade" parameterType="String" resultType="String">
+		select tc.org_code from bse.t_bas_transfer_center tc where tc.active='Y' and tc.motorcade_code=#{motorCadeCode}
+	</select>
+	
+	<!--根据运单查派送装车差异报告，269701 lln 显示出其中运单差异报告类型为“少货”、“退回”和预计装车件数的记录-->
+	<select id="queryDiffReportByWayBill"  parameterType="String"  resultMap="diffReportByWayBillResultMap">
+		  Select  
+	           d.plan_load_qty   as planLoadQty,
+	      d.notes           as notes,
+	      lg.deliverbill_no as deliverBillNo,
+	      d.gap_type  As gapType
+	    from tfr.t_opt_de_load_gaprep lg
+	      Left Join tfr.t_opt_de_load_gaprep_detail d
+	         On lg.id = d.de_load_gaprep_id
+	    Where
+	            d.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+    UNION ALL
+	    select 
+	      w.stock_qty      as planLoadQty,
+	      w.return_reason  as notes,
+	      t.deliverbill_no as deliverBillNo,
+	      '退回'  As gapType
+	    from tfr.t_opt_load_waybill_return  w
+	    left join tfr.t_opt_load_task t 
+	      on t.task_no=w.load_task_no
+	    Where
+	            w.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="queryDiffReportReturnNum"  parameterType="HashMap"  resultMap="diffReportReturnNumResultMap">
+		 with aa as(
+    		select 
+	    		Count(*) as returnNum,
+    			waybill_no as waybillNo
+	    	from tfr.t_opt_load_waybill_return  w
+	    	left join tfr.t_opt_load_task t 
+	      on t.task_no=w.load_task_no
+	    	Where
+	            w.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+	            and t.LOAD_START_TIME <![CDATA[>=]]> #{surrenderTime}
+            Group By waybill_no
+           ),
+		bb as(
+    		 Select Count(*) as loseNum,
+    			waybill_no as waybillNo From
+              tfr.t_opt_de_load_gaprep_detail ld
+              Where ld.GAP_TYPE='少货' 
+              and ld.waybill_no=#{waybillNo,jdbcType=VARCHAR}
+             and ld.CREATE_TIME<![CDATA[>=]]> #{surrenderTime}
+              Group By waybill_no
+              )
+		Select NVL(aa.returnNum,0) returnNum,NVL(bb.loseNum,0) loseNum,NVL(aa.waybillNo,bb.waybillNo) waybillNo From aa FULL OUTER JOIN   bb On aa.waybillNo=bb.waybillNo                
+	</select>
+	
+</mapper>

@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.tfr.jobtodo" >
+  <resultMap id="jobTodoResultMap" type="com.deppon.foss.module.transfer.common.api.shared.domain.TfrJobTodoEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="BUSINESS_ID" property="businessID" jdbcType="VARCHAR" />
+    <result column="BUSINESS_SCENE" property="businessScene" jdbcType="VARCHAR" />
+    <result column="BUSINESS_GOAL" property="businessGoal" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="BUSINESS_TIME" property="businessTime" jdbcType="TIMESTAMP" />
+    <result column="OPERATOR_CODE" property="operatorCode" jdbcType="VARCHAR" />
+    <result column="JOB_ID" property="jobId" jdbcType="VARCHAR" />
+  </resultMap>
+  
+   <sql id="jobTodo_Column_List" >
+		ID,
+		BUSINESS_ID,
+		BUSINESS_SCENE,
+		BUSINESS_GOAL,	
+		CREATE_TIME,
+		BUSINESS_TIME,
+		OPERATOR_CODE
+  </sql>
+  
+  <insert id="addJobTodo" parameterType="com.deppon.foss.module.transfer.common.api.shared.domain.TfrJobTodoEntity">
+  	insert into TFR.T_OPT_JOB_TODO
+  	/*中转-通用模块-将需要异步处理的单据存入job待办表*/
+  	(
+  		<include refid="jobTodo_Column_List" />
+  	)
+  	values 
+  	(
+  		#{id,jdbcType=VARCHAR},
+  		#{businessID,jdbcType=VARCHAR},
+  		#{businessScene,jdbcType=VARCHAR},
+  		#{businessGoal,jdbcType=VARCHAR},
+  		#{createTime,jdbcType=TIMESTAMP},
+  		#{businessTime,jdbcType=TIMESTAMP},
+  		#{operatorCode,jdbcType=VARCHAR}
+  	)
+  </insert>
+  
+  <select id="selectJobTodo" parameterType="com.deppon.foss.module.transfer.common.api.shared.dto.TfrJobTodoQueryDto"
+  	resultMap="jobTodoResultMap">
+  	select 
+  	/*中转-通用模块-查询job待办信息*/
+  	<include refid="jobTodo_Column_List" />
+  	from TFR.T_OPT_JOB_TODO jt
+  	<where>
+  		1 = 1
+  		<if test="id != null and id != ''">
+  			and id = #{id,jdbcType=VARCHAR}
+  		</if>
+  		<if test="businessSceneList != null and businessSceneList.length != 0">
+  			and jt.BUSINESS_SCENE in
+			<foreach collection="businessSceneList" item="item" open="(" close=")" separator=",">
+				#{item,jdbcType=VARCHAR}
+			</foreach>
+  		</if>
+		<if test="businessGoalList != null and businessGoalList.length != 0">
+			and jt.BUSINESS_GOAL in
+			<foreach collection="businessGoalList" item="item" open="(" close=")" separator=",">
+				#{item,jdbcType=VARCHAR}
+			</foreach>
+		</if>
+  		<if test="startTime != null">
+  			and jt.create_time <![CDATA[>=]]> #{startTime,jdbcType=TIMESTAMP}
+  		</if>
+  		<if test="endTime != null">
+  			and jt.create_time <![CDATA[<=]]> #{endTime,jdbcType=TIMESTAMP}
+  		</if>
+  		<if test="bizStartTime != null">
+  			and jt.business_time <![CDATA[>=]]> #{bizStartTime,jdbcType=TIMESTAMP}
+  		</if>
+  		<if test="bizEndTime != null">
+  			and jt.business_time <![CDATA[<=]]> #{bizEndTime,jdbcType=TIMESTAMP}
+  		</if>
+  		and rownum <![CDATA[<=]]> #{count,jdbcType=NUMERIC}
+  	</where>
+  		order by jt.business_id
+  </select>
+  
+  
+  
+  <delete id="deleteJobTodo" parameterType="java.lang.String">
+  	delete 
+  	/*中转-通用模块-业务处理完毕后，将job待办表中的信息删除*/
+  	from tfr.t_opt_job_todo o where o.id = #{id,jdbcType=VARCHAR}
+  </delete>
+  
+  <insert id="addJobTodo2Migration" parameterType="java.lang.String">
+  	INSERT INTO TFR.T_OPT_JOB_TODO_MIG
+  	/*中转-通用模块-业务处理完毕后，将job待办表中的数据迁移*/
+	  (ID,
+	   BUSINESS_ID,
+	   BUSINESS_SCENE,
+	   BUSINESS_GOAL,
+	   CREATE_TIME,
+	   BUSINESS_TIME,
+	   MIG_TIME,
+	   OPERATOR_CODE)
+	  SELECT sys_guid(),
+	         BUSINESS_ID,
+	         BUSINESS_SCENE,
+	         BUSINESS_GOAL,
+	         CREATE_TIME,
+	         BUSINESS_TIME,
+	         systimestamp,
+	         OPERATOR_CODE
+	    FROM TFR.T_OPT_JOB_TODO O
+	   WHERE O.ID = #{id,jdbcType=VARCHAR}
+  </insert>
+  
+  
+  <select id="selectJobTodoMigrationByBusinessId" parameterType="HashMap"
+  	 resultType="int">
+  	select count(0)
+  	from TFR.T_OPT_JOB_TODO_MIG jt
+  	where jt.BUSINESS_ID = #{businessId,jdbcType=VARCHAR} and jt.BUSINESS_GOAL= #{businessGoal,jdbcType=VARCHAR} 
+  </select>
+  
+  <select id="selectJobTodoMigrationByMap" parameterType="HashMap"
+  	 resultType="int">
+  	select count(0)
+  	from TFR.T_OPT_JOB_TODO_MIG jt
+  	where jt.BUSINESS_ID = #{businessId,jdbcType=VARCHAR} and jt.BUSINESS_GOAL= #{businessGoal,jdbcType=VARCHAR} 
+  	and jt.business_scene = #{businessScene,jdbcType=VARCHAR}
+  </select>
+  <!-- 根据  businessId业务Id businessGoal业务场景 businessScene业务动作 查询代办实体-->
+  <select id="selectJobTodoByMap" parameterType="HashMap"
+  	 resultMap="jobTodoResultMap">
+  	select 
+     <include refid="jobTodo_Column_List" />
+  	from TFR.T_OPT_JOB_TODO_MIG jt
+  	where jt.BUSINESS_ID = #{businessId,jdbcType=VARCHAR} and jt.BUSINESS_GOAL= #{businessGoal,jdbcType=VARCHAR} 
+  	and jt.business_scene = #{businessScene,jdbcType=VARCHAR}
+  </select>
+  
+  <!-- 通过jobid查询job待办信息 -->
+  <select id="selectJobTodoByJobId" parameterType="HashMap"
+  	resultMap="jobTodoResultMap">
+  	select * /*中转-通用模块-通过jobid查询job待办信息*/
+  	from TFR.T_OPT_JOB_TODO jt
+  	where jt.job_id = #{jobId,jdbcType=VARCHAR}
+  		and  jt.business_goal in  
+		<foreach collection="list" item="item" open="(" close=")" separator=",">
+			 #{item,jdbcType=VARCHAR} 
+		</foreach>
+		<![CDATA[  and rownum <=  #{count}]]>
+  		
+  </select>
+  
+  
+  
+  	<!-- job表中更新jobid -->
+  <update id="updateAndGetJobId" parameterType="HashMap">
+	update  /*中转推送轨迹模块-更新job表中jobid*/
+	tfr.t_opt_job_todo et 
+		set et.job_id = #{jobId,jdbcType=VARCHAR}
+		where  
+		 et.job_id ='N/A'
+		and et.business_goal in  
+		<foreach collection="list" item="item" open="(" close=")" separator=",">
+			 #{item,jdbcType=VARCHAR} 
+		</foreach>
+		<![CDATA[  and rownum <=  #{count}]]>
+ </update>
+ 
+ <!-- 根据id把job表中的此条数据的jobId设置为"N/A" -->
+  <update id="updateJobIdToNA" parameterType="String">
+	update  
+	tfr.t_opt_job_todo et 
+		set et.job_id = 'N/A'
+		where et.id = #{id}
+	
+ </update>
+ 
+</mapper>

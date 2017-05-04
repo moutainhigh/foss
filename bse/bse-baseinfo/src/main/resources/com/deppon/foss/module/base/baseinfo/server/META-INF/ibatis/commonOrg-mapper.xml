@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.commmonOrg">
+	<!-- 公共选择组件 -->
+	<resultMap id="commonOrgResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.CommonOrgEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="NAME" property="name" jdbcType="VARCHAR" />
+		<result column="CODE" property="code" jdbcType="VARCHAR" />
+		<result column="UNIFIED_CODE" property="unifiedCode" jdbcType="VARCHAR" />
+		<result column="SIMPLE_NAME" property="simpleName" jdbcType="VARCHAR" />
+		<result column="PINYIN" property="pinYin" jdbcType="VARCHAR" />
+		<result column="PROV_CODE" property="provinceCode" jdbcType="VARCHAR" />
+		<result column="CITY_CODE" property="cityCode" jdbcType="VARCHAR" />
+		<result column="CONUNTY_CODE" property="countyCode" jdbcType="VARCHAR" />
+		<result column="TYPE" property="type" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="DIVISION" property="division" jdbcType="CHAR" />
+		<result column="DO_AIR_DISPATCH" property="doAirDispatch" jdbcType="CHAR" />
+		<result column="TRANSFER_CENTER" property="transferCenter" jdbcType="CHAR" />
+		<result column="BIG_REGION" property="bigRegion" jdbcType="CHAR" />
+		<result column="SMALL_REGION" property="smallRegion" jdbcType="CHAR" />
+		<result column="AIR_DISPATCH" property="airDispatch" jdbcType="CHAR" />
+		<result column="SALES_DEPARTMENT" property="salesDepartment" jdbcType="CHAR" />
+		<result column="TRANS_DEPARTMENT" property="transDepartment" jdbcType="CHAR" />
+		<result column="TRANS_TEAM" property="transTeam" jdbcType="CHAR" />
+		<result column="DISPATCH_TEAM" property="dispatchTeam" jdbcType="CHAR" />
+		<result column="BILLING_GROUP" property="billingGroup" jdbcType="CHAR" />
+		<result column="IS_DELIVER_SCHEDULE" property="isDeliverSchedule" jdbcType="CHAR" />
+		<result column="IS_ARRANGE_GOODS" property="isArrangeGoods" jdbcType="CHAR" />
+		<result column="IS_ENTITY_FINANCE" property="isEntityFinance" jdbcType="CHAR" />
+		<result column="EXPRESS_SALES_DEPARTMENT" property="expressSalesDepartment" jdbcType="CHAR" />
+		<result column="EXPRESS_PART" property="expressPart" jdbcType="CHAR" />
+		<result column="EXPRESS_BIG_REGION" property="expressBigRegion" jdbcType="CHAR" />
+	</resultMap>
+
+	<!-- 数据字段 -->
+	<sql id="commonOrg_Column_List">
+		T.ID AS ID,
+		T.NAME AS NAME,
+		T.CODE AS CODE,
+		T.UNIFIED_CODE AS UNIFIED_CODE,
+		T.SIMPLENAME AS SIMPLE_NAME,
+		T.PINYIN AS PINYIN,
+		T.PROV_CODE AS PROV_CODE,
+		T.CREATE_TIME AS CREATE_TIME,
+		T.MODIFY_TIME AS MODIFY_TIME,
+		T.ACTIVE AS ACTIVE,
+		T.CITY_CODE AS CITY_CODE,
+		T.COUNTY_CODE AS CONUNTY_CODE,
+		T.TYPE AS TYPE,
+		T.DIVISION AS DIVISION,
+		T.DO_AIR_DISPATCH AS DO_AIR_DISPATCH,
+		T.TRANSFER_CENTER AS TRANSFER_CENTER,
+		T.BIG_REGION AS BIG_REGION,
+		T.SMALL_REGION AS SMALL_REGION,
+		T.AIR_DISPATCH AS AIR_DISPATCH,
+		T.SALES_DEPARTMENT AS SALES_DEPARTMENT,
+		T.TRANS_DEPARTMENT AS TRANS_DEPARTMENT,
+		T.TRANS_TEAM AS TRANS_TEAM,
+		T.BILLING_GROUP AS BILLING_GROUP,
+		T.IS_DELIVER_SCHEDULE AS IS_DELIVER_SCHEDULE,
+		T.IS_ARRANGE_GOODS AS IS_ARRANGE_GOODS,
+		T.DISPATCH_TEAM AS DISPATCH_TEAM,
+		T.IS_ENTITY_FINANCE AS IS_ENTITY_FINANCE,
+		T.EXPRESS_SALES_DEPARTMENT AS EXPRESS_SALES_DEPARTMENT,
+		T.EXPRESS_PART AS EXPRESS_PART,
+		T.EXPRESS_BIG_REGION AS EXPRESS_BIG_REGION
+	</sql>
+	<!-- 分页查询条件 -->
+	<sql id="queryCondition">
+		<where>
+			<if test="queryParam != null and queryParam != ''">
+				AND 
+					(
+					  NAME like CONCAT(CONCAT('%', #{queryParam,jdbcType=VARCHAR}),'%')
+				   OR 
+				      CODE like CONCAT(CONCAT('%', #{queryParam,jdbcType=VARCHAR}),'%')
+				   OR 
+				   	  PINYIN like CONCAT(CONCAT('%', #{queryParam,jdbcType=VARCHAR}),'%')
+				    )
+			</if>
+			<if test="name != null and name != ''">
+				AND NAME like CONCAT(CONCAT('%', #{name,jdbcType=VARCHAR}),'%')
+			</if>
+			<if test="code != null and code != ''">
+				AND CODE like CONCAT(CONCAT('%', #{code,jdbcType=VARCHAR}),'%')
+			</if>
+			<if test="pinYin != null and pinYin != ''">
+				AND PINYIN like CONCAT(CONCAT('%', #{pinYin,jdbcType=VARCHAR}),'%')
+			</if>
+			<if test="simpleName != null and  simpleName != ''">
+				AND SIMPLENAME like CONCAT(CONCAT('%',#{simpleName,jdbcType=VARCHAR}), '%')
+			</if>
+			<if test="provinceCode != null and  provinceCode != ''">
+				AND PROV_CODE=#{provinceCode,jdbcType=VARCHAR}
+			</if>
+			<if test="cityCode != null and  cityCode != ''">
+				AND CITY_CODE= #{cityCode,jdbcType=VARCHAR}
+			</if>									
+			<if test="countyCode != null and  countyCode != ''">
+				AND COUNTY_CODE =#{countyCode,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<choose>
+				<when test="type == 'ORG' ">
+				 AND 
+					( 
+						( T.TYPE = #{type,jdbcType=VARCHAR} 
+						<if test="orgList != null and orgList.size>0">
+			        		AND CODE IN 
+			        			<foreach collection="orgList" open="(" close=")" separator="," item="code">
+			        	      	#{code} 
+								</foreach>
+	      	     			 </if>
+	      	     			  AND
+	      	      (
+					<choose>
+						<when test="nature != null and  nature != '' ">
+							1=1
+						</when>
+						<otherwise>
+							T. DIVISION='O'
+						</otherwise>
+					</choose>
+					<if test="division != null and  division != ''">
+						OR T.DIVISION = #{division,jdbcType=CHAR}
+					</if>
+					 <if test="bigRegion != null and  bigRegion != ''">
+						OR T.BIG_REGION = #{bigRegion,jdbcType=CHAR}
+					</if>
+					<if test="smallRegion != null and smallRegion != ''">
+						OR T.SMALL_REGION = #{smallRegion,jdbcType=CHAR}
+					</if>
+					<if test="salesDepartment != null and  salesDepartment != ''">
+						OR (T.SALES_DEPARTMENT = #{salesDepartment,jdbcType=CHAR}
+						 <![CDATA[ AND( T.EXPRESS_SALES_DEPARTMENT <> 'Y'
+					               OR T.EXPRESS_SALES_DEPARTMENT IS NULL))]]>
+					</if>
+					<if test="transferCenter != null and  transferCenter != ''">
+						OR T.TRANSFER_CENTER = #{transferCenter,jdbcType=CHAR}
+					</if>
+					<if test="doAirDispatch != null and doAirDispatch != ''">
+						OR T.DO_AIR_DISPATCH = #{doAirDispatch,jdbcType=CHAR}
+					</if>
+					<if test="transDepartment != null and  transDepartment != ''">
+						OR T.TRANS_DEPARTMENT = #{transDepartment,jdbcType=CHAR}
+					</if>
+					<if test="dispatchTeam != null and dispatchTeam != ''">
+						OR T.DISPATCH_TEAM = #{dispatchTeam,jdbcType=CHAR}
+					</if>
+					<if test="billingGroup != null and  billingGroup != ''">
+						OR T.BILLING_GROUP = #{billingGroup,jdbcType=CHAR}
+					</if>
+					<if test="transTeam != null and  transTeam != ''">
+						OR T.TRANS_TEAM = #{transTeam,jdbcType=CHAR}
+					</if>
+					<if test="isDeliverSchedule != null and  isDeliverSchedule != ''">
+						OR T.IS_DELIVER_SCHEDULE = #{isDeliverSchedule,jdbcType=CHAR}
+					</if>
+					<if test="isArrangeGoods != null and  isArrangeGoods != ''">
+						OR T.IS_ARRANGE_GOODS = #{isArrangeGoods,jdbcType=CHAR}
+					</if>
+					<if test="airDispatch != null and  airDispatch != ''">
+						OR T.AIR_DISPATCH = #{airDispatch,jdbcType=CHAR}
+					</if>
+					<if test="isEntityFinance != null and  isEntityFinance != ''">
+						OR T.IS_ENTITY_FINANCE = #{isEntityFinance,jdbcType=CHAR}
+					</if>
+					<if test="expressSalesDepartment != null and  expressSalesDepartment != ''">
+						OR T.EXPRESS_SALES_DEPARTMENT = #{expressSalesDepartment,jdbcType=CHAR}
+					</if>
+					<if test="expressPart != null and  expressPart != ''">
+						OR T.EXPRESS_PART = #{expressPart,jdbcType=CHAR}
+					</if>
+					<if test="expressBigRegion != null and  expressBigRegion != ''">
+						OR T.EXPRESS_BIG_REGION = #{expressBigRegion,jdbcType=CHAR}
+					</if>
+				  )
+				)
+				<if test="queryTypes != null and  queryTypes.size()>0">
+				  OR  T.TYPE IN
+					<foreach collection="queryTypes" index="index" item="item" open="(" separator="," close=")">
+						#{item}
+					</foreach>
+<!-- 					AND( -->
+<!-- 					<if test="salesDepartment != null and  salesDepartment != ''"> -->
+<!-- 						OR (T.SALES_DEPARTMENT = #{salesDepartment,jdbcType=CHAR} -->
+<!-- 						 <![CDATA[ AND( T.EXPRESS_SALES_DEPARTMENT <> 'Y' -->
+<!-- 					               OR T.EXPRESS_SALES_DEPARTMENT IS NULL))]]> --> 
+<!-- 					</if> -->
+<!-- 					<if test="expressSalesDepartment != null and  expressSalesDepartment != ''"> -->
+<!-- 						OR T.EXPRESS_SALES_DEPARTMENT = #{expressSalesDepartment,jdbcType=CHAR} -->
+<!-- 					</if> -->
+<!-- 					) -->
+				</if>
+			 	  )
+				</when>
+				<otherwise>
+					<if test="type != null and  type != ''">
+						AND T.TYPE = #{type,jdbcType=VARCHAR} 
+					</if>
+					<if test="queryTypes != null and  queryTypes.size()>0">
+					  	AND( T.TYPE IN
+						<foreach collection="queryTypes" index="index" item="type" open="("
+							separator="," close=")">
+							#{type}
+						</foreach>
+						<if test="transferCenter != null and  transferCenter != ''">
+						OR T.TRANSFER_CENTER = #{transferCenter,jdbcType=CHAR}
+						</if>
+						<if test="salesDepartment != null and  salesDepartment != ''">
+						OR T.SALES_DEPARTMENT = #{salesDepartment,jdbcType=CHAR}
+						</if>
+					)
+					</if>
+				</otherwise>
+			</choose> 
+			<if test="existsSql != null and existsSql != ''">
+				<![CDATA[AND EXISTS (${existsSql})]]>
+			</if>
+			<if test="notExistsSql != null and notExistsSql != ''">
+				<![CDATA[AND NOT EXISTS (${notExistsSql})]]>
+			</if>
+		</where>
+	</sql>
+
+	<!-- 查询网点信息 -->
+	<select id="queryCommonOrgByCondition" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.OrgSearchCondition" resultMap="commonOrgResultMap">
+	    SELECT 
+	    /** 综合:查询网点信息 **/
+		  <include refid="commonOrg_Column_List" />
+	    FROM BSE.MV_DEST_NET T
+		  <include refid="queryCondition"/>
+		  ORDER BY T.NAME
+	</select>
+
+	<!-- 统计总记录数 -->
+	<select id="countCommonOrgByCondition" resultType="Long" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.OrgSearchCondition">
+		 SELECT/** 综合:统计总记录数 **/  COUNT(*) FROM BSE.MV_DEST_NET T 
+			<include refid="queryCondition"/>
+	</select>
+	
+	<sql id="where">
+		<where>
+		  	<if test="name != null and name != ''">
+				AND T.NAME like CONCAT(CONCAT('%', #{name,jdbcType=VARCHAR}),'%')
+			</if>
+		  	<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			AND(1!=1
+		  	<if test="division != null and  division != ''">
+				OR T.DIVISION = #{division,jdbcType=CHAR}
+			</if>
+			<if test="bigRegion != null and  bigRegion != ''">
+				OR T.BIG_REGION = #{bigRegion,jdbcType=CHAR}
+			</if>
+			<if test="smallRegion != null and smallRegion != ''">
+				OR T.SMALL_REGION = #{smallRegion,jdbcType=CHAR}
+			</if>
+			<if test="salesDepartment != null and  salesDepartment != ''">
+				OR T.SALES_DEPARTMENT = #{salesDepartment,jdbcType=CHAR}
+			</if>
+			<if test="transferCenter != null and  transferCenter != ''">
+				OR T.TRANSFER_CENTER = #{transferCenter,jdbcType=CHAR}
+			</if>
+			<if test="doAirDispatch != null and doAirDispatch != ''">
+				OR T.DO_AIR_DISPATCH = #{doAirDispatch,jdbcType=CHAR}
+			</if>
+			<if test="transDepartment != null and  transDepartment != ''">
+				OR T.TRANS_DEPARTMENT = #{transDepartment,jdbcType=CHAR}
+			</if>
+			<if test="dispatchTeam != null and dispatchTeam != ''">
+				OR T.DISPATCH_TEAM = #{dispatchTeam,jdbcType=CHAR}
+			</if>
+			<if test="billingGroup != null and  billingGroup != ''">
+				OR T.BILLING_GROUP = #{billingGroup,jdbcType=CHAR}
+			</if>
+			<if test="transTeam != null and  transTeam != ''">
+				OR T.TRANS_TEAM = #{transTeam,jdbcType=CHAR}
+			</if>
+			<if test="isDeliverSchedule != null and  isDeliverSchedule != ''">
+				OR T.IS_DELIVER_SCHEDULE = #{isDeliverSchedule,jdbcType=CHAR}
+			</if>
+			<if test="isArrangeGoods != null and  isArrangeGoods != ''">
+				OR T.IS_ARRANGE_GOODS = #{isArrangeGoods,jdbcType=CHAR}
+			</if>
+			<if test="airDispatch != null and  airDispatch != ''">
+				OR T.AIR_DISPATCH = #{airDispatch,jdbcType=CHAR}
+			</if>
+			<if test="isEntityFinance != null and  isEntityFinance != ''">
+				OR T.IS_ENTITY_FINANCE = #{isEntityFinance,jdbcType=CHAR}
+			</if>
+			<if test="expressSalesDepartment != null and  expressSalesDepartment != ''">
+				OR T.EXPRESS_SALES_DEPARTMENT = #{expressSalesDepartment,jdbcType=CHAR}
+			</if>
+			<if test="expressPart != null and  expressPart != ''">
+				OR T.EXPRESS_PART = #{expressPart,jdbcType=CHAR}
+			</if>
+			<if test="expressBigRegion != null and  expressBigRegion != ''">
+				OR T.EXPRESS_BIG_REGION = #{expressBigRegion,jdbcType=CHAR}
+			</if>
+			<if test="isManageDepartment != null and  isManageDepartment != ''">
+				OR T.IS_MANAGE_DEPARTMENT = #{isManageDepartment,jdbcType=CHAR}
+			</if>
+			)
+		</where>
+	</sql>
+	<!-- org组织表选择器 -->
+	<select id="queryOrgByParam" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.CommonOrgDto" resultMap="commonOrgResultMap">
+	    SELECT 
+	    /** 综合:org组织表选择器，查询组织信息 **/
+		  T.code as code,
+		  T.name as name
+	    FROM BSE.t_bas_org T
+	    <include refid="where"/>
+		  ORDER BY T.NAME
+	</select>
+	<!-- org组织表选择器 -->
+	<select id="queryOrgByParamCount" resultType="Long" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.CommonOrgDto">
+		 SELECT/** 综合:统计总记录数 **/  COUNT(*) FROM BSE.t_bas_org T 
+			<include refid="where"/>
+	</select>
+</mapper>

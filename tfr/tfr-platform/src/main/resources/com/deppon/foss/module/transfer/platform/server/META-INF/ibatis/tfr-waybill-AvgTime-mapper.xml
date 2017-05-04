@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.platform.waybillAvgTime" >
+	<!-- 票均装车时长查询返回结果 -->
+	<resultMap id="waybillAvgTimeResultMap" type="com.deppon.foss.module.transfer.platform.api.shared.domain.WaybillAvgTimeEntity" >
+		<result property="orgCode" column="orgCode"/>
+		<result property="orgName" column="orgName"/>
+		<result property="queryDate" column="queryDate"/>
+		<result property="waybillAvgTimeDay" column="waybillAvgTimeDay"/>
+		<result property="waybillAvgTimeMonth" column="waybillAvgTimeMonth"/>
+		<result property="waybillValidTimeDay" column="waybillValidTimeDay"/>
+		<result property="waybillDay" column="waybillDay"/>
+		<result property="waybillValidTimeMonth" column="waybillValidTimeMonth"/>
+		<result property="waybillMonth" column="waybillMonth"/>
+	</resultMap>
+	
+	<!-- 票均装车时长查询 -->
+	<select id="queryWaybillAvgTimeEntityList" resultMap="waybillAvgTimeResultMap" parameterType="com.deppon.foss.module.transfer.platform.api.shared.vo.DeliverGoodsAreaQueryVo">
+	  with a as
+		 (select trunc(t.load_start_time, 'DD') "DAY",
+		         d.load_task_id waybillQty,
+		         t.orig_org_code orgCode,
+		         t.orig_org_name orgName,
+		         t.id,
+		         (to_date(to_char(t.load_end_time, 'yyyy-mm-dd hh24:mi:ss'),
+		                  'yyyy-mm-dd hh24:mi:ss') -
+		         to_date(to_char(t.load_start_time, 'yyyy-mm-dd hh24:mi:ss'),
+		                  'yyyy-mm-dd hh24:mi:ss')) * 24 * 60 minutes,
+		         row_number() over(partition by t.id order by d.load_task_id) rn
+		    from TFR.T_OPT_LOAD_TASK t
+		    join (
+				    SELECT ld.load_task_id FROM tfr.t_opt_load_waybill_detail ld 
+				    WHERE  trunc(#{queryDate}, 'MM')
+				     <![CDATA[<=]]> ld.TASK_BEGIN_TIME
+				     and ld.TASK_BEGIN_TIME <![CDATA[<]]> #{queryDate} + 1
+		         ) d
+		      on t.id = d.load_task_id
+		    join (
+			         SELECT  b.org_code FROM bse.t_bas_transfer_center b
+			         WHERE b.active='Y'
+		         ) td on t.orig_org_code = td.org_code
+		    where t.task_state = 'SUBMITED'
+		     and (to_date(to_char(t.load_end_time, 'yyyy-mm-dd hh24:mi:ss'),
+		                  'yyyy-mm-dd hh24:mi:ss') -
+		         to_date(to_char(t.load_start_time, 'yyyy-mm-dd hh24:mi:ss'),
+		                  'yyyy-mm-dd hh24:mi:ss')) * 24 * 60 <![CDATA[<=]]> 90
+		     and (to_date(to_char(t.load_end_time, 'yyyy-mm-dd hh24:mi:ss'),
+		                  'yyyy-mm-dd hh24:mi:ss') -
+		         to_date(to_char(t.load_start_time, 'yyyy-mm-dd hh24:mi:ss'),
+		                  'yyyy-mm-dd hh24:mi:ss')) * 24 * 60 <![CDATA[>]]> 0
+		     and trunc(#{queryDate},
+		               'MM') <![CDATA[<=]]> t.load_start_time
+		     and t.load_start_time <![CDATA[<]]>#{queryDate} + 1
+		     <if test="queryOrgCode!=null and queryOrgCode!=''">
+					and t.orig_org_code=#{queryOrgCode}
+			</if>
+		)
+		select #{queryDate} queryDate,
+			   m.orgCode orgCode,
+	           m.orgName orgName,
+	           nvl(d.waybillAvgTimeDay,0)  waybillAvgTimeDay,
+	           nvl(d.waybillValidTimeDay,0) waybillValidTimeDay,
+               nvl(d.waybillDay,0) waybillDay,
+	           nvl(m.waybillAvgTimeMonth,0) waybillAvgTimeMonth,
+	           nvl(m.waybillValidTimeMonth,0) waybillValidTimeMonth,
+               nvl(m.waybillMonth,0) waybillMonth
+		
+		  from (select 
+               round(sum(decode(rn, 1, minutes, 0)) / count(waybillQty), 2) waybillAvgTimeMonth,
+               round(sum(decode(rn, 1, minutes, 0)),2) waybillValidTimeMonth,
+               count(waybillQty) waybillMonth,
+               orgCode,
+               orgName
+	          from a
+	         group by orgCode, orgName) m,
+       		(select
+               round(sum(decode(rn, 1, minutes, 0)) / count(waybillQty), 2)  waybillAvgTimeDay,
+               round(sum(decode(rn, 1, minutes, 0)),2) waybillValidTimeDay,
+               count(waybillQty)  waybillDay,
+               orgCode,
+               orgName
+          	from a
+       		  where a.day = #{queryDate}
+         	group by orgCode, orgName) d
+ 				where m.orgCode = d.orgCode(+)
+  			and m.orgName = d.orgName(+)
+	</select>
+	<!-- 票均装车时长查询记录数 -->
+	<select id="queryWaybillAvgTimeEntityListCount" resultType="Long" parameterType="com.deppon.foss.module.transfer.platform.api.shared.vo.DeliverGoodsAreaQueryVo">
+	 with a as
+		 (select trunc(t.load_start_time, 'DD') "DAY",
+		         d.load_task_id waybillQty,
+		         t.orig_org_code orgCode,
+		         t.orig_org_name orgName,
+		         t.id,
+		         (to_date(to_char(t.load_end_time, 'yyyy-mm-dd hh24:mi:ss'),
+		                  'yyyy-mm-dd hh24:mi:ss') -
+		         to_date(to_char(t.load_start_time, 'yyyy-mm-dd hh24:mi:ss'),
+		                  'yyyy-mm-dd hh24:mi:ss')) * 24 * 60 minutes,
+		         row_number() over(partition by t.id order by d.load_task_id) rn
+		    from TFR.T_OPT_LOAD_TASK t
+		    join (
+				    SELECT ld.load_task_id FROM tfr.t_opt_load_waybill_detail ld 
+				    WHERE  trunc(#{queryDate}, 'MM')
+				     <![CDATA[<=]]> ld.TASK_BEGIN_TIME
+				     and ld.TASK_BEGIN_TIME <![CDATA[<]]> #{queryDate} + 1
+		         ) d
+		      on t.id = d.load_task_id
+		    join (
+			         SELECT  b.org_code FROM bse.t_bas_transfer_center b
+			         WHERE b.active='Y'
+		         ) td on t.orig_org_code = td.org_code
+		    where t.task_state = 'SUBMITED'
+		     and (to_date(to_char(t.load_end_time, 'yyyy-mm-dd hh24:mi:ss'),
+		                  'yyyy-mm-dd hh24:mi:ss') -
+		         to_date(to_char(t.load_start_time, 'yyyy-mm-dd hh24:mi:ss'),
+		                  'yyyy-mm-dd hh24:mi:ss')) * 24 * 60 <![CDATA[<=]]> 90
+		     and (to_date(to_char(t.load_end_time, 'yyyy-mm-dd hh24:mi:ss'),
+		                  'yyyy-mm-dd hh24:mi:ss') -
+		         to_date(to_char(t.load_start_time, 'yyyy-mm-dd hh24:mi:ss'),
+		                  'yyyy-mm-dd hh24:mi:ss')) * 24 * 60 <![CDATA[>]]> 0
+		     and trunc(#{queryDate},
+		               'MM') <![CDATA[<=]]> t.load_start_time
+		     and t.load_start_time <![CDATA[<]]>#{queryDate} + 1
+		     <if test="queryOrgCode!=null and queryOrgCode!=''">
+					and t.orig_org_code=#{queryOrgCode}
+			</if>
+		)
+		select
+			count(1)
+		
+		  from (select 
+               round(sum(decode(rn, 1, minutes, 0)) / count(waybillQty), 2) waybillAvgTimeMonth,
+               orgCode,
+               orgName
+	          from a
+	         group by orgCode, orgName) m,
+       		(select
+               round(sum(decode(rn, 1, minutes, 0)) / count(waybillQty), 2)  waybillAvgTimeDay,
+                orgCode,
+               orgName
+          	from a
+       		  where a.day = #{queryDate}
+         	group by orgCode, orgName) d
+ 				where m.orgCode = d.orgCode(+)
+  			and m.orgName = d.orgName(+)
+	
+	</select>
+	
+</mapper>

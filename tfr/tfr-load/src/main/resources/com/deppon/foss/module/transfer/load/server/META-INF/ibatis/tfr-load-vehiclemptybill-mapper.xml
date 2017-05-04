@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tfr-load.vehiclemptybill">
+	<resultMap id="queryVehicleEmptybill"
+		type="com.deppon.foss.module.transfer.load.api.shared.dto.VehiclEmptyBillDto">
+		<result property="id" column="id" />
+		<result property="vehiclEmptyBillNo" column="vehiclEmptyBillNo"/>
+		<result property="vehicleNo" column="vehicleNo"/>
+		<result property="state" column="status"/>
+		<result property="driverName" column="driverName"/>
+		<result property="origOrgName" column="origOrgName"/>
+		<result property="destOrgName" column="destOrgName"/>
+		<result property="destOrgCode" column="destOrgCode"/>
+		<result property="origTime" column="departTime"/>
+		<result property="destTime" column="arriveTime"/>
+		<result property="createTime" column="createTime"/>
+		<result property="driverCode" column="driverCode"/>
+		<result property="createrUserName" column="createrUserName"/>
+		<result property="truckTaskDettailId" column="truckTaskDettailId"/>
+		<result property="truckTaskBillId" column="truckTaskBillId"/>
+		<result property="truckTaskId" column="truckTaskId"/>
+	</resultMap>
+	<!--查询空驶单 --> 
+	
+	<select id="queryVehicleEmptybill" parameterType="HashMap" resultMap="queryVehicleEmptybill">
+		<![CDATA[
+				select    b.BILL_NO as  vehiclEmptyBillNo,
+                          de.VEHICLE_NO  as vehicleNo,
+				          de.STATUS as  status,
+				          ta.DRIVER_NAME1  as  driverName,
+				          ta.DRIVER_CODE1  as driverCode, 
+				          de.ORIG_ORG_NAME as origOrgName,
+				          de.DEST_ORG_NAME as destOrgName,
+				          de.DEST_ORG_CODE as destOrgCode,
+				          de.ACTUAL_DEPART_TIME as departTime,
+				          de.ACTUAL_ARRIVE_TIME as arriveTime, 
+				          b.BILLING_TIME as createTime,
+                          de.CREATER as createrUserName
+					from tfr.t_Opt_Truck_Task_Detail de,
+                      tfr.t_Opt_Truck_Task_Bill b,
+                      tfr.t_opt_truck_task ta
+		       ]]>
+		<include refid="selectVehiclEmptyBill_Where"/>
+	</select>
+	<!--查询空驶单记录条数-->
+	 <select id="queryVehiclEmptyBillCount" parameterType="HashMap" resultType="Long">	  
+		<![CDATA[
+				select count(1)
+					from  tfr.t_Opt_Truck_Task_Detail de
+					left join   tfr.t_Opt_Truck_Task_Bill b
+					       on  b.truck_task_detail_id = de.id 
+					left join  tfr.t_opt_truck_task ta
+					       on de.TRUCK_TASK_ID=ta.id 
+		       ]]>
+		<include refid="selectVehiclEmptyBill_Where"/>
+		</select>
+	<!--通过车牌号查询车辆状态（删除）-->
+   <select id="searchStatusByVehiclEmptyBillNo" parameterType="String" resultType="LONG">	  
+		<![CDATA[
+		 select    COUNT(1) AS COUNTS
+					   from tfr.t_Opt_Truck_Task_Detail de,
+                      tfr.t_Opt_Truck_Task_Bill b,
+                      tfr.t_opt_truck_task ta
+             WHERE b.truck_task_detail_id = de.id and de.TRUCK_TASK_ID = ta.id  and b.bill_type='VEHICLEMPBILL'  and b.bill_level=1
+             AND b.BILL_NO=#{vehiclEmptyBillNo}
+             and (de.status = 'ONTHEWAY' Or ta.status = 'ONTHEWAY' or de.status = 'ARRIVED' Or ta.status = 'ARRIVED' )
+             
+		       ]]>
+		
+	</select>
+
+  <!--通过车牌号查询车辆状态是否在途（新增）-->
+   <select id="searchStatusByVehicleNoIsDepart" parameterType="String" resultType="LONG">	  
+		<![CDATA[
+		   select COUNT(1) AS COUNTS
+             from tfr.t_Opt_Truck_Task_Detail de,
+                  tfr.t_opt_truck_task ta
+           where 
+             de.TRUCK_TASK_ID = ta.id
+             and de.VEHICLE_NO =#{vehicleNo}
+             and (de.status = 'ONTHEWAY' Or ta.status = 'ONTHEWAY' or de.status = 'UNDEPART' or ta.status = 'UNDEPART' )
+		       ]]>
+		
+	</select>
+	<!-- 根据空驶单单查询任务车辆ID，任务车辆明细ID，单据Id -->
+	<select id="queryTruckTaskIdByVehiclEmptyBillNo" resultMap="queryVehicleEmptybill">
+	 <![CDATA[  select de.id as truckTaskDettailId,
+				       b.id as truckTaskBillId,
+				       ta.id as truckTaskId
+				from  tfr.t_Opt_Truck_Task_Detail de,
+                      tfr.t_Opt_Truck_Task_Bill b,
+                      tfr.t_opt_truck_task ta  
+		         where b.truck_task_detail_id = de.id 
+				       and de.TRUCK_TASK_ID = ta.id  
+				       and b.bill_type='VEHICLEMPBILL'  
+				       and b.BILL_NO=#{vehiclEmptyBillNo}
+	      ]]>
+	</select>
+	
+	<!-- 删除任务车辆单据 -->
+	<delete id="deleteTruckTaskBillVehiclEmptyBillNo"  parameterType="String">
+		delete tfr.t_Opt_Truck_Task_Bill bi
+		<where>
+           bi.id=#{vehiclEmptyBillNo}
+		</where>
+	</delete>
+	
+		<!-- 删除任务车辆单明细表 -->
+	<delete id="deleteTruckTaskDetailVehiclEmptyBillNo"  parameterType="String">
+		delete tfr.t_Opt_Truck_Task_Detail de
+		<where>
+           de.id=#{truckTaskDetailId}
+		</where>
+	</delete>
+	
+		<!-- 删除任务车辆 -->
+	<delete id="deleteTruckTaskVehiclEmptyBillNo"  parameterType="String">
+		delete tfr.t_opt_truck_task ta
+		<where>
+          ta.id=#{truckTaskId}
+		</where>
+	</delete>
+	
+	<sql id="selectVehiclEmptyBill_Where">
+		<where>
+			 b.truck_task_detail_id = de.id and de.TRUCK_TASK_ID = ta.id  and b.bill_type='VEHICLEMPBILL'  and b.bill_level=1
+			<if test="vehiclEmptyBillNo !=null and vehiclEmptyBillNo !=''">
+			 and b.BILL_NO=#{vehiclEmptyBillNo}
+			</if>
+			<if test="vehicleNo !=null and vehicleNo !=''">
+				and  de.VEHICLE_NO=#{vehicleNo}
+			</if>
+			<if test="driverCode !=null and driverCode !=''">
+				and  ta.driver_code1=#{driverCode}
+			</if>
+			<if test="origOrgCode !=null and origOrgCode !=''">
+				and   de.ORIG_ORG_CODE=#{origOrgCode}
+			</if>
+			<if test="destOrgCode !=null and destOrgCode !=''">
+				and   de.DEST_ORG_CODE=#{destOrgCode}
+			</if>
+			<if test="startTime !=null and startTime !=''">
+			and <![CDATA[de.create_time >= #{startTime} ]]>  
+			</if>
+			<if test="endTime !=null and endTime !=''">
+			and   <![CDATA[de.create_time <= #{endTime} ]]>  
+			</if>
+			<if test="createrUserName !=null and createrUserName !=''">
+				and     de.CREATER=#{createrUserName}
+			</if>
+			<if test="driverName !=null and driverName !=''">
+				and     ta.DRIVER_NAME1=#{driverName}
+			</if>
+		</where>
+	</sql>
+</mapper>

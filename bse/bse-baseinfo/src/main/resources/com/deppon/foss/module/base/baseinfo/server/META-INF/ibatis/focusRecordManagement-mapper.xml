@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.focusRecordManagement">
+	<resultMap id="focusRecordManagement"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.FocusRecordManagementEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="BILLING_GROUP_CODE" property="billingGroupCode" jdbcType="VARCHAR" />
+		<result column="TRANS_DEPARTMENT_CODE" property="transDepartmentCode" jdbcType="VARCHAR" />
+		<result column="SALES_DEPARTMENT_CODE" property="salesDepartmentCode" jdbcType="VARCHAR" />
+		<result column="BILLING_GROUP_NAME" property="billingGroupName" jdbcType="VARCHAR" />
+		<result column="TRANS_DEPARTMENT_NAME" property="transDepartmentName" jdbcType="VARCHAR" />
+		<result column="SALES_DEPARTMENT_NAME" property="salesDepartmentName" jdbcType="VARCHAR" />
+		<result column="BILLING_AMOUNT" property="billingAmount" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="START_DATE" property="startDate" jdbcType="TIMESTAMP" />
+		<result column="END_DATE" property="endDate" jdbcType="TIMESTAMP" />
+	</resultMap>
+	
+	<!-- 根据所有条件分页查询 -->
+	<select id="queryFocusRecordManagementList" resultMap="focusRecordManagement" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.FocusRecordManagementEntity">
+		select
+		BILLING_GROUP_CODE,
+		TRANS_DEPARTMENT_CODE
+		from bse.t_bas_focus_record_management S
+		<where>
+			<if test="billingGroupCode != null and billingGroupCode !=''">
+				AND S.BILLING_GROUP_CODE = #{billingGroupCode, jdbcType=VARCHAR} 
+			</if>
+			AND S.active='Y'
+		</where>
+		group by s.BILLING_GROUP_CODE,s.TRANS_DEPARTMENT_CODE
+	</select>
+	
+	<insert id='addFocusRecordManagement' parameterType='com.deppon.foss.module.base.baseinfo.api.shared.domain.FocusRecordManagementEntity'>
+		insert into bse.t_bas_focus_record_management(
+			ID,
+			BILLING_GROUP_CODE,
+			TRANS_DEPARTMENT_CODE,
+			SALES_DEPARTMENT_CODE,
+			BILLING_AMOUNT,
+			CREATE_TIME,
+			MODIFY_TIME,
+			ACTIVE,
+			CREATE_USER_CODE,
+			MODIFY_USER_CODE,
+			START_DATE,
+			END_DATE
+		) values(
+			#{id,jdbcType=VARCHAR},
+			#{billingGroupCode,jdbcType=VARCHAR},
+			#{transDepartmentCode,jdbcType=VARCHAR},
+			#{salesDepartmentCode,jdbcType=VARCHAR},
+			#{billingAmount,jdbcType=VARCHAR},
+			#{createDate,jdbcType=TIMESTAMP},
+			#{modifyDate,jdbcType=TIMESTAMP},
+			#{active,jdbcType=CHAR},
+			#{createUser, jdbcType=VARCHAR},
+			#{modifyUser, jdbcType=VARCHAR},
+			#{startDate,jdbcType=TIMESTAMP},
+			#{endDate,jdbcType=TIMESTAMP}
+		)
+	</insert>
+	
+	<!--根据开单组Code进行查询-->
+		<select id="queryFocusRecordManagementByCode" resultMap="focusRecordManagement" parameterType="map">
+		select
+		id,
+		BILLING_GROUP_CODE,
+		TRANS_DEPARTMENT_CODE,
+		SALES_DEPARTMENT_CODE,
+		BILLING_AMOUNT,
+		CREATE_TIME,
+		CREATE_USER_CODE,
+		START_DATE,
+		END_DATE
+		from bse.t_bas_focus_record_management S
+		where s.BILLING_GROUP_CODE=#{billingGroupCode} and s.active=#{active}
+	</select>
+	
+	<!--查询总数-->
+	<select id="queryCount" resultType="Long" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.FocusRecordManagementEntity">
+			select count(distinct(BILLING_GROUP_CODE)) from t_bas_focus_record_management s
+			<where>
+			<if test="billingGroupCode != null and billingGroupCode != ''">
+				AND S.BILLING_GROUP_CODE = #{billingGroupCode, jdbcType=VARCHAR} 
+			</if>
+			AND S.active='Y'
+		</where>
+	</select>
+	
+	<!-- 查询是否重复 -->
+	<select id="queryIfExist" resultMap="focusRecordManagement" parameterType="map">
+		select
+		id,
+		BILLING_GROUP_CODE,
+		TRANS_DEPARTMENT_CODE
+		from bse.t_bas_focus_record_management S
+		<where>
+			<if test="ids !=null and ids != ''">
+			s.id not in
+			<foreach collection="ids" open="(" close=")" separator="," item="id">
+			#{id, jdbcType=VARCHAR} 
+			</foreach>
+			</if>
+			<if test="billingGroupCode != null and billingGroupCode != ''">
+				AND S.BILLING_GROUP_CODE = #{billingGroupCode, jdbcType=VARCHAR} 
+			</if>
+			AND S.active='Y'
+		</where>
+	</select>
+	
+	<!-- 批量删除（非物理删除） -->
+	<update id="deleteFocusRecordManagement" parameterType="map">
+		update bse.t_bas_focus_record_management
+		<set>
+			active='N',
+			modify_time = #{modifyDate,jdbcType=TIMESTAMP} ,
+			modify_user_code = #{modifyUser,jdbcType=VARCHAR}
+		</set>
+		where id in
+		<foreach collection="ids" open="(" close=")" separator="," item="id">
+			#{id, jdbcType=VARCHAR} 
+		</foreach>
+	</update>
+	
+	<!-- 提供给接送货-->
+	<select id="queryAllBillingGroup" resultMap="focusRecordManagement">
+		select distinct BILLING_GROUP_CODE,BILLING_AMOUNT,START_DATE,END_DATE
+		from bse.t_bas_focus_record_management s 
+		where s.active='Y' 
+	</select>
+</mapper>

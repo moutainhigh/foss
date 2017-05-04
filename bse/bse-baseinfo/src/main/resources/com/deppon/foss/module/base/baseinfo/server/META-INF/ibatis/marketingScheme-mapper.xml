@@ -1,0 +1,494 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.marketingScheme" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.domain.MarketingSchemeEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="CODE" property="code" jdbcType="VARCHAR" />
+    <result column="NAME" property="name" jdbcType="VARCHAR" />
+    <result column="BEGIN_TIME" property="beginTime" jdbcType="TIMESTAMP" />
+    <result column="END_TIME" property="endTime" jdbcType="TIMESTAMP" />
+    <result column="DESCRIPTION" property="remark" jdbcType="VARCHAR" />
+    <result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+    <result column="CREATE_ORG_CODE" property="createOrgCode" jdbcType="VARCHAR" />
+    <result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+    <result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+    <result column="MODIFY_ORG_CODE" property="modifyOrgCode" jdbcType="VARCHAR" />
+    <result column="VERSION_NO" property="versionNo" jdbcType="DECIMAL" />
+    <result column="T_BAS_PRICE_REGION_CODE" property="priceRegionCode" jdbcType="VARCHAR" />
+    <result column="T_BAS_PRICE_REGION_ID" property="priceRegionId" jdbcType="VARCHAR" />
+    <result column="ACTIVE" property="active" jdbcType="CHAR" />
+    <result column="TYPE" property="type" jdbcType="VARCHAR" />
+    <result column="PRICING_ENTRY_ID" property="pricingEntryId" jdbcType="VARCHAR" />
+    <result column="PRICING_ENTRY_CODE" property="pricingEntryCode" jdbcType="VARCHAR" />
+    <result column="PRODUCT_ITEM" property="productItem" jdbcType="VARCHAR" />
+    <result column="ORDER_SOURCE" property="orderSource" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_DEGREE" property="customerDegree" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_PROFESSION" property="customerProfession" jdbcType="VARCHAR" />
+    <result column="LINE_REGION" property="lineRegion" jdbcType="VARCHAR" />
+    <result column="AVAILABLE_PERIOD" property="availablePeriod" jdbcType="VARCHAR" />
+    <result column="COUPON_TIME_TO_SEND" property="couponTimeToSend" jdbcType="DECIMAL" />
+    <result column="IS_VOID" property="isVoid" jdbcType="CHAR" />
+  </resultMap>
+  
+  <sql id="select_param_list" >
+    ID, CODE, NAME, BEGIN_TIME, END_TIME, DESCRIPTION, CREATE_USER_CODE, CREATE_TIME, 
+    CREATE_ORG_CODE, MODIFY_USER_CODE, MODIFY_TIME, MODIFY_ORG_CODE, VERSION_NO, T_BAS_PRICE_REGION_CODE, 
+    T_BAS_PRICE_REGION_ID, ACTIVE, TYPE, PRICING_ENTRY_ID, PRICING_ENTRY_CODE, PRODUCT_ITEM, ORDER_SOURCE,
+    CUSTOMER_DEGREE, CUSTOMER_PROFESSION, LINE_REGION, AVAILABLE_PERIOD, COUPON_TIME_TO_SEND, IS_VOID
+  </sql>
+  
+  <select id="selectByMarketCode"  resultMap="BaseResultMap" parameterType="map" >
+    select /** 综合-降价发券-根据CODE查询降价发券方案 **/
+    <include refid="select_param_list" />
+    from BSE.T_BAS_MARKETING_SCHEME
+    where ACTIVE = 'Y'
+	<if test="code !=null and '' != code">
+		and CODE = #{code,jdbcType=VARCHAR}
+	</if>  
+    <if test="endTime !=null and '' != endTime">
+    	<![CDATA[ and END_TIME  > ]]> #{endTime, jdbcType=TIMESTAMP}
+    </if> 
+    order by END_TIME desc
+  </select>
+  
+  <select id="searchMarketingEvent" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.MarketingSchemeEntity">
+    select /** 综合-价格-根据综合条件查询市场活动方案 **/
+    <include refid="select_param_list" />
+    from BSE.T_BAS_MARKETING_SCHEME event
+    where 1=1
+     <if test="priceRegionId !=null and '' != priceRegionId">
+     		and event.T_BAS_PRICE_REGION_ID = #{priceRegionId}
+     </if> 
+     <if test="modifyDate !=null and '' != modifyDate">
+     		<![CDATA[ and event.MODIFY_TIME  >= to_date( ]]> #{modifyDate, jdbcType=TIMESTAMP} <![CDATA[,'yyyy-MM hh24:mi:ss')]]>
+     </if>
+     <if test="active!=null and active!=''">
+			and event.ACTIVE = #{active}
+	 </if>  
+	 <if test="type !=null and '' != type">
+			and event.TYPE = #{type}
+	 </if>       
+  	<if test="versionNo!=null and versionNo!=''"> 
+			AND event.VERSION_NO >= #{versionNo}        
+  	</if> 
+  		order by event.VERSION_NO,event.ID ASC 
+  </select>
+
+  <select id="searchMarketingEventByCondition" resultType="com.deppon.foss.module.pickup.pricing.api.shared.dto.MarketingEventDto" 
+  	parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.MarketingEventEntity">
+  	select /** 综合-价格-根据综合条件查询市场活动方案 **/
+  	    event.ID  	  				    AS id,
+    	event.CODE  	  				AS code,	
+    	event.NAME                      AS name,
+    	event.BEGIN_TIME                AS beginTime,
+    	event.END_TIME                  AS endTime,
+    	event.DESCRIPTION               AS remark,
+    	event.CREATE_USER_CODE          AS createUser,
+    	event.CREATE_TIME               AS createDate,
+    	event.CREATE_ORG_CODE           AS createOrgCode,
+    	event.MODIFY_USER_CODE          AS modifyUser,
+    	event.MODIFY_TIME               AS modifyDate,
+    	event.MODIFY_ORG_CODE           AS modifyOrgCode,
+    	event.VERSION_NO                AS versionNo,
+    	event.T_BAS_PRICE_REGION_CODE   AS priceRegionCode,
+    	event.T_BAS_PRICE_REGION_ID     AS priceRegionId,
+    	event.ACTIVE                    AS active,
+    	event.TYPE                      AS type,
+    	dic.terms_code                  AS orderChannelCode,
+		dic.terms_name			        AS orderChannelName
+	    from BSE.T_BAS_MARKETING_SCHEME event,BSE.T_BAS_PRICING_VALUATION val, BAS.t_Bas_Data_Dictionary dic, 
+           BAS.t_Bas_Data_Dictionary_Value dicVal
+	    where  event.id = val.MARKETING_EVENT_ID 
+			<if test="code !=null and '' != code">
+	       		and event.name =#{name}
+	       	</if>
+           <if test="name !=null and '' != name">
+	       		and event.name =#{name}
+	       </if>
+	       <if test="active !=null and '' != active">
+	       		and event.active = #{active}
+	       </if> 
+	       <if test="type !=null and '' != type">
+				and event.TYPE = #{type}
+		  </if>
+	       <if test="beginTime !=null and '' != beginTime">
+	       		<![CDATA[ and event.BEGIN_TIME  >= to_date( ]]> #{beginTime, jdbcType=TIMESTAMP} <![CDATA[,'yyyy-MM hh24:mi:ss')]]>
+	       </if> 
+	       <if test="endTime !=null and '' != endTime">
+	       		<![CDATA[ and event.END_TIME  < to_date( ]]> #{endTime, jdbcType=TIMESTAMP} <![CDATA[,'yyyy-MM hh24:mi:ss')]]>
+	       </if>            
+  </select>
+  
+  <insert id="insert" parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.MarketingEventEntity" >
+    insert  /** 综合-价格-插入市场活动方案 **/ 
+    into BSE.T_BAS_MARKETING_SCHEME (ID, CODE, NAME, 
+      BEGIN_TIME, END_TIME, DESCRIPTION, 
+      CREATE_USER_CODE, CREATE_TIME, CREATE_ORG_CODE, 
+      MODIFY_USER_CODE, MODIFY_TIME, MODIFY_ORG_CODE, 
+      VERSION_NO, T_BAS_PRICE_REGION_CODE, T_BAS_PRICE_REGION_ID, 
+      ACTIVE, TYPE)
+    values (#{id,jdbcType=VARCHAR}, #{code,jdbcType=VARCHAR}, #{name,jdbcType=VARCHAR}, 
+      #{beginTime,jdbcType=TIMESTAMP}, #{endTime,jdbcType=TIMESTAMP}, #{remark,jdbcType=VARCHAR}, 
+      #{createUser,jdbcType=VARCHAR}, #{createDate,jdbcType=TIMESTAMP}, #{createOrgCode,jdbcType=VARCHAR}, 
+      #{modifyUser,jdbcType=VARCHAR}, #{modifyDate,jdbcType=TIMESTAMP}, #{modifyOrgCode,jdbcType=VARCHAR}, 
+      #{versionNo,jdbcType=DECIMAL}, #{priceRegionCode,jdbcType=VARCHAR}, #{priceRegionId,jdbcType=VARCHAR}, 
+      #{active,jdbcType=CHAR}, #{type,jdbcType=VARCHAR})
+  </insert>
+  
+  <update id="updateByPrimaryKey"
+		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.MarketingEventEntity">
+		update /** 综合-价格-修改市场活动方案 **/  
+		BSE.T_BAS_MARKETING_SCHEME
+		set CODE = #{code,jdbcType=VARCHAR},
+		NAME = #{name,jdbcType=VARCHAR},
+		BEGIN_TIME = #{beginTime,jdbcType=TIMESTAMP},
+		END_TIME = #{endTime,jdbcType=TIMESTAMP},
+		DESCRIPTION = #{remark,jdbcType=VARCHAR},
+		CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+		CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+		CREATE_ORG_CODE = #{createOrgCode,jdbcType=VARCHAR},
+		MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+		MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+		MODIFY_ORG_CODE = #{modifyOrgCode,jdbcType=VARCHAR},
+		VERSION_NO = #{versionNo,jdbcType=DECIMAL},
+		T_BAS_PRICE_REGION_CODE = #{priceRegionCode,jdbcType=VARCHAR},
+		T_BAS_PRICE_REGION_ID = #{priceRegionId,jdbcType=VARCHAR},
+		ACTIVE = #{active,jdbcType=CHAR},
+		TYPE = #{type,jdbcType=VARCHAR}
+		where ID = #{id,jdbcType=VARCHAR}
+	</update>
+  
+	<update id="updateByPrimaryKeySelective"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.MarketingSchemeEntity">
+		update /** 综合-降价发券-修改降价发券方案 **/  
+		BSE.T_BAS_MARKETING_SCHEME
+		<set>
+			<if test="code != null">
+				CODE = #{code,jdbcType=VARCHAR},
+			</if>
+			<if test="name != null">
+				NAME = #{name,jdbcType=VARCHAR},
+			</if>
+			<if test="beginTime != null">
+				BEGIN_TIME = #{beginTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="endTime != null">
+				END_TIME = #{endTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="remark != null">
+				DESCRIPTION = #{remark,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+			MODIFY_TIME = sysdate,
+			<if test="modifyOrgCode != null">
+				MODIFY_ORG_CODE = #{modifyOrgCode,jdbcType=VARCHAR},
+			</if>
+			<if test="versionNo != null">
+				VERSION_NO = #{versionNo,jdbcType=DECIMAL},
+			</if>
+			<if test="priceRegionCode != null">
+				T_SRV_PRICE_REGION_CODE = #{priceRegionCode,jdbcType=VARCHAR},
+			</if>
+			<if test="priceRegionId != null">
+				T_SRV_PRICE_REGION_ID = #{priceRegionId,jdbcType=VARCHAR},
+			</if>
+			<if test="active != null">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="type != null">
+				TYPE = #{type,jdbcType=VARCHAR},
+			</if>
+			<if test="pricingEntryId != null and pricingEntryId != '' ">
+				PRICING_ENTRY_ID = #{pricingEntryId,jdbcType=VARCHAR},
+			</if>
+			<if test="pricingEntryCode != null and pricingEntryCode != '' ">
+				PRICING_ENTRY_CODE = #{pricingEntryCode,jdbcType=VARCHAR},
+			</if>
+			<if test="productItem != null and productItem != '' " >
+        		PRODUCT_ITEM = #{productItem,jdbcType=VARCHAR},
+      		</if>
+<!--       		<if test="orderSource != null and orderSource != '' " > -->
+     		    ORDER_SOURCE = #{orderSource,jdbcType=VARCHAR},
+<!--      		</if> -->
+<!--      		<if test="customerDegree != null and customerDegree != '' " > -->
+        		CUSTOMER_DEGREE = #{customerDegree,jdbcType=VARCHAR},
+<!--       		</if> -->
+<!--       		<if test="customerProfession != null and customerProfession != '' " > -->
+       			CUSTOMER_PROFESSION = #{customerProfession,jdbcType=VARCHAR},
+<!--       		</if> -->
+<!--      		<if test="lineRegion != null and lineRegion != '' " > -->
+        		LINE_REGION = #{lineRegion,jdbcType=VARCHAR},
+<!--       		</if> -->
+      		<if test="availablePeriod != null and availablePeriod != '' " >
+        		AVAILABLE_PERIOD = #{availablePeriod,jdbcType=VARCHAR},
+      		</if>
+<!--       		<if test="couponTimeToSend != null and couponTimeToSend != '' " > -->
+        		COUPON_TIME_TO_SEND = #{couponTimeToSend,jdbcType=DECIMAL},
+<!--       		</if> -->
+      		IS_VOID='N'
+		</set>
+		where ID = #{id,jdbcType=VARCHAR}
+	</update>
+  
+  	<select id="queryMarketingEventByName" resultMap="BaseResultMap" parameterType="String">
+		select /** 综合-降价发券-根据名称查询降价发券方案 **/  
+		<include refid="select_param_list" />
+		from BSE.T_BAS_MARKETING_SCHEME event
+		where event.NAME = #{name}
+		and event.IS_VOID = 'N'
+	</select>
+	
+	<select id="queryMarketingSchemeByCondition" resultMap="BaseResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.MarketingSchemeEntity">
+		select /** 综合-降价发券-根据条件查询降价发券方案 **/
+		<include refid="select_param_list" />
+		from BSE.T_BAS_MARKETING_SCHEME event
+		where event.IS_VOID = 'N'
+		<if test="id !=null and '' != id">
+			and event.ID = #{id}
+		</if>
+		<if test="code !=null and '' != code">
+			and event.CODE = #{code}
+		</if>
+		<if test="name !=null and '' != name">
+			and event.NAME like '%'||#{name}||'%'
+		</if>
+		<if test="active !=null and '' != active">
+			and event.ACTIVE = #{active}
+		</if>
+		<if test="type !=null and '' != type">
+			and event.TYPE = #{type}
+		</if>
+		<if test="businessDate != null and businessDate !='' ">
+			<![CDATA[ and event.BEGIN_TIME  <= ]]> #{businessDate, jdbcType=TIMESTAMP} 
+			<![CDATA[ and event.END_TIME  > ]]> #{businessDate, jdbcType=TIMESTAMP}
+		</if>
+		<!-- <if test="beginTime !=null and '' != beginTime">
+		    		<![CDATA[ and event.BEGIN_TIME  <= ]]>
+			#{beginTime, jdbcType=TIMESTAMP}
+		</if>
+		<if test="endTime !=null and '' != endTime">
+		       		<![CDATA[ and event.END_TIME  >= ]]>
+			#{endTime, jdbcType=TIMESTAMP}
+		</if> -->
+	</select>
+	
+	<select id="countMarketingSchemeByCondition" resultType="long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.MarketingSchemeEntity">
+		select /** 综合-降价发券-根据条件查询降价发券方案总数 **/ COUNT(1)
+		from BSE.T_BAS_MARKETING_SCHEME event
+		where event.IS_VOID = 'N'
+		<if test="id !=null and '' != id">
+			and event.ID = #{id}
+		</if>
+		<if test="code !=null and '' != code">
+			and event.CODE = #{code}
+		</if>
+		<if test="name !=null and '' != name">
+			and event.NAME like '%'||#{name}||'%'
+		</if>
+		<if test="active !=null and '' != active">
+			and event.ACTIVE = #{active}
+		</if>
+		<if test="type !=null and '' != type">
+			and event.TYPE = #{type}
+		</if>
+		<if test="businessDate != null and businessDate !='' ">
+			<![CDATA[ and event.BEGIN_TIME  <= ]]> #{businessDate, jdbcType=TIMESTAMP} 
+			<![CDATA[ and event.END_TIME  > ]]> #{businessDate, jdbcType=TIMESTAMP}
+		</if>
+		<!-- <if test="beginTime !=null and '' != beginTime">
+		    		<![CDATA[ and event.BEGIN_TIME  <= ]]>
+			#{beginTime, jdbcType=TIMESTAMP}
+		</if>
+		<if test="endTime !=null and '' != endTime">
+		       		<![CDATA[ and event.END_TIME  >= ]]>
+			#{endTime, jdbcType=TIMESTAMP}
+		</if> -->
+	</select>
+	
+	<select id="getMarketEventMaxCode" resultType="java.lang.String" parameterType="java.lang.String" >
+   		select /** 综合-降价发券-查询降价发券方案最大CODE **/
+    	MAX(CODE)
+    	from BSE.T_BAS_MARKETING_SCHEME where TYPE = #{type}
+    	and IS_VOID = 'N'
+    </select>
+  
+	<insert id="insertSelective" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.MarketingSchemeEntity" >
+    	insert /** 综合-降价发券-插入降价发券方案 **/ 
+    	into BSE.T_BAS_MARKETING_SCHEME
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="code != null" >
+        CODE,
+      </if>
+      <if test="name != null" >
+        NAME,
+      </if>
+      <if test="beginTime != null" >
+        BEGIN_TIME,
+      </if>
+      <if test="endTime != null" >
+        END_TIME,
+      </if>
+      <if test="remark != null" >
+        DESCRIPTION,
+      </if>
+      <if test="createUser != null" >
+        CREATE_USER_CODE,
+      </if>
+      CREATE_TIME,
+      <if test="createOrgCode != null" >
+        CREATE_ORG_CODE,
+      </if>
+      <if test="modifyUser != null" >
+      	MODIFY_USER_CODE,
+      </if>
+      MODIFY_TIME,
+      <if test="modifyOrgCode != null" >
+        MODIFY_ORG_CODE,
+      </if>
+      <if test="versionNo != null" >
+        VERSION_NO,
+      </if>
+      <if test="priceRegionCode != null" >
+        T_BAS_PRICE_REGION_CODE,
+      </if>
+      <if test="priceRegionId != null" >
+        T_BAS_PRICE_REGION_ID,
+      </if>
+      <if test="active != null" >
+        ACTIVE,
+      </if>
+      <if test="type != null" >
+        TYPE,
+      </if>
+      <if test="pricingEntryId != null and pricingEntryId != '' " >
+        PRICING_ENTRY_ID,
+      </if>
+      <if test="pricingEntryCode != null and pricingEntryCode != '' " >
+        PRICING_ENTRY_CODE,
+      </if>
+      <if test="productItem != null and productItem != '' " >
+        PRODUCT_ITEM,
+      </if>
+      <if test="orderSource != null and orderSource != '' " >
+        ORDER_SOURCE,
+      </if>
+      <if test="customerDegree != null and customerDegree != '' " >
+        CUSTOMER_DEGREE,
+      </if>
+      <if test="customerProfession != null and customerProfession != '' " >
+        CUSTOMER_PROFESSION,
+      </if>
+      <if test="lineRegion != null and lineRegion != '' " >
+        LINE_REGION,
+      </if>
+      <if test="availablePeriod != null and availablePeriod != '' " >
+        AVAILABLE_PERIOD,
+      </if>
+      <if test="couponTimeToSend != null" >
+        COUPON_TIME_TO_SEND,
+       </if>
+      IS_VOID
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+		<if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      	</if>
+       <if test="code != null" >
+        #{code,jdbcType=VARCHAR},
+      </if>
+      <if test="name != null" >
+        #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="beginTime != null" >
+        #{beginTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="endTime != null" >
+        #{endTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="remark != null" >
+        #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="createUser != null" >
+        #{createUser,jdbcType=VARCHAR},
+      </if>
+      sysdate,     
+      <if test="createOrgCode != null" >
+        #{createOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyUser != null" >
+        #{modifyUser,jdbcType=VARCHAR},
+      </if>
+      sysdate,
+      <if test="modifyOrgCode != null" >
+        #{modifyOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="versionNo != null" >
+        #{versionNo,jdbcType=DECIMAL},
+      </if>
+      <if test="priceRegionCode != null" >
+        #{priceRegionCode,jdbcType=VARCHAR},
+      </if>
+      <if test="priceRegionId != null" >
+        #{priceRegionId,jdbcType=VARCHAR},
+      </if>
+      <if test="active != null" >
+        #{active,jdbcType=CHAR},
+      </if>
+      <if test="type != null" >
+        #{type,jdbcType=VARCHAR},
+      </if>
+      <if test="pricingEntryId != null and pricingEntryId != '' " >
+         #{pricingEntryId,jdbcType=VARCHAR},
+      </if>
+      <if test="pricingEntryCode != null and pricingEntryCode != '' " >
+         #{pricingEntryCode,jdbcType=VARCHAR},
+      </if>  
+      <if test="productItem != null and productItem != '' " >
+         #{productItem,jdbcType=VARCHAR},
+      </if>
+      <if test="orderSource != null and orderSource != '' " >
+         #{orderSource,jdbcType=VARCHAR},
+      </if>
+      <if test="customerDegree != null and customerDegree != '' " >
+         #{customerDegree,jdbcType=VARCHAR},
+      </if>
+      <if test="customerProfession != null and customerProfession != '' " >
+         #{customerProfession,jdbcType=VARCHAR},
+      </if>
+      <if test="lineRegion != null and lineRegion != '' " >
+         #{lineRegion,jdbcType=VARCHAR},
+      </if>
+      <if test="availablePeriod != null and availablePeriod != '' " >
+         #{availablePeriod,jdbcType=VARCHAR},
+      </if>
+      <if test="couponTimeToSend != null" >
+         #{couponTimeToSend,jdbcType=DECIMAL},
+      </if>
+      'N'
+    </trim>
+  </insert>
+  
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String">
+	  update /** 综合-降价发券-作废降价发券方案 **/ 
+	  BSE.T_BAS_MARKETING_SCHEME t 
+	  set t.IS_VOID='Y' 
+	  where t.ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.String" >
+    select /** 综合-降价发券-根据主键查询降价发券方案 **/
+    <include refid="select_param_list" />
+    from BSE.T_BAS_MARKETING_SCHEME
+    where ID = #{id,jdbcType=VARCHAR}
+    and IS_VOID = 'N'
+  </select>
+  
+</mapper>

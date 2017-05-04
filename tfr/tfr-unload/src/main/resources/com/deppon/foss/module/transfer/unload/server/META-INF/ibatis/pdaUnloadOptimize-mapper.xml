@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="com.deppon.foss.module.transfer.unload.api.server.dao.IPdaUnloadOptimizeDao">
+
+	<select id="queryUnloadTaskByTaskNo" parameterType="java.lang.String"
+		resultType="com.deppon.foss.module.transfer.unload.api.shared.dto.PdaUnloadTaskDto">
+		SELECT t.id              unloadTaskId,
+		       t.unload_task_no  unloadTaskNo,
+		       t.unload_type     unloadType,
+		       t.unload_org_code unloadOrgCode
+		  FROM tfr.t_opt_unload_task t
+		 WHERE t.unload_task_no = #{unloadTaskNo,jdbcType=VARCHAR}
+		   AND t.task_state != 'CANCELED'
+	</select>
+	
+	<select id="queryUnloadHandOverBill" parameterType="java.lang.String"
+		resultType="com.deppon.foss.module.transfer.unload.api.shared.dto.UnloadBillDto">
+		SELECT d.bill_no       billNo,
+		       d.bill_type     billType,
+		       h.orig_org_code origOrgCode,
+		       h.dest_org_code destOrgCode
+		  FROM tfr.t_opt_unload_task t
+		 INNER JOIN tfr.t_opt_unload_bill_detail d
+		    ON d.unload_task_id = t.id
+		   AND d.bill_type = 'HANDOVER'
+		 INNER JOIN tfr.t_opt_handoverbill h
+		    ON h.handover_no = d.bill_no
+		 WHERE t.id = #{unloadTaskId,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="queryUnloadAssembleBill" parameterType="java.lang.String"
+		resultType="com.deppon.foss.module.transfer.unload.api.shared.dto.UnloadBillDto">
+		SELECT d.bill_no       billNo,
+		       d.bill_type     billType,
+		       b.orig_org_code origOrgCode,
+		       b.dest_org_code destOrgCode
+		  FROM tfr.t_opt_unload_task t
+		 INNER JOIN tfr.t_opt_unload_bill_detail d
+		    ON d.unload_task_id = t.id
+		   AND d.bill_type = 'VEHICLEASSEMBLE'
+		 INNER JOIN tfr.t_opt_vehicleassemblebill b
+		    ON b.vehicleassemble_no = d.bill_no
+		 WHERE t.id = #{unloadTaskId,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="queryUnloadWaybillByTaskId" parameterType="java.lang.String"
+		resultType="com.deppon.foss.module.transfer.unload.api.shared.dto.UnloadWaybillDto">
+		SELECT w.waybill_no                 waybillNo,
+		       w.precious_goods             isValue,
+		       w.receive_org_code           receiveOrgCode,
+		       w.receive_org_name           receiveOrgName,
+		       w.customer_pickup_org_code   customerPickupOrgCode,
+		       w.customer_pickup_org_name   customerPickupOrgName,
+		       w.goods_weight_total         weight,
+		       w.goods_volume_total         volume,
+		       w.goods_qty_total            waybillQty,
+		       w.goods_name                 goodsName,
+		       w.goods_package              packing,
+		       wd.id                        unloadWaybillDetailId,
+		       w.receive_customer_dist_code receiveCustomerDistCode,
+		       w.is_express                 isExpress,
+		       w.receive_method             receiveMethod,
+		       w.product_code               productCode
+		  FROM tfr.t_opt_unload_waybill_detail wd
+		 INNER JOIN pkp.t_srv_waybill w
+		    ON w.waybill_no = wd.waybill_no
+		   AND w.active = 'Y'
+		 WHERE wd.unload_task_id = #{unloadTaskId,jdbcType=VARCHAR}
+		   AND wd.package_no IS NULL
+	</select>
+
+	<select id="queryUnloadMoreSerial" parameterType="java.lang.String"
+		resultType="com.deppon.foss.module.transfer.unload.api.shared.dto.UnloadSerialDto">
+		SELECT t.serial_no serialNo
+		  FROM tfr.t_opt_unload_serialno t
+		 WHERE t.unload_waybill_detail_id = #{unloadWaybillDetailId,jdbcType=VARCHAR}
+		   AND t.goods_state IN
+		       ('MORE_ENTRAINED', 'MORE_ALLOPATRY_ENTRAINED', 'MORE')
+	</select>
+
+	<insert id="addVehicleSyncPda"
+		parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.VehicleSyncPdaEntity">
+		INSERT INTO tfr.t_opt_vehicle_sync_pda
+		  (id,
+		   truck_task_detail_id,
+		   type,
+		   failed,
+		   failed_info,
+		   create_time,
+		   modify_time)
+		VALUES(
+		  #{id,jdbcType=VARCHAR}, 
+		  #{truckTaskDetailId,jdbcType=VARCHAR}, 
+		  #{type,jdbcType=VARCHAR}, 
+		  #{failed,jdbcType=VARCHAR}, 
+		  #{failedInfo,jdbcType=VARCHAR}, 
+		  #{createTime,jdbcType=TIMESTAMP}, 
+		  #{modifyTime,jdbcType=TIMESTAMP})
+	</insert>
+	
+	<update id="updateVehicleSyncPda" 
+		parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.VehicleSyncPdaEntity">
+		UPDATE tfr.t_opt_vehicle_sync_pda t
+		   SET t.failed = #{failed,jdbcType=VARCHAR}, 
+		       t.failed_info = #{failedInfo,jdbcType=VARCHAR}, 
+		       t.modify_time = #{modifyTime,jdbcType=VARCHAR}
+		 WHERE t.id = #{id,jdbcType=VARCHAR}
+	</update>
+	
+	<delete id="deleteVehicleSyncPda" 
+		parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.VehicleSyncPdaEntity">
+		DELETE FROM tfr.t_opt_vehicle_sync_pda t WHERE t.id = #{id,jdbcType=VARCHAR}
+	</delete>
+	
+	<select id="queryVehicleSyncPda"
+		resultType="com.deppon.foss.module.transfer.unload.api.shared.domain.VehicleSyncPdaEntity">
+		<![CDATA[  
+		SELECT t.id id, t.truck_task_detail_id truckTaskDetailId
+		  FROM tfr.t_opt_vehicle_sync_pda t
+		 WHERE t.failed = 'N'
+		   AND t.create_time >= SYSDATE - 3
+		   AND rownum <= 500
+		]]>   
+	</select>
+	
+	<select id="queryUnloadBillByTruckTaskDetailId" parameterType="java.lang.String"
+		resultType="com.deppon.foss.module.transfer.unload.api.shared.dto.UnloadBillDto">
+		SELECT b.bill_no       billNo,
+		       b.bill_type     billType,
+		       d.orig_org_code origOrgCode,
+		       d.dest_org_code destOrgCode
+		  FROM tfr.t_opt_truck_task_detail d
+		 INNER JOIN tfr.t_opt_truck_task_bill b
+		    ON b.truck_task_detail_id = d.id
+		   AND b.bill_level = '1'
+		 WHERE d.id = #{truckTaskDetailId,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="queryHandOverWaybill" parameterType="java.lang.String"
+		resultType="com.deppon.foss.module.transfer.unload.api.shared.dto.UnloadWaybillDto">
+		SELECT w.waybill_no                 waybillNo,
+		       w.precious_goods             isValue,
+		       w.receive_org_code           receiveOrgCode,
+		       w.receive_org_name           receiveOrgName,
+		       w.customer_pickup_org_code   customerPickupOrgCode,
+		       w.customer_pickup_org_name   customerPickupOrgName,
+		       w.goods_weight_total         weight,
+		       w.goods_volume_total         volume,
+		       w.goods_qty_total            waybillQty,
+		       w.goods_name                 goodsName,
+		       w.goods_package              packing,
+		       h.handover_no                handoverBillNo,
+		       w.receive_customer_dist_code receiveCustomerDistCode,
+		       w.is_express                 isExpress,
+		       w.receive_method             receiveMethod,
+		       w.product_code               productCode,
+		       hd.transport_type            productName
+		  FROM tfr.t_opt_handoverbill h
+		 INNER JOIN tfr.t_opt_handoverbill_detail hd
+		    ON hd.handover_no = h.handover_no
+		 INNER JOIN pkp.t_srv_waybill w
+		    ON w.waybill_no = hd.waybill_no
+		   AND w.active = 'Y'
+		 WHERE h.handover_no = #{billNo,jdbcType=VARCHAR}
+ 		   AND h.be_package = 'N'
+	</select>
+	
+	<select id="queryAssembleWaybill" parameterType="java.lang.String"
+		resultType="com.deppon.foss.module.transfer.unload.api.shared.dto.UnloadWaybillDto">
+		SELECT w.waybill_no                 waybillNo,
+		       w.precious_goods             isValue,
+		       w.receive_org_code           receiveOrgCode,
+		       w.receive_org_name           receiveOrgName,
+		       w.customer_pickup_org_code   customerPickupOrgCode,
+		       w.customer_pickup_org_name   customerPickupOrgName,
+		       w.goods_weight_total         weight,
+		       w.goods_volume_total         volume,
+		       w.goods_qty_total            waybillQty,
+		       w.goods_name                 goodsName,
+		       w.goods_package              packing,
+		       h.handover_no                handoverBillNo,
+		       w.receive_customer_dist_code receiveCustomerDistCode,
+		       w.is_express                 isExpress,
+		       w.receive_method             receiveMethod,
+		       w.product_code               productCode,
+		       hd.transport_type            productName
+		  FROM tfr.t_opt_vehicleassemblebill v
+		 INNER JOIN tfr.t_opt_vehicleassemble_detail vd
+		    ON vd.vehicleassemblebill_id = v.id
+		 INNER JOIN tfr.t_opt_handoverbill h
+		    ON h.handover_no = vd.handover_no
+		   AND h.be_package = 'N'
+		 INNER JOIN tfr.t_opt_handoverbill_detail hd
+		    ON hd.handover_no = h.handover_no
+		 INNER JOIN pkp.t_srv_waybill w
+		    ON w.waybill_no = hd.waybill_no
+		   AND w.active = 'Y'
+		 WHERE v.vehicleassemble_no = #{billNo,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="queryUnloadSerial"
+		parameterType="com.deppon.foss.module.transfer.unload.api.shared.dto.UnloadWaybillDto"
+		resultType="com.deppon.foss.module.transfer.unload.api.shared.dto.UnloadSerialDto">
+		SELECT t.waybill_no waybillNo, t.serial_no serialNo
+		  FROM tfr.t_opt_handoverbill_serialno t
+		 WHERE t.handoverbill_no = #{handoverBillNo,jdbcType=VARCHAR}
+		   AND t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="queryContraband" parameterType="java.lang.String" resultType="int">
+		<![CDATA[
+		SELECT COUNT(1)
+		  FROM tfr.t_opt_contraband c
+		 WHERE c.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		   AND c.process_result <> 'NO_CONTRABAND'
+		]]>   
+	</select>
+	
+	<select id="queryOrgStationNum" parameterType="java.lang.String" resultType="java.lang.String">
+		SELECT t.station_number
+		  FROM bse.t_bas_sales_department t
+		 WHERE t.active = 'Y'
+		   AND t.code = #{customerPickupOrgCode,jdbcType=VARCHAR}
+		   AND rownum = 1
+	</select>
+	
+	<select id="queryOuterBranchStationNum" parameterType="java.lang.String" resultType="java.lang.String">
+		SELECT t.station_number
+		  FROM bse.t_bas_outer_branch t
+		 WHERE t.active = 'Y'
+		   AND t.agent_dept_code = #{customerPickupOrgCode,jdbcType=VARCHAR}
+		   AND rownum = 1
+	</select>
+	
+	<select id="queryNeedPack"
+		parameterType="com.deppon.foss.module.transfer.unload.api.shared.dto.UnloadSerialDto"
+		resultType="int">
+		SELECT COUNT(1)
+		  FROM tfr.t_opt_package_request_detail t
+		 WHERE t.is_packed = 'N'
+		   AND t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		   AND t.serial_no = #{serialNo,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="queryTodo"
+		parameterType="com.deppon.foss.module.transfer.unload.api.shared.dto.UnloadSerialDto"
+		resultType="int">
+		SELECT COUNT(1)
+		  FROM pkp.t_srv_waybillrfc w
+		 INNER JOIN pkp.t_srv_labeledgood_todo t
+		    ON t.t_srv_waybill_rfc_id = w.id
+		 WHERE w.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		   AND t.serial_no = #{serialNo,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="queryWaybillType" parameterType="java.lang.String" resultType="java.lang.String">
+		SELECT t.waybill_type
+		  FROM pkp.t_srv_actual_freight t
+		 WHERE t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+	</select>
+
+	<select id="queryReturnGoods" parameterType="java.lang.String"
+		resultType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ReturnGoodsRequestEntity">
+		SELECT t.return_status returnStatus,
+		       t.return_type   returnType,
+		       t.time_report   timeReport
+		  FROM bse.t_bas_return_goods t
+		 WHERE t.active = 'Y'
+		   AND t.ori_waybill = #{waybillNo,jdbcType=VARCHAR}
+		   AND t.active = 'Y'
+	</select>
+	
+</mapper>

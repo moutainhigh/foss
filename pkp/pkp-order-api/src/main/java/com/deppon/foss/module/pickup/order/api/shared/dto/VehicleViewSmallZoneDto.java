@@ -1,0 +1,79 @@
+/**
+ *  initial comments.
+ */
+/*******************************************************************************
+ * Copyright 2013 038590-foss-wanghui
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
+ * PROJECT NAME	: pkp-order-api
+ * 
+ * FILE PATH        	: src/main/java/com/deppon/foss/module/pickup/order/api/shared/dto/DispatchOrderDto.java
+ * 
+ * FILE NAME        	: DispatchOrderDto.java
+ * 
+ * AUTHOR			: FOSS接送货系统开发组
+ * 
+ * HOME PAGE		: http://www.deppon.com
+ * 
+ * COPYRIGHT		: Copyright (c) 2012  Deppon All Rights Reserved.
+ ******************************************************************************/
+package com.deppon.foss.module.pickup.order.api.shared.dto;
+
+import java.io.Serializable;
+import java.util.List;
+
+/**
+ * 
+ * @ClassName: ExpressOrderDto 
+ * @Description: 快递订单DTO 
+ * @author YANGBIN
+ * @date 2014-5-13 下午2:11:10 
+ *
+ */
+public class VehicleViewSmallZoneDto implements Serializable {
+	/** 
+	* @Fields serialVersionUID : TODO(用一句话描述这个变量表示什么) 
+	*/
+	private static final long serialVersionUID = 1L;
+	private String id ;
+	private String name;
+	private String polygonID;
+	private List<VehicleViewDto> vehicleArry;
+	public String getId() {
+		return id;
+	}
+	public void setId(String id) {
+		this.id = id;
+	}
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+	public String getPolygonID() {
+		return polygonID;
+	}
+	public void setPolygonID(String polygonID) {
+		this.polygonID = polygonID;
+	}
+	public List<VehicleViewDto> getVehicleArry() {
+		return vehicleArry;
+	}
+	public void setVehicleArry(List<VehicleViewDto> vehicleArry) {
+		this.vehicleArry = vehicleArry;
+	}
+	
+	
+}

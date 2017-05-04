@@ -1,0 +1,468 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="com.deppon.foss.module.transfer.platform.api.server.dao.IGoodsAreaDensityDao">
+	<!--整点货区密度查询对应resultMap -->
+	<!--各种货区密度查询对应resultMap -->
+	<resultMap id="goodsAreaDensityEntity"
+		type="com.deppon.foss.module.transfer.platform.api.shared.domain.GoodsAreaDensityEntity">
+		<result property="id" column="id" />
+		<result property="transferCenterCode" column="transferCenterCode" />
+		<result property="transferCenterName" column="transferCenterName" />
+		<result property="goodsAreaTypeName" column="goodsAreaTypeName" />
+		<result property="goodsAreaCode" column="goodsAreaCode" />
+		<result property="goodsAreaName" column="goodsAreaName" />
+		<result property="goodsVolume" column="goodsVolume" />
+		<result property="goodsAreaVolume" column="goodsAreaVolume" />
+		<result property="density" column="density" />
+		<result property="statisticDate" column="statisticDate" />
+		<result property="statisticTimePoint" column="statisticTimePoint" />
+		<result property="statisticMonth" column="statisticMonth" />
+	</resultMap>
+
+	<!--用于统计的货区密度实体resultMap -->
+	<resultMap id="goodsAreaDensity4Sum"
+		type="com.deppon.foss.module.transfer.platform.api.shared.dto.GoodsAreaDensity4SumDto">
+		<result property="headquartersName" column="headquartersName" />
+		<result property="businessUnitName" column="businessUnitName" />
+		<result property="transferCenterCode" column="transferCenterCode" />
+		<result property="transferCenterName" column="transferCenterName" />
+		<result property="sumGoodsVolume4Daily" column="sumGoodsVolume4Daily" />
+		<result property="sumGoodsAreaVolume4Daily" column="sumGoodsAreaVolume4Daily" />
+		<result property="avgDensity4Daily" column="avgDensity4Daily" />
+		<result property="sumGoodsVolume4Monthly" column="sumGoodsVolume4Monthly" />
+		<result property="sumGoodsAreaVolume4Monthly" column="sumGoodsAreaVolume4Monthly" />
+		<result property="avgDensity4Monthly" column="avgDensity4Monthly" />
+	</resultMap>
+
+	<!-- 整点货区密度查询select子句 -->
+	<sql id="sql_selectGoodsAreaDensity4Timely_select_clause">
+		SELECT t.transfer_center_code transferCenterCode,
+	       t.transfer_center_name transferCenterName,
+	       t.goods_area_type_name goodsAreaTypeName,
+	       t.goods_area_code      goodsAreaCode,
+	       t.goods_area_name      goodsAreaName,
+	       t.goods_volume         goodsVolume,
+	       t.goods_area_volume    goodsAreaVolume,
+	       t.density              density,
+	       t.statistic_date       statisticDate,
+	       t.statistic_time_point statisticTimePoint,
+	       t.statistic_month      statisticMonth
+	  FROM tfr.t_opt_goods_area_density t
+	</sql>
+	
+	<!-- 各种货区密度查询where子句 -->
+	<sql id="sql_selectGoodsAreaDensity_where_clause">
+		<where>
+			<if test="transferCenterCode != null and transferCenterCode != ''">
+				t.transfer_center_code =
+				#{transferCenterCode,jdbcType=VARCHAR}
+			</if>
+			<if test="statisticDate != null">
+				AND t.statistic_date =
+				#{statisticDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="beginStatisticDate != null and endStatisticDate != null">
+				AND t.statistic_date BETWEEN
+				#{beginStatisticDate,jdbcType=TIMESTAMP}
+				AND
+				#{endStatisticDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="statisticTimePoint != null and statisticTimePoint != ''">
+				AND t.statistic_time_point =
+				#{statisticTimePoint,jdbcType=VARCHAR}
+			</if>
+			<if test="statisticMonth != null and statisticMonth != ''">
+				AND t.statistic_month_point =
+				#{statisticMonth,jdbcType=VARCHAR}
+			</if>
+			<if test="beginStatisticMonth != null and endStatisticMonth != null and beginStatisticMonth != '' and endStatisticMonth != ''">
+				AND t.statistic_month BETWEEN
+				#{beginStatisticMonth,jdbcType=VARCHAR}
+				AND
+				#{endStatisticMonth,jdbcType=VARCHAR}
+			</if>
+			<if test="goodsAreaTypeCode != null and goodsAreaTypeCode != ''">
+				AND t.goods_area_type_code =
+				#{goodsAreaTypeCode,jdbcType=VARCHAR}
+			</if>
+			<if test="goodsAreaCode != null and goodsAreaCode != ''">
+				AND t.goods_area_code =
+				#{goodsAreaCode,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</sql>
+
+	<!-- 各外场各货区平均货区货密度查询select子句 -->
+	<sql id="sql_selectTfrCtrGoodsAreaAvgDensity_select_clause">
+		SELECT t.transfer_center_code transferCenterCode,
+	       t.transfer_center_name transferCenterName,
+	       t.goods_area_type_name goodsAreaTypeName,
+	       t.goods_area_code goodsAreaCode,
+	       t.goods_area_name goodsAreaName,
+	       SUM(t.goods_volume) goodsVolume,
+	       SUM(t.goods_area_volume) goodsAreaVolume,
+	       AVG(t.density) density,
+	</sql>
+	
+	<!-- 各外场各货区平均货区货密度查询group by子句 -->
+	<sql id="sql_selectTfrCtrGoodsAreaAvgDensity_groupBy_clause">
+		 GROUP BY t.transfer_center_code,
+		          t.transfer_center_name,
+		          t.goods_area_type_name,
+		          t.goods_area_code,
+		          t.goods_area_name,
+	</sql>
+	
+	<!-- 各外场平均货区货密度查询select子句 -->
+	<sql id="sql_selectTfrCtrAvgDensity_select_clause">
+		SELECT t.transfer_center_code transferCenterCode,
+		       t.transfer_center_name transferCenterName,
+		       SUM(t.goods_volume) goodsVolume,
+		       SUM(t.goods_area_volume) goodsAreaVolume,
+		       AVG(t.density) density,
+	</sql>
+	
+	<!-- 各外场平均货区货密度查询group by子句 -->
+	<sql id="sql_selectTfrCtrAvgDensity_groupBy_clause">
+		GROUP BY t.transfer_center_code, t.transfer_center_name,
+	</sql>
+
+	<!-- 整点货区密度查询 -->
+	<select id="selectGoodsAreaDensity4Timely"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.GoodsAreaDensityQcDto"
+		resultMap="goodsAreaDensityEntity">
+		<include refid="sql_selectGoodsAreaDensity4Timely_select_clause" />
+		<include refid="sql_selectGoodsAreaDensity_where_clause" />
+		<if test="transferCenterCode != null and transferCenterCode != '' and goodsAreaCode != null and goodsAreaCode != ''">
+			ORDER BY t.statistic_date
+		</if>
+	</select>
+	
+	<!-- 整点货区密度总数查询 -->
+	<select id="selectCntGoodsAreaDensity4Timely"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.GoodsAreaDensityQcDto"
+		resultType="Long">
+		SELECT COUNT(1) FROM tfr.t_opt_goods_area_density t
+		<include refid="sql_selectGoodsAreaDensity_where_clause" />
+	</select>
+
+	<!--各外场各货区各天平均货区密度查询 -->
+	<select id="selectTfrCtrGoodsAreaAvgDensity4Daily"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.GoodsAreaDensityQcDto"
+		resultMap="goodsAreaDensityEntity">
+		<include refid="sql_selectTfrCtrGoodsAreaAvgDensity_select_clause" />
+			t.statistic_date statisticDate
+		 FROM tfr.t_opt_goods_area_density t 
+		<include refid="sql_selectGoodsAreaDensity_where_clause" />
+		<include refid="sql_selectTfrCtrGoodsAreaAvgDensity_groupBy_clause"/>
+			t.statistic_date
+	</select>
+	
+	<!--各外场各货区各天平均货区密度总数查询 -->
+	<select id="selectCntTfrCtrGoodsAreaAvgDensity4Daily"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.GoodsAreaDensityQcDto"
+		resultType="Long">
+		SELECT COUNT(1) FROM (
+		SELECT 1
+		FROM tfr.t_opt_goods_area_density t
+		<include refid="sql_selectGoodsAreaDensity_where_clause" />
+		<include refid="sql_selectTfrCtrGoodsAreaAvgDensity_groupBy_clause" />
+		t.statistic_date)
+	</select>
+	
+	<!--各外场各天平均货区密度查询 -->
+	<select id="selectTfrCtrAvgDensity4Daily"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.GoodsAreaDensityQcDto"
+		resultMap="goodsAreaDensityEntity">
+		<include refid="sql_selectTfrCtrAvgDensity_select_clause" />
+			t.statistic_date statisticDate
+		 FROM tfr.t_opt_goods_area_density t 
+		<include refid="sql_selectGoodsAreaDensity_where_clause" />
+		<include refid="sql_selectTfrCtrAvgDensity_groupBy_clause"/>
+			t.statistic_date
+	</select>
+	
+	<!--各外场各天平均货区密度总数查询 -->
+	<select id="selectCntTfrCtrAvgDensity4Daily"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.GoodsAreaDensityQcDto"
+		resultType="Long">
+		SELECT COUNT(1) FROM (
+		SELECT 1
+		 FROM tfr.t_opt_goods_area_density t 
+		<include refid="sql_selectGoodsAreaDensity_where_clause" />
+		<include refid="sql_selectTfrCtrAvgDensity_groupBy_clause"/>
+			t.statistic_date)
+	</select>
+	
+	<!--各外场各货区各月平均货区密度查询 -->
+	<select id="selectTfrCtrGoodsAreaAvgDensity4Monthly"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.GoodsAreaDensityQcDto"
+		resultMap="goodsAreaDensityEntity">
+		<include refid="sql_selectTfrCtrGoodsAreaAvgDensity_select_clause" />
+			t.statistic_month statisticMonth
+		 FROM tfr.t_opt_goods_area_density t 
+		<include refid="sql_selectGoodsAreaDensity_where_clause" />
+		<include refid="sql_selectTfrCtrGoodsAreaAvgDensity_groupBy_clause"/>
+			t.statistic_month
+		<if test="transferCenterCode != null and transferCenterCode != '' and goodsAreaCode != null and goodsAreaCode != ''">
+			ORDER BY t.statistic_month
+		</if>
+	</select>
+	
+	<!--各外场各货区各月平均货区密度总数查询 -->
+	<select id="selectCntTfrCtrGoodsAreaAvgDensity4Monthly"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.GoodsAreaDensityQcDto"
+		resultType="Long">
+		SELECT COUNT(1) FROM (
+		SELECT 1
+		 FROM tfr.t_opt_goods_area_density t 
+		<include refid="sql_selectGoodsAreaDensity_where_clause" />
+		<include refid="sql_selectTfrCtrGoodsAreaAvgDensity_groupBy_clause"/>
+			t.statistic_month)
+	</select>
+	
+	<!--各外场各月平均货区密度查询 -->
+	<select id="selectTfrCtrAvgDensity4Monthly"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.GoodsAreaDensityQcDto"
+		resultMap="goodsAreaDensityEntity">
+		<include refid="sql_selectTfrCtrAvgDensity_select_clause" />
+			t.statistic_month statisticMonth
+		 FROM tfr.t_opt_goods_area_density t 
+		<include refid="sql_selectGoodsAreaDensity_where_clause" />
+		<include refid="sql_selectTfrCtrAvgDensity_groupBy_clause"/>
+			t.statistic_month
+	</select>
+	
+	<!--各外场各月平均货区密度总数查询 -->
+	<select id="selectCntTfrCtrAvgDensity4Monthly"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.GoodsAreaDensityQcDto"
+		resultMap="goodsAreaDensityEntity">
+		SELECT COUNT(1) FROM (
+		SELECT 1
+		 FROM tfr.t_opt_goods_area_density t 
+		<include refid="sql_selectGoodsAreaDensity_where_clause" />
+		<include refid="sql_selectTfrCtrAvgDensity_groupBy_clause"/>
+			t.statistic_month)
+	</select>
+
+	<!-- 货区密度查询 -->
+	<select id="selectGoodsAreaDensity4Sum"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.GoodsAreaDensityQcDto"
+		resultMap="goodsAreaDensity4Sum">
+		SELECT tc.headquartersName,
+		       tc.businessUnitName,
+		       tc.transferCenterCode,
+		       tc.transferCenterName,
+		       daily.sumGoodsVolume4Daily,
+		       daily.sumGoodsAreaVolume4Daily,
+		       daily.avgDensity4Daily,
+		       monthly.sumGoodsVolume4Monthly,
+		       monthly.sumGoodsAreaVolume4Monthly,
+		       monthly.avgDensity4Monthly
+		  FROM (SELECT d1.transfer_center_code transferCenterCode,
+		               d1.goods_volume sumGoodsVolume4Daily,
+		               d2.goods_area_volume sumGoodsAreaVolume4Daily,
+		               round(d1.goods_volume / d2.goods_area_volume, 3) avgDensity4Daily
+		          FROM (SELECT transfer_center_code,
+		                       round(AVG(goods_volume), 3) goods_volume
+		                  FROM (SELECT t.transfer_center_code,
+		                               t.statistic_time_point,
+		                               SUM(t.goods_volume) goods_volume
+		                          FROM tfr.t_opt_goods_area_density t
+		                         <where>
+		                            <if test="transferCenterCode != null and transferCenterCode != ''">
+		                            t.transfer_center_code = #{transferCenterCode,jdbcType=VARCHAR}
+		                            </if>
+		                           AND t.statistic_date = #{statisticDate,jdbcType=TIMESTAMP}
+		                         </where>
+		                         GROUP BY t.transfer_center_code,
+		                                  t.statistic_time_point)
+		                 GROUP BY transfer_center_code) d1,
+		               (SELECT transfer_center_code, goods_area_volume
+		                  FROM (SELECT transfer_center_code,
+		                               statistic_time_point,
+		                               goods_area_volume,
+		                               row_number() over(PARTITION BY transfer_center_code ORDER BY statistic_time_point DESC) rn
+		                          FROM (SELECT t.transfer_center_code,
+		                                       t.statistic_time_point,
+		                                       SUM(t.goods_area_volume) goods_area_volume
+		                                  FROM tfr.t_opt_goods_area_density t
+		                                 <where>
+		                                    <if test="transferCenterCode != null and transferCenterCode != ''">
+		                                    t.transfer_center_code = #{transferCenterCode,jdbcType=VARCHAR}
+		                                    </if>
+		                                   AND t.statistic_date = #{statisticDate,jdbcType=TIMESTAMP}
+		                                 </where>
+		                                 GROUP BY t.transfer_center_code,t.statistic_time_point))
+		                 WHERE rn = 1) d2
+		         WHERE d1.transfer_center_code = d2.transfer_center_code) daily,
+		       (SELECT m1.transfer_center_code transferCenterCode,
+		               m1.goods_volume sumGoodsVolume4Monthly,
+		               m2.goods_area_volume sumGoodsAreaVolume4Monthly,
+		               round(m1.goods_volume / m2.goods_area_volume, 3) avgDensity4Monthly
+		          FROM (SELECT transfer_center_code, SUM(goods_volume) goods_volume
+		                  FROM (SELECT transfer_center_code,
+		                               statistic_date,
+		                               round(AVG(goods_volume), 3) goods_volume
+		                          FROM (SELECT t.transfer_center_code,
+		                                       t.statistic_date,
+		                                       t.statistic_time_point,
+		                                       SUM(t.goods_volume) goods_volume
+		                                  FROM tfr.t_opt_goods_area_density t
+		                                  <where>
+		                                     <if test="transferCenterCode != null and transferCenterCode != ''">
+		                                      t.transfer_center_code = #{transferCenterCode,jdbcType=VARCHAR}
+		                                     </if>
+		                                     AND t.statistic_month = #{statisticMonth,jdbcType=VARCHAR}
+		                                     AND t.statistic_date BETWEEN
+		                                         #{beginStatisticDate,jdbcType=TIMESTAMP} AND #{endStatisticDate,jdbcType=TIMESTAMP}
+		                                  </where>
+		                                 GROUP BY t.transfer_center_code,
+		                                          t.statistic_date,
+		                                          t.statistic_time_point)
+		                         GROUP BY transfer_center_code, statistic_date)
+		                 GROUP BY transfer_center_code) m1,
+		               (SELECT transfer_center_code,
+		                       SUM(goods_area_volume) goods_area_volume
+		                  FROM (SELECT transfer_center_code,
+		                               statistic_date,
+		                               statistic_time_point,
+		                               goods_area_volume,
+		                               row_number() over(PARTITION BY transfer_center_code, statistic_date ORDER BY statistic_time_point DESC) rn
+		                          FROM (SELECT t.transfer_center_code,
+		                                       t.statistic_date,
+		                                       t.statistic_time_point,
+		                                       SUM(t.goods_area_volume) goods_area_volume
+		                                  FROM tfr.t_opt_goods_area_density t
+		                                 <where>
+		                                     <if test="transferCenterCode != null and transferCenterCode != ''">
+		                                      t.transfer_center_code = #{transferCenterCode,jdbcType=VARCHAR}
+		                                     </if>
+		                                     AND t.statistic_month = #{statisticMonth,jdbcType=VARCHAR}
+		                                     AND t.statistic_date BETWEEN
+		                                         #{beginStatisticDate,jdbcType=TIMESTAMP} AND #{endStatisticDate,jdbcType=TIMESTAMP}
+		                                  </where>
+		                                 GROUP BY t.transfer_center_code,
+		                                          t.statistic_date,
+		                                          t.statistic_time_point))
+		                 WHERE rn = 1
+		                 GROUP BY transfer_center_code) m2
+		         WHERE m1.transfer_center_code = m2.transfer_center_code) monthly,
+		       (SELECT a.code    transferCenterCode,
+		               a.name    transferCenterName,
+		               a.hq_name headquartersName,
+		               b.bu_name businessUnitName
+		          FROM (SELECT l.code, l.name, o.name hq_name
+		                  FROM bse.t_bas_mv_org_layer l, bse.t_bas_org o
+		                 WHERE l.level3 = o.code
+		                   AND l.active = 'Y'
+		                   AND l.transfer_center = 'Y'
+		                   AND o.active = 'Y'
+		                   <if test="transferCenterCode != null and transferCenterCode != ''">
+                             AND l.code = #{transferCenterCode,jdbcType=VARCHAR}
+                           </if>) a,
+		               (SELECT l.code, l.name, o.name bu_name
+		                  FROM bse.t_bas_mv_org_layer l, bse.t_bas_org o
+		                 WHERE l.level4 = o.code
+		                   AND l.active = 'Y'
+		                   AND l.transfer_center = 'Y'
+		                   AND o.active = 'Y'
+		                   <if test="transferCenterCode != null and transferCenterCode != ''">
+                             AND l.code = #{transferCenterCode,jdbcType=VARCHAR}
+                           </if>) b
+		         WHERE a.code = b.code) tc
+		 WHERE daily.transferCenterCode = monthly.transferCenterCode
+		   AND daily.transferCenterCode = tc.transferCenterCode
+		   AND monthly.transferCenterCode = tc.transferCenterCode
+	</select>
+	
+	<!-- 货区密度总数查询 -->
+	<select id="selectCntGoodsAreaDensity4Sum"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.GoodsAreaDensityQcDto"
+		resultType="Long">
+		SELECT COUNT(1)
+		  FROM (SELECT 1
+		          FROM tfr.t_opt_goods_area_density t
+		         <where>
+                    <if test="transferCenterCode != null and transferCenterCode != ''">
+                     t.transfer_center_code = #{transferCenterCode,jdbcType=VARCHAR}
+                    </if>
+                    AND t.statistic_date = #{statisticDate,jdbcType=TIMESTAMP}
+               	 </where>
+		         GROUP BY t.transfer_center_code)
+	</select>
+			
+	<insert id="generateGoodsAreaDensity" parameterType="java.util.Date">
+		INSERT INTO tfr.t_opt_goods_area_density
+		  (id,
+		  create_time,
+		   transfer_center_code,
+		   transfer_center_name,
+		   goods_area_type_code,
+		   goods_area_type_name,
+		   goods_area_code,
+		   goods_area_name,
+		   goods_volume,
+		   goods_area_volume,
+		   density,
+		   statistic_date,
+		   statistic_time_point,
+		   statistic_month
+		   )
+		  SELECT sys_guid(),
+		  		sysdate,
+		         c.org_code,
+		         c.name,
+		         a.goods_area_type,
+		         v.value_name,
+		         a.goods_area_code,
+		         a.goods_area_name,
+		         SUM(CASE
+		               WHEN (w.goods_qty_total = 0 OR w.goods_qty_total IS NULL) THEN
+		                0
+		               ELSE
+		                (s.stock_goods_qty / w.goods_qty_total) * w.goods_volume_total
+		             END),
+		         a.volume,
+		          CASE
+			         WHEN (a.volume = 0 OR a.volume IS NULL) THEN
+			          NULL
+			         ELSE
+			          SUM(CASE
+			                WHEN (w.goods_qty_total = 0 OR w.goods_qty_total IS NULL) THEN
+			                 0
+			                ELSE
+			                 (s.stock_goods_qty / w.goods_qty_total) * w.goods_volume_total
+			              END) / a.volume
+			       END,
+		        trunc(#{date,jdbcType=TIMESTAMP}),
+		        to_char(#{date,jdbcType=TIMESTAMP}, 'hh24'),
+		        to_char(#{date,jdbcType=TIMESTAMP}, 'yyyy-mm')
+		    FROM bse.t_bas_goods_area a
+		   INNER JOIN bse.t_bas_data_dictionary_value v
+		      ON v.terms_code = 'BSE_GOODSAREA_TYPE'
+		     AND v.value_code = a.goods_area_type
+		     AND v.active = 'Y'
+		   INNER JOIN bse.t_bas_transfer_center c
+		      ON c.org_code = a.org_code
+		     AND c.active = 'Y'
+		    LEFT JOIN tfr.t_opt_waybill_stock s
+		      ON s.goods_area_code = a.goods_area_code
+		     AND s.org_code = a.org_code
+		    LEFT JOIN pkp.t_srv_waybill w
+		      ON w.waybill_no = s.waybill_no
+		     AND w.active = 'Y'
+		   WHERE a.active = 'Y'
+		   GROUP BY c.org_code,
+		            c.name,
+		            a.goods_area_type,
+		            v.value_name,
+		            a.goods_area_code,
+		            a.goods_area_name,
+		            a.volume
+	</insert>
+	
+</mapper>

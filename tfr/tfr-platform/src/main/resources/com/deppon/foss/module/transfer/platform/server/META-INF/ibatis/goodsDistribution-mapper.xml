@@ -1,0 +1,435 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="Foss.platform.goodsDistributionJob" >
+
+	<!-- 转运场货量流动分布-->
+	<resultMap id="GoodsDistributionMap" type="com.deppon.foss.module.transfer.platform.api.shared.domain.GoodsDistributionEntity" >
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="transfer_center_code" property="transferCenterCode" jdbcType="VARCHAR" />
+		<result column="transfer_center_name" property="transferCenterName" jdbcType="VARCHAR" />
+		<result column="operation_dept_code" property="operationDeptCode" jdbcType="VARCHAR" />
+		<result column="operation_dept_name" property="operationDeptName" jdbcType="VARCHAR" />
+		<result column="arrive_cargo" property="arriveCargo" jdbcType="DECIMAL" />
+		<result column="arrive_volume" property="arriveVolume" jdbcType="DECIMAL" />
+		<result column="depart_cargo" property="departCargo" jdbcType="DECIMAL" />
+		<result column="depart_volume" property="departVolume" jdbcType="DECIMAL" />
+		<result column="actual_in_cargo" property="actualInCargo" jdbcType="DECIMAL" />
+		<result column="actual_in_volume" property="actualInVolume" jdbcType="DECIMAL" />
+		<result column="actual_out_cargo" property="actualOutCargo" jdbcType="DECIMAL" />
+		<result column="actual_out_volume" property="actualOutVolume" jdbcType="DECIMAL" />
+		<result column="goods_stock_weight" property="goodsStockWeight" jdbcType="DECIMAL" />
+		<result column="goods_stock_volume" property="goodsStockVolume" jdbcType="DECIMAL" />
+		<result column="sta_date" property="staDate" jdbcType="TIMESTAMP" />
+		<result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="sta_time" property="staTime" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 统计转运场货量流动分布-->
+	<select id="statisticGoodsDistribution" parameterType="HashMap" resultMap="GoodsDistributionMap">
+		SELECT TT.ORG_CODE transfer_center_code,
+		       MAX(TT.ORG_NAME) transfer_center_name,
+		       round(SUM(TT.ARRIVE_CARGO)/1000,3) ARRIVE_CARGO,
+		       sum(TT.ARRIVE_VOLUME) ARRIVE_VOLUME,
+		       round(SUM(TT.DEPART_CARGO)/1000,3) DEPART_CARGO,
+		       sum(TT.DEPART_VOLUME) DEPART_VOLUME,
+		       round(SUM(TT.ACTUAL_IN_CARGO)/1000,3) ACTUAL_IN_CARGO,
+		       SUM(TT.ACTUAL_IN_VOLUME) ACTUAL_IN_VOLUME,
+		       round(SUM(TT.ACTUAL_OUT_CARGO)/1000,3) ACTUAL_OUT_CARGO,
+		       SUM(TT.ACTUAL_OUT_VOLUME) ACTUAL_OUT_VOLUME,
+		       round(SUM(TT.GOODS_STOCK_WEIGHT)/1000,3) GOODS_STOCK_WEIGHT,
+		       SUM(TT.GOODS_STOCK_VOLUME) GOODS_STOCK_VOLUME,
+		       sysdate create_time
+		  FROM (
+		        
+		        <!--到达货量-->
+		        <!--车辆单据-交接单-->
+		        SELECT TD.DEST_ORG_CODE ORG_CODE,
+		                MAX(O.NAME) ORG_NAME,
+		                ROUND(NVL(SUM(HD.ACTUAL_WEIGHT), 0), 3) ARRIVE_CARGO,
+		                ROUND(NVL(SUM(HD.ACTUAL_VOLUME), 0), 3) ARRIVE_VOLUME,
+		                0 DEPART_CARGO,
+		                0 DEPART_VOLUME,
+		                0 ACTUAL_IN_CARGO,
+		                0 ACTUAL_IN_VOLUME,
+		                0 ACTUAL_OUT_CARGO,
+		                0 ACTUAL_OUT_VOLUME,
+		                0 GOODS_STOCK_WEIGHT,
+		                0 GOODS_STOCK_VOLUME
+		          FROM TFR.T_OPT_TRUCK_TASK_DETAIL TD
+		          JOIN TFR.T_OPT_TRUCK_TASK_BILL TB
+		            ON TD.ID = TB.TRUCK_TASK_DETAIL_ID
+		           AND TB.BILL_LEVEL = 1
+		          JOIN TFR.T_OPT_HANDOVERBILL_DETAIL HD
+		            ON HD.HANDOVER_NO = TB.BILL_NO
+		           AND TB.BILL_TYPE = 'HANDOVER'
+		          JOIN BSE.T_BAS_ORG O
+		            ON O.CODE = TD.DEST_ORG_CODE
+		           AND O.ACTIVE = 'Y'
+		           AND O.TRANSFER_CENTER = 'Y'
+		           AND (O.EXPRESS_BRANCH = 'N' OR O.EXPRESS_BRANCH IS NULL) <!--去掉分部-->
+	<![CDATA[	  WHERE TD.ACTUAL_ARRIVE_TIME > #{startDate,jdbcType=TIMESTAMP}
+		           AND TD.ACTUAL_ARRIVE_TIME <= #{statisticDate,jdbcType=TIMESTAMP}
+		           AND TD.STATUS <> 'CANCLED'
+		           ]]>
+		         GROUP BY TD.DEST_ORG_CODE
+		        
+		        UNION ALL
+		        
+		        <!--车辆单据-配载单-->
+		        SELECT TD.DEST_ORG_CODE ORG_CODE,
+		               MAX(O.NAME) ORG_NAME,
+		               ROUND(NVL(SUM(HD.ACTUAL_WEIGHT), 0), 3) ARRIVE_CARGO,
+		               ROUND(NVL(SUM(HD.ACTUAL_VOLUME), 0), 3) ARRIVE_VOLUME,
+		               0 DEPART_CARGO,
+		               0 DEPART_VOLUME,
+		               0 ACTUAL_IN_CARGO,
+		               0 ACTUAL_IN_VOLUME,
+		               0 ACTUAL_OUT_CARGO,
+		               0 ACTUAL_OUT_VOLUME,
+		               0 GOODS_STOCK_WEIGHT,
+		               0 GOODS_STOCK_VOLUME
+		          FROM TFR.T_OPT_TRUCK_TASK_DETAIL TD
+		          JOIN TFR.T_OPT_TRUCK_TASK_BILL TB
+		            ON TD.ID = TB.TRUCK_TASK_DETAIL_ID
+		           AND TB.BILL_LEVEL = 1
+		          JOIN TFR.T_OPT_VEHICLEASSEMBLEBILL V
+		            ON V.VEHICLEASSEMBLE_NO = TB.BILL_NO
+	<![CDATA[	   AND V.STATE <> '90']]>
+		          JOIN TFR.T_OPT_VEHICLEASSEMBLE_DETAIL VD
+		            ON V.ID = VD.VEHICLEASSEMBLEBILL_ID
+		          JOIN TFR.T_OPT_HANDOVERBILL_DETAIL HD
+		            ON HD.HANDOVER_NO = VD.HANDOVER_NO
+		           AND TB.BILL_TYPE = 'VEHICLEASSEMBLE'
+		          JOIN BSE.T_BAS_ORG O
+		            ON O.CODE = TD.DEST_ORG_CODE
+		           AND O.ACTIVE = 'Y'
+		           AND O.TRANSFER_CENTER = 'Y'
+		           AND (O.EXPRESS_BRANCH = 'N' OR O.EXPRESS_BRANCH IS NULL) <!--去掉分部-->
+	<![CDATA[	  WHERE TD.ACTUAL_ARRIVE_TIME > #{startDate,jdbcType=TIMESTAMP}
+		           AND TD.ACTUAL_ARRIVE_TIME <= #{statisticDate,jdbcType=TIMESTAMP}
+		           AND TD.STATUS <> 'CANCLED']]>
+		         GROUP BY TD.DEST_ORG_CODE
+		        
+		        UNION ALL
+		        
+		        <!--出发货量-->
+		        <!--车辆单据-交接单-->
+		        SELECT TD.ORIG_ORG_CODE ORG_CODE,
+		               MAX(O.NAME) ORG_NAME,
+		               0 ARRIVE_CARGO,
+		               0 ARRIVE_VOLUME,
+		               ROUND(NVL(SUM(HD.ACTUAL_WEIGHT), 0), 3) DEPART_CARGO,
+		               ROUND(NVL(SUM(HD.Actual_Volume), 0), 3) DEPART_VOLUME,
+		               0 ACTUAL_IN_CARGO,
+		               0 ACTUAL_IN_VOLUME,
+		               0 ACTUAL_OUT_CARGO,
+		               0 ACTUAL_OUT_VOLUME,
+		               0 GOODS_STOCK_WEIGHT,
+		               0 GOODS_STOCK_VOLUME
+		          FROM TFR.T_OPT_TRUCK_TASK_DETAIL TD
+		          JOIN TFR.T_OPT_TRUCK_TASK_BILL TB
+		            ON TD.ID = TB.TRUCK_TASK_DETAIL_ID
+		           AND TB.BILL_LEVEL = 1
+		          JOIN TFR.T_OPT_HANDOVERBILL_DETAIL HD
+		            ON HD.HANDOVER_NO = TB.BILL_NO
+		           AND TB.BILL_TYPE = 'HANDOVER'
+		          JOIN BSE.T_BAS_ORG O
+		            ON O.CODE = TD.ORIG_ORG_CODE
+		           AND O.ACTIVE = 'Y'
+		           AND O.TRANSFER_CENTER = 'Y'
+		           AND (O.EXPRESS_BRANCH = 'N' OR O.EXPRESS_BRANCH IS NULL) <!--去掉分部-->
+	<![CDATA[	  WHERE TD.ACTUAL_DEPART_TIME >#{startDate,jdbcType=TIMESTAMP}
+		           AND TD.ACTUAL_DEPART_TIME <=#{statisticDate,jdbcType=TIMESTAMP}
+		           AND TD.STATUS <> 'CANCLED']]>
+		         GROUP BY TD.ORIG_ORG_CODE
+		        
+		        UNION ALL
+		        
+		        <!--车辆单据-配载单-->
+		        SELECT TD.ORIG_ORG_CODE ORG_CODE,
+		               MAX(O.NAME) ORG_NAME,
+		               0 ARRIVE_CARGO,
+		               0 ARRIVE_VOLUME,
+		               ROUND(NVL(SUM(HD.ACTUAL_WEIGHT), 0), 3) DEPART_CARGO,
+		               ROUND(NVL(SUM(HD.Actual_Volume), 0), 3) DEPART_VOLUME,
+		               0 ACTUAL_IN_CARGO,
+		               0 ACTUAL_IN_VOLUME,
+		               0 ACTUAL_OUT_CARGO,
+		               0 ACTUAL_OUT_VOLUME,
+		               0 GOODS_STOCK_WEIGHT,
+		               0 GOODS_STOCK_VOLUME
+		          FROM TFR.T_OPT_TRUCK_TASK_DETAIL TD
+		          JOIN TFR.T_OPT_TRUCK_TASK_BILL TB
+		            ON TD.ID = TB.TRUCK_TASK_DETAIL_ID
+		           AND TB.BILL_LEVEL = 1
+		          JOIN TFR.T_OPT_VEHICLEASSEMBLEBILL V
+		            ON V.VEHICLEASSEMBLE_NO = TB.BILL_NO
+		<![CDATA[  AND V.STATE <> '90']]>
+		          JOIN TFR.T_OPT_VEHICLEASSEMBLE_DETAIL VD
+		            ON V.ID = VD.VEHICLEASSEMBLEBILL_ID
+		          JOIN TFR.T_OPT_HANDOVERBILL_DETAIL HD
+		            ON HD.HANDOVER_NO = VD.HANDOVER_NO
+		           AND TB.BILL_TYPE = 'VEHICLEASSEMBLE'
+		          JOIN BSE.T_BAS_ORG O
+		            ON O.CODE = TD.ORIG_ORG_CODE
+		           AND O.ACTIVE = 'Y'
+		           AND O.TRANSFER_CENTER = 'Y'
+		           AND (O.EXPRESS_BRANCH = 'N' OR O.EXPRESS_BRANCH IS NULL) <!--去掉分部-->
+	 <![CDATA[    WHERE TD.ACTUAL_DEPART_TIME >#{startDate,jdbcType=TIMESTAMP}
+		           AND TD.ACTUAL_DEPART_TIME <=#{statisticDate,jdbcType=TIMESTAMP}
+		           AND TD.STATUS <> 'CANCLED']]>
+		         GROUP BY TD.ORIG_ORG_CODE
+		        
+		        UNION ALL
+		        
+		        <!--实际流入量                  按流水号-->
+		        
+		        SELECT T.UNLOAD_ORG_CODE ORG_CODE,
+		               MAX(O.NAME) ORG_NAME,
+		               0 ARRIVE_CARGO,
+		               0 ARRIVE_VOLUME,
+		               0 DEPART_CARGO,
+		               0 DEPART_VOLUME,
+		               ROUND(SUM(TT.UNLOAD_QTY / W.GOODS_QTY_TOTAL *
+		                         W.GOODS_WEIGHT_TOTAL),
+		                     3) ACTUAL_IN_CARGO,
+		               ROUND(SUM(TT.UNLOAD_QTY / W.GOODS_QTY_TOTAL *
+		                         W.GOODS_VOLUME_TOTAL),
+		                     3) ACTUAL_IN_VOLUME,
+		               0 ACTUAL_OUT_CARGO,
+		               0 ACTUAL_OUT_VOLUME,
+		               0 GOODS_STOCK_WEIGHT,
+		               0 GOODS_STOCK_VOLUME
+		          FROM TFR.T_OPT_UNLOAD_TASK T
+		          JOIN TFR.T_OPT_UNLOAD_WAYBILL_DETAIL WD
+		            ON WD.UNLOAD_TASK_ID = T.ID
+	<![CDATA[	    AND T.TASK_STATE <> 'CANCELED']]>
+		          JOIN (SELECT US.UNLOAD_WAYBILL_DETAIL_ID WD_ID, COUNT(1) UNLOAD_QTY
+		                  FROM TFR.T_OPT_UNLOAD_SERIALNO US
+		 <![CDATA[        WHERE US.UNLOAD_TIME >#{startDate,jdbcType=TIMESTAMP}
+		                   AND US.UNLOAD_TIME <=#{statisticDate,jdbcType=TIMESTAMP}
+		                   AND US.GOODS_STATE <> 'CANCELED' AND us.GOODS_STATE <> 'LACK']]>
+		                 GROUP BY US.UNLOAD_WAYBILL_DETAIL_ID) TT
+		            ON TT.WD_ID = WD.ID
+		          JOIN PKP.T_SRV_WAYBILL W
+		            ON W.WAYBILL_NO = WD.WAYBILL_NO
+		           AND W.ACTIVE = 'Y'
+		          JOIN BSE.T_BAS_ORG O
+		            ON O.CODE = T.UNLOAD_ORG_CODE
+		           AND O.ACTIVE = 'Y'
+		           AND O.TRANSFER_CENTER = 'Y'
+		           AND (O.EXPRESS_BRANCH = 'N' OR O.EXPRESS_BRANCH IS NULL)
+		         GROUP BY T.UNLOAD_ORG_CODE
+		        
+		        union all
+		        
+		        <!--实际流出量                   按流水号-->        
+		        SELECT T.ORIG_ORG_CODE ORG_CODE,
+		               MAX(O.NAME) ORG_NAME,
+		               0 ARRIVE_CARGO,
+		               0 ARRIVE_VOLUME,
+		               0 DEPART_CARGO,
+		               0 DEPART_VOLUME,
+		               0 ACTUAL_IN_CARGO,
+		               0 ACTUAL_IN_VOLUME,
+		               ROUND(SUM(TT.LOAD_QTY / W.GOODS_QTY_TOTAL *
+		                         W.GOODS_WEIGHT_TOTAL),
+		                     3) ACTUAL_OUT_CARGO,
+		               ROUND(SUM(TT.LOAD_QTY / W.GOODS_QTY_TOTAL *
+		                         W.GOODS_VOLUME_TOTAL),
+		                     3) ACTUAL_OUT_VOLUME,
+		               0 GOODS_STOCK_WEIGHT,
+		               0 GOODS_STOCK_VOLUME
+		          FROM TFR.T_OPT_LOAD_TASK T
+	<![CDATA[	   JOIN TFR.T_OPT_LOAD_WAYBILL_DETAIL WD
+		            ON WD.LOAD_TASK_ID = T.ID
+		           AND T.TASK_STATE <> 'CANCELED'
+		          JOIN (SELECT US.LOAD_WAYBILL_DETAIL_ID WD_ID, COUNT(1) LOAD_QTY
+		                  FROM TFR.T_OPT_LOAD_SERIALNO US
+		                 WHERE US.LOAD_TIME >#{startDate,jdbcType=TIMESTAMP}
+		                   AND US.LOAD_TIME <=#{statisticDate,jdbcType=TIMESTAMP}
+		                   AND US.GOODS_STATE <> 'CANCELED'
+		                   AND US.GOODS_STATE <> 'INVALID']]>
+		                 GROUP BY US.LOAD_WAYBILL_DETAIL_ID) TT
+		            ON TT.WD_ID = WD.ID
+		          JOIN PKP.T_SRV_WAYBILL W
+		            ON W.WAYBILL_NO = WD.WAYBILL_NO
+		           AND W.ACTIVE = 'Y'
+		          JOIN BSE.T_BAS_ORG O
+		            ON O.CODE = T.ORIG_ORG_CODE
+		           AND O.ACTIVE = 'Y'
+		           AND O.TRANSFER_CENTER = 'Y'
+		           AND (O.EXPRESS_BRANCH = 'N' OR O.EXPRESS_BRANCH IS NULL)
+		         GROUP BY T.ORIG_ORG_CODE
+		        
+		        UNION ALL
+		        
+		        <!--货台库存-->
+		        SELECT S.ORG_CODE ORG_CODE,
+		               MAX(O.NAME) ORG_NAME,
+		               0 ARRIVE_CARGO,
+		               0 ARRIVE_VOLUME,
+		               0 DEPART_CARGO,
+		               0 DEPART_VOLUME,
+		               0 ACTUAL_IN_CARGO,
+		               0 ACTUAL_IN_VOLUME,
+		               0 ACTUAL_OUT_CARGO,
+		               0 ACTUAL_OUT_VOLUME,
+		               ROUND(MAX(W.GOODS_WEIGHT_TOTAL) * COUNT(1) /
+		                     MAX(W.GOODS_QTY_TOTAL),
+		                     3) GOODS_STOCK_WEIGHT,
+		               ROUND(MAX(W.GOODS_VOLUME_TOTAL) * COUNT(1) /
+		                     MAX(W.GOODS_QTY_TOTAL),
+		                     3) GOODS_STOCK_VOLUME
+		          FROM TFR.T_OPT_STOCK S
+		          JOIN BSE.T_BAS_ORG O
+		            ON O.CODE = S.ORG_CODE
+		           AND O.ACTIVE = 'Y'
+		           AND O.TRANSFER_CENTER = 'Y'
+		           AND (O.EXPRESS_BRANCH = 'N' OR O.EXPRESS_BRANCH IS NULL)
+		         INNER JOIN PKP.T_SRV_WAYBILL W
+		            ON W.WAYBILL_NO = S.WAYBILL_NO
+		           AND W.ACTIVE = 'Y'
+		         WHERE NOT EXISTS (SELECT 1 /*非正在装车*/
+		                  FROM TFR.T_OPT_LOAD_TASK LT
+		                 INNER JOIN TFR.T_OPT_LOAD_WAYBILL_DETAIL WD
+		                    ON WD.LOAD_TASK_ID = LT.ID
+		                 INNER JOIN TFR.T_OPT_LOAD_SERIALNO LS
+		                    ON LS.LOAD_WAYBILL_DETAIL_ID = WD.ID
+		                   AND LS.BE_LOADED = 'Y'
+		                 WHERE LT.ORIG_ORG_CODE = S.ORG_CODE
+		                   AND LT.LOAD_START_TIME >= SYSDATE - 1 <!-- 业务默认装车一天内一定把车装好 -->
+		                   AND LT.TASK_STATE = 'LOADING'
+		                   AND WD.WAYBILL_NO = S.WAYBILL_NO
+		                   AND LS.SERIAL_NO = S.SERIAL_NO)
+		         GROUP BY S.ORG_CODE, W.WAYBILL_NO) TT
+		 GROUP BY TT.ORG_CODE
+		
+	</select>
+	
+	<!-- 保存统计信息 -->
+	<insert id="saveGoodsDistribution" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.GoodsDistributionEntity">
+		insert into tfr.t_opt_goods_distribution(
+			id,
+			transfer_center_code,
+			transfer_center_name,
+			operation_dept_code,
+			operation_dept_name,
+			arrive_cargo,
+			arrive_volume,
+			depart_cargo,
+			depart_volume,
+			actual_in_cargo,
+			actual_in_volume,
+			actual_out_cargo,
+			actual_out_volume,
+			goods_stock_weight,
+			goods_stock_volume,
+			sta_date,
+			sta_time,
+			create_time
+		)
+		values(
+			#{id,jdbcType=VARCHAR},
+			#{transferCenterCode,jdbcType=VARCHAR},
+			#{transferCenterName,jdbcType=VARCHAR},
+			#{operationDeptCode,jdbcType=VARCHAR},
+			#{operationDeptName,jdbcType=VARCHAR},
+			#{arriveCargo,jdbcType=DECIMAL},
+			#{arriveVolume,jdbcType=DECIMAL},
+			#{departCargo,jdbcType=DECIMAL},
+			#{departVolume,jdbcType=DECIMAL},
+			#{actualInCargo,jdbcType=DECIMAL},
+			#{actualInVolume,jdbcType=DECIMAL},
+			#{actualOutCargo,jdbcType=DECIMAL},
+			#{actualOutVolume,jdbcType=DECIMAL},
+			#{goodsStockWeight,jdbcType=DECIMAL},
+			#{goodsStockVolume,jdbcType=DECIMAL},
+			#{staDate,jdbcType=TIMESTAMP},
+			#{staTime,jdbcType=VARCHAR},
+			#{createTime,jdbcType=TIMESTAMP}
+		)
+	</insert>
+	
+	<!-- 查询经营本部 -->
+	<select id="queryOperationDeptCodeByCurrentCode" parameterType="String" resultMap="GoodsDistributionMap">
+		 SELECT 
+		  		hq_code operation_dept_code,
+		  		hq_name operation_dept_name
+		  FROM (SELECT t.code code,
+		               t.parent_org_code hq_code,
+		               t.parent_org_name hq_name
+		          FROM (SELECT o.name,
+		                       o.parent_org_name,
+		                       o.code,
+		                       o.parent_org_code,
+		                       CASE
+		                         WHEN o.name LIKE '%本部' THEN
+		                          'Y'
+		                         ELSE
+		                          'N'
+		                       END hq
+		                  FROM bse.t_bas_org o
+		                 WHERE o.active = 'Y') t
+		         START WITH t.code = #{code,jdbcType=VARCHAR}
+		        CONNECT BY PRIOR t.parent_org_code = t.code
+		               AND t.hq = 'N'
+		         ORDER BY LEVEL DESC)
+		 WHERE rownum = 1
+	</select>
+	
+	<!-- 按天查询转运场货量流动分布 -->
+	<select id="queryGoodsDistributionByDay" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.GoodsDistributionEntity" resultMap="GoodsDistributionMap">
+		select 
+               transfer_center_code,
+		       transfer_center_name,
+		       operation_dept_code,
+		       operation_dept_name,
+		       round(arrive_cargo, 2) arrive_cargo,
+		       round(arrive_volume, 2) arrive_volume,
+		       round(depart_cargo, 2) depart_cargo,
+		       round(depart_volume, 2) depart_volume,
+		       round(actual_in_cargo, 2) actual_in_cargo,
+		       round(actual_in_volume, 2) actual_in_volume,
+		       round(actual_out_cargo, 2) actual_out_cargo,
+		       round(actual_out_volume, 2) actual_out_volume,
+		       round(goods_stock_weight, 2) goods_stock_weight,
+		       round(goods_stock_volume, 2) goods_stock_volume,
+		       sta_date,
+		       create_time,
+		       sta_time
+		  from tfr.t_opt_goods_distribution g
+		 where to_char(g.sta_date, 'yyyy-mm-dd') = to_char(#{staDate,jdbcType=TIMESTAMP},'yyyy-mm-dd')
+		   and g.transfer_center_code = #{transferCenterCode,jdbcType=VARCHAR}
+		   <if test="operationDeptCode!=null and operationDeptCode!=''">
+		  	 and g.operation_dept_code = #{operationDeptCode,jdbcType=VARCHAR}
+		   </if>
+		 order by g.sta_time
+	</select>
+	
+	<!-- 按月查询转运场货量流动分布 -->
+	<select id="queryGoodsDistributionByMonth" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.GoodsDistributionEntity" resultMap="GoodsDistributionMap">
+		select *
+		  from (select max(g.transfer_center_code) transfer_center_code,
+		               max(g.transfer_center_name) transfer_center_name,
+		               max(g.operation_dept_code) operation_dept_code,
+		               max(g.operation_dept_name) operation_dept_name,
+		              round(sum(g.arrive_cargo) / count(*),2) arrive_cargo,
+		              round(sum(g.depart_cargo) / count(*),2) depart_cargo,
+		              round(sum(g.actual_in_cargo) / count(*),2) actual_in_cargo,
+		              round(sum(g.actual_out_cargo) / count(*),2) actual_out_cargo,
+		              round(sum(g.goods_stock_weight) / count(*),2) goods_stock_weight,
+		               g.sta_time sta_time,
+		               max(g.sta_date) sta_date
+		          from tfr.t_opt_goods_distribution g
+		         where to_char(g.sta_date, 'yyyy-mm') = to_char(#{staDate,jdbcType=TIMESTAMP},'yyyy-mm')
+		           and g.transfer_center_code = #{transferCenterCode,jdbcType=VARCHAR}
+		           <if test="operationDeptCode!=null and operationDeptCode!=''">
+				  	 and g.operation_dept_code = #{operationDeptCode,jdbcType=VARCHAR}
+				   </if>
+		         group by g.sta_time) temp
+		 order by temp.sta_time
+	</select>
+	
+	
+</mapper>

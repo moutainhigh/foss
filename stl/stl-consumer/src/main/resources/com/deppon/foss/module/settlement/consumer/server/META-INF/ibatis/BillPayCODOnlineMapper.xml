@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.BillPayCODOnlineDao">
+
+	<!-- 批量插入代收货款付款单明细 -->
+	<insert id="addCodPaymentD"	parameterType="java.util.Map">
+		INSERT INTO /*结算-应付单-批量插入付款单明细*/
+		STL.T_STL_BILL_PAYMENT_D
+		  (ID,
+		   PAYMENT_NO,
+		   PAYMENT_ACCOUNT_DATE,
+		   SOURCE_BILL_NO,
+		   WAYBILL_NO,
+		   SOURCE_BILL_TYPE,
+		   SOURCE_ACCOUNT_DATE,
+		   CREATE_TIME,
+		   SRC_SOURCE_BILL_NO,
+		   PAY_AMOUNT)
+		  SELECT SYS_GUID() ID,
+		         p.payment_no PAYMENT_NO,
+		         P.ACCOUNT_DATE PAYMENT_ACCOUNT_DATE,
+		         P.PAYABLE_NO SOURCE_BILL_NO,
+		         P.WAYBILL_NO WAYBILL_NO,
+		         'P' SOURCE_BILL_TYPE,
+		         P.ACCOUNT_DATE SOURCE_ACCOUNT_DATE,
+		         SYSDATE CREATE_TIME,
+		         P.SOURCE_BILL_NO SRC_SOURCE_BILL_NO,
+		         P.UNVERIFY_AMOUNT PAY_AMOUNT
+		    FROM STL.T_STL_BILL_PAYABLE P
+		   WHERE P.PAYABLE_NO IN 
+			<foreach collection="payableNos" item="payableNos" open="(" close=")" separator=",">
+				#{payableNos,jdbcType=VARCHAR}
+			</foreach>
+		     AND P.BILL_TYPE = 'APC'
+		     AND P.ACTIVE = 'Y'
+	</insert>
+
+	<!-- 批量插入代收货款付款单 -->
+	<insert id="addCodPayment" parameterType="java.util.Map">
+		INSERT INTO /*结算-应付单-批量插入付款单*/
+		STL.T_STL_BILL_PAYMENT
+		  (ID,
+		   PAYMENT_NO,
+		   CURRENCY_CODE,
+		   AMOUNT,
+		   CUSTOMER_CODE,
+		   CUSTOMER_NAME,
+		   WORKFLOW_NO,
+		   REMIT_STATUS,
+		   AUDIT_STATUS,
+		   SOURCE_BILL_NO,
+		   SOURCE_BILL_TYPE,
+		   PAYMENT_ORG_CODE,
+		   PAYMENT_ORG_NAME,
+		   PAYMENT_COMPANY_CODE,
+		   PAYMENT_COMPANY_NAME,
+		   ACTIVE,
+		   IS_RED_BACK,
+		   CREATE_USER_CODE,
+		   CREATE_USER_NAME,
+		   AUDIT_USER_CODE,
+		   AUDIT_USER_NAME,
+		   MODIFY_USER_CODE,
+		   MODIFY_USER_NAME,
+		   DISABLE_USER_CODE,
+		   DISABLE_USER_NAME,
+		   BUSINESS_DATE,
+		   ACCOUNT_DATE,
+		   CREATE_TIME,
+		   MODIFY_TIME,
+		   DISABLE_TIME,
+		   BILL_TYPE,
+		   IS_INIT,
+		   PAYMENT_TYPE,
+		   MOBILE_PHONE,
+		   ACCOUNT_NO,
+		   PAYEE_NAME,
+		   ACCOUNT_TYPE,
+		   PROVINCE_CODE,
+		   CITY_CODE,
+		   BANK_HQ_NAME,
+		   BANK_BRANCH_NAME,
+		   BANK_BRANCH_CODE,
+		   AUDIT_OPINION,
+		   DISABLE_OPINION,
+		   APPLY_WORK_FLOW_NO,
+		   NOTES,
+		   VERSION_NO,
+		   BANK_HQ_CODE,
+		   PROVINCE_NAME,
+		   CITY_NAME,
+		   CREATE_TYPE,
+		   BATCH_NO,
+		   WORKFLOW_TYPE,
+		   INVOICE_HEAD_CODE,
+		   INVOICE_HEAD_NAME,
+		   PAYEE_CODE,
+		   CUSTOMER_TYPE)
+		  SELECT SYS_GUID() ID,
+		         p.payment_no PAYMENT_NO,
+		         'RMB' CURRENCY_CODE,
+		         P.UNVERIFY_AMOUNT AMOUNT,
+		         P.CUSTOMER_CODE CUSTOMER_CODE,
+		         P.CUSTOMER_NAME CUSTOMER_NAME,
+		         '' WORKFLOW_NO,
+		         'NT' REMIT_STATUS,
+		         'NA' AUDIT_STATUS,
+		         P.PAYABLE_NO SOURCE_BILL_NO,
+		         'YF' SOURCE_BILL_TYPE,
+		         P.PAYABLE_ORG_CODE PAYMENT_ORG_CODE,
+		         P.PAYABLE_ORG_NAME PAYMENT_ORG_NAME,
+		         P.PAYABLE_COM_CODE PAYMENT_COMPANY_CODE,
+		         P.PAYABLE_COM_NAME PAYMENT_COMPANY_NAME,
+		         'Y' ACTIVE,
+		         'N' IS_RED_BACK,
+		         #{empCode,jdbcType=VARCHAR} CREATE_USER_CODE,
+		         #{empName,jdbcType=VARCHAR} CREATE_USER_NAME,
+		         '' AUDIT_USER_CODE,
+		         '' AUDIT_USER_NAME,
+		         '' MODIFY_USER_CODE,
+		         '' MODIFY_USER_NAME,
+		         '' DISABLE_USER_CODE,
+		         '' DISABLE_USER_NAME,
+		         P.BUSINESS_DATE BUSINESS_DATE,
+		         SYSDATE ACCOUNT_DATE,
+		         SYSDATE CREATE_TIME,
+		         '' MODIFY_TIME,
+		         '' DISABLE_TIME,
+		         'YF' BILL_TYPE,
+		         'N' IS_INIT,
+		         'TT' PAYMENT_TYPE,
+		         C.PAYEE_PHONE MOBILE_PHONE,
+		         C.ACCOUNT_NO ACCOUNT_NO,
+		         C.PAYEE_NAME PAYEE_NAME,
+		         C.PUBLIC_PRIVATE_FLAG ACCOUNT_TYPE,
+		         C.PROVINCE_CODE PROVINCE_CODE,
+		         C.CITY_CODE CITY_CODE,
+		         C.BANK_HQ_NAME BANK_HQ_NAME,
+		         C.BANK_BRANCH_NAME BANK_BRANCH_NAME,
+		         C.BANK_BRANCH_CODE BANK_BRANCH_CODE,
+		         '' AUDIT_OPINION,
+		         '' DISABLE_OPINION,
+		         '' APPLY_WORK_FLOW_NO,
+		         '' NOTES,
+		         '1' VERSION_NO,
+		         '' BANK_HQ_CODE,
+		         C.PROVINCE_NAME PROVINCE_NAME,
+		         C.CITY_NAME CITY_NAME,
+		         'A' CREATE_TYPE,
+		         '' BATCH_NO,
+		         '' WORKFLOW_TYPE,
+		         '' INVOICE_HEAD_CODE,
+		         '' INVOICE_HEAD_NAME,
+		         '' PAYEE_CODE,
+		         '' CUSTOMER_TYPE
+		    FROM STL.T_STL_BILL_PAYABLE P
+		   INNER JOIN STL.T_STL_COD C
+		      ON C.WAYBILL_NO = P.WAYBILL_NO
+		   WHERE P.PAYABLE_NO IN 
+			<foreach collection="payableNos" item="payableNos" open="(" close=")" separator=",">
+				#{payableNos,jdbcType=VARCHAR}
+			</foreach>
+		     AND P.ACTIVE = 'Y'
+		     AND P.BILL_TYPE = 'APC'
+		     AND C.ACTIVE = 'Y'
+	</insert>
+
+	<!-- 批量更新代收货款应付单 -->
+	<update id="updateCodPayable" parameterType="java.util.Map">
+		UPDATE /*结算-应付单-批量更新应付单的支付状态*/ STL.T_STL_BILL_PAYABLE P
+   SET P.VERSION_NO       = VERSION_NO + 1,
+       P.PAY_STATUS       = 'Y',
+       p.payment_no       = 'FK2' || LPAD(STL.SQ_FK2.NEXTVAL, 9, '0'),
+       p.payment_amount   = p.unverify_amount,
+       P.MODIFY_TIME      = SYSDATE,
+       P.MODIFY_USER_CODE = 'YQ',
+       P.MODIFY_USER_NAME = '银企'
+		 WHERE P.PAYABLE_NO IN 
+		  <foreach collection="payableNos" item="payableNos" open="(" close=")" separator=",">
+		      #{payableNos,jdbcType=VARCHAR}
+		  </foreach>
+		   AND P.ACTIVE = 'Y'
+		   AND P.BILL_TYPE = 'APC'
+	</update>
+
+</mapper>

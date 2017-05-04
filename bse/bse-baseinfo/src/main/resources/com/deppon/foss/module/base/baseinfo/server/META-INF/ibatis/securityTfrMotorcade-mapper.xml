@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- securityTfrMotorcadeEntity-mapper.xml 保安组信息Mapper文件 -->
+<mapper namespace="foss.bse.bse-baseinfo.securityTfrMotorcade" >
+
+    <resultMap id="securityTfrMotorcadeResultMap"
+   			type="com.deppon.foss.module.base.baseinfo.api.shared.domain.SecurityTfrMotorcadeEntity">
+		<result property="id" column="ID"  jdbcType="VARCHAR" />
+		<result property="virtualCode" column="VIRTUAL_CODE"  jdbcType="VARCHAR" />
+		<result property="securityCode" column="SECURITY_CODE"  jdbcType="VARCHAR" />
+		<result property="transcenterCode" column="TRANSCENTER_CODE"  jdbcType="VARCHAR" />
+		<result property="motorcadeCode" column="MOTORCADE_CODE"  jdbcType="VARCHAR" />
+		<result property="createDate" column="CREATE_TIME"  jdbcType="TIMESTAMP" />
+		<result property="modifyDate" column="MODIFY_TIME"  jdbcType="TIMESTAMP" />
+		<result property="active" column="ACTIVE"  jdbcType="CHAR" />	
+		<result property="createUser" column="CREATE_USER_CODE"  jdbcType="VARCHAR" />
+		<result property="modifyUser" column="MODIFY_USER_CODE"  jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<!-- 数据字段 -->
+	<sql id="SecurityTfrMotorcade_Column_List">
+		ID, VIRTUAL_CODE,SECURITY_CODE,TRANSCENTER_CODE,MOTORCADE_CODE,CREATE_TIME,
+		MODIFY_TIME,ACTIVE,CREATE_USER_CODE,MODIFY_USER_CODE
+	</sql>
+	
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<if test="securityCode != null and securityCode != ''">
+				SECURITY_CODE LIKE CONCAT(CONCAT('%',#{securityCode,jdbcType=VARCHAR}),'%')
+			</if>
+			<if test="active != null and active != ''">
+			    and ACTIVE LIKE CONCAT(CONCAT('%',#{active,jdbcType=CHAR}),'%')
+			</if>		
+		</where>
+	</sql>
+	
+	<!-- 根据保安组编码查询 -->
+	<sql id="querySecurityCodeWhere">
+		<where>
+			<if test="securityCode != null and securityCode != ''">
+				SECURITY_CODE = #{securityCode,jdbcType=VARCHAR}
+			</if>	
+			<if test="active != null and active != ''">
+			    and ACTIVE LIKE CONCAT(CONCAT('%',#{active,jdbcType=CHAR}),'%')
+			</if>
+			order by create_time desc		
+		</where>
+	</sql>	
+	
+	<!-- 根据保安组编码查询信息-->
+	<select id="select"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SecurityTfrMotorcadeEntity"
+		resultMap="securityTfrMotorcadeResultMap">
+		<![CDATA[
+			SELECT
+			/** 查询保安组信息 **/
+		]]>
+		<include refid="SecurityTfrMotorcade_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_SECURITY_TFR_MOTORCADE T
+		]]>
+		<include refid="querySecurityCodeWhere" />
+	</select>
+	
+	<!-- 统计总记录数 -->
+	<select id="queryCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SecurityTfrMotorcadeEntity">
+	    <![CDATA[
+	       	SELECT/** 统计总记录数**/ count(*) FROM BSE.T_BAS_SECURITY_TFR_MOTORCADE T 
+	    ]]>
+		<include refid="queryWhere" />
+	</select>
+	
+	<!-- 统计同一保安组总记录数 -->
+	<select id="querySecurityCodeCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SecurityTfrMotorcadeEntity">
+	    <![CDATA[
+	       	SELECT/** 统计同一保安组记录数**/ count(*) FROM BSE.T_BAS_SECURITY_TFR_MOTORCADE T 
+	    ]]>
+		<include refid="querySecurityCodeWhere" />
+	</select>
+	
+	<!-- 新增保安组信息 -->
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SecurityTfrMotorcadeEntity">	
+		<![CDATA[
+			INSERT/** 新增保安组信息 **/ INTO BSE.T_BAS_SECURITY_TFR_MOTORCADE T	(
+		]]>
+		<include refid="SecurityTfrMotorcade_Column_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR},
+		#{virtualCode,jdbcType=VARCHAR},
+		#{securityCode,jdbcType=VARCHAR},
+		#{transcenterCode,jdbcType=VARCHAR},
+		#{motorcadeCode,jdbcType=VARCHAR},
+		#{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=CHAR},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+	
+	<!-- 批量删除保安组信息 -->
+	<update id="deleteByCode" parameterType="map">
+		UPDATE/** 逻辑删除保安组信息 **/ BSE.T_BAS_SECURITY_TFR_MOTORCADE T
+		<set>
+ 			ACTIVE = 'N' 
+		</set>
+		<where>
+			<if test="codeList!=null and codeList.length > 0">
+				ID in
+				<foreach collection="codeList" index="index" item="code" open="("
+					separator="," close=")">
+					#{code}
+				</foreach>
+			</if>
+		</where>
+	</update>
+	
+	<!-- 修改保安组信息 -->
+	<update id="update"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SecurityTfrMotorcadeEntity">
+		UPDATE/** 修改保安组信息 **/ BSE.T_BAS_SECURITY_TFR_MOTORCADE T
+		<set>
+			<if test="virtualCode != null">
+				VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR},
+			</if>
+			<if test="securityCode != null">
+				SECURITY_CODE = #{securityCode,jdbcType=VARCHAR},
+			</if>
+			<if test="transcenterCode != null">
+				TRANSCENTER_CODE = #{transcenterCode,jdbcType=VARCHAR},
+			</if>
+			<if test="motorcadeCode != null">
+				MOTORCADE_CODE = #{motorcadeCode,jdbcType=VARCHAR},
+			</if>
+			<if test="createDate != null">
+				CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="active != null">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="createUser != null">
+				CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+		</set>
+		<where>
+			<if test="id != null">
+				id = #{id,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</update>
+	
+</mapper>

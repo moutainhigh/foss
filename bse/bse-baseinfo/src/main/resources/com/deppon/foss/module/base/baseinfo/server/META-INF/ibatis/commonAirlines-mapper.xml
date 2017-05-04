@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.commmonAirlines">
+
+	<!-- 航空公司 -->
+	<resultMap id="airlineResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.AirlinesEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="NAME" property="name" jdbcType="VARCHAR" />
+		<result column="CODE" property="code" jdbcType="VARCHAR" />
+		<result column="SIMPLE_NAME" property="simpleName" jdbcType="VARCHAR" />
+		<result column="PRIFIX_NAME" property="prifixName" jdbcType="VARCHAR" />
+		<result column="LOGO" property="logo" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 数据字段 -->
+	<sql id="airline_Column_List">
+		ID, NAME, CODE, SIMPLE_NAME, PRIFIX_NAME, LOGO,
+		CREATE_TIME, MODIFY_TIME,
+		ACTIVE,
+		CREATE_USER_CODE, MODIFY_USER_CODE,
+		NOTES
+	</sql>
+
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<if test="name != null and name != ''">
+				NAME LIKE CONCAT(CONCAT('%',#{name,jdbcType=VARCHAR}),'%') 
+			</if>
+			<if test="code != null and code != ''">
+				AND CODE = #{code,jdbcType=VARCHAR}
+			</if>
+			<if test="queryParam != null and queryParam != '' ">
+				AND 
+				(
+					CODE LIKE CONCAT(CONCAT('%',#{queryParam,jdbcType=VARCHAR}),'%')
+				 OR  		
+				 	NAME LIKE CONCAT(CONCAT('%',#{queryParam,jdbcType=VARCHAR}),'%')
+				 )
+			</if>
+			<if test="active != null and active != ''">
+				AND ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</sql>
+
+	<!-- 分页查询所有航空公司信息 -->
+	<select id="getAllInfos"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AirlinesEntity"
+		resultMap="airlineResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:分页查询所有航空公司信息 **/
+		]]>
+		<include refid="airline_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_AIRLINES T
+		]]>
+		<include refid="queryWhere" />
+	</select>
+
+	<!-- 统计总记录数 -->
+	<select id="getCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AirlinesEntity">
+	    <![CDATA[
+	       	select/** 综合:统计总记录数 **/ count(*) from BSE.T_BAS_AIRLINES T
+	    ]]>
+		<include refid="queryWhere" />
+	</select>
+</mapper>

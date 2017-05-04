@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.commonPartnerDepartment">
+	<!-- 营业部信息 -->
+	<resultMap id="queryNameMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.SaleDepartmentEntity">
+		<result property="id" column="ID" jdbcType="VARCHAR" />
+		<result property="code" column="CODE" jdbcType="VARCHAR" />
+		<result property="name" column="NAME" jdbcType="VARCHAR" />
+		<result property="isLeagueSaleDept" column="IS_LEAGUE_SALEDEPT" jdbcType="CHAR" />
+		<result property="isTwoLevelNetwork" column="IS_TWO_LEVEL_NETWORK" jdbcType="CHAR" />
+		<result property="active" column="ACTIVE" jdbcType="CHAR" />
+	</resultMap>
+	
+	<!-- 数据字段 -->
+	<sql id="query_sale_department_param">
+		A.ID AS ID,
+		A.CODE AS CODE,
+		A.NAME AS NAME,
+		A.IS_LEAGUE_SALEDEPT AS IS_LEAGUE_SALEDEPT, /**是否加盟网点**/
+		A.IS_TWO_LEVEL_NETWORK AS IS_TWO_LEVEL_NETWORK,/**是否二级网点**/
+		A.ACTIVE AS ACTIVE/** 是否可用**/
+	</sql>
+	
+	<!--根据 是否二级网点 与  是否可用  查询二级合伙人网点数据 -->
+	<select id="queryByIsTwoLevelNetwork" resultMap="queryNameMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SaleDepartmentEntity">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据  IS_TWO_LEVEL_NETWORK与ACTIVE 精确查询数据  **/
+		]]>
+		<include refid="query_sale_department_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_SALES_DEPARTMENT A 
+		]]>
+		<where>
+			A.ACTIVE='Y'
+			AND A.IS_LEAGUE_SALEDEPT='Y'
+			AND A.IS_TWO_LEVEL_NETWORK='Y'
+			<if test="name != null and name != ''">
+				AND A.NAME LIKE CONCAT(CONCAT('%', #{name,jdbcType=VARCHAR}), '%')
+			</if>
+		</where>
+	</select>
+	
+	<!-- 根据  是否二级网点 与  是否可用  查询二级合伙人网点  统计数据 -->
+	<select id="queryByIsTwoLevelNetworkCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SaleDepartmentEntity">
+		<![CDATA[
+		  SELECT  /** 综合:根据 IS_TWO_LEVEL_NETWORK与ACTIVE 精确查询数据  **/ count(*)
+		  FROM BSE.T_BAS_SALES_DEPARTMENT A 
+		]]>
+		<where>
+			A.ACTIVE='Y' 
+			AND A.IS_LEAGUE_SALEDEPT='Y'
+			AND A.IS_TWO_LEVEL_NETWORK='Y'
+			<if test="name != null and name != ''">
+				AND A.NAME LIKE CONCAT(CONCAT('%', #{name,jdbcType=VARCHAR}), '%')
+			</if>
+		</where> 
+	</select>
+	
+	
+	<!--根据 是否加盟网点 与 是否可用  查询一级网点名称数据 -->
+	<select id="queryByIsLeagueSaleDept" resultMap="queryNameMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SaleDepartmentEntity">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据 IS_LEAGUE_SALEDEPT ACTIVE 精确查询数据  **/
+		]]>
+		<include refid="query_sale_department_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_SALES_DEPARTMENT A 
+		]]>
+		<where>
+			A.ACTIVE='Y'
+			AND A.IS_LEAGUE_SALEDEPT='Y'
+			AND A.IS_TWO_LEVEL_NETWORK='N'
+			<if test="name != null and name != ''">
+				AND A.NAME LIKE CONCAT(CONCAT('%', #{name,jdbcType=VARCHAR}), '%')
+			</if>
+		</where>
+	</select>
+	<!-- 根据 是否加盟网点 与 是否可用  统计数据 -->
+	<select id="queryByIsLeagueSaleDeptCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SaleDepartmentEntity">
+		<![CDATA[
+		  SELECT  /** 综合:根据 IS_LEAGUE_SALEDEPT ACTIVE 精确查询数据  **/ count(*)
+		  FROM BSE.T_BAS_SALES_DEPARTMENT A 
+		]]>
+		<where>
+			A.ACTIVE='Y' 
+			AND A.IS_LEAGUE_SALEDEPT='Y'
+			AND A.IS_TWO_LEVEL_NETWORK='N'
+			<if test="name != null and name != ''">
+				AND A.NAME LIKE CONCAT(CONCAT('%', #{name,jdbcType=VARCHAR}), '%')
+			</if>
+		</where> 
+	</select>
+	
+</mapper>

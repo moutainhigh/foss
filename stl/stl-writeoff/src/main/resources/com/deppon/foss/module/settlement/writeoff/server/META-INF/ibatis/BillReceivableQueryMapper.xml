@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.BillReceivableEntityDao">
+
+	<!-- 根据输入应收单号查询可用于核销的应收单 -->
+	<select id="selectBillByReceivableNos" resultMap="BaseResultMap"
+		parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.BillReceivableDto">
+		SELECT /*结算-核销-根据输入应收单号查询可用于核销的应收单*/
+		<include refid="Base_Column_List" />
+		FROM STL.T_STL_BILL_RECEIVABLE T
+		WHERE UNVERIFY_AMOUNT>0 
+			AND RECEIVABLE_NO IN
+				<foreach collection="receivableNos" index="index" item="item"
+					open="(" separator="," close=")">
+					#{item}
+				</foreach>
+		<if test="active!=null and active!=''">
+			AND ACTIVE = #{active}<!-- 有效 -->
+		</if>
+		<if test="isRedBack!=null and isRedBack!=''">
+			AND IS_RED_BACK = #{isRedBack}<!-- 非红单 -->
+		</if>
+		<if test="isRedBack!=null and isRedBack!=''">
+			AND APPROVE_STATUS = #{approveStatus}<!-- 审核状态已审核 -->
+		</if>
+		<if test="generatingOrgCode!=null and generatingOrgCode!=''">
+			AND RECEIVABLE_ORG_CODE = #{generatingOrgCode}<!-- 登录部门等于应收单应收部门过滤数据 -->
+		</if>
+		<!-- 可核销应收单类型：始发应收、小票应收、专线到付运费、偏线到付运费、空运到付运费、空运机场代理应收、空运机场其他应收 、空运代理代收货款应收-->
+		<if test="billTypeList!=null and billTypeList.size()>0">
+			AND BILL_TYPE IN
+			<foreach collection="billTypeList" index="index" item="item"
+				open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+	</select>
+
+	<!-- 根据输入参数查询可用于核销的应收单 -->
+	<select id="selectBillByReceivableParams" resultMap="BaseResultMap"
+		parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.BillReceivableDto">
+		select /*结算-核销-根据输入参数查询可用于核销的应收单*/
+		<include refid="Base_Column_List" />
+		from STL.T_STL_BILL_RECEIVABLE T
+		where UNVERIFY_AMOUNT>0  <!-- 未核销金额大于0 -->
+		<if test="active!=null and active!=''">
+			AND ACTIVE = #{active}<!-- 有效 -->
+		</if>
+		<if test="isRedBack!=null and isRedBack!=''">
+			AND IS_RED_BACK = #{isRedBack}<!-- 非红单 -->
+		</if>
+		<if test="isRedBack!=null and isRedBack!=''">
+			AND APPROVE_STATUS = #{approveStatus}<!-- 审核状态已审核 -->
+		</if>
+		<if test="generatingOrgCode!=null and generatingOrgCode!=''">
+			AND RECEIVABLE_ORG_CODE = #{generatingOrgCode}<!-- 登录部门等于应收单应收部门过滤数据 -->
+		</if>
+		<if test="customerCode!=null and customerCode!=''">
+			AND CUSTOMER_CODE = #{customerCode}<!-- 客户不为空时，根据客户编码过滤 -->
+		</if>
+		<if test="startBusinessDate!=null and startBusinessDate!='' and endBusinessDate!=null and endBusinessDate!=''">
+    		<![CDATA[ AND   BUSINESS_DATE >=#{startBusinessDate} AND   BUSINESS_DATE <#{endBusinessDate}]]>
+		</if>
+		<if test="startAccountDate!=null and startAccountDate!='' and endAccountDate!=null and endAccountDate!=''">
+    		<![CDATA[ AND  ACCOUNT_DATE >=#{startAccountDate} AND   ACCOUNT_DATE <#{endAccountDate} ]]>
+		</if>
+		<!-- 可核销应收单类型：始发应收、小票应收、专线到付运费、偏线到付运费、空运到付运费、空运机场代理应收、空运机场其他应收 -->
+		<if test="billTypeList!=null and billTypeList.size()>0">
+			AND BILL_TYPE IN
+			<foreach collection="billTypeList" index="index" item="item"
+				open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+    	<![CDATA[ AND   ROWNUM <=#{maxShowNum} ]]>
+	</select>
+
+
+
+	<!-- 根据输入应收单对应运单号查询可用于核销的应收单 -->
+	<select id="selectBillByWayBillNos" resultMap="BaseResultMap"
+		parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.BillReceivableDto">
+		SELECT /*结算-核销-根据输入应收单号查询可用于核销的应收单*/
+		<include refid="Base_Column_List" />
+		FROM STL.T_STL_BILL_RECEIVABLE T
+		WHERE UNVERIFY_AMOUNT>0 
+			AND WAYBILL_NO IN
+				<foreach collection="waybillNoList" index="index" item="item"
+					open="(" separator="," close=")">
+					#{item}
+				</foreach>
+		<if test="active!=null and active!=''">
+			AND ACTIVE = #{active}<!-- 有效 -->
+		</if>
+		<if test="isRedBack!=null and isRedBack!=''">
+			AND IS_RED_BACK = #{isRedBack}<!-- 非红单 -->
+		</if>
+		<if test="isRedBack!=null and isRedBack!=''">
+			AND APPROVE_STATUS = #{approveStatus}<!-- 审核状态已审核 -->
+		</if>
+		<if test="generatingOrgCode!=null and generatingOrgCode!=''">
+			AND RECEIVABLE_ORG_CODE = #{generatingOrgCode}<!-- 登录部门等于应收单应收部门过滤数据 -->
+		</if>
+		<!-- 可核销应收单类型：始发应收、小票应收、专线到付运费、偏线到付运费、空运到付运费、空运机场代理应收、空运机场其他应收 、空运代理代收货款应收-->
+		<if test="billTypeList!=null and billTypeList.size()>0">
+			AND BILL_TYPE IN
+			<foreach collection="billTypeList" index="index" item="item"
+				open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+	</select>
+</mapper>

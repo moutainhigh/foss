@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="com.deppon.pda.bdm.module.foss.upgrade.server.dao.impl.ExpressRouteDetailDataVerGenDao">
+	<!-- 路由明细 -->
+	<select id="queryLocalDatas" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.RouteDetailEntity">
+		<![CDATA[
+			SELECT 
+				RD.ID 				AS id,
+              	RD.FREIGHTROUTECODE AS routeCode,
+              	RD.STATIONSER 		AS stationSer,
+              	RD.DEPARTURECODE 	AS departureDept,
+              	RD.DESTCODE 		AS destDept,
+              	RD.STORENUM 		AS storeNum,
+              	RD.OPERFLAG 		AS operFlag
+	        FROM T_BASE_ROUTE_DETAIL RD
+		    LEFT JOIN T_BASE_ROUTE R
+		    	ON RD.FREIGHTROUTECODE = R.ID
+		    WHERE r.DEPARTURECODE in
+		       (select de.assemblydeptcode as assemblydeptcode from T_SVR_EXP_DEPARTASSEMBLYDEPT de where de.departdeptcode = #{deptCode,jdbcType=VARCHAR} and de.operflag = 1
+ 				and de.assemblytype = 'TRANS_VEHICLE' and de.linesort = 'BSE_LINE_SORT_SOURCE')
+		    AND RD.OPERFLAG = '1'
+		   
+		]]>
+		<if test="startTime != null and startTime != ''  ">
+			<![CDATA[ AND RD.UPDTIME > #{startTime,jdbcType=TIMESTAMP}]]>
+		</if>
+		<if test="endTime != null and endTime != '' ">
+			<![CDATA[ AND RD.UPDTIME <= #{endTime,jdbcType=TIMESTAMP}]]>
+		</if>
+	</select>
+	
+	
+	<select id="queryLocalDatasByDel" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.RouteDetailEntity">
+		<![CDATA[
+			SELECT 
+				RD.ID 				AS id,
+              	RD.FREIGHTROUTECODE AS routeCode,
+              	RD.STATIONSER 		AS stationSer,
+              	RD.DEPARTURECODE 	AS departureDept,
+              	RD.DESTCODE 		AS destDept,
+              	RD.STORENUM 		AS storeNum,
+              	RD.OPERFLAG 		AS operFlag
+	        FROM T_BASE_ROUTE_DETAIL RD
+		    LEFT JOIN T_BASE_ROUTE R
+		    	ON RD.FREIGHTROUTECODE = R.ID
+		    WHERE r.DEPARTURECODE in
+		       (select de.assemblydeptcode as assemblydeptcode from T_SVR_EXP_DEPARTASSEMBLYDEPT de where de.departdeptcode = #{deptCode,jdbcType=VARCHAR} and de.operflag = 1
+ 				and de.assemblytype = 'TRANS_VEHICLE' and de.linesort = 'BSE_LINE_SORT_SOURCE')
+		    AND RD.OPERFLAG = '3'
+			AND RD.UPDTIME > #{startTime,jdbcType=TIMESTAMP}
+			AND RD.UPDTIME <= #{endTime,jdbcType=TIMESTAMP}
+		]]>
+	</select>
+	
+	<select id="queryLocalIncDataList" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="int">
+		<![CDATA[
+			SELECT COUNT(*) FROM T_BASE_ROUTE_DETAIL 
+		]]>
+		<if test="startTime != null and startTime != ''  ">
+			<![CDATA[ WHERE UPDTIME >= #{startTime,jdbcType=TIMESTAMP}]]>
+		</if>
+		<if test="endTime != null and endTime != '' ">
+			<![CDATA[ AND UPDTIME < #{endTime,jdbcType=TIMESTAMP}]]>
+		</if>
+	</select>
+</mapper>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:cxf="http://cxf.apache.org/core" xmlns:jaxws="http://cxf.apache.org/jaxws" xmlns:jaxrs="http://cxf.apache.org/jaxrs"
+	xsi:schemaLocation="
+		      http://www.springframework.org/schema/beans
+		      http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		      http://cxf.apache.org/core
+		      http://cxf.apache.org/schemas/core.xsd
+		      http://cxf.apache.org/jaxws
+		      http://cxf.apache.org/schemas/jaxws.xsd
+		      http://cxf.apache.org/jaxrs
+		      http://cxf.apache.org/schemas/jaxrs.xsd"
+	default-autowire="byName">
+
+	<!-- Load CXF modules from cxf.jar -->
+	<import resource="classpath:META-INF/cxf/cxf.xml" />
+	<import resource="classpath:META-INF/cxf/cxf-servlet.xml" />
+
+	<!-- 预提 -->
+	<bean id="withholdingWebService" class="com.deppon.foss.module.settlement.costcontrolitf.server.ws.WithholdingWebService"></bean>
+	<!-- 转报销 -->
+	<bean id="submitRefundWebService" class="com.deppon.foss.module.settlement.costcontrolitf.server.ws.SubmitRefundWebService"></bean>
+
+	<!-- web service -->
+	<jaxws:endpoint id="WSWithholdingWebService" implementor="#withholdingWebService" implementorClass="com.deppon.foss.withholdingservice.IWithholdingService" address="/withholdingWebService">
+		<jaxws:inInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingInInterceptor" />
+		</jaxws:inInterceptors>
+		<jaxws:outInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingOutInterceptor" />
+		</jaxws:outInterceptors>
+	</jaxws:endpoint>
+	<!-- web service -->
+	<jaxws:endpoint id="WSSubmitRefundWebService" implementor="#submitRefundWebService" implementorClass="com.deppon.foss.submitrefund.ISubmitRefundService" address="/submitRefundWebService">
+		<jaxws:inInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingInInterceptor" />
+		</jaxws:inInterceptors>
+		<jaxws:outInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingOutInterceptor" />
+		</jaxws:outInterceptors>
+	</jaxws:endpoint>
+	
+	<bean id="paymentTransferServiceImpl" class="com.deppon.foss.module.settlement.costcontrolitf.server.ws.PaymentTransferServiceImpl" />
+	<!-- 配置restful方式的web服务 -->
+    <jaxrs:server id="paymentTransferServiceImplWS" address="/paymentTransferServiceImpl">
+        <jaxrs:serviceBeans>
+            <ref bean="paymentTransferServiceImpl"/>
+        </jaxrs:serviceBeans>
+        <jaxrs:inInterceptors><!-- 加入消息拦截器  -->
+            <bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+        </jaxrs:inInterceptors>
+        <jaxrs:outInterceptors>
+            <bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+        </jaxrs:outInterceptors>
+    </jaxrs:server>
+	<!-- rest end -->
+	
+	
+	
+	<!-- add by tangjun 273272 -->
+	<!-- 月结报表中月结提成金额文件配置开始 -->
+	<bean id="billReceivableMonthlyServiceImpl" class="com.deppon.foss.module.settlement.costcontrolitf.server.ws.BillReceivableMonthlyServiceImpl">
+	</bean>
+	<jaxrs:server id="billReceivableMonthly" address="/billReceivableMonthly">
+	    <jaxrs:serviceBeans>
+	        <ref bean="billReceivableMonthlyServiceImpl" />
+	    </jaxrs:serviceBeans>
+	    <jaxrs:extensionMappings>
+	        <entry key="json" value="application/json" />
+	        <entry key="xml" value="application/xml" />
+	    </jaxrs:extensionMappings>
+	    <jaxrs:languageMappings>
+	           <entry key="en" value="en-gb"/>  
+	    </jaxrs:languageMappings>
+	     <jaxrs:inInterceptors><!-- 加入消息拦截器  -->
+            <bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+        </jaxrs:inInterceptors>
+        <jaxrs:outInterceptors>
+            <bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+        </jaxrs:outInterceptors>
+	</jaxrs:server>
+	<!-- 月结报表中月结提成金额文件配置结束 -->
+	
+</beans>

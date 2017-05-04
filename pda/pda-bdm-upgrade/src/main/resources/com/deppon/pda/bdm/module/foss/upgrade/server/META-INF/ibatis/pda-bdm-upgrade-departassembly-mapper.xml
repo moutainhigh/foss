@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.pda.bdm.module.foss.upgrade.server.dao.impl.DepartassemblyDataVerGenDao">
+	<!-- 始发配载部门信息 -->
+	<select id="queryLocalDatas" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.DepartassemblyDeptEntity">
+		<![CDATA[
+			SELECT 
+		        DD.ID as id,
+		        DD.DEPARTDEPTCODE as departDeptId,
+		        DD.ASSEMBLYDEPTCODE as assemblyDeptId,
+		        DD.ASSEMBLYTYPE as assemblyType,
+		            DD.OPERFLAG as operFlag,
+		            (CASE DD.ISDEFAULT
+		                    WHEN 'N' THEN
+		                   '0'
+		                   WHEN 'Y' THEN
+		                   '1'
+		                   ELSE
+		                   '2'
+		                  END) as isDefault
+		            FROM T_BASE_DEPARTASSEMBLYDEPT DD
+		      
+		     WHERE 
+		     		DD.ASSEMBLYDEPTCODE=#{deptCode,jdbcType=VARCHAR} 
+		     		AND DD.ASSEMBLYTYPE = 'TRANS_VEHICLE'
+       				AND DD.OPERFLAG = '1'
+       				AND DD.LINESORT = 'BSE_LINE_SORT_TARGET'
+		]]>
+		<if test="startTime != null and startTime != ''  ">
+			<![CDATA[ AND DD.UPDTIME > #{startTime,jdbcType=TIMESTAMP}]]>
+		</if>
+		<if test="endTime != null and endTime != '' ">
+			<![CDATA[ AND DD.UPDTIME <= #{endTime,jdbcType=TIMESTAMP}]]>
+		</if>
+	</select>
+	
+	<select id="queryLocalDatasByDel" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.DepartassemblyDeptEntity">
+		<![CDATA[
+			SELECT 
+				DD.ID as id
+      		  FROM T_BASE_DEPARTASSEMBLYDEPT DD
+ 		   WHERE DD.ASSEMBLYTYPE = 'TRANS_VEHICLE'
+        	AND DD.OPERFLAG = '3'
+			AND DD.UPDTIME > #{startTime,jdbcType=TIMESTAMP}
+			AND DD.UPDTIME <= #{endTime,jdbcType=TIMESTAMP}
+		]]>
+	</select>
+	
+	<select id="queryLocalIncDataList" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="int">
+		<![CDATA[
+			SELECT COUNT(*) FROM T_BASE_DEPARTASSEMBLYDEPT 
+		]]>
+		<if test="startTime != null and startTime != ''  ">
+			<![CDATA[ WHERE UPDTIME >= #{startTime,jdbcType=TIMESTAMP}]]>
+		</if>
+		<if test="endTime != null and endTime != '' ">
+			<![CDATA[ AND UPDTIME < #{endTime,jdbcType=TIMESTAMP}]]>
+		</if>
+	</select>
+</mapper>

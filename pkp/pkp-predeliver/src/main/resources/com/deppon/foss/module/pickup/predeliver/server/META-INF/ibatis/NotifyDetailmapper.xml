@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.foss.module.pickup.predeliver.api.server.dao.INotifyDetailsDao" >
+
+	<!-- 运单返回resultMap -->
+  <resultMap id="noticeDetailRecordMap2"
+    type="com.deppon.foss.module.pickup.predeliver.api.shared.dto.NotifyDetailsDto">
+    <result property="waybillNo" column="waybillNo" jdbcType = "VARCHAR" />
+    <result property="noticeStatus" column="noticeStatus" jdbcType = "VARCHAR" />
+    <result property="deliverMethod" column="deliverMethod" jdbcType = "VARCHAR"/>
+    <result property="stockStatus" column="stockStatus" jdbcType = "VARCHAR" />
+    <result property="inStockTime" column="inStockTime" jdbcType = "TIMESTAMP" />
+    <result property="planToSendTime" column="planToSendTime" jdbcType = "TIMESTAMP" />
+    <result property="receivecustomerName" column="receivecustomerName" jdbcType = "VARCHAR" />
+    <result property="delivercustomerAddr" column="delivercustomerAddr" jdbcType = "VARCHAR" />
+    <result property="customerTelePhone" column="customerTelePhone" jdbcType = "VARCHAR" />
+    <result property="customerMobile" column="customerMobile" jdbcType = "VARCHAR" />
+    <result property="goodsTotal" column="goodsTotal" jdbcType = "INTEGER" />
+    <result property="weight" column="weight" jdbcType = "DECIMAL" />
+    <result property="volume" column="volume" jdbcType = "DECIMAL" />
+    <result property="arriveFee" column="arriveFee" jdbcType = "DECIMAL" />
+    <result property="deliverRequire" column="deliverRequire" jdbcType = "VARCHAR" />
+    <result property="creatorName" column="creatorName" jdbcType = "VARCHAR" />
+    <result property="createTime" column="createTime"  jdbcType = "TIMESTAMP" />
+    <result property="receiveCustomerNationCode" column="receiveCustomerNationCode" jdbcType = "VARCHAR" />
+        <result property="receiveCustomerProvCode" column="receiveCustomerProvCode" jdbcType = "VARCHAR" />
+        <result property="receiveCustomerCityCode" column="receiveCustomerCityCode" jdbcType = "VARCHAR" />
+    <result property="receiveCustomerDistCode" column="receiveCustomerDistCode"  jdbcType = "VARCHAR" />
+    <result property="receiveCustomerAddress" column="receiveCustomerAddress"  jdbcType = "VARCHAR" />
+    <!-- DMANA-3694 增加6个字段：到达时间、送货司机、司机手机、签收时间、出发部门、到达部门 -->
+    <result property="arriveTime" column="arriveTime"  jdbcType = "TIMESTAMP" />
+    <result property="signTime" column="signTime"  jdbcType = "TIMESTAMP" />
+    <result property="receiveOrgName" column="receiveOrgName"  jdbcType = "VARCHAR" />
+    <result property="customerPickupOrgName" column="customerPickupOrgName"  jdbcType = "VARCHAR" />
+    <result property="driverCode" column="driverCode"  jdbcType = "VARCHAR" />
+    <result property="driverName" column="driverName"  jdbcType = "VARCHAR" />
+    <result property="vehicleNo" column="vehicleNo"  jdbcType = "VARCHAR" />
+    <result property="isExpress" column="isExpress"  jdbcType = "VARCHAR" />
+    <result property="receiveCustomerAddressNote" column="receiveCustomerAddressNote"  jdbcType = "VARCHAR" />
+  </resultMap>
+  
+    <sql id="select_stock_Where">
+	<if test="endStockOrgCode != null and endStockOrgCode !=''">  
+      <![CDATA[ and WS.ORG_CODE  = #{endStockOrgCode, jdbcType=VARCHAR}]]>
+   	 </if>
+    <!-- 库区-->
+    <!--add by chenjunying DMANA-9499 判断保留之前的条件，新加多库区查询条件-->
+    <if test="goodsAreaCode != null and goodsAreaCode !=''">  
+      <![CDATA[ AND WS.GOODS_AREA_CODE = #{goodsAreaCode, jdbcType=VARCHAR}]]>
+    </if> 
+ 	<if test="goodsAreaCodes!= null and goodsAreaCodes.size>0">
+		and ws.GOODS_AREA_CODE  in
+		<foreach collection="goodsAreaCodes" open="(" close=")" separator=","
+			item="mgoodsAreaCode">
+       	      #{mgoodsAreaCode,jdbcType=VARCHAR}
+		</foreach>
+    </if>
+  </sql>
+  
+  <select id="queryNoticeDetailCount" resultType="java.lang.Long">
+    select /*模块：接送货-通知客户管理- 查询通知明细列表查询 个数*/
+   count(1) 
+    FROM pkp.t_srv_notification nc 
+    inner join PKP.T_SRV_WAYBILL WB
+    on nc.waybill_no=wb.waybill_no
+   <include refid="notice_Detail_where"/>
+  </select>
+  <select id="queryNoticeDetail" resultMap="noticeDetailRecordMap2"
+   parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.NotifyDetailsConditonDto">
+   <![CDATA[
+    SELECT /*模块：接送货-通知客户管理- 查询通知明细列表查询 */
+	 wb.waybill_no waybillNo,
+	nc.notice_result noticeStatus,
+	wb.RECEIVE_METHOD deliverMethod,
+	decode(ws.in_stock_time,null,'N','Y') stockStatus,
+	ws.in_stock_time inStockTime,
+	nc.Deliver_Date planToSendTime,
+	wb.receive_customer_contact receivecustomerName,
+	wb.receive_customer_nation_code receiveCustomerNationCode,
+	wb.RECEIVE_CUSTOMER_PROV_CODE receiveCustomerProvCode,
+	wb.RECEIVE_CUSTOMER_CITY_CODE receiveCustomerCityCode,
+	wb.RECEIVE_CUSTOMER_DIST_CODE receiveCustomerDistCode,
+	wb.RECEIVE_CUSTOMER_ADDRESS receiveCustomerAddress,
+	wb.RECEIVE_CUSTOMER_PHONE customerTelePhone,
+	wb.RECEIVE_CUSTOMER_MOBILEPHONE customerMobile,
+	wb.goods_qty_total goodsTotal,
+	wb.goods_weight_total weight,
+	wb.goods_volume_total volume,
+	wb.to_pay_amount/100 arriveFee,
+	nc.operator creatorName,
+	nc.operate_time createTime,
+	nc.deliver_require deliverRequire,
+	 AF.ARRIVE_TIME AS arriveTime, /* 到达时间  DMANA-3694*/
+	 AF.RECEIVE_CUSTOMER_ADDRESS_NOTE receiveCustomerAddressNote,
+	 SR.SIGN_TIME AS signTime, /* 签收时间 */
+	 WB.RECEIVE_ORG_NAME AS receiveOrgName, /* 出发部门 */
+	 WB.CUSTOMER_PICKUP_ORG_NAME AS customerPickupOrgName, /* 到达部门 */
+	 ED.DRIVER_CODE AS driverCode, /*司机CODE*/
+	 ED.DRIVER_NAME AS driverName, /* 司机姓名 */
+	 ED.VEHICLE_NO AS vehicleNo,/* 车牌号 */
+	 ED.IS_EXPRESS AS isExpress/*是否快递*/
+    FROM pkp.t_srv_notification nc inner join PKP.T_SRV_WAYBILL WB
+    on nc.waybill_no=wb.waybill_no
+    LEFT JOIN TFR.T_OPT_WAYBILL_STOCK WS 
+      ON WB.WAYBILL_NO = WS.WAYBILL_NO  
+      
+      ]]>
+      
+      <include refid="select_stock_Where"/>
+      
+	<![CDATA[
+		/* DMANA-3694 */
+	    INNER JOIN PKP.T_SRV_ACTUAL_FREIGHT AF ON NC.WAYBILL_NO = AF.WAYBILL_NO
+  		LEFT JOIN PKP.T_SRV_WAYBILL_SIGN_RESULT SR ON SR.WAYBILL_NO =
+                                                NC.WAYBILL_NO
+                                            AND SR.ACTIVE = 'Y'
+
+  		LEFT JOIN (
+  		SELECT *
+               FROM (SELECT DD.WAYBILL_NO  AS WAYBILL_NO,
+                            SD.DRIVER_CODE AS DRIVER_CODE,
+                            SD.DRIVER_NAME AS DRIVER_NAME,
+                            SD.VEHICLE_NO  AS VEHICLE_NO,
+                            SD.IS_EXPRESS AS IS_EXPRESS,
+                            ROW_NUMBER() OVER(PARTITION BY DD.WAYBILL_NO ORDER BY SD.SUBMIT_TIME DESC) AS MAXID
+                       FROM PKP.T_SRV_DELIVERBILL SD
+                      INNER JOIN PKP.T_SRV_DELIVERBILL_DETAIL DD ON DD.T_SRV_DELIVERBILL_ID =
+                                                                    SD.ID
+                                                                AND DD.ARRIVESHEET_NO <>
+                                                                    'N/A'
+                      WHERE SD.STATUS IN ('CONFIRMED', 'PDA_DOWNLOADED',
+                             'SIGNINFO_CONFIRMED')
+                        ]]>
+                         <choose>
+					      <when test="waybillNoList !=null and waybillNoList.length > 0">
+					        and dd.WAYBILL_NO IN
+					        <foreach collection="waybillNoList" index="index" item="waybillNo" open="(" separator="," close=")">
+					          #{waybillNo, jdbcType=VARCHAR}
+					        </foreach>
+					      </when>
+					      <otherwise>
+					        <if test="noticeTimeFrom != null and noticeTimeFrom != ''">
+					        <![CDATA[AND SD.SUBMIT_TIME >= #{noticeTimeFrom, jdbcType=TIMESTAMP} - 90]]>
+					        </if>
+					      </otherwise>
+					    </choose>   
+                        )
+              WHERE MAXID = 1) ED ON ED.WAYBILL_NO = NC.WAYBILL_NO
+	 
+      	
+   	  <include refid="notice_Detail_where"/>
+  </select>
+  
+  <sql id="notice_Detail_where">  
+    <where>
+    	wb.active = 'Y'
+    	and (WB.LAST_LOAD_ORG_CODE = #{lastLoadOrgCode,jdbcType=VARCHAR} or WB.customer_pickup_org_code = #{lastLoadOrgCode,jdbcType=VARCHAR}) 
+		<if test="lastLoadOrgCode != null and lastLoadOrgCode != '' " >
+	       and  nc.OPERATE_ORG_CODE = #{lastLoadOrgCode,jdbcType=VARCHAR}
+	     </if>
+	     <if test="moduleName != null and moduleName!=''" >
+	        AND nc.MODULE_NAME = #{moduleName,jdbcType=VARCHAR}
+	    </if>
+    <choose>
+      <when test="waybillNoList !=null and waybillNoList.length > 0">
+        and WB.WAYBILL_NO IN
+        <foreach collection="waybillNoList" index="index" item="waybillNo" open="(" separator="," close=")">
+          #{waybillNo, jdbcType=VARCHAR}
+        </foreach>
+      </when>
+      <otherwise>
+        <if test="receiveMethod != null and receiveMethod != ''">  
+          AND WB.RECEIVE_METHOD like '%' || #{receiveMethod, jdbcType=VARCHAR} || '%'
+        </if>
+        <if test="noticeResult != null and noticeResult != ''">  
+         AND nc.notice_result = #{noticeResult, jdbcType=VARCHAR}
+        </if>
+        <if test="noticeTimeFrom != null and noticeTimeFrom != ''">
+          <![CDATA[and nc.operate_time>=#{noticeTimeFrom, jdbcType=TIMESTAMP}]]>
+           <![CDATA[and wb.bill_time>=#{noticeTimeFrom, jdbcType=TIMESTAMP}-90]]>
+        </if>
+        <if test="noticeTimeTo != null and noticeTimeTo != ''">  
+          <![CDATA[and nc.operate_time<=#{noticeTimeTo, jdbcType=TIMESTAMP}]]>
+        </if>
+        <if test="productCode != null and productCode != ''">  
+          <![CDATA[and WB.product_code=#{productCode, jdbcType=VARCHAR}]]>
+        </if>
+      </otherwise>
+    </choose>
+   </where>
+  </sql>
+</mapper>

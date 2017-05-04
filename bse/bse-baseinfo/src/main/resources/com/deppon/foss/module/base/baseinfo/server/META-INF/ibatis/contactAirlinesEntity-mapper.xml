@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!-- 
+	正单交货人 
+-->
+<mapper namespace="foss.bse.bse-baseinfo.contactwithAirlines">
+	<resultMap id="contactAirlinesResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.ContactAirlinesEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="CONTACT_CODE" property="contactCode" jdbcType="VARCHAR" />
+		<result column="COMPANY" property="company" jdbcType="VARCHAR" />
+		<result column="CONTACT" property="contact" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="contactAirlines_Column_List">
+		ID, CONTACT_CODE, COMPANY, CONTACT, CREATE_TIME,
+		MODIFY_TIME, ACTIVE,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE
+	</sql>
+	<!-- 根据entity精确查询的查询条件 ，如果属性为空，则此属性不作为条件 -->
+	<sql id="contactAirlines_Pagination_Where_Base_Param">
+		<if test="id != null and id != ''">
+			AND ID = #{id,jdbcType=VARCHAR}
+		</if>
+		<if test="company != null and company != ''">
+			AND COMPANY = #{company,jdbcType=VARCHAR}
+		</if>
+		<if test="createDate != null">
+			AND CREATE_TIME = #{createDate,jdbcType=TIMESTAMP}
+		</if>
+		<if test="modifyDate != null">
+			AND MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+		</if>
+		<if test="active != null and active != ''">
+			AND ACTIVE = #{active,jdbcType=CHAR}
+		</if>
+		<if test="createUser != null and createUser != ''">
+			AND CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR}
+		</if>
+		<if test="modifyUser != null and modifyUser != ''">
+			AND MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR}
+		</if>
+	</sql>
+	<sql id="contactAirlines_Pagination_Where_Equals_Param">
+		<trim prefix="WHERE" prefixOverrides="AND | OR">
+			<include refid="contactAirlines_Pagination_Where_Base_Param"/>
+			<if test="contactCode != null and contactCode != ''">
+				AND CONTACT_CODE = #{contactCode,jdbcType=VARCHAR}
+			</if>
+			<if test="contact != null and contact != ''">
+				AND CONTACT = #{contact,jdbcType=VARCHAR}
+			</if>
+		</trim>
+	</sql>
+	<sql id="contactAirlines_Pagination_Where_Like_Param">
+		<trim prefix="WHERE" prefixOverrides="AND | OR">
+			<include refid="contactAirlines_Pagination_Where_Base_Param"/>
+			<if test="contactCode != null and contactCode != ''">
+				AND CONTACT_CODE like CONCAT(CONCAT('%', #{contactCode,jdbcType=VARCHAR}), '%')
+			</if>
+			<if test="contact != null and contact != ''">
+				AND CONTACT like CONCAT(CONCAT('%', #{contact,jdbcType=VARCHAR}), '%')
+			</if>
+		</trim>
+	</sql>	
+	<!-- 查询正单交货人信息  -->
+	<select id="queryContactWithAirlinesListBySelective" resultMap="contactAirlinesResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ContactAirlinesEntity">
+		select
+		/** 综合:查询正单交货人信息  **/
+		<include refid="contactAirlines_Column_List" />
+		from BSE.T_BAS_CONTACT_AIRLINES
+		<include refid="contactAirlines_Pagination_Where_Equals_Param" />
+	</select>
+	<select id="queryContactAirlinesCountBySelectiveCondition" resultType="java.lang.Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ContactAirlinesEntity">
+		<![CDATA[ select count(*) from BSE.T_BAS_CONTACT_AIRLINES ]]>
+		<include refid="contactAirlines_Pagination_Where_Like_Param"/>
+	</select>
+	<select id="queryContactAirlinesListBySelectiveCondition" resultMap="contactAirlinesResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ContactAirlinesEntity">
+		select
+		<include refid="contactAirlines_Column_List" />
+		from BSE.T_BAS_CONTACT_AIRLINES
+		<include refid="contactAirlines_Pagination_Where_Like_Param" />
+	</select>
+	<!-- 删除正单交货人信息 -->
+	<delete id="deleteContactWithAirlines" parameterType="java.lang.String">
+		delete/** 综合:删除正单交货人信息 **/ from
+		BSE.T_BAS_CONTACT_AIRLINES
+		where ID = #{id,jdbcType=VARCHAR}
+	</delete>
+	<!-- 新增正单交货人信息 -->
+	<insert id="addContactWithAirlines"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ContactAirlinesEntity">
+		insert/** 综合:新增正单交货人信息 **/ into BSE.T_BAS_CONTACT_AIRLINES (ID,
+		CONTACT_CODE, COMPANY,
+		CONTACT, CREATE_TIME, MODIFY_TIME,
+		ACTIVE,
+		CREATE_USER_CODE, MODIFY_USER_CODE
+		)
+		values (#{id,jdbcType=VARCHAR},
+		#{contactCode,jdbcType=VARCHAR},
+		#{company,jdbcType=VARCHAR},
+		#{contact,jdbcType=VARCHAR}, #{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=CHAR},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR}
+		)
+	</insert>
+	<insert id="addContactWithAirlinesBySelective"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ContactAirlinesEntity">
+		insert into BSE.T_BAS_CONTACT_AIRLINES
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				ID,
+			</if>
+			<if test="contactCode != null">
+				CONTACT_CODE,
+			</if>
+			<if test="company != null">
+				COMPANY,
+			</if>
+			<if test="contact != null">
+				CONTACT,
+			</if>
+			<if test="createDate != null">
+				CREATE_TIME,
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME,
+			</if>
+			<if test="active != null">
+				ACTIVE,
+			</if>
+			<if test="createUser != null">
+				CREATE_USER_CODE,
+			</if>
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id,jdbcType=VARCHAR},
+			</if>
+			<if test="contactCode != null">
+				#{contactCode,jdbcType=VARCHAR},
+			</if>
+			<if test="company != null">
+				#{company,jdbcType=VARCHAR},
+			</if>
+			<if test="contact != null">
+				#{contact,jdbcType=VARCHAR},
+			</if>
+			<if test="createDate != null">
+				#{createDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyDate != null">
+				#{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="active != null">
+				#{active,jdbcType=CHAR},
+			</if>
+			<if test="createUser != null">
+				#{createUser,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyUser != null">
+				#{modifyUser,jdbcType=VARCHAR},
+			</if>
+		</trim>
+	</insert>
+	<!-- 修改正单交货人信息 -->
+	<update id="updateContactWithAirlinesBySelective"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ContactAirlinesEntity">
+		update/** 综合:修改正单交货人信息 **/ BSE.T_BAS_CONTACT_AIRLINES
+		<set>
+			<if test="contactCode != null">
+				CONTACT_CODE = #{contactCode,jdbcType=VARCHAR},
+			</if>
+			<if test="company != null">
+				COMPANY = #{company,jdbcType=VARCHAR},
+			</if>
+			<if test="contact != null">
+				CONTACT = #{contact,jdbcType=VARCHAR},
+			</if>
+			<if test="createDate != null">
+				CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="active != null">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="createUser != null">
+				CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+		</set>
+		where ID = #{id,jdbcType=VARCHAR}
+	</update>
+	<update id="updateContactWithAirlines"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ContactAirlinesEntity">
+		update BSE.T_BAS_CONTACT_AIRLINES
+		set CONTACT_CODE =
+		#{contactCode,jdbcType=VARCHAR},
+		COMPANY = #{company,jdbcType=VARCHAR},
+		CONTACT = #{contact,jdbcType=VARCHAR},
+		CREATE_TIME =
+		#{createDate,jdbcType=TIMESTAMP},
+		MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+		ACTIVE = #{active,jdbcType=CHAR},
+		CREATE_USER_CODE =
+		#{createUser,jdbcType=VARCHAR},
+		MODIFY_USER_CODE =
+		#{modifyUser,jdbcType=VARCHAR}
+		where ID = #{id,jdbcType=VARCHAR}
+	</update>
+</mapper>

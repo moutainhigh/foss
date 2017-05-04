@@ -1,0 +1,826 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.stl.WoodenStatementDao">
+	<resultMap id="WoodenStatementDResultMap"
+		type="com.deppon.foss.module.settlement.writeoff.api.shared.domain.WoodenStatementDEntity">
+		<result column="BUSINESS_DATE" property="businessDate" jdbcType="TIMESTAMP" />
+		<result column="PAYABLE_NO" property="payableNo" jdbcType="VARCHAR" />
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+		<result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+		<result column="BILL_ORG_CODE" property="billOrgCode" jdbcType="VARCHAR" />
+		<result column="BILL_ORG_NAME" property="billOrgName" jdbcType="VARCHAR" />
+		<result column="PAYABLE_ORG_CODE" property="payableOrgCode" jdbcType="VARCHAR" />
+		<result column="PAYABLE_ORG_NAME" property="payableOrgName" jdbcType="VARCHAR" />
+		<result column="AMOUNT" property="amount" jdbcType="DECIMAL" />
+		<result column="VERIFY_AMOUNT" property="verifyAmount" jdbcType="DECIMAL" />
+		<result column="UNVERIFY_AMOUNT" property="unverifyAmount" jdbcType="DECIMAL" />
+		<result column="ACTUAL_FRAME_VOLUME" property="actualFrameVolume" jdbcType="VARCHAR" />
+		<result column="ACTUAL_WOODEN_VOLUME" property="actualWoodenVolume" jdbcType="VARCHAR" />
+		<result column="ACTUAL_MASK_NUMBER" property="actualMaskNumber" jdbcType="VARCHAR" />
+		<result column="BAG_BELT_NUM" property="bagBeltNum" jdbcType="VARCHAR" />
+		<result column="WOODEN_BAR_LONG" property="woodenBarLong" jdbcType="VARCHAR" />
+		<result column="BUBB_VELAMEN_VOLUME" property="bubbVelamenVolume" jdbcType="VARCHAR" />
+		<result column="BIND_VELAMEN_VOLUME" property="bindVelamenVolume" jdbcType="VARCHAR" />
+		<result column="BILL_PARENT_TYPE" property="billParentType" jdbcType="VARCHAR" />
+		<result column="PACK_TYPE" property="packType" jdbcType="VARCHAR" />
+	</resultMap>
+	<!-- 按客户查询应收单应付单 -->
+	<select id="queryWoodenStatementDByCustomer" 
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.WoodenStatementDto" 
+	    resultMap="WoodenStatementDResultMap">
+		SELECT PA.PAYABLE_TYPE		   PACK_TYPE,
+			   PA.BUSINESS_DATE        BUSINESS_DATE,
+		       PA.PAYABLE_NO           PAYABLE_NO,
+		       PA.WAYBILL_NO           WAYBILL_NO,
+		       PA.CUSTOMER_NAME        CUSTOMER_NAME,
+		       PA.CUSTOMER_CODE        CUSTOMER_CODE,
+		       PA.ORIG_ORG_CODE        BILL_ORG_CODE,
+		       PA.ORIG_ORG_NAME        BILL_ORG_NAME,
+		       PA.PAYABLE_ORG_CODE     PAYABLE_ORG_CODE,
+		       PA.PAYABLE_ORG_NAME     PAYABLE_ORG_NAME,
+		       PA.AMOUNT/100           AMOUNT,
+		       PA.VERIFY_AMOUNT/100    VERIFY_AMOUNT,
+		       PA.UNVERIFY_AMOUNT/100  UNVERIFY_AMOUNT,
+		       DECODE(PA.PAYABLE_TYPE,'MAP',NVL(MP.ACTUAL_FRAME_VOLUME,0),'MNP',NVL(AP.ACTUAL_FRAME_VOLUME,0),0)  ACTUAL_FRAME_VOLUME,
+           	   DECODE(PA.PAYABLE_TYPE,'MAP',NVL(MP.ACTUAL_WOODEN_VOLUME,0),'MNP',NVL(AP.ACTUAL_WOODEN_VOLUME,0),0) ACTUAL_WOODEN_VOLUME,
+		       DECODE(PA.PAYABLE_TYPE,'MNP',NVL(AP.ACTUAL_MASK_NUMBER,0),0)   ACTUAL_MASK_NUMBER,
+		       DECODE(PA.PAYABLE_TYPE,'MNP',NVL(AP.BAG_BELT_NUM,0),0)         BAG_BELT_NUM,
+		       DECODE(PA.PAYABLE_TYPE,'MNP',NVL(AP.WOODEN_BAR_LONG,0),0)      WOODEN_BAR_LONG,
+		       DECODE(PA.PAYABLE_TYPE,'MNP',NVL(AP.BUBB_VELAMEN__VOLUME,0),0) BUBB_VELAMEN_VOLUME,
+		       DECODE(PA.PAYABLE_TYPE,'MNP',NVL(AP.BIND_VELAMEN_VOLUME,0),0)  BIND_VELAMEN_VOLUME
+		  FROM STL.T_STL_BILL_PAYABLE PA
+		  LEFT JOIN TFR.T_OPT_PACKAGE_ASSIST_PRICE AP
+		    ON PA.WAYBILL_NO = AP.WAYBILL_NO
+	       AND AP.ACTIVE = 'Y'
+	       AND AP.PACKAGE_SUPPLIER_CODE = PA.CUSTOMER_CODE
+	       AND AP.PACKAGE_ORG_CODE = PA.PAYABLE_ORG_CODE
+	      LEFT JOIN TFR.T_OPT_PACKAGE_MAIN_PRICE MP
+	        ON PA.WAYBILL_NO = MP.WAYBILL_NO
+	       AND MP.PACKAGE_SUPPLIER_CODE = PA.CUSTOMER_CODE
+	       AND MP.PACKAGE_ORG_CODE = PA.PAYABLE_ORG_CODE
+		 WHERE PA.ACTIVE = 'Y'
+		   AND PA.BILL_TYPE IN ('WP','WOP')
+		   AND PA.APPROVE_STATUS = 'AA'
+		   AND PA.EFFECTIVE_STATUS = 'Y'
+		   AND PA.PAY_STATUS = 'N'
+		   AND PA.UNVERIFY_AMOUNT > 0
+		   AND (PA.STATEMENT_BILL_NO = 'N/A' OR PA.STATEMENT_BILL_NO IS NULL)
+		   AND PA.PAYABLE_ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+		  <![CDATA[
+		   AND PA.BUSINESS_DATE>=#{periodBeginDate,jdbcType=TIMESTAMP} 
+		   AND PA.BUSINESS_DATE<#{periodEndDate,jdbcType=TIMESTAMP}
+		  ]]>
+		  <if test="customerCode!=null and customerCode!='' ">
+		    AND PA.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+		  </if>
+		UNION ALL
+		SELECT 'MNP'                  PACK_TYPE,
+			   RE.BUSINESS_DATE       BUSINESS_DATE,
+		       RE.RECEIVABLE_NO       PAYABLE_NO,
+		       RE.WAYBILL_NO          WAYBILL_NO,
+		       RE.CUSTOMER_NAME       CUSTOMER_NAME,
+		       RE.CUSTOMER_CODE       CUSTOMER_CODE,
+		       RE.ORIG_ORG_CODE       BILL_ORG_CODE,
+		       RE.ORIG_ORG_NAME       BILL_ORG_NAME,
+		       RE.RECEIVABLE_ORG_CODE PAYABLE_ORG_CODE,
+		       RE.RECEIVABLE_ORG_NAME PAYABLE_ORG_NAME,
+		       RE.AMOUNT/100          AMOUNT,
+		       RE.VERIFY_AMOUNT/100   VERIFY_AMOUNT,
+		       RE.UNVERIFY_AMOUNT/100 UNVERIFY_AMOUNT,
+		       0                      ACTUAL_FRAME_VOLUME,
+		       0                      ACTUAL_WOODEN_VOLUME,
+		       0                      ACTUAL_MASK_NUMBER,
+		       0                      BAG_BELT_NUM,
+		       0                      WOODEN_BAR_LONG,
+		       0                      BUBB_VELAMEN_VOLUME,
+		       0                      BIND_VELAMEN_VOLUME
+		  FROM STL.T_STL_BILL_RECEIVABLE RE
+		 WHERE RE.ACTIVE = 'Y'
+		   AND RE.BILL_TYPE = 'WOR'
+		   AND RE.APPROVE_STATUS = 'AA'
+		   AND RE.UNVERIFY_AMOUNT > 0
+		   AND (RE.STATEMENT_BILL_NO = 'N/A' OR RE.STATEMENT_BILL_NO IS NULL)
+		   AND RE.RECEIVABLE_ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+		  <![CDATA[
+		   AND RE.BUSINESS_DATE>=#{periodBeginDate,jdbcType=TIMESTAMP} 
+		   AND RE.BUSINESS_DATE<#{periodEndDate,jdbcType=TIMESTAMP}
+		  ]]>
+		  <if test="customerCode!=null and customerCode!='' ">
+		    AND RE.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+		  </if>
+	</select>
+	<!-- 按客户查询应收单应付单总行数 -->
+	<select id="countWoodenStatementDByCustomer" 
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.WoodenStatementDto" 
+	    resultType="Integer">
+		SELECT SUM(COUNT)
+		  FROM (SELECT COUNT(PA.ID) COUNT
+		          FROM STL.T_STL_BILL_PAYABLE PA
+		         WHERE PA.ACTIVE = 'Y'
+		           AND PA.BILL_TYPE IN ('WP','WOP')
+		           AND PA.APPROVE_STATUS = 'AA'
+		           AND PA.EFFECTIVE_STATUS = 'Y'
+		           AND PA.PAY_STATUS = 'N'
+		           AND PA.UNVERIFY_AMOUNT > 0
+		           AND (PA.STATEMENT_BILL_NO = 'N/A' OR PA.STATEMENT_BILL_NO IS NULL)
+		           AND PA.PAYABLE_ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+		          <![CDATA[
+		           AND PA.BUSINESS_DATE>=#{periodBeginDate,jdbcType=TIMESTAMP} 
+		           AND PA.BUSINESS_DATE<#{periodEndDate,jdbcType=TIMESTAMP}
+		          ]]>
+				  <if test="customerCode!=null and customerCode!='' ">
+				    AND PA.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+				  </if>  
+		        UNION ALL
+		        SELECT COUNT(RE.ID) COUNT
+		          FROM STL.T_STL_BILL_RECEIVABLE RE
+		         WHERE RE.ACTIVE = 'Y'
+		           AND RE.BILL_TYPE = 'WOR'
+		           AND RE.APPROVE_STATUS = 'AA'
+		           AND RE.UNVERIFY_AMOUNT > 0
+		           AND (RE.STATEMENT_BILL_NO = 'N/A' OR RE.STATEMENT_BILL_NO IS NULL)
+		           AND RE.RECEIVABLE_ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+		          <![CDATA[
+		           AND RE.BUSINESS_DATE>=#{periodBeginDate,jdbcType=TIMESTAMP} 
+		           AND RE.BUSINESS_DATE<#{periodEndDate,jdbcType=TIMESTAMP}
+		          ]]>
+				  <if test="customerCode!=null and customerCode!='' ">
+				    AND RE.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+				  </if>
+				  ) COU
+	</select>
+	<!-- 按单号查询应收单应付单 -->
+	<select id="queryWoodenStatementDByNumber" 
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.WoodenStatementDto" 
+	    resultMap="WoodenStatementDResultMap">
+		SELECT PA.PAYABLE_TYPE		    PACK_TYPE,
+			   PA.BUSINESS_DATE         BUSINESS_DATE,
+		       PA.PAYABLE_NO            PAYABLE_NO,
+		       PA.WAYBILL_NO            WAYBILL_NO,
+		       PA.CUSTOMER_NAME         CUSTOMER_NAME,
+		       PA.CUSTOMER_CODE         CUSTOMER_CODE,
+		       PA.ORIG_ORG_CODE         BILL_ORG_CODE,
+		       PA.ORIG_ORG_NAME         BILL_ORG_NAME,
+		       PA.PAYABLE_ORG_CODE      PAYABLE_ORG_CODE,
+		       PA.PAYABLE_ORG_NAME      PAYABLE_ORG_NAME,
+		       PA.AMOUNT/100            AMOUNT,
+		       PA.VERIFY_AMOUNT/100     VERIFY_AMOUNT,
+		       PA.UNVERIFY_AMOUNT/100   UNVERIFY_AMOUNT,
+		       DECODE(PA.PAYABLE_TYPE,'MAP',NVL(MP.ACTUAL_FRAME_VOLUME,0),'MNP',NVL(AP.ACTUAL_FRAME_VOLUME,0),0)  ACTUAL_FRAME_VOLUME,
+           	   DECODE(PA.PAYABLE_TYPE,'MAP',NVL(MP.ACTUAL_WOODEN_VOLUME,0),'MNP',NVL(AP.ACTUAL_WOODEN_VOLUME,0),0) ACTUAL_WOODEN_VOLUME,
+		       DECODE(PA.PAYABLE_TYPE,'MNP',NVL(AP.ACTUAL_MASK_NUMBER,0),0)   ACTUAL_MASK_NUMBER,
+		       DECODE(PA.PAYABLE_TYPE,'MNP',NVL(AP.BAG_BELT_NUM,0),0)         BAG_BELT_NUM,
+		       DECODE(PA.PAYABLE_TYPE,'MNP',NVL(AP.WOODEN_BAR_LONG,0),0)      WOODEN_BAR_LONG,
+		       DECODE(PA.PAYABLE_TYPE,'MNP',NVL(AP.BUBB_VELAMEN__VOLUME,0),0) BUBB_VELAMEN_VOLUME,
+		       DECODE(PA.PAYABLE_TYPE,'MNP',NVL(AP.BIND_VELAMEN_VOLUME,0),0)  BIND_VELAMEN_VOLUME
+		  FROM STL.T_STL_BILL_PAYABLE PA
+		  LEFT JOIN TFR.T_OPT_PACKAGE_ASSIST_PRICE AP
+		    ON PA.WAYBILL_NO = AP.WAYBILL_NO
+	       AND AP.ACTIVE = 'Y'
+	       AND AP.PACKAGE_SUPPLIER_CODE = PA.CUSTOMER_CODE
+	       AND AP.PACKAGE_ORG_CODE = PA.PAYABLE_ORG_CODE
+	      LEFT JOIN TFR.T_OPT_PACKAGE_MAIN_PRICE MP
+	        ON PA.WAYBILL_NO = MP.WAYBILL_NO
+	       AND MP.PACKAGE_SUPPLIER_CODE = PA.CUSTOMER_CODE
+	       AND MP.PACKAGE_ORG_CODE = PA.PAYABLE_ORG_CODE
+		 WHERE PA.ACTIVE = 'Y'
+		   AND PA.BILL_TYPE IN ('WP','WOP')
+		   AND PA.APPROVE_STATUS = 'AA'
+		   AND PA.EFFECTIVE_STATUS = 'Y'
+		   AND PA.PAY_STATUS = 'N'
+		   AND PA.UNVERIFY_AMOUNT > 0
+		   AND (PA.STATEMENT_BILL_NO = 'N/A' OR PA.STATEMENT_BILL_NO IS NULL)
+		   AND PA.PAYABLE_ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+		  <if test="customerCode!=null and customerCode!='' ">
+		   AND PA.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+		  </if>
+		   AND PA.PAYABLE_NO IN
+		  <foreach collection="numbers" index="index" item="item" open="(" separator="," close=")">
+           #{item}
+          </foreach>
+        UNION ALL
+		SELECT 'MNP'                    PACK_TYPE,
+			   RE.BUSINESS_DATE       	BUSINESS_DATE,
+		       RE.RECEIVABLE_NO       	PAYABLE_NO,
+		       RE.WAYBILL_NO          	WAYBILL_NO,
+		       RE.CUSTOMER_NAME       	CUSTOMER_NAME,
+		       RE.CUSTOMER_CODE       	CUSTOMER_CODE,
+		       RE.ORIG_ORG_CODE       	BILL_ORG_CODE,
+		       RE.ORIG_ORG_NAME       	BILL_ORG_NAME,
+		       RE.RECEIVABLE_ORG_CODE 	PAYABLE_ORG_CODE,
+		       RE.RECEIVABLE_ORG_NAME 	PAYABLE_ORG_NAME,
+		       RE.AMOUNT/100        	AMOUNT,
+		       RE.VERIFY_AMOUNT/100 	VERIFY_AMOUNT,
+		       RE.UNVERIFY_AMOUNT/100   UNVERIFY_AMOUNT,
+		       0                      	ACTUAL_FRAME_VOLUME,
+		       0                      	ACTUAL_WOODEN_VOLUME,
+		       0                      	ACTUAL_MASK_NUMBER,
+		       0                      	BAG_BELT_NUM,
+		       0                      	WOODEN_BAR_LONG,
+		       0                      	BUBB_VELAMEN_VOLUME,
+		       0                      	BIND_VELAMEN_VOLUME
+		  FROM STL.T_STL_BILL_RECEIVABLE RE
+		 WHERE RE.ACTIVE = 'Y'
+		   AND RE.BILL_TYPE = 'WOR'
+		   AND RE.APPROVE_STATUS = 'AA'
+		   AND RE.UNVERIFY_AMOUNT > 0
+		   AND (RE.STATEMENT_BILL_NO = 'N/A' OR RE.STATEMENT_BILL_NO IS NULL)
+		   AND RE.RECEIVABLE_ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+		  <if test="customerCode!=null and customerCode!='' ">
+		   AND RE.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+		  </if>
+		   AND RE.RECEIVABLE_NO IN
+		  <foreach collection="numbers" index="index" item="item" open="(" separator="," close=")">
+	        #{item}
+	      </foreach>
+	</select>
+	<!-- 按对账单单号查询对账单明细 -->
+	<select id="queryWoodenDByStatementBillNo" 
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.WoodenStatementDto" 
+	    resultMap="WoodenStatementDResultMap">
+	    SELECT D.PACK_TYPE            PACK_TYPE,
+	    	   D.BUSINESS_DATE        BUSINESS_DATE,
+	           D.PAYABLE_NO           PAYABLE_NO,
+	           D.WAYBILL_NO           WAYBILL_NO,
+	           D.CUSTOMER_NAME        CUSTOMER_NAME,
+	           D.CUSTOMER_CODE        CUSTOMER_CODE,
+	           D.BILL_ORG_CODE        BILL_ORG_CODE,
+	           D.BILL_ORG_NAME        BILL_ORG_NAME,
+	           D.PAYABLE_ORG_CODE     PAYABLE_ORG_CODE,
+	           D.PAYABLE_ORG_NAME     PAYABLE_ORG_NAME,
+	           D.AMOUNT/100           AMOUNT,
+	           D.VERIFY_AMOUNT/100    VERIFY_AMOUNT,
+	           D.UNVERIFY_AMOUNT/100  UNVERIFY_AMOUNT,
+	           D.ACTUAL_FRAME_VOLUME  ACTUAL_FRAME_VOLUME,
+	           D.ACTUAL_WOODEN_VOLUME ACTUAL_WOODEN_VOLUME,
+	           D.ACTUAL_MASK_NUMBER   ACTUAL_MASK_NUMBER,
+	           D.BAG_BELT_NUM         BAG_BELT_NUM,
+	           D.WOODEN_BAR_LONG      WOODEN_BAR_LONG,
+	           D.BUBB_VELAMEN_VOLUME  BUBB_VELAMEN_VOLUME,
+	           D.BIND_VELAMEN_VOLUME  BIND_VELAMEN_VOLUME,
+	           D.BILL_PARENT_TYPE     BILL_PARENT_TYPE
+	      FROM STL.T_STL_STATEMENT_OF_WOODEN_D D
+	     WHERE D.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+	       AND D.IS_DELETE = 'N'
+	</select>
+	<!-- 按对账单单号查询对账单明细总条数 -->
+	<select id="countWoodenDByStatementBillNo" 
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.WoodenStatementDto" 
+	    resultType="Integer">
+	    SELECT COUNT(*) COUNT
+	      FROM STL.T_STL_STATEMENT_OF_WOODEN_D D
+	     WHERE D.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+	       AND D.IS_DELETE = 'N'
+	</select>
+	
+	<resultMap id="WoodenStatementResultMap"
+		type="com.deppon.foss.module.settlement.writeoff.api.shared.domain.WoodenStatementEntity">
+		<result column="STATEMENT_BILL_NO" property="statementBillNo" jdbcType="VARCHAR" />
+		<result column="CREATE_ORG_CODE" property="createOrgCode" jdbcType="VARCHAR" />
+		<result column="CREATE_ORG_NAME" property="createOrgName" jdbcType="VARCHAR" />
+		<result column="COMPANY_CODE" property="companyCode" jdbcType="VARCHAR" />
+		<result column="COMPANY_NAME" property="companyName" jdbcType="VARCHAR" />
+		<result column="UNIFIED_CODE" property="unifiedCode" jdbcType="VARCHAR" />
+		<result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+		<result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+		<result column="BILL_TYPE" property="billType" jdbcType="VARCHAR" />
+		<result column="PERIOD_AMOUNT" property="periodAmount" jdbcType="DECIMAL" />
+		<result column="PERIOD_BEGIN_DATE" property="periodBeginDate" jdbcType="TIMESTAMP" />
+		<result column="PERIOD_END_DATE" property="periodEndDate" jdbcType="TIMESTAMP" />
+		<result column="UNPAID_AMOUNT" property="unpaidAmount" jdbcType="DECIMAL" />
+		<result column="CREATE_USER_CODE" property="createUserCode" jdbcType="VARCHAR" />
+		<result column="CREATE_USER_NAME" property="createUserName" jdbcType="VARCHAR" />
+		<result column="BUSINESS_DATE" property="businessDate" jdbcType="TIMESTAMP" />
+		<result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_USER_CODE" property="modifyUserCode" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_NAME" property="modifyUserName" jdbcType="VARCHAR" />
+		<result column="CONFIRM_USER_CODE" property="confirmUserCode" jdbcType="VARCHAR" />
+		<result column="CONFIRM_USER_NAME" property="confirmUserName" jdbcType="VARCHAR" />
+		<result column="CONFIRM_TIME" property="confirmTime" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+		<result column="CONFIRM_STATUS" property="confirmStatus" jdbcType="VARCHAR" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+		<result column="VERSION_NO" property="versionNo" jdbcType="DECIMAL" />
+	</resultMap>
+	<!-- 按客户查询对账单 -->
+	<select id="queryWoodenStatementByCustomer" 
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.WoodenStatementDto" 
+	    resultMap="WoodenStatementResultMap">
+		SELECT STATEMENT_BILL_NO,
+		       CREATE_ORG_CODE,
+		       CREATE_ORG_NAME,
+		       COMPANY_CODE,
+		       COMPANY_NAME,
+		       UNIFIED_CODE,
+		       CUSTOMER_CODE,
+		       CUSTOMER_NAME,
+		       BILL_TYPE,
+		       PERIOD_AMOUNT/100 PERIOD_AMOUNT,
+		       PERIOD_BEGIN_DATE,
+		       PERIOD_END_DATE,
+		       UNPAID_AMOUNT/100 UNPAID_AMOUNT,
+		       CREATE_USER_CODE,
+		       CREATE_USER_NAME,
+		       BUSINESS_DATE,
+		       CREATE_TIME,
+		       MODIFY_USER_CODE,
+		       MODIFY_USER_NAME,
+		       CONFIRM_USER_CODE,
+		       CONFIRM_USER_NAME,
+		       CONFIRM_TIME,
+		       MODIFY_TIME,
+		       CONFIRM_STATUS,
+		       NOTES,
+		       VERSION_NO
+		  FROM STL.T_STL_STATEMENT_OF_WOODEN W
+		 WHERE W.CREATE_ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+		  <![CDATA[
+		   AND W.BUSINESS_DATE>=#{periodBeginDate,jdbcType=TIMESTAMP} 
+		   AND W.BUSINESS_DATE<#{periodEndDate,jdbcType=TIMESTAMP}
+		  ]]>
+		<if test="customerCode!=null and customerCode!='' ">
+			AND W.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+		</if>
+		<if test="confirmStatus!=null and confirmStatus!='' ">
+			AND W.CONFIRM_STATUS = #{confirmStatus,jdbcType=VARCHAR}
+		</if>
+		<if	test="settleStatus!=null and settleStatus!='' and settleStatus==statementSettleStatus">
+			and W.UNPAID_AMOUNT = 0
+		</if>
+		<if	test="settleStatus!=null and settleStatus!='' and settleStatus==statementUnSettleStatus">
+			and W.UNPAID_AMOUNT !=0
+		</if>
+	</select>
+	<!-- 按单号查询对账单 -->
+	<select id="queryWoodenStatementByNumber" 
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.WoodenStatementDto" 
+	    resultMap="WoodenStatementResultMap">
+		SELECT STATEMENT_BILL_NO,
+		       CREATE_ORG_CODE,
+		       CREATE_ORG_NAME,
+		       COMPANY_CODE,
+		       COMPANY_NAME,
+		       UNIFIED_CODE,
+		       CUSTOMER_CODE,
+		       CUSTOMER_NAME,
+		       BILL_TYPE,
+		       PERIOD_AMOUNT/100 PERIOD_AMOUNT,
+		       PERIOD_BEGIN_DATE,
+		       PERIOD_END_DATE,
+		       UNPAID_AMOUNT/100 UNPAID_AMOUNT,
+		       CREATE_USER_CODE,
+		       CREATE_USER_NAME,
+		       BUSINESS_DATE,
+		       CREATE_TIME,
+		       MODIFY_USER_CODE,
+		       MODIFY_USER_NAME,
+		       CONFIRM_USER_CODE,
+		       CONFIRM_USER_NAME,
+		       CONFIRM_TIME,
+		       MODIFY_TIME,
+		       CONFIRM_STATUS,
+		       NOTES,
+		       VERSION_NO
+		  FROM STL.T_STL_STATEMENT_OF_WOODEN W
+		 WHERE W.STATEMENT_BILL_NO IN
+		  <foreach collection="numbers" index="index" item="item" open="(" separator="," close=")">
+           #{item}
+          </foreach>
+          <if test="orgCode!=null and orgCode!='' ">
+          	AND W.CREATE_ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+          </if>
+	</select>
+	<!-- 按客户查询对账单总个数 -->
+	<select id="countWoodenStatementByCustomer" 
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.WoodenStatementDto" 
+	    resultType="Integer">
+		SELECT COUNT(*)
+		  FROM STL.T_STL_STATEMENT_OF_WOODEN W
+		 WHERE W.CREATE_ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+		  <![CDATA[
+		   AND W.BUSINESS_DATE>=#{periodBeginDate,jdbcType=TIMESTAMP} 
+		   AND W.BUSINESS_DATE<#{periodEndDate,jdbcType=TIMESTAMP}
+		  ]]>
+		<if test="customerCode!=null and customerCode!='' ">
+			AND W.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+		</if>
+	</select>
+	<!-- 按客户保存对账单明细 -->
+	<insert id="woodenStatementDSaveByCustomer"
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.WoodenStatementDto">
+		INSERT INTO STL.T_STL_STATEMENT_OF_WOODEN_D
+		  SELECT SYS_GUID(),
+		         #{statementBillNo,jdbcType=VARCHAR},
+		         PA.BUSINESS_DATE,
+		         PA.PAYABLE_NO,
+		         PA.WAYBILL_NO,
+		         PA.CUSTOMER_NAME,
+		         PA.CUSTOMER_CODE,
+		         PA.ORIG_ORG_CODE,
+		         PA.ORIG_ORG_NAME,
+		         PA.PAYABLE_ORG_CODE,
+		         PA.PAYABLE_ORG_NAME,
+		         PA.AMOUNT,
+		         PA.VERIFY_AMOUNT,
+		         PA.UNVERIFY_AMOUNT,
+		         DECODE(PA.PAYABLE_TYPE,'MAP',NVL(MP.ACTUAL_FRAME_VOLUME,0),'MNP',NVL(AP.ACTUAL_FRAME_VOLUME,0),0)  ACTUAL_FRAME_VOLUME,
+           		 DECODE(PA.PAYABLE_TYPE,'MAP',NVL(MP.ACTUAL_WOODEN_VOLUME,0),'MNP',NVL(AP.ACTUAL_WOODEN_VOLUME,0),0) ACTUAL_WOODEN_VOLUME,
+			     DECODE(PA.PAYABLE_TYPE,'MNP',NVL(AP.ACTUAL_MASK_NUMBER,0),0),
+		         DECODE(PA.PAYABLE_TYPE,'MNP',NVL(AP.BAG_BELT_NUM,0),0),
+		         DECODE(PA.PAYABLE_TYPE,'MNP',NVL(AP.WOODEN_BAR_LONG,0),0),
+		         DECODE(PA.PAYABLE_TYPE,'MNP',NVL(AP.BUBB_VELAMEN__VOLUME,0),0),
+		         DECODE(PA.PAYABLE_TYPE,'MNP',NVL(AP.BIND_VELAMEN_VOLUME,0),0),
+		         '20.YF',
+		         'N',
+		         '',
+		         PA.PAYABLE_TYPE
+		    FROM STL.T_STL_BILL_PAYABLE PA
+		    LEFT JOIN TFR.T_OPT_PACKAGE_ASSIST_PRICE AP
+		      ON PA.WAYBILL_NO = AP.WAYBILL_NO
+	         AND AP.ACTIVE = 'Y'
+	         AND AP.PACKAGE_SUPPLIER_CODE = PA.CUSTOMER_CODE
+	         AND AP.PACKAGE_ORG_CODE = PA.PAYABLE_ORG_CODE
+	        LEFT JOIN TFR.T_OPT_PACKAGE_MAIN_PRICE MP
+	          ON PA.WAYBILL_NO = MP.WAYBILL_NO
+	         AND MP.PACKAGE_SUPPLIER_CODE = PA.CUSTOMER_CODE
+	         AND MP.PACKAGE_ORG_CODE = PA.PAYABLE_ORG_CODE
+		   WHERE PA.ACTIVE = 'Y'
+		     AND PA.BILL_TYPE IN ('WP','WOP')
+		     AND PA.APPROVE_STATUS = 'AA'
+		     AND PA.EFFECTIVE_STATUS = 'Y'
+		     AND PA.PAY_STATUS = 'N'
+		     AND PA.UNVERIFY_AMOUNT > 0
+		     AND (PA.STATEMENT_BILL_NO = 'N/A' OR PA.STATEMENT_BILL_NO IS NULL)
+		     AND PA.PAYABLE_ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+		    <![CDATA[
+		     AND PA.BUSINESS_DATE>=#{periodBeginDate,jdbcType=TIMESTAMP} 
+		     AND PA.BUSINESS_DATE<#{periodEndDate,jdbcType=TIMESTAMP}
+		    ]]>
+		    <if test="customerCode!=null and customerCode!='' ">
+		      AND PA.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+		    </if>  
+		  UNION ALL
+		  SELECT SYS_GUID(),
+		         #{statementBillNo,jdbcType=VARCHAR},
+		         RE.BUSINESS_DATE,
+		         RE.RECEIVABLE_NO,
+		         RE.WAYBILL_NO,
+		         RE.CUSTOMER_NAME,
+		         RE.CUSTOMER_CODE,
+		         RE.ORIG_ORG_CODE,
+		         RE.ORIG_ORG_NAME,
+		         RE.RECEIVABLE_ORG_CODE,
+		         RE.RECEIVABLE_ORG_NAME,
+		         RE.AMOUNT,
+		         RE.VERIFY_AMOUNT,
+		         RE.UNVERIFY_AMOUNT,
+		         0,
+		         0,
+		         0,
+		         0,
+		         0,
+		         0,
+		         0,
+		         '10.YS',
+		         'N',
+		         '',
+		         'MNP'
+		    FROM STL.T_STL_BILL_RECEIVABLE RE
+		   WHERE RE.ACTIVE = 'Y'
+		     AND RE.BILL_TYPE = 'WOR'
+		     AND RE.APPROVE_STATUS = 'AA'
+		     AND RE.UNVERIFY_AMOUNT > 0
+		     AND (RE.STATEMENT_BILL_NO = 'N/A' OR RE.STATEMENT_BILL_NO IS NULL)
+		     AND RE.RECEIVABLE_ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+		    <![CDATA[
+		     AND RE.BUSINESS_DATE>=#{periodBeginDate,jdbcType=TIMESTAMP} 
+		     AND RE.BUSINESS_DATE<#{periodEndDate,jdbcType=TIMESTAMP}
+		    ]]>
+		    <if test="customerCode!=null and customerCode!='' ">
+		      AND RE.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+		    </if>
+	</insert>
+	<!-- 按单号保存对账单明细 -->
+	<insert id="woodenStatementDSaveByNumber"
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.WoodenStatementDto">
+	    INSERT INTO STL.T_STL_STATEMENT_OF_WOODEN_D
+		  SELECT SYS_GUID(),
+		         #{statementBillNo,jdbcType=VARCHAR},
+		         PA.BUSINESS_DATE,
+		         PA.PAYABLE_NO,
+		         PA.WAYBILL_NO,
+		         PA.CUSTOMER_NAME,
+		         PA.CUSTOMER_CODE,
+		         PA.ORIG_ORG_CODE,
+		         PA.ORIG_ORG_NAME,
+		         PA.PAYABLE_ORG_CODE,
+		         PA.PAYABLE_ORG_NAME,
+		         PA.AMOUNT,
+		         PA.VERIFY_AMOUNT,
+		         PA.UNVERIFY_AMOUNT,
+		         DECODE(PA.PAYABLE_TYPE,'MAP',NVL(MP.ACTUAL_FRAME_VOLUME,0),'MNP',NVL(AP.ACTUAL_FRAME_VOLUME,0),0)  ACTUAL_FRAME_VOLUME,
+           		 DECODE(PA.PAYABLE_TYPE,'MAP',NVL(MP.ACTUAL_WOODEN_VOLUME,0),'MNP',NVL(AP.ACTUAL_WOODEN_VOLUME,0),0) ACTUAL_WOODEN_VOLUME,
+			     DECODE(PA.PAYABLE_TYPE,'MNP',NVL(AP.ACTUAL_MASK_NUMBER,0),0),
+		         DECODE(PA.PAYABLE_TYPE,'MNP',NVL(AP.BAG_BELT_NUM,0),0),
+		         DECODE(PA.PAYABLE_TYPE,'MNP',NVL(AP.WOODEN_BAR_LONG,0),0),
+		         DECODE(PA.PAYABLE_TYPE,'MNP',NVL(AP.BUBB_VELAMEN__VOLUME,0),0),
+		         DECODE(PA.PAYABLE_TYPE,'MNP',NVL(AP.BIND_VELAMEN_VOLUME,0),0),
+             	 '20.YF',
+		         'N',
+		         '',
+		         PA.PAYABLE_TYPE
+		    FROM STL.T_STL_BILL_PAYABLE PA
+		    LEFT JOIN TFR.T_OPT_PACKAGE_ASSIST_PRICE AP
+		      ON PA.WAYBILL_NO = AP.WAYBILL_NO
+	         AND AP.ACTIVE = 'Y'
+	         AND AP.PACKAGE_SUPPLIER_CODE = PA.CUSTOMER_CODE
+	         AND AP.PACKAGE_ORG_CODE = PA.PAYABLE_ORG_CODE
+	        LEFT JOIN TFR.T_OPT_PACKAGE_MAIN_PRICE MP
+	          ON PA.WAYBILL_NO = MP.WAYBILL_NO
+	         AND MP.PACKAGE_SUPPLIER_CODE = PA.CUSTOMER_CODE
+	         AND MP.PACKAGE_ORG_CODE = PA.PAYABLE_ORG_CODE
+		   WHERE PA.ACTIVE = 'Y'
+			 AND PA.BILL_TYPE IN ('WP','WOP')
+			 AND PA.APPROVE_STATUS = 'AA'
+			 AND PA.EFFECTIVE_STATUS = 'Y'
+			 AND PA.PAY_STATUS = 'N'
+			 AND PA.UNVERIFY_AMOUNT > 0
+			 AND (PA.STATEMENT_BILL_NO = 'N/A' OR PA.STATEMENT_BILL_NO IS NULL)
+			 AND PA.PAYABLE_ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+			 AND PA.PAYABLE_NO IN
+			<foreach collection="numbers" index="index" item="item" open="(" separator="," close=")">
+	         #{item}
+	        </foreach>
+	      UNION ALL
+		  SELECT SYS_GUID(),
+		         #{statementBillNo,jdbcType=VARCHAR},
+		         RE.BUSINESS_DATE,
+		         RE.RECEIVABLE_NO,
+		         RE.WAYBILL_NO,
+		         RE.CUSTOMER_NAME,
+		         RE.CUSTOMER_CODE,
+		         RE.ORIG_ORG_CODE,
+		         RE.ORIG_ORG_NAME,
+		         RE.RECEIVABLE_ORG_CODE,
+		         RE.RECEIVABLE_ORG_NAME,
+		         RE.AMOUNT,
+		         RE.VERIFY_AMOUNT,
+		         RE.UNVERIFY_AMOUNT,
+		         0,
+		         0,
+		         0,
+		         0,
+		         0,
+		         0,
+		         0,
+		         '10.YS',
+		         'N',
+		         '',
+		         'MNP'
+		    FROM STL.T_STL_BILL_RECEIVABLE RE
+		   WHERE RE.ACTIVE = 'Y'
+		     AND RE.BILL_TYPE = 'WOR'
+		     AND RE.APPROVE_STATUS = 'AA'
+		     AND RE.UNVERIFY_AMOUNT > 0
+		     AND (RE.STATEMENT_BILL_NO = 'N/A' OR RE.STATEMENT_BILL_NO IS NULL)
+		     AND RE.RECEIVABLE_ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+			 AND RE.RECEIVABLE_NO IN
+			<foreach collection="numbers" index="index" item="item" open="(" separator="," close=")">
+	         #{item}
+	        </foreach>
+	</insert>
+	<!-- 按对账单单号保存对账单 -->
+	<insert id="woodenStatementSaveByStatementBillNo"
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.WoodenStatementDto">
+		INSERT INTO STL.T_STL_STATEMENT_OF_WOODEN
+		  (ID,
+		   STATEMENT_BILL_NO,
+		   BILL_TYPE,
+		   BUSINESS_DATE,
+		   PERIOD_BEGIN_DATE,
+		   PERIOD_END_DATE,
+		   CUSTOMER_NAME,
+		   CUSTOMER_CODE,
+		   COMPANY_CODE,
+		   COMPANY_NAME,
+		   CREATE_ORG_CODE,
+		   CREATE_ORG_NAME,
+		   UNIFIED_CODE,
+		   CREATE_TIME,
+		   CREATE_USER_CODE,
+		   CREATE_USER_NAME,
+		   PERIOD_AMOUNT,
+		   UNPAID_AMOUNT,
+		   VERSION_NO,
+		   CONFIRM_STATUS)
+		  SELECT SYS_GUID(),
+		         #{statementBillNo,jdbcType=VARCHAR},
+		         #{billType,jdbcType=VARCHAR},
+		         SYSDATE,
+		         MIN(WD.BUSINESS_DATE),
+		         MAX(WD.BUSINESS_DATE),
+		         WD.CUSTOMER_NAME,
+		         WD.CUSTOMER_CODE,
+		         FO.CODE,
+		         FO.NAME,
+		         WD.PAYABLE_ORG_CODE,
+		         WD.PAYABLE_ORG_NAME,
+		         O.UNIFIED_CODE,
+		         SYSDATE,
+		         #{empCode,jdbcType=VARCHAR},
+		         #{empName,jdbcType=VARCHAR},
+		         #{periodAmount,jdbcType=DECIMAL} * 100,
+		         #{unpaidAmount,jdbcType=DECIMAL} * 100,
+		         1,
+		         'N'
+		    FROM STL.T_STL_STATEMENT_OF_WOODEN_D WD
+		    LEFT JOIN BSE.T_BAS_ORG O
+		      ON O.CODE = WD.PAYABLE_ORG_CODE
+		     AND O.ACTIVE = 'Y'
+		    LEFT JOIN BSE.T_BAS_FIN_ORG FO
+		      ON FO.CODE = O.SUBSIDIARY_CODE
+		     AND FO.ACTIVE = 'Y'
+		   WHERE WD.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+		     AND WD.IS_DELETE = 'N'
+		   GROUP BY WD.CUSTOMER_NAME,
+		            WD.CUSTOMER_CODE,
+		            FO.CODE,
+		            FO.NAME,
+		            WD.PAYABLE_ORG_CODE,
+		            WD.PAYABLE_ORG_NAME,
+		            O.UNIFIED_CODE
+	</insert>
+	<!-- 更新应付单 -->
+	<update id="woodenPayableUpdateByStatementBillNo"
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.WoodenStatementDto">
+		UPDATE STL.T_STL_BILL_PAYABLE P
+		   SET P.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR},
+		       P.MODIFY_TIME       = SYSDATE,
+		       P.MODIFY_USER_CODE  = #{empCode,jdbcType=VARCHAR},
+		       P.MODIFY_USER_NAME  = #{empName,jdbcType=VARCHAR},
+		       P.VERSION_NO        = P.VERSION_NO + 1
+		 WHERE P.ACTIVE = 'Y'
+		   AND P.BILL_TYPE IN ('WP','WOP')
+		   AND (P.STATEMENT_BILL_NO = 'N/A' OR P.STATEMENT_BILL_NO IS NULL)
+		   AND P.PAYABLE_NO IN (SELECT WD.PAYABLE_NO
+		                         FROM STL.T_STL_STATEMENT_OF_WOODEN_D WD
+		                        WHERE WD.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+		                          AND WD.IS_DELETE = 'N'
+		                          AND WD.BILL_PARENT_TYPE = '20.YF')
+	</update>
+	<!-- 更新应收单 -->
+	<update id="woodenReceivedUpdateByStatementBillNo"
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.WoodenStatementDto">
+		UPDATE STL.T_STL_BILL_RECEIVABLE R
+		   SET R.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR},
+		       R.MODIFY_TIME       = SYSDATE,
+		       R.MODIFY_USER_CODE  = #{empCode,jdbcType=VARCHAR},
+		       R.MODIFY_USER_NAME  = #{empName,jdbcType=VARCHAR},
+		       R.VERSION_NO        = R.VERSION_NO + 1
+		 WHERE R.ACTIVE = 'Y'
+		   AND R.BILL_TYPE = 'WOR'
+		   AND (R.STATEMENT_BILL_NO = 'N/A' OR R.STATEMENT_BILL_NO IS NULL)
+		   AND R.RECEIVABLE_NO IN (SELECT WD.PAYABLE_NO
+		                            FROM STL.T_STL_STATEMENT_OF_WOODEN_D WD
+		                           WHERE WD.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+		                             AND WD.IS_DELETE = 'N'
+		                             AND WD.BILL_PARENT_TYPE = '10.YS')
+	</update>
+	<!-- 确认对账单 -->
+	<update id="confirmWoodenStatement" 
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.WoodenStatementDto">
+	    UPDATE STL.T_STL_STATEMENT_OF_WOODEN W
+		   SET W.MODIFY_USER_CODE  = #{empCode,jdbcType=VARCHAR},
+		       W.MODIFY_USER_NAME  = #{empName,jdbcType=VARCHAR},
+		       W.MODIFY_TIME       = SYSDATE,
+		       W.CONFIRM_USER_CODE = #{empCode,jdbcType=VARCHAR},
+		       W.CONFIRM_USER_NAME = #{empName,jdbcType=VARCHAR},
+		       W.CONFIRM_TIME      = SYSDATE,
+		       W.CONFIRM_STATUS    = #{confirmStatus,jdbcType=VARCHAR},
+		       W.VERSION_NO        = W.VERSION_NO + 1
+		 WHERE W.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+	</update>
+	<!-- 反确认对账单 -->
+	<update id="unConfirmWoodenStatement" 
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.WoodenStatementDto">
+	    UPDATE STL.T_STL_STATEMENT_OF_WOODEN W
+		   SET W.MODIFY_USER_CODE  = #{empCode,jdbcType=VARCHAR},
+		       W.MODIFY_USER_NAME  = #{empName,jdbcType=VARCHAR},
+		       W.MODIFY_TIME       = SYSDATE,
+		       W.CONFIRM_USER_CODE = '',
+		       W.CONFIRM_USER_NAME = '',
+		       W.CONFIRM_TIME      = '',
+		       W.CONFIRM_STATUS    = #{confirmStatus,jdbcType=VARCHAR},
+		       W.VERSION_NO        = W.VERSION_NO + 1
+		 WHERE W.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+	</update>
+	<!-- 更新对账单 -->
+	<update id="woodenStatementUpdateByStatementBillNo"
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.WoodenStatementDto">
+	    UPDATE STL.T_STL_STATEMENT_OF_WOODEN W
+		   SET W.PERIOD_AMOUNT    = #{periodAmount,jdbcType=DECIMAL} * 100,
+		       W.UNPAID_AMOUNT    = #{unpaidAmount,jdbcType=DECIMAL} * 100,
+		       W.MODIFY_USER_CODE = #{empCode,jdbcType=VARCHAR},
+		       W.MODIFY_USER_NAME = #{empName,jdbcType=VARCHAR},
+		       W.MODIFY_TIME      = SYSDATE,
+		       W.BILL_TYPE        = #{billType,jdbcType=VARCHAR},
+		       W.VERSION_NO       = W.VERSION_NO + 1
+		 WHERE W.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+	</update>
+	<!-- 查询删除对账单明细 -->
+	<select id="queryDelWoodenStatementD"
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.WoodenStatementDto" 
+	    resultMap="WoodenStatementDResultMap">
+	    SELECT D.PACK_TYPE			  PACK_TYPE,
+	    	   D.BUSINESS_DATE        BUSINESS_DATE,
+	           D.PAYABLE_NO           PAYABLE_NO,
+	           D.WAYBILL_NO           WAYBILL_NO,
+	           D.CUSTOMER_NAME        CUSTOMER_NAME,
+	           D.CUSTOMER_CODE        CUSTOMER_CODE,
+	           D.BILL_ORG_CODE        BILL_ORG_CODE,
+	           D.BILL_ORG_NAME        BILL_ORG_NAME,
+	           D.PAYABLE_ORG_CODE     PAYABLE_ORG_CODE,
+	           D.PAYABLE_ORG_NAME     PAYABLE_ORG_NAME,
+	           D.AMOUNT/100           AMOUNT,
+	           D.VERIFY_AMOUNT/100    VERIFY_AMOUNT,
+	           D.UNVERIFY_AMOUNT/100  UNVERIFY_AMOUNT,
+	           D.ACTUAL_FRAME_VOLUME  ACTUAL_FRAME_VOLUME,
+	           D.ACTUAL_WOODEN_VOLUME ACTUAL_WOODEN_VOLUME,
+	           D.ACTUAL_MASK_NUMBER   ACTUAL_MASK_NUMBER,
+	           D.BAG_BELT_NUM         BAG_BELT_NUM,
+	           D.WOODEN_BAR_LONG      WOODEN_BAR_LONG,
+	           D.BUBB_VELAMEN_VOLUME  BUBB_VELAMEN_VOLUME,
+	           D.BIND_VELAMEN_VOLUME  BIND_VELAMEN_VOLUME,
+	           D.BILL_PARENT_TYPE     BILL_PARENT_TYPE
+	      FROM STL.T_STL_STATEMENT_OF_WOODEN_D D
+	     WHERE D.IS_DELETE = 'N'
+	       AND D.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+	       AND D.PAYABLE_NO IN
+			<foreach collection="numbers" index="index" item="item" open="(" separator="," close=")">
+	         #{item}
+	        </foreach>
+	</select>
+	<!-- 按单号删除对账单明细 -->
+	<update id="delWoodenStatementD"
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.WoodenStatementDto">
+	    UPDATE STL.T_STL_STATEMENT_OF_WOODEN_D WD
+		   SET WD.IS_DELETE = 'Y', WD.DISABLE_TIME = SYSDATE
+		 WHERE WD.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+		   AND WD.IS_DELETE = 'N'
+		   <if test="numbers!=null and numbers.size>0">
+		   AND WD.PAYABLE_NO IN
+		    <foreach collection="numbers" index="index" item="item" open="(" separator="," close=")">
+	         #{item}
+	        </foreach>
+	       </if>
+	</update>
+	<!-- 按对账单单号更新应付单 -->
+	<update id="updatePayStatementBillNo"
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.WoodenStatementDto">
+		UPDATE STL.T_STL_BILL_PAYABLE P
+		   SET P.STATEMENT_BILL_NO = 'N/A',
+		       P.MODIFY_TIME       = SYSDATE,
+		       P.MODIFY_USER_CODE  = #{empCode,jdbcType=VARCHAR},
+		       P.MODIFY_USER_NAME  = #{empName,jdbcType=VARCHAR},
+		       P.VERSION_NO        = P.VERSION_NO + 1
+		 WHERE P.ACTIVE = 'Y'
+		   AND P.BILL_TYPE IN ('WP','WOP')
+		   AND P.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+		   <if test="numbers!=null and numbers.size>0">
+		   AND P.PAYABLE_NO IN 
+		    <foreach collection="numbers" index="index" item="item" open="(" separator="," close=")">
+	         #{item}
+	        </foreach>
+	       </if>
+	</update>
+	<!-- 按对账单单号更新应收单 -->
+	<update id="updateRecStatementBillNo"
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.WoodenStatementDto">
+		UPDATE STL.T_STL_BILL_RECEIVABLE R
+		   SET R.STATEMENT_BILL_NO = 'N/A',
+		       R.MODIFY_TIME       = SYSDATE,
+		       R.MODIFY_USER_CODE  = #{empCode,jdbcType=VARCHAR},
+		       R.MODIFY_USER_NAME  = #{empName,jdbcType=VARCHAR},
+		       R.VERSION_NO        = R.VERSION_NO + 1
+		 WHERE R.ACTIVE = 'Y'
+		   AND R.BILL_TYPE = 'WOR'
+		   AND R.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+		   <if test="numbers!=null and numbers.size>0">
+		   AND R.RECEIVABLE_NO IN 
+		    <foreach collection="numbers" index="index" item="item" open="(" separator="," close=")">
+	         #{item}
+	        </foreach>
+	       </if>
+	</update>
+	<!-- 按对账单单号查询核销单 -->
+	<select id="queryWriteoffBillByStatementBillNo" parameterType="String" resultType="Integer">
+	    SELECT COUNT(W.ID) COUNT
+		  FROM STL.T_STL_BILL_WRITEOFF W
+		 WHERE W.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+		   AND W.ACTIVE = 'Y'
+	</select>
+
+</mapper>

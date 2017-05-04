@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.goodsArea" >
+
+	<resultMap id="goodsAreaResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.GoodsAreaEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="org_code" property="organizationCode" jdbcType="VARCHAR" />
+		<result column="virtual_code" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="goods_area_code" property="goodsAreaCode" jdbcType="VARCHAR" />
+		<result column="goods_area_name" property="goodsAreaName" jdbcType="VARCHAR" />
+		<result column="goods_area_type" property="goodsAreaType" jdbcType="VARCHAR" />
+		<result column="goods_type" property="goodsType" jdbcType="VARCHAR" />
+		<result column="arrive_region_code" property="arriveRegionCode" jdbcType="VARCHAR" />
+		<result column="goods_area_usage" property="goodsAreaUsage" jdbcType="VARCHAR" />
+		<result column="active" property="active" jdbcType="CHAR" />
+		<result column="notes" property="notes" jdbcType="VARCHAR" />
+		<result column="create_time" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="modify_time" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="ASTERISK_CODE" property="asteriskCode" jdbcType="VARCHAR" />
+		<result column="COUNTING_MODE" property="countingMode" jdbcType="VARCHAR" />
+		<result column="VERSION_NO" property="version" jdbcType="NUMERIC" />
+		
+		<result column="GOODS_AREA_WIDTH" property="goodsAreaWidth" jdbcType="NUMERIC" />
+		<result column="GOODS_AREA_LENGTH" property="goodsAreaLength" jdbcType="NUMERIC" />
+		<result column="GOODS_AREA_HEIGHT" property="goodsAreaHeight" jdbcType="NUMERIC" />
+		<result column="VOLUME" property="volume" jdbcType="NUMERIC" />
+		<result column="ABSCISSA" property="abscissa" jdbcType="NUMERIC" />
+		<result column="ORDINATE" property="ordinate" jdbcType="NUMERIC" />
+		<result column="AREA" property="area" jdbcType="NUMERIC" />
+		
+	</resultMap>
+	
+	<sql id="columns">
+		ID,
+		ORG_CODE,
+		GOODS_AREA_CODE,
+		GOODS_AREA_NAME,
+		GOODS_AREA_TYPE,
+		GOODS_TYPE,
+		ARRIVE_REGION_CODE,
+		GOODS_AREA_USAGE,
+		CREATE_TIME,
+		MODIFY_TIME,
+		ACTIVE,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE,
+		NOTES,
+		VIRTUAL_CODE,
+		ASTERISK_CODE,
+		COUNTING_MODE,
+		VERSION_NO,
+		
+		GOODS_AREA_WIDTH,
+		GOODS_AREA_LENGTH,
+		GOODS_AREA_HEIGHT,
+		VOLUME,
+		ABSCISSA,
+		ORDINATE,
+		AREA
+	</sql>
+	
+	<sql id="values">
+		#{id,jdbcType=VARCHAR},
+		#{organizationCode,jdbcType=VARCHAR}, 
+		#{goodsAreaCode,jdbcType=VARCHAR}, 
+		#{goodsAreaName,jdbcType=VARCHAR}, 
+		#{goodsAreaType,jdbcType=VARCHAR}, 
+		#{goodsType,jdbcType=VARCHAR}, 
+		#{arriveRegionCode,jdbcType=VARCHAR}, 
+		#{goodsAreaUsage,jdbcType=VARCHAR}, 
+		#{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=VARCHAR}, 
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR}, 
+		#{notes,jdbcType=VARCHAR}, 
+		#{virtualCode, jdbcType=VARCHAR}, 
+		#{asteriskCode, jdbcType=VARCHAR},
+		#{countingMode, jdbcType=VARCHAR},
+		#{version, jdbcType=NUMERIC},
+		
+		#{goodsAreaWidth, jdbcType=NUMERIC},
+		#{goodsAreaLength, jdbcType=NUMERIC},
+		#{goodsAreaHeight, jdbcType=NUMERIC},
+		#{volume, jdbcType=NUMERIC},
+		#{abscissa, jdbcType=NUMERIC},
+		#{ordinate, jdbcType=NUMERIC},
+		#{area, jdbcType=NUMERIC}
+	</sql>
+
+	<insert id="addGoodsArea" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.GoodsAreaEntity">
+		insert into BSE.T_BAS_goods_area (
+		<include refid="columns"/>
+		) values ( 
+		<include refid="values"/>
+		)
+	</insert>
+
+	<update id="deleteGoodsArea" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.GoodsAreaEntity">
+		update BSE.T_BAS_goods_area 
+		set active = #{active, jdbcType=CHAR} 
+		, modify_time = #{modifyDate,jdbcType=TIMESTAMP} 
+		, VERSION_NO = #{version, jdbcType=NUMERIC}
+		, modify_user_code = #{modifyUser,jdbcType=VARCHAR} 
+		where id = #{id,jdbcType=VARCHAR}
+	</update>
+
+	<select id="queryGoodsAreaByVirtualCode" resultMap="goodsAreaResultMap" parameterType="map">
+		select 
+		<include refid="columns"/>
+		from BSE.T_BAS_goods_area where active = #{active,jdbcType=CHAR} AND virtual_code = #{virtualCode,jdbcType=VARCHAR}
+	</select>
+
+	<select id="queryGoodsAreaById" resultMap="goodsAreaResultMap" parameterType="java.lang.String">
+		select 
+		<include refid="columns"/>
+		from BSE.T_BAS_goods_area where id = #{id,jdbcType=VARCHAR}
+	</select>
+
+
+	<sql id="whereGoodsAreaListByCondition">
+		FROM BSE.T_BAS_GOODS_AREA WHERE ACTIVE = #{active,jdbcType=CHAR} 
+		<if test="organizationCode != null and organizationCode != ''">
+			AND org_code = #{organizationCode,jdbcType=VARCHAR} 
+		</if>
+		<if test="orgCodeList != null and orgCodeList.size > 0">
+			AND org_code in 
+			<foreach collection="orgCodeList" open="(" close=")" separator="," item="orgCode">
+				#{orgCode} 
+			</foreach>
+		</if>
+		<if test="goodsAreaCode != null and goodsAreaCode != ''">
+			AND goods_area_code = #{goodsAreaCode,jdbcType=VARCHAR}
+		</if>
+		<if test="goodsAreaName != null and goodsAreaName != ''">
+			AND goods_area_name like CONCAT(CONCAT('%', #{goodsAreaName, jdbcType=VARCHAR}), '%')  
+		</if>
+		<if test="arriveRegionCode != null and arriveRegionCode != ''">
+			AND arrive_region_code = #{arriveRegionCode,jdbcType=VARCHAR}
+		</if>
+		<if test="goodsAreaType != null and goodsAreaType != ''">
+			AND goods_area_type = #{goodsAreaType,jdbcType=VARCHAR}
+		</if>
+		<if test="goodsAreaUsage != null and goodsAreaUsage != ''">
+			AND goods_area_usage = #{goodsAreaUsage,jdbcType=VARCHAR}
+		</if>
+		<if test="goodsType != null and goodsType != ''">
+			AND goods_type = #{goodsType,jdbcType=VARCHAR}
+		</if>
+		<if test="asteriskCode != null and asteriskCode != ''">
+			AND ASTERISK_CODE = #{asteriskCode,jdbcType=VARCHAR}
+		</if>
+		<if test="countingMode != null and countingMode != ''">
+			AND COUNTING_MODE = #{countingMode,jdbcType=VARCHAR}
+		</if>
+	</sql>
+
+	<select id="queryGoodsAreaListByCondition" resultMap="goodsAreaResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.GoodsAreaEntity">
+		select   
+		<include refid="columns"/>
+		<include refid="whereGoodsAreaListByCondition"/>
+		order by create_time,org_code, goods_area_code
+	</select>
+	
+	<select id="countGoodsAreaListByCondition" resultType="long" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.GoodsAreaEntity">
+		select count(1) 
+		<include refid="whereGoodsAreaListByCondition"/>
+	</select>
+
+	<select id="queryGoodsAreaListByOrganizationCode" resultMap="goodsAreaResultMap" parameterType="map">
+		select 
+		<include refid="columns"/>
+		from BSE.T_BAS_goods_area 
+		where active = #{active,jdbcType=CHAR} 
+		and org_code = #{organizationCode,jdbcType=VARCHAR}
+		<if test="goodsAreaType != null and goodsAreaType != ''">
+			and goods_area_type = #{goodsAreaType,jdbcType=VARCHAR}
+		</if>
+		order by goods_area_code
+	</select>
+
+	<select id="queryGoodsAreaListForDownload" resultMap="goodsAreaResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.GoodsAreaEntity">
+		select 
+		<include refid="columns"/>
+		from BSE.T_BAS_goods_area 
+		<where>
+			<if test="version != null">
+				<![CDATA[ AND version_no >= #{version, jdbcType=NUMERIC} ]]>
+			</if>
+			<if test="organizationCode != null and organizationCode != ''">
+				AND org_code = #{organizationCode,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND active = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+		order by version_no,id ASC
+	</select>
+
+	<update id="deleteGoodsAreas" parameterType="map">
+		update BSE.T_BAS_goods_area 
+		set active = #{inactive, jdbcType=CHAR} 
+		, modify_time = #{modifyDate,jdbcType=TIMESTAMP} 
+		, modify_user_code = #{modifyUser,jdbcType=VARCHAR}
+		, VERSION_NO = #{version, jdbcType=NUMERIC} 
+		where active = #{active, jdbcType=CHAR}
+		and virtual_code in 
+		<foreach collection="virtualCodes" open="(" close=")" separator="," item="virtualCode">
+			#{virtualCode,jdbcType=VARCHAR} 
+		</foreach>
+	</update>
+	
+	
+
+	<!-- 以下为 cache 使用 -->
+
+	<select id="queryLastVersion" resultType="long">
+		<![CDATA[
+			SELECT MAX(VERSION_NO)
+			FROM BSE.T_BAS_goods_area
+		]]>
+	</select>
+	
+	<select id="queryGoodsAreaListForCache" resultMap="goodsAreaResultMap" parameterType="string">
+		select 
+		<include refid="columns"/>
+		FROM BSE.T_BAS_goods_area
+		where active = #{active,jdbcType=CHAR}
+		order by goods_area_code
+	</select>
+
+	<select id="queryExpressGoodsAreaByTransCenterCode" resultMap="goodsAreaResultMap" parameterType="String">
+		select 
+		<include refid="columns"/>
+		from BSE.T_BAS_goods_area 
+		where active = 'Y'
+		and org_code = #{orgCode,jdbcType=VARCHAR}
+		order by goods_area_code
+	</select>
+
+
+<select id="queryCountingModeGoodsAreaListByOrganizationCode" resultMap="goodsAreaResultMap" parameterType="map">
+		select 
+		ID,
+		ORG_CODE,
+		GOODS_AREA_CODE,
+		GOODS_AREA_NAME,
+		GOODS_AREA_TYPE,
+		GOODS_TYPE,
+		ARRIVE_REGION_CODE,
+		GOODS_AREA_USAGE,
+		CREATE_TIME,
+		MODIFY_TIME,
+		ACTIVE,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE,
+		NOTES,
+		VIRTUAL_CODE,
+		ASTERISK_CODE,
+		VERSION_NO,
+		VOLUME,
+		AREA,
+		COUNTING_MODE
+		from BSE.T_BAS_goods_area 
+		where active = #{active,jdbcType=CHAR} 
+		and org_code = #{organizationCode,jdbcType=VARCHAR}
+		and COUNTING_MODE in('KP','AB','KPAB')
+		order by goods_area_code
+	</select>
+	<select id="queryGoodsAreaByStationSalesDept" resultMap="goodsAreaResultMap" parameterType="map">
+		select
+		g.goods_area_code as goods_area_code,
+		g.virtual_code as virtual_code,
+		g.goods_area_name as goods_area_name
+		from bse.t_bas_sales_department s
+		left join bse.t_bas_goods_area g on s.transfer_center = g.org_code
+                                  						and g.active = 'Y'
+                                  						and g.goods_area_type in ('BSE_GOODSAREA_TYPE_EXPRESS_STATION', 'BSE_GOODSAREA_TYPE_STATION')
+        where s.code = #{code,jdbcType=VARCHAR}
+        and s.active = 'Y'
+        order by g.goods_area_type desc
+	</select>
+</mapper>

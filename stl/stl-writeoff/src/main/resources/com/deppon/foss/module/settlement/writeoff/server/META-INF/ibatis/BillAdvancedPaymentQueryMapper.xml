@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.BillAdvancedPaymentEntityDao" >
+  <select id="selectBillAdvancedPaymentNos" resultMap="BaseResultMap"
+  	 parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.AdvPayWriteoffBillPayDto" >
+    SELECT /*结算-核销-根据传入的一到多个预付单号，获取一到多条预付单信息*/
+    <include refid="Base_Column_List" />
+    FROM STL.T_STL_BILL_ADVANCED_PAYMENT 
+    WHERE ACTIVE = #{active} <!-- 有效 -->
+		<if test="isRedBack!=null and isRedBack!=''">
+			AND IS_RED_BACK = #{isRedBack} <!-- 非红单 -->
+		</if>
+    	AND UNVERIFY_AMOUNT>0  <!-- 未核销金额大于0 -->
+    	<if test="auditStatus!=null and auditStatus!=''">
+    		AND AUDIT_STATUS = #{auditStatus} <!-- 预付单的审批状态必须为汇款成功 -->
+    	</if>
+    	<if test="billType!=null and billType!=''">
+			AND BILL_TYPE = #{billType} <!-- 客户必须为航空公司 -->
+		</if> 
+		AND ADVANCES_NO IN
+		<foreach collection="advancesNos"  index="index" item="item"  open="(" separator="," close=")">  
+		        #{item} 
+		</foreach>
+		<if test="paymentOrgCode!=null and paymentOrgCode!=''"><!--部门编码-->
+	    	AND PAYMENT_ORG_CODE=#{paymentOrgCode}
+	    </if>
+  </select>
+  <!-- 根据输入参数查询可用于核销的预付单 -->
+	<select id="selectBillAdvancedPaymentParams" resultMap="BaseResultMap"
+		parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.AdvPayWriteoffBillPayDto">
+		select /*根据输入参数查询可用于核销的预付单*/
+		<include refid="Base_Column_List" />
+		from STL.T_STL_BILL_ADVANCED_PAYMENT
+		where ACTIVE = #{active} <!-- 有效 -->
+		<if test="isRedBack!=null and isRedBack!=''">
+			AND IS_RED_BACK = #{isRedBack} <!-- 非红单 -->
+		</if>
+		AND UNVERIFY_AMOUNT>0  <!-- 未核销金额大于0 -->
+		<if test="auditStatus!=null and auditStatus!=''">
+    		AND AUDIT_STATUS = #{auditStatus} <!-- 预付单的审批状态必须为汇款成功 -->
+    	</if>
+    	<if test="billType!=null and billType!=''">
+			AND BILL_TYPE = #{billType} <!-- 客户必须为航空公司 -->
+		</if> 
+		<if test="customerCode!=null and customerCode!=''">
+			AND CUSTOMER_CODE = #{customerCode} <!-- 客户不为空时，根据客户编码过滤 -->
+		</if>
+   		<![CDATA[ AND   BUSINESS_DATE >=#{startBusinessDate} AND   BUSINESS_DATE <=#{endBusinessDate} ]]>
+		 <if test="paymentOrgCode!=null and paymentOrgCode!=''"> <!--部门编码-->
+	    	AND PAYMENT_ORG_CODE=#{paymentOrgCode}
+	    </if>
+	</select>
+</mapper>

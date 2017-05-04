@@ -1,0 +1,489 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.lostwarning.findLostGoods" >
+		
+	<resultMap id="queryLostGoodsNotFindResultMap" type="com.deppon.foss.module.transfer.lostwarning.api.shared.dto.LostWarningLogDto" >
+		<result column="ID" property="ID" jdbcType="VARCHAR" />
+		<result column="WAYBILL_NO" property="wayBillNo" jdbcType="VARCHAR" />
+		<result column="SERIAL_NO" property="serialNo" jdbcType="VARCHAR" />
+		<result column="REP_TYPE" property="repType" jdbcType="VARCHAR" />
+		<result column="LOST_REPCODE" property="lostRepCode" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+	</resultMap>
+	
+	<resultMap id="queryFindLostGoodsResultMap" type="com.deppon.foss.module.transfer.lostwarning.api.shared.dto.LostGoodsFindOrgDto" >
+		<result column="WAYBILL_NO" property="wayBillNo" jdbcType="VARCHAR" />
+		<result column="SERIAL_NO" property="serialNo" jdbcType="VARCHAR" />
+		<result column="Operator_Code" property="operatorCode" jdbcType="VARCHAR" />
+		<result column="Operator_Name" property="operatorName" jdbcType="VARCHAR" />
+		<result column="Org_Code" property="orgCode" jdbcType="VARCHAR" />
+		<result column="org_name" property="orgName" jdbcType="VARCHAR" />
+		<result column="In_Stock_Type" property="inStockType" jdbcType="VARCHAR" />
+		<result column="createTime" property="createTime" jdbcType="TIMESTAMP" />
+	</resultMap>
+	
+ <!-- ==============丢货找到由线程处理变为按照模块处理 begin================ -->
+ <!-- 装车扫描找到-->
+ <!-- 收集数据 -->
+ <insert id="insertLoadData"  parameterType="HashMap">
+ Insert Into tfr.t_opt_tstdata_efficacy	
+SELECT DISTINCT lwd.waybill_no AS waybill_no, '2'
+	  FROM tfr.t_opt_load_waybill_detail lwd
+	  JOIN tfr.t_opt_lostwarning_log t
+	    ON t.waybill_no = lwd.waybill_no
+	 WHERE <![CDATA[ t.Create_Time>=to_date(#{uploadTime},'yyyy-mm-dd') ]]>
+	   AND lwd.task_begin_time > SYSDATE - 15
+	   AND NOT EXISTS (SELECT 1
+	          FROM tfr.t_opt_tstdata_efficacy tt
+	         WHERE t.waybill_no = tt.waybill_no)
+	   AND lwd.scan_qty > 0
+	   AND t.rep_code = '1'
+	   AND t.is_find = '0'	  
+   </insert>
+   
+   <!--  清仓扫描-->
+   <!-- 收集数据 -->
+   
+   <insert id="insertInventoryData"  parameterType="HashMap">
+    INSERT INTO TFR.T_OPT_TSTDATA_EFFICACY
+    SELECT DISTINCT L.WAYBILL_NO, '3'
+      FROM TFR.T_OPT_ST_TASK_LIST L,
+           TFR.T_OPT_ST_TASK      ST,
+           BSE.T_BAS_ORG          ORG,
+           TFR.T_OPT_LOSTWARNING_LOG T
+     WHERE L.ST_TASK_ID = ST.ID
+     <![CDATA[And  t.Create_Time>=to_date(#{uploadTime},'yyyy-mm-dd') ]]>
+       AND ST.DEPTCODE = ORG.CODE
+       AND L.WAYBILL_NO = T.WAYBILL_NO
+       AND ORG.ACTIVE = 'Y'
+       AND NOT EXISTS
+     (SELECT 1
+              FROM TFR.T_OPT_TSTDATA_EFFICACY TT
+             WHERE TT.WAYBILL_NO = T.WAYBILL_NO)
+       AND ST.CREATETIME IS NOT NULL
+         <!-- modify by wwb 加上已上报未找到限制 -->
+    	AND t.rep_code = '1'
+	  AND t.is_find = '0'
+ </insert>
+ 
+ 
+ 
+ <!-- 叉车司机找到 -->
+ <!-- 收集数据 -->
+ 
+ <insert id="insertDriverData"  parameterType="HashMap">
+ INSERT INTO TFR.T_OPT_TSTDATA_EFFICACY
+ SELECT   DISTINCT  tab.waybill_no, '4'   FROM  (SELECT   D.*
+ FROM TFR.T_OPT_TRAYSCAN_TASK_DETAIL D
+  LEFT JOIN TFR.T_OPT_TRAYSCAN_TASK T
+    ON T.TASK_NO = D.TRAYSCAN_TASK_NO
+  LEFT JOIN BSE.T_BAS_ORG ORG
+    ON T.CREATER_ORG_CODE = ORG.CODE
+   AND ORG.ACTIVE = 'Y'
+ WHERE D.CREATE_TIME IS NOT NULL)  tab , tfr.t_opt_lostwarning_log  g 
+ WHERE  tab.waybill_no=g.waybill_no
+ <![CDATA[And  g.Create_Time>=to_date(#{uploadTime},'yyyy-mm-dd') ]]>
+
+ AND  NOT EXISTS ( SELECT  1  FROM  TFR.T_OPT_TSTDATA_EFFICACY tt
+ WHERE tt.waybill_no=g.waybill_no)
+ <!-- modify by wwb 加上已上报未找到限制 -->
+  AND g.rep_code = '1'
+   AND g.is_find = '0'
+ </insert>
+		 
+	
+ <!-- 分揀找到 -->
+ <!-- 收集數據-->
+ 
+ <insert id="insertSortingData"  parameterType="HashMap">
+ INSERT INTO TFR.T_OPT_TSTDATA_EFFICACY
+  SELECT DISTINCT T.WAYBILL_NO, '5'
+    FROM TFR.T_OPT_SORTING_SCANNING T,
+     TFR.T_OPT_LOSTWARNING_LOG TT
+   WHERE T.SCAN_TIME IS NOT NULL
+     AND T.WAYBILL_NO = TT.WAYBILL_NO
+     <![CDATA[And  tt.Create_Time>=to_date(#{uploadTime},'yyyy-mm-dd') ]]>
+     AND NOT EXISTS
+   (SELECT 1
+            FROM TFR.T_OPT_TSTDATA_EFFICACY TF
+           WHERE TF.WAYBILL_NO = TT.WAYBILL_NO)
+       <!-- modify by wwb 加上已上报未找到限制 -->     
+     AND tt.rep_code = '1'
+    AND tt.is_find = '0'
+  </insert>
+ 
+ <!-- 签收找到 -->
+ <!-- 收集数据 -->
+ 
+ <insert id="insertSSignedData"  parameterType="HashMap">
+    INSERT INTO TFR.T_OPT_TSTDATA_EFFICACY
+   Select Distinct tab.Waybill_No, '6' From (Select  a.*
+  From Pkp.T_Srv_Arrivesheet a
+ Inner Join Pkp.T_Srv_Sign_Detail d
+    On A.Arrivesheet_No = D.Arrivesheet_No
+   where A.Active = 'Y'
+   And A.Status = 'SIGN'
+   And A.Sign_Time Is Not Null)  tab,
+   tfr.t_opt_lostwarning_log tt
+   Where tt.Waybill_No = tab.Waybill_No
+   <![CDATA[And  tt.Create_Time>=to_date(#{uploadTime},'yyyy-mm-dd')+#{days} ]]>
+   <![CDATA[And  tt.Create_Time<to_date(#{uploadTime},'yyyy-mm-dd')+#{days}+1 ]]>
+   And Not Exists
+ (Select 1
+          From  TFR.T_OPT_TSTDATA_EFFICACY aa
+         Where tt.Waybill_No = aa.Waybill_No)
+    <!-- modify by wwb 加上已上报未找到限制 -->      
+   AND tt.rep_code =  '1'
+   AND tt.is_find = '0'
+   
+ <!-- 2016-8-2 19:13:22 wwb 增加外发的签收 -->
+
+   UNION
+ 
+  SELECT DISTINCT TAB.WAYBILL_NO, '6'
+   FROM (SELECT A.*
+           FROM PKP.T_SRV_WAYBILL_SIGN_RESULT A
+          INNER JOIN PKP.T_SRV_WAYBILL W
+             ON A.WAYBILL_NO = W.WAYBILL_NO
+           LEFT JOIN TFR.T_OPT_HANDOVERBILL_DETAIL HD
+             ON HD.WAYBILL_NO = W.WAYBILL_NO
+           LEFT JOIN TFR.T_OPT_HANDOVERBILL HB
+             ON HB.HANDOVER_NO = HD.HANDOVER_NO
+          WHERE A.ACTIVE = 'Y'
+            AND W.ACTIVE = 'Y'
+      
+            AND (W.PRODUCT_CODE IN ('AF', 'PLF') 
+            		OR
+                (HB.HANDOVER_TYPE = 'LDP_HANDOVER'
+                <![CDATA[  AND HB.HANDOVERBILL_STATE <> '90']]>)
+                )) TAB,
+        TFR.T_OPT_LOSTWARNING_LOG TT
+  WHERE TT.WAYBILL_NO = TAB.WAYBILL_NO
+   <![CDATA[And  tt.Create_Time>=to_date(#{uploadTime},'yyyy-mm-dd')+#{days} ]]>
+   <![CDATA[And  tt.Create_Time<to_date(#{uploadTime},'yyyy-mm-dd')+#{days}+1 ]]>
+    AND NOT EXISTS (SELECT 1
+           FROM TFR.T_OPT_TSTDATA_EFFICACY AA
+          WHERE TT.WAYBILL_NO = AA.WAYBILL_NO)
+    AND TT.REP_CODE = '1'
+    AND TT.IS_FIND = '0'
+  </insert>
+  
+  
+  
+ <!-- 卸车单票入库数据 -->
+ <!-- 收集数据 -->
+  <insert id="insertUnloadData"  parameterType="HashMap">
+ INSERT INTO TFR.T_OPT_TSTDATA_EFFICACY
+ SELECT distinct T.WAYBILL_NO,'7'
+            FROM tfr.t_opt_in_stock_info T
+      left join TFR.T_OPT_LOSTWARNING_LOG TT
+   on t.WAYBILL_NO = TT.WAYBILL_NO 
+   where 1=1
+   <![CDATA[And  tt.Create_Time>=to_date(#{uploadTime},'yyyy-mm-dd') ]]>
+     AND NOT EXISTS
+   (SELECT 1
+            FROM  TFR.T_OPT_TSTDATA_EFFICACY TR
+           WHERE TT.WAYBILL_NO = TR.WAYBILL_NO)
+     <!-- modify by wwb 加上已上报未找到限制 -->     
+	 AND TT.rep_code = '1'
+        AND TT.is_find = '0'           
+   </insert>
+ 
+  <!-- ==============丢货找到由线程处理变为按照模块处理 end================ -->
+	
+<!--=======================代码添加区 begin====================================== -->
+<!-- 收集丢货上报未找到且运单失效的运单号 -->
+<!-- 收集丢货上报未找到且运单失效的运单号 -->
+<insert id="insertBillAndEfficacy"  parameterType="HashMap">
+<![CDATA[
+   insert into tfr.t_opt_tstdata_efficacy
+  Select Distinct t.waybill_no , '1'
+    From  pkp.t_Srv_Waybill p,tfr.t_Opt_Lostwarning_Log t
+    Where t.Create_Time>=to_date(#{uploadTime},'yyyy-mm-dd')
+    And t.Rep_Code='1'
+    And t.Is_Find='0'
+    And  p.Active='N'
+    And  t.waybill_no=p.waybill_no 
+    And  Not Exists  (select 1 from tfr.t_opt_tstdata_efficacy d where d.waybill_no= t.waybill_no )
+    ]]>        
+   </insert>
+   
+   <!--收集丢货上报未找到且运单作废的运单号  -->
+   <insert id="insertBillAndVoided"  parameterType="HashMap">
+<![CDATA[
+   insert into tfr.t_opt_tstdata_voided
+ Select Distinct t.waybill_no 
+    From  Pkp.t_Srv_Actual_Freight p,tfr.t_Opt_Lostwarning_Log t
+    Where t.Create_Time>=to_date(#{uploadTime},'yyyy-mm-dd')
+    And t.Rep_Code='1'
+    And t.Is_Find='0'
+    And  p.Status In ('ABORTED', 'OBSOLETE')
+    And  t.waybill_no=p.waybill_no
+    And  Not Exists  (select 1 from tfr.t_opt_tstdata_voided d where d.waybill_no= t.waybill_no )
+    ]]>        
+   </insert>
+   
+<!-- 收集丢货上报未找到而且已经签收的数据 -->
+<insert id="insertBillAndSigned"  parameterType="map">
+<![CDATA[
+  insert into tfr.t_opt_tstdata_signed
+ Select Distinct t.waybill_no 
+    From  pkp.t_srv_waybill_sign_result p,tfr.t_Opt_Lostwarning_Log t
+    Where t.Create_Time>=to_date(#{uploadTime},'yyyy-mm-dd')
+    And t.Rep_Code='1'
+    And t.Is_Find='0'
+    And  p.active='Y'
+    And p.sign_status='SIGN_STATUS_ALL'
+    And  t.waybill_no=p.waybill_no
+    And  Not Exists  (select 1 from tfr.t_opt_tstdata_signed d where d.waybill_no= t.waybill_no )
+    ]]>        
+   </insert>
+   <!--同步入库表记录到新建的入库信息表中去  -->
+ <insert id="inserNewInstockData"  parameterType="java.lang.Integer">
+Insert Into tfr.t_opt_in_stock_info
+ select sys_guid() id, waybill_no, sysdate CREATE_TIME
+  from (select distinct t.waybill_no
+          from tfr.t_opt_in_stock t
+   Where 
+     <![CDATA[ t.in_stock_time<Sysdate-#{days}]]>
+     <![CDATA[ and t.in_stock_time>=Sysdate-#{days}-1]]>
+     and t.is_valid='Y')
+   </insert>   
+   
+   
+<!--获取上述失效表里的运单号  -->
+<select id="queryLostGoodsWayBillAndEfficacy" parameterType="HashMap" resultMap="queryLostGoodsNotFindResultMap">
+	select t.waybill_no from  tfr.t_opt_tstdata_efficacy t where 
+		t.FINDTYPE = #{findType,jdbcType=VARCHAR}
+	and <![CDATA[rownum < 4000]]>
+</select>
+
+<!--获取上述作废表里的运单号  -->
+<select id="queryLostGoodsWayBillAndVoided" parameterType="HashMap" resultMap="queryLostGoodsNotFindResultMap">
+	select t.waybill_no from  tfr.t_opt_tstdata_voided t
+</select>
+
+<!--获取上述签收表里的运单号  -->
+<select id="queryLostGoodsWayBillAndSigned" parameterType="HashMap" resultMap="queryLostGoodsNotFindResultMap">
+	select t.waybill_no from  tfr.t_opt_tstdata_signed t
+</select>
+
+
+
+<!-- 删除失效表里的运单号-->
+ <delete id="deleteEfficacyData" parameterType="HashMap">
+    delete from  tfr.t_opt_tstdata_efficacy  t where  t.waybill_no = #{wayBillNo,jdbcType=VARCHAR}
+  	</delete>
+  	<!-- 删除作废表里的运单号-->
+ <delete id="deleteVoidedData" parameterType="HashMap">
+    delete from tfr.t_opt_tstdata_voided  t  where  t.waybill_no = #{wayBillNo,jdbcType=VARCHAR}
+  	</delete>
+  	<!-- 删除签收表里的运单号-->
+ <delete id="deleteSignedData" parameterType="HashMap">
+    delete from tfr.t_opt_tstdata_signed  t  where  t.waybill_no = #{wayBillNo,jdbcType=VARCHAR}
+  	</delete>
+<!-- 删除新建入库记录表中入库时间在十五天之前的记录-->
+ <delete id="deleteInstockNewInVaildData">
+    delete from tfr.t_opt_in_stock_info  t  where <![CDATA[ t.create_time < sysdate-15]]>
+ </delete>   	
+  	
+<!--  =========================代码添加区  end===========================================-->
+
+	<!-- 查询上报成功且未处理的丢货运单号信息 start -->
+	<select id="queryLostGoodsNotFind" parameterType="HashMap" resultMap="queryLostGoodsNotFindResultMap">
+	<![CDATA[
+		Select Distinct t.Waybill_No From tfr.t_Opt_Lostwarning_Log t Where t.Rep_Code='1' And t.Is_Find='0'
+		And t.Create_Time>=to_date(#{uploadTime},'yyyy-mm-dd')
+	]]>
+	</select>
+	<!-- 查询上报成功且未处理的丢货数据 end -->
+	
+	<!-- 查询上报成功且未处理的丢货运单号信息 start -->
+	<select id="queryLostGoodsNotFindByBillNo" parameterType="HashMap" resultMap="queryLostGoodsNotFindResultMap">
+	<![CDATA[
+		Select * From tfr.t_Opt_Lostwarning_Log t Where t.Rep_Code='1' And t.Is_Find='0'
+		And t.Waybill_No=#{wayBillNo} And t.Create_Time>=to_date(#{uploadTime},'yyyy-mm-dd')
+	]]>
+	</select>
+	<!-- 查询上报成功且未处理的丢货数据 end -->
+	
+	<!-- 丢货数据状态更改 start-->
+	<update id="updateLostWarningLog" parameterType="HashMap">
+		Update Tfr.t_Opt_Lostwarning_Log t Set t.Is_Find = #{isFind},t.Rep_Msg = #{repMsg},t.Find_Msg = #{findMsg} 
+			where t.waybill_no = #{wayBillNo}  And t.Is_Find = '0' And t.Rep_Code='1'
+			<if test="idList != null">
+				and t.ID in
+				<foreach item="item" index="index" collection="idList" 
+	                 open="(" separator="," close=")">
+	                #{item}
+	        	</foreach>
+			</if>
+	</update>
+	<!-- 丢货数据状态更改 end-->
+	
+	<!-- 查询效的运单数 start -->
+	<select id="queryWayBillCountByBillNo" parameterType="HashMap" resultType="java.lang.Long">
+		Select Count(1) from pkp.t_Srv_Waybill t Where t.Active='Y' And t.waybill_no=#{wayBillNo}
+	</select>
+	<!-- 查询有效的运单数 end -->
+	
+	<!-- 查询运单是否签收 start -->
+	<select id="queryWayBillISSign" parameterType="HashMap" resultType="java.lang.Long">
+		Select Count(1) From pkp.t_srv_waybill_sign_result t 
+		Where t.waybill_no=#{wayBillNo} And t.active='Y'
+	</select>
+	<!-- 查询运单是否签收 end -->
+	
+	<!-- 查询运单是否作废 start -->
+	<select id="queryInvaildWayBill" parameterType="HashMap" resultType="java.lang.Long">
+		Select Count(1) From Pkp.t_Srv_Actual_Freight t Where t.Status In ('ABORTED', 'OBSOLETE')  
+		And t.Waybill_No = #{wayBillNo}
+	</select>
+	<!-- 查询运单是否作废 end -->
+	
+	<!-- 查询丢货运单的入库记录 start -->
+	<select id="queryInStockInfo" parameterType="HashMap" resultMap="queryFindLostGoodsResultMap">
+		Select t.In_Stock_Type,
+		       t.Waybill_No,
+		       t.Serial_No,
+		       t.Operator_Code,
+		       t.Operator_Name,
+		       t.Org_Code,
+		       Org.Name As Org_Name,
+		       t.In_Stock_Time as createTime
+		  From Tfr.t_Opt_In_Stock t
+		  Left Join Bse.t_Bas_Org Org
+		    On t.Org_Code = Org.Code
+		   And Org.Active = 'Y'
+		 Where 
+		   t.Waybill_No = #{wayBillNo}
+		   And t.Is_Valid = 'Y'
+		   And t.In_Stock_Time is not null
+		   <!-- 2016-8-2 14:58:53 wwb 去掉零担丢货服务组入库的特殊组织 -->
+	    <![CDATA[and t.org_code <> #{invalidOrg, jdbcType=VARCHAR}]]>
+		 Order By t.Serial_No,t.In_Stock_Time
+	</select>
+	<!-- 查询丢货运单的入库记录  end -->
+	
+	<!-- 查询丢货运单的装车记录 start -->
+	<select id="queryLoadGoodsInfo" parameterType="HashMap" resultMap="queryFindLostGoodsResultMap">
+		Select S.Serial_No,
+		       Lwd.Waybill_No,
+		       Lwd.Orig_Org_Code As Org_Code,
+		       Org.Name          As Org_Name,
+		       Lwd.Task_Begin_Time as createTime
+		  From Tfr.T_Opt_Load_Serialno       s,
+		       Tfr.T_Opt_Load_Waybill_Detail Lwd,
+		       Bse.T_Bas_Org                 Org
+		 Where S.Load_Waybill_Detail_Id = Lwd.Id
+		   And Lwd.Orig_Org_Code = Org.Code
+		   And Lwd.Task_Begin_Time is not null
+		   And Org.Active = 'Y'
+	<![CDATA[ 
+		   And S.Goods_State <> 'CANCELED' 
+	]]>
+		   And Lwd.Waybill_No = #{wayBillNo}
+		   Order By S.Serial_No,Lwd.Task_Begin_Time
+	</select>
+	<!-- 查询丢货运单的装车记录 end -->	
+	
+	<!-- 查询丢货运单的清仓记录 start -->
+	<select id="queryCheckStockGoodsInfo" parameterType="HashMap" resultMap="queryFindLostGoodsResultMap">
+		Select l.Waybill_No,
+		       l.Serial_No,
+		       St.Creator_Code As Operator_Code,
+		       St.Creator_Name As Operator_Name,
+		       St.Deptcode     As Org_Code,
+		       Org.Name        As Org_Name,
+		       St.Createtime as createTime
+		  From Tfr.t_Opt_St_Task_List l, Tfr.t_Opt_St_Task St, Bse.t_Bas_Org Org
+		 Where l.St_Task_Id = St.Id
+		   And St.Deptcode=org.Code
+		   And Org.Active = 'Y'
+		   And l.Waybill_No = #{wayBillNo}
+		   And St.Createtime is not null
+		   Order By l.Serial_No,St.Createtime
+	</select>
+	<!-- 查询丢货运单的清仓记录 end -->	
+	
+	<!-- 查询丢货运单的叉车扫描记录 start -->
+	<select id="queryTrayScanGoodsInfo" parameterType="HashMap" resultMap="queryFindLostGoodsResultMap">
+		Select t.Creater_Code     As Operator_Code,
+		       t.Creater_Name     As Operator_Name,
+		       t.Creater_Org_Code As Org_Code,
+		       Org.Name           As Org_Name,
+		       d.Waybill_No,
+		       d.Seria_No         As Serial_No,
+		       d.Create_Time as createTime
+		  From Tfr.t_Opt_Trayscan_Task_Detail d
+		  Left Join Tfr.t_Opt_Trayscan_Task t
+		    On t.Task_No = d.Trayscan_Task_No
+		  Left Join Bse.t_Bas_Org Org
+		    On t.Creater_Org_Code = Org.Code
+		   And Org.Active = 'Y'
+		 Where d.Waybill_No = #{wayBillNo}
+		 And d.Create_Time is not null
+		 Order By d.Seria_No,d.Create_Time
+	</select>
+	<!-- 查询丢货运单的叉车扫描记录 end -->	
+	
+	<!-- 查询丢货运单的分拣扫描记录 start -->
+	<select id="querySortingScanGoodsInfo" parameterType="HashMap" resultMap="queryFindLostGoodsResultMap">
+		Select t.Waybill_No,
+		       t.Serial_No,
+		       t.Operator_Code,
+		       t.Operator_Name,
+		       t.Operation_Org_Code As Org_Code,
+		       t.Operation_Org_Name As Org_Name,
+		       t.Scan_Time as createTime
+		  From Tfr.t_Opt_Sorting_Scanning t
+		 Where t.Waybill_No = #{wayBillNo}
+		 And t.Scan_Time is not null
+		   Order By t.Serial_No,t.Scan_Time
+	</select>
+	<!-- 查询丢货运单的分拣扫描记录 end -->	
+	
+	<!-- 查询丢货运单的签收记录 start -->
+	<select id="querySignScanGoodsInfo" parameterType="HashMap" resultMap="queryFindLostGoodsResultMap">
+		Select a.Waybill_No, d.Serial_No,a.Sign_Time as createTime
+            From Pkp.t_Srv_Arrivesheet a
+           Inner Join Pkp.t_Srv_Sign_Detail d
+              On a.Arrivesheet_No = d.Arrivesheet_No
+             where a.Active = 'Y'
+             And a.Status = 'SIGN'
+             And a.Sign_Time is not null
+          
+             And a.Waybill_No= #{wayBillNo}
+          
+          <!-- 2016-8-2 19:16:27 wwb 签收增加外发 -->   
+          UNION ALL
+	
+		SELECT DISTINCT A.WAYBILL_NO, D.SERIAL_NO, A.SIGN_TIME AS CREATETIME
+		  FROM PKP.T_SRV_WAYBILL_SIGN_RESULT A
+		 INNER JOIN PKP.T_SRV_WAYBILL W
+		    ON A.WAYBILL_NO = W.WAYBILL_NO
+		 INNER JOIN PKP.T_SRV_LABELED_GOOD D
+		    ON W.WAYBILL_NO = D.WAYBILL_NO
+		  LEFT JOIN TFR.T_OPT_HANDOVERBILL_DETAIL HD
+		    ON HD.WAYBILL_NO = W.WAYBILL_NO
+		  LEFT JOIN TFR.T_OPT_HANDOVERBILL HB
+		    ON HB.HANDOVER_NO = HD.HANDOVER_NO
+		 WHERE A.ACTIVE = 'Y'
+		   AND D.ACTIVE = 'Y'
+		   AND W.ACTIVE = 'Y'
+		 
+		   AND (W.PRODUCT_CODE IN ('AF', 'PLF') OR
+		       (HB.HANDOVER_TYPE = 'LDP_HANDOVER'  <![CDATA[  AND HB.HANDOVERBILL_STATE <> '90']]>)
+		       )
+		   AND A.WAYBILL_NO = #{wayBillNo}
+  
+	</select>
+	<!-- 查询丢货运单的分拣扫描记录 end -->	
+	
+	<!-- 获取丢货找到上报ID 序列值 start-->
+	<select id="getNextSequenceValue" resultType="java.lang.Long" parameterType="java.util.Map">
+  	  select  tfr.SEQ_LOSTGOODS_FIND_ID.NEXTVAL from dual
+	</select>
+	<!-- 获取丢货找到上报ID 序列值 end-->
+    
+</mapper>

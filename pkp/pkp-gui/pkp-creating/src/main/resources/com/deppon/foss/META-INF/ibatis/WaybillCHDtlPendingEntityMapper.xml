@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.pkp.WaybillCHDtlPendingEntityMapper" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillCHDtlPendingEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="PRICING_ENTRY_CODE" property="pricingEntryCode" jdbcType="VARCHAR" />
+    <result column="AMOUNT" property="amount" jdbcType="DECIMAL" />
+    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+    <result column="PRICING_CRI_DETAIL_ID" property="pricingCriDetailId" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+    <result column="ACTIVE" property="active" jdbcType="VARCHAR" />
+    <result column="BILL_TIME" property="billTime" jdbcType="TIMESTAMP" />
+    <result column="CURRENCY_CODE" property="currencyCode" jdbcType="VARCHAR"/>
+  </resultMap>
+  
+  <!-- 其它费用DTO -->
+  <resultMap id="BaseResultMapDto" type="com.deppon.foss.module.pickup.waybill.shared.dto.WaybillOtherChargeDto" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="SUB_TYPE" property="code" jdbcType="VARCHAR" />
+    <result column="FEE" property="amount" jdbcType="VARCHAR" />
+    <result column="NAME" property="chargeName" jdbcType="VARCHAR" />
+    <result column="CACULATE_TYPE" property="type" jdbcType="VARCHAR" />
+    <result column="DESCRIPTION" property="descrition" jdbcType="VARCHAR" />
+    <result column="MAX_FEE" property="upperLimit" jdbcType="VARCHAR" />
+    <result column="MIN_FEE" property="lowerLimit" jdbcType="VARCHAR" />
+    <result column="CANMODIFY" property="isUpdate" jdbcType="CHAR"/>
+    <result column="CANDELETE" property="isDelete" jdbcType="CHAR"/>
+  </resultMap>
+  
+  <sql id="Base_Column_List" >
+    ID, PRICING_ENTRY_CODE, AMOUNT, WAYBILL_NO, PRICING_CRI_DETAIL_ID, CREATE_TIME, MODIFY_TIME, 
+    ACTIVE, BILL_TIME, CURRENCY_CODE
+  </sql>
+  <!-- 用于查询的字段：主要是在金额的字段是除以100 -->
+  <sql id="Base_Column_List_Select" >
+    ID, PRICING_ENTRY_CODE, AMOUNT/100 as AMOUNT, WAYBILL_NO, PRICING_CRI_DETAIL_ID, 
+    CREATE_TIME, MODIFY_TIME, ACTIVE, BILL_TIME,CURRENCY_CODE
+  </sql>
+  
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.String" >
+    select 
+    <include refid="Base_Column_List_Select" />
+    from PKP.T_SRV_WAYBILL_CH_DETAIL_PG
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String" >
+    delete from PKP.T_SRV_WAYBILL_CH_DETAIL_PG
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  <delete id="deleteByWaybillNo" parameterType="java.lang.String" >
+    delete from PKP.T_SRV_WAYBILL_CH_DETAIL_PG
+    where WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+  </delete>
+  <insert id="insert" parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillCHDtlPendingEntity" >
+    insert into PKP.T_SRV_WAYBILL_CH_DETAIL_PG (ID, PRICING_ENTRY_CODE, AMOUNT, WAYBILL_NO, PRICING_CRI_DETAIL_ID, CREATE_TIME, MODIFY_TIME, 
+    ACTIVE, BILL_TIME, CURRENCY_CODE)
+    values (#{id,jdbcType=VARCHAR}, #{pricingEntryCode,jdbcType=VARCHAR}, #{amount,jdbcType=DECIMAL}*100, 
+      #{waybillNo,jdbcType=VARCHAR}, #{pricingCriDetailId,jdbcType=VARCHAR}, 
+      #{createTime,jdbcType=TIMESTAMP}, #{modifyTime,jdbcType=TIMESTAMP}, #{active,jdbcType=VARCHAR}, 
+      #{billTime,jdbcType=TIMESTAMP},#{currencyCode,jdbcType=VARCHAR})
+  </insert>
+  <insert id="insertSelective" parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillCHDtlPendingEntity" >
+    insert into PKP.T_SRV_WAYBILL_CH_DETAIL_PG
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="pricingEntryCode != null" >
+        PRICING_ENTRY_CODE,
+      </if>
+      <if test="amount != null" >
+        AMOUNT,
+      </if>
+      <if test="waybillNo != null" >
+        WAYBILL_NO,
+      </if>
+      <if test="pricingCriDetailId != null" >
+        PRICING_CRI_DETAIL_ID,
+      </if>
+      <if test="createTime != null" >
+        CREATE_TIME,
+      </if>
+      <if test="modifyTime != null" >
+        MODIFY_TIME,
+      </if>
+      <if test="active != null" >
+        ACTIVE,
+      </if>
+      <if test="billTime != null" >
+        BILL_TIME,
+      </if>
+      <if test="currencyCode != null">
+      	CURRENCY_CODE,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="pricingEntryCode != null" >
+        #{pricingEntryCode,jdbcType=VARCHAR},
+      </if>
+      <if test="amount != null" >
+        #{amount,jdbcType=DECIMAL}*100,
+      </if>
+      <if test="waybillNo != null" >
+        #{waybillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="pricingCriDetailId != null" >
+        #{pricingCriDetailId,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null" >
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifyTime != null" >
+        #{modifyTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="active != null" >
+        #{active,jdbcType=VARCHAR},
+      </if>
+      <if test="billTime != null" >
+        #{billTime,jdbcType=TIMESTAMP},
+      </if>
+       <if test="currencyCode != null" >
+        #{currencyCode,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillCHDtlPendingEntity" >
+    update PKP.T_SRV_WAYBILL_CH_DETAIL_PG
+    <set >
+      <if test="pricingEntryCode != null" >
+        PRICING_ENTRY_CODE = #{pricingEntryCode,jdbcType=VARCHAR},
+      </if>
+      <if test="amount != null" >
+        AMOUNT = #{amount,jdbcType=DECIMAL}*100,
+      </if>
+      <if test="waybillNo != null" >
+        WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="pricingCriDetailId != null" >
+        PRICING_CRI_DETAIL_ID = #{pricingCriDetailId,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null" >
+        CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifyTime != null" >
+        MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="active != null" >
+        ACTIVE = #{active,jdbcType=VARCHAR},
+      </if>
+      <if test="billTime != null" >
+        BILL_TIME = #{billTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="currencyCode != null" >
+        CURRENCY_CODE = #{currencyCode,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillCHDtlPendingEntity" >
+    update PKP.T_SRV_WAYBILL_CH_DETAIL_PG
+    set PRICING_ENTRY_CODE = #{pricingEntryCode,jdbcType=VARCHAR},
+      AMOUNT = #{amount,jdbcType=DECIMAL}*100,
+      WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR},
+      PRICING_CRI_DETAIL_ID = #{pricingCriDetailId,jdbcType=VARCHAR},
+      CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+      MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP},
+      ACTIVE = #{active,jdbcType=VARCHAR},
+      BILL_TIME = #{billTime,jdbcType=TIMESTAMP},
+      CURRENCY_CODE = #{currencyCode,jdbcType=VARCHAR}
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+
+	<!-- 批量插入WaybillCHDtlPendingEntity数据 -->
+	<insert id="insertBatch" parameterType="java.util.List">
+		begin
+		<choose>
+			<when test="list.size() == 0">
+				null
+			</when>
+			<otherwise>
+				<foreach collection="list" item="item" index="index"
+					separator=";">
+					insert into PKP.T_SRV_WAYBILL_CH_DETAIL_PG (
+					<include refid="Base_Column_List" />
+					)
+					values
+					(#{item.id,jdbcType=VARCHAR},
+					#{item.pricingEntryCode,jdbcType=VARCHAR},
+					#{item.amount,jdbcType=DECIMAL},
+					#{item.waybillNo,jdbcType=VARCHAR},
+					#{item.pricingCriDetailId,jdbcType=VARCHAR},
+					#{item.createTime,jdbcType=TIMESTAMP},
+					#{item.modifyTime,jdbcType=TIMESTAMP},
+					#{item.active,jdbcType=VARCHAR},
+					#{item.billTime,jdbcType=TIMESTAMP},#{item.currencyCode,jdbcType=VARCHAR})
+				</foreach>
+			</otherwise>
+		</choose>
+		;end;
+	</insert>
+  
+  	<!-- 通过运单号查询待处理运单的费用信息 -->
+	<select id="queryCHDtlPendingByNo" resultMap="BaseResultMap" parameterType="java.util.Map">
+		SELECT
+		<include refid="Base_Column_List_Select" />
+		FROM PKP.T_SRV_WAYBILL_CH_DETAIL_PG P
+		<where>
+    	<![CDATA[
+    		P.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+    		AND P.ACTIVE = #{active,jdbcType=VARCHAR}
+    	]]>
+		</where>
+	</select>
+	
+ 	<!-- 根据ID集合查询对象集合信息 -->
+<!-- 	<select id="selectByPrimaryKeyList" resultMap="BaseResultMap" parameterType="java.util.Map"> -->
+<!-- 		SELECT -->
+<!-- 		<include refid="Base_Column_List_Select" /> -->
+<!-- 		FROM PKP.T_SRV_WAYBILL_CH_DETAIL_PG -->
+<!-- 		WHERE  ACTIVE = #{active,jdbcType=VARCHAR}  -->
+<!-- 		AND ID IN -->
+<!-- 		<foreach item="item" index="index" collection="ids" open="(" separator="," close=")"> -->
+<!-- 			#{item,jdbcType=VARCHAR} -->
+<!-- 		</foreach> -->
+<!-- 	</select> -->
+
+	<!-- 根据运单号查询费用明细中的其它费用 -->
+	<select id="queryOtherChargeByNo" resultMap="BaseResultMapDto" parameterType="java.util.Map">
+		SELECT
+			C.ID,C.SUB_TYPE,C.FEE/100 as FEE,C.CACULATE_TYPE,C.DESCRIPTION,C.MAX_FEE/100 as MAX_FEE,
+			E.NAME,C.MIN_FEE/100 as MIN_FEE,C.CANMODIFY,C.CANDELETE
+		FROM PKP.T_SRV_PRICING_CRITERIA_DETAIL C,
+			PKP.T_SRV_WAYBILL_CH_DETAIL_PG P,
+			PKP.T_SRV_PRICING_ENTRY E
+		WHERE P.PRICING_CRI_DETAIL_ID = C.ID(+)
+			AND E.CODE(+) = C.SUB_TYPE
+			AND P.PRICING_ENTRY_CODE = C.SUB_TYPE
+			AND P.ACTIVE = #{active,jdbcType=VARCHAR}
+			AND P.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+	</select>
+	
+	<!-- 根据运单号查询费用明细中的非其它费用 -->
+	<select id="queryChargeExceptOtherChargeByNo" resultMap="BaseResultMap" parameterType="java.util.Map">
+		SELECT
+			P.ID, P.PRICING_ENTRY_CODE, P.AMOUNT/100 as AMOUNT,
+			P.WAYBILL_NO, P.PRICING_CRI_DETAIL_ID,
+			P.CREATE_TIME, P.MODIFY_TIME, P.ACTIVE, P.BILL_TIME, P.CURRENCY_CODE
+		FROM PKP.T_SRV_PRICING_CRITERIA_DETAIL C,
+			PKP.T_SRV_WAYBILL_CH_DETAIL_PG P
+		<where> 
+		<![CDATA[
+				P.PRICING_CRI_DETAIL_ID = C.ID(+)
+   			AND P.PRICING_ENTRY_CODE <> C.SUB_TYPE
+    		AND	P.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+    		AND P.ACTIVE = #{active,jdbcType=VARCHAR}
+    	]]>
+		</where>
+	</select>
+	
+	
+	
+	
+	
+
+	
+</mapper>

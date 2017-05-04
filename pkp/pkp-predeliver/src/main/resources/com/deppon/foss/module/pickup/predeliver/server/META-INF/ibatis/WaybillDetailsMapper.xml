@@ -1,0 +1,568 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.deppon.foss.module.pickup.predeliver.api.server.dao.IWaybillDetailDao">	
+	<sql id="waybillNo_List">
+	 HANDOVER.waybill_no waybillNo, /*运单号*/
+	</sql>
+	<!-- 列表显示字段 通用 -->
+	<sql id="Base_Column_List_waybillDetailNew">
+	   HANDOVER.ID id,
+	   HANDOVER.ID srvDeliverHandoverbillId,
+       HANDOVER.RECEIVE_CUSTOMER_PROV_CODE as receiveCustomerProvCode,
+       HANDOVER.RECEIVE_CUSTOMER_CITY_CODE  as receiveCustomerCityCode,
+       HANDOVER.RECEIVE_CUSTOMER_DIST_CODE  as receiveCustomerDistCode,
+       HANDOVER.RECEIVE_CUSTOMER_ADDRESS receiveCustomerAddress, /**送货地址 */
+       HANDOVER.Receive_Customer_Address_Note AS receiveCustomerAddressNote,
+       HANDOVER.BILL_QTY - FREIGHT.Arrange_Goods_Qty arrangeGoodsQty, /**排单件数 */
+       HANDOVER.BILL_QTY - FREIGHT.Arrange_Goods_Qty preArrangeGoodsQty, /**预排单件数 */
+       HANDOVER.BILL_QTY - FREIGHT.Arrange_Goods_Qty arrangableGoodsQty, /**可排单件数 */
+       HANDOVER.ACTUAL_VEHICLE_NO actualVehicleNo,
+       HANDOVER.ACTUAL_SMALLZONE_NAME actualSmallzoneName,
+       HANDOVER.ACTUAL_SMALLZONE_CODE actualSmallzoneCode,
+       HANDOVER.GOODS_WEIGHT * (HANDOVER.BILL_QTY - FREIGHT.Arrange_Goods_Qty)/HANDOVER.GOODS_QTY_TOTAL AS arrangedWeight, /**排单重量 */
+       HANDOVER.GOODS_VOLUME * (HANDOVER.BILL_QTY - FREIGHT.Arrange_Goods_Qty)/HANDOVER.GOODS_QTY_TOTAL arrangedVolume,/**排单体积 */
+       HANDOVER.GOODS_WEIGHT AS weight, /**开单重量 */
+       HANDOVER.GOODS_VOLUME AS goodsVolumeTotal, /**开单体积 */
+       to_char(HANDOVER.GOODS_SIZE) AS dimension, /**尺寸 */
+       HANDOVER.GOODS_PACKAGE AS goodsPackage, /**包装 */
+       HANDOVER.DELIVER_REQUIRE as deliverRequire,
+       HANDOVER.RECEIVE_METHOD receiveMethod,
+       HANDOVER.UITRA_LONG_DELIVERY uitraLongDelivery,
+       HANDOVER.SPECIAL_ADDRESS_TYPE as addressType, /**特殊地址类型 */
+       (CASE
+         WHEN HANDOVER.GOODS_WEIGHT > 500 OR HANDOVER.GOODS_VOLUME > 2.5 THEN
+          '大票货,'
+          else ''
+          end)||
+          (CASE
+        	 WHEN HANDOVER.TO_PAY_AMOUNT > 1000000 THEN
+          '到付金额超一万,'
+          else ''
+          end
+          )||
+          (CASE
+        	 WHEN HANDOVER.RECEIVE_METHOD = 'LARGE_DELIVER_UP' THEN
+          '大件上楼,'
+          else ''
+          end
+          )||
+          (CASE
+        	 WHEN HANDOVER.UITRA_LONG_DELIVERY = 'Y' THEN
+          '超远派送,'
+          else ''
+          end
+          )||
+          (CASE
+        	 WHEN HANDOVER.IS_EXHIBITION = 'Y' and HANDOVER.IS_EMPTY_CAR = 'Y' THEN
+          '会展货-空车出,'
+          WHEN HANDOVER.IS_EXHIBITION = 'Y' and (HANDOVER.IS_EMPTY_CAR = 'N' or HANDOVER.IS_EMPTY_CAR is null ) THEN
+          '会展货-非空车出,'
+          else ''
+          end
+          )||
+          (CASE
+        	 WHEN HANDOVER.RECEIVE_METHOD = 'DELIVER_INGA' THEN
+          '送货进仓,'
+          else ''
+          end
+          )
+         AS goodsType,
+       /**特殊货物类型 */
+       HANDOVER.IS_VEHICLE_SCHEDULING isVehicleScheduling,
+       HANDOVER.PRODUCT_CODE AS prouctCode, /**运输性质 */
+       HANDOVER.PRE_DELIVER_DATE AS deliverDate, /**预计送货日期 */
+       HANDOVER.DELIVERY_TIME_INTERVAL deliveryTimeInterval, /**送货时间段 */
+       CASE
+         WHEN HANDOVER.DELIVERY_TIME_START || '-' ||
+              HANDOVER.DELIVERY_TIME_OVER = '-' THEN
+          ''
+         ELSE
+          HANDOVER.DELIVERY_TIME_START || '-' || HANDOVER.DELIVERY_TIME_OVER
+       END AS deliverTimeStartAndOver,
+       /**送货时间点 */
+       HANDOVER.BILL_QTY  AS billQty, /**交单件数 */
+       HANDOVER.GOODS_QTY_TOTAL AS goodsQtyTotal, /**开单件数 */
+       HANDOVER.TO_PAY_AMOUNT / 100 AS payAmount, /**到付金额 */
+       HANDOVER.TALLYMAN_RETURN_REASON AS ertuenReason, /**理货员退回原因 */
+       HANDOVER.LONGITUDE longitude,
+	   HANDOVER.LATITUDE latitude,
+       FREIGHT.TOGETHER_SEND_CODE togetherSendCode, /**合送编码 */
+       FREIGHT.GOODS_NAME goodsName, /**货物品名 */
+	   FREIGHT.cash_time cashTime
+	</sql>
+	<sql id ="Stock_Column_List">
+	ws.stock_goods_qty stockQty,/**库存件数 */
+	</sql>
+  
+  <!-- 已卸车未入库属于特殊已到达,故交接单状态使用50-已入库 -->
+	<sql id ="Stock_Status_Column_List">
+	(CASE
+         WHEN ws.stock_goods_qty > 0 then
+          '库存中'
+         WHEN (SELECT COUNT(1)
+                 FROM TFR.T_OPT_HANDOVERBILL_DETAIL hd
+                 inner JOIN TFR.T_OPT_HANDOVERBILL h
+                   ON h.HANDOVER_NO = hd.HANDOVER_NO
+                WHERE h.HANDOVERBILL_STATE = 40
+                  AND hd.WAYBILL_NO = HANDOVER.WAYBILL_NO
+                  <include refid="select_dest_org_code_Where" />
+                  ) > 0 THEN
+          '已到达'
+         when (SELECT COUNT(1)
+                 FROM TFR.T_OPT_HANDOVERBILL_DETAIL hd
+                 LEFT JOIN TFR.T_OPT_HANDOVERBILL h
+                   ON h.HANDOVER_NO =
+                      hd.HANDOVER_NO
+                WHERE h.HANDOVERBILL_STATE = 30
+                  AND hd.WAYBILL_NO = HANDOVER.WAYBILL_NO
+                  <include refid="select_dest_org_code_Where" />
+                  ) > 0 THEN
+          '预计到达'
+         ELSE
+          NULL
+       END) AS goodsStatus,/**货物状态 */
+	</sql>
+	<sql id="select_default_Where">
+		<!-- 版本 -->
+		<if test="active != null and active !=''">	
+		<![CDATA[ and HANDOVER.ACTIVE  = #{active, jdbcType=VARCHAR}]]>
+		</if>
+		 <if test="lastLoadOrgCode != null and lastLoadOrgCode !=''">
+            <![CDATA[ and HANDOVER.LAST_LOAD_ORG_CODE  = #{lastLoadOrgCode, jdbcType=VARCHAR}]]>
+        </if>
+        /** 已排件数必须少于交单件数 **/
+ 		<![CDATA[AND HANDOVER.BILL_QTY > FREIGHT.Arrange_Goods_Qty
+		AND NOT EXISTS (SELECT 1
+          FROM PKP.t_Srv_Waybill_Sign_Result WSR
+         WHERE WSR.WAYBILL_NO = HANDOVER.WAYBILL_NO
+           AND WSR.SIGN_STATUS = 'SIGN_STATUS_ALL' 
+           AND WSR.ACTIVE = 'Y') 
+          and  (FREIGHT.STATUS IS NULL OR FREIGHT.STATUS NOT IN ('OBSOLETE', 'ABORTED'))
+        ]]>
+	</sql>
+	<!-- 运单号集合查询 或者其他-->
+	<sql id="select_WaybillNos_other">
+	 	<choose>
+	       <when test="waybillNoList!=null and waybillNoList.length>0">
+	          AND HANDOVER.WAYBILL_NO IN 
+			    	<foreach collection="waybillNoList" item="waybillNo" index="index" open="("  close=")"  separator=",">
+			            #{waybillNo}
+			        </foreach>
+	       </when>
+	       <otherwise>
+	       <include refid="select_Other_Where" />
+	       </otherwise>
+       </choose>
+	</sql>
+	<sql id="select_stockOrgCode_Where">
+		<!-- 库存部门 -->
+		<if test="endStockOrgCode != null and endStockOrgCode !=''">	
+		<![CDATA[ and  ws.org_code  = #{endStockOrgCode, jdbcType=VARCHAR}]]>
+		</if>
+		<if test="goodsAreaCode !=null and goodsAreaCode != ''">	
+		<![CDATA[ and ws.GOODS_AREA_CODE  =   #{goodsAreaCode, jdbcType=VARCHAR}]]>
+		</if>
+	</sql>
+	<sql id="select_dest_org_code_Where">
+		<!-- 库存部门 -->
+		<if test="endStockOrgCode != null and endStockOrgCode !=''">	
+		<![CDATA[ and  h.dest_org_code  = #{endStockOrgCode, jdbcType=VARCHAR}]]>
+		</if>
+	</sql>
+	
+	<sql id="select_default_30_day_Where">
+		 <!-- 查询当前日期之前三十天之内的数据  -->
+		<![CDATA[AND HANDOVER.PRE_DELIVER_DATE>TRUNC(SYSDATE-30) and  HANDOVER.PRE_DELIVER_DATE<TRUNC(SYSDATE)]]>
+	</sql>
+	<sql id="select_Other_Where">
+		 <if test="preDeliverDate != null and preDeliverDate != ''">
+                <![CDATA[    AND HANDOVER.PRE_DELIVER_DATE  >= TRUNC(#{preDeliverDate, jdbcType=TIMESTAMP})
+				  AND HANDOVER.PRE_DELIVER_DATE < TRUNC(#{preDeliverDate, jdbcType=TIMESTAMP} + 1)]]>
+           </if>
+           <if test="productCode != null and productCode != ''">
+                    AND HANDOVER.PRODUCT_CODE = #{productCode, jdbcType=VARCHAR}
+           </if>
+           <!-- 所属车队组 -->
+			<if test=" vehicleType != null  and vehicleType!=''">
+				AND EXISTS (
+							select 1
+							  from BSE.T_BAS_SERVICE_BIGZONE sb
+							 inner join bse.t_bas_service_smallzone sz
+							    on sb.VIRTUAL_CODE = sz.bigzonecode
+							    where  sz.REGION_TYPE= 'DE' 
+							and HANDOVER.ACTUAL_SMALLZONE_CODE = sz.REGION_CODE
+							and sz.ACTIVE='Y'
+							and sb.ACTIVE='Y'
+							and sb.TRANS_DEPARTMENT_CODE = #{vehicleType, jdbcType=VARCHAR}						
+				)
+			</if>
+			<!-- 送货大区 -->
+			<if test=" deliverGrandAreas != null  and deliverGrandAreas.length > 0">
+				AND EXISTS (
+							select 1
+							  from BSE.T_BAS_SERVICE_BIGZONE sb
+							 inner join bse.t_bas_service_smallzone sz
+							    on sb.VIRTUAL_CODE = sz.bigzonecode
+							where sz.REGION_TYPE= 'DE' 
+							and HANDOVER.ACTUAL_SMALLZONE_CODE = sz.REGION_CODE
+							and sz.ACTIVE='Y'
+							and sb.ACTIVE='Y'
+							and sb.REGION_CODE in 
+							<foreach collection="deliverGrandAreas" index="index" item="bAreaCode" open="(" separator="," close=")">
+									#{bAreaCode}
+							</foreach>
+				)
+			</if>	
+			<!-- 送货小区 -->
+			<if test=" deliverSmallAreas != null  and deliverSmallAreas.length > 0">
+				AND HANDOVER.ACTUAL_SMALLZONE_CODE IN
+				<foreach collection="deliverSmallAreas" index="index" item="sAreaCode" open="(" separator="," close=")">
+					#{sAreaCode}
+				</foreach>
+			</if>
+           <if test="vehicleNo != null and vehicleNo != ''">
+                    AND HANDOVER.ACTUAL_VEHICLE_NO = #{vehicleNo, jdbcType=VARCHAR}
+           </if>
+           <if test="receiveCustomerProvCode != null and receiveCustomerProvCode != ''">
+                    AND HANDOVER.RECEIVE_CUSTOMER_PROV_CODE = #{receiveCustomerProvCode, jdbcType=VARCHAR}
+           </if>
+           <if test="receiveCustomerCityCode != null and receiveCustomerCityCode != ''">
+                    AND HANDOVER.RECEIVE_CUSTOMER_CITY_CODE = #{receiveCustomerCityCode, jdbcType=VARCHAR}
+           </if>
+           <if test="receiveCustomerDistCode != null and receiveCustomerDistCode != ''">
+                    AND HANDOVER.RECEIVE_CUSTOMER_DIST_CODE = #{receiveCustomerDistCode, jdbcType=VARCHAR}
+           </if>
+           <!-- 特殊运单.特殊货物类型 或者特殊地址类型不为空-->
+			<if test="specialNoType == 'Y'.toString() ">
+					<![CDATA[	AND( HANDOVER.GOODS_WEIGHT > 500 
+						OR HANDOVER.GOODS_VOLUME > 2.5
+						OR HANDOVER.IS_EXHIBITION = 'Y'
+						OR HANDOVER.UITRA_LONG_DELIVERY = 'Y'
+						OR HANDOVER.TO_PAY_AMOUNT >= 1000000 
+						OR HANDOVER.RECEIVE_METHOD IN ('LARGE_DELIVER_UP','DELIVER_INGA')
+						or HANDOVER.SPECIAL_ADDRESS_TYPE is not null )
+					]]> 
+			</if>
+           <!-- 理货员退回 -->
+			<if test=" tallymanReturnReason == 'Y'.toString() ">
+				AND HANDOVER.TALLYMAN_RETURN_REASON IS NOT NULL 
+			</if>
+			<!-- 晚交运单 -->
+			<if test=" lateNo == 'Y'.toString() ">
+				AND HANDOVER.LATE_NO = #{lateNo,jdbcType=VARCHAR}
+			</if> 
+			<!--  进仓货： ①特殊货物类型：提货方式为“送货进仓”的运单   
+      ②特殊地址类型：“进仓货-空车出”和“进仓货-非空车出”的运单
+			-->
+			<if test=" deliverInga == 'Y'.toString() ">
+				AND (HANDOVER.RECEIVE_METHOD ='DELIVER_INGA' OR 
+				 HANDOVER.SPECIAL_ADDRESS_TYPE IN('PKP_GODOWNENTRY_NULLCAR','PKP_GODOWNENTRY_NOTNULLCAR'))
+			</if> 
+			<!-- 非进仓货 -->
+			<if test=" noDeliverInga == 'Y'.toString() ">
+				AND (NVL(HANDOVER.RECEIVE_METHOD, 'N/A') !='DELIVER_INGA' AND 
+				 NVL(HANDOVER.SPECIAL_ADDRESS_TYPE, 'N/A') NOT IN('PKP_GODOWNENTRY_NULLCAR','PKP_GODOWNENTRY_NOTNULLCAR'))
+			</if> 
+			<!-- 超远派送 -->
+			<if test=" uitraLongDelivery == 'Y'.toString() ">
+				AND HANDOVER.UITRA_LONG_DELIVERY = #{uitraLongDelivery,jdbcType=VARCHAR}
+			</if> 
+			<!-- 会展货 -->
+			<if test=" isExhibition == 'Y'.toString() ">
+				AND HANDOVER.IS_EXHIBITION = #{isExhibition,jdbcType=VARCHAR}
+			</if> 
+			<!-- 逐件验货-->
+			<if test=" pieceInspection == 'Y'.toString() ">
+				AND HANDOVER.SPECIAL_ADDRESS_TYPE ='PKP_DELIVERYADDRESS_UNPACKINGINSPECTION'
+			</if>
+			<!-- 带人货 :①开单单件平均重量大于50KG。②提货方式为：大件上楼。③提货方式为“送货上楼”且单票重量大于500KG。
+						④开单单件平均体积大于0.3方。⑤开单总件数大于100件。⑥单票重量大于1000KG。-->
+			<if test=" isWithPeople == 'Y'.toString() ">
+				<![CDATA[	AND (HANDOVER.GOODS_QTY_TOTAL>100
+				 			OR HANDOVER.GOODS_WEIGHT>1000
+							OR (HANDOVER.RECEIVE_METHOD='LARGE_DELIVER_UP')
+							OR (HANDOVER.RECEIVE_METHOD='DELIVER_UP' AND HANDOVER.GOODS_WEIGHT>500)
+							OR (HANDOVER.GOODS_VOLUME/HANDOVER.GOODS_QTY_TOTAL)>0.3
+							OR (HANDOVER.GOODS_WEIGHT/HANDOVER.GOODS_QTY_TOTAL)>50)
+				]]>
+			</if>
+			<if test="noPartitionWaybill != null and noPartitionWaybill != ''">
+            AND HANDOVER.ACTUAL_SMALLZONE_CODE IS  NULL 
+			</if>
+			<if test="noCoordinateWaybill != null and noCoordinateWaybill != ''">
+            AND (HANDOVER.LONGITUDE IS  NULL  or  HANDOVER.LATITUDE is null )
+			</if>
+			<!--
+			<if test="deliveryTimeInterval != null and deliveryTimeInterval != ''">
+            AND HANDOVER.DELIVERY_TIME_INTERVAL =#{deliveryTimeInterval,jdbcType=VARCHAR}
+			</if>
+			-->
+			<!-- 送货时间段 -->
+			<choose>
+				<when test="deliveryTimes != null and deliveryTimes.length > 0">
+					AND NVL(HANDOVER.DELIVERY_TIME_INTERVAL,'全天') in 
+					<foreach collection="deliveryTimes" index="index" item="item" open="(" separator="," close=")">
+						#{item}
+					</foreach>
+				</when>
+				<when test="deliveryTimeInterval != null and deliveryTimeInterval != ''">
+					 AND NVL(HANDOVER.DELIVERY_TIME_INTERVAL,'全天') = #{deliveryTimeInterval,jdbcType=VARCHAR}
+				</when>
+			</choose>
+			<!-- 加入到达时间 -->
+    	<if test="arrivedDateFrom !=null and arrivedDateFrom != ''">	
+        <![CDATA[ and FREIGHT.ARRIVE_TIME  >= #{arrivedDateFrom, jdbcType=TIMESTAMP}]]>
+    	</if>
+    	<if test="arrivedDateTo !=null and arrivedDateTo != ''">	
+        <![CDATA[ and FREIGHT.ARRIVE_TIME  <= #{arrivedDateTo, jdbcType=TIMESTAMP}]]>
+    	</if>
+      
+			<!-- 加入库存时间 -->
+    	<if test="stockDateFrom !=null and stockDateFrom != ''">	
+        <![CDATA[ and ws.IN_STOCK_TIME  >= #{stockDateFrom, jdbcType=TIMESTAMP}]]>
+    	</if>
+    	<if test="stockDateTo !=null and stockDateTo != ''">	
+        <![CDATA[ and ws.IN_STOCK_TIME  <= #{stockDateTo, jdbcType=TIMESTAMP}]]>
+    	</if>
+           
+	</sql>
+	<!-- 查询送货日期默认30天内的数据 -->
+	<select id="queryWaybillDetailNewByTime" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.WaybillDetailNewQueryDto" resultType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.WaybillDetailDto">	 	
+	select  <include refid="waybillNo_List" />
+	 <include refid="Base_Column_List_waybillDetailNew" />
+	from  PKP.T_SRV_DELIVER_HANDOVERBILL HANDOVER
+ inner join PKP.T_SRV_ACTUAL_FREIGHT FREIGHT
+    on HANDOVER.Waybill_No = FREIGHT.Waybill_No
+    <where>
+    	<include refid="select_default_Where" />
+    	<include refid="select_default_30_day_Where" />
+    </where>
+	</select>
+	<!-- 查询送货日期默认30天内的数据 总数-->
+	<select id="queryWaybillDetailNewByTimeCount" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.WaybillDetailNewQueryDto"
+            resultType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.WaybillDeliverNewCountDto">
+           select  count(HANDOVER.waybill_no)  totalGoodsQty,sum( HANDOVER.GOODS_WEIGHT * (HANDOVER.BILL_QTY - FREIGHT.Arrange_Goods_Qty)/HANDOVER.GOODS_QTY_TOTAL) totalGoodsWeight,sum(HANDOVER.GOODS_VOLUME * (HANDOVER.BILL_QTY - FREIGHT.Arrange_Goods_Qty)/HANDOVER.GOODS_QTY_TOTAL) totalGoodsVolume
+	 FROM PKP.T_SRV_DELIVER_HANDOVERBILL HANDOVER
+ inner join PKP.T_SRV_ACTUAL_FREIGHT FREIGHT
+    on HANDOVER.Waybill_No = FREIGHT.Waybill_No
+    <where>
+    	<include refid="select_default_Where" />
+    	<include refid="select_default_30_day_Where" />
+    </where> 
+       </select>
+    <!-- 根据运单号集合或者除货物状态查询运单明细信息 -->
+	<select id="queryWaybillDetailNewByWaybillNos" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.WaybillDetailNewQueryDto" resultType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.WaybillDetailDto">	 	
+	select ws.IN_STOCK_TIME as inStockTime,  
+         FREIGHT.ARRIVE_TIME as arriveTime,
+  <include refid="waybillNo_List" />
+	<include refid="Stock_Column_List" />
+	<include refid="Stock_Status_Column_List" />
+	<include refid="Base_Column_List_waybillDetailNew" />
+  
+	 FROM PKP.T_SRV_DELIVER_HANDOVERBILL HANDOVER
+ inner join PKP.T_SRV_ACTUAL_FREIGHT FREIGHT
+    on HANDOVER.Waybill_No = FREIGHT.Waybill_No
+     left join TFR.T_OPT_WAYBILL_STOCK ws
+    on HANDOVER.Waybill_No = ws.waybill_no
+    <include refid="select_stockOrgCode_Where" />
+    <where>
+    	<include refid="select_default_Where" />
+    	<include refid="select_WaybillNos_other" />
+    </where>
+	</select>
+	<!-- 根据运单号集合或者除货物状态查询运单明细信息  总数-->
+	<select id="queryWaybillDetailNewByWaybillNosCount" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.WaybillDetailNewQueryDto"
+            resultType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.WaybillDeliverNewCountDto">
+           select    count(HANDOVER.waybill_no) totalGoodsQty,sum( HANDOVER.GOODS_WEIGHT * (HANDOVER.BILL_QTY - FREIGHT.Arrange_Goods_Qty)/HANDOVER.GOODS_QTY_TOTAL) totalGoodsWeight,sum(HANDOVER.GOODS_VOLUME * (HANDOVER.BILL_QTY - FREIGHT.Arrange_Goods_Qty)/HANDOVER.GOODS_QTY_TOTAL) totalGoodsVolume
+	from  PKP.T_SRV_DELIVER_HANDOVERBILL HANDOVER
+ inner join PKP.T_SRV_ACTUAL_FREIGHT FREIGHT
+    on HANDOVER.Waybill_No = FREIGHT.Waybill_No
+     left join TFR.T_OPT_WAYBILL_STOCK ws
+    on HANDOVER.Waybill_No = ws.waybill_no
+    <include refid="select_stockOrgCode_Where" />
+    <where>
+    	<include refid="select_default_Where" />
+    	<include refid="select_WaybillNos_other" />
+    </where> 
+       </select>
+       <!-- 查询在库存中运单明细信息 -->
+	<select id="queryWaybillDetailNewInStock" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.WaybillDetailNewQueryDto" resultType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.WaybillDetailDto">	 	
+	select  ws.IN_STOCK_TIME as inStockTime,
+  <include refid="Stock_Column_List" />
+	<include refid="waybillNo_List" />
+	'库存中' AS goodsStatus,
+	<include refid="Base_Column_List_waybillDetailNew" />
+	from  PKP.T_SRV_DELIVER_HANDOVERBILL HANDOVER
+ inner join PKP.T_SRV_ACTUAL_FREIGHT FREIGHT
+    on HANDOVER.Waybill_No = FREIGHT.Waybill_No
+     inner join TFR.T_OPT_WAYBILL_STOCK ws
+    on HANDOVER.Waybill_No = ws.waybill_no
+    <where>
+    	<include refid="select_default_Where" />
+    	<include refid="select_WaybillNos_other" />
+    	<include refid="select_stockOrgCode_Where" />
+      <!-- 加入库存时间 -->
+    	<if test="stockDateFrom !=null and stockDateFrom != ''">	
+        <![CDATA[ and ws.IN_STOCK_TIME  >= #{stockDateFrom, jdbcType=TIMESTAMP}]]>
+    	</if>
+    	<if test="stockDateTo !=null and stockDateTo != ''">	
+        <![CDATA[ and ws.IN_STOCK_TIME  <= #{stockDateTo, jdbcType=TIMESTAMP}]]>
+    	</if>
+    </where>
+	</select>
+	<!-- 查询在库存中运单明细信息  总数-->
+	<select id="queryWaybillDetailNewByInStockCount" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.WaybillDetailNewQueryDto"
+            resultType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.WaybillDeliverNewCountDto">
+           select   count(HANDOVER.waybill_no)  totalGoodsQty,sum( HANDOVER.GOODS_WEIGHT * (HANDOVER.BILL_QTY - FREIGHT.Arrange_Goods_Qty)/HANDOVER.GOODS_QTY_TOTAL) totalGoodsWeight,sum(HANDOVER.GOODS_VOLUME * (HANDOVER.BILL_QTY - FREIGHT.Arrange_Goods_Qty)/HANDOVER.GOODS_QTY_TOTAL) totalGoodsVolume
+	 FROM PKP.T_SRV_DELIVER_HANDOVERBILL HANDOVER
+ inner join PKP.T_SRV_ACTUAL_FREIGHT FREIGHT
+    on HANDOVER.Waybill_No = FREIGHT.Waybill_No
+    inner join TFR.T_OPT_WAYBILL_STOCK ws
+    on HANDOVER.Waybill_No = ws.waybill_no
+    <where>
+    	<include refid="select_default_Where" />
+    	<include refid="select_WaybillNos_other" />
+    	<include refid="select_stockOrgCode_Where" />
+      <!-- 加入库存时间 -->
+    	<if test="stockDateFrom !=null and stockDateFrom != ''">	
+        <![CDATA[ and ws.IN_STOCK_TIME  >= #{stockDateFrom, jdbcType=TIMESTAMP}]]>
+    	</if>
+    	<if test="stockDateTo !=null and stockDateTo != ''">	
+        <![CDATA[ and ws.IN_STOCK_TIME  <= #{stockDateTo, jdbcType=TIMESTAMP}]]>
+    	</if>
+    </where> 
+       </select>
+        <!-- 查询在已到达运单明细信息 -->
+	<select id="queryWaybillDetailNewArrived" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.WaybillDetailNewQueryDto" resultType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.WaybillDetailDto">	 	
+	select  <include refid="waybillNo_List" />
+	'已到达' AS goodsStatus,
+  FREIGHT.ARRIVE_TIME as arriveTime,
+	<include refid="Base_Column_List_waybillDetailNew" />
+	 FROM PKP.T_SRV_DELIVER_HANDOVERBILL HANDOVER
+ inner join PKP.T_SRV_ACTUAL_FREIGHT FREIGHT
+  on HANDOVER.Waybill_No = FREIGHT.Waybill_No
+ inner join TFR.T_OPT_HANDOVERBILL_DETAIL hd on hd.WAYBILL_NO = HANDOVER.WAYBILL_NO
+  inner JOIN TFR.T_OPT_HANDOVERBILL h ON h.HANDOVER_NO = hd.HANDOVER_NO
+    <where>
+    	 h.HANDOVERBILL_STATE = 40
+    	 <include refid="select_dest_org_code_Where" />
+    	<include refid="select_default_Where" />
+    	<include refid="select_WaybillNos_other" />
+    	<if test="arrivedDateFrom !=null and arrivedDateFrom != ''">	
+        <![CDATA[ and FREIGHT.ARRIVE_TIME  >= #{arrivedDateFrom, jdbcType=TIMESTAMP}]]>
+    	</if>
+    	<if test="arrivedDateTo !=null and arrivedDateTo != ''">	
+        <![CDATA[ and FREIGHT.ARRIVE_TIME  <= #{arrivedDateTo, jdbcType=TIMESTAMP}]]>
+    	</if>
+    </where>
+	</select>
+	<!-- 查询在已到达运单明细信息  总数-->
+	<select id="queryWaybillDetailNewArrivedCount" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.WaybillDetailNewQueryDto"
+            resultType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.WaybillDeliverNewCountDto">
+           select  count( HANDOVER.waybill_no) totalGoodsQty,sum( HANDOVER.GOODS_WEIGHT * (HANDOVER.BILL_QTY - FREIGHT.Arrange_Goods_Qty)/HANDOVER.GOODS_QTY_TOTAL) totalGoodsWeight,sum(HANDOVER.GOODS_VOLUME * (HANDOVER.BILL_QTY - FREIGHT.Arrange_Goods_Qty)/HANDOVER.GOODS_QTY_TOTAL) totalGoodsVolume
+	 FROM PKP.T_SRV_DELIVER_HANDOVERBILL HANDOVER
+ inner join PKP.T_SRV_ACTUAL_FREIGHT FREIGHT
+    on HANDOVER.Waybill_No = FREIGHT.Waybill_No
+  inner join TFR.T_OPT_HANDOVERBILL_DETAIL hd on hd.WAYBILL_NO = HANDOVER.WAYBILL_NO
+  inner JOIN TFR.T_OPT_HANDOVERBILL h ON h.HANDOVER_NO = hd.HANDOVER_NO  
+    <where>
+    	h.HANDOVERBILL_STATE = 40
+    	<include refid="select_dest_org_code_Where" />
+    	<include refid="select_default_Where" />
+    	<include refid="select_WaybillNos_other" />
+      <!-- 加入到达时间 -->
+    	<if test="arrivedDateFrom !=null and arrivedDateFrom != ''">	
+        <![CDATA[ and FREIGHT.ARRIVE_TIME  >= #{arrivedDateFrom, jdbcType=TIMESTAMP}]]>
+    	</if>
+    	<if test="arrivedDateTo !=null and arrivedDateTo != ''">	
+        <![CDATA[ and FREIGHT.ARRIVE_TIME  <= #{arrivedDateTo, jdbcType=TIMESTAMP}]]>
+    	</if>
+    </where> 
+       </select>
+      <!-- 查询在预计到达运单明细信息 -->
+	<select id="queryWaybillDetailNewPreArrive" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.WaybillDetailNewQueryDto" resultType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.WaybillDetailDto">	 	
+	select  <include refid="waybillNo_List" />
+	'预计到达' AS goodsStatus,
+	<include refid="Base_Column_List_waybillDetailNew" />
+	 FROM PKP.T_SRV_DELIVER_HANDOVERBILL HANDOVER
+ inner join PKP.T_SRV_ACTUAL_FREIGHT FREIGHT
+  on HANDOVER.Waybill_No = FREIGHT.Waybill_No
+ inner join TFR.T_OPT_HANDOVERBILL_DETAIL hd on hd.WAYBILL_NO = HANDOVER.WAYBILL_NO
+  inner JOIN TFR.T_OPT_HANDOVERBILL h ON h.HANDOVER_NO = hd.HANDOVER_NO
+    <where>
+    	 h.HANDOVERBILL_STATE = 30
+    	 <include refid="select_dest_org_code_Where" />
+    	<include refid="select_default_Where" />
+    	<include refid="select_WaybillNos_other" />
+    </where>
+	</select>
+	<!-- 查询在预计到达运单明细信息  总数-->
+	<select id="queryWaybillDetailNewPreArriveCount" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.WaybillDetailNewQueryDto"
+            resultType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.WaybillDeliverNewCountDto">
+           select    count( HANDOVER.waybill_no)  totalGoodsQty,sum( HANDOVER.GOODS_WEIGHT * (HANDOVER.BILL_QTY - FREIGHT.Arrange_Goods_Qty)/HANDOVER.GOODS_QTY_TOTAL) totalGoodsWeight,sum(HANDOVER.GOODS_VOLUME * (HANDOVER.BILL_QTY - FREIGHT.Arrange_Goods_Qty)/HANDOVER.GOODS_QTY_TOTAL) totalGoodsVolume
+	 FROM PKP.T_SRV_DELIVER_HANDOVERBILL HANDOVER
+ inner join PKP.T_SRV_ACTUAL_FREIGHT FREIGHT
+    on HANDOVER.Waybill_No = FREIGHT.Waybill_No
+  inner join TFR.T_OPT_HANDOVERBILL_DETAIL hd on hd.WAYBILL_NO = HANDOVER.WAYBILL_NO
+  inner JOIN TFR.T_OPT_HANDOVERBILL h ON h.HANDOVER_NO = hd.HANDOVER_NO  
+    <where>
+     h.HANDOVERBILL_STATE = 30
+     <include refid="select_dest_org_code_Where" />
+    	<include refid="select_default_Where" />
+    	<include refid="select_WaybillNos_other" />
+    </where> 
+       </select>
+       <!-- 根据派送单ID查询派送单明细信息 -->
+	<select id="selectByDeliverbillId" resultType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.WaybillDetailBillArrageDto" parameterType="java.lang.String">
+		select /*模块：接送货--运单明细 查询已排单明细*/
+			dbd.ID id, 
+			dbd.T_SRV_DELIVERBILL_ID deliverbillId, 
+			dbd.SERIAL_NO serialNo,
+			dbd.WAYBILL_NO waybillNo, 
+			replace(dbd.CONSIGNEE_ADDRESS, '-','')  consigneeAddress,
+			dbd.PRE_ARRANGE_GOODS_QTY preArrangeGoodsQty, 
+			dbd.WEIGHT weight ,
+			dbd.GOODS_VOLUME_TOTAL goodsVolumeTotal,
+			dbd.DIMENSION dimension, 
+			dbd.GOODS_PACKAGE goodsPackage,
+			dbd.TRANSPORT_TYPE transportType,
+			dbd.DELIVER_DATE deliverDate,
+			dbd.PAY_AMOUNT/100  payAmount,
+		      hand.ACTUAL_VEHICLE_NO vehicleNo,
+		      hand.DELIVERY_TIME_INTERVAL deliveryTimeInterval,
+		      hand.DELIVERY_TIME_START deliveryTimeStart,
+		      hand.DELIVERY_TIME_OVER deliveryTimeOver,
+		      hand.LONGITUDE longitude,
+		      hand.LATITUDE latitude,
+		      hand.IS_VEHICLE_SCHEDULING isVehicleScheduling,
+			hand.LAST_LOAD_ORG_CODE lastLoadOrgCode,
+			hand.ACTUAL_SMALLZONE_CODE actualSmallzoneCode,
+			hand.ACTUAL_SMALLZONE_NAME actualSmallzoneName,
+			hand.ACTUAL_SMALLZONE_NAME regionName,
+			actual_freight.TOGETHER_SEND_CODE togetherSendCode,
+      		actual_freight.cash_time  cashTime
+		FROM PKP.T_SRV_DELIVERBILL_DETAIL dbd
+			INNER JOIN pkp.t_srv_actual_freight actual_freight
+				 on dbd.waybill_no = actual_freight.waybill_no
+			LEFT JOIN PKP.t_Srv_Deliver_Handoverbill hand
+				 on dbd.T_SRV_DELIVER_HANDOVERBILL_ID = hand.ID
+		WHERE dbd.T_SRV_DELIVERBILL_ID = #{deliverbillId,jdbcType=VARCHAR}
+		  ORDER BY SERIAL_NO
+	</select>
+	<!-- 根据运单号查询收货联系人 -->
+	<select id="queryWaybillDetailNewByWaybillNo" resultType="java.lang.String" parameterType="java.lang.String">
+		select /*模块：创建派送单中--根据运单号查询出收货联系人*/
+			t.receive_customer_contact receiveCustomerContact
+  		from pkp.t_srv_waybill t
+ 		where t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+ 		and t.active='Y'
+	</select>
+	<!-- 根据运单号查询交单时间 -->
+	<select id="queryBilltimeByWaybillNo" resultType="java.util.Date" parameterType="java.lang.String">
+		select /*模块：根据运单号查询出交单时间*/
+			t.bill_time billTime
+  		from pkp.T_SRV_DELIVER_HANDOVERBILL t
+ 		where t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+ 		and t.active='Y'
+	</select>
+</mapper>

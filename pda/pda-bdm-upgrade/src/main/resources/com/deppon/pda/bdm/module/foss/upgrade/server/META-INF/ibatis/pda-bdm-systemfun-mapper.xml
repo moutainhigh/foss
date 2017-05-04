@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="com.deppon.pda.bdm.module.foss.upgrade.server.dao.impl.SystemFunDao">
+
+	<!-- 查询数据版本信息 -->
+	<select id="getDataVerInfo"
+		resultType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.BaseDataVerEntity">
+		<![CDATA[
+			SELECT 
+				ID,
+				DATAVER,
+				UPDTIME AS UPDDATE 
+			FROM T_SVR_DATAVERSION
+		]]>
+	</select>
+
+	<!-- 保存数据版本信息 -->
+	<insert id="saveBaseDataVer"
+		parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.BaseDataVerEntity">
+		<![CDATA[
+			INSERT INTO 
+				T_SVR_DATAVERSION
+			VALUES
+				('1',#{dataVer},#{updDate})
+		]]>
+	</insert>
+
+	<!-- 修改数据版本信息 -->
+	<update id="updDataVer"
+		parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.BaseDataVerEntity">
+		<![CDATA[
+			UPDATE 
+				T_SVR_DATAVERSION
+			SET 
+				DATAVER= #{dataVer},
+				UPDTIME = #{updDate} 
+			WHERE ID = #{id}
+		]]>
+	</update>
+
+	<!-- 查询用户所属部门 -->
+	<select id="getUserInfo" parameterType="string"
+		resultType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.UserEntity">
+		<![CDATA[ 
+			SELECT 
+				DEPTID 
+			FROM T_SVR_USER 
+			WHERE EMPCODE = #{userCode,jdbcType=VARCHAR} AND OPERFLAG <> 3
+		]]>
+	</select>
+
+	<!-- 查询部门编码 -->
+	<select id="getDeptCode" parameterType="string"
+		resultType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.DeptEntity">
+		<![CDATA[ 
+			SELECT 
+				DEPTCODE
+  			FROM T_SVR_DEPT 
+  			WHERE ID =  #{deptCode,jdbcType=VARCHAR} 
+  		]]>
+	</select>
+	<!-- 通过顶级车队编码查询出对应的开单组Code -->
+	<select id="getBillGroupCodeByFleetCode" parameterType="string"
+		resultType="string">
+		<![CDATA[ 
+			SELECT 
+				SERVICEBILLTEAM
+  			FROM T_SVR_TRANS_DEPARTMENT 
+  			WHERE CODE =  #{topFleetCode,jdbcType=VARCHAR} 
+  			and  operflag <> 3
+  		]]>
+	</select>
+
+	<!-- 获取配载部门code -->
+	<select id="getDepartAssemblyDept" parameterType="java.lang.String"
+		resultType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.DepartAssemblyDept">
+		 <![CDATA[
+		 	select 
+		 		id,
+		 		departdeptid,
+		 		assemblydeptid,
+		 		departdeptcode,
+		 		assemblydeptcode
+		 	 from t_svr_departassemblydept  
+		 	 where departdeptcode = #{deptId,jdbcType=VARCHAR} 
+		 	 and operflag = 1 
+		 	 and assemblytype = 'TRANS_VEHICLE'
+		 	 and isdefault = 'Y'
+		 	 and linesort = 'BSE_LINE_SORT_SOURCE'
+		 	 
+	 		]]>
+	</select>
+
+	<!-- 获取快递员出发部门code -->
+	<select id="getCourierSourceDeptCode" parameterType="java.lang.String"
+		resultType="java.lang.String">
+		 <![CDATA[
+		 	select 
+		 	orgcode
+ 			from t_svr_express_vehicle v
+ 			where v.operflag = 1
+   			and v.empcode = #{userCode,jdbcType=VARCHAR}
+	 		]]>
+	</select>
+	
+		<!-- 获取车队司机的始发外场code -->
+	<select id="queryTransCenter" parameterType="java.lang.String"
+		resultType="java.lang.String">
+		 <![CDATA[
+		 	SELECT 
+        transfercenter
+        FROM T_SVR_TRANS_DEPARTMENT 
+        WHERE CODE =  #{topFleetCode,jdbcType=VARCHAR} 
+        and  operflag <> 3
+	 		]]>
+	</select>
+	
+	<!-- 通过deptCode 从快递部门区域关系表中查找区域编码 -->
+	<select id="getExpressRegionCodeByDeptCode" parameterType="string"
+		resultType="string">
+		<![CDATA[ 
+			 select t_srv_express_eff_region_code
+   				from t_base_express_eff_region_org 
+  				where operflag = '1'
+    			and include_org_code =#{deptCode,jdbcType=VARCHAR}
+  		]]>
+	</select>
+	<!-- 通过deptCode 从零担部门区域关系表中查找区域编码 -->
+	<select id="getRegionCodeByDeptCode" parameterType="string"
+		resultType="string">
+		<![CDATA[ 
+			  select effective_region_code
+   				from t_base_effective_region_org 
+  				where operflag = '1'
+    			and include_org_code =#{deptCode,jdbcType=VARCHAR}
+  		]]>
+	</select>
+	
+	
+	
+	<!--  根据部门编码查找部门组织信息-->
+	<select id="getDeptInfoByCode" parameterType="string"
+		resultType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.DeptEntity">
+		<![CDATA[ 
+					 
+			select   dp.deptprovince as deptProvince,
+					 dp.deptcity as deptCity,
+		   			 dp.deptcounty as deptCounty
+		   			 from t_base_dept dp
+		 			where dp.operflag = '1'
+		    		and deptcode =#{deptCode,jdbcType=VARCHAR}
+  		]]>
+	</select>
+	<!-- 通过区县编码查找时效区域编码查找   快递-->
+	<select id="getExpressRegionByCount" parameterType="string"
+		resultType="string">
+		<![CDATA[ 
+			  select code from t_base_express_eff_region 
+         where operflag='1'
+         and county_code=#{deptCounty,jdbcType=VARCHAR}
+  		]]>
+	</select>
+	<!-- 通过城市编码找时效区域编码查找   快递-->
+	<select id="getExpressRegionByCity" parameterType="string"
+		resultType="string">
+		<![CDATA[ 
+		select code from t_base_express_eff_region 
+         where operflag='1'
+         and city_code=#{deptCity,jdbcType=VARCHAR}
+  		]]>
+	</select>
+	
+	<!-- 通过省编码找时效区域编码查找  快递-->
+	<select id="getExpressRegionByProvince" parameterType="string"
+		resultType="string">
+		<![CDATA[ 
+		select code from t_base_express_eff_region 
+         where operflag='1'
+         and prov_code=#{deptProvince,jdbcType=VARCHAR}
+  		]]>
+	</select>
+	
+	<!-- 通过区县编码查找时效区域编码查找  零担 -->
+	<select id="getRegionByCount" parameterType="string"
+		resultType="string">
+		<![CDATA[ 
+		 select code from t_base_effective_region 
+         where operflag='1'
+         and county_code=#{deptCounty,jdbcType=VARCHAR}
+  		]]>
+	</select>
+	<!-- 通过城市编码找时效区域编码查找    零担-->
+	<select id="getRegionByCity" parameterType="string"
+		resultType="string">
+		<![CDATA[ 
+		select code from t_base_effective_region 
+         where operflag='1'
+         and city_code=#{deptCity,jdbcType=VARCHAR}
+         and county_code is null 
+  		]]>
+	</select>
+	
+	<!-- 通过省编码找时效区域编码查找   零担-->
+	<select id="getRegionByProvince" parameterType="string"
+		resultType="string">
+		<![CDATA[ 
+		select code from t_base_effective_region 
+         where operflag='1'
+         and prov_code=#{deptProvince,jdbcType=VARCHAR}
+         and city_code is null
+  		]]>
+	</select>
+	
+	<!-- 通过外场编码查找驻地营业部-->
+	<select id="queryResidentDeptCode" parameterType="string"
+		resultType="string">
+		<![CDATA[ 
+		
+		select t.deptcode
+		  from t_svr_dept t
+		 where t.operflag = 1
+		   and t.leave = 'Y'
+		   and t.isstation = 'Y'
+		   and t.transfercenter =#{sourceTransCenter,jdbcType=VARCHAR}
+   	]]>
+	</select>
+	
+	<select id="queryHttpHost" 
+		resultType="string">
+		<![CDATA[ 
+		select value from T_BAM_CODE where code = 'HTTP_HOST'
+   	]]>
+	</select>
+</mapper>

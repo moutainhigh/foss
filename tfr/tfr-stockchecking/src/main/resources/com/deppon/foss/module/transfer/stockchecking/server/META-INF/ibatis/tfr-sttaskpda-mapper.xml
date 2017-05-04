@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.tfr.StTaskPdaDao" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StTaskPdaEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="ST_TASK_NO" property="stTaskNo" jdbcType="VARCHAR" />
+    <result column="STATUS" property="status" jdbcType="VARCHAR" />
+    <result column="PDA_NO" property="pdaNo" jdbcType="VARCHAR" />
+    <result column="SCAN_TIME" property="scanTime" jdbcType="TIMESTAMP" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    ID, ST_TASK_NO, STATUS, PDA_NO, SCAN_TIME, CREATE_TIME
+  </sql>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.String" >
+    select 
+    <include refid="Base_Column_List" />
+    from TFR.T_OPT_ST_TASK_PDA
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+  <select id="queryBranchPdaTask" resultMap="BaseResultMap" parameterType="java.lang.String" >
+    select 
+    <include refid="Base_Column_List" />
+    from TFR.T_OPT_ST_TASK_PDA
+    where ST_TASK_NO = #{stTaskNo,jdbcType=VARCHAR}
+      order by pda_no, scan_time desc
+  </select>
+  <select id="queryOneBranchPdaTask" resultMap="BaseResultMap" parameterType="map" >
+    select 
+    <include refid="Base_Column_List" />
+    from TFR.T_OPT_ST_TASK_PDA
+    where ST_TASK_NO = #{stTaskNo,jdbcType=VARCHAR}
+      and PDA_NO = #{pdaNo}
+      order by scan_time desc
+  </select>
+  <select id="queryIsChanged" resultType="int" parameterType="map" >
+   <![CDATA[ 
+		SELECT COUNT(1)
+		  FROM pkp.t_srv_waybillrfc wr
+		 INNER JOIN pkp.t_srv_labeledgood_todo ld
+		    ON ld.t_srv_waybill_rfc_id = wr.id
+		   and ld.is_printed = 'N'
+		   AND ld.serial_no = #{serialNo,jdbcType=VARCHAR}
+		   AND ld.handle_org_code = #{deptCode,jdbcType=VARCHAR}
+		 WHERE wr.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+  ]]>
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String" >
+    delete from TFR.T_OPT_ST_TASK_PDA
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  <insert id="addStTaskPdaEntity" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StTaskPdaEntity" >
+    insert into TFR.T_OPT_ST_TASK_PDA (ID, ST_TASK_NO, STATUS, 
+      PDA_NO, SCAN_TIME, CREATE_TIME)
+    values (#{id,jdbcType=VARCHAR}, #{stTaskNo,jdbcType=VARCHAR}, #{status,jdbcType=VARCHAR}, 
+      #{pdaNo,jdbcType=VARCHAR}, #{scanTime,jdbcType=TIMESTAMP}, #{createTime,jdbcType=TIMESTAMP})
+  </insert>
+  <insert id="addStTaskPdaEntityBatch" parameterType="java.util.List" >
+    begin
+	<foreach collection="list" item="item" separator=";">
+    insert into TFR.T_OPT_ST_TASK_PDA (ID, ST_TASK_NO, STATUS, 
+      PDA_NO, SCAN_TIME, CREATE_TIME)
+    values (#{item.id,jdbcType=VARCHAR}, #{item.stTaskNo,jdbcType=VARCHAR}, #{item.status,jdbcType=VARCHAR}, 
+      #{item.pdaNo,jdbcType=VARCHAR}, #{item.scanTime,jdbcType=TIMESTAMP}, #{item.createTime,jdbcType=TIMESTAMP})
+    </foreach>
+	;end;
+  </insert>
+  <insert id="insertSelective" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StTaskPdaEntity" >
+    insert into TFR.T_OPT_ST_TASK_PDA
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="stTaskNo != null" >
+        ST_TASK_NO,
+      </if>
+      <if test="status != null" >
+        STATUS,
+      </if>
+      <if test="pdaNo != null" >
+        PDA_NO,
+      </if>
+      <if test="scanTime != null" >
+        SCAN_TIME,
+      </if>
+      <if test="createTime != null" >
+        CREATE_TIME,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="stTaskNo != null" >
+        #{stTaskNo,jdbcType=VARCHAR},
+      </if>
+      <if test="status != null" >
+        #{status,jdbcType=VARCHAR},
+      </if>
+      <if test="pdaNo != null" >
+        #{pdaNo,jdbcType=VARCHAR},
+      </if>
+      <if test="scanTime != null" >
+        #{scanTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="createTime != null" >
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StTaskPdaEntity" >
+    update TFR.T_OPT_ST_TASK_PDA
+    <set >
+      <if test="stTaskNo != null" >
+        ST_TASK_NO = #{stTaskNo,jdbcType=VARCHAR},
+      </if>
+      <if test="status != null" >
+        STATUS = #{status,jdbcType=VARCHAR},
+      </if>
+      <if test="pdaNo != null" >
+        PDA_NO = #{pdaNo,jdbcType=VARCHAR},
+      </if>
+      <if test="scanTime != null" >
+        SCAN_TIME = #{scanTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="createTime != null" >
+        CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StTaskPdaEntity" >
+    update TFR.T_OPT_ST_TASK_PDA
+    set ST_TASK_NO = #{stTaskNo,jdbcType=VARCHAR},
+      STATUS = #{status,jdbcType=VARCHAR},
+      PDA_NO = #{pdaNo,jdbcType=VARCHAR},
+      SCAN_TIME = #{scanTime,jdbcType=TIMESTAMP},
+      CREATE_TIME = #{createTime,jdbcType=TIMESTAMP}
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+</mapper>

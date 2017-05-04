@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.BillPaymentEntityDao">
+	<!-- 通过Dto查询现金支出报表 -->
+	<select id="queryCashPaymentReportByDto" resultMap="BaseResultMap"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CashPaymentReportDto">
+		SELECT/*结算-客户管理-通过Dto查询现金支出报表 */
+		<include refid="Base_Column_List" />
+		FROM STL.T_STL_BILL_PAYMENT T
+		WHERE
+	<![CDATA[T.BUSINESS_DATE >=#{ startDate ,jdbcType=TIMESTAMP} and T.BUSINESS_DATE <#{endDate ,jdbcType=TIMESTAMP}]]>
+		<if test="sourceBillType != null and sourceBillType != ''">
+				AND T.SOURCE_BILL_TYPE = #{sourceBillType}
+		</if>
+		<if test="paymentOrgCode != null and paymentOrgCode != ''">
+				AND T.PAYMENT_ORG_CODE = #{paymentOrgCode}
+		</if>	
+	 	<!-- 加入数据权限 -->
+		<if test="empCode != null and empCode != ''">
+			AND EXISTS (SELECT ORG_CODE
+				FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V 
+			 WHERE V.EMP_CODE = #{empCode}
+						 AND T.PAYMENT_ORG_CODE = V.ORG_CODE) <!-- 应收单可以按照应收部门进行查询   -->		
+		</if>
+	</select>
+
+	<!-- 查询应收单记录条数，总金额，核销总金额和未核销总金额resultMap -->
+	<resultMap id="TotalRecordsInDBMap"
+		type="com.deppon.foss.module.settlement.consumer.api.shared.dto.CashPaymentReportDto">
+		<result column="TOTAL_RECORDS_IN_DB" property="totalRecordsInDB" jdbcType="DECIMAL" />
+		<result column="TOTAL_AMOUNT" property="totalAmount" jdbcType="DECIMAL" />
+		<result column="AUDIT_STATUS" property="auditStatus" jdbcType="VARCHAR" />
+		<result column="PAYMENT_TYPE" property="paymentType" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 通过Dto查询现金支出报表 -->
+	<select id="queryTotalRecordsInDBByDto" resultMap="TotalRecordsInDBMap"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CashPaymentReportDto">
+	SELECT /*结算-客户管理-通过Dto查询现金支出报表 */count(T.ID) as TOTAL_RECORDS_IN_DB,SUM(T.AMOUNT)/100 as TOTAL_AMOUNT,T.AUDIT_STATUS as AUDIT_STATUS,T.PAYMENT_TYPE as PAYMENT_TYPE
+	FROM STL.T_STL_BILL_PAYMENT T
+	WHERE
+	<![CDATA[T.BUSINESS_DATE >=#{ startDate ,jdbcType=TIMESTAMP} and T.BUSINESS_DATE <#{endDate ,jdbcType=TIMESTAMP}]]>
+		<if test="sourceBillType != null and sourceBillType != ''">
+				AND T.SOURCE_BILL_TYPE = #{sourceBillType}
+		</if>
+		<if test="paymentOrgCode != null and paymentOrgCode != ''">
+				AND T.PAYMENT_ORG_CODE = #{paymentOrgCode}
+		</if>
+	 	<!-- 加入数据权限 -->
+		<if test="empCode != null and empCode != ''">
+			AND EXISTS (SELECT ORG_CODE
+				FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V 
+			 WHERE V.EMP_CODE = #{empCode}
+						 AND T.PAYMENT_ORG_CODE = V.ORG_CODE) <!-- 应收单可以按照应收部门进行查询   -->		
+		</if>	
+		 GROUP BY T.AUDIT_STATUS,T.PAYMENT_TYPE
+	</select>
+</mapper>

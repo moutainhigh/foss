@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.load.express.arrival">
+	<!--快递到达页面展示实体类-->
+	<resultMap id="expressArrivalResultMap"
+		type="com.deppon.foss.module.transfer.load.api.shared.domain.ExpressArrivalDisplayEntity">
+		<result property="id" column="ID" />
+		<result property="receiveCustomerCityCode" column="RECEIVE_CUSTOMER_CITY_CODE" />
+		<result property="receiveCustomerCityName" column="RECEIVE_CUSTOMER_CITY_NAME" />
+		<result property="receiveCustomerProvCode" column="RECEIVE_CUSTOMER_PROV_CODE" />
+		<result property="receiveCustomerProvName" column="RECEIVE_CUSTOMER_PROV_NAME" />
+		<result property="waybillNo" column="WAYBILL_NO" />
+		<result property="receiveCustomerAddress" column="RECEIVE_CUSTOMER_ADDRESS" />
+		<result property="customerPickupOrgName" column="CUSTOMER_PICKUP_ORG_NAME" />
+		<result property="customerPickupOrgCode" column="CUSTOMER_PICKUP_ORG_CODE" />
+		<result property="preArriveTime" column="PRE_ARRIVE_TIME" />
+		<result property="createUserDeptName" column="CREATE_USER_DEPT_NAME" />
+		<result property="createOrgCode" column="CREATE_ORG_CODE" />
+		<result property="status" column="STATUS" />
+		<result property="active" column="ACTIVE" />
+	</resultMap>
+	<!-- 查询快递到达货 -->
+	<select id="queryExpressArrival" parameterType="com.deppon.foss.module.transfer.load.api.shared.dto.ExpressArrivalQueryDto" 
+			resultMap="expressArrivalResultMap">
+			select b.id,
+			   a.receive_customer_city_code,
+          	   f.name receive_customer_city_name,
+          	   a.receive_customer_prov_code,
+         	   g.name receive_customer_prov_name,
+			   b.waybill_no,
+		       D1.Name ||'-'|| D2.Name ||'-'|| D3.Name ||'-'||D4.NAME||'-'||
+                         A.Receive_Customer_Address Receive_Customer_Address,
+		       d.name customer_pickup_org_name,
+		       b.customer_pickup_org_code,
+		       b.pre_arrive_time,
+		       e.name create_user_dept_name,
+		       b.create_org_code,
+		       c.status
+		  	from pkp.t_srv_waybill_express a
+		  	inner join pkp.t_srv_actual_freight saf on a.waybill_no=saf.waybill_no and saf.status='EFFECTIVE'
+		  	left join PKP.T_SRV_ACTUAL_FREIGHT pf 
+               on pf.waybill_no = a.waybill_no
+		  	left join bse.t_bas_district d1
+               on a.RECEIVE_CUSTOMER_PROV_CODE = d1.code and d1.active = 'Y'
+          	left join bse.t_bas_district d2
+               on a.RECEIVE_CUSTOMER_CITY_CODE = d2.code and d2.active = 'Y'
+          	left join bse.t_bas_district d3
+               on a.RECEIVE_CUSTOMER_DIST_CODE = d3.code and d3.active = 'Y'
+            left join bse.t_bas_district d4
+               on pf.receive_customer_village_code = d4.code and d4.active = 'Y'
+		  	left join pkp.t_srv_waybill b
+		    	on a.waybill_no = b.waybill_no and b.active = 'Y'
+		  	left join tfr.t_opt_express_arrival c
+		    	on a.waybill_no = c.waybill_no
+		   		and c.active = 'Y'
+		  	left join bse.t_bas_org d 
+		  		on b.customer_pickup_org_code = d.code and d.active = 'Y'
+		  	left join bse.t_bas_org e
+		  		on b.create_org_code = e.code and e.active = 'Y'
+		    left join bse.t_bas_district f
+  				on a.receive_customer_city_code = f.code and f.active = 'Y'
+  			left join bse.t_bas_district g
+  				on a.receive_customer_prov_code  = g.code and g.active = 'Y'
+  			left join tfr.t_opt_auto_add_code_byhand ttd
+          		on a.waybill_no = ttd.waybill_no 
+          	left join pkp.t_srv_waybill_sign_result ppr
+          		on a.waybill_no = ppr.waybill_no
+		  where b.pre_arrive_time between #{beginTime} and #{endTime} 
+   		 	<if test="waybillNo != null and waybillNo !='' ">
+		 	 	and b.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		 	</if> 
+		 		and a.is_add_code = 'Y' 
+		 		and ppr.waybill_no is null
+		 		and ttd.waybill_no is null
+		 		and b.customer_pickup_org_code = #{orgCode}  and (c.status =1 or c.status is null) 
+				order by c.status desc , b.pre_arrive_time , b.waybill_no
+		
+	</select>
+		
+		<!-- 查询快递到达记录count -->
+	<select id="queryExpressArrivalCount" parameterType="com.deppon.foss.module.transfer.load.api.shared.dto.ExpressArrivalQueryDto" 
+			resultType="Long">
+			select count(*) from 
+			(select b.id,
+			   b.waybill_no,
+		       b.receive_customer_address,
+		       d.name customer_pickup_org_name,
+		       b.customer_pickup_org_code,
+		       b.pre_arrive_time,
+		       e.name create_user_dept_name,
+		       b.create_org_code,
+		       c.status
+		  	from pkp.t_srv_waybill_express a
+		  	inner join pkp.t_srv_actual_freight saf on a.waybill_no=saf.waybill_no and saf.status='EFFECTIVE'
+		  	left join pkp.t_srv_waybill b
+		    	on a.waybill_no = b.waybill_no and b.active = 'Y'
+		  	left join tfr.t_opt_express_arrival c
+		    	on a.waybill_no = c.waybill_no
+		   		and c.active = 'Y'
+		  	left join bse.t_bas_org d 
+		  		on b.customer_pickup_org_code = d.code and d.active = 'Y'
+		  	left join bse.t_bas_org e
+		  		on b.create_org_code = e.code and e.active = 'Y'
+		  	left join tfr.t_opt_auto_add_code_byhand ttd
+          		on a.waybill_no = ttd.waybill_no 
+          	left join pkp.t_srv_waybill_sign_result ppr
+          		on a.waybill_no = ppr.waybill_no
+		  where b.pre_arrive_time between #{beginTime} and #{endTime} 
+		  		and a.is_add_code = 'Y' 
+		  		and ppr.waybill_no is null
+		  		and ttd.waybill_no is null
+   		 	<if test="waybillNo != null and waybillNo !='' ">
+		 	 	and b.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		 	</if> 
+		 		and a.is_add_code = 'Y' 
+		 		and b.customer_pickup_org_code = #{orgCode}  
+		 		and (c.status =1 or c.status is null) 
+				)
+		
+			
+		
+	</select>
+	
+	
+	<!-- 根据id查询表中是否有此数据 -->
+	<select id="expressArrivalSelectById" parameterType="string" 
+		resultType="com.deppon.foss.module.transfer.load.api.shared.domain.ExpressArrivalEntity">
+			select * from tfr.t_opt_express_arrival a 
+			where a.id = #{id} 
+	</select>
+	
+	<!--    将确认的数据保存到tfr.t_opt_express_arrival表中,status = 1 -->
+	<insert id="expressArrivalConfirm"
+		parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.ExpressArrivalEntity">
+			insert into tfr.t_opt_express_arrival  
+				(id,
+				WAYBILL_NO,
+				CREATE_TIME,
+				CREATE_USER_CODE,
+				CREATE_USER_NAME,
+				CREATE_ORG_CODE,
+				CREATE_ORG_NAME,
+				STATUS,
+				ACTIVE)	
+				values(
+				#{id,jdbcType=VARCHAR},
+				#{waybillNo,jdbcType=VARCHAR},
+				#{createTime,jdbcType=TIMESTAMP},
+				#{createUserCode,jdbcType=VARCHAR},
+				#{createUserName,jdbcType=VARCHAR},
+				#{createOrgCode,jdbcType=VARCHAR},
+				#{createOrgName,jdbcType=VARCHAR},
+				#{status,jdbcType=VARCHAR},
+				#{active,jdbcType=VARCHAR}
+				)
+	</insert>
+	
+	
+	
+	<!-- 将此条数据物理删除 -->
+	<delete id="expressArrivalDelete" 
+		parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.ExpressArrivalEntity">
+		delete from tfr.t_opt_express_arrival a 
+       		where a.id = #{id}
+      		and a.waybill_no = #{waybillNo}
+	</delete>
+</mapper>
+
+

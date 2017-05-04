@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.stl.StatementCreatDao" >
+<resultMap id="ListResultMapForBr" type="com.deppon.foss.module.settlement.consumer.api.shared.dto.InvoiceManagementAddListDto" >
+	<result column="ID" property="id" jdbcType="VARCHAR" />
+	<result column="RECEIVABLE_NO" property="receivableNumber" jdbcType="VARCHAR" />
+    <result column="BUSINESS_DATE" property="businessDate" jdbcType="TIMESTAMP" />
+    <result column="WAYBILL_NO" property="waybillNumber" jdbcType="VARCHAR" />
+    <result column="AMOUNT" property="totleFee" jdbcType="DECIMAL" />
+    <result column="PRODUCT_CODE" property="transportProperties" jdbcType="VARCHAR" />
+    <result column="BILL_TYPE" property="subTypesOfDocuments" jdbcType="VARCHAR" />
+    <result column="GENERATING_COM_NAME" property="companyName" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+    <result column="RECEIVABLE_ORG_NAME" property="departmentName" jdbcType="VARCHAR" />
+    <result column="RECEIVABLE_ORG_CODE" property="departmentCode" jdbcType="VARCHAR" />
+    <result column="ACCOUNT_DATE" property="dateOfEntry" jdbcType="TIMESTAMP" />
+    <result column="CONREVEN_DATE" property="dateOfReceipt" jdbcType="TIMESTAMP" />
+    <result column="TARGET_ORG_CODE" property="destinationStation" jdbcType="VARCHAR" />
+    <result column="INVOICE_MARK" property="invoiceMark" jdbcType="VARCHAR" />
+    <result column="DEST_ORG_CODE" property="destOrgCode" jdbcType="VARCHAR" />
+</resultMap>
+  
+<resultMap id="ListResultMapForHs" type="com.deppon.foss.module.settlement.consumer.api.shared.dto.InvoiceManagementAddDto" >
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+    <result column="COMPANY_NAME" property="companyName" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+    <result column="CREATE_ORG_NAME" property="createOrgName" jdbcType="VARCHAR" />
+    <result column="STATEMENT_BILL_NO" property="statementBillNo" jdbcType="VARCHAR" />
+    <result column="SECTOR_BENCHMARKING_ENCODING" property="sectorBenchmarkingEncoding" jdbcType="VARCHAR" />
+    <result column="INVOICE_HEAD_CODE" property="invoiceHeadCode" jdbcType="VARCHAR" />
+    <result column="TAXID" property="taxId" jdbcType="VARCHAR" />
+    <result column="TOTLE_FEE" property="totleFee" jdbcType="DECIMAL" />
+    <result column="TRANSPORT_PROPERTIES" property="transportProperties" jdbcType="VARCHAR" />
+    <result column="DEPARTMENT_CODE" property="departmentCode" jdbcType="VARCHAR" />
+    <result column="IS_DELETE" property="isDelete" jdbcType="VARCHAR" />
+    <result column="INVOICE_STATUS" property="invoiceStatus" jdbcType="VARCHAR" />
+    <result column="REGISTERED_ADDRESS" property="registeredAddress" jdbcType="VARCHAR" />
+    <result column="REGISTERED_TELEPHONE" property="registeredTelephone" jdbcType="VARCHAR" />
+    <result column="BANK" property="bank" jdbcType="VARCHAR" />
+    <result column="ACCOUNT_BANK" property="accountBank" jdbcType="VARCHAR" />
+    <result column="IS_GENERAL_TAXPAYER" property="isGeneralTaxpayer" jdbcType="VARCHAR" />
+    <result column="INVOICE_TYPE" property="invoiceMark" jdbcType="VARCHAR" />
+    <result column="NO_WITHOUT_HH" property="statementNumberWithoutHh" jdbcType="INTEGER" />
+    <result column="BEGIN_DATE" property="periodBeginDate" jdbcType="TIMESTAMP" />
+    <result column="END_DATE" property="periodEndDate" jdbcType="TIMESTAMP" />
+</resultMap>
+
+<!-- Query_Receivable_Column_List -->
+  <sql id="Query_Receivable_Column_List" >
+		 REC.RECEIVABLE_NO RECEIVABLE_NO,REC.WAYBILL_NO WAYBILL_NO,REC.BILL_TYPE BILL_TYPE,REC.GENERATING_COM_NAME,REC.AMOUNT/100 AMOUNT,
+		 REC.CUSTOMER_CODE CUSTOMER_CODE, REC.CUSTOMER_NAME CUSTOMER_NAME,REC.TARGET_ORG_CODE TARGET_ORG_CODE,
+		 REC.BUSINESS_DATE BUSINESS_DATE, REC.ACCOUNT_DATE ACCOUNT_DATE,REC.CONREVEN_DATE CONREVEN_DATE,
+		 REC.PRODUCT_CODE PRODUCT_CODE,REC.RECEIVABLE_ORG_NAME RECEIVABLE_ORG_NAME,REC.RECEIVABLE_ORG_CODE RECEIVABLE_ORG_CODE,
+		 REC.DEST_ORG_CODE,REC.ID
+  </sql>
+  
+<!-- Query_HH_STATEMENT_Column_List -->
+  <sql id="Query_Hh_Statement_Column_List" >
+		 REC.CREATE_TIME CREATE_TIME,REC.CUSTOMER_CODE CUSTOMER_CODE,REC.COMPANY_NAME COMPANY_NAME,REC.CUSTOMER_NAME CUSTOMER_NAME,
+		 REC.CREATE_ORG_NAME CREATE_ORG_NAME,REC.STATEMENT_BILL_NO STATEMENT_BILL_NO,REC.SECTOR_BENCHMARKING_ENCODING SECTOR_BENCHMARKING_ENCODING,
+		 REC.INVOICE_HEAD_CODE INVOICE_HEAD_CODE, REC.TAXID TAXID,
+		 REC.TOTLE_FEE TOTLE_FEE,REC.TRANSPORT_PROPERTIES TRANSPORT_PROPERTIES,
+		 REC.DEPARTMENT_CODE DEPARTMENT_CODE,
+		 REC.INVOICE_STATUS INVOICE_STATUS,
+		 REC.REGISTERED_ADDRESS REGISTERED_ADDRESS,REC.REGISTERED_TELEPHONE REGISTERED_TELEPHONE,REC.BANK BANK,
+		 REC.ACCOUNT_BANK ACCOUNT_BANK,REC.IS_GENERAL_TAXPAYER IS_GENERAL_TAXPAYER,REC.INVOICE_TYPE INVOICE_TYPE,
+		 REC.BEGIN_DATE BEGIN_DATE,REC.END_DATE END_DATE
+  </sql>
+  
+<!-- 按客户保存对账单明细 -->
+	<insert id="statementDSave"
+	    parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.InvoiceManagementAddDto">
+	    insert into STL.T_STL_HH_STATEMENT
+		  (ID,
+		   CREATE_TIME,
+		   CUSTOMER_CODE,
+		   COMPANY_NAME,
+		   CUSTOMER_NAME,
+		   CREATE_ORG_NAME,
+		   STATEMENT_BILL_NO,
+		   SECTOR_BENCHMARKING_ENCODING,
+		   INVOICE_HEAD_CODE,
+		   TAXID,
+		   TOTLE_FEE,
+		   DEPARTMENT_CODE,
+		   IS_DELETE,
+		   INVOICE_STATUS,
+		   REGISTERED_ADDRESS,
+		   REGISTERED_TELEPHONE,
+		   BANK,
+		   ACCOUNT_BANK,
+		   IS_GENERAL_TAXPAYER,
+		   NO_WITHOUT_HH,
+		   TRANSPORT_PROPERTIES,
+		   INVOICE_TYPE,
+		   BEGIN_DATE,
+		   END_DATE
+		   )
+		  VALUES (
+			sys_guid(),
+			#{createTime, jdbcType=TIMESTAMP},
+			#{customerCode, jdbcType=VARCHAR},
+			#{companyName, jdbcType=VARCHAR},
+			#{customerName, jdbcType=VARCHAR},
+			#{createOrgName, jdbcType=VARCHAR},
+			#{statementBillNo, jdbcType=VARCHAR},
+			#{sectorBenchmarkingEncoding, jdbcType=VARCHAR},
+			#{invoiceHeadCode, jdbcType=VARCHAR},
+			#{taxId, jdbcType=VARCHAR},
+			#{totleFee, jdbcType=DECIMAL},
+			#{departmentCode, jdbcType=VARCHAR},
+			#{isDelete, jdbcType=VARCHAR},
+			#{invoiceStatus, jdbcType=VARCHAR},
+			#{registeredAddress, jdbcType=VARCHAR},
+			#{registeredTelephone, jdbcType=VARCHAR},
+			#{bank, jdbcType=VARCHAR},
+			#{accountBank, jdbcType=VARCHAR},
+			#{isGeneralTaxpayer, jdbcType=VARCHAR},
+			#{statementNumberWithoutHh, jdbcType=INTEGER},
+			#{transportProperties, jdbcType=VARCHAR},
+			#{invoiceMark, jdbcType=VARCHAR},
+			#{periodBeginDate, jdbcType=TIMESTAMP},
+			#{periodEndDate, jdbcType=TIMESTAMP}
+		)
+	</insert>
+	
+	<!-- 按客户查询应收单 -->
+	<select id="queryReceivableByCustomer" resultMap="ListResultMapForBr"
+		parameterType="java.util.Map">
+		SELECT /*结算-核销-查询应收单*/
+		 <include refid="Query_Receivable_Column_List"/>
+		  FROM STL.T_STL_BILL_RECEIVABLE REC
+		    LEFT JOIN BSE.T_BAS_SALES_DEPARTMENT O
+		    ON O.CODE = REC.DEST_ORG_CODE
+		   AND O.ACTIVE = 'Y'
+		WHERE (REC.DEAL_WITHIS IS NULL OR  REC.DEAL_WITHIS='') AND REC.ACTIVE='Y' 
+		<if test="customerCode!=null and customerCode!='' ">
+			AND REC.CUSTOMER_CODE=#{customerCode,jdbcType=VARCHAR}
+		</if>
+		<if test="beginTime!=null">
+		<![CDATA[
+			AND REC.CREATE_TIME>=#{beginTime,jdbcType=TIMESTAMP}
+		]]>
+		</if>
+		<if test="endTime!=null">
+		<![CDATA[
+			AND REC.CREATE_TIME<=#{endTime,jdbcType=TIMESTAMP} 
+		]]>
+		</if>
+		<if test="list!=null">
+		AND REC.RECEIVABLE_ORG_CODE IN
+			<foreach collection="list" item="perItem" open="(" close=")" separator=",">
+				#{perItem,jdbcType=VARCHAR}
+			</foreach>	
+		</if>
+		<if test="Manycheck!=null">
+		AND REC.BILL_TYPE IN
+			<foreach collection="Manycheck" item="perItem" open="(" close=")" separator=",">
+				#{perItem,jdbcType=VARCHAR}
+			</foreach>
+		</if>
+	
+		
+	</select>
+	
+	<!-- 按单号查询应收单 -->
+	<select id="queryReceivableByWaybillNumber" resultMap="ListResultMapForBr"
+		parameterType="java.util.Map">
+		SELECT /*结算-核销-查询应收单*/
+		 <include refid="Query_Receivable_Column_List"/>
+		  FROM STL.T_STL_BILL_RECEIVABLE REC
+		LEFT JOIN BSE.T_BAS_SALES_DEPARTMENT O
+		    ON O.CODE = REC.DEST_ORG_CODE
+		   AND O.ACTIVE = 'Y'
+		WHERE not exists 
+			(select * 
+          	from stl.t_stl_bill_receivable re 
+         	where re.WAYBILL_NO = REC.WAYBILL_NO 
+         	and re.bill_type = REC.bill_type 
+           	and re.deal_withis is not null)
+		AND (REC.DEAL_WITHIS IS NULL OR  REC.DEAL_WITHIS='') AND REC.ACTIVE='Y' 
+		AND REC.WAYBILL_NO IN 
+		<foreach collection="waybills" item="waybill" open="(" close=")" separator=",">
+			#{waybill,jdbcType=VARCHAR}
+		</foreach>
+		AND (REC.BILL_TYPE='POR' OR REC.BILL_TYPE='PDFR') 
+		AND REC.RECEIVABLE_ORG_CODE IN
+		<foreach collection="subsidiaryDept" item="perItem" open="(" close=")" separator=",">
+			#{perItem,jdbcType=VARCHAR}
+		</foreach>
+		AND (REC.BILL_TYPE = 'POR' OR (REC.BILL_TYPE = 'PDFR' AND O.IS_LEAGUE_SALEDEPT = 'N'))
+	</select>
+	
+	<select id="queryReceivableByWaybillNumbers" resultMap="ListResultMapForBr"
+		parameterType="java.util.Map">
+		SELECT /*结算-核销-查询应收单*/
+		 <include refid="Query_Receivable_Column_List"/>
+		  FROM STL.T_STL_BILL_RECEIVABLE REC
+		LEFT JOIN BSE.T_BAS_SALES_DEPARTMENT O
+		    ON O.CODE = REC.DEST_ORG_CODE
+		   AND O.ACTIVE = 'Y'
+		WHERE not exists 
+			(select * 
+          	from stl.t_stl_bill_receivable re 
+         	where re.WAYBILL_NO = REC.WAYBILL_NO 
+         	and re.bill_type = REC.bill_type 
+           	and re.deal_withis is not null)
+		AND (REC.DEAL_WITHIS IS NULL OR  REC.DEAL_WITHIS='') AND REC.ACTIVE='Y' 
+		<if test="waybills!=null">
+		AND REC.WAYBILL_NO IN 
+			<foreach collection="waybills" item="waybill" open="(" close=")" separator=",">
+				#{waybill,jdbcType=VARCHAR}
+			</foreach>
+		</if>
+		AND (REC.BILL_TYPE='POR' OR REC.BILL_TYPE='PDFR') 
+		<if test="subsidiaryDept!=null">
+		AND REC.RECEIVABLE_ORG_CODE IN
+			<foreach collection="subsidiaryDept" item="perItem" open="(" close=")" separator=",">
+				#{perItem,jdbcType=VARCHAR}
+			</foreach>
+		</if>
+		<if test="Manycheck!=null">
+		AND REC.BILL_TYPE IN
+			<foreach collection="Manycheck" item="perItem" open="(" close=")" separator=",">
+				#{perItem,jdbcType=VARCHAR}
+			</foreach>
+		</if>
+	</select>
+	<!-- 按id查询应收单 -->
+	<select id="queryReceivableById" resultType="java.lang.String" parameterType="java.util.List">
+		SELECT REC.WAYBILL_NO
+		  FROM STL.T_STL_BILL_RECEIVABLE REC
+		WHERE REC.DEAL_WITHIS IS NOT NULL 
+		AND REC.ID IN
+		<foreach collection="list" item="perItem" open="(" close=")" separator=",">
+			#{perItem,jdbcType=VARCHAR}
+		</foreach>
+	</select>
+	
+	<!-- 按应收号查询应收单 -->
+	<select id="queryReceivableByReceivableNumber" resultMap="ListResultMapForBr"
+		parameterType="java.util.Map">
+		SELECT /*结算-核销-查询应收单*/
+		 <include refid="Query_Receivable_Column_List"/>
+		  FROM STL.T_STL_BILL_RECEIVABLE REC
+		LEFT JOIN BSE.T_BAS_SALES_DEPARTMENT O
+		    ON O.CODE = REC.DEST_ORG_CODE
+		   AND O.ACTIVE = 'Y'
+		WHERE not exists (select * 
+          	from stl.t_stl_bill_receivable re 
+         	where re.RECEIVABLE_NO = REC.RECEIVABLE_NO 
+         	and re.bill_type = REC.bill_type 
+           	and re.deal_withis is not null)
+		AND (REC.DEAL_WITHIS IS NULL OR  REC.DEAL_WITHIS='') AND REC.ACTIVE='Y'
+		<if test="waybills!=null"> 
+		AND REC.RECEIVABLE_NO IN 
+		<foreach collection="waybills" item="waybill" open="(" close=")" separator=",">
+			#{waybill,jdbcType=VARCHAR}
+		</foreach> 
+		</if>
+		<if test="subsidiaryDept!=null">
+		AND REC.RECEIVABLE_ORG_CODE IN
+		<foreach collection="subsidiaryDept" item="perItem" open="(" close=")" separator=",">
+			#{perItem,jdbcType=VARCHAR}
+		</foreach>
+		</if>
+		<if test="Manycheck!=null">
+			AND REC.BILL_TYPE IN
+			<foreach collection="Manycheck" item="perItem" open="(" close=")" separator=",">
+				#{perItem,jdbcType=VARCHAR}
+			</foreach>
+		</if>
+	</select>
+	
+	<!-- 按客户查询合伙人对账单 -->
+	<select id="queryHsByCustomer" resultMap="ListResultMapForHs"
+		parameterType="java.util.Map">
+		SELECT /*结算-核销-查询应收单*/
+		 <include refid="Query_Hh_Statement_Column_List"/>
+		  FROM STL.T_STL_HH_STATEMENT REC
+		WHERE (REC.IS_DELETE IS NULL OR REC.IS_DELETE='')
+		<if test="regionList!=null">
+			AND REC.DEPARTMENT_CODE IN 
+			<foreach collection="regionList" item="idItem" open="(" close=")" separator=",">
+				#{idItem,jdbcType=VARCHAR}
+			</foreach>
+		</if>
+		<if test="beginTime!=null">
+		<![CDATA[
+			AND REC.CREATE_TIME>=#{beginTime,jdbcType=TIMESTAMP}
+		]]>
+		</if>
+		<if test="endTime!=null">
+		<![CDATA[
+			AND REC.CREATE_TIME<=#{endTime,jdbcType=TIMESTAMP}
+		]]>
+		</if>
+		<if test="customerCode!=null and customerCode!='' ">
+			AND REC.CUSTOMER_CODE=#{customerCode,jdbcType=VARCHAR}
+		</if>
+		<if test="invoiceStatus!=null and invoiceStatus!='' ">
+			AND REC.INVOICE_STATUS=#{invoiceStatus,jdbcType=VARCHAR} 
+		</if>
+	</select>
+	
+	<!-- 按单号查询合伙人对账单 -->
+	<select id="queryHsByWaybillNumber" resultMap="ListResultMapForHs"
+		parameterType="java.util.Map">
+		SELECT /*结算-核销-查询应收单*/
+		 <include refid="Query_Hh_Statement_Column_List"/>
+		  FROM STL.T_STL_HH_STATEMENT REC
+		WHERE REC.IS_DELETE IS NULL AND REC.STATEMENT_BILL_NO IN 
+		<!-- 对ID集合进行遍历 -->
+		(
+			SELECT DEAL_WITHIS FROM STL.T_STL_BILL_RECEIVABLE WHERE WAYBILL_NO IN
+			<foreach collection="list" item="idItem" open="(" close=")" separator=",">
+				#{idItem,jdbcType=VARCHAR}
+			</foreach>
+			GROUP BY DEAL_WITHIS
+		)
+		AND REC.DEPARTMENT_CODE IN 
+			<foreach collection="allowDepts" item="idItem" open="(" close=")" separator=",">
+				#{idItem,jdbcType=VARCHAR}
+			</foreach>
+	</select>
+	
+	<!-- 按对账单号查询合伙人对账单 -->
+	<select id="queryHsByStatementNo" resultMap="ListResultMapForHs"
+		parameterType="java.util.Map">
+		SELECT /*结算-核销-查询应收单*/
+		 <include refid="Query_Hh_Statement_Column_List"/>
+		  FROM STL.T_STL_HH_STATEMENT REC
+		WHERE REC.IS_DELETE IS NULL 
+		AND REC.STATEMENT_BILL_NO IN 
+		<!-- 对ID集合进行遍历 -->
+		<foreach collection="list" item="idItem" open="(" close=")" separator=",">
+			#{idItem,jdbcType=VARCHAR}
+		</foreach>
+		AND REC.DEPARTMENT_CODE IN 
+			<foreach collection="allowDepts" item="idItem" open="(" close=")" separator=",">
+				#{idItem,jdbcType=VARCHAR}
+			</foreach>
+	</select>
+	
+	<!-- 按对账单号查询合伙人对账单给发票系统 -->
+	<select id="queryHsByStatementNoForFims" resultMap="ListResultMapForHs"
+		parameterType="java.util.List">
+		SELECT /*结算-核销-查询应收单*/
+		 <include refid="Query_Hh_Statement_Column_List"/>
+		  FROM STL.T_STL_HH_STATEMENT REC
+		WHERE REC.IS_DELETE IS NULL 
+		AND REC.INVOICE_STATUS IN ('notApply','reback')
+		AND REC.STATEMENT_BILL_NO IN 
+		<!-- 对ID集合进行遍历 -->
+		<foreach collection="list" item="idItem" open="(" close=")" separator=",">
+			#{idItem,jdbcType=VARCHAR}
+		</foreach>
+	</select>
+	
+	<!-- 修改对账单状态 -->
+	<update id="updateForInvoiceStatus" parameterType="java.util.Map">
+		UPDATE STL.T_STL_HH_STATEMENT REC 
+		SET REC.INVOICE_STATUS=#{invoiceStatus,jdbcType=VARCHAR}
+		WHERE REC.STATEMENT_BILL_NO IN
+		<foreach collection="list" item="idItem" open="(" close=")" separator=",">
+			#{idItem,jdbcType=VARCHAR}
+		</foreach>
+	</update>
+	
+	<!-- 查询对账单最大单号 -->
+	<select id="queryMaxStatementNo" resultType="int">
+		 SELECT MAX(REC.NO_WITHOUT_HH) FROM STL.T_STL_HH_STATEMENT REC
+	</select>
+	
+	<!-- 删除合伙人对账单运单IS_DELETE -->
+	<update id="deleteForHsId" parameterType="java.lang.String">
+		UPDATE STL.T_STL_HH_STATEMENT REC 
+		SET REC.IS_DELETE='Y'
+		WHERE REC.STATEMENT_BILL_NO=#{statementNumber,jdbcType=VARCHAR}
+	</update>
+	
+	<!-- 删除应收单表的合伙人对账单单号Bill_Receivable_DEAL_WITHIS -->
+	<update id="deleteForBrDw" parameterType="java.lang.String">
+		UPDATE STL.T_STL_BILL_RECEIVABLE REC 
+		SET REC.DEAL_WITHIS=NULL
+		WHERE REC.DEAL_WITHIS=#{statementNumber,jdbcType=VARCHAR}
+	</update>
+	
+	<update id="updateForBrDw" parameterType="java.util.Map">
+		UPDATE STL.T_STL_BILL_RECEIVABLE REC 
+		SET REC.DEAL_WITHIS=#{statementNumberUpdate,jdbcType=VARCHAR}
+		WHERE REC.ID IN
+		<foreach collection="list" item="idItem" open="(" close=")" separator=",">
+			#{idItem,jdbcType=VARCHAR}
+		</foreach>
+	</update>
+	
+	<!-- 按对账单查询应收单 -->
+	<select id="queryReceivablesByStatementBillNo" resultMap="ListResultMapForBr"
+		parameterType="java.lang.String">
+		SELECT /*结算-核销-查询应收单*/
+		 <include refid="Query_Receivable_Column_List"/>
+		  FROM STL.T_STL_BILL_RECEIVABLE REC
+		WHERE REC.DEAL_WITHIS=#{statementBillNo,jdbcType=VARCHAR}
+	</select>
+</mapper>

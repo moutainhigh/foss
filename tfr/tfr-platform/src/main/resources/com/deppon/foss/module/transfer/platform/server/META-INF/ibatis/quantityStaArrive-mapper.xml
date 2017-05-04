@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="com.deppon.foss.module.transfer.platform.api.server.dao.IQuantityStaArriveDao">
+
+	<insert id="insert16Day">
+	INSERT INTO tfr.t_opt_sta_arrive_16day
+	  SELECT * FROM tfr.t_opt_sta_arrive t
+	  WHERE t.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+	</insert>
+	
+	<delete id="deleteArrive">
+		delete from tfr.t_opt_sta_arrive t
+		 where t.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+	</delete>
+	
+	<select id="proInsertActual" 
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.QuantityStaGoodsCondDto"
+		statementType="CALLABLE">
+		{CALL tfr.pkg_opt_quantity_sta_arrive.pro_insert_actual
+		(#{transferCenterCode,mode=IN,jdbcType=VARCHAR},
+		 #{beginDate,mode=IN,jdbcType=TIMESTAMP},	
+		 #{endDate,mode=IN,jdbcType=TIMESTAMP},
+		 #{createTime,mode=IN,jdbcType=TIMESTAMP},
+		 #{dataBelongDate,mode=IN,jdbcType=TIMESTAMP},
+		 #{staDate,mode=IN,jdbcType=TIMESTAMP},
+		 #{staHh,mode=IN,jdbcType=NUMERIC}
+        )}
+	</select>
+	
+	<delete id="delete2ndDayArrive">
+		delete from tfr.t_opt_sta_arrive_2nd t
+		 where t.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+	</delete>
+	
+	<delete id="delete2ndDayArriveFcst">
+		delete from tfr.t_opt_sta_arrive_2nd_fcst t
+		 where t.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+	</delete>
+	
+	<select id="proInsert2ndDayActual" 
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.QuantityStaGoodsCondDto"
+		statementType="CALLABLE">
+		{CALL tfr.pkg_opt_quantity_sta_arrive.pro_insert_2nd_actual
+		(#{transferCenterCode,mode=IN,jdbcType=VARCHAR},
+		 #{beginDate,mode=IN,jdbcType=TIMESTAMP},	
+		 #{endDate,mode=IN,jdbcType=TIMESTAMP},
+		 #{createTime,mode=IN,jdbcType=TIMESTAMP},
+		 #{dataBelongDate,mode=IN,jdbcType=TIMESTAMP},
+		 #{staDate,mode=IN,jdbcType=TIMESTAMP},
+		 #{staHh,mode=IN,jdbcType=NUMERIC}
+        )}
+	</select>
+	
+	<resultMap id="quantityStaTfrCtrTotalDto"
+		type="com.deppon.foss.module.transfer.platform.api.shared.dto.QuantityStaTfrCtrTotalDto">
+		<result property="transferCenterCode" column="transferCenterCode"/>
+		<result property="dataType" column="dataType" />
+		<result property="weightTotal" column="weightTotal"/>
+		<result property="volumeTotal" column="volumeTotal"/>
+		<result property="qtyTotal" column="qtyTotal"/>
+	</resultMap>
+
+	<select id="selectTfrCtrTotal" parameterType="java.util.Map" resultMap="quantityStaTfrCtrTotalDto">
+		SELECT t.org_code transferCenterCode,
+		       t.data_type dataType,
+		       SUM(t.weight_total) weightTotal,
+		       SUM(t.volume_total) volumeTotal,
+		       SUM(t.qty_total) qtyTotal
+		  FROM tfr.t_opt_sta_arrive t
+		 WHERE t.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		   AND t.sta_hh = #{staHh,jdbcType=NUMERIC}
+		  GROUP BY t.org_code, t.data_type
+	</select>
+	
+	<select id="selectTfrCtrTotal16Day"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.QuantityStaTfrCtrCondDto"
+		resultMap="quantityStaTfrCtrTotalDto">
+		SELECT t.org_code transferCenterCode,
+		       t.data_type dataType,
+		       SUM(t.weight_total) weightTotal,
+		       SUM(t.volume_total) volumeTotal,
+		       SUM(t.qty_total) qtyTotal
+		  FROM tfr.t_opt_sta_arrive_16day t
+		 WHERE t.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		   AND t.sta_hh = #{staHh,jdbcType=NUMERIC}
+		   AND t.data_type = #{dataType,jdbcType=VARCHAR}
+		  GROUP BY t.org_code, t.data_type
+	</select>
+	
+	<select id="selectLastStaHh16Day" 
+		parameterType="java.util.Map"
+		resultType="java.lang.Integer">
+		SELECT MAX(t.sta_hh)
+		  FROM tfr.t_opt_sta_arrive_16day t
+		 WHERE t.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+	</select>
+	
+	<resultMap id="quantityStaTfrCtrPerLineDto"
+		type="com.deppon.foss.module.transfer.platform.api.shared.dto.QuantityStaTfrCtrPerLineDto">
+		<result property="transferCenterCode" column="transferCenterCode" />
+		<result property="relevantOrgCode" column="relevantOrgCode" />
+		<result property="dataType" column="dataType" />
+		<result property="weightTotal" column="weightTotal" />
+		<result property="volumeTotal" column="volumeTotal" />
+		<result property="qtyTotal" column="qtyTotal" />
+	</resultMap>
+		
+	<select id="selectTfrCtrPerLine" parameterType="java.util.Map"
+		resultMap="quantityStaTfrCtrPerLineDto">
+		SELECT t.org_code transferCenterCode,
+		       t.relevant_org_code relevantOrgCode,
+		       t.data_type dataType,
+		       SUM(t.weight_total) weightTotal,
+		       SUM(t.volume_total) volumeTotal,
+		       SUM(t.qty_total) qtyTotal
+		  FROM tfr.t_opt_sta_arrive t
+		 WHERE t.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		   AND t.sta_hh = #{staHh,jdbcType=NUMERIC}
+		   AND t.data_type = #{dataType,jdbcType=VARCHAR}
+		 GROUP BY t.org_code, t.relevant_org_code, t.data_type
+	</select>
+	
+	<select id="select2ndDayTfrCtrPerLine" parameterType="java.util.Map"
+		resultMap="quantityStaTfrCtrPerLineDto">
+		SELECT t.org_code transferCenterCode,
+		       t.relevant_org_code relevantOrgCode,
+		       t.data_type dataType,
+		       SUM(t.weight_total) weightTotal,
+		       SUM(t.volume_total) volumeTotal,
+		       SUM(t.qty_total) qtyTotal
+		  FROM tfr.t_opt_sta_arrive_2nd t
+		 WHERE t.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		   AND t.sta_hh = #{staHh,jdbcType=NUMERIC}
+		   AND t.data_type = #{dataType,jdbcType=VARCHAR}
+		 GROUP BY t.org_code, t.relevant_org_code, t.data_type
+	</select>
+	
+	<select id="selectTfrCtrPerLine16Day" 
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.QuantityStaTfrCtrCondDto"
+		resultMap="quantityStaTfrCtrPerLineDto">
+		SELECT t.org_code transferCenterCode,
+		       t.relevant_org_code relevantOrgCode,
+		       t.data_type dataType,
+		       SUM(t.weight_total) weightTotal,
+		       SUM(t.volume_total) volumeTotal,
+		       SUM(t.qty_total) qtyTotal
+		  FROM tfr.t_opt_sta_arrive_16day t
+		 WHERE t.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		   AND t.sta_hh = #{staHh,jdbcType=NUMERIC}
+		   AND t.data_type = #{dataType,jdbcType=VARCHAR}
+		   AND t.relevant_org_code = #{relevantOrgCode,jdbcType=VARCHAR}
+		 GROUP BY t.org_code, t.relevant_org_code, t.data_type
+	</select>
+	
+	<insert id="insertFcst" 
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.QuantityStaFcstEntity">
+		INSERT INTO tfr.t_opt_sta_arrive_fcst
+		  (id,
+		   org_code,
+		   relevant_org_code,
+		   data_type,
+		   weight_no_billing,
+		   volume_no_billing,
+		   qty_no_billing,
+		   weight_total,
+		   volume_total,
+		   qty_total,
+		   create_time,
+		   data_belong_date,
+		   sta_hh,
+		   sta_date)
+		VALUES
+		  (#{id,jdbcType=VARCHAR},
+		   #{orgCode,jdbcType=VARCHAR},
+		   #{relevantOrgCode,jdbcType=VARCHAR},
+		   #{dataType,jdbcType=VARCHAR},
+		   #{weightNoBilling,jdbcType=NUMERIC},
+		   #{volumeNoBilling,jdbcType=NUMERIC},
+		   #{qtyNoBilling,jdbcType=NUMERIC},
+		   #{weightTotal,jdbcType=NUMERIC},
+		   #{volumeTotal,jdbcType=NUMERIC},
+		   #{qtyTotal,jdbcType=NUMERIC},
+		   #{createTime,jdbcType=TIMESTAMP},
+		   #{dataBelongDate,jdbcType=TIMESTAMP},
+		   #{staHh,jdbcType=NUMERIC},
+		   #{staDate,jdbcType=TIMESTAMP})
+	</insert>
+	
+	<insert id="insert2ndDayFcst" 
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.QuantityStaFcstEntity">
+		INSERT INTO tfr.t_opt_sta_arrive_2nd_fcst
+		  (id,
+		   org_code,
+		   relevant_org_code,
+		   data_type,
+		   weight_no_billing,
+		   volume_no_billing,
+		   qty_no_billing,
+		   weight_total,
+		   volume_total,
+		   qty_total,
+		   create_time,
+		   data_belong_date,
+		   sta_hh,
+		   sta_date)
+		VALUES
+		  (#{id,jdbcType=VARCHAR},
+		   #{orgCode,jdbcType=VARCHAR},
+		   #{relevantOrgCode,jdbcType=VARCHAR},
+		   #{dataType,jdbcType=VARCHAR},
+		   #{weightNoBilling,jdbcType=NUMERIC},
+		   #{volumeNoBilling,jdbcType=NUMERIC},
+		   #{qtyNoBilling,jdbcType=NUMERIC},
+		   #{weightTotal,jdbcType=NUMERIC},
+		   #{volumeTotal,jdbcType=NUMERIC},
+		   #{qtyTotal,jdbcType=NUMERIC},
+		   #{createTime,jdbcType=TIMESTAMP},
+		   #{dataBelongDate,jdbcType=TIMESTAMP},
+		   #{staHh,jdbcType=NUMERIC},
+		   #{staDate,jdbcType=TIMESTAMP})
+	</insert>
+	
+	<insert id="insertHis" parameterType="java.util.Date">
+	<![CDATA[
+		INSERT INTO tfr.t_opt_sta_arrive_his
+		  SELECT * FROM tfr.t_opt_sta_arrive_16day t WHERE t.sta_date <= #{date,jdbcType=TIMESTAMP}
+	]]>
+	</insert>
+	
+	<delete id="delete16Day" parameterType="java.util.Date">
+	<![CDATA[
+		DELETE FROM tfr.t_opt_sta_arrive_16day t WHERE t.sta_date <= #{date,jdbcType=TIMESTAMP}
+	]]>
+	</delete>
+	
+	<insert id="insertFcstHis" parameterType="java.util.Date">
+	<![CDATA[
+		INSERT INTO tfr.t_opt_sta_arrive_fcst_his
+		  SELECT * FROM tfr.t_opt_sta_arrive_fcst t WHERE t.sta_date <= #{date,jdbcType=TIMESTAMP}
+	]]>
+	</insert>
+	
+	<delete id="deleteFcst" parameterType="java.util.Date">
+	<![CDATA[
+		DELETE FROM tfr.t_opt_sta_arrive_fcst t WHERE t.sta_date <= #{date,jdbcType=TIMESTAMP}
+	]]>
+	</delete>
+	
+</mapper>

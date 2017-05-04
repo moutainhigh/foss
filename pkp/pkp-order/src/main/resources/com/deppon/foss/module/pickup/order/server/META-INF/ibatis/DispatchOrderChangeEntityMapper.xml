@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper
+	namespace="com.deppon.foss.module.pickup.order.api.shared.domain.DispatchOrderChangeEntity">
+
+	<resultMap id="orderResult"
+		type="com.deppon.foss.module.pickup.order.api.shared.domain.DispatchOrderEntity">
+		<result column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="ORDER_NO" property="orderNo" jdbcType="VARCHAR" />
+		<result column="PICKUP_PROVINCE" property="pickupProvince"
+			jdbcType="VARCHAR" />
+		<result column="PICKUP_CITY" property="pickupCity" jdbcType="VARCHAR" />
+		<result column="PICKUP_COUNTY" property="pickupCounty"
+			jdbcType="VARCHAR" />
+		<result column="PICKUP_ELSE_ADDRESS" property="pickupElseAddress"
+			jdbcType="VARCHAR" />
+		<result column="TEL" property="tel" jdbcType="VARCHAR" />
+		<result column="MOBILE" property="mobile" jdbcType="VARCHAR" />
+		<result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+		<result column="PRODUCT_CODE" property="productCode" jdbcType="VARCHAR" />
+		<result column="SALES_DEPARTMENT_NAME" property="salesDepartmentName"
+			jdbcType="VARCHAR" />
+		<result column="SALES_DEPARTMENT_CODE" property="salesDepartmentCode"
+			jdbcType="VARCHAR" />
+		<result column="CREATE_USER_CODE" property="createUserCode"
+			jdbcType="VARCHAR" />
+		<result column="CREATE_USER_NAME" property="createUserName"
+			jdbcType="VARCHAR" />
+		<result column="FLEET_CODE" property="fleetCode" jdbcType="VARCHAR" />
+		<result column="ORDER_VEHICLE_TIME" property="orderVehicleTime"
+			jdbcType="TIMESTAMP" />
+		<result column="ORDER_STATUS" property="orderStatus" jdbcType="VARCHAR" />
+		<result column="ORDER_TYPE" property="orderType" jdbcType="VARCHAR" />
+		<result column="EARLIEST_PICKUP_TIME" property="earliestPickupTime" jdbcType="TIMESTAMP" />
+		<result column="LATEST_PICKUP_TIME" property="latestPickupTime" jdbcType="TIMESTAMP" />
+		<result column="ORDER_SOURCE" property="orderSource" jdbcType="VARCHAR" />
+		
+	</resultMap>
+
+	<resultMap id="orderChangeResult"
+		type="com.deppon.foss.module.pickup.order.api.shared.domain.DispatchOrderChangeEntity">
+		<result column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="CHANGEID" property="changeId" jdbcType="VARCHAR" />
+		<result column="CHANGETIME" property="changeTime" jdbcType="TIMESTAMP" />
+		<result column="PRODUCT_CODE" property="productCode" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<select id="queryChange"
+		resultMap="orderChangeResult" 
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.dto.QueryOrderChangeDto">
+		SELECT /*模块：接送货-零担-预处理建议THREAD*/
+		   CO.ID           AS ID,
+		   CO.CHANGEID     AS CHANGEID,
+		   CO.CHANGETIME   AS CHANGETIME,
+		   CO.PRODUCT_CODE AS PRODUCT_CODE
+		FROM       
+				PKP.T_SRV_DISPATCH_ORDER_CHANGE CO
+				LEFT JOIN PKP.T_SRV_DISPATCH_ORDER D ON D.ID = CO.CHANGEID
+		WHERE D.PRODUCT_CODE not in 
+		<foreach collection="productCodes" item="item" index ="index" open="(" separator="," close=")">
+					#{item} 
+		</foreach>          
+	<![CDATA[ AND ROWNUM <=1000 ]]>
+	
+	</select>
+
+	<select id="queryChangebyJobId"
+		resultMap="orderChangeResult"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.dto.QueryOrderChangeDto">
+
+			SELECT /*模块：接送货-零担-自动调度*/
+		       CO.ID           AS ID,
+		       CO.CHANGEID     AS CHANGEID,
+		       CO.CHANGETIME   AS CHANGETIME,
+		       CO.PRODUCT_CODE AS PRODUCT_CODE
+			FROM       
+        		PKP.T_SRV_DISPATCH_ORDER_CHANGE CO
+        	WHERE   CO.PRODUCT_CODE not in 
+		<foreach collection="productCodes" item="item" index ="index" open="(" separator="," close=")">
+					#{item}
+		</foreach>          
+      				                   AND CO.JOB_ID = #{job_id,jdbcType=VARCHAR}
+	<![CDATA[   AND ROWNUM <=#{num,jdbcType=INTEGER}	]]>
+	</select>
+
+	<select id="queryExpressChange"
+		resultMap="orderChangeResult" 
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.dto.QueryOrderChangeDto">
+		SELECT /*模块：接送货-快递-预处理建议*/
+			 CO.ID           AS ID,
+			CO.CHANGEID     AS CHANGEID,
+			CO.CHANGETIME   AS CHANGETIME,
+			CO.PRODUCT_CODE AS PRODUCT_CODE
+		from       
+			PKP.T_SRV_DISPATCH_ORDER_CHANGE CO
+			LEFT JOIN PKP.T_SRV_DISPATCH_ORDER D ON D.ID = CO.CHANGEID
+				AND D.PRODUCT_CODE in 
+				<foreach collection="productCodes" item="item" index="index"
+					open="(" separator="," close=")">
+						#{item} 
+				</foreach> 
+		<![CDATA[ WHERE ROWNUM <= 1000 ]]>
+	</select>
+
+	<!--update zxy 20140716 AUTO-165 修改:新增查询字段 -->
+	<select id="queryChangeByExpressDto"
+		resultType="com.deppon.foss.module.pickup.order.api.shared.domain.DispatchOrderChangeEntity"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.dto.ExpressOrderDto">
+		SELECT /*模块：接送货-快递-自动调度*/CO.ID AS ID, CO.CHANGEID AS CHANGEID,CO.CHANGETIME as CHANGETIME,
+			CO.CITY_CODE AS CITYCODE  FROM
+		PKP.T_SRV_DISPATCH_ORDER_CHANGE CO
+		<where>
+			<!--添加对运输性质的过滤  包括快递和3.60特惠件-->
+			<if test="productCodes !=null and productCodes.size()>0">
+				AND  CO.PRODUCT_CODE in
+				<foreach collection="productCodes" item="item" index ="index" open="(" separator="," close=")">
+					#{item}
+				</foreach>
+			</if>
+			<if test="startTime != null">
+			AND CO.CHANGETIME <![CDATA[>=]]>
+				#{startTime,jdbcType=TIMESTAMP}
+			</if>
+			<if test="endTime != null">
+			AND CO.CHANGETIME <![CDATA[<]]>
+				#{endTime,jdbcType=TIMESTAMP}
+			</if>
+			<if test="cityCode != null and cityCode != '' ">
+				AND CO.CITY_CODE = #{cityCode,jdbcType=VARCHAR}
+			</if>
+			<if test="rownum != null and rownum != '' ">
+			AND ROWNUM <![CDATA[<]]>
+				#{rownum,jdbcType=VARCHAR}
+			</if>
+			<if test="jobId != null and jobId != '' ">
+				AND CO.JOB_ID = #{jobId,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</select>
+	
+	<!-- zxy 20140709 内部优化 新增:更新jobid -->
+	<update id="updateOrderChangeForJob"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.dto.QueryOrderChangeDto">
+		update PKP.T_SRV_DISPATCH_ORDER_CHANGE CO
+			set CO.JOB_ID = #{job_id,jdbcType=VARCHAR} 
+		<where>
+			<if test="productCodes !=null and productCodes.size()>0">
+				and  CO.PRODUCT_CODE not in
+				<foreach collection="productCodes" item="item" index ="index" open="(" separator="," close=")">
+					#{item}
+				</foreach>
+			</if>
+			<if test="num != null and num != '' ">
+			<![CDATA[	AND ROWNUM < #{num,jdbcType=INTEGER} ]]>
+			</if>
+			<![CDATA[ AND CO.CHANGETIME < SYSDATE ]]> 
+			AND CO.JOB_ID = 'N/A'
+		</where>
+	</update>
+	
+	<!-- zxy 20140709 内部优化 新增:更新快递jobid -->
+	<update id="updateOrderChangeForExpressJob"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.dto.ExpressOrderDto">
+		update PKP.T_SRV_DISPATCH_ORDER_CHANGE CO
+			set CO.JOB_ID = #{jobId,jdbcType=VARCHAR} 
+		<where>
+			<!--添加对运输性质的过滤  包括快递和3.60特惠件-->
+			<if test="productCodes !=null and productCodes.size()>0">
+				and  CO.PRODUCT_CODE in
+				<foreach collection="productCodes" item="item" index ="index" open="(" separator="," close=")">
+					#{item}
+				</foreach>
+			</if>
+			<if test="startTime != null">
+			AND CO.CHANGETIME <![CDATA[>=]]>
+				#{startTime,jdbcType=TIMESTAMP}
+			</if>
+			<if test="endTime != null">
+			AND CO.CHANGETIME <![CDATA[<]]>
+				#{endTime,jdbcType=TIMESTAMP}
+			</if>
+			<if test="cityCode != null and cityCode != '' ">
+				AND CO.CITY_CODE = #{cityCode,jdbcType=VARCHAR}
+			</if>
+			<if test="rownum != null and rownum != '' ">
+			<![CDATA[	AND ROWNUM < #{rownum,jdbcType=VARCHAR} ]]>
+			</if>
+			AND CO.JOB_ID = 'N/A'
+		</where>
+	</update>
+  
+	<delete id="deleteChange" parameterType="java.util.List">
+		delete /*模块：接送货-预处理建议job*/from PKP.T_SRV_DISPATCH_ORDER_CHANGE
+		where ID in
+		<foreach collection="list" item="item" index="index" open="("
+			separator="," close=")">
+			#{item.id}
+		</foreach>
+	</delete>
+
+	<delete id="deleteChangeByOrderID" parameterType="java.lang.String">
+		delete /*模块：接送货-线程预处理建议*/from
+		PKP.T_SRV_DISPATCH_ORDER_CHANGE
+		where CHANGEID = #{orderId,jdbcType=VARCHAR}
+	</delete>
+
+	<!-- update zxy 20140710 AUTO-134 修改:新增ORDER_STATUS,ORDER_TYPE -->
+	<!-- update daolin 20141210   新增EARLIEST_PICKUP_TIME,LATEST_PICKUP_TIME,ORDER_SOURCE -->
+	<select id="queryOrder" resultMap="orderResult">
+		select /*模块：接送货-预处理建议job*/ID, ORDER_NO, PICKUP_PROVINCE, PICKUP_CITY,
+		PICKUP_COUNTY,PICKUP_ELSE_ADDRESS,
+		TEL, MOBILE,CUSTOMER_NAME,
+		PRODUCT_CODE,CREATE_USER_CODE,CREATE_USER_NAME,SALES_DEPARTMENT_NAME,SALES_DEPARTMENT_CODE,FLEET_CODE,
+		ORDER_VEHICLE_TIME,ORDER_STATUS,ORDER_TYPE,EARLIEST_PICKUP_TIME,LATEST_PICKUP_TIME,ORDER_SOURCE
+		from PKP.T_SRV_DISPATCH_ORDER where ID in
+		<foreach collection="list" item="item" index="index" open="("
+			separator="," close=")">
+			#{item.changeId}
+		</foreach>
+	</select>
+
+	<insert id="insertChange"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.domain.DispatchOrderChangeEntity">
+		insert into /*模块：接送货-预处理建议job*/PKP.T_SRV_DISPATCH_ORDER_CHANGE
+		(id,changeid,changetime,job_id,product_code,city_code,earliest_pickup_time)
+		values (
+		#{id,jdbcType=VARCHAR},
+		#{changeId,jdbcType=VARCHAR},
+		#{changeTime,jdbcType=TIMESTAMP},
+		#{jobId,jdbcType=VARCHAR},
+		#{productCode,jdbcType=VARCHAR},
+		#{cityCode,jdbcType=VARCHAR},
+		#{earliestPickupTime,jdbcType=TIMESTAMP})
+	</insert>
+
+	<update id="batchUpdateChange">
+		update /*模块：接送货-自动调度处理-更新预处理订单表查询状态*/PKP.T_SRV_DISPATCH_ORDER_CHANGE
+		set JOB_ID = 'A'
+		where CHANGEID in
+		<foreach collection="list" item="item" index="index" open="("
+			separator="," close=")">
+			#{item.changeId}
+		</foreach>
+	</update>
+
+	<select id="queryByQueryOrderChangeDto" resultMap="orderChangeResult"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.dto.QueryOrderChangeDto">
+			SELECT /*模块：接送货-预处理建议THREAD*/
+		       CO.CHANGEID     AS CHANGEID,
+		       CO.CHANGETIME   AS CHANGETIME,
+		       CO.PRODUCT_CODE AS PRODUCT_CODE
+			FROM       
+        			PKP.T_SRV_DISPATCH_ORDER_CHANGE CO
+        	WHERE  
+        			/* cdl 1017 新增条件（运输性质为门-门、场-场 的转为人工处理*/
+        	        CO.PRODUCT_CODE NOT IN
+		<foreach collection="productCodes" item="item" index ="index" open="(" separator="," close=")">
+					 #{item}
+		</foreach>
+      				AND CO.JOB_ID = #{job_id,jdbcType=VARCHAR} 
+					/*14.7.15 gcl AUTO-164去掉rownum数量查询*/
+	</select>
+
+	<update id="updateDispatchOrderStatusById"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.domain.DispatchOrderChangeEntity">
+		update /*模块：接送货-自动调度处理-更新预处理订单表查询状态*/PKP.T_SRV_DISPATCH_ORDER_CHANGE
+		set JOB_ID = #{jobId,jdbcType=VARCHAR}
+		where CHANGEID =
+		#{changeId,jdbcType=VARCHAR}
+	</update>
+	
+	<select id="queryChanageIdByOrder" resultType="String" parameterType="String">
+			SELECT /*模块：接送货-预处理建议-查询预处理ID是否存在*/
+		       CO.ID  
+			FROM  PKP.T_SRV_DISPATCH_ORDER_CHANGE CO
+        	WHERE  CO.CHANGEID = #{orderId,jdbcType=VARCHAR}           
+	</select>
+</mapper>

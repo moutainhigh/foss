@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.pda.bdm.module.foss.login.server.dao.impl.LoginDao">
+	
+	 <resultMap id="deptMap" type="com.deppon.pda.bdm.module.core.shared.domain.DeptEntity">
+    	<id property="id" column="ID"/>
+    	<result property="deptCode" column="DEPTCODE"/>
+        <!-- <result property="deptNo" column="DEPTNO"/>  -->
+    	<result property="deptName" column="DEPTNAME"/>
+    	<result property="phoneAndFax" column="PHONEANDFAX"/>
+    	<result property="deptStandCode" column="DEPTSTANDCODE"/>
+    	<result property="deptAttribute" column="DEPTATTRIBUTE"/>
+    	<result property="isBizUnit" column="ISBIZUNIT"/>
+    	<result property="deptProvince" column="DEPTPROVINCE"/>
+    	<result property="deptCity" column="DEPTCITY"/>
+    	<result property="deptCounty" column="DEPTCOUNTY"/>
+    	<result property="deptAddress" column="DEPTADDRESS"/>
+    	<!-- <result property="status" column="STATUS"/> -->
+    	<result property="isAirAssembly" column="ISAIRASSEMBLY"/>
+    	<result property="isCarAssembly" column="ISCARASSEMBLY"/>
+    	<result property="isOutAssembly" column="ISOUTASSEMBLY"/>
+    	<result property="isOutStorage" column="ISOUTSTORAGE"/>
+    	<result property="isTransfer" column="ISTRANSFER"/>
+    	<result property="isArrived" column="ISARRIVED"/>
+    	<result property="operFlag" column="OPERFLAG"/>
+    	<result property="updTime" column="UPDTIME"/>
+    	<result property="isActive" column="ISACTIVE"/>
+ 		<result property="activeTime" column="ACTIVETIME"/>
+    	<result property="version" column="VERSION"/>
+    	<result property="parentOrgCode" column="PARENTORGCODE"/>
+    	<result property="isstation" column="ISSTATION"/>
+    	<result property="isTopFleet" column="ISTOPFLEET"/>
+    </resultMap>
+    <!-- 通过部门编码获取部门 -->
+	<select id="getEntityByCode" resultMap="deptMap" parameterType="string">
+    	<![CDATA[
+    	SELECT
+    		ID,
+	    	DEPTCODE,
+	    	DEPTNAME,
+	    	PHONEANDFAX,
+	    	DEPTSTANDCODE,
+	    	DEPTATTRIBUTE,
+	    	ISBIZUNIT,
+	    	DEPTPROVINCE,
+	    	DEPTCITY,
+	    	DEPTCOUNTY,
+	    	'' as DEPTADDRESS,
+	    	ISAIRASSEMBLY,
+	    	ISCARASSEMBLY,
+	    	ISOUTASSEMBLY,
+	    	ISOUTSTORAGE,
+	    	ISTRANSFER,
+	    	ISARRIVED,
+	    	OPERFLAG,
+	    	VERSION,
+	    	to_char(UPDTIME,'yyyy-MM-dd hh24:mi:ss') UPDTIME,
+	    	ISACTIVE,
+	    	to_char(ACTIVETIME,'yyyy-MM-dd hh24:mi:ss') ACTIVETIME,
+	    	PARENTORGCODE,
+	    	ISSTATION,
+	    	ISTOPFLEET
+    	FROM t_svr_dept
+    	WHERE DEPTCODE = #{deptCode,jdbcType=VARCHAR}
+    	and OPERFLAG <> '3'
+    	]]>
+    </select>
+	
+	<!-- <select id="checkUserLogin" parameterType="com.deppon.pda.model.PdaLoginInfo" 
+		resultType="int"> select count(*) from T_SVR_LOGIN where userCode = #{userCode} 
+		</select> <select id="checkUserPdaLogin" parameterType="com.deppon.pda.model.PdaLoginInfo" 
+		resultType="int"> select count(*) from T_SVR_LOGIN where userCode = #{userCode} 
+		and pdaCode = #{pdaCode} </select> <insert id="saveLoginInfo" parameterType="com.deppon.pda.model.PdaLoginInfo"> 
+		insert into T_SVR_LOGIN(id,userCode,pdaCode) values(#{id},#{userCode},#{pdaCode}) 
+		</insert> -->
+
+	<!-- <select id="login" parameterType="com.deppon.pda.bdm.module.foss.login.shared.domain.PdaLoginInfo" 
+		resultType="int"> select count(*) from T_SVR_USER where EMPCODE = #{userCode,jdbcType=VARCHAR} 
+		AND PASSWORD = #{password,jdbcType=VARCHAR} </select> -->
+	<!-- 更具用户工号获取对应的权限 -->
+	<select id="getUserPrivilege" parameterType="java.lang.String"
+		resultType="com.deppon.pda.bdm.module.foss.login.shared.domain.PrivilegeEntity">
+	 <![CDATA[
+	 
+		select distinct p.privilegecode, p.privilegename, p.sortby as privilegeIndex, p.remark
+		 from t_svr_privilege p
+		inner join t_svr_role_privilege rp on rp.privilegecode = p.privilegecode
+		inner join t_svr_role r on rp.roleid = r.rolebasnumber
+		inner join t_svr_user_role ur on ur.roleid = r.rolebasnumber
+		inner join t_svr_user u on u.id = ur.userid
+		where u.empcode = #{userCode}
+		  and u.operflag <> '3'
+		  and p.isbam = '0'
+		  and p.status = '1'
+		order by p.sortby asc
+ ]]>
+	</select>
+
+
+	<!-- 根据部门ID获取该部门下所有员工信息 -->
+	<select id="getUserInfoByDeptId" parameterType="java.lang.String"
+		resultType="com.deppon.pda.bdm.module.foss.login.shared.domain.UserInfoEntity">
+		 <![CDATA[
+		 		SELECT 
+		 			EMPCODE empCode,
+		 			USERNAME empName
+		 		FROM 
+		 			T_SVR_USER
+		 		WHERE DEPTID = #{deptId,jdbcType=VARCHAR}
+		 		AND OPERFLAG <> '3'
+	 		]]>
+	</select>
+
+	<!-- 获取长途目的站 -->
+	<select id="getLongDestDepts" parameterType="map"
+		resultType="com.deppon.pda.bdm.module.foss.login.shared.domain.DestDeptInfoEntity">
+		 <![CDATA[
+					  select distinct p.deptcode as deptCode,p.deptname as deptName,
+					                  (case when p.deptsort='LD' then '3' else '2' end) as deptType
+					    from t_svr_specialline s
+                       inner join t_svr_business_partner p on s.arrivedeptid = p.id
+                       where (
+                       		 s.departdeptid =
+                             #{bigDeptId,jdbcType=VARCHAR}  or s.departdeptid =
+                             #{deptId,jdbcType=VARCHAR} 
+                       )
+                         and s.operflag <> '3'
+                       
+                      union
+                      select distinct d.deptcode as deptCode, d.deptname as deptName,
+                             (case  d.isexpress_branch when 'Y' then '4' else  '1' end) as deptType
+                        from t_svr_specialline s
+                       inner join t_svr_dept d on s.arrivedeptid = d.id
+                       where (
+                       		 s.departdeptid =
+                             #{bigDeptId,jdbcType=VARCHAR}  or s.departdeptid =
+                             #{deptId,jdbcType=VARCHAR} 
+                       )
+                         and s.operflag <> '3'
+                      
+                     union     
+                       select distinct p.deptcode as deptCode,p.deptname as deptName,
+					                  (case when p.deptsort='LD' then '3' else '2' end) as deptType
+					    from t_svr_exp_specialline ep
+                       inner join t_svr_business_partner p on ep.arrivedeptid = p.id
+                       where (
+                       		 ep.departdeptid =
+                             #{bigDeptId,jdbcType=VARCHAR}  or ep.departdeptid =
+                             #{deptId,jdbcType=VARCHAR} 
+                       )
+                         and ep.operflag <> '3'                          
+                      union
+                      select distinct d.deptcode as deptCode, d.deptname as deptName,
+                            (case  d.isexpress_branch when 'Y' then '4' else  '1' end) as deptType
+                        from t_svr_exp_specialline ep
+                       inner join t_svr_dept d on ep.arrivedeptid = d.id
+                       where (
+                       		 ep.departdeptid =
+                             #{bigDeptId,jdbcType=VARCHAR}  or ep.departdeptid =
+                             #{deptId,jdbcType=VARCHAR} 
+                       )
+                         and ep.operflag <> '3'
+                             
+	 		]]>
+	</select>
+	<!-- 获取短途目的站 -->
+	<select id="getShortDestDepts" parameterType="map"
+		resultType="com.deppon.pda.bdm.module.foss.login.shared.domain.DestDeptInfoEntity">
+		 <![CDATA[
+		 	select distinct d.deptcode as deptCode, d.deptname as deptName,'' as deptType
+              from t_svr_departassemblydept t
+                left join t_svr_dept d on d.id = t.departdeptid
+             where 
+            t.operflag = '1' and
+                   d.isarrived = '1'                 
+                 and t.linesort = 'BSE_LINE_SORT_TARGET'
+                 and (t.assemblydeptid =  #{bigDeptId,jdbcType=VARCHAR}  
+                 or t.assemblydeptid = #{deptId,jdbcType=VARCHAR}
+                              )
+                    UNION        
+                    select distinct d.deptcode as deptCode, d.deptname as deptName,'' as deptType
+              from t_svr_exp_departassemblydept et
+                left join t_svr_dept d on d.id = et.departdeptid
+             where et.operflag <> '3'
+                 and d.isarrived = '1'
+                 and et.linesort = 'BSE_LINE_SORT_TARGET'
+                 and (et.assemblydeptid =  #{bigDeptId,jdbcType=VARCHAR}  
+                 or et.assemblydeptid =
+                             #{deptId,jdbcType=VARCHAR} )
+                             
+		 
+	
+	 		]]>
+	</select>
+	<!-- 获取配载部门code -->
+	<select id="getDepartAssemblyDept" parameterType="java.lang.String"
+		resultType="com.deppon.pda.bdm.module.foss.login.shared.domain.DepartAssemblyDeptEntity">
+		 <![CDATA[
+		 	 	 
+		 	 select 
+		 		et.id,
+		 		et.departdeptid,
+		 		et.assemblydeptid,
+		 		et.departdeptcode,
+		 		et.assemblydeptcode
+		 	 from t_svr_exp_departassemblydept  et
+		 	 where et.departdeptcode = #{deptId,jdbcType=VARCHAR} 
+		 	 and et.operflag = 1 
+		 	 and et.assemblytype = 'TRANS_VEHICLE'
+		 	 and et.isdefault = 'Y'
+		 	 and et.linesort = 'BSE_LINE_SORT_SOURCE'
+		 	 
+	 		]]>
+	</select>
+	
+	<!-- 获取营业部装车目的站    6 对于快递来说  是点部到分部。目前还没有使用-->
+	<select id="getSalesShortDestDepts" parameterType="map"
+		resultType="com.deppon.pda.bdm.module.foss.login.shared.domain.DestDeptInfoEntity">
+		 <![CDATA[
+		 			select distinct d.deptcode as deptCode, d.deptname as deptName,
+		 			  (case  d.isexpress_branch when 'Y' then '6' else  '' end) as deptType
+ 						 from t_svr_departassemblydept t
+ 							 left join t_svr_dept d on d.id = t.assemblydeptid
+						 where t.operflag <> '3'
+   							and t.linesort = 'BSE_LINE_SORT_SOURCE'  							
+   							and (t.departdeptid =  #{bigDeptId,jdbcType=VARCHAR}  
+   							or t.departdeptid =
+                            #{deptId,jdbcType=VARCHAR}  )
+                       
+                       union 
+                       
+                       select distinct d.deptcode as deptCode, d.deptname as deptName,
+                          (case  d.isexpress_branch when 'Y' then '6' else  '' end)  as deptType
+ 						 from t_svr_exp_departassemblydept et
+ 							 left join t_svr_dept d on d.id = et.assemblydeptid
+						 where et.operflag <> '3'
+   							and et.linesort = 'BSE_LINE_SORT_SOURCE'
+   							and (et.departdeptid =  #{bigDeptId,jdbcType=VARCHAR}  
+   							or et.departdeptid =
+                            #{deptId,jdbcType=VARCHAR}  )
+                            
+                            
+	 		]]>
+	</select>
+	
+	<!-- 通过车队code获取对应外场code -->
+	<select id="getOutStorageCode" parameterType="string"
+		resultType="string">
+		 <![CDATA[
+		 			SELECT td.transfercenter 
+		 			FROM t_svr_trans_department td 
+		 			WHERE td.code = #{platoonCode}  
+		 			AND td.operflag = '1'
+	 		]]>
+	</select>
+	<!-- 查找外场始发驻地营业部 -->
+	<select id="querySourceStaionSalesDept" parameterType="string"
+		resultType="com.deppon.pda.bdm.module.core.shared.domain.DeptEntity">
+		 <![CDATA[
+		 select t.deptcode as deptCode,
+		   deptprovince  as deptProvince,
+		    deptcity  as deptCity,
+		    deptcounty  as deptCounty
+		  from t_svr_dept t
+		 where t.operflag = 1
+		   and t.leave = 'Y'
+		   and t.isstation = 'Y'
+		   and t.transfercenter =#{transferCode,jdbcType=VARCHAR}
+	 		]]>
+	</select>
+	
+  <!-- ==================   零担        ====================== -->
+	
+	
+	<!-- 查找部门级别时效区域 -->
+	<select id="queryEffRegionOrg" parameterType="string"
+		resultType="string">
+		 <![CDATA[
+		   select effective_region_code
+   				from t_base_effective_region_org 
+  				where operflag = '1'
+    			and include_org_code =#{sourceStaionSalesDept,jdbcType=VARCHAR}
+	 		]]>
+	</select>
+	<!-- 通过区县编码查找时效区域编码查找  零担 -->
+	<select id="queryRegionByCounty" parameterType="string"
+		resultType="string">
+		<![CDATA[ 
+		 select code from t_base_effective_region 
+         where operflag='1'
+         and county_code=#{deptCounty,jdbcType=VARCHAR}
+  		]]>
+	</select>
+	<!-- 通过城市编码找时效区域编码查找    零担-->
+	<select id="queryRegionByCity" parameterType="string"
+		resultType="string">
+		<![CDATA[ 
+		select code from t_base_effective_region 
+         where operflag='1'
+         and city_code=#{deptCity,jdbcType=VARCHAR}
+         and county_code is null
+  		]]>
+	</select>
+	
+	<!-- 通过省编码找时效区域编码查找   零担-->
+	<select id="queryRegionByProvince" parameterType="string"
+		resultType="string">
+		<![CDATA[ 
+		select code from t_base_effective_region 
+         where operflag='1'
+         and prov_code=#{deptProvince,jdbcType=VARCHAR}
+         and city_code is null
+  		]]>
+	</select>
+	
+	<!-- ==================   快递         ====================== -->
+	
+	<!-- 查找部门级别时效区域    快递-->
+	<select id="queryExpEffRegionOrg" parameterType="string"
+		resultType="string">
+		 <![CDATA[
+		   select t_srv_express_eff_region_code
+   				from t_base_express_eff_region_org 
+  				where operflag = '1'
+    			and include_org_code =#{sourceStaionSalesDept,jdbcType=VARCHAR}
+	 		]]>
+	</select>
+	
+	
+	<!-- 通过区县编码查找时效区域编码查找 快递 -->
+	<select id="queryExpRegionByCounty" parameterType="string"
+		resultType="string">
+		<![CDATA[ 
+		 select code from t_base_express_eff_region 
+         where operflag='1'
+         and county_code=#{deptCounty,jdbcType=VARCHAR}
+  		]]>
+	</select>
+	<!-- 通过城市编码找时效区域编码查找    快递-->
+	<select id="queryExpRegionByCity" parameterType="string"
+		resultType="string">
+		<![CDATA[ 
+		select code from t_base_express_eff_region 
+         where operflag='1'
+         and city_code=#{deptCity,jdbcType=VARCHAR}
+         and county_code is null
+  		]]>
+	</select>
+	
+	<!-- 通过省编码找时效区域编码查找   快递-->
+	<select id="queryExpRegionByProvince" parameterType="string"
+		resultType="string">
+		<![CDATA[ 
+		select code from t_base_express_eff_region 
+         where operflag='1'
+         and prov_code=#{deptProvince,jdbcType=VARCHAR}
+         and city_code is null
+  		]]>
+	</select>
+
+	<!-- 通过营业部理货员工号查询是相关营业部映射的快递分部编码-->
+	<select id="getExpressBranch" parameterType="string"
+		resultType="string">
+		<![CDATA[ 
+		select e.EXPRESS_BRANCH_CODE
+		  from t_svr_user c
+		 inner join t_svr_dept dp 
+		            on dp.id = c.deptid
+		            and dp.operflag = 1
+		 inner join T_SVR_EXPRESSBRANCH_SALES_DEPT e 
+		         on e.SALESDEPT_CODE =dp.deptcode
+		            and e.operflag = 1
+		 where c.operflag = 1
+		   and c.empcode = #{userCode,jdbcType=VARCHAR}        
+  		]]>
+	</select>
+	
+	
+	<update id="updatePdaSimCardCode" parameterType="com.deppon.pda.bdm.module.core.shared.domain.PdaLoginInfo">
+		UPDATE  T_SVR_DEVICE SET SIMCARDCODE=#{pdaSimIMSI,jdbcType=VARCHAR} 
+		WHERE dvccode = #{pdaCode,jdbcType=VARCHAR}
+	</update>
+</mapper>

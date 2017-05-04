@@ -1,0 +1,149 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.salesExpenseMappingEntity">
+
+	<resultMap id="salesExpenseMappingResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.domain.SalesExpenseMappingEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="BUSINESS_DEPARTMENT_CODE" property="businessDepartmentCode" jdbcType="VARCHAR" />
+		<result column="BUSINESS_DEPARTMENT_NAME" property="businessDepartmentName" jdbcType="VARCHAR" />
+		<result column="BUDGET_DEPARTMENT_CODE" property="budgetDepartmentCode" jdbcType="VARCHAR" />
+		<result column="BUDGET_DEPARTMENT_NAME" property="budgetDepartmentName" jdbcType="VARCHAR" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<sql id="Base_Column_List">
+		ID,
+		BUSINESS_DEPARTMENT_CODE,
+		BUSINESS_DEPARTMENT_NAME,
+		BUDGET_DEPARTMENT_CODE,
+		BUDGET_DEPARTMENT_NAME,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE,
+		CREATE_TIME,
+		MODIFY_TIME,
+		ACTIVE
+	</sql>
+
+
+	<!-- 插入营业部与外请车费用承担部门映射信息 -->
+	<insert id="addSalesExpenseMapping"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SalesExpenseMappingEntity">
+		
+		<![CDATA[
+			INSERT/** 综合:营业部与外请车费用承担部门映射信息 **/ INTO bse.T_BAS_SALES_EXPENSE_MAPPING 	(
+		]]>
+		<include refid="Base_Column_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR},
+		#{businessDepartmentCode,jdbcType=VARCHAR},
+		#{businessDepartmentName,jdbcType=VARCHAR},
+		#{budgetDepartmentCode,jdbcType=VARCHAR},
+		#{budgetDepartmentName,jdbcType=VARCHAR},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR},
+		#{createTime,jdbcType=TIMESTAMP},
+		#{modifyTime,jdbcType=TIMESTAMP},
+		#{active,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	<!-- 根据前台传的参数动态精确查询  -->
+	<sql id="querySalesExpenseMapping_Conditions">
+		<where>
+		<if test="businessDepartmentCode != null and businessDepartmentCode != ''">
+			AND T.BUSINESS_DEPARTMENT_CODE = #{businessDepartmentCode,jdbcType=VARCHAR}
+		</if>
+		<if test="budgetDepartmentCode != null and budgetDepartmentCode != ''">
+			AND T.BUDGET_DEPARTMENT_CODE = #{budgetDepartmentCode,jdbcType=DECIMAL}
+		</if>
+			AND T.ACTIVE = #{active,jdbcType=CHAR}
+		</where>
+	</sql>
+	
+	<!-- 查询列-->
+	<sql id="querySalesExpenseMapping_Params">
+		T.ID,
+		T.BUSINESS_DEPARTMENT_CODE,
+		T.BUSINESS_DEPARTMENT_NAME,
+		T.BUDGET_DEPARTMENT_CODE,
+		T.BUDGET_DEPARTMENT_NAME,
+		T.CREATE_USER_CODE,
+		T.MODIFY_USER_CODE,
+		T.CREATE_TIME,
+		T.MODIFY_TIME,
+		T.ACTIVE
+	</sql>
+	<!-- 动态查询营业部与外请车费用承担部门映射信息总条数 -->
+	<select id="queryTotalByCondition" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.SalesExpenseMappingQueryDto" >
+		<![CDATA[
+			SELECT
+			/** 综合:营业部与外请车费用承担部门映射信息总条数 **/
+			COUNT(*)
+		FROM bse.T_BAS_SALES_EXPENSE_MAPPING T 
+		]]>
+		<include refid="querySalesExpenseMapping_Conditions" />
+	</select>
+	
+	
+	<!-- 动态查询营业部与外请车费用承担部门映射信息-->
+	<select id="querySalesExpenseMappingByCondition" resultMap="salesExpenseMappingResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.SalesExpenseMappingQueryDto" >
+		  SELECT 
+		  /** 综合:营业部与外请车费用承担部门映射信息 **/
+		<include refid="querySalesExpenseMapping_Params" />
+		<![CDATA[
+	    	FROM bse.T_BAS_SALES_EXPENSE_MAPPING T 
+		]]>
+		<include refid="querySalesExpenseMapping_Conditions" />
+	</select>
+	
+	
+	<!--修改营业部与外请车费用承担部门映射信息 -->
+
+	<update id="updateOrDeleteSalesExpenseMapping" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SalesExpenseMappingEntity">
+	UPDATE /*营业部与外请车费用承担部门映射信息*/ bse.T_BAS_SALES_EXPENSE_MAPPING T
+	SET T.ACTIVE = #{active,jdbcType=CHAR},
+	T.MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP},
+	T.MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR}
+	WHERE T.ID = #{id,jdbcType=VARCHAR}
+	</update>
+	
+	
+	<!-- 根据营业部编码、预算承担部门编码查询-->
+	<select id="querySalesExpenseMappingBySubAndType" resultMap="salesExpenseMappingResultMap" parameterType="map" >
+	   SELECT /* 综合：根据营业部编码、预算承担部门编码查询*/
+	      <include refid="querySalesExpenseMapping_Params" />
+	    	    FROM bse.T_BAS_SALES_EXPENSE_MAPPING T 
+      			where  T.BUSINESS_DEPARTMENT_CODE = #{businessDepartmentCode,jdbcType=VARCHAR}
+      			AND T.BUDGET_DEPARTMENT_CODE=#{budgetDepartmentCode,jdbcType=VARCHAR}   
+      		    AND t.active =#{active,jdbcType=VARCHAR}
+	</select>
+
+	<!-- 根据营业部编码查询-->
+	<select id="queryByBusinessDepart" resultMap="salesExpenseMappingResultMap" parameterType="map" >
+	   SELECT /* 综合：根据营业部编码查询*/
+	      <include refid="querySalesExpenseMapping_Params" />
+	    	    FROM bse.T_BAS_SALES_EXPENSE_MAPPING T 
+      			where  T.BUSINESS_DEPARTMENT_CODE = #{businessDepartmentCode,jdbcType=VARCHAR}
+      		    AND t.active =#{active,jdbcType=VARCHAR}
+	</select>
+
+
+	<!-- 根据id查询重分类基础信息-->
+	<select id="queryInfosByIds" resultMap="salesExpenseMappingResultMap" parameterType="map" >
+	   	SELECT /* 综合：根据id查询重分类基础信息*/
+	   	<include refid="querySalesExpenseMapping_Params" />
+	     FROM bse.T_BAS_SALES_EXPENSE_MAPPING T 
+		WHERE ID IN 
+			<foreach collection="ids"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+			</foreach>
+	</select>
+</mapper>

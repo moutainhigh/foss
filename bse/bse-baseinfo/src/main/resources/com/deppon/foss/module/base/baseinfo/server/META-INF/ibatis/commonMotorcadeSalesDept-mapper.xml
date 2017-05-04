@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- salesMotorcade salesMotorcade-mapper.xml 营业部车队关系 -->
+<mapper namespace="foss.bse.bse-baseinfo.commonMotorcadeSalesDept">
+
+	<resultMap id="salesMotorcadeQueryResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.SalesMotorcadeEntity">
+		<result property="id" column="ID" jdbcType="VARCHAR" />
+		<result property="virtualCode" column="VIRTUAL_CODE" jdbcType="VARCHAR" />
+		<result property="salesdeptCode" column="SALESDEPT_CODE"
+			jdbcType="VARCHAR" />
+		<result property="motorcadeCode" column="MOTORCADE_CODE"
+			jdbcType="VARCHAR" />
+		<result property="salesdeptName" column="SALESDEPT_NAME"
+			jdbcType="VARCHAR" />
+		<result property="motorcadeName" column="MOTORCADE_NAME"
+			jdbcType="VARCHAR" />
+		<result property="createDate" column="CREATE_TIME" jdbcType="TIMESTAMP" />
+		<result property="modifyDate" column="MODIFY_TIME" jdbcType="TIMESTAMP" />
+		<result property="active" column="ACTIVE" jdbcType="CHAR" />
+		<result property="createUser" column="CREATE_USER_CODE"
+			jdbcType="VARCHAR" />
+		<result property="modifyUser" column="MODIFY_USER_CODE"
+			jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 以下全为查询 -->
+
+	<sql id="query_salesMotorcade_param">
+		A.ID AS ID, /** ID **/
+		A.VIRTUAL_CODE AS VIRTUAL_CODE, /**
+		虚拟编码 **/
+		A.SALESDEPT_CODE AS SALESDEPT_CODE, /** 营业部编码 **/
+		A.MOTORCADE_CODE AS MOTORCADE_CODE, /** 车队编码 **/
+		C.NAME AS
+		SALESDEPT_NAME,
+		D.NAME AS MOTORCADE_NAME,
+		A.CREATE_TIME AS
+		CREATE_TIME,
+		/** 创建时间 **/
+		A.MODIFY_TIME AS MODIFY_TIME, /** 更新时间 **/
+		A.ACTIVE AS
+		ACTIVE, /** 是否启用 **/
+		A.CREATE_USER_CODE AS CREATE_USER_CODE, /** 创建人
+		**/
+		A.MODIFY_USER_CODE AS MODIFY_USER_CODE /** 更新人 **/
+	</sql>
+
+	<!-- 根据entity精确查询的查询条件 ，如果属性为空，则此属性不作为条件 -->
+	<sql id="query_querySalesMotorcadeExactByEntity_condition">
+		<where>
+			<if test="id!=null and id != ''">
+				AND A.ID = #{id,jdbcType=VARCHAR}
+			</if>
+			<if test="virtualCode!=null and virtualCode != ''">
+				AND A.VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR}
+			</if>
+			<if test="salesdeptCode!=null and salesdeptCode != ''">
+				AND A.SALESDEPT_CODE = #{salesdeptCode,jdbcType=VARCHAR}
+			</if>
+			<if test="salesdeptName and salesdeptName != ''">
+				AND C.NAME like CONCAT(CONCAT('%',
+				#{salesdeptName,jdbcType=VARCHAR}),
+				'%')
+			</if>
+			<if test="motorcadeCode!=null and motorcadeCode != ''">
+				AND A.MOTORCADE_CODE = #{motorcadeCode,jdbcType=VARCHAR}
+			</if>
+			AND A.ACTIVE = #{active,jdbcType=CHAR}
+		</where>
+	</sql>
+	<!-- 根据实体动态条件精确查询,如果属性的值为null或者空白则无效： -->
+	<select id="querySalesMotorcadeByEntity" resultMap="salesMotorcadeQueryResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SalesMotorcadeEntity">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据实体动态条件精确查询,如果属性的值为null或者空白则无效 **/
+		]]>
+		<include refid="query_salesMotorcade_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_SALESDEPT_MOTORCADE A 
+	    		LEFT JOIN BSE.T_BAS_ORG C ON C.CODE=A.SALESDEPT_CODE AND C.ACTIVE=#{active,jdbcType=CHAR} 
+	    		LEFT JOIN BSE.T_BAS_ORG D ON D.CODE=A.MOTORCADE_CODE AND D.ACTIVE=#{active,jdbcType=CHAR} 
+		]]>
+		<include refid="query_querySalesMotorcadeExactByEntity_condition" />
+	</select>
+	<!-- 根据实体动态条件精确查询总数,如果属性的值为null或者空白则无效： -->
+	<select id="querySalesMotorcadeByEntityCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SalesMotorcadeEntity">
+		<![CDATA[
+			 SELECT/** 综合:根据实体动态条件精确查询总数,如果属性的值为null或者空白则无效 **/ COUNT(*) 
+	    		FROM BSE.T_BAS_SALESDEPT_MOTORCADE A 
+	    		LEFT JOIN BSE.T_BAS_ORG C ON C.CODE=A.SALESDEPT_CODE AND C.ACTIVE=#{active,jdbcType=CHAR} 
+	    		LEFT JOIN BSE.T_BAS_ORG D ON D.CODE=A.MOTORCADE_CODE AND D.ACTIVE=#{active,jdbcType=CHAR} 
+		]]>
+		<include refid="query_querySalesMotorcadeExactByEntity_condition" />
+	</select>
+</mapper>

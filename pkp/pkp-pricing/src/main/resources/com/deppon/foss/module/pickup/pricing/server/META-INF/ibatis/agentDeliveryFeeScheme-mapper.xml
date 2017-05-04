@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.pkp.pkp-pricing.agentDeliveryFeeScheme">
+	<resultMap type="com.deppon.foss.module.pickup.pricing.api.shared.domain.AgentDeliveryFeeSchemeEntity" id="agentDeliveryFeeSchemeEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="SCHEMENAME" property="schemeName" jdbcType="VARCHAR" />
+		<result column="TRANSPORTTYPE" property="transportType" jdbcType="VARCHAR" />
+		<result column="AGENTDEPTNAME" property="agentDeptName" jdbcType="VARCHAR" />
+		<result column="AGENTDEPTCODE" property="agentDeptCode" jdbcType="VARCHAR" />
+		<result column="REMARK" property="remark" jdbcType="VARCHAR" />
+		<result column="CREATEDATE" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="CREATEUSER" property="createUser" jdbcType="VARCHAR" />
+		<result column="UPDATEDATE" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="UPDATEUSER" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="VERSIONNO" property="versionNo" jdbcType="VARCHAR" />
+	</resultMap>
+	<resultMap type="com.deppon.foss.module.pickup.pricing.api.shared.domain.AgentDeliveryFeeEntity" id="agentDeliveryFeeEntity">
+		<result column="SCHEMEID" property="schemeId" jdbcType="VARCHAR" />
+		<result column="STARTPOINT" property="startPoint" jdbcType="DECIMAL" />
+		<result column="TERMINALPOINT" property="terminalPoint" jdbcType="DECIMAL" />
+		<result column="LOWESTPRICE" property="lowestPrice" jdbcType="INTEGER" />
+		<result column="CHARGESTANDARD" property="chargeStandard" jdbcType="DECIMAL" />
+		<result column="PRICINGMANNER" property="pricingManner" jdbcType="VARCHAR" />
+		<result column="VERSIONNO" property="versionNo" jdbcType="DECIMAL" />
+	</resultMap>
+	<sql id="Scheme_Column_List">
+		ID,SCHEMENAME,TRANSPORTTYPE,AGENTDEPTNAME,AGENTDEPTCODE,REMARK,CREATEDATE,CREATEUSER,UPDATEDATE,UPDATEUSER,VERSIONNO
+	</sql>
+	<sql id="Fee_Column_List">
+		SCHEMEID,STARTPOINT,TERMINALPOINT,LOWESTPRICE,CHARGESTANDARD,PRICINGMANNER,VERSIONNO
+	</sql>
+	<sql id="queryWhere">
+		<where>
+			<if test="schemeName != null and schemeName != ''">
+				SCHEMENAME = #{schemeName,jdbcType=VARCHAR}
+			</if>
+			<if test="vehicleType != null and vehicleType != ''">
+				and AGENTDEPTCODE = #{agentDeptCode,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</sql>
+	
+	<!-- 	根据方案ID查询偏线代理送货费方案 -->
+	<select id="queryAgentDeliveryFeeSchemeById" parameterType="string" resultMap="agentDeliveryFeeSchemeEntity">
+		SELECT /*根据目的站编码查询偏线代理送货费方案 */
+       T.ID,
+       T.SCHEMENAME,
+       T.TRANSPORTTYPE,
+       BRANCH.AGENT_DEPT_NAME AGENTDEPTNAME,
+       T.AGENTDEPTCODE,
+       T.REMARK,
+       T.CREATEDATE,
+       T.CREATEUSER,
+       T.UPDATEDATE,
+       T.UPDATEUSER,
+       T.VERSIONNO  		 
+		  FROM PKP.T_SRV_AGENTDELIVERYFEE_SCHEME T
+	 	  LEFT JOIN BSE.T_BAS_OUTER_BRANCH BRANCH
+	     ON BRANCH.AGENT_DEPT_CODE = T.AGENTDEPTCODE 
+	     <where>
+				T.ID = #{schemeId,jdbcType=VARCHAR} AND BRANCH.ACTIVE='Y'
+		</where>			
+	</select>
+		<!-- 	@author:wutao ;根据目的站Code查询，验证是否重复 -->
+	<select id="queryAgentDeliveryFeeSchemeByDeptCode" parameterType="java.util.HashMap" resultMap="agentDeliveryFeeSchemeEntity">
+		SELECT /*根据目的站编码查询偏线代理送货费方案 */
+       T.ID,
+       T.SCHEMENAME,
+       T.TRANSPORTTYPE,
+       BRANCH.AGENT_DEPT_NAME AGENTDEPTNAME,
+       T.AGENTDEPTCODE,
+       T.REMARK,
+       T.CREATEDATE,
+       T.CREATEUSER,
+       T.UPDATEDATE,
+       T.UPDATEUSER,
+       T.VERSIONNO  		 
+		  FROM PKP.T_SRV_AGENTDELIVERYFEE_SCHEME T
+	 	  LEFT JOIN BSE.T_BAS_OUTER_BRANCH BRANCH
+	     ON BRANCH.AGENT_DEPT_CODE = T.AGENTDEPTCODE 
+	     WHERE BRANCH.ACTIVE = 'Y' 
+			<if test="agentDeptCode != null and agentDeptCode != ''">
+				and T.AGENTDEPTCODE = #{agentDeptCode,jdbcType=VARCHAR}
+			</if>
+	</select>
+<!-- 	根据方案名称查询偏线代理送货费方案 -->
+	<select id="queryAgentDeliveryFeeSchemeByName" parameterType="string" resultMap="agentDeliveryFeeSchemeEntity">
+		<![CDATA[
+			SELECT
+			/** 接送货-价格:根据名称查询偏线代理送货费方案  **/
+		]]>
+		<include refid="Scheme_Column_List" />
+		<![CDATA[
+			FROM PKP.T_SRV_AGENTDELIVERYFEE_SCHEME T
+		]]>
+		<where>
+				SCHEMENAME = #{schemeName,jdbcType=VARCHAR}
+		</where>
+	</select>
+	
+	<!-- 	根据参数查询偏线代理送货费方案 -->	
+	<select id="queryAgentDeliveryFeeSchemeByParams" parameterType="java.util.HashMap"  resultMap="agentDeliveryFeeSchemeEntity">
+		SELECT /*根据目的站编码查询偏线代理送货费方案 */
+       T.ID,
+       T.SCHEMENAME,
+       T.TRANSPORTTYPE,
+       BRANCH.AGENT_DEPT_NAME AGENTDEPTNAME,
+       T.AGENTDEPTCODE,
+       T.REMARK,
+       T.CREATEDATE,
+       T.CREATEUSER,
+       T.UPDATEDATE,
+       T.UPDATEUSER,
+       T.VERSIONNO  		 
+		  FROM PKP.T_SRV_AGENTDELIVERYFEE_SCHEME T
+	 	  LEFT JOIN BSE.T_BAS_OUTER_BRANCH BRANCH
+	     ON BRANCH.AGENT_DEPT_CODE = T.AGENTDEPTCODE 
+	     WHERE BRANCH.ACTIVE = 'Y' 
+			<if test="schemeName != null and schemeName != ''">
+			AND T.SCHEMENAME like '%${schemeName}%'
+			</if>
+			<if test="agentDeptCode != null and agentDeptCode != ''">
+				and T.AGENTDEPTCODE = #{agentDeptCode,jdbcType=VARCHAR}
+			</if>
+	 			   
+	</select>
+	
+
+	
+<!-- 	根据方案ID查询偏线代理送货费 -->
+	<select id="queryAgentDeliveryFeeBySchemeId" parameterType="string" resultMap="agentDeliveryFeeEntity">
+		<![CDATA[
+			SELECT
+			/** 接送货-价格:根据方案ID查询偏线代理送货费  **/
+		]]>
+		<include refid="Fee_Column_List" />
+		<![CDATA[
+			FROM PKP.T_SRV_AGENT_DELIVERY_FEE T
+		]]>
+		<where>
+				SCHEMEID = #{schemeId,jdbcType=VARCHAR}
+		</where>
+	</select>
+		
+	
+	<!-- 	查询偏线代理送货费方案总量 -->
+	<select id="queryRecordCount" parameterType="java.util.HashMap" resultType="long">
+		SELECT /*接送货-价格-查询偏线价格方案总数*/ 
+         COUNT(1)
+         FROM PKP.T_SRV_AGENTDELIVERYFEE_SCHEME T
+			LEFT JOIN BSE.T_BAS_OUTER_BRANCH BRANCH
+            ON BRANCH.AGENT_DEPT_CODE = T.AGENTDEPTCODE         
+           WHERE BRANCH.ACTIVE = 'Y' 
+            <if test="schemeName != null and schemeName != ''">
+			 AND   T.SCHEMENAME  like '%${schemeName}%'
+			</if>
+			<if test="agentDeptCode != null and agentDeptCode != ''">
+				and T.AGENTDEPTCODE = #{agentDeptCode,jdbcType=VARCHAR}
+			</if>
+	</select>
+	
+<!-- 	新增偏线代理送货费方案 -->
+	<insert id="addAgentDeliveryFeeScheme" parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.AgentDeliveryFeeSchemeEntity">
+		<![CDATA[
+			INSERT/** 接送货-价格:新增偏线代理送货费方案  **/ INTO PKP.T_SRV_AGENTDELIVERYFEE_SCHEME T	(
+		]]>
+		<include refid="Scheme_Column_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR},
+		#{schemeName,jdbcType=VARCHAR},
+		#{transportType,jdbcType=VARCHAR},
+		#{agentDeptName,jdbcType=VARCHAR}, 
+		#{agentDeptCode,jdbcType=VARCHAR}, 
+		#{remark,jdbcType=VARCHAR},
+		#{createDate,jdbcType=TIMESTAMP},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{modifyUser,jdbcType=VARCHAR},
+		#{versionNo,jdbcType=DECIMAL}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+	
+<!-- 	新增偏线代理送货费 -->
+	<insert id="addAgentDeliveryFee" parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.AgentDeliveryFeeEntity">
+		<![CDATA[
+			INSERT/** 接送货-价格:新增偏线代理送货费  **/ INTO PKP.T_SRV_AGENT_DELIVERY_FEE T	(
+		]]>
+		<include refid="Fee_Column_List" />
+		<![CDATA[
+		)
+		]]>
+		<foreach collection="entityList" item="entity" index="index" separator="union all">
+		select
+		#{entity.schemeId,jdbcType=VARCHAR},
+		#{entity.startPoint,jdbcType=DECIMAL},
+		#{entity.terminalPoint,jdbcType=DECIMAL},
+		#{entity.lowestPrice,jdbcType=INTEGER}, 
+		#{entity.chargeStandard,jdbcType=DECIMAL}, 
+		#{entity.pricingManner,jdbcType=VARCHAR},
+		#{entity.versionNo,jdbcType=DECIMAL}
+		from dual
+		</foreach>
+	</insert>
+	
+<!-- 	根据方案ID删除偏线代理送货费方案 -->
+	<delete id="deleteAgentDeliveryFeeSchemeById" parameterType="string">
+		<![CDATA[
+			DELETE/** 接送货-价格:根据方案ID删除偏线代理送货费方案  **/ FROM PKP.T_SRV_AGENTDELIVERYFEE_SCHEME T
+		]]>
+		<where>
+			<if test="idList != null and idList.size != 0">
+				ID in
+				<foreach collection="idList" index="index" item="schemeId" open="("
+					separator="," close=")">
+					#{schemeId}
+				</foreach>
+			</if>
+		</where>
+	</delete>
+	
+<!-- 	根据方案Id删除偏线代理送货费 -->
+	<delete id="deleteAgentDeliveryFeeByschemeId" parameterType="map">
+		<![CDATA[
+			DELETE /** 接送货-价格:根据方案Id删除偏线代理送货费  **/ FROM PKP.T_SRV_AGENT_DELIVERY_FEE T
+		]]>
+		<where>
+			SCHEMEID in
+			<foreach collection="schemeIdList" index="index" item="schemeId" open="("
+				separator="," close=")">
+				#{schemeId}
+			</foreach>
+		</where>		
+	</delete>
+	
+<!-- 	更新偏线代理送货费方案 -->
+	<update id="updateAgentDeliveryFeeScheme" parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.AgentDeliveryFeeSchemeEntity">
+		<![CDATA[
+			UPDATE/** 接送货-价格:更新偏线代理送货费方案  **/ PKP.T_SRV_AGENTDELIVERYFEE_SCHEME T
+		]]>
+		<set >
+			<if test="schemeName != null" >
+        		SCHEMENAME = #{schemeName,jdbcType=VARCHAR},
+      		</if>
+      		<if test="agentDeptName != null" >
+        		AGENTDEPTNAME = #{agentDeptName,jdbcType=VARCHAR},
+      		</if>
+      		<if test="agentDeptCode != null" >
+        		AGENTDEPTCODE = #{agentDeptCode,jdbcType=VARCHAR},
+      		</if>
+      		<if test="remark != null" >
+        		REMARK = #{remark,jdbcType=VARCHAR},
+      		</if>
+        		VERSIONNO = #{versionNo,jdbcType=DECIMAL},
+      		<if test="modifyDate != null" >
+        		UPDATEDATE = #{modifyDate,jdbcType=TIMESTAMP},
+      		</if>
+      		<if test="modifyUser != null" >
+        		UPDATEUSER = #{modifyUser,jdbcType=VARCHAR}
+      		</if>
+      	</set>
+      	<where>
+      		<if test="id != null and id != ''">
+				ID = #{id,jdbcType=VARCHAR}
+			</if>
+      	</where>
+	</update>
+
+<!-- 	根据目的站统计送货费方案 -->
+	<select id="countSchemeByagentDeptCode" parameterType="string" resultType="int">
+		<![CDATA[
+			SELECT
+			/** 接送货-价格:根据目的站统计送货费方案  **/
+			COUNT(1)
+			FROM PKP.T_SRV_AGENTDELIVERYFEE_SCHEME T
+		]]>
+		<where>
+				AGENTDEPTCODE = #{agentDeptCode,jdbcType=VARCHAR}
+		</where>
+	</select>
+	
+<!-- 	根据目的站查询送货费方案 -->
+	<select id="querySchemeByagentDeptCode" parameterType="string" resultMap="agentDeliveryFeeSchemeEntity">
+		<![CDATA[
+			SELECT
+			/** 接送货-价格:根据目的站查询送货费方案  **/
+		]]>
+		<include refid="Scheme_Column_List" />
+		<![CDATA[
+			FROM PKP.T_SRV_AGENTDELIVERYFEE_SCHEME T
+		]]>
+		<where>
+				AGENTDEPTCODE = #{agentDeptCode,jdbcType=VARCHAR}
+		</where>
+	</select>
+</mapper>

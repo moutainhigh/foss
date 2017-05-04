@@ -1,0 +1,781 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.foss.module.transfer.platform.api.server.dao.IQuantityStaDao">
+	
+	<resultMap id="quantityStaGoodsCondDto" 
+		type="com.deppon.foss.module.transfer.platform.api.shared.dto.QuantityStaGoodsCondDto">
+		<result property="transferCenterCode" column="transferCenterCode" />
+		<result property="configValue" column="configValue" />
+	</resultMap>
+	
+	<select id="querySpecialForecastStartConfigValue" parameterType="java.util.Map" 
+		resultMap="quantityStaGoodsCondDto">
+		SELECT c.org_code transferCenterCode, t.conf_value configValue
+		  FROM bse.t_bas_transfer_center c
+		  LEFT JOIN bse.t_bas_sys_config t
+		    ON t.org_code = c.org_code
+		   AND t.conf_type = #{type,jdbcType=VARCHAR}
+		   AND t.code = #{code,jdbcType=VARCHAR}
+		   AND t.active = 'Y'
+		 WHERE c.active = 'Y'
+		 AND ORA_HASH(c.org_code, #{threadCount,jdbcType=NUMERIC}) = #{threadNo,jdbcType=NUMERIC}
+	</select>
+	
+	<select id="queryDefaultForecastStartConfigValue" resultType="java.lang.String"
+		parameterType="java.util.Map">
+		SELECT t.conf_value configValue
+		  FROM bse.t_bas_sys_config t
+		 WHERE t.conf_type = #{type,jdbcType=VARCHAR}
+		   AND t.code = #{code,jdbcType=VARCHAR}
+		   AND t.org_code = #{dip,jdbcType=VARCHAR}
+		   AND t.active = 'Y'
+	</select>
+	
+	<resultMap id="quantityStaDto"
+		type="com.deppon.foss.module.transfer.platform.api.shared.dto.QuantityStaDto">
+		<result property="type" column="type" />
+		<result property="particularType" column="particularType" />
+		<result property="groupSiteId" column="groupSiteId" />
+		<result property="groupSiteName" column="groupSiteName" />
+		<result property="orgCode" column="orgCode" />
+		<result property="relevantOrgCode" column="relevantOrgCode" />
+		<result property="relevantOrgName" column="relevantOrgName" />
+		<result property="weightTotal" column="weightTotal" />
+		<result property="volumeTotal" column="volumeTotal" />
+		<result property="waybillQtyTotal" column="waybillQtyTotal" />
+		<result property="flfWeightTotal" column="flfWeightTotal" />
+		<result property="flfVolumeTotal" column="flfVolumeTotal" />
+		<result property="flfQtyTotal" column="flfQtyTotal" />
+		<result property="fsfWeightTotal" column="fsfWeightTotal" />
+		<result property="fsfVolumeTotal" column="fsfVolumeTotal" />
+		<result property="fsfQtyTotal" column="fsfQtyTotal" />
+		<result property="expWeightTotal" column="expWeightTotal" />
+		<result property="expVolumeTotal" column="expVolumeTotal" />
+		<result property="expQtyTotal" column="expQtyTotal" />
+		<result property="instoreWeightTotal" column="instoreWeightTotal" />
+		<result property="instoreVolumeTotal" column="instoreVolumeTotal" />
+		<result property="instoreQtyTotal" column="instoreQtyTotal" />
+		<result property="billedWeightTotal" column="billedWeightTotal" />
+		<result property="billedVolumeTotal" column="billedVolumeTotal" />
+		<result property="billedQtyTotal" column="billedQtyTotal" />
+		<result property="intransitWeightTotal" column="intransitWeightTotal" />
+		<result property="intransitVolumeTotal" column="intransitVolumeTotal" />
+		<result property="intransitQtyTotal" column="intransitQtyTotal" />
+		<result property="forecastUnbilledWeightTotal" column="forecastUnbilledWeightTotal" />
+		<result property="forecastUnbilledVolumeTotal" column="forecastUnbilledVolumeTotal" />
+		<result property="forecastUnbilledQtyTotal" column="forecastUnbilledQtyTotal" />
+		<result property="forecastWeightTotal" column="forecastWeightTotal" />
+		<result property="forecastVolumeTotal" column="forecastVolumeTotal" />
+		<result property="forecastQtyTotal" column="forecastQtyTotal" />
+		<result property="dataBelongDate" column="dataBelongDate" />
+	</resultMap>
+
+	<!-- 查询到达货需要查询的列 -->
+	<sql id="sql_arrive_select_column">
+	   a.org_code orgCode,
+       a.relevant_org_code relevantOrgCode,
+       a.relevant_org_name relevantOrgName,
+       t.id groupSiteId,
+       t.name groupSiteName,
+       <if test="dataType != null and dataType != ''">
+       a.data_type particularType,
+       </if>
+       a.data_belong_date dataBelongDate,
+       
+       round(SUM(decode(a.product_code, 'FLF', a.weight_total,'BGFLF', a.weight_total, 0))/1000,3) flfWeightTotal,
+       SUM(decode(a.product_code, 'FLF', a.volume_total,'BGFLF', a.volume_total, 0)) flfVolumeTotal,
+       SUM(decode(a.product_code, 'FLF', a.qty_total,'BGFLF', a.qty_total, 0)) flfQtyTotal,
+       
+       round(SUM(decode(a.product_code, 'FSF', a.weight_total,'BGFSF', a.weight_total, 0))/1000,3) fsfWeightTotal,
+       SUM(decode(a.product_code, 'FSF', a.volume_total,'BGFSF', a.volume_total, 0)) fsfVolumeTotal,
+       SUM(decode(a.product_code, 'FSF', a.qty_total,'BGFSF', a.qty_total, 0)) fsfQtyTotal,
+       
+       round(SUM(decode(a.product_code, 'PACKAGE', a.weight_total,'RCP', a.weight_total,'EPEP', a.weight_total, 0))/1000,3) expWeightTotal,
+       SUM(decode(a.product_code, 'PACKAGE', a.volume_total,'RCP', a.volume_total,'EPEP', a.volume_total, 0)) expVolumeTotal,
+       SUM(decode(a.product_code, 'PACKAGE', a.qty_total,'RCP', a.qty_total,'EPEP', a.qty_total, 0)) expQtyTotal,
+       
+       round(SUM(a.weight_no_handover)/1000,3) billedWeightTotal,
+       SUM(a.volume_no_handover) billedVolumeTotal,
+       SUM(a.qty_no_handover) billedQtyTotal,
+       
+       round(SUM(a.weight_on_the_way)/1000,3) intransitWeightTotal,
+       SUM(a.volume_on_the_way) intransitVolumeTotal,
+       SUM(a.qty_on_the_way) intransitQtyTotal,
+       
+       round(SUM(a.weight_total)/1000,3) weightTotal,
+       SUM(a.volume_total) volumeTotal,
+       SUM(a.qty_total) waybillQtyTotal,
+       
+       round(nvl(f.weight_no_billing,0)/1000,3) forecastUnbilledWeightTotal,
+       nvl(f.volume_no_billing,0) forecastUnbilledVolumeTotal,
+       nvl(f.qty_no_billing,0) forecastUnbilledQtyTotal,
+       
+       round(nvl(f.weight_total,0)/1000,3) forecastWeightTotal,
+       nvl(f.volume_total,0) forecastVolumeTotal,
+       nvl(f.qty_total,0) forecastQtyTotal
+	</sql>
+	
+	<!-- 查询到达货select子句 -->
+	<sql id="sql_arrive_select_caluse">
+		SELECT 'ARRIVAL' type,
+		<include refid="sql_arrive_select_column"/>
+	</sql>
+	
+	<!-- 查询出发货select子句 ，比到达货多查在库货量-->
+	<sql id="sql_depart_select_caluse">
+		SELECT 'DEPARTURE' type,
+		<include refid="sql_arrive_select_column"/>
+		, round(SUM(a.weight_in_stock)/1000,3) instoreWeightTotal,
+          SUM(a.volume_in_stock) instoreVolumeTotal,
+          SUM(a.qty_in_stock) instoreQtyTotal
+	</sql>
+	
+	<select id="queryDepart" 
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.QuantityStaQcDto" 
+		resultMap="quantityStaDto">
+		<include refid="sql_depart_select_caluse"/>
+		  FROM tfr.t_opt_sta_depart a
+		  LEFT JOIN tfr.t_opt_sta_depart_fcst f
+		    ON f.org_code = a.org_code
+		   AND f.sta_date = a.sta_date
+		   AND f.sta_hh = a.sta_hh
+		   AND f.data_type = a.data_type
+		   AND f.relevant_org_code = a.relevant_org_code
+		  LEFT JOIN(SELECT s.org_code, s.id, s.name, ss.sitecode
+					  FROM bse.t_bas_sitegroup s
+					 INNER JOIN bse.t_bas_sitegroup_site ss
+					    ON ss.parent_org_code = s.virtual_code
+					   AND ss.active = 'Y'
+					 WHERE s.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+					   AND s.type = 'CF'
+					   AND s.active = 'Y') t
+	      ON a.org_code = t.org_code
+  		  AND a.relevant_org_code = t.sitecode
+		 WHERE a.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+		   AND a.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		   <if test="dataType != null and dataType != ''">
+		   AND a.data_type = #{dataType,jdbcType=VARCHAR}
+		   </if>
+		   <if test="relevantOrgCode != null and relevantOrgCode != ''">
+		   AND a.relevant_org_code = #{relevantOrgCode,jdbcType=VARCHAR}
+		   </if>
+		 GROUP BY a.org_code,
+		          a.relevant_org_code,
+		          a.relevant_org_name,
+		          t.id,
+		          t.name,
+		          <if test="dataType != null and dataType != ''">
+		          a.data_type,
+		          </if>
+		          a.data_belong_date,
+		          nvl(f.weight_no_billing,0),
+		          nvl(f.volume_no_billing,0),
+		          nvl(f.qty_no_billing,0),
+		          nvl(f.weight_total,0),
+		          nvl(f.volume_total,0),
+		          nvl(f.qty_total,0)
+	</select>
+	
+	<select id="query2ndDayDepart" 
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.QuantityStaQcDto" 
+		resultMap="quantityStaDto">
+		<include refid="sql_depart_select_caluse"/>
+		  FROM tfr.t_opt_sta_depart_2nd a
+		  LEFT JOIN tfr.t_opt_sta_depart_2nd_fcst f
+		    ON f.org_code = a.org_code
+		   AND f.sta_date = a.sta_date
+		   AND f.sta_hh = a.sta_hh
+		   AND f.data_type = a.data_type
+		   AND f.relevant_org_code = a.relevant_org_code
+		  LEFT JOIN(SELECT s.org_code, s.id, s.name, ss.sitecode
+					  FROM bse.t_bas_sitegroup s
+					 INNER JOIN bse.t_bas_sitegroup_site ss
+					    ON ss.parent_org_code = s.virtual_code
+					   AND ss.active = 'Y'
+					 WHERE s.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+					   AND s.type = 'CF'
+					   AND s.active = 'Y') t
+	       ON a.org_code = t.org_code
+  		  AND a.relevant_org_code = t.sitecode
+		 WHERE a.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+		   AND a.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		   <if test="dataType != null and dataType != ''">
+		   AND a.data_type = #{dataType,jdbcType=VARCHAR}
+		   </if>
+		   <if test="relevantOrgCode != null and relevantOrgCode != ''">
+		   AND a.relevant_org_code = #{relevantOrgCode,jdbcType=VARCHAR}
+		   </if>
+		 GROUP BY a.org_code,
+		          a.relevant_org_code,
+		          a.relevant_org_name,
+		          t.id,
+		          t.name,
+		          <if test="dataType != null and dataType != ''">
+		          a.data_type,
+		          </if>
+		          a.data_belong_date,
+		          nvl(f.weight_no_billing,0),
+		          nvl(f.volume_no_billing,0),
+		          nvl(f.qty_no_billing,0),
+		          nvl(f.weight_total,0),
+		          nvl(f.volume_total,0),
+		          nvl(f.qty_total,0)
+	</select>
+	
+	<select id="queryArrive" 
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.QuantityStaQcDto" 
+		resultMap="quantityStaDto">
+		<include refid="sql_arrive_select_caluse"/>
+		  FROM tfr.t_opt_sta_arrive a
+		  LEFT JOIN tfr.t_opt_sta_arrive_fcst f
+		    ON f.org_code = a.org_code
+		   AND f.sta_date = a.sta_date
+		   AND f.sta_hh = a.sta_hh
+		   AND f.data_type = a.data_type
+		   AND f.relevant_org_code = a.relevant_org_code
+		  LEFT JOIN(SELECT s.org_code, s.id, s.name, ss.sitecode
+					  FROM bse.t_bas_sitegroup s
+					 INNER JOIN bse.t_bas_sitegroup_site ss
+					    ON ss.parent_org_code = s.virtual_code
+					   AND ss.active = 'Y'
+					 WHERE s.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+					   AND s.type = 'DD'
+					   AND s.active = 'Y') t
+	       ON a.org_code = t.org_code
+  		  AND a.relevant_org_code = t.sitecode
+		 WHERE a.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+		   AND a.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		   <if test="dataType != null and dataType != ''">
+		   AND a.data_type = #{dataType,jdbcType=VARCHAR}
+		   </if>
+		   <if test="relevantOrgCode != null and relevantOrgCode != ''">
+		   AND a.relevant_org_code = #{relevantOrgCode,jdbcType=VARCHAR}
+		   </if>
+		 GROUP BY a.org_code,
+		          a.relevant_org_code,
+		          a.relevant_org_name,
+		          t.id,
+		          t.name,
+		          <if test="dataType != null and dataType != ''">
+		          a.data_type,
+		          </if>
+		          a.data_belong_date,
+		          nvl(f.weight_no_billing,0),
+		          nvl(f.volume_no_billing,0),
+		          nvl(f.qty_no_billing,0),
+		          nvl(f.weight_total,0),
+		          nvl(f.volume_total,0),
+		          nvl(f.qty_total,0)
+	</select>
+	
+	<select id="query2ndDayArrive" 
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.QuantityStaQcDto" 
+		resultMap="quantityStaDto">
+		<include refid="sql_arrive_select_caluse"/>
+		  FROM tfr.t_opt_sta_arrive_2nd a
+		  LEFT JOIN tfr.t_opt_sta_arrive_2nd_fcst f
+		    ON f.org_code = a.org_code
+		   AND f.sta_date = a.sta_date
+		   AND f.sta_hh = a.sta_hh
+		   AND f.data_type = a.data_type
+		   AND f.relevant_org_code = a.relevant_org_code
+		  LEFT JOIN(SELECT s.org_code, s.id, s.name, ss.sitecode
+					  FROM bse.t_bas_sitegroup s
+					 INNER JOIN bse.t_bas_sitegroup_site ss
+					    ON ss.parent_org_code = s.virtual_code
+					   AND ss.active = 'Y'
+					 WHERE s.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+					   AND s.type = 'DD'
+					   AND s.active = 'Y') t
+	       ON a.org_code = t.org_code
+  		  AND a.relevant_org_code = t.sitecode
+		 WHERE a.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+		   AND a.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		   <if test="dataType != null and dataType != ''">
+		   AND a.data_type = #{dataType,jdbcType=VARCHAR}
+		   </if>
+		   <if test="relevantOrgCode != null and relevantOrgCode != ''">
+		   AND a.relevant_org_code = #{relevantOrgCode,jdbcType=VARCHAR}
+		   </if>
+		 GROUP BY a.org_code,
+		          a.relevant_org_code,
+		          a.relevant_org_name,
+		          t.id,
+		          t.name,
+		          <if test="dataType != null and dataType != ''">
+		          a.data_type,
+		          </if>
+		          a.data_belong_date,
+		          nvl(f.weight_no_billing,0),
+		          nvl(f.volume_no_billing,0),
+		          nvl(f.qty_no_billing,0),
+		          nvl(f.weight_total,0),
+		          nvl(f.volume_total,0),
+		          nvl(f.qty_total,0)
+	</select>
+	
+	<resultMap type="com.deppon.foss.module.transfer.platform.api.shared.dto.QuantityStaTotalDto"
+		id="quantityStaTotalDto">
+		<result property="weightTotal" column="weightTotal" />
+		<result property="volumeTotal" column="volumeTotal" />
+		<result property="qtyTotal" column="qtyTotal" />
+		
+		<result property="weightFlf" column="weightFlf" />
+		<result property="volumeFlf" column="volumeFlf" />
+		<result property="qtyFlf" column="qtyFlf" />
+		
+		<result property="weightFsf" column="weightFsf" />
+		<result property="volumeFsf" column="volumeFsf" />
+		<result property="qtyFsf" column="qtyFsf" />
+		
+		<result property="weightExp" column="weightExp" />
+		<result property="volumeExp" column="volumeExp" />
+		<result property="qtyExp" column="qtyExp" />
+		
+		<result property="weightNoHandOver" column="weightNoHandOver" />
+		<result property="volumeNoHandOver" column="volumeNoHandOver" />
+		<result property="qtyNoHandOver" column="qtyNoHandOver" />
+		
+		<result property="weightOnTheWay" column="weightOnTheWay" />
+		<result property="volumeOnTheWay" column="volumeOnTheWay" />
+		<result property="qtyOnTheWay" column="qtyOnTheWay" />
+		
+		<result property="weightInStock" column="weightInStock" />
+		<result property="volumeInStock" column="volumeInStock" />
+		<result property="qtyInStock" column="qtyInStock" />
+		
+		<result property="weightFcstNoBilling" column="weightFcstNoBilling" />
+		<result property="volumeFcstNoBilling" column="volumeFcstNoBilling" />
+		<result property="qtyFcstNoBilling" column="qtyFcstNoBilling" />
+		
+		<result property="weightFcstTotal" column="weightFcstTotal" />
+		<result property="volumeFcstTotal" column="volumeFcstTotal" />
+		<result property="qtyFcstTotal" column="qtyFcstTotal" />
+		
+	</resultMap>
+	
+	<!-- 查询到达货总量select子句 -->
+	<sql id="sql_arrive_total_select_caluse">
+		SELECT round(SUM(a.weight_total)/1000,3) weightTotal,
+		       SUM(a.volume_total) volumeTotal,
+		       SUM(a.qty_total) waybillQtyTotal,
+		       
+		       round(SUM(decode(a.product_code, 'FLF', a.weight_total,'BGFLF', a.weight_total, 0)) / 1000,3) flfWeightTotal,
+		       SUM(decode(a.product_code, 'FLF', a.volume_total,'BGFLF', a.volume_total, 0)) flfVolumeTotal,
+		       SUM(decode(a.product_code, 'FLF', a.qty_total,'BGFLF', a.qty_total, 0)) flfQtyTotal,
+		       
+		       round(SUM(decode(a.product_code, 'FSF', a.weight_total,'BGFSF', a.weight_total, 0)) / 1000,3) fsfWeightTotal,
+		       SUM(decode(a.product_code, 'FSF', a.volume_total,'BGFSF', a.volume_total, 0)) fsfVolumeTotal,
+		       SUM(decode(a.product_code, 'FSF', a.qty_total,'BGFSF', a.qty_total, 0)) fsfQtyTotal,
+		       
+		       round(SUM(decode(a.product_code, 'PACKAGE', a.weight_total,'RCP', a.weight_total,'EPEP', a.weight_total, 0)) / 1000,3) expWeightTotal,
+		       SUM(decode(a.product_code, 'PACKAGE', a.volume_total,'RCP', a.volume_total,'EPEP', a.volume_total, 0)) expVolumeTotal,
+		       SUM(decode(a.product_code, 'PACKAGE', a.qty_total,'RCP', a.qty_total,'EPEP', a.qty_total, 0)) expQtyTotal,
+		       
+		       round(SUM(a.weight_no_handover) / 1000,3) billedWeightTotal,
+		       SUM(a.volume_no_handover) billedVolumeTotal,
+		       SUM(a.qty_no_handover) billedQtyTotal,
+		       
+		       round(SUM(a.weight_on_the_way) / 1000,3) intransitWeightTotal,
+		       SUM(a.volume_on_the_way) intransitVolumeTotal,
+		       SUM(a.qty_on_the_way) intransitQtyTotal,
+		       
+		       round(SUM(f.weight_no_billing) / 1000,3) forecastUnbilledWeightTotal,
+		       SUM(f.volume_no_billing) forecastUnbilledVolumeTotal,
+		       SUM(f.qty_no_billing) forecastUnbilledQtyTotal,
+		       
+		       round(SUM(f.weight_total) / 1000,3) forecastWeightTotal,
+		       SUM(f.volume_total) forecastVolumeTotal,
+		       SUM(f.qty_total) forecastQtyTotal
+	</sql>
+	
+	<!-- 查询出发货总量select子句，比到达货多查在库货量 -->
+	<sql id="sql_depart_total_select_caluse">
+		<include refid="sql_arrive_total_select_caluse"/>
+		, round(SUM(a.weight_in_stock) / 1000,3) instoreWeightTotal,
+          SUM(a.volume_in_stock) instoreVolumeTotal,
+          SUM(a.qty_in_stock) instoreQtyTotal
+	</sql>
+	
+	<select id="queryDepartTotal"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.QuantityStaQcDto"
+		resultMap="quantityStaDto">
+		<include refid="sql_depart_total_select_caluse"/>
+		  FROM tfr.t_opt_sta_depart a
+		  LEFT JOIN tfr.t_opt_sta_depart_fcst f
+		    ON f.org_code = a.org_code
+		   AND f.sta_date = a.sta_date
+		   AND f.sta_hh = a.sta_hh
+		   AND f.data_type = a.data_type
+		   AND f.relevant_org_code = a.relevant_org_code
+		 WHERE a.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+		   AND a.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		   <if test="dataType != null and dataType != ''">
+		   AND a.data_type = #{dataType,jdbcType=VARCHAR}
+		   </if>
+		   <if test="relevantOrgCode != null and relevantOrgCode != ''">
+		   AND a.relevant_org_code = #{relevantOrgCode,jdbcType=VARCHAR}
+		   </if>
+	</select>
+	
+	<select id="queryDepart2ndTotal"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.QuantityStaQcDto"
+		resultMap="quantityStaDto">
+		<include refid="sql_depart_total_select_caluse"/>
+		  FROM tfr.t_opt_sta_depart_2nd a
+		  LEFT JOIN tfr.t_opt_sta_depart_2nd_fcst f
+		    ON f.org_code = a.org_code
+		   AND f.sta_date = a.sta_date
+		   AND f.sta_hh = a.sta_hh
+		   AND f.data_type = a.data_type
+		   AND f.relevant_org_code = a.relevant_org_code
+		 WHERE a.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+		   AND a.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		   <if test="dataType != null and dataType != ''">
+		   AND a.data_type = #{dataType,jdbcType=VARCHAR}
+		   </if>
+		   <if test="relevantOrgCode != null and relevantOrgCode != ''">
+		   AND a.relevant_org_code = #{relevantOrgCode,jdbcType=VARCHAR}
+		   </if>
+	</select>
+	
+	<select id="queryArriveTotal"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.QuantityStaQcDto"
+		resultMap="quantityStaDto">
+		<include refid="sql_arrive_total_select_caluse"/>
+		  FROM tfr.t_opt_sta_arrive a
+		  LEFT JOIN tfr.t_opt_sta_arrive_fcst f
+		    ON f.org_code = a.org_code
+		   AND f.sta_date = a.sta_date
+		   AND f.sta_hh = a.sta_hh
+		   AND f.data_type = a.data_type
+		   AND f.relevant_org_code = a.relevant_org_code
+		 WHERE a.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+		   AND a.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		   <if test="dataType != null and dataType != ''">
+		   AND a.data_type = #{dataType,jdbcType=VARCHAR}
+		   </if>
+		   <if test="relevantOrgCode != null and relevantOrgCode != ''">
+		   AND a.relevant_org_code = #{relevantOrgCode,jdbcType=VARCHAR}
+		   </if>
+	</select>
+	
+	<select id="queryArrive2ndTotal"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.QuantityStaQcDto"
+		resultMap="quantityStaDto">
+		<include refid="sql_arrive_total_select_caluse"/>
+		  FROM tfr.t_opt_sta_arrive_2nd a
+		  LEFT JOIN tfr.t_opt_sta_arrive_2nd_fcst f
+		    ON f.org_code = a.org_code
+		   AND f.sta_date = a.sta_date
+		   AND f.sta_hh = a.sta_hh
+		   AND f.data_type = a.data_type
+		   AND f.relevant_org_code = a.relevant_org_code
+		 WHERE a.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+		   AND a.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		   <if test="dataType != null and dataType != ''">
+		   AND a.data_type = #{dataType,jdbcType=VARCHAR}
+		   </if>
+		   <if test="relevantOrgCode != null and relevantOrgCode != ''">
+		   AND a.relevant_org_code = #{relevantOrgCode,jdbcType=VARCHAR}
+		   </if>
+	</select>
+
+	<resultMap type="com.deppon.foss.module.transfer.platform.api.shared.dto.QuantitySta4ChartDto"
+		id="quantitySta4ChartDto">
+		<result property="orgCode" column="orgCode" />
+		<result property="relevantOrgCode" column="relevantOrgCode" />
+		<result property="relevantOrgName" column="relevantOrgName" />
+		<result property="type" column="type" />
+		<result property="particularType" column="particularType" />
+		<result property="staDate" column="staDate" />
+		<result property="staHh" column="staHh" />
+		<result property="weightActual" column="weightActual" />
+		<result property="volumeActual" column="volumeActual" />
+		<result property="weightFcst" column="weightFcst" />
+		<result property="volumeFcst" column="volumeFcst" />
+		<result property="weightWarn" column="weightWarn" />
+		<result property="volumeWarn" column="volumeWarn" />
+	</resultMap>
+	
+	<select id="queryDepart1Day4Chart"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.QuantityStaQcDto"
+		resultMap="quantitySta4ChartDto">
+		SELECT t.org_code orgCode,
+			   t.sta_hh staHh,
+			   <if test="dataType != null and dataType != ''">
+	            t.data_type particularType,
+	           </if>
+	     	   <if test="relevantOrgCode != null and relevantOrgCode != ''">
+           	     t.relevant_org_code relevantOrgCode, t.relevant_org_name relevantOrgName,
+               </if>
+               'DEPARTURE' type,
+               #{staDate,jdbcType=TIMESTAMP} staDate,
+		       round(SUM(t.weight_total)/1000,3) weightActual,
+		       SUM(t.volume_total) volumeActual,
+		       round(SUM(f.weight_total)/1000,3) weightFcst,
+		       SUM(f.volume_total) volumeFcst
+		  FROM tfr.t_opt_sta_depart_16day t
+		  LEFT JOIN tfr.t_opt_sta_depart_fcst f
+		    ON f.org_code = t.org_code
+		   AND f.sta_date = t.sta_date
+		   AND f.sta_hh = t.sta_hh
+		   AND f.data_type = t.data_type
+		   AND f.relevant_org_code = t.relevant_org_code
+		 WHERE t.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+		    AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		   <if test="staHh != null">
+             AND t.sta_hh = #{staHh,jdbcType=NUMERIC}
+           </if>
+           <if test="dataType != null and dataType != ''">
+             AND t.data_type = #{dataType,jdbcType=VARCHAR}
+           </if>
+		   <if test="relevantOrgCode != null and relevantOrgCode != ''">
+           	AND t.relevant_org_code = #{relevantOrgCode,jdbcType=VARCHAR}
+           </if>
+		 GROUP BY t.org_code, t.sta_hh
+		 <if test="dataType != null and dataType != ''">
+            ,t.data_type
+         </if>
+	     <if test="relevantOrgCode != null and relevantOrgCode != ''">
+           	,t.relevant_org_code, t.relevant_org_name
+         </if>
+		 ORDER BY t.sta_hh
+	</select>
+	
+	<select id="queryArrive1Day4Chart"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.QuantityStaQcDto"
+		resultMap="quantitySta4ChartDto">
+		SELECT t.org_code orgCode,
+			   t.sta_hh staHh,
+			   <if test="dataType != null and dataType != ''">
+	            t.data_type particularType,
+	           </if>
+	     	   <if test="relevantOrgCode != null and relevantOrgCode != ''">
+           	     t.relevant_org_code relevantOrgCode, t.relevant_org_name relevantOrgName,
+               </if>
+               'ARRIVAL' type,
+               #{staDate,jdbcType=TIMESTAMP} staDate,
+		       round(SUM(t.weight_total)/1000,3) weightActual,
+		       SUM(t.volume_total) volumeActual,
+		       round(SUM(f.weight_total)/1000,3) weightFcst,
+		       SUM(f.volume_total) volumeFcst
+		  FROM tfr.t_opt_sta_arrive_16day t
+		  LEFT JOIN tfr.t_opt_sta_arrive_fcst f
+		    ON f.org_code = t.org_code
+		   AND f.sta_date = t.sta_date
+		   AND f.sta_hh = t.sta_hh
+		   AND f.data_type = t.data_type
+		   AND f.relevant_org_code = t.relevant_org_code
+		 WHERE t.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+		    AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		   <if test="staHh != null">
+             AND t.sta_hh = #{staHh,jdbcType=NUMERIC}
+           </if>
+           <if test="dataType != null and dataType != ''">
+             AND t.data_type = #{dataType,jdbcType=VARCHAR}
+           </if>
+		   <if test="relevantOrgCode != null and relevantOrgCode != ''">
+           	AND t.relevant_org_code = #{relevantOrgCode,jdbcType=VARCHAR}
+           </if>
+		 GROUP BY t.org_code, t.sta_hh
+		 <if test="dataType != null and dataType != ''">
+            ,t.data_type
+         </if>
+	     <if test="relevantOrgCode != null and relevantOrgCode != ''">
+           	,t.relevant_org_code, t.relevant_org_name
+         </if>
+		 ORDER BY t.sta_hh
+	</select>
+	
+	<select id="queryDepartFewDays1Hh4Chart"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.QuantityStaQcDto"
+		resultMap="quantitySta4ChartDto">
+		SELECT t.org_code orgCode,
+			   t.sta_date staDate,
+			   <if test="dataType != null and dataType != ''">
+	            t.data_type particularType,
+	           </if>
+	     	   <if test="relevantOrgCode != null and relevantOrgCode != ''">
+           	     t.relevant_org_code relevantOrgCode, t.relevant_org_name relevantOrgName,
+               </if>
+               'DEPARTURE' type,
+               #{staHh,jdbcType=NUMERIC} staHh,
+		       round(SUM(t.weight_total)/1000,3) weightActual,
+		       SUM(t.volume_total) volumeActual,
+		       round(SUM(f.weight_total)/1000,3) weightFcst,
+		       SUM(f.volume_total) volumeFcst
+		  FROM tfr.t_opt_sta_depart_16day t
+		  LEFT JOIN tfr.t_opt_sta_depart_fcst f
+		    ON f.org_code = t.org_code
+		   AND f.sta_date = t.sta_date
+		   AND f.sta_hh = t.sta_hh
+		   AND f.data_type = t.data_type
+		   AND f.relevant_org_code = t.relevant_org_code
+		 WHERE t.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+		    AND t.sta_date >= #{beginStaDate,jdbcType=TIMESTAMP}
+		    <![CDATA[
+		    AND t.sta_date <= #{endStaDate,jdbcType=TIMESTAMP}
+		    ]]>
+            AND t.sta_hh = #{staHh,jdbcType=NUMERIC}
+           <if test="dataType != null and dataType != ''">
+             AND t.data_type = #{dataType,jdbcType=VARCHAR}
+           </if>
+		   <if test="relevantOrgCode != null and relevantOrgCode != ''">
+           	AND t.relevant_org_code = #{relevantOrgCode,jdbcType=VARCHAR}
+           </if>
+		 GROUP BY t.org_code, t.sta_date
+		 <if test="dataType != null and dataType != ''">
+            ,t.data_type
+         </if>
+	     <if test="relevantOrgCode != null and relevantOrgCode != ''">
+           	,t.relevant_org_code, t.relevant_org_name
+         </if>
+		 ORDER BY t.sta_date
+	</select>
+	
+	<select id="queryArriveFewDays1Hh4Chart"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.QuantityStaQcDto"
+		resultMap="quantitySta4ChartDto">
+		SELECT t.org_code orgCode,
+			   t.sta_date staDate,
+			   <if test="dataType != null and dataType != ''">
+	            t.data_type particularType,
+	           </if>
+	     	   <if test="relevantOrgCode != null and relevantOrgCode != ''">
+           	     t.relevant_org_code relevantOrgCode, t.relevant_org_name relevantOrgName,
+               </if>
+               'ARRIVAL' type,
+               #{staHh,jdbcType=NUMERIC} staHh,
+		       round(SUM(t.weight_total)/1000,3) weightActual,
+		       SUM(t.volume_total) volumeActual,
+		       round(SUM(f.weight_total)/1000,3) weightFcst,
+		       SUM(f.volume_total) volumeFcst
+		  FROM tfr.t_opt_sta_arrive_16day t
+		  LEFT JOIN tfr.t_opt_sta_arrive_fcst f
+		    ON f.org_code = t.org_code
+		   AND f.sta_date = t.sta_date
+		   AND f.sta_hh = t.sta_hh
+		   AND f.data_type = t.data_type
+		   AND f.relevant_org_code = t.relevant_org_code
+		 WHERE t.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+		    AND t.sta_date >= #{beginStaDate,jdbcType=TIMESTAMP}
+		    <![CDATA[
+		    AND t.sta_date <= #{endStaDate,jdbcType=TIMESTAMP}
+		    ]]>
+             AND t.sta_hh = #{staHh,jdbcType=NUMERIC}
+           <if test="dataType != null and dataType != ''">
+             AND t.data_type = #{dataType,jdbcType=VARCHAR}
+           </if>
+		   <if test="relevantOrgCode != null and relevantOrgCode != ''">
+           	AND t.relevant_org_code = #{relevantOrgCode,jdbcType=VARCHAR}
+           </if>
+		 GROUP BY t.org_code, t.sta_date
+		 <if test="dataType != null and dataType != ''">
+            ,t.data_type
+         </if>
+	     <if test="relevantOrgCode != null and relevantOrgCode != ''">
+           	,t.relevant_org_code, t.relevant_org_name
+         </if>
+		 ORDER BY t.sta_date
+	</select>
+	
+	<select id="query2ndDepartDeliverFcst" parameterType="java.util.Map" resultMap="quantityStaDto">
+	SELECT t.org_code orgCode,
+	       round(SUM(t.weight_total)/1000,3) forecastWeightTotal,
+	       SUM(t.volume_total) forecastVolumeTotal,
+	       SUM(t.qty_total) forecastQtyTotal
+	  FROM tfr.t_opt_sta_depart_2nd_fcst t
+	  <where>
+	  	<if test="transferCenterCode != null and transferCenterCode != ''">
+	  		t.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+	  	</if>
+	   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+	   AND t.data_type = 'DEPARTURE_DELIVER'
+	  </where>
+	 GROUP BY t.org_code
+	</select>
+	
+	<select id="queryDepartLastFcstStaHh" 
+		parameterType="java.util.Date"
+		resultType="java.lang.Integer">
+		SELECT MAX(t.sta_hh)
+		  FROM tfr.t_opt_sta_depart_fcst t
+		 WHERE t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+	</select>
+	
+	<select id="queryArriveLastFcstStaHh" 
+		parameterType="java.util.Date"
+		resultType="java.lang.Integer">
+		SELECT MAX(t.sta_hh)
+		  FROM tfr.t_opt_sta_arrive_fcst t
+		 WHERE t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+	</select>
+	
+	<select id="queryTotalFcst" parameterType="java.util.Map" resultMap="quantityStaDto">
+	 SELECT org_code orgCode, round(SUM(weight_total)/1000,3) forecastWeightTotal, 
+	        SUM(volume_total) forecastVolumeTotal, SUM(qty_total) forecastQtyTotal
+	  FROM (SELECT t.org_code,
+	               SUM(t.weight_total) weight_total,
+	               SUM(t.volume_total) volume_total,
+	               SUM(t.qty_total) qty_total
+	          FROM tfr.t_opt_sta_depart_fcst t
+	         <where>
+	           <if test="transferCenterCode != null and transferCenterCode != ''">
+			  		t.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+			   </if>
+	           AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+	           AND t.sta_hh = #{staHhDepart,jdbcType=NUMERIC}
+	          </where>
+	         GROUP BY t.org_code
+	        UNION ALL
+	        SELECT t.org_code,
+	               SUM(t.weight_total) weight_total,
+	               SUM(t.volume_total) volume_total,
+	               SUM(t.qty_total) qty_total
+	          FROM tfr.t_opt_sta_arrive_fcst t
+	         <where>
+	           <if test="transferCenterCode != null and transferCenterCode != ''">
+			  		t.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+			   </if>
+	           AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+	           AND t.sta_hh = #{staHhArrive,jdbcType=NUMERIC}
+	          </where>
+	         GROUP BY t.org_code)
+	 GROUP BY org_code
+	</select>
+	
+	<select id="query2ndTotalFcst" parameterType="java.util.Map" resultMap="quantityStaDto">
+	 SELECT org_code orgCode, round(SUM(weight_total)/1000,3) forecastWeightTotal, 
+	        SUM(volume_total) forecastVolumeTotal, SUM(qty_total) forecastQtyTotal
+	  FROM (SELECT t.org_code,
+	               SUM(t.weight_total) weight_total,
+	               SUM(t.volume_total) volume_total,
+	               SUM(t.qty_total) qty_total
+	          FROM tfr.t_opt_sta_depart_2nd_fcst t
+	          <where>
+	           <if test="transferCenterCode != null and transferCenterCode != ''">
+			  		t.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+			   </if>
+	           AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+	          </where>
+	         GROUP BY t.org_code
+	        UNION ALL
+	        SELECT t.org_code,
+	               SUM(t.weight_total) weight_total,
+	               SUM(t.volume_total) volume_total,
+	               SUM(t.qty_total) qty_total
+	          FROM tfr.t_opt_sta_arrive_2nd_fcst t
+	          <where>
+	           <if test="transferCenterCode != null and transferCenterCode != ''">
+			  		t.org_code = #{transferCenterCode,jdbcType=VARCHAR}
+			   </if>
+	           AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+	          </where>
+	         GROUP BY t.org_code)
+	 GROUP BY org_code
+	</select>
+	
+</mapper>

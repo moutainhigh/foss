@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.deppon.foss.module.pickup.predeliver.api.server.dao.IPartitionedViewDao">
+	<!-- 查询选中的大区小区所属的运单集合 -->
+	<select id="querywaybills_BigZoneAndSmallZone" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.PartitionedViewDto" resultType="String">
+		SELECT HANDOVERBILL.WAYBILL_NO
+		   FROM  PKP.T_SRV_DELIVER_HANDOVERBILL HANDOVERBILL
+		INNER JOIN PKP.T_SRV_ACTUAL_FREIGHT FREIGHT /** 实际运单表 **/
+		   ON FREIGHT.WAYBILL_NO = HANDOVERBILL.WAYBILL_NO
+		INNER JOIN BSE.T_BAS_SERVICE_SMALLZONE SMALLZONE /** 小区表 **/
+		   ON HANDOVERBILL.ACTUAL_SMALLZONE_CODE = SMALLZONE.REGION_CODE
+		   AND SMALLZONE.ACTIVE = 'Y'
+		INNER JOIN BSE.T_BAS_SERVICE_BIGZONE BIGZONE /** 大区表 **/
+		   ON SMALLZONE.BIGZONECODE = BIGZONE.VIRTUAL_CODE
+		   AND BIGZONE.ACTIVE = 'Y'
+		 LEFT JOIN TFR.T_OPT_HANDOVERBILL_DETAIL HD
+		    ON HD.WAYBILL_NO = HANDOVERBILL.WAYBILL_NO
+		 LEFT JOIN TFR.T_OPT_HANDOVERBILL H
+		    ON H.HANDOVER_NO = HD.HANDOVER_NO
+		 WHERE
+		 	/** 运单是否可用  **/
+		 	HANDOVERBILL.ACTIVE = 'Y' AND
+			/** 验证部门  **/
+	        HANDOVERBILL.LAST_LOAD_ORG_CODE = #{permissionControlDto.lastLoadOrgCode}
+			/** 已排件数必须少于交单件数 **/
+			AND HANDOVERBILL.BILL_QTY - FREIGHT.ARRANGE_GOODS_QTY>0
+			/** 交单不是会展货 **/
+			AND HANDOVERBILL.IS_EXHIBITION='N'
+			/** 交单不是晚交运单 **/
+			AND HANDOVERBILL.LATE_NO = 'N' 
+			/** 是否超远派送 **/
+			AND (HANDOVERBILL.UITRA_LONG_DELIVERY IS NULL OR HANDOVERBILL.UITRA_LONG_DELIVERY='N')
+			/** 交单不是特殊地址 **/
+			AND HANDOVERBILL.SPECIAL_ADDRESS_TYPE IS NULL
+			/** 已签收运单不能排单 **/
+			AND NOT EXISTS (SELECT 1
+	            FROM PKP.T_SRV_WAYBILL_SIGN_RESULT WSR
+	            WHERE WSR.WAYBILL_NO = HANDOVERBILL.WAYBILL_NO
+	            AND WSR.SIGN_STATUS = 'SIGN_STATUS_ALL' 
+	            AND WSR.ACTIVE = 'Y') 
+			AND (
+				<if test="bigZoneCodes!=null and bigZoneCodes.length>0">
+					BIGZONE.REGION_CODE IN 
+			    	<foreach collection="bigZoneCodes" item="bigZoneCode" index="index" open="("  close=")"  separator=",">
+			            #{bigZoneCode}
+			        </foreach>
+			    </if>
+			    <if test="smallZoneCodes!=null and smallZoneCodes.length>0">
+					OR SMALLZONE.REGION_CODE IN 
+			    	<foreach collection="smallZoneCodes" item="smallZoneCode" index="index" open="("  close=")"  separator=",">
+			            #{smallZoneCode}
+			        </foreach>
+			    </if>
+		    )
+			<include refid="QueryPartition"/>
+	</select>
+	
+	<!-- 未排单运单通用查询条件 -->
+	<sql id="QueryPartition">	
+	
+		<!-- 运单不作废或者终止 -->
+		AND (FREIGHT.STATUS IS NULL OR FREIGHT.STATUS NOT IN ('OBSOLETE', 'ABORTED'))
+		<!-- 送货时间 -->
+		<if test="deliverTime!=null and deliverTime!=''">
+			AND TO_CHAR(HANDOVERBILL.PRE_DELIVER_DATE,'YYYY-MM-dd')=#{deliverTime}
+		</if>
+		<!-- 运输性质 -->
+		<if test="productCode!=null and productCode!=''">
+			AND HANDOVERBILL.PRODUCT_CODE=#{productCode}
+		</if>		
+		<!-- 逻辑判断：优先级别——小区>大区>车队组 -->
+		<choose>  
+		       <when test="smallZone!=null and smallZone!=''">  
+		           AND HANDOVERBILL.SMALLZONE_CODE=#{smallZone}
+		       </when>  
+		       <when test="bigZone != null and bigZone!=''">  
+		           AND HANDOVERBILL.SMALLZONE_CODE IN 
+		           (SELECT REGION_CODE FROM BSE.T_BAS_SERVICE_SMALLZONE WHERE ACTIVE = 'Y' AND BIGZONECODE=#{bigZone})
+		       </when>  
+		       <when test="teamGroup != null and teamGroup!=''">  
+		           AND HANDOVERBILL.SMALLZONE_CODE IN 
+		           (SELECT REGION_CODE FROM BSE.T_BAS_SERVICE_SMALLZONE WHERE ACTIVE = 'Y' AND BIGZONECODE
+				IN (SELECT REGION_CODE FROM BSE.T_BAS_SERVICE_BIGZONE WHERE ACTIVE='Y' 
+				AND TRANS_DEPARTMENT_CODE=#{teamGroup})
+				)
+		       </when>
+		  </choose> 
+		  <!-- 货物状态 -->
+		  <choose>  
+		  	<!-- 预计到达 -->
+		      <when test="goodStatus=='ONTHEWAY'">
+		          AND H.HANDOVERBILL_STATE = 30
+		      </when>  
+		      <!-- 已到达 -->
+		      <when test="goodStatus=='ARRIVED'">  
+		          AND H.HANDOVERBILL_STATE = 40
+		      </when>  
+		      <!-- 库存中 -->
+		      <when test="goodStatus=='IN_STOCK'">  
+		          AND (SELECT COUNT(1) FROM TFR.T_OPT_WAYBILL_STOCK
+					WHERE STOCK_GOODS_QTY>0 AND WAYBILL_NO=HANDOVERBILL.WAYBILL_NO AND ORG_CODE=#{permissionControlDto.endStockOrgCode}
+				)>0
+		      </when>
+		  </choose>
+		  <!-- 车牌号 -->
+		  <if test="vehicleNo!=null and vehicleNo!=''">
+		  	AND VEHICLE_NO=#{vehicleNo}
+		  </if>
+	</sql>
+</mapper>

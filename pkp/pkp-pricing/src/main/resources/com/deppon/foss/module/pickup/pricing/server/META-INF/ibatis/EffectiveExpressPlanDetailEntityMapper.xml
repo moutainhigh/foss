@@ -1,0 +1,770 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.pricing.EffectiveExpressPlanDetailEntityMapper" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.pickup.pricing.api.shared.domain.EffectiveExpressPlanDetailEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="T_SRV_PRODUCT_ID" property="productId" jdbcType="VARCHAR" />
+    <result column="T_SRV_PRODUCT_CODE" property="productCode" jdbcType="VARCHAR" />
+    <result column="T_SRV_EXPRESS_EFFECTIVE_PLAN_I" property="effectivePlanId" jdbcType="VARCHAR" />
+    <result column="DEPT_REGION_ID" property="deptRegionId" jdbcType="VARCHAR" />
+    <result column="DEPT_REGION_CODE" property="deptRegionCode" jdbcType="VARCHAR" />
+    <result column="ARRV_REGION_ID" property="arrvRegionId" jdbcType="VARCHAR" />
+    <result column="ARRV_REGION_CODE" property="arrvRegionCode" jdbcType="VARCHAR" />
+    <result column="MAX_TIME" property="maxTime" jdbcType="DECIMAL" />
+    <result column="MAX_TIME_UNIT" property="maxTimeUnit" jdbcType="VARCHAR" />
+    <result column="MIN_TIME" property="minTime" jdbcType="DECIMAL" />
+    <result column="MIN_TIME_UNIT" property="minTimeUnit" jdbcType="VARCHAR" />
+    <result column="ARRIVE_TIME" property="arriveTime" jdbcType="VARCHAR" />
+    <result column="ADD_DAY" property="addDay" jdbcType="DECIMAL" />
+    <result column="DELIVERY_TIME" property="deliveryTime" jdbcType="VARCHAR" />
+    <result column="HAS_SALES_DEPT" property="hasSalesDept" jdbcType="CHAR" />
+    <result column="LONG_OR_SHORT" property="longOrShort" jdbcType="VARCHAR" />
+    <result column="DESCRIPTION" property="description" jdbcType="VARCHAR" />
+    <result column="VERSION_NO" property="versionNo" jdbcType="DECIMAL" />
+    <result column="CREATE_TIME" property="createDate"  />
+    <result column="MODIFY_TIME" property="modifyDate"  />
+    <result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+    <result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+    <result column="CREATE_ORG_CODE" property="createOrgCode" jdbcType="VARCHAR" />
+    <result column="MODIFY_ORG_CODE" property="modifyOrgCode" jdbcType="VARCHAR" />
+    <result column="ACTIVE" property="active" jdbcType="CHAR" />
+  </resultMap>
+  
+  <sql id="Base_Column_List" >
+    ID, 
+    T_SRV_PRODUCT_ID, 
+    T_SRV_PRODUCT_CODE, 
+    T_SRV_EXPRESS_EFFECTIVE_PLAN_I, 
+    DEPT_REGION_ID, 
+    DEPT_REGION_CODE, 
+    ARRV_REGION_ID, 
+    ARRV_REGION_CODE, 
+    MAX_TIME, 
+    MAX_TIME_UNIT, 
+    MIN_TIME, 
+    MIN_TIME_UNIT, 
+    ARRIVE_TIME, 
+    ADD_DAY, 
+    DELIVERY_TIME, 
+    HAS_SALES_DEPT, 
+    LONG_OR_SHORT, 
+    DESCRIPTION, 
+    VERSION_NO, 
+    CREATE_TIME, 
+    MODIFY_TIME, 
+    CREATE_USER_CODE, 
+    MODIFY_USER_CODE, 
+    CREATE_ORG_CODE, 
+    MODIFY_ORG_CODE, 
+    ACTIVE
+  </sql>
+  <sql id="DownLoad_Column_List" >
+    detail.ID, 
+    detail.T_SRV_PRODUCT_ID, 
+    detail.T_SRV_PRODUCT_CODE, 
+    detail.T_SRV_EXPRESS_EFFECTIVE_PLAN_I, 
+    detail.DEPT_REGION_ID, 
+    detail.DEPT_REGION_CODE, 
+    detail.ARRV_REGION_ID, 
+    detail.ARRV_REGION_CODE, 
+    detail.MAX_TIME, 
+    detail.MAX_TIME_UNIT, 
+    detail.MIN_TIME, 
+    detail.MIN_TIME_UNIT, 
+    detail.ARRIVE_TIME, 
+    detail.ADD_DAY, 
+    detail.DELIVERY_TIME, 
+    detail.HAS_SALES_DEPT, 
+    detail.LONG_OR_SHORT, 
+    detail.DESCRIPTION, 
+    detail.VERSION_NO, 
+    detail.CREATE_TIME, 
+    detail.MODIFY_TIME, 
+    detail.CREATE_USER_CODE, 
+    detail.MODIFY_USER_CODE, 
+    detail.CREATE_ORG_CODE, 
+    detail.MODIFY_ORG_CODE, 
+    detail.ACTIVE
+  </sql>
+  <select id="selectDetailForDownload" resultMap="BaseResultMap" parameterType="java.util.HashMap" >
+    select /*综合-价格-时效方案明细下载*/
+    <include refid="DownLoad_Column_List" />
+    from PKP.T_SRV_EXPRESS_EFF_PLAN_DETAIL detail, PKP.T_SRV_EXPRESS_EFFECTIVE_PLAN plan
+   <where>
+    	<if test="deptRegionId!=null and deptRegionId!=''">
+    		detail.T_SRV_EXPRESS_EFFECTIVE_PLAN_I = plan.ID
+    		AND plan.DEPT_REGION_ID = #{deptRegionId,jdbcType=VARCHAR}	
+    	</if>
+    	<if test="active!=null and active!=''">
+    		AND plan.ACTIVE = #{active,jdbcType=VARCHAR}	
+    	</if> 
+    	<if test="lastModifyTime!=null and lastModifyTime!=''">
+    		AND  plan.MODIFY_TIME <![CDATA[ > ]]> #{lastModifyTime,jdbcType=TIMESTAMP} 
+    	</if>
+    	<if test="billDate!=null and billDate!=''">
+    		AND #{billDate,jdbcType=TIMESTAMP} BETWEEN  plan.BEGIN_TIME AND plan.END_TIME  	
+    	</if>	
+    </where>
+    order by plan.MODIFY_TIME desc
+  </select>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.String" >
+    select /*综合-价格-根据主键查询时效方案明细*/
+    <include refid="Base_Column_List" />
+    from PKP.T_SRV_EXPRESS_EFF_PLAN_DETAIL
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String" >
+    delete /*综合-价格-根据主键删除时效方案明细*/ 
+    from PKP.T_SRV_EXPRESS_EFF_PLAN_DETAIL
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  <insert id="insert" parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.EffectiveExpressPlanDetailEntity" >
+    insert /*综合-价格-插入时效方案明细*/ 
+    into PKP.T_SRV_EXPRESS_EFF_PLAN_DETAIL (ID, T_SRV_PRODUCT_ID, T_SRV_PRODUCT_CODE, 
+      T_SRV_EXPRESS_EFFECTIVE_PLAN_I, DEPT_REGION_ID, DEPT_REGION_CODE, 
+      ARRV_REGION_ID, ARRV_REGION_CODE, MAX_TIME, 
+      MAX_TIME_UNIT, MIN_TIME, MIN_TIME_UNIT, 
+      ARRIVE_TIME, ADD_DAY, DELIVERY_TIME, 
+      HAS_SALES_DEPT, LONG_OR_SHORT, DESCRIPTION, 
+      VERSION_NO, CREATE_TIME, MODIFY_TIME, 
+      CREATE_USER_CODE, MODIFY_USER_CODE, CREATE_ORG_CODE, 
+      MODIFY_ORG_CODE, ACTIVE)
+    values (#{id,jdbcType=VARCHAR}, #{productId,jdbcType=VARCHAR}, #{productCode,jdbcType=VARCHAR}, 
+      #{effectivePlanId,jdbcType=VARCHAR}, #{deptRegionId,jdbcType=VARCHAR}, #{deptRegionCode,jdbcType=VARCHAR}, 
+      #{arrvRegionId,jdbcType=VARCHAR}, #{arrvRegionCode,jdbcType=VARCHAR}, #{maxTime,jdbcType=DECIMAL}, 
+      #{maxTimeUnit,jdbcType=VARCHAR}, #{minTime,jdbcType=DECIMAL}, #{minTimeUnit,jdbcType=VARCHAR}, 
+      #{arriveTime,jdbcType=VARCHAR}, #{addDay,jdbcType=DECIMAL}, #{deliveryTime,jdbcType=VARCHAR}, 
+      #{hasSalesDept,jdbcType=CHAR}, #{longOrShort,jdbcType=VARCHAR}, #{description,jdbcType=VARCHAR}, 
+      #{versionNo,jdbcType=DECIMAL}, #{createDate,jdbcType=TIMESTAMP}, #{modifyDate,jdbcType=TIMESTAMP}, 
+      #{createUser,jdbcType=VARCHAR}, #{modifyUser,jdbcType=VARCHAR}, #{createOrgCode,jdbcType=VARCHAR}, 
+      #{modifyOrgCode,jdbcType=VARCHAR}, #{active,jdbcType=CHAR})
+  </insert>
+  <insert id="insertSelective" parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.EffectiveExpressPlanDetailEntity" >
+    insert /*综合-价格-插入时效方案明细*/ 
+    into PKP.T_SRV_EXPRESS_EFF_PLAN_DETAIL
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="productId != null" >
+        T_SRV_PRODUCT_ID,
+      </if>
+      <if test="productCode != null" >
+        T_SRV_PRODUCT_CODE,
+      </if>
+      <if test="effectivePlanId != null" >
+        T_SRV_EXPRESS_EFFECTIVE_PLAN_I,
+      </if>
+      <if test="deptRegionId != null" >
+        DEPT_REGION_ID,
+      </if>
+      <if test="deptRegionCode != null" >
+        DEPT_REGION_CODE,
+      </if>
+      <if test="arrvRegionId != null" >
+        ARRV_REGION_ID,
+      </if>
+      <if test="arrvRegionCode != null" >
+        ARRV_REGION_CODE,
+      </if>
+      <if test="maxTime != null" >
+        MAX_TIME,
+      </if>
+      <if test="maxTimeUnit != null" >
+        MAX_TIME_UNIT,
+      </if>
+      <if test="minTime != null" >
+        MIN_TIME,
+      </if>
+      <if test="minTimeUnit != null" >
+        MIN_TIME_UNIT,
+      </if>
+      <if test="arriveTime != null" >
+        ARRIVE_TIME,
+      </if>
+      <if test="addDay != null" >
+        ADD_DAY,
+      </if>
+      <if test="deliveryTime != null" >
+        DELIVERY_TIME,
+      </if>
+      <if test="hasSalesDept != null" >
+        HAS_SALES_DEPT,
+      </if>
+      <if test="longOrShort != null" >
+        LONG_OR_SHORT,
+      </if>
+      <if test="description != null" >
+        DESCRIPTION,
+      </if>
+      <if test="versionNo != null" >
+        VERSION_NO,
+      </if>
+      <if test="createDate != null" >
+        CREATE_TIME,
+      </if>
+      <if test="modifyDate != null" >
+        MODIFY_TIME,
+      </if>
+      <if test="createUser != null" >
+        CREATE_USER_CODE,
+      </if>
+      <if test="modifyUser != null" >
+        MODIFY_USER_CODE,
+      </if>
+      <if test="createOrgCode != null" >
+        CREATE_ORG_CODE,
+      </if>
+      <if test="modifyOrgCode != null" >
+        MODIFY_ORG_CODE,
+      </if>
+      <if test="active != null" >
+        ACTIVE,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="productId != null" >
+        #{productId,jdbcType=VARCHAR},
+      </if>
+      <if test="productCode != null" >
+        #{productCode,jdbcType=VARCHAR},
+      </if>
+      <if test="effectivePlanId != null" >
+        #{effectivePlanId,jdbcType=VARCHAR},
+      </if>
+      <if test="deptRegionId != null" >
+        #{deptRegionId,jdbcType=VARCHAR},
+      </if>
+      <if test="deptRegionCode != null" >
+        #{deptRegionCode,jdbcType=VARCHAR},
+      </if>
+      <if test="arrvRegionId != null" >
+        #{arrvRegionId,jdbcType=VARCHAR},
+      </if>
+      <if test="arrvRegionCode != null" >
+        #{arrvRegionCode,jdbcType=VARCHAR},
+      </if>
+      <if test="maxTime != null" >
+        #{maxTime,jdbcType=DECIMAL},
+      </if>
+      <if test="maxTimeUnit != null" >
+        #{maxTimeUnit,jdbcType=VARCHAR},
+      </if>
+      <if test="minTime != null" >
+        #{minTime,jdbcType=DECIMAL},
+      </if>
+      <if test="minTimeUnit != null" >
+        #{minTimeUnit,jdbcType=VARCHAR},
+      </if>
+      <if test="arriveTime != null" >
+        #{arriveTime,jdbcType=VARCHAR},
+      </if>
+      <if test="addDay != null" >
+        #{addDay,jdbcType=DECIMAL},
+      </if>
+      <if test="deliveryTime != null" >
+        #{deliveryTime,jdbcType=VARCHAR},
+      </if>
+      <if test="hasSalesDept != null" >
+        #{hasSalesDept,jdbcType=CHAR},
+      </if>
+      <if test="longOrShort != null" >
+        #{longOrShort,jdbcType=VARCHAR},
+      </if>
+      <if test="description != null" >
+        #{description,jdbcType=VARCHAR},
+      </if>
+      <if test="versionNo != null" >
+        #{versionNo,jdbcType=DECIMAL},
+      </if>
+      <if test="createDate != null" >
+        #{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifyDate != null" >
+        #{modifyDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="createUser != null" >
+        #{createUser,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyUser != null" >
+        #{modifyUser,jdbcType=VARCHAR},
+      </if>
+      <if test="createOrgCode != null" >
+        #{createOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyOrgCode != null" >
+        #{modifyOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="active != null" >
+        #{active,jdbcType=CHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.EffectiveExpressPlanDetailEntity" >
+    update /*综合-价格-修改时效方案明细*/ 
+    PKP.T_SRV_EXPRESS_EFF_PLAN_DETAIL
+    <set >
+      <if test="productId != null" >
+        T_SRV_PRODUCT_ID = #{productId,jdbcType=VARCHAR},
+      </if>
+      <if test="productCode != null" >
+        T_SRV_PRODUCT_CODE = #{productCode,jdbcType=VARCHAR},
+      </if>
+      <if test="effectivePlanId != null" >
+        T_SRV_EXPRESS_EFFECTIVE_PLAN_I = #{effectivePlanId,jdbcType=VARCHAR},
+      </if>
+      <if test="deptRegionId != null" >
+        DEPT_REGION_ID = #{deptRegionId,jdbcType=VARCHAR},
+      </if>
+      <if test="deptRegionCode != null" >
+        DEPT_REGION_CODE = #{deptRegionCode,jdbcType=VARCHAR},
+      </if>
+      <if test="arrvRegionId != null" >
+        ARRV_REGION_ID = #{arrvRegionId,jdbcType=VARCHAR},
+      </if>
+      <if test="arrvRegionCode != null" >
+        ARRV_REGION_CODE = #{arrvRegionCode,jdbcType=VARCHAR},
+      </if>
+      <if test="maxTime != null" >
+        MAX_TIME = #{maxTime,jdbcType=DECIMAL},
+      </if>
+      <if test="maxTimeUnit != null" >
+        MAX_TIME_UNIT = #{maxTimeUnit,jdbcType=VARCHAR},
+      </if>
+      <if test="minTime != null" >
+        MIN_TIME = #{minTime,jdbcType=DECIMAL},
+      </if>
+      <if test="minTimeUnit != null" >
+        MIN_TIME_UNIT = #{minTimeUnit,jdbcType=VARCHAR},
+      </if>
+      <if test="arriveTime != null" >
+        ARRIVE_TIME = #{arriveTime,jdbcType=VARCHAR},
+      </if>
+      <if test="addDay != null" >
+        ADD_DAY = #{addDay,jdbcType=DECIMAL},
+      </if>
+      <if test="deliveryTime != null" >
+        DELIVERY_TIME = #{deliveryTime,jdbcType=VARCHAR},
+      </if>
+      <if test="hasSalesDept != null" >
+        HAS_SALES_DEPT = #{hasSalesDept,jdbcType=CHAR},
+      </if>
+      <if test="longOrShort != null" >
+        LONG_OR_SHORT = #{longOrShort,jdbcType=VARCHAR},
+      </if>
+      <if test="description != null" >
+        DESCRIPTION = #{description,jdbcType=VARCHAR},
+      </if>
+      <if test="versionNo != null" >
+        VERSION_NO = #{versionNo,jdbcType=DECIMAL},
+      </if>
+      <if test="createDate != null" >
+        CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifyDate != null" >
+        MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="createUser != null" >
+        CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyUser != null" >
+        MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+      </if>
+      <if test="createOrgCode != null" >
+        CREATE_ORG_CODE = #{createOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyOrgCode != null" >
+        MODIFY_ORG_CODE = #{modifyOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="active != null" >
+        ACTIVE = #{active,jdbcType=CHAR},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  
+  <update id="updateByPrimaryKey" parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.EffectiveExpressPlanDetailEntity" >
+    update /*综合-价格-修改时效方案明细*/ 
+    PKP.T_SRV_EXPRESS_EFF_PLAN_DETAIL
+    set T_SRV_PRODUCT_ID = #{productId,jdbcType=VARCHAR},
+      T_SRV_PRODUCT_CODE = #{productCode,jdbcType=VARCHAR},
+      T_SRV_EXPRESS_EFFECTIVE_PLAN_I = #{effectivePlanId,jdbcType=VARCHAR},
+      DEPT_REGION_ID = #{deptRegionId,jdbcType=VARCHAR},
+      DEPT_REGION_CODE = #{deptRegionCode,jdbcType=VARCHAR},
+      ARRV_REGION_ID = #{arrvRegionId,jdbcType=VARCHAR},
+      ARRV_REGION_CODE = #{arrvRegionCode,jdbcType=VARCHAR},
+      MAX_TIME = #{maxTime,jdbcType=DECIMAL},
+      MAX_TIME_UNIT = #{maxTimeUnit,jdbcType=VARCHAR},
+      MIN_TIME = #{minTime,jdbcType=DECIMAL},
+      MIN_TIME_UNIT = #{minTimeUnit,jdbcType=VARCHAR},
+      ARRIVE_TIME = #{arriveTime,jdbcType=VARCHAR},
+      ADD_DAY = #{addDay,jdbcType=DECIMAL},
+      DELIVERY_TIME = #{deliveryTime,jdbcType=VARCHAR},
+      HAS_SALES_DEPT = #{hasSalesDept,jdbcType=CHAR},
+      LONG_OR_SHORT = #{longOrShort,jdbcType=VARCHAR},
+      DESCRIPTION = #{description,jdbcType=VARCHAR},
+      VERSION_NO = #{versionNo,jdbcType=DECIMAL},
+      CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+      MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+      CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+      MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+      CREATE_ORG_CODE = #{createOrgCode,jdbcType=VARCHAR},
+      MODIFY_ORG_CODE = #{modifyOrgCode,jdbcType=VARCHAR},
+      ACTIVE = #{active,jdbcType=CHAR}
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  
+  <sql id="Special_Column_List" >
+    DETAIL.ID, 
+    DETAIL.T_SRV_PRODUCT_ID, 
+    DETAIL.T_SRV_PRODUCT_CODE, 
+    DETAIL.T_SRV_EXPRESS_EFFECTIVE_PLAN_I, 
+    DETAIL.DEPT_REGION_ID, 
+    DETAIL.DEPT_REGION_CODE, 
+    DETAIL.ARRV_REGION_ID, 
+    DETAIL.ARRV_REGION_CODE, 
+    DETAIL.MAX_TIME, 
+    DETAIL.MAX_TIME_UNIT, 
+    DETAIL.MIN_TIME, 
+    DETAIL.MIN_TIME_UNIT, 
+    DETAIL.ARRIVE_TIME, 
+    DETAIL.ADD_DAY, 
+    DETAIL.DELIVERY_TIME, 
+    DETAIL.HAS_SALES_DEPT, 
+    DETAIL.LONG_OR_SHORT, 
+    DETAIL.DESCRIPTION, 
+    DETAIL.VERSION_NO, 
+    DETAIL.CREATE_TIME, 
+    DETAIL.MODIFY_TIME, 
+    DETAIL.CREATE_USER_CODE, 
+    DETAIL.MODIFY_USER_CODE, 
+    DETAIL.CREATE_ORG_CODE, 
+    DETAIL.MODIFY_ORG_CODE, 
+    DETAIL.ACTIVE
+  </sql>
+  
+  
+  <select id="queryEffectivePlanDetailListByCondition" resultMap="BaseResultMap"	parameterType="com.deppon.foss.module.pickup.pricing.api.shared.dto.EffectivePlanDto">
+		 SELECT /*综合-价格-根据综合条件查询时效方案明细*/ 
+		<include refid="Special_Column_List" />
+		 FROM PKP.T_SRV_EXPRESS_EFF_PLAN_DETAIL DETAIL
+		 JOIN PKP.T_SRV_EXPRESS_EFFECTIVE_PLAN PLAN ON
+		 PLAN.ID = DETAIL.T_SRV_EXPRESS_EFFECTIVE_PLAN_I
+		 <where>
+		 	<if test="deptRegionId != null and deptRegionId != '' ">
+		 		AND DETAIL.DEPT_REGION_ID = #{deptRegionId}
+		 	</if>
+		 	<if test="arrvRegionId != null and arrvRegionId != '' ">
+		 		AND DETAIL.ARRV_REGION_ID = #{arrvRegionId}
+		 	</if>
+		 	<if test="active != null and active != '' ">
+		 		AND PLAN.ACTIVE  = #{active}
+		 	</if>
+		 	<if test="productCode != null and productCode != '' ">
+		 		AND DETAIL.T_SRV_PRODUCT_CODE  = #{productCode}
+		 	</if>
+		 	<if test="billDate != null and billDate != '' ">
+		 		<![CDATA[AND PLAN.BEGIN_TIME <= #{billDate} AND PLAN.END_TIME > #{billDate}]]>
+		 	</if>
+		 </where>
+  </select>
+  
+  <select id="queryEffectivePlanDetailListByArrvIds" resultMap="BaseResultMap"	parameterType="map">
+		 SELECT /*综合-价格-根据到达区域ID集合查询时效方案明细*/ 
+		<include refid="Special_Column_List" />
+		 FROM PKP.T_SRV_EXPRESS_EFF_PLAN_DETAIL DETAIL
+		 JOIN PKP.T_SRV_EXPRESS_EFFECTIVE_PLAN PLAN ON
+		 PLAN.ID = DETAIL.T_SRV_EXPRESS_EFFECTIVE_PLAN_I
+		 <where>
+		 	<if test="deptRegionId != null and deptRegionId != '' ">
+		 		AND DETAIL.DEPT_REGION_ID = #{deptRegionId}
+		 	</if>
+		 	<if test="arrvRegionIds != null and arrvRegionIds != '' ">
+		 		AND DETAIL.ARRV_REGION_ID IN  
+				<foreach collection="arrvRegionIds" open="(" close=")" separator="," item="id">
+				<![CDATA[	#{id}  ]]>
+				</foreach>
+		 	</if>
+		 	<if test="active != null and active != '' ">
+		 		AND PLAN.ACTIVE  = #{active}
+		 	</if>
+		 	<if test="productCode != null and productCode != '' ">
+		 		AND DETAIL.T_SRV_PRODUCT_CODE  = #{productCode}
+		 	</if>
+		 	<if test="billDate != null and billDate != '' ">
+		 		<![CDATA[AND PLAN.BEGIN_TIME <= #{billDate} AND PLAN.END_TIME > #{billDate}]]>
+		 	</if>
+		 </where>
+  </select>
+
+  <select id="queryEffectivePlanDetailListByRegionIds" resultMap="BaseResultMap" parameterType="map">
+		 SELECT /*综合-价格-根据始发和到达区域ID集合查询时效方案明细*/ 
+		<include refid="Special_Column_List" />
+		 FROM PKP.T_SRV_EXPRESS_EFF_PLAN_DETAIL DETAIL
+		 JOIN PKP.T_SRV_EXPRESS_EFFECTIVE_PLAN PLAN ON
+		 PLAN.ID = DETAIL.T_SRV_EXPRESS_EFFECTIVE_PLAN_I
+		 <where>
+		 	<if test="deptRegionIds != null and deptRegionIds != '' ">
+		 		AND DETAIL.DEPT_REGION_ID IN  
+				<foreach collection="deptRegionIds" open="(" close=")" separator="," item="id">
+				<![CDATA[	#{id}  ]]>
+				</foreach>
+		 	</if>
+		 	<if test="arrvRegionIds != null and arrvRegionIds != '' ">
+		 		AND DETAIL.ARRV_REGION_ID IN  
+				<foreach collection="arrvRegionIds" open="(" close=")" separator="," item="id">
+				<![CDATA[	#{id}  ]]>
+				</foreach>
+		 	</if>
+		 	<if test="active != null and active != '' ">
+		 		AND PLAN.ACTIVE  = #{active}
+		 	</if>
+		 	<if test="productCode != null and productCode != '' ">
+		 		AND DETAIL.T_SRV_PRODUCT_CODE  = #{productCode}
+		 	</if>
+		 	<if test="billDate != null and billDate != '' ">
+		 		<![CDATA[AND PLAN.BEGIN_TIME <= #{billDate} AND PLAN.END_TIME > #{billDate}]]>
+		 	</if>
+		 </where>
+  </select>
+  
+	<select id="queryEffectivePlanDetailByCondition" resultMap="BaseResultMap"	parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.EffectiveExpressPlanDetailEntity">
+		 SELECT /*综合-价格-根据综合条件查询时效方案明细*/ 
+		<include refid="Special_Column_List" />
+		 FROM PKP.T_SRV_EXPRESS_EFF_PLAN_DETAIL DETAIL
+		<where>
+		<if test="arrvRegionId!=null and arrvRegionId!=''"> 
+				AND DETAIL.ARRV_REGION_ID = #{arrvRegionId}        
+  		</if>
+  		<if test="deptRegionId!=null and deptRegionId!=''"> 
+				AND DETAIL.DEPT_REGION_ID = #{deptRegionId}        
+  		</if>
+  		<if test="arrvRegionCode!=null and arrvRegionCode!=''"> 
+				AND DETAIL.ARRV_REGION_CODE = #{arrvRegionCode}        
+  		</if>
+  		<if test="deptRegionCode!=null and deptRegionCode!=''"> 
+				AND DETAIL.DEPT_REGION_CODE = #{deptRegionCode}        
+  		</if>
+  		<if test="productCode!=null and productCode!=''"> 
+				AND DETAIL.T_SRV_PRODUCT_CODE  = #{productCode}  
+  		</if>
+  		<if test="effectivePlanId!=null and effectivePlanId!=''"> 
+				AND DETAIL.T_SRV_EXPRESS_EFFECTIVE_PLAN_I = #{effectivePlanId}        
+  		</if>
+		<if test="active != null and active != ''">
+				AND DETAIL.ACTIVE = #{active}
+		</if>
+		<if test="versionNo!=null and versionNo!=''"> 
+				AND DETAIL.VERSION_NO <![CDATA[ >= ]]> #{versionNo}        
+  		</if>
+  		</where>
+  			order by DETAIL.VERSION_NO ASC 
+	</select>
+  
+  <sql id="baseQueryEffectivePlanDetailInfo">
+		  FROM PKP.T_SRV_EXPRESS_EFF_PLAN_DETAIL DETAIL
+		  <where>
+			 <if test="effectivePlanId != null and effectivePlanId != ''">
+				  DETAIL.T_SRV_EXPRESS_EFFECTIVE_PLAN_I  = #{effectivePlanId}
+			 </if>
+			 <if test="active != null and active != ''">
+					 AND DETAIL.ACTIVE  = #{active}
+			 </if>
+			 <if test="deptRegionId != null and deptRegionId != ''">
+					 AND DETAIL.DEPT_REGION_ID  = #{deptRegionId}
+			 </if>
+			 <if test="deptRegionCode != null and deptRegionCode != ''">
+					 AND DETAIL.DEPT_REGION_CODE  = #{deptRegionCode}
+			 </if>
+			 <if test="longOrShort != null and longOrShort != ''">
+					 AND DETAIL.LONG_OR_SHORT  = #{longOrShort}
+			 </if>
+			 <if test="productCode != null and productCode != ''">
+					 AND DETAIL.T_SRV_PRODUCT_CODE  = #{productCode}
+			 </if>
+			 <if test="arrvRegionId != null and arrvRegionId != ''">
+					 AND DETAIL.ARRV_REGION_ID  = #{arrvRegionId}
+			 </if>
+			 <if test="arrvRegionCode != null and arrvRegionCode != ''">
+					 AND DETAIL.ARRV_REGION_CODE  = #{arrvRegionCode}
+			 </if>
+			 <if test="createUser != null and createUser != ''">
+					 AND DETAIL.CREATE_USER_CODE  = #{createUser}
+			 </if>
+			 <if test="createOrgCode != null and createOrgCode != ''">
+					 AND DETAIL.CREATE_ORG_CODE  = #{createOrgCode}
+			 </if>
+			 <if test="modifyOrgCode != null and modifyOrgCode != ''">
+					 AND DETAIL.MODIFY_ORG_CODE  = #{modifyOrgCode}
+			 </if>
+		  </where>
+  </sql>
+  
+  <select id="queryEffectivePlanDetailInfo" resultMap="BaseResultMap"	parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.EffectiveExpressPlanDetailEntity">
+  		SELECT /*综合-价格-根据综合条件查询时效方案明细*/ 
+  		<include refid="Special_Column_List" />
+		<include refid="baseQueryEffectivePlanDetailInfo" />
+  </select>
+  
+  <select id="queryEffectivePlanDetailInfoPaggingCount" resultType="Long"	parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.EffectiveExpressPlanDetailEntity">
+  		SELECT /*综合-价格-根据综合条件查询时效方案明细总数*/ COUNT(*)	
+  		<include refid="baseQueryEffectivePlanDetailInfo" />
+  </select>
+  
+    <!-- 批量删除方案明细信息 -->
+  <delete id="deleteEffectivePlanDetailByIds" parameterType="map">
+  		DELETE /*综合-价格-删除时效方案明细*/ 
+  		FROM PKP.T_SRV_EXPRESS_EFF_PLAN_DETAIL 
+  		<![CDATA[WHERE ID IN ]]>
+		<foreach collection="ids" open="(" close=")" separator=","
+				item="id">
+		<![CDATA[	#{id}  ]]>
+		</foreach>
+  </delete>
+  <!-- 批量激活方案明细信息 -->
+  <update id="activeEffectivePlanDetailByIds" parameterType="map">
+  		UPDATE /*综合-价格-激活时效方案明细*/ 
+  		PKP.T_SRV_EXPRESS_EFF_PLAN_DETAIL  
+  		<set>
+  		ACTIVE = #{active},
+  		VERSION_NO = #{versionNo},
+  		MODIFY_TIME= sysdate
+  		</set>
+  		<![CDATA[WHERE ID IN ]]>
+		<foreach collection="ids" open="(" close=")" separator=","
+				item="id">
+		<![CDATA[	#{id}  ]]>
+		</foreach>
+  </update>
+  
+  
+   <!-- 根据条件查询时效方案明细分页 -->
+  <select id="searchEffectivePlanDetailEntityByCondition" resultMap="BaseResultMap"
+		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.EffectiveExpressPlanDetailEntity">
+		<![CDATA[
+			SELECT /*综合-价格-根据综合条件查询时效方案明细*/ 
+		]]>
+		<include refid="Base_Column_List" />
+		<![CDATA[
+			FROM pkp.T_SRV_EXPRESS_EFF_PLAN_DETAIL MASTER
+		]]>
+		<where>
+		 	<if test="deptRegionCode != null and deptRegionCode != ''">
+				AND MASTER.DEPT_REGION_CODE = #{deptRegionCode}
+			</if>
+			<if test="deptRegionId != null and deptRegionId != ''">
+				AND MASTER.DEPT_REGION_ID = #{deptRegionId}
+			</if>
+			<if test="arrvRegionId != null and arrvRegionId != ''">
+				AND MASTER.ARRV_REGION_ID = #{arrvRegionId}
+			</if>
+			<if test="active != null and active != ''">
+				AND MASTER.ACTIVE = #{active}
+			</if>
+			<if test="createDate != null and createDate != ''">
+				AND  MASTER.CREATE_TIME = #{createDate}
+			</if>
+			<if test="modifyOrgCode != null and modifyOrgCode != ''">
+				AND MASTER.MODIFY_ORG_CODE = #{modifyOrgCode}
+			</if>
+		</where>
+		order by MASTER.VERSION_NO ASC 
+	</select>
+	
+	 <!-- 根据条件查询时效方案明细信息分页总记录数 -->
+  <select id="searchEffectivePlanDetailEntityByConditionCount" resultType = "long"
+		parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.EffectiveExpressPlanDetailEntity">
+		<![CDATA[
+			SELECT /*综合-价格- 根据条件查询时效方案明细信息分页总记录数*/ 
+		]]>
+		COUNT(*)
+		<![CDATA[
+			FROM pkp.T_SRV_EXPRESS_EFF_PLAN_DETAIL MASTER
+		]]>
+		<where>
+			<if test="deptRegionCode != null and deptRegionCode != ''">
+				AND MASTER.DEPT_REGION_CODE = #{deptRegionCode}
+			</if>
+			<if test="deptRegionId != null and deptRegionId != ''">
+				AND MASTER.DEPT_REGION_ID = #{deptRegionId}
+			</if>
+			<if test="arrvRegionId != null and arrvRegionId != ''">
+				AND MASTER.ARRV_REGION_ID = #{arrvRegionId}
+			</if>
+			<if test="active != null and active != ''">
+				AND MASTER.ACTIVE = #{active}
+			</if>
+			<if test="createDate != null and createDate != ''">
+				AND  MASTER.CREATE_TIME = #{createDate}
+			</if>
+			<if test="modifyOrgCode != null and modifyOrgCode != ''">
+				AND MASTER.MODIFY_ORG_CODE = #{modifyOrgCode}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 批量新增 -->
+	<insert id="batchInsert" parameterType="map" >
+	    insert /*综合-价格-批量插入时效方案明细*/ 
+	    into PKP.T_SRV_EXPRESS_EFF_PLAN_DETAIL (
+	      ID, 
+	      T_SRV_PRODUCT_ID, 
+	      T_SRV_PRODUCT_CODE, 
+	      T_SRV_EXPRESS_EFFECTIVE_PLAN_I, 
+	      DEPT_REGION_ID, 
+	      DEPT_REGION_CODE, 
+	      ARRV_REGION_ID, 
+	      ARRV_REGION_CODE, 
+	      MAX_TIME, 
+	      MAX_TIME_UNIT, 
+	      MIN_TIME, 
+	      MIN_TIME_UNIT, 
+	      ARRIVE_TIME, 
+	      ADD_DAY, 
+	      DELIVERY_TIME, 
+	      HAS_SALES_DEPT,
+	      LONG_OR_SHORT, 
+	      DESCRIPTION, 
+	      VERSION_NO, 
+	      CREATE_TIME, 
+	      MODIFY_TIME, 
+	      CREATE_USER_CODE, 
+	      MODIFY_USER_CODE, 
+	      CREATE_ORG_CODE, 
+	      MODIFY_ORG_CODE, 
+	      ACTIVE)
+	      SELECT 
+	      	<![CDATA[ sys_guid() ]]>,
+	    	T_SRV_PRODUCT_ID, 
+	    	T_SRV_PRODUCT_CODE, 
+	      	#{newId}, 
+	      	DEPT_REGION_ID, 
+	      	DEPT_REGION_CODE, 
+	      	ARRV_REGION_ID, 
+	      	ARRV_REGION_CODE, 
+	      	MAX_TIME, 
+	      	MAX_TIME_UNIT, 
+	      	MIN_TIME, 
+	      	MIN_TIME_UNIT, 
+	      	ARRIVE_TIME, 
+	      	ADD_DAY, 
+	      	DELIVERY_TIME, 
+	      	HAS_SALES_DEPT,
+	      	LONG_OR_SHORT, 
+	      	DESCRIPTION, 
+	      	VERSION_NO, 
+	      	CREATE_TIME, 
+	      	MODIFY_TIME, 
+	      	CREATE_USER_CODE, 
+	      	MODIFY_USER_CODE, 
+	      	CREATE_ORG_CODE, 
+	      	MODIFY_ORG_CODE, 
+	      	#{active}
+	      	FROM pkp.T_SRV_EXPRESS_EFF_PLAN_DETAIL EFFECTIVE_DETAIL 
+	      	WHERE EFFECTIVE_DETAIL.T_SRV_EXPRESS_EFFECTIVE_PLAN_I =  #{oldId}
+  </insert>
+	
+</mapper>

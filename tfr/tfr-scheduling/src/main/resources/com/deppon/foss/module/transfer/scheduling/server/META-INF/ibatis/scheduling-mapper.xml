@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Foss.scheduling" >
+	<resultMap id="adjustResultMap" type="com.deppon.foss.module.transfer.scheduling.api.shared.domain.AdjustEntity" >
+		<result column="GOODS_AREA_CODE" property="goodsAreaCode" jdbcType="VARCHAR" />
+		<result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+		<result column="AREA_WEIGHT_TOTAL" property="areaWeightTotal" jdbcType="NUMERIC" />
+		<result column="AREA_VOLUME_TOTAL" property="areaVolumeTotal" jdbcType="NUMERIC" />
+		<result column="AREA_LINE" property="areaLine" jdbcType="VARCHAR" />
+		<result column="AREA_WAYBILL_QTY" property="areaWaybillQty" jdbcType="INTEGER" />
+		
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="PRODUCT_CODE" property="productCode" jdbcType="VARCHAR"/>
+		<result column="STOCK_GOODS_QTY" property="stockGoodsQTY" jdbcType="INTEGER" />
+		<result column="GOODS_QTY_TOTAL" property="goodsQtyTotal" jdbcType="INTEGER" />
+		<result column="GOODS_WEIGHT_TOTAL" property="goodsWeightTotal" jdbcType="NUMERIC" />
+		<result column="GOODS_VOLUME_TOTAL" property="goodsVolumeTotal" jdbcType="NUMERIC" />
+		<result column="BEFORE_LINE" property="beforeLine" jdbcType="VARCHAR" />
+		<result column="AFTER_LINE" property="afterLine" jdbcType="VARCHAR" />
+		
+		<result column="SERIAL_NO" property="serialNo" jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="Base_Column_List" >
+   	GOODS_AREA_CODE, ORG_CODE, AREA_WEIGHT_TOTAL, AREA_VOLUME_TOTAL, AREA_LINE, AREA_WAYBILL_QTY,
+   	WAYBILL_NO, STOCK_GOODS_QTY, GOODS_QTY_TOTAL, GOODS_WEIGHT_TOTAL, GOODS_VOLUME_TOTAL, BEFORE_LINE, AFTER_LINE, 
+   	SERIAL_NO
+	</sql>
+	
+	<!-- Adjust Count -->
+	<select id="getCount"	resultType="Long" parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.AdjustEntity">
+		SELECT COUNT(DISTINCT(GOODS_AREA_CODE)) FROM TFR.T_OPT_WAYBILL_STOCK WS
+		<include refid="select_Where_Adjust"/>
+		AND WS.GOODS_AREA_CODE !='BULK_GOODS_AREA' AND WS.GOODS_AREA_CODE !='WHOLE_GOODS_AREA'
+	</select>
+	
+	<!-- Adjust Query Level1 -->
+	<select id="queryLevel1"  parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.AdjustEntity" resultMap="adjustResultMap">
+			SELECT WS.ORG_CODE, WS.GOODS_AREA_CODE, COUNT(WS.WAYBILL_NO) AS AREA_WAYBILL_QTY FROM TFR.T_OPT_WAYBILL_STOCK WS
+			<include refid="select_Where_Adjust"/>
+			AND WS.GOODS_AREA_CODE !='BULK_GOODS_AREA' AND WS.GOODS_AREA_CODE !='WHOLE_GOODS_AREA'
+			<include refid="group_By"/>
+	</select>
+	
+	<!-- waybill List -->
+	<select id="waybillList"  parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.AdjustEntity" resultMap="adjustResultMap">
+			SELECT distinct WS.WAYBILL_NO, WS.GOODS_AREA_CODE, WS.ORG_CODE, WS.STOCK_GOODS_QTY, W.GOODS_QTY_TOTAL, W.GOODS_WEIGHT_TOTAL, W.GOODS_VOLUME_TOTAL,W.PRODUCT_CODE
+			FROM TFR.T_OPT_WAYBILL_STOCK WS 
+			LEFT JOIN PKP.T_SRV_WAYBILL W ON WS.WAYBILL_NO = W.WAYBILL_NO AND W.ACTIVE = 'Y'
+			join tfr.t_opt_stock t
+              on ws.waybill_no = t.waybill_no
+              and ws.org_code = t.org_code
+			<include refid="select_Where_Adjust"/>
+			AND WS.GOODS_AREA_CODE !='BULK_GOODS_AREA' AND WS.GOODS_AREA_CODE !='WHOLE_GOODS_AREA'
+	</select>
+	
+	<!-- 修改后为本线路的waybill List -->
+	<select id="changedWaybillList"  parameterType="map" resultMap="adjustResultMap">
+			SELECT distinct WS.WAYBILL_NO, WS.GOODS_AREA_CODE, WS.ORG_CODE, WS.STOCK_GOODS_QTY, W.GOODS_QTY_TOTAL, W.GOODS_WEIGHT_TOTAL,W.GOODS_VOLUME_TOTAL,W.PRODUCT_CODE 
+			FROM TFR.T_OPT_WAYBILL_STOCK WS
+			LEFT JOIN TFR.T_OPT_TOGETHER_LIST TL
+			ON TL.WAYBILL_NO = WS.WAYBILL_NO AND TL.ORIG_GOODS_AREA_CODE = WS.GOODS_AREA_CODE AND TL.ORG_CODE = WS.ORG_CODE
+			join tfr.t_opt_stock t
+              on ws.waybill_no = t.waybill_no
+              and ws.org_code = t.org_code
+		    JOIN PKP.T_SRV_WAYBILL W 
+			ON WS.WAYBILL_NO = W.WAYBILL_NO
+			WHERE TL.ORG_CODE = #{orgCode} AND TL.NEW_GOODS_AREA_CODE = #{goodsAreaCode}
+			GROUP BY WS.WAYBILL_NO,WS.GOODS_AREA_CODE,WS.ORG_CODE, WS.STOCK_GOODS_QTY, W.GOODS_QTY_TOTAL, W.GOODS_WEIGHT_TOTAL, W.GOODS_VOLUME_TOTAL,W.PRODUCT_CODE 
+	</select>
+	
+	<!-- 修改后路径list -->
+	<select id="newGoodsAreaCodeList"  parameterType="map" resultType="java.lang.String">
+		SELECT NEW_GOODS_AREA_CODE FROM TFR.T_OPT_TOGETHER_LIST 
+		WHERE WAYBILL_NO = #{waybillNo} 
+		AND ORG_CODE = #{orgCode}
+		AND ORIG_GOODS_AREA_CODE = #{origGoodsAreaCode} 
+		GROUP BY NEW_GOODS_AREA_CODE
+	</select>
+		
+	<!-- Adjust Query Level2 -->
+	<select id="queryLevel2"  parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.AdjustEntity" resultMap="adjustResultMap">
+			SELECT 
+			<include refid="Base_Column_List" />
+			FROM TFR.T_OPT_WAYBILL_STOCK WS
+			LEFT JOIN PKP.T_SRV_WAYBILL W ON WS.WAYBILL_NO = W.WAYBILL_NO
+			join tfr.t_opt_stock t
+              on ws.waybill_no = t.waybill_no
+              and ws.org_code = t.org_code
+		<include refid="select_Where_Adjust"/>
+	</select>
+	
+	<!-- Adjust Query Level3 -->
+	<select id="queryLevel3"  parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.AdjustEntity" resultMap="adjustResultMap">
+			SELECT S.ORG_CODE, S.WAYBILL_NO, S.SERIAL_NO FROM TFR.T_OPT_STOCK S
+			WHERE S.ORG_CODE = #{orgCode} AND S.WAYBILL_NO = #{waybillNo}
+			ORDER BY S.ORG_CODE, S.WAYBILL_NO,S.SERIAL_NO
+	</select>
+	
+	<sql id="select_Where_Adjust">
+		<where>
+			<if test="orgCode!=null and orgCode!='' ">
+					AND WS.ORG_CODE = #{orgCode}
+			</if>
+			<if test="goodsAreaCode!=null and goodsAreaCode!='' ">
+					AND WS.GOODS_AREA_CODE = #{goodsAreaCode}
+			</if>
+			<if test="packageNextOrgCode!=null and packageNextOrgCode!='' ">
+					AND WS.NEXT_ORG_CODE=#{packageNextOrgCode}
+			</if>
+			<if test="waybillNo!=null and waybillNo!='' ">
+					AND WS.WAYBILL_NO = #{waybillNo}
+			</if>
+		</where>
+	</sql>
+	<sql id="group_By">
+		GROUP BY WS.ORG_CODE, WS.GOODS_AREA_CODE ORDER BY AREA_WAYBILL_QTY DESC
+	</sql>
+	<sql id="Base_Column_List2">
+		 distinct GOODS_AREA_CODE, ORG_CODE, AREA_WEIGHT_TOTAL, AREA_VOLUME_TOTAL, AREA_LINE, AREA_WAYBILL_QTY,
+   	     WAYBILL_NO, STOCK_GOODS_QTY, GOODS_QTY_TOTAL, GOODS_WEIGHT_TOTAL, GOODS_VOLUME_TOTAL, BEFORE_LINE, AFTER_LINE, SERIAL_NO
+	</sql>
+	
+	
+	<!-- 查询修改的走货路径集合 -->
+	<select id="queryLevel1ByParamMap"  parameterType="map" resultMap="adjustResultMap">
+	   select ORG_CODE, GOODS_AREA_CODE, count(waybill_no) AREA_WAYBILL_QTY from(
+		  SELECT WS.ORG_CODE, WS.GOODS_AREA_CODE, WS.WAYBILL_NO 
+			FROM TFR.T_OPT_WAYBILL_STOCK WS
+			join tfr.t_opt_stock t
+              on ws.waybill_no = t.waybill_no
+              and ws.org_code = t.org_code
+			<where>
+				WS.GOODS_AREA_CODE !='BULK_GOODS_AREA' AND WS.GOODS_AREA_CODE !='WHOLE_GOODS_AREA'
+				<if test="orgCode!=null and orgCode!=''">
+					AND WS.ORG_CODE = #{orgCode}
+				</if>
+	            <if test="goodsAreaCodesList!=null and goodsAreaCodesList.size > 0">
+	            	AND
+	            	<if test="packageNextOrgCode!=null and packageNextOrgCode!='' ">
+	            	<if test="packageGoodsAreaCode!=null and packageGoodsAreaCode!='' ">
+	            		(
+	            	</if>
+	            	</if>
+	            	WS.GOODS_AREA_CODE in
+	            	 <foreach collection="goodsAreaCodesList"  index="index" item="goodsAreaCode"  open="(" separator="," close=")">  
+		            	#{goodsAreaCode} 
+		            </foreach>
+	            	<if test="packageNextOrgCode!=null and packageNextOrgCode!='' ">
+	            	<if test="packageGoodsAreaCode!=null and packageGoodsAreaCode!='' ">
+	            	or (
+	            		WS.GOODS_AREA_CODE=#{packageGoodsAreaCode}
+	            		and WS.NEXT_ORG_CODE=#{packageNextOrgCode}
+	            	))
+	            	</if>
+	            	</if>
+	            </if>
+	             <if test="goodsAreaCodesList!=null and goodsAreaCodesList.size == 0">
+	            	<if test="packageNextOrgCode!=null and packageNextOrgCode!='' ">
+	            	<if test="packageGoodsAreaCode!=null and packageGoodsAreaCode!='' ">
+	            		and WS.GOODS_AREA_CODE=#{packageGoodsAreaCode}
+	            		and WS.NEXT_ORG_CODE=#{packageNextOrgCode}
+	            	</if>
+	            	</if>
+	            </if>
+        	</where> 
+        	  GROUP BY WS.ORG_CODE, WS.GOODS_AREA_CODE, ws.waybill_no  
+			)
+		 group by ORG_CODE, GOODS_AREA_CODE
+	</select>
+	
+	<!-- 查询运单对应的走货路径集合 -->
+	<select id="queryWaybillListByParamMap"  parameterType="map" resultMap="adjustResultMap">
+			SELECT distinct WS.WAYBILL_NO, WS.GOODS_AREA_CODE, WS.ORG_CODE, WS.STOCK_GOODS_QTY, W.GOODS_QTY_TOTAL, W.GOODS_WEIGHT_TOTAL, W.GOODS_VOLUME_TOTAL
+			FROM TFR.T_OPT_WAYBILL_STOCK WS 
+			LEFT JOIN PKP.T_SRV_WAYBILL W ON WS.WAYBILL_NO = W.WAYBILL_NO AND W.ACTIVE = 'Y'
+			join tfr.t_opt_stock t
+			  on t.waybill_no=ws.waybill_no
+			  and t.org_code=ws.org_code 
+			<where>
+				WS.GOODS_AREA_CODE !='BULK_GOODS_AREA' AND WS.GOODS_AREA_CODE !='WHOLE_GOODS_AREA'
+				<if test="orgCode!=null and orgCode!=''">
+					AND WS.ORG_CODE = #{orgCode}
+				</if>
+	            <if test="goodsAreaCodesList!=null and goodsAreaCodesList.size > 0">
+	                   AND
+	            	<if test="packageNextOrgCode!=null and packageNextOrgCode!='' ">
+	            	<if test="packageGoodsAreaCode!=null and packageGoodsAreaCode!='' ">
+	            		(
+	            	</if>
+	            	</if>
+	            	WS.GOODS_AREA_CODE in
+	            	 <foreach collection="goodsAreaCodesList"  index="index" item="goodsAreaCode"  open="(" separator=","  close=")">  
+		            	#{goodsAreaCode} 
+		            </foreach>
+	            	<if test="packageNextOrgCode!=null and packageNextOrgCode!='' ">
+	            	<if test="packageGoodsAreaCode!=null and packageGoodsAreaCode!='' ">
+	            	or (
+	            		WS.GOODS_AREA_CODE=#{packageGoodsAreaCode}
+	            		and WS.NEXT_ORG_CODE=#{packageNextOrgCode}
+	            	))
+	            	</if>
+	            	</if>
+	            </if>
+	            <if test="goodsAreaCodesList!=null and goodsAreaCodesList.size == 0">
+	            	<if test="packageNextOrgCode!=null and packageNextOrgCode!='' ">
+	            	<if test="packageGoodsAreaCode!=null and packageGoodsAreaCode!='' ">
+	            		and WS.GOODS_AREA_CODE=#{packageGoodsAreaCode}
+	            		and WS.NEXT_ORG_CODE=#{packageNextOrgCode}
+	            	</if>
+	            	</if>
+	            </if>
+        	</where>  
+	</select>
+</mapper>

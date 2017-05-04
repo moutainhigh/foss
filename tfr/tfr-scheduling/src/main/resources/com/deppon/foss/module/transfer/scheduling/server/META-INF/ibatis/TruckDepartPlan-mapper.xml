@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="Foss.scheduling.TruckDepartPlan" >
+  <resultMap id="TruckDepartPlanDtoResultMap" type="com.deppon.foss.module.transfer.scheduling.api.shared.dto.TruckDepartPlanDto" >  
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="ORIG_ORG_CODE" property="origOrgCode" jdbcType="VARCHAR" />
+    <result column="DEST_ORG_CODE" property="destOrgCode" jdbcType="VARCHAR" />
+    <result column="PLAN_DATE" property="planDate" jdbcType="TIMESTAMP" />
+    <result column="PLAN_TYPE" property="planType" jdbcType="VARCHAR" />
+    <result column="IS_ISSUE" property="isIssue" jdbcType="CHAR" />
+    <result column="NOTES" property="notes" jdbcType="VARCHAR" />
+    <result column="STATUS" property="status" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="CREATE_USER_CODE" property="createUserCode" jdbcType="VARCHAR" />
+    <result column="CREATE_USER_NAME" property="createUserName" jdbcType="VARCHAR" />
+    <result column="CREATE_ORG_CODE" property="createOrgCode" jdbcType="VARCHAR" />
+    <result column="UPDATE_TIME" property="updateTime" jdbcType="TIMESTAMP" />
+    <result column="UPDATE_USER_CODE" property="updateUserCode" jdbcType="VARCHAR" />
+    <result column="UPDATE_USER_NAME" property="updateUserName" jdbcType="VARCHAR" />
+    <result column="UPDATE_ORG_CODE" property="updateOrgCode" jdbcType="VARCHAR" />
+    <!--候补统计字段-->
+    <result column="ORIG_ORG_NAME" property="origOrgName" jdbcType="VARCHAR" />
+    <result column="DEST_ORG_NAME" property="destOrgName" jdbcType="VARCHAR" />
+    <result column="CAR_TOTAL" property="carTotal" jdbcType="DECIMAL" />
+    <result column="FREQUENCY_TOTAL" property="frequencyTotal" jdbcType="DECIMAL" />
+    <result column="WEIGHT_TOTAL" property="weightTotal" jdbcType="DECIMAL" />
+    <result column="PRE_WEIGHT_TOTAL" property="preWeightTotal" jdbcType="DECIMAL" />
+    <result column="WEIGHT_GAP_TOTAL" property="weightGapTotal" jdbcType="DECIMAL" />
+    <result column="VOLUME_TOTAL" property="volumeTotal" jdbcType="DECIMAL" />
+    <result column="PRE_VOLUME_TOTAL" property="preVolumeTotal" jdbcType="DECIMAL" />
+    <result column="VOLUME_GAP_TOTAL" property="volumeGapTotal" jdbcType="DECIMAL" />
+    <result column="OWN_CAR_TOTAL" property="ownCarTotal" jdbcType="DECIMAL" />
+    <result column="OUTER_CAR_TOTAL" property="outerCarTotal" jdbcType="DECIMAL" />
+  </resultMap>
+  
+  <!--发车计划字段-->
+  <sql id="TruckDepartPlan_Column_List" >
+    ID, ORIG_ORG_CODE, DEST_ORG_CODE, PLAN_DATE, PLAN_TYPE, IS_ISSUE, NOTES, STATUS, 
+    CREATE_TIME, CREATE_USER_CODE, CREATE_USER_NAME, CREATE_ORG_CODE, UPDATE_TIME, UPDATE_USER_CODE, 
+    UPDATE_USER_NAME, UPDATE_ORG_CODE
+  </sql>
+ 
+ <!--按照主键ID删除-->
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String" >
+    delete from TFR.T_OPT_TRUCK_DEPART_PLAN
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  
+  <!--新增发车计划-->
+  <insert id="addTruckDepartPlan" parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.TruckDepartPlanEntity" >
+    insert into TFR.T_OPT_TRUCK_DEPART_PLAN (ID, ORIG_ORG_CODE, DEST_ORG_CODE, 
+      PLAN_DATE, PLAN_TYPE, IS_ISSUE, 
+      NOTES, STATUS, CREATE_TIME, 
+      CREATE_USER_CODE, CREATE_USER_NAME, CREATE_ORG_CODE, 
+      UPDATE_TIME, UPDATE_USER_CODE, UPDATE_USER_NAME, 
+      UPDATE_ORG_CODE)
+    values (#{id,jdbcType=VARCHAR}, #{origOrgCode,jdbcType=VARCHAR}, #{destOrgCode,jdbcType=VARCHAR}, 
+      #{planDate,jdbcType=TIMESTAMP}, #{planType,jdbcType=VARCHAR}, #{isIssue,jdbcType=CHAR}, 
+      #{notes,jdbcType=VARCHAR}, #{status,jdbcType=VARCHAR}, #{createTime,jdbcType=TIMESTAMP}, 
+      #{createUserCode,jdbcType=VARCHAR}, #{createUserName,jdbcType=VARCHAR}, #{createOrgCode,jdbcType=VARCHAR}, 
+      #{updateTime,jdbcType=TIMESTAMP}, #{updateUserCode,jdbcType=VARCHAR}, #{updateUserName,jdbcType=VARCHAR}, 
+      #{updateOrgCode,jdbcType=VARCHAR})
+  </insert>
+  
+  <!--查询统计发车计划-->
+  <select id="queryTruckDepartPlan" resultMap="TruckDepartPlanDtoResultMap" parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.dto.TruckDepartPlanDto" >
+    select 	   temp.ID,
+		       temp.ORIG_ORG_CODE,/**出发部门**/
+		       temp.DEST_ORG_CODE,/**到达部门**/
+		       temp.PLAN_DATE,    /**计划日期**/   
+		       temp.PLAN_TYPE,    /**计划类型**/
+		       temp.IS_ISSUE,     /**是否异常**/
+		       temp.CAR_TOTAL,	/**车辆数**/
+		       temp.FREQUENCY_TOTAL,/**班次数**/
+		       temp.WEIGHT_TOTAL as PRE_WEIGHT_TOTAL,/**载重合计**/
+		       temp.VOLUME_TOTAL as PRE_VOLUME_TOTAL,/**体积合计**/
+		       temp.CREATE_TIME,/**创建时间**/
+		       temp.CREATE_USER_NAME,/**创建用户名**/
+		       temp.CREATE_USER_CODE, /**创建用户code**/
+		       temp.CREATE_ORG_CODE,/**创建用户组织code**/
+		       temp.OWN_CAR_TOTAL,/**自有车数**/
+			   temp.OUTER_CAR_TOTAL/**外请车数**/
+		       from(
+					select
+					       t1.ID,
+					       t1.ORIG_ORG_CODE,
+					       t1.DEST_ORG_CODE,
+					       t1.PLAN_DATE,       
+					       t1.PLAN_TYPE,
+					       t1.IS_ISSUE,       
+					       t2.CAR_TOTAL,
+					       t2.FREQUENCY_TOTAL,
+					       t2.WEIGHT_TOTAL,
+					       t2.VOLUME_TOTAL,
+					       t1.CREATE_TIME,
+					       t1.CREATE_USER_NAME,
+					       t1.CREATE_USER_CODE,
+					       t1.CREATE_ORG_CODE,
+					       t2.OWN_CAR_TOTAL,
+					       t2.OUTER_CAR_TOTAL
+					  from tfr.T_OPT_TRUCK_DEPART_PLAN t1,
+					       (  
+						        select truck_depart_plan_id,
+								       sum(decode(t.truck_type,'OWN',1,0)) own_car_total,
+								       sum(decode(t.truck_type,'OUTER',1,0)) outer_car_total,
+								       count(t.truck_type) car_total,
+								       Sum(count(t.dest_org_code)) over(partition by t.truck_depart_plan_id) frequency_total, 
+								       Sum(sum(t.max_load_weight)) over(partition by t.truck_depart_plan_id) weight_total, 
+								       Sum(sum(t.truck_volume)) over(partition by t.truck_depart_plan_id)  volume_total  
+								from tfr.t_opt_truck_depart_plan_detail t
+					  		   where t.PLAN_TYPE = #{planType,jdbcType=VARCHAR}
+					           and t.STATUS = #{status,jdbcType=VARCHAR}
+					           and t.FREQUENCY_TYPE in 
+					           <foreach collection="frequencyTypeList" item="item" open="(" close=")" separator=",">
+						     	    #{item,jdbcType=VARCHAR}
+						        </foreach> 
+					           <if test="origOrgCode != null and origOrgCode != ''">										                   
+					           	and t.ORIG_ORG_CODE=#{origOrgCode,jdbcType=VARCHAR}
+					           </if>
+					           <if test="destOrgCode != null and destOrgCode != ''">
+					           and t.DEST_ORG_CODE=#{destOrgCode,jdbcType=VARCHAR}
+					           </if>
+					           <if test="planDate != null and planDate != ''">
+					           and t.DEPART_DATE=#{planDate,jdbcType=TIMESTAMP}
+					           </if>
+						 		group by t.truck_depart_plan_id
+			             	) t2
+					   where t1.ID = t2.TRUCK_DEPART_PLAN_ID(+)
+					   and t1.PLAN_TYPE = #{planType,jdbcType=VARCHAR}
+					   and t1.STATUS = #{status,jdbcType=VARCHAR}
+					   <if test="origOrgCode != null and origOrgCode != ''">	
+					   		and t1.ORIG_ORG_CODE=#{origOrgCode,jdbcType=VARCHAR}
+					    </if>
+					    <if test="destOrgCode != null and destOrgCode != ''">
+					   		and t1.DEST_ORG_CODE=#{destOrgCode,jdbcType=VARCHAR}
+					    </if>
+					    <if test="planDate != null and planDate != ''">
+					   		and t1.PLAN_DATE=#{planDate,jdbcType=TIMESTAMP}
+					    </if>
+					    <if test="createTimeFrom != null and createTimeFrom != ''">
+					   		<![CDATA[  and t1.CREATE_TIME>#{createTimeFrom,jdbcType=TIMESTAMP}]]>  
+					   </if>
+					   <if test="createTimeTo != null and createTimeTo != ''">
+					  		<![CDATA[  and t1.CREATE_TIME <= #{createTimeTo,jdbcType=TIMESTAMP}]]>  
+					   </if>
+					   <if test="createUserCode != null and createUserCode != ''">
+					  		 and t1.CREATE_USER_CODE=#{createUserCode,jdbcType=VARCHAR}
+					   </if>
+					   <if test="createOrgCode != null and createOrgCode != ''">
+					  		 and t1.CREATE_ORG_CODE=#{createOrgCode,jdbcType=VARCHAR}
+					   </if>
+					   ) temp
+					   <!--如果带车牌查询-->
+					   <if test="vehicleNo != null and vehicleNo != ''">
+					   		 WHERE exists (
+                                 select 1 
+                                 FROM (
+                                      SELECT t4.TRUCK_DEPART_PLAN_ID
+                                        FROM TFR.T_OPT_TRUCK_DEPART_PLAN_DETAIL t4
+                                       where t4.VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR}
+                                       group by t4.TRUCK_DEPART_PLAN_ID
+                                     )
+                                  tids
+                                  where tids.TRUCK_DEPART_PLAN_ID=temp.ID
+                           )
+					   </if>
+					   order by temp.CREATE_TIME desc		 
+  </select>
+  
+  <!--查询统计发车计划总条数-->
+  <select id="queryTruckDepartPlanTotal" resultType="Long" parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.dto.TruckDepartPlanDto" >
+    select 	   count(temp.ID)
+		       from(
+					select
+					       t1.ID					       
+					  from tfr.T_OPT_TRUCK_DEPART_PLAN t1,
+					       (  
+					       select   
+							t3.TRUCK_DEPART_PLAN_ID
+							from
+							(
+					       	  select t.TRUCK_DEPART_PLAN_ID
+					          from TFR.T_OPT_TRUCK_DEPART_PLAN_DETAIL t
+					         where t.PLAN_TYPE = #{planType,jdbcType=VARCHAR}
+					           and t.STATUS = #{status,jdbcType=VARCHAR}
+					           <if test="origOrgCode != null and origOrgCode != ''">										                   
+					           	and t.ORIG_ORG_CODE=#{origOrgCode,jdbcType=VARCHAR}
+					           </if>
+					           <if test="destOrgCode != null and destOrgCode != ''">
+					           and t.DEST_ORG_CODE=#{destOrgCode,jdbcType=VARCHAR}
+					           </if>
+					           <if test="planDate != null and planDate != ''">
+					           and t.DEPART_DATE=#{planDate,jdbcType=TIMESTAMP}
+					           </if>
+					         group by t.TRUCK_DEPART_PLAN_ID,t.TRUCK_TYPE
+					         )t3  group by t3.TRUCK_DEPART_PLAN_ID
+			             	) t2
+					   where t1.ID = t2.TRUCK_DEPART_PLAN_ID(+)
+					   and t1.PLAN_TYPE = #{planType,jdbcType=VARCHAR}
+					   and t1.STATUS = #{status,jdbcType=VARCHAR}
+					   <if test="origOrgCode != null and origOrgCode != ''">	
+					   		and t1.ORIG_ORG_CODE=#{origOrgCode,jdbcType=VARCHAR}
+					    </if>
+					    <if test="destOrgCode != null and destOrgCode != ''">
+					   		and t1.DEST_ORG_CODE=#{destOrgCode,jdbcType=VARCHAR}
+					    </if>
+					    <if test="planDate != null and planDate != ''">
+					   		and t1.PLAN_DATE=#{planDate,jdbcType=TIMESTAMP}
+					    </if>
+					    <if test="createTimeFrom != null and createTimeFrom != ''">
+					   		<![CDATA[  and t1.CREATE_TIME>#{createTimeFrom,jdbcType=TIMESTAMP}]]>  
+					   </if>
+					   <if test="createTimeTo != null and createTimeTo != ''">
+					  		<![CDATA[  and t1.CREATE_TIME <= #{createTimeTo,jdbcType=TIMESTAMP}]]>  
+					   </if>
+					   <if test="createUserCode != null and createUserCode != ''">
+					  		 and t1.CREATE_USER_CODE=#{createUserCode,jdbcType=VARCHAR}
+					   </if>
+					   <if test="createOrgCode != null and createOrgCode != ''">
+					  		 and t1.CREATE_ORG_CODE=#{createOrgCode,jdbcType=VARCHAR}
+					   </if>
+					   ) temp
+					   <!--如果带车牌查询-->
+					   <if test="vehicleNo != null and vehicleNo != ''">
+					   		 WHERE exists (
+                                 select 1 
+                                 FROM (
+                                      SELECT t4.TRUCK_DEPART_PLAN_ID
+                                        FROM TFR.T_OPT_TRUCK_DEPART_PLAN_DETAIL t4
+                                       where t4.VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR}
+                                       group by t4.TRUCK_DEPART_PLAN_ID
+                                     )
+                                  tids
+                                  where tids.TRUCK_DEPART_PLAN_ID=temp.ID
+                           )
+					   </if>		 
+  </select>
+  
+  <!--查询统计发车计划-->
+  <select id="hasExsitTruckDepartPlan" resultMap="TruckDepartPlanDtoResultMap" parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.dto.TruckDepartPlanDto" >
+  		select
+			<include refid="TruckDepartPlan_Column_List"/>
+		  from tfr.T_OPT_TRUCK_DEPART_PLAN t1					      
+		   where t1.PLAN_TYPE = #{planType,jdbcType=VARCHAR}
+		   and t1.STATUS = #{status,jdbcType=VARCHAR}	
+		   and t1.ORIG_ORG_CODE=#{origOrgCode,jdbcType=VARCHAR}
+		   and t1.DEST_ORG_CODE=#{destOrgCode,jdbcType=VARCHAR}
+		   and t1.PLAN_DATE=#{planDate,jdbcType=TIMESTAMP}		    	 
+  </select> 
+ 
+  
+  <!--更新保存备注及异常标记-->
+  <update id="updatePlanRemark" parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.dto.TruckDepartPlanDto">
+    update TFR.T_OPT_TRUCK_DEPART_PLAN
+    set 
+      IS_ISSUE = #{isIssue,jdbcType=CHAR},
+      NOTES = #{notes,jdbcType=VARCHAR},
+      UPDATE_TIME = #{updateTime,jdbcType=TIMESTAMP},
+      UPDATE_USER_CODE = #{updateUserCode,jdbcType=VARCHAR},
+      UPDATE_USER_NAME = #{updateUserName,jdbcType=VARCHAR},
+      UPDATE_ORG_CODE = #{updateOrgCode,jdbcType=VARCHAR}
+    where id=#{id,jdbcType=VARCHAR}
+  </update>
+  
+  <!--根据ID查询发车计划-->
+  <select id="queryTruckDepartPlanById" resultMap="TruckDepartPlanDtoResultMap" parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.dto.TruckDepartPlanDto" >
+  		select
+			<include refid="TruckDepartPlan_Column_List"/>
+		  from tfr.T_OPT_TRUCK_DEPART_PLAN t1					      
+		   where t1.id=#{id,jdbcType=VARCHAR}		    	 
+  </select> 
+  
+  
+    
+  <!--根据线路编号，查询当日最大的线路班次号-->
+  <select id="queryMaxfrequencyNo" resultType="Integer" parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.dto.TruckDepartPlanDto" >
+      select 
+      		nvl(max(t.frequency_no),0)+1 as cnt
+         from tfr.t_opt_truck_depart_plan_detail t
+         where t.status = #{status,jdbcType=VARCHAR}
+          and  t.line_no = #{lineNo,jdbcType=VARCHAR}
+          and  t.depart_date = #{departDate,jdbcType=TIMESTAMP}
+          and  t.orig_org_code=#{origOrgCode,jdbcType=VARCHAR}
+          and  t.dest_org_code=#{destOrgCode,jdbcType=VARCHAR}
+          and  t.plan_type=#{planType,jdbcType=VARCHAR}
+  </select>
+  
+</mapper>

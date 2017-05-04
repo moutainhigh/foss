@@ -1,0 +1,419 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.management.transfersignbill" >
+  <resultMap id="TransferSignBillResultMap" type="com.deppon.foss.module.transfer.management.api.shared.domain.TransferSignBillEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="SIGN_BILL_NO" property="signBillNo" jdbcType="VARCHAR" />
+    <result column="USE_TRUCK_ORG_CODE" property="useTruckOrgCode" jdbcType="VARCHAR" />
+    <result column="USE_TRUCK_ORG_NAME" property="useTruckOrgName" jdbcType="VARCHAR" />
+    <result column="SIGN_BILL_DATE" property="signBillDate" jdbcType="TIMESTAMP" />
+    <result column="DRIVER_CODE" property="driverCode" jdbcType="VARCHAR" />
+    <result column="DRIVER_NAME" property="driverName" jdbcType="VARCHAR" />
+    <result column="IS_FIRST_TRANSFER" property="isFirstTransfer" jdbcType="CHAR" />
+    <result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+    <result column="VEHICLE_TYPE_LENGTH" property="vehicleTypeLength" jdbcType="VARCHAR" />
+    <result column="VEHICLE_TYPE_LENGTH_NAME" property="vehicleTypeLengthName" jdbcType="VARCHAR" />
+    <result column="TRANSFER_DISTANCE" property="transferDistance" jdbcType="DECIMAL" />
+    <result column="VOLUME" property="volume" jdbcType="DECIMAL" />
+    <result column="WEIGHT" property="weight" jdbcType="DECIMAL" />
+    <result column="USE_TRUCK_DURATION" property="useTruckDuration" jdbcType="DECIMAL" />
+    <result column="TRANSFER_ROYALTY" property="transferRoyalty" jdbcType="DECIMAL" />
+    <result column="USE_TRUCK_FEE" property="useTruckFee" jdbcType="DECIMAL" />
+    <result column="TRANSFER_TYPE" property="transferType" />
+    <result column="HANDOVER_NO" property="handOverNo" />
+    <result column="ORIG_ORG_CODE" property="origOrgCode" />
+    <result column="ORIG_ORG_NAME" property="origOrgName" />
+    <result column="DEST_ORG_CODE" property="destOrgCode" />
+    <result column="DEST_ORG_NAME" property="destOrgName" />
+    <result column="MOTORCADE_CODE" property="motorcadeCode" />
+    <result column="MOTORCADE_NAME" property="motorcadeName" />
+    <result column="STORE_SIGN" property="storeSign" />
+    <result column="ARRANGE_USETRUCK_DATE" property="arrangeUseTruckDate" />
+    <result column="UNLOAD_END_DATE" property="unloadEndDate" />
+    <result column="ORIG_DATE" property="origDate" />
+    <result column="DEST_DATE" property="destDate" />
+    <result column="ORG_CODE" property="orgCode" />
+    <result column="ORG_NAME" property="orgName" />
+  </resultMap>
+  
+  <resultMap id="TransferSignBillDtoResultMap" type="com.deppon.foss.module.transfer.management.api.shared.dto.TransferSignBillDto" >
+    <result column="DRIVER_COUNT" property="driverCount"  />
+    <result column="TRANSFER_DISTANCE_TOTAL" property="transferDistanceTotal"  />
+    <result column="VOLUME_TOTAL" property="volumeTotal" />
+    <result column="WEIGHT_TOTAL" property="weightTotal"  />
+    <result column="USE_TRUCK_DURATION_TOAAL" property="useTruckDurationTotal"  />    
+  </resultMap>
+ 
+    
+  <sql id="TransferSignBill_Column_List" >
+    T.ID,T.SIGN_BILL_NO,T.USE_TRUCK_ORG_CODE,T.USE_TRUCK_ORG_NAME,T.SIGN_BILL_DATE,T.DRIVER_CODE,
+	T.DRIVER_NAME,T.IS_FIRST_TRANSFER,T.VEHICLE_NO,T.VEHICLE_TYPE_LENGTH,T.TRANSFER_DISTANCE,
+	T.VOLUME,T.WEIGHT,T.USE_TRUCK_DURATION,T.TRANSFER_ROYALTY/100 AS TRANSFER_ROYALTY ,
+	T.USE_TRUCK_FEE/100 AS USE_TRUCK_FEE ,VL.Vehicle_Length_Name AS VEHICLE_TYPE_LENGTH_NAME,
+	T.TRANSFER_TYPE, T.HANDOVER_NO, T.ORIG_ORG_CODE, T.ORIG_ORG_NAME, T.DEST_ORG_CODE,
+	T.DEST_ORG_NAME, T.MOTORCADE_CODE, T.MOTORCADE_NAME, T.STORE_SIGN, T.ARRANGE_USETRUCK_DATE, 
+	T.UNLOAD_END_DATE, T.ORIG_DATE, T.DEST_DATE
+  </sql>
+  <select id="queryTransferSignBill" resultMap="TransferSignBillResultMap" parameterType="com.deppon.foss.module.transfer.management.api.shared.dto.TransferSignBillDto" >
+    select 
+    <include refid="TransferSignBill_Column_List" />
+   from TFR.T_OPT_TRANSFER_SIGN_BILL T  LEFT JOIN  bse.t_bas_vehicle_type_length VL on  VL.Vehicle_Length_Code=T.VEHICLE_TYPE_LENGTH    
+     <include refid="transferSignBill_Where" />
+  </select>
+  <select id="queryCount" resultType="Long" parameterType="com.deppon.foss.module.transfer.management.api.shared.dto.TransferSignBillDto" >
+    select count(ID)  from TFR.T_OPT_TRANSFER_SIGN_BILL   
+    <include refid="transferSignBill_Where" />
+  </select>
+  <select id="queryTransferSignBillByFee" resultMap="TransferSignBillDtoResultMap" parameterType="com.deppon.foss.module.transfer.management.api.shared.dto.TransferSignBillDto" >
+     select count(DISTINCT DRIVER_CODE) AS  DRIVER_COUNT ,sum(TRANSFER_DISTANCE) AS TRANSFER_DISTANCE_TOTAL,sum(VOLUME) AS VOLUME_TOTAL ,sum(WEIGHT) AS WEIGHT_TOTAL ,sum(USE_TRUCK_DURATION)  AS USE_TRUCK_DURATION_TOAAL  from  TFR.T_OPT_TRANSFER_SIGN_BILL
+  	<include refid="transferSignBill_Where" />
+  </select>
+  <!-- 查询导出的excel -->
+  <select id="queryExportTransferSignBill" resultMap="TransferSignBillResultMap" parameterType="com.deppon.foss.module.transfer.management.api.shared.dto.TransferSignBillDto" >
+    select 
+    <include refid="TransferSignBill_Column_List" />
+   from TFR.T_OPT_TRANSFER_SIGN_BILL T  LEFT JOIN  bse.t_bas_vehicle_type_length VL on  VL.Vehicle_Length_Code=T.VEHICLE_TYPE_LENGTH  
+     <include refid="transferSignBill_Where" />
+  </select>
+  <!-- 查询条件 -->
+  <sql id="transferSignBill_Where">
+		<where>
+			<if test="useTruckOrgCode!=null and useTruckOrgCode!='' ">	
+					AND USE_TRUCK_ORG_CODE=#{useTruckOrgCode} 				
+			</if>
+			<if test="orgCodes!=null">	
+			AND ORG_CODE IN
+			<foreach 
+				collection="orgCodes" open="(" close=")" item="item" separator="," index="index"> 
+				#{item} 
+			</foreach>
+			</if>
+			<if test="destOrgCode!=null and destOrgCode!='' ">	
+					AND DEST_ORG_CODE=#{destOrgCode} 				
+			</if>			
+			<if test="isFirstTransfer !=null and isFirstTransfer !='' and isFirstTransfer != 'ALL' ">	
+					AND IS_FIRST_TRANSFER=#{isFirstTransfer} 				
+			</if>			
+			<if test="motorcadeCode!=null and motorcadeCode!='' ">	
+					AND MOTORCADE_CODE=#{motorcadeCode} 				
+			</if>			
+			<if test="driverCode!=null and driverCode!='' ">	
+					AND  DRIVER_CODE = #{driverCode}
+			</if>					 
+			<if test="vehicleNo!=null and  vehicleNo!=''">
+				AND  VEHICLE_NO = #{vehicleNo}					
+			</if>
+			<if test="vehicleTypeLength!=null and  vehicleTypeLength!=''">
+				AND VEHICLE_TYPE_LENGTH = #{vehicleTypeLength}					
+			</if> 
+			<if test="beginSignBillDate!=null and beginSignBillDate!=''">
+				<![CDATA[ AND  SIGN_BILL_DATE>= to_date(#{beginSignBillDate},'yyyy-mm-dd hh24:mi:ss')	 ]]> 
+			</if>
+			<if test="endSignBillDate!=null  and endSignBillDate!=''">
+				<![CDATA[ AND  SIGN_BILL_DATE<= to_date(#{endSignBillDate}||'23:59:59','yyyy-mm-dd hh24:mi:ss')	 ]]> 									
+			</if>		
+		</where>
+	</sql>
+  
+  <select id="queryTransferSignBillById" resultMap="TransferSignBillResultMap" parameterType="java.lang.String" >
+    select 
+    <include refid="TransferSignBill_Column_List" />
+   from TFR.T_OPT_TRANSFER_SIGN_BILL T  LEFT JOIN  bse.t_bas_vehicle_type_length VL on  VL.Vehicle_Length_Code=T.VEHICLE_TYPE_LENGTH 
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+  <delete id="deleteTransferSignBill" parameterType="java.lang.String" >
+    delete from TFR.T_OPT_TRANSFER_SIGN_BILL
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  
+  <insert id="addTransferSignBill" parameterType="com.deppon.foss.module.transfer.management.api.shared.domain.TransferSignBillEntity" >
+    insert into TFR.T_OPT_TRANSFER_SIGN_BILL
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="signBillNo != null" >
+        SIGN_BILL_NO,
+      </if>
+      <if test="useTruckOrgCode != null" >
+        USE_TRUCK_ORG_CODE,
+      </if>
+      <if test="orgCode != null" >
+        ORG_CODE,
+      </if>
+      <if test="orgName != null" >
+        ORG_NAME,
+      </if>
+      <if test="useTruckOrgName != null" >
+        USE_TRUCK_ORG_NAME,
+      </if>
+      <if test="signBillDate != null" >
+        SIGN_BILL_DATE,
+      </if>
+      <if test="driverCode != null" >
+        DRIVER_CODE,
+      </if>
+      <if test="driverName != null" >
+        DRIVER_NAME,
+      </if>
+      <if test="isFirstTransfer != null" >
+        IS_FIRST_TRANSFER,
+      </if>
+      <if test="vehicleNo != null" >
+        VEHICLE_NO,
+      </if>
+      <if test="vehicleTypeLength != null" >
+        VEHICLE_TYPE_LENGTH,
+      </if>
+      <if test="transferDistance != null" >
+        TRANSFER_DISTANCE,
+      </if>
+      <if test="volume != null" >
+        VOLUME,
+      </if>
+      <if test="weight != null" >
+        WEIGHT,
+      </if>
+      <if test="useTruckDuration != null" >
+        USE_TRUCK_DURATION,
+      </if>
+      <if test="transferRoyalty != null" >
+        TRANSFER_ROYALTY,
+      </if>
+      <if test="useTruckFee != null" >
+        USE_TRUCK_FEE,
+      </if>
+      <if test="currencyCode != null" >
+        CURRENCY_CODE,
+      </if>
+      <if test="transferType != null" >
+        TRANSFER_TYPE,
+      </if>
+      <if test="handOverNo != null" >
+        HANDOVER_NO,
+      </if>
+      <if test="origOrgCode != null" >
+        ORIG_ORG_CODE,
+      </if>
+      <if test="origOrgName != null" >
+        ORIG_ORG_NAME,
+      </if>
+      <if test="destOrgCode != null" >
+        DEST_ORG_CODE,
+      </if>
+      <if test="destOrgName != null" >
+        DEST_ORG_NAME,
+      </if>
+      <if test="storeSign != null" >
+        STORE_SIGN,
+      </if>
+      <if test="arrangeUseTruckDate != null" >
+        ARRANGE_USETRUCK_DATE,
+      </if>
+      <if test="unloadEndDate != null" >
+        UNLOAD_END_DATE,
+      </if>
+      <if test="origDate != null" >
+        ORIG_DATE,
+      </if>
+      <if test="destDate != null" >
+        DEST_DATE,
+      </if>
+      <if test="motorcadeCode != null" >
+        MOTORCADE_CODE,
+      </if>
+      <if test="motorcadeName != null" >
+        MOTORCADE_NAME
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="signBillNo != null" >
+        #{signBillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="useTruckOrgCode != null" >
+        #{useTruckOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="orgCode != null" >
+        #{orgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="orgName != null" >
+        #{orgName,jdbcType=VARCHAR},
+      </if>
+      <if test="useTruckOrgName != null" >
+        #{useTruckOrgName,jdbcType=VARCHAR},
+      </if>
+      <if test="signBillDate != null" >
+        #{signBillDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="driverCode != null" >
+        #{driverCode,jdbcType=VARCHAR},
+      </if>
+      <if test="driverName != null" >
+        #{driverName,jdbcType=VARCHAR},
+      </if>
+      <if test="isFirstTransfer != null" >
+        #{isFirstTransfer,jdbcType=CHAR},
+      </if>
+      <if test="vehicleNo != null" >
+        #{vehicleNo,jdbcType=VARCHAR},
+      </if>
+      <if test="vehicleTypeLength != null" >
+        #{vehicleTypeLength,jdbcType=VARCHAR},
+      </if>
+      <if test="transferDistance != null" >
+        #{transferDistance,jdbcType=DECIMAL},
+      </if>
+      <if test="volume != null" >
+        #{volume,jdbcType=DECIMAL},
+      </if>
+      <if test="weight != null" >
+        #{weight,jdbcType=DECIMAL},
+      </if>
+      <if test="useTruckDuration != null" >
+        #{useTruckDuration,jdbcType=DECIMAL},
+      </if>
+      <if test="transferRoyalty != null" >
+        #{transferRoyalty,jdbcType=DECIMAL},
+      </if>
+      <if test="useTruckFee != null" >
+        #{useTruckFee,jdbcType=DECIMAL},
+      </if>
+      <if test="currencyCode != null" >
+         #{currencyCode},
+      </if>
+      <if test="transferType != null" >
+         #{transferType},
+      </if>
+      <if test="handOverNo != null" >
+         #{handOverNo},
+      </if>
+      <if test="origOrgCode != null" >
+         #{origOrgCode},
+      </if>
+      <if test="origOrgName != null" >
+         #{origOrgName},
+      </if>
+      <if test="destOrgCode != null" >
+         #{destOrgCode},
+      </if>
+      <if test="destOrgName != null" >
+         #{destOrgName},
+      </if>
+      <if test="storeSign != null" >
+         #{storeSign},
+      </if>
+      <if test="arrangeUseTruckDate != null" >
+         #{arrangeUseTruckDate},
+      </if>
+      <if test="unloadEndDate != null" >
+         #{unloadEndDate},
+      </if>
+      <if test="origDate != null" >
+         #{origDate},
+      </if>
+      <if test="destDate != null" >
+         #{destDate},
+      </if>
+      <if test="motorcadeCode != null" >
+        #{motorcadeCode},
+      </if>
+      <if test="motorcadeName != null" >
+        #{motorcadeName}
+      </if>
+    </trim>
+  </insert>
+  <update id="updateTransferSignBill" parameterType="com.deppon.foss.module.transfer.management.api.shared.domain.TransferSignBillEntity" >
+    update TFR.T_OPT_TRANSFER_SIGN_BILL
+    <set >
+      <if test="signBillNo != null" >
+        SIGN_BILL_NO = #{signBillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="useTruckOrgCode != null" >
+        USE_TRUCK_ORG_CODE = #{useTruckOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="useTruckOrgName != null" >
+        USE_TRUCK_ORG_NAME = #{useTruckOrgName,jdbcType=VARCHAR},
+      </if>
+      <if test="signBillDate != null" >
+        SIGN_BILL_DATE = #{signBillDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="driverCode != null" >
+        DRIVER_CODE = #{driverCode,jdbcType=VARCHAR},
+      </if>
+      <if test="driverName != null" >
+        DRIVER_NAME = #{driverName,jdbcType=VARCHAR},
+      </if>
+      <if test="isFirstTransfer != null" >
+        IS_FIRST_TRANSFER = #{isFirstTransfer,jdbcType=CHAR},
+      </if>
+      <if test="vehicleNo != null" >
+        VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR},
+      </if>
+      <if test="vehicleTypeLength != null" >
+        VEHICLE_TYPE_LENGTH = #{vehicleTypeLength,jdbcType=VARCHAR},
+      </if>
+      <if test="transferDistance != null" >
+        TRANSFER_DISTANCE = #{transferDistance,jdbcType=DECIMAL},
+      </if>
+      <if test="volume != null" >
+        VOLUME = #{volume,jdbcType=DECIMAL},
+      </if>
+      <if test="weight != null" >
+        WEIGHT = #{weight,jdbcType=DECIMAL},
+      </if>
+      <if test="useTruckDuration != null" >
+        USE_TRUCK_DURATION = #{useTruckDuration,jdbcType=DECIMAL},
+      </if>
+      <if test="transferRoyalty != null" >
+        TRANSFER_ROYALTY = #{transferRoyalty,jdbcType=DECIMAL},
+      </if>
+      <if test="useTruckFee != null" >
+        USE_TRUCK_FEE = #{useTruckFee,jdbcType=DECIMAL},
+      </if>
+      <if test="currencyCode != null" >
+        CURRENCY_CODE= #{currencyCode},
+      </if>
+      <if test="handOverNo != null" >
+        HANDOVER_NO = #{handOverNo},
+      </if>
+      <if test="origOrgCode != null" >
+        ORIG_ORG_CODE = #{origOrgCode},
+      </if>
+      <if test="origOrgName != null" >
+        ORIG_ORG_NAME = #{origOrgName},
+      </if>
+      <if test="destOrgCode != null" >
+        DEST_ORG_CODE = #{destOrgCode},
+      </if>
+      <if test="destOrgName != null" >
+        DEST_ORG_NAME = #{destOrgName},
+      </if>
+      <if test="motorcadeCode != null" >
+        MOTORCADE_CODE = #{motorcadeCode},
+      </if>
+      <if test="motorcadeName != null" >
+        MOTORCADE_NAME = #{motorcadeName},
+      </if>
+      <if test="storeSign != null" >
+        STORE_SIGN = #{storeSign},
+      </if>
+      <if test="arrangeUseTruckDate != null" >
+        ARRANGE_USETRUCK_DATE = #{arrangeUseTruckDate, jdbcType=TIMESTAMP},
+      </if>
+      <if test="unloadEndDate != null" >
+        UNLOAD_END_DATE = #{unloadEndDate, jdbcType=TIMESTAMP},
+      </if>
+      <if test="origDate != null" >
+        ORIG_DATE = #{origDate, jdbcType=TIMESTAMP},
+      </if>
+      <if test="destDate != null" >
+        DEST_DATE = #{destDate, jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+ 
+</mapper>

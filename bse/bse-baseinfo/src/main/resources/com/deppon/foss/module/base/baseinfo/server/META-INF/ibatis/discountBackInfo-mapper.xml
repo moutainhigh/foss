@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="foss.bse.bse-baseinfo.discountBackInfo">
+	<!-- 事后折扣信息返回的结果集，单表查 -->
+	<resultMap id="resultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.DiscountBackEntity">
+		<id property="id" column="ID" jdbcType="VARCHAR" />
+		<result property="crmId" column="CRM_ID" jdbcType="DECIMAL" />
+		<result property="cusCode" column="CUS_CODE" jdbcType="VARCHAR" />
+		<result property="cusName" column="CUS_NAME" jdbcType="VARCHAR" />
+		<result property="schemeName" column="SCHEME_NAME" jdbcType="VARCHAR" />
+		<result property="schemeCode" column="SCHEME_CODE"  jdbcType="VARCHAR" />
+		<result property="beginTime" column="BEGIN_TIME"  javaType="Date" jdbcType="TIMESTAMP"  />
+		<result property="endTime" column="END_TIME" javaType="Date" jdbcType="TIMESTAMP"  />
+		<result property="preferType" column="PREFER_TYPE" jdbcType="VARCHAR" />
+		<result property="active" column="ACTIVE" jdbcType="CHAR" />
+		<result property="createUser" column="CREATE_USER_CODE" javaType="String" jdbcType="VARCHAR" />
+		<result property="createDate" column="CREATE_TIME" javaType="Date" jdbcType="TIMESTAMP" />
+		<result property="modifyUser" column="MODIFY_USER_CODE" javaType="String" jdbcType="VARCHAR" />
+		<result property="modifyDate" column="MODIFY_TIME" javaType="Date" jdbcType="TIMESTAMP" />
+	</resultMap>
+
+	<!-- 单表查，操作的字段 -->
+	<sql id="query_columns">
+		C.ID,
+		C.CRM_ID, 
+		C.CUS_CODE,
+		C.CUS_NAME,
+		C.SCHEME_NAME,
+		C.SCHEME_CODE,
+		C.BEGIN_TIME,
+		C.END_TIME,
+		C.PREFER_TYPE,
+		C.ACTIVE,
+		C.CREATE_USER_CODE,
+		C.CREATE_TIME,
+		C.MODIFY_USER_CODE,
+		C.MODIFY_TIME
+	</sql>
+	
+	<!-- 查询成本中心部门条件 -->
+	<sql id="query_params">
+		<where>
+	      	<if test="deptName!=null and deptName != ''">
+	        	AND C.DEPT_NAME like CONCAT(CONCAT('%', #{deptName,jdbcType=VARCHAR}), '%') 
+	      	</if>
+	      	<if test="active!=null and active != ''">
+	        	AND C.ACTIVE= #{active,jdbcType=CHAR} 
+	      	</if>
+	      	<if test="status!=null and status != ''">
+	        	AND C.STATEUS= #{status,jdbcType=CHAR} 
+	      	</if>
+	      	<if test="isFreeze!=null and isFreeze != ''">
+	        	AND C.ISFREEZE= #{isFreeze,jdbcType=CHAR} 
+	      	</if>
+	      	<if test="isCostOrgUnit!=null and isCostOrgUnit != ''">
+	        	AND C.ISCOSTORGUNIT= #{isCostOrgUnit,jdbcType=CHAR} 
+	      	</if> 
+	      	<if test="deptCode!=null and deptCode != ''">
+	        	AND C.DEPT_CODE= #{deptCode,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="simpleCode!=null and simpleCode != ''">
+	        	AND C.SIMPLE_CODE= #{simpleCode,jdbcType=VARCHAR} 
+	      	</if>
+	      	AND C.SIMPLE_CODE is not null
+		</where>
+	</sql>
+	
+	
+	<!-- 根据crmId查询foss表中是否存在该信息 -->
+	<select id="queryDiscountBackInfoByCrmId" parameterType="map"
+		resultMap="resultMap">
+        <![CDATA[
+			SELECT 
+			/** 综合:根据crmId查询foss表中是否存在该信息 **/
+		]]>
+		<include refid="query_columns" />
+		<![CDATA[
+		    FROM BSE.T_BAS_CUS_DISCOUNTBACK C
+		]]>
+		<where>
+			<if test="crmId != null and crmId != ''">
+				CRM_ID = #{crmId,jdbcType=DECIMAL}
+			</if>
+		</where>
+	</select>
+	
+	<!--新增事后折概要信息-->
+	<insert id="insert" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.DiscountBackEntity">
+		<![CDATA[
+			INSERT /** 综合:新增成本中心部门信息**/ INTO BSE.T_BAS_CUS_DISCOUNTBACK C (
+		]]>
+		<include refid="query_columns"/>
+		<![CDATA[
+			) VALUES (
+		]]>
+		#{id,jdbcType=VARCHAR},
+		#{crmId,jdbcType=DECIMAL},
+		#{cusCode,jdbcType=VARCHAR},
+		#{cusName,jdbcType=VARCHAR},
+		#{schemeName,jdbcType=VARCHAR},
+		#{schemeCode,jdbcType=VARCHAR},
+		#{beginTime,jdbcType=TIMESTAMP},
+		#{endTime,jdbcType=TIMESTAMP},
+		#{preferType,jdbcType=VARCHAR},
+		#{active,jdbcType=CHAR},
+		#{createUser,jdbcType=VARCHAR},
+		#{createDate,jdbcType=TIMESTAMP},
+		#{modifyUser,jdbcType=VARCHAR},
+		#{modifyDate,jdbcType=TIMESTAMP}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+	
+	<!--修改事后折信息-->
+	<update id="update" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.DiscountBackEntity">
+		UPDATE /** 修改事后折信息 **/ BSE.T_BAS_CUS_DISCOUNTBACK
+		<set>
+			<if test="cusCode != null and cusCode != ''">
+				CUS_CODE = #{cusCode,jdbcType=VARCHAR},
+			</if>
+			<if test="cusName != null and cusName != ''">
+				CUS_NAME = #{cusName,jdbcType=VARCHAR},
+			</if>
+			<if test="schemeName != null and schemeName != ''">
+				SCHEME_NAME = #{schemeName,jdbcType=VARCHAR},
+			</if>
+			<if test="schemeCode != null and schemeCode != ''">
+				SCHEME_CODE = #{schemeCode,jdbcType=VARCHAR},
+			</if>
+			<if test="beginTime != null and beginTime != ''">
+				BEGIN_TIME = #{beginTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="endTime != null and endTime != ''">
+				END_TIME = #{endTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="preferType != null and preferType != ''">
+				PREFER_TYPE = #{preferType,jdbcType=VARCHAR},
+			</if>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate != null and modifyDate != ''">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+		</set>
+		
+		<where>
+			<if test="crmId != null and crmId != ''">
+				CRM_ID = #{crmId,jdbcType=DECIMAL}
+			</if>
+		</where>
+	</update>
+	
+</mapper>

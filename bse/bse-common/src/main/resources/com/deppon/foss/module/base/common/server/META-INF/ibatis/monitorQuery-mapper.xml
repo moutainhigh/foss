@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.MonitorQueryDao" >
+	<resultMap id="MonitorQueryResultMap"
+		type="com.deppon.foss.module.base.common.api.shared.dto.MonitorDataDto">
+		<result column="INDICATOR_GROUP" property="indicatorGroup" jdbcType="VARCHAR" />
+		<result column="INDICATOR_CODE" property="indicatorCode" jdbcType="VARCHAR" />
+		<result column="INDICATOR_NAME" property="indicatorName" jdbcType="VARCHAR" />
+		<result column="MONITOR_DATE" property="monitorDate" jdbcType="TIMESTAMP" />
+		<result column="MONITOR_TIME_RANGE" property="monitorTimeRange" jdbcType="VARCHAR" />
+		<result column="SEQ" property="seq" jdbcType="DECIMAL" />
+		<result column="INDICATOR_VALUE" property="indicatorValue" jdbcType="DECIMAL" />
+		<result column="FORMULA" property="formula" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 通过类别查询指标组列表 -->
+	<select id="queryIndicatorGroupByCategory" parameterType="java.util.Map" resultType="java.lang.String">
+		SELECT/** 综合:通过类别查询指标组列表 **/ INDICATOR_GROUP
+		FROM BSE.T_BAS_MONITOR_INDICATOR T
+		WHERE T.INDICATOR_CATEGORY = #{indicatorCategory}
+		GROUP BY T.INDICATOR_GROUP
+		ORDER BY MIN(SEQ)
+	</select>
+	
+	<!-- 通过指标组查询指标列表 -->
+	<select id="queryIndicatorsByIndicatorGroup" resultMap="foss.bse.MonitorIndicatorEntityDao.BaseResultMap" parameterType="java.util.Map">
+		SELECT /** 综合:通过指标组查询指标列表 **/
+		<include refid="foss.bse.MonitorIndicatorEntityDao.Base_Column_List" />
+		FROM BSE.T_BAS_MONITOR_INDICATOR
+		WHERE INDICATOR_GROUP IN
+		<foreach collection="indicatorGroups"  index="index" item="item"  open="(" separator="," close=")">  
+			#{item}
+		</foreach>
+		ORDER BY SEQ
+	</select>
+  
+	<!-- 按日查询常规业务指标 -->
+	<select id="queryDailyCommonIndicators" resultMap="MonitorQueryResultMap" parameterType="java.util.Map">
+		SELECT /** 综合:按日查询常规业务指标 **/ A.INDICATOR_GROUP,
+			A.INDICATOR_CODE,
+			A.INDICATOR_NAME,
+			B.MONITOR_DATE,
+			B.MONITOR_TIME_RANGE,
+			MIN(A.SEQ) SEQ,
+			SUM(DECODE(A.INDICATOR_TYPE,
+			'C',
+			B.INDICATOR_VALUE,
+			'T',
+			B.INDICATOR_VALUE / 100)) INDICATOR_VALUE
+		FROM BSE.T_BAS_MONITOR_INDICATOR A, BSE.T_BAS_MONITOR_DATA B
+		WHERE A.INDICATOR_CODE = B.INDICATOR_CODE
+			AND B.MONITOR_DATE = #{monitorDate,jdbcType=TIMESTAMP}
+			AND A.INDICATOR_GROUP IN
+		<foreach collection="indicatorGroups" index="index" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		<include refid="orgLevelWhere" />
+		GROUP BY A.INDICATOR_GROUP,
+			A.INDICATOR_CODE,
+			A.INDICATOR_NAME,
+			B.MONITOR_DATE,
+			B.MONITOR_TIME_RANGE
+		ORDER BY MONITOR_TIME_RANGE, SEQ
+	</select>
+	
+	<sql id="orgLevelWhere">
+	 	<if test="orgLevel != 1">
+			AND
+			<choose>
+				<when test="orgLevel == 3">
+					B.LEVEL3_ORG_CODE = #{orgCode}
+				</when>
+				<when test="orgLevel == 2">
+					B.LEVEL2_ORG_CODE = #{orgCode}
+				</when>
+				<otherwise>
+					1=0
+				</otherwise>
+			</choose>
+		</if> 
+	</sql>
+	
+	<!-- 按月查询常规业务指标 -->
+	<select id="queryMonthlyCommonIndicators" resultMap="MonitorQueryResultMap" parameterType="java.util.Map">
+		SELECT/** 综合:按月查询常规业务指标 **/ A.INDICATOR_GROUP,
+			A.INDICATOR_CODE,
+			A.INDICATOR_NAME,
+			B.MONITOR_DATE,
+			'00:00-24:00' MONITOR_TIME_RANGE,
+			MIN(A.SEQ) SEQ,
+			SUM(DECODE(A.INDICATOR_TYPE,
+			'C',
+			B.INDICATOR_VALUE,
+			'T',
+			B.INDICATOR_VALUE / 100)) INDICATOR_VALUE
+		FROM BSE.T_BAS_MONITOR_INDICATOR A, BSE.T_BAS_MONITOR_DATA B
+		WHERE A.INDICATOR_CODE = B.INDICATOR_CODE
+			<![CDATA[
+				AND B.MONITOR_DATE >= #{monitorBeginDate,jdbcType=TIMESTAMP}
+				AND B.MONITOR_DATE < #{monitorEndDate,jdbcType=TIMESTAMP}
+			]]>
+			AND A.INDICATOR_GROUP IN
+		<foreach collection="indicatorGroups" index="index" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		<include refid="orgLevelWhere" />
+		GROUP BY A.INDICATOR_GROUP,
+			A.INDICATOR_CODE,
+			A.INDICATOR_NAME,
+			B.MONITOR_DATE
+		ORDER BY MONITOR_DATE, SEQ
+	</select>
+	
+	<!-- 按日查询新业务指标 TODO -->
+	<select id="queryDailyNewIndicators" resultMap="MonitorQueryResultMap" parameterType="java.util.Map">
+	SELECT/** 综合:按日查询新业务指标 **/ INDICATOR_GROUP,
+			 INDICATOR_CODE,
+			 INDICATOR_NAME,
+			 MONITOR_DATE,
+			 MIN(SEQ) SEQ,
+			 FORMULA,
+			 SUM(INDICATOR_VALUE) INDICATOR_VALUE
+	FROM (
+		SELECT A.INDICATOR_GROUP,
+				A.INDICATOR_CODE,
+				A.INDICATOR_NAME,
+				B.MONITOR_DATE,
+				A.SEQ,
+				A.FORMULA,
+				B.INDICATOR_VALUE
+		FROM BSE.T_BAS_MONITOR_INDICATOR A, BSE.T_BAS_MONITOR_DATA B
+		WHERE A.INDICATOR_CODE = B.INDICATOR_CODE
+					AND A.INDICATOR_CATEGORY = #{indicatorCategory}
+					AND B.MONITOR_DATE = #{monitorDate,jdbcType=TIMESTAMP}
+					AND A.INDICATOR_GROUP IN 
+					<foreach collection="indicatorGroups"  index="index" item="item"  open="(" separator="," close=")">  
+						#{item}
+					</foreach>
+					<include refid="orgLevelWhere" />
+		UNION ALL
+		SELECT INDICATOR_GROUP,
+			 INDICATOR_CODE,
+			 INDICATOR_NAME,
+			 #{monitorDate,jdbcType=TIMESTAMP},
+			 SEQ,
+			 FORMULA,
+			 NULL INDICATOR_VALUE
+		FROM BSE.T_BAS_MONITOR_INDICATOR
+		WHERE INDICATOR_CATEGORY = #{indicatorCategory}
+	)
+	GROUP BY INDICATOR_GROUP, INDICATOR_CODE, INDICATOR_NAME, MONITOR_DATE, FORMULA
+	ORDER BY MONITOR_DATE, SEQ
+	</select>
+  
+	<!-- 按日查询系统功能使用情况 TODO -->
+	<select id="queryDailyApplicationResource" resultMap="MonitorQueryResultMap" parameterType="java.util.Map">
+		SELECT/** 综合:按日查询系统功能使用情况 **/ B.MONITOR_TIME_RANGE, A.NAME INDICATOR_NAME, SUM(B.INDICATOR_VALUE) INDICATOR_VALUE
+		FROM BSE.T_BAS_RESOURCES A, BSE.T_BAS_MONITOR_DATA B
+		where
+		B.INDICATOR_SUB_CODE = A.CODE
+			<!-- 只查询功能节点 -->
+			AND A.RES_TYPE = '3'
+			AND B.INDICATOR_CODE = #{indicatorCode,jdbcType=VARCHAR}
+			<!--AND B.MONITOR_DATE = #{monitorDate,jdbcType=TIMESTAMP}-->
+			<if test="endTime==null">
+			AND B.MONITOR_DATE=#{startTime,jdbcType=TIMESTAMP}
+			</if>
+			<if test="startTime!=null and endTime!=null">
+			AND B.MONITOR_DATE>=#{startTime,jdbcType=TIMESTAMP} AND B.MONITOR_DATE<![CDATA[<]]>#{endTime,jdbcType=TIMESTAMP}
+			</if>
+			<!-- AND B.MONITOR_DATE>=#{startTime,jdbcType=TIMESTAMP} AND B.MONITOR_DATE<![CDATA[<=]]>#{endTime,jdbcType=TIMESTAMP} -->
+		    AND ( 1 = 0
+				<if test="level1OrgCode!=null and level1OrgCode!=''">
+				OR 1 = 1
+				</if>
+				<if test="level2OrgCodes!=null and level2OrgCodes.size()>0">
+					OR B.LEVEL2_ORG_CODE IN 
+					<foreach collection="level2OrgCodes" index="index" item="item" open="(" separator="," close=")">  
+						#{item}
+					</foreach>
+				</if> 
+				<if test="level3OrgCodes!=null and level3OrgCodes.size()>0">
+					OR B.LEVEL3_ORG_CODE IN 
+					<foreach collection="level3OrgCodes" index="index" item="item" open="(" separator="," close=")">  
+						#{item}
+					</foreach>
+				</if>
+			) 
+		GROUP BY B.MONITOR_TIME_RANGE, A.NAME, B.INDICATOR_CODE
+	</select>
+  
+	<!-- 按日查询组织在线情况 -->
+	<select id="queryDailyApplicationOnline" resultMap="MonitorQueryResultMap" parameterType="java.util.Map">
+		SELECT /** 综合:按日查询组织在线情况 **/ MONITOR_TIME_RANGE, SUM(INDICATOR_VALUE) INDICATOR_VALUE
+		FROM BSE.T_BAS_MONITOR_DATA
+		WHERE INDICATOR_CODE = #{indicatorCode,jdbcType=VARCHAR}
+			<!--AND MONITOR_DATE = #{monitorDate,jdbcType=TIMESTAMP}-->
+			<if test="endTime==null">
+			AND MONITOR_DATE=#{startTime,jdbcType=TIMESTAMP}
+			</if>
+			<if test="startTime!=null and endTime!=null">
+			AND MONITOR_DATE>=#{startTime,jdbcType=TIMESTAMP} AND MONITOR_DATE<![CDATA[<]]>#{endTime,jdbcType=TIMESTAMP}
+			</if>
+			<!-- AND MONITOR_DATE>=#{startTime,jdbcType=TIMESTAMP} AND MONITOR_DATE<![CDATA[<=]]>#{endTime,jdbcType=TIMESTAMP} -->
+			AND 
+			<choose> 
+				<when test="orgLevel == 3">
+					LEVEL3_ORG_CODE = #{orgCode}
+				</when>
+				<when test="orgLevel == 2">
+					LEVEL2_ORG_CODE = #{orgCode}
+				</when>
+				<when test="orgLevel == 1">
+					1=1
+				</when>
+				<otherwise>
+					1=0
+				</otherwise>
+			</choose>
+		GROUP BY MONITOR_TIME_RANGE, INDICATOR_CODE
+	</select>
+  
+	<!-- 按日查询模拟登陆情况 -->
+	<select id="queryDailyApplicationLogin" resultMap="MonitorQueryResultMap" parameterType="java.util.Map">
+		SELECT/** 综合:按日查询模拟登陆情况 **/ A.APP_NAME INDICATOR_CODE, B.MONITOR_TIME_RANGE, 
+			SUM(CASE WHEN B.INDICATOR_VALUE = 1 THEN 1 ELSE 0 END) || '/'
+			||  SUM(CASE WHEN B.INDICATOR_VALUE = 0 THEN 1 ELSE 0 END) INDICATOR_NAME
+		FROM BSE.T_BAS_MONITOR_APP A, BSE.T_BAS_MONITOR_DATA B
+		WHERE B.INDICATOR_CODE = #{indicatorCode,jdbcType=VARCHAR}
+			AND A.APP_CODE = B.INDICATOR_SUB_CODE
+			<!--AND B.MONITOR_DATE = #{monitorDate,jdbcType=TIMESTAMP}-->
+			<if test="endTime==null">
+				AND B.MONITOR_DATE=#{startTime,jdbcType=TIMESTAMP}
+			</if>
+			<if test="startTime!=null and endTime!=null">
+				AND B.MONITOR_DATE>=#{startTime,jdbcType=TIMESTAMP} AND B.MONITOR_DATE<![CDATA[<]]>#{endTime,jdbcType=TIMESTAMP}
+			</if>
+			<!-- AND B.MONITOR_DATE>=#{startTime,jdbcType=TIMESTAMP} AND B.MONITOR_DATE<![CDATA[<=]]>#{endTime,jdbcType=TIMESTAMP}-->
+		GROUP BY A.APP_NAME, B.Monitor_Time_Range
+		ORDER BY A.APP_NAME
+	</select>
+</mapper>

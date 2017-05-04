@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.pda.bdm.module.core.server.dao.impl.OcrDao" >
+	<resultMap id="BaseResultMap" type="com.deppon.pda.bdm.module.core.shared.domain.WaybillPictureOcrDto">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<id column="WAYBILL_UUID" property="waybillUuid" jdbcType="VARCHAR" />
+		<id column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<id column="ORDER_NO" property="orderNo" jdbcType="VARCHAR" />
+		<id column="DRIVER_CODE" property="driverCode" jdbcType="VARCHAR" />
+		<id column="TRUCK_CODE" property="truckCode" jdbcType="VARCHAR" />
+		<id column="MOBILE_PHONE" property="mobilephone" jdbcType="VARCHAR" />
+		<id column="BIG_GOODS_FLAG" property="bigGoodsFlag" jdbcType="VARCHAR" />
+		<id column="CASH_PAY_FLAG" property="cashPayFlag" jdbcType="VARCHAR" />
+		<id column="FILE_PATH" property="filePath" jdbcType="VARCHAR" />
+		<id column="PENDGING_TYPE" property="pendgingType" jdbcType="VARCHAR" />
+		<id column="BELONG_ORG_CODE" property="billOrgCode" jdbcType="VARCHAR" />
+		<id column="REMARK" property="remark" jdbcType="VARCHAR" />
+		<id column="EQUIPMENT_NO" property="equipmentNo" jdbcType="VARCHAR" />
+		<id column="OPERATOR" property="operator" jdbcType="VARCHAR" />
+		<id column="BAIDUID" property="baiDuId" jdbcType="VARCHAR" />
+		<id column="RECEIVE_ORG_CODE" property="receiveOrgCode" jdbcType="VARCHAR" />
+		<id column="ISBIGUP" property="isBigUp" jdbcType="VARCHAR" />
+		<id column="FHTOOTOVERQTY" property="fhToOtOverQty" jdbcType="VARCHAR" />
+		<id column="OTTOTTOVERQTY" property="otToTtOverQty" jdbcType="VARCHAR" />
+		<id column="SERVICERATE" property="serviceRate" jdbcType="VARCHAR" />
+		<id column="SERVICEFEE" property="serviceFee" jdbcType="VARCHAR" />
+		<id column="CREATE_TIME" property="creatTime" jdbcType="VARCHAR" />
+		<id column="NEW_FILE_PATH" property="newFilePath" jdbcType="VARCHAR" />
+		<id column="WHETHER_SEND" property="whetherSend" jdbcType="VARCHAR" />
+		<id column="SPECIAL_CUSTOMER" property="specialCustomer" jdbcType="VARCHAR" />
+		<id column="IS_EXHIBIT_CARGO" property="isExhibitCargo" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<select id="queryWaybillsWithoutSend"  resultMap="BaseResultMap" parameterType="java.lang.String">
+		 select 
+		 v.id,
+		 v.waybill_uuid,
+		 v.waybill_no,
+		 v.order_no,
+		 v.driver_code,
+		 v.TRUCK_CODE,
+		 v.MOBILE_PHONE,
+		 v.big_goods_flag,
+		 v.cash_pay_flag,
+		 v.file_path,
+		 v.pendging_type,
+		 v.belong_org_code,
+		 v.remark,
+		 v.equipment_no,
+		 v.receive_org_code,
+		 v.baiDuId,					
+		 v.ISBIGUP,
+		 v.FHTOOTOVERQTY,
+		 v.OTTOTTOVERQTY,
+		 v.SERVICERATE,
+		 v.SERVICEFEE,
+		 s.NEW_FILE_PATH,
+		 v.SPECIAL_CUSTOMER,
+		 v.IS_EXHIBIT_CARGO
+		 from pda.t_app_pic_waybill_pending v left join pda.t_ocr_pic_waybill_pending s
+		 on v.id=s.id 
+		 where v.create_time<![CDATA[>]]>CAST((sysdate-numtodsinterval('2','day')) AS TIMESTAMP)
+		 and v.JOB_ID=#{jobId,jdbcType=VARCHAR}
+	</select>
+	
+	<insert id="saveMobileException"
+		parameterType="com.deppon.pda.bdm.module.core.shared.domain.MobileExceptionBean">
+			<![CDATA[
+	    		INSERT INTO pda.T_APP_EXCEPTION (
+	    			uuid,
+	    			usercode,
+	    			truckCode,
+					mobilephone,
+					mobileTime,
+					exception,
+					crateTime
+	    		) 
+				VALUES
+				(
+					#{uuid,jdbcType=VARCHAR},
+					#{usercode,jdbcType=VARCHAR},
+					#{truckCode,jdbcType=VARCHAR},
+					#{mobilephone,jdbcType=VARCHAR},
+					#{mobileTime,jdbcType=TIMESTAMP},
+					#{exception,jdbcType=VARCHAR},
+					#{creatTime,jdbcType=TIMESTAMP}
+				)
+	    		]]>
+	</insert>
+	
+	<update id="updateWetherSendForApp" parameterType="java.util.List">
+		update pda.t_app_pic_waybill_pending t set t.whether_send=1
+		where t.create_time<![CDATA[>]]>CAST((sysdate-numtodsinterval('2','day')) AS TIMESTAMP)
+		and t.id in
+		<foreach collection="list" item="item" open="("
+					close=")" separator=",">
+					#{item.id,jdbcType=VARCHAR}
+		</foreach>
+	</update>
+	
+	<update id="updateWetherSendForOcr" parameterType="java.util.List">
+		update pda.t_ocr_pic_waybill_pending t set t.whether_send=1
+		where t.create_time<![CDATA[>]]>CAST((sysdate-numtodsinterval('2','day')) AS TIMESTAMP)
+		and t.id in
+		<foreach collection="list" item="item" open="("
+					close=")" separator=",">
+					#{item.id,jdbcType=VARCHAR}
+		</foreach>
+	</update>
+	
+	<!-- 新增运单图片文件 -->
+	<insert id="insertToOcr"
+		parameterType="com.deppon.foss.module.pickup.waybill.shared.dto.WaybillPicturePdaDto">
+			<![CDATA[
+	    		INSERT INTO pda.t_ocr_pic_waybill_pending(
+	    		  ID,
+				  WAYBILL_NO,
+				  FILE_PATH,
+				  NEW_FILE_PATH,
+				  CREATE_TIME,
+				  WHETHER_SEND,
+				  JOB_ID
+	    		) 
+				VALUES
+				(
+					#{id,jdbcType=VARCHAR},
+					#{waybillNo,jdbcType=VARCHAR},
+					#{filePath,jdbcType=VARCHAR},
+					-1,
+					CAST(sysdate AS TIMESTAMP),
+					0,
+					0
+				)
+	    		]]>
+	</insert>
+	
+	<update id="updateJobId" parameterType="map">
+		update pda.t_app_pic_waybill_pending t set t.JOB_ID = #{jobId,jdbcType=VARCHAR} 
+		where t.create_time<![CDATA[<]]>CAST((sysdate-numtodsinterval(#{waitTime,jdbcType=INTEGER},'second')) AS TIMESTAMP) 
+		 and t.create_time<![CDATA[>]]>CAST((sysdate-numtodsinterval('2','day')) AS TIMESTAMP)
+		 and t.WHETHER_SEND = '0'
+		 and t.JOB_ID = '0'
+		 and rownum <![CDATA[<=]]> 1000
+	</update>
+	
+	<update id="updateWetherSendForFailForApp" parameterType="java.util.List">
+		update pda.t_app_pic_waybill_pending t set t.whether_send='FAIL'
+		where t.create_time<![CDATA[>]]>CAST((sysdate-numtodsinterval('2','day')) AS TIMESTAMP)
+		and t.id in
+		<foreach collection="list" item="item" open="("
+					close=")" separator=",">
+					#{item.id,jdbcType=VARCHAR}
+		</foreach>
+	</update>
+	
+	<update id="updateWetherSendForFailForOcr" parameterType="java.util.List">
+		update pda.t_ocr_pic_waybill_pending t set t.whether_send='FAIL'
+		where t.create_time<![CDATA[>]]>CAST((sysdate-numtodsinterval('2','day')) AS TIMESTAMP)
+		and t.id in
+		<foreach collection="list" item="item" open="("
+					close=")" separator=",">
+					#{item.id,jdbcType=VARCHAR}
+		</foreach>
+	</update>
+	
+	<select id="waybillNoSend" resultType="java.lang.Integer" parameterType="java.lang.Integer">
+		select count(*) from pda.t_app_pic_waybill_pending t 
+		where t.create_time<![CDATA[<]]>CAST((sysdate-numtodsinterval(#{waitTime,jdbcType=INTEGER},'second')) AS TIMESTAMP) 
+		 and t.create_time<![CDATA[>]]>CAST((sysdate-numtodsinterval('2','day')) AS TIMESTAMP)
+		 and t.WHETHER_SEND = '0'
+		 and t.JOB_ID = '0'
+		 and rownum <![CDATA[<=]]> 1000
+	</select>
+</mapper>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.management.queryvehicleoil" >
+  <resultMap id="vehicleOil" type="com.deppon.foss.module.transfer.management.api.shared.dto.VehicleOilInfoDto" >
+   	<result property="vehicleNo" column="vehicleNo" />
+	<result property="refuelAmount" column="refuelAmount" />
+	<result property="currentMile" column="currentMile" />
+	<result property="refuelTime" column="refuelTime" />
+  </resultMap>
+  
+  <!-- 查询车辆油耗信息 -->
+	<select id="selectVehicleOil" resultMap="vehicleOil"
+		parameterType="map">
+  		select max(csp.vehicle_no) vehicleNo,
+       		   sum(de.fuel_qty) refuelAmount,
+               max(csp.run_km) currentMile,
+               max(csp.create_date) refuelTime
+          from tfr.t_opt_fuel_consumption csp
+     left join tfr.t_opt_fuel_detail de on de.fuel_consumption_id = csp.id
+         where csp.vehicle_no=#{vehicleNo}
+           and csp.create_date between #{beginDate} and #{endDate}
+         group by csp.id
+            
+	</select>
+
+  
+  
+</mapper>

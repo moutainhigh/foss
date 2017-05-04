@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.tfr.TfrJobProcessDao" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.transfer.common.api.shared.domain.TfrJobProcessEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="BIZ_NAME" property="bizName" jdbcType="VARCHAR" />
+    <result column="BIZ_CODE" property="bizCode" jdbcType="VARCHAR" />
+    <result column="BIZ_START_TIME" property="bizStartTime" jdbcType="TIMESTAMP" />
+    <result column="BIZ_END_TIME" property="bizEndTime" jdbcType="TIMESTAMP" />
+    <result column="STATUS" property="status" jdbcType="VARCHAR" />
+    <result column="THREAD_NO" property="threadNo" jdbcType="DECIMAL" />
+    <result column="THREAD_COUNT" property="threadCount" jdbcType="DECIMAL" />
+    <result column="JOB_START_TIME" property="jobStartTime" jdbcType="TIMESTAMP" />
+    <result column="JOB_END_TIME" property="jobEndTime" jdbcType="TIMESTAMP" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    ID, BIZ_NAME, BIZ_CODE, BIZ_START_TIME, BIZ_END_TIME, STATUS, THREAD_NO, THREAD_COUNT, 
+    JOB_START_TIME, JOB_END_TIME
+  </sql>
+  
+  <sql id="Base_Column_where" >
+    <if test="bizStartTimeFrom!=null and bizStartTimeTo!=null">
+				AND t.BIZ_START_TIME between #{bizStartTimeFrom,jdbcType=TIMESTAMP} and #{bizStartTimeTo,jdbcType=TIMESTAMP}
+	</if>
+    <if test="bizEndTimeFrom!=null and bizEndTimeTo!=null">
+				AND t.BIZ_END_TIME between #{bizEndTimeFrom,jdbcType=TIMESTAMP} and #{bizEndTimeTo,jdbcType=TIMESTAMP}
+	</if>
+    <if test="jobStartTimeFrom!=null and jobStartTimeTo!=null">
+				AND t.JOB_START_TIME between #{jobStartTimeFrom,jdbcType=TIMESTAMP} and #{jobStartTimeTo,jdbcType=TIMESTAMP}
+	</if>
+    <if test="jobEndTimeFrom!=null and jobEndTimeTo!=null">
+				AND t.JOB_END_TIME between #{jobEndTimeFrom,jdbcType=TIMESTAMP} and #{jobEndTimeTo,jdbcType=TIMESTAMP}
+	</if>
+  </sql>
+  
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.String" >
+    select 
+    <include refid="Base_Column_List" />
+    from TFR.T_OPT_JOB_PROCESS
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+  <select id="selectJobProcessList" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.transfer.common.api.shared.dto.TfrJobProcessDto" >
+    select 
+    <include refid="Base_Column_List" />
+    from TFR.T_OPT_JOB_PROCESS t
+    <where>
+    	 <include refid="Base_Column_where" />
+    </where>
+  </select>
+  <select id="selectJobProcessCount" resultType="Long" parameterType="com.deppon.foss.module.transfer.common.api.shared.dto.TfrJobProcessDto" >
+	  select 
+	  	count(1)
+	  from TFR.T_OPT_JOB_PROCESS t
+	  <where>
+			<include refid="Base_Column_where" />
+	  </where>
+  </select>
+  <select id="queryJobProcessByIndex" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.transfer.common.api.shared.domain.TfrJobProcessEntity" >
+    select 
+    <include refid="Base_Column_List" />
+    from TFR.T_OPT_JOB_PROCESS
+    where BIZ_CODE = #{bizCode}
+      and THREAD_NO = #{threadNo}
+      and THREAD_COUNT = #{threadCount}
+      for update nowait
+  </select>
+  <select id="queryJobProcessByIndexNoLock" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.transfer.common.api.shared.domain.TfrJobProcessEntity" >
+    select 
+    <include refid="Base_Column_List" />
+    from TFR.T_OPT_JOB_PROCESS
+    where BIZ_CODE = #{bizCode}
+      and THREAD_NO = #{threadNo}
+      and THREAD_COUNT = #{threadCount}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String" >
+    delete from TFR.T_OPT_JOB_PROCESS
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  <insert id="addJobProcessEntity" parameterType="com.deppon.foss.module.transfer.common.api.shared.domain.TfrJobProcessEntity" >
+    insert into TFR.T_OPT_JOB_PROCESS (ID, BIZ_NAME, BIZ_CODE, 
+      BIZ_START_TIME, BIZ_END_TIME, STATUS, 
+      THREAD_NO, THREAD_COUNT, JOB_START_TIME, 
+      JOB_END_TIME)
+    values (#{id,jdbcType=VARCHAR}, #{bizName,jdbcType=VARCHAR}, #{bizCode,jdbcType=VARCHAR}, 
+      #{bizStartTime,jdbcType=TIMESTAMP}, #{bizEndTime,jdbcType=TIMESTAMP}, #{status,jdbcType=VARCHAR}, 
+      #{threadNo,jdbcType=DECIMAL}, #{threadCount,jdbcType=DECIMAL}, #{jobStartTime,jdbcType=TIMESTAMP}, 
+      #{jobEndTime,jdbcType=TIMESTAMP})
+  </insert>
+  <insert id="insertSelective" parameterType="com.deppon.foss.module.transfer.common.api.shared.domain.TfrJobProcessEntity" >
+    insert into TFR.T_OPT_JOB_PROCESS
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="bizName != null" >
+        BIZ_NAME,
+      </if>
+      <if test="bizCode != null" >
+        BIZ_CODE,
+      </if>
+      <if test="bizStartTime != null" >
+        BIZ_START_TIME,
+      </if>
+      <if test="bizEndTime != null" >
+        BIZ_END_TIME,
+      </if>
+      <if test="status != null" >
+        STATUS,
+      </if>
+      <if test="threadNo != null" >
+        THREAD_NO,
+      </if>
+      <if test="threadCount != null" >
+        THREAD_COUNT,
+      </if>
+      <if test="jobStartTime != null" >
+        JOB_START_TIME,
+      </if>
+      <if test="jobEndTime != null" >
+        JOB_END_TIME,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="bizName != null" >
+        #{bizName,jdbcType=VARCHAR},
+      </if>
+      <if test="bizCode != null" >
+        #{bizCode,jdbcType=VARCHAR},
+      </if>
+      <if test="bizStartTime != null" >
+        #{bizStartTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="bizEndTime != null" >
+        #{bizEndTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="status != null" >
+        #{status,jdbcType=VARCHAR},
+      </if>
+      <if test="threadNo != null" >
+        #{threadNo,jdbcType=DECIMAL},
+      </if>
+      <if test="threadCount != null" >
+        #{threadCount,jdbcType=DECIMAL},
+      </if>
+      <if test="jobStartTime != null" >
+        #{jobStartTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="jobEndTime != null" >
+        #{jobEndTime,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateJobProcessEntity" parameterType="com.deppon.foss.module.transfer.common.api.shared.domain.TfrJobProcessEntity" >
+    update TFR.T_OPT_JOB_PROCESS
+    <set>
+      <if test="bizName != null" >
+        BIZ_NAME = #{bizName,jdbcType=VARCHAR},
+      </if>
+      <if test="bizStartTime != null" >
+        BIZ_START_TIME = #{bizStartTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="bizEndTime != null" >
+        BIZ_END_TIME = #{bizEndTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="status != null" >
+        STATUS = #{status,jdbcType=VARCHAR},
+      </if>
+      <if test="jobStartTime != null" >
+        JOB_START_TIME = #{jobStartTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="jobEndTime != null" >
+        JOB_END_TIME = #{jobEndTime,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where BIZ_CODE = #{bizCode,jdbcType=VARCHAR}
+      and THREAD_NO = #{threadNo,jdbcType=DECIMAL}
+      and THREAD_COUNT = #{threadCount,jdbcType=DECIMAL}
+  </update>
+  <update id="updateByPrimaryKeySelective" parameterType="com.deppon.foss.module.transfer.common.api.shared.domain.TfrJobProcessEntity" >
+    update TFR.T_OPT_JOB_PROCESS
+    <set>
+      <if test="bizName != null" >
+        BIZ_NAME = #{bizName,jdbcType=VARCHAR},
+      </if>
+      <if test="bizCode != null" >
+        BIZ_CODE = #{bizCode,jdbcType=VARCHAR},
+      </if>
+      <if test="bizStartTime != null" >
+        BIZ_START_TIME = #{bizStartTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="bizEndTime != null" >
+        BIZ_END_TIME = #{bizEndTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="status != null" >
+        STATUS = #{status,jdbcType=VARCHAR},
+      </if>
+      <if test="threadNo != null" >
+        THREAD_NO = #{threadNo,jdbcType=DECIMAL},
+      </if>
+      <if test="threadCount != null" >
+        THREAD_COUNT = #{threadCount,jdbcType=DECIMAL},
+      </if>
+      <if test="jobStartTime != null" >
+        JOB_START_TIME = #{jobStartTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="jobEndTime != null" >
+        JOB_END_TIME = #{jobEndTime,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.deppon.foss.module.transfer.common.api.shared.domain.TfrJobProcessEntity" >
+    update TFR.T_OPT_JOB_PROCESS
+    set BIZ_NAME = #{bizName,jdbcType=VARCHAR},
+      BIZ_CODE = #{bizCode,jdbcType=VARCHAR},
+      BIZ_START_TIME = #{bizStartTime,jdbcType=TIMESTAMP},
+      BIZ_END_TIME = #{bizEndTime,jdbcType=TIMESTAMP},
+      STATUS = #{status,jdbcType=VARCHAR},
+      THREAD_NO = #{threadNo,jdbcType=DECIMAL},
+      THREAD_COUNT = #{threadCount,jdbcType=DECIMAL},
+      JOB_START_TIME = #{jobStartTime,jdbcType=TIMESTAMP},
+      JOB_END_TIME = #{jobEndTime,jdbcType=TIMESTAMP}
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+</mapper>

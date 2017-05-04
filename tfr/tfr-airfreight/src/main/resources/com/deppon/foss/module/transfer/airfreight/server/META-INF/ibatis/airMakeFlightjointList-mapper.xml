@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.airfreight" >
+	<resultMap id="modifyAirPickupbillResultMap" type="com.deppon.foss.module.transfer.airfreight.api.shared.domain.AirPickupbillEntity">
+        <id  property="id" column="ID"/>
+		<result property="airLineCode" column="AIR_LINE_CODE"/>
+		<result property="airLineName" column="AIR_LINE_NAME"/>
+		<result property="airWaybillNo" column="AIR_WAYBILL_NO"/>
+		<result property="destOrgCode" column="DEST_ORG_CODE"/>
+		<result property="destOrgName" column="DEST_ORG_NAME"/>
+		<result property="flightNo" column="FLIGHT_NO"/>
+		<result property="arrvRegionCode" column="ARRV_REGION_CODE"/>
+		<result property="arrvRegionName" column="ARRV_REGION_NAME"/>
+		<result property="flightDate" column="FLIGHT_DATE"/>
+		<result property="createUserCode" column="CREATE_USER_CODE"/>
+		<result property="createUserName" column="CREATE_USER_NAME"/>
+		<result property="origOrgCode" column="ORIG_ORG_CODE"/>
+		<result property="origOrgName" column="ORIG_ORG_NAME"/>
+		<result property="createTime" column="CREATE_TIME"/>
+		<result property="modifyUserCode" column="MODIFY_USER_CODE"/>
+		<result property="modifyUserName" column="MODIFY_USER_NAME"/>
+		<result property="modifyTime" column="MODIFY_TIME"/>
+		<result property="waybillQtyTotal" column="WAYBILL_QTY_TOTAL"/>
+		<result property="goodsQtyTotal" column="GOODS_QTY_TOTAL"/>
+		<result property="grossWeightTotal" column="GROSS_WEIGHT_TOTAL"/>
+		<result property="deliverFeeTotal" column="DELIVER_FEE_TOTAL"/>
+		<result property="arrivalFeeTotal" column="ARRIVAL_FEE_TOTAL"/>
+		<result property="collectionFeeTotal" column="COLLECTION_FEE_TOTAL"/>
+		<result property="currencyCode" column="CURRENCY_CODE"/>
+	</resultMap>
+	
+	<resultMap id="modifyAirPickupbillDetailResultMap" type="com.deppon.foss.module.transfer.airfreight.api.shared.domain.AirPickupbillDetailEntity">
+    	<id  property="id" column="ID"/>
+		<result property="airPickupbillId" column="AIR_PICKUPBILL_ID"/>
+		<result property="waybillNo" column="WAYBILL_NO"/>
+		<result property="arrvRegionName" column="ARRV_REGION_NAME"/>
+		<result property="goodsName" column="GOODS_NAME"/>
+		<result property="goodsQty" column="GOODS_QTY"/>
+		<result property="airPickQty" column="AIRPICK_QTY"/>
+		<result property="weight" column="WEIGHT"/>
+		<result property="billingWeight" column="BILLING_WEIGHT"/>
+		<result property="beTransfer" column="BE_TRANSFER"/>
+		<result property="pickupType" column="PICKUP_TYPE"/>
+		<result property="deliverFee" column="DELIVER_FEE"/>
+		<result property="arrivalFee" column="ARRIVAL_FEE"/>
+		<result property="collectionFee" column="COLLECTION_FEE"/>
+		<result property="airWaybillNo" column="AIR_WAYBILL_NO"/>
+		<result property="currencyCode" column="CURRENCY_CODE"/>
+		<result property="createTime" column="CREATE_TIME"/>
+		<result property="receiverContactPhone" column="RECEIVER_CONTACT_PHONE"/>
+		<result property="receiverAddress" column="RECEIVER_ADDRESS"/>
+		<result property="receiverName" column="RECEIVER_NAME"/>
+		<result property="notes" column="NOTES"/>
+		<result property="transportType" column="product_code"/>
+		
+	</resultMap>
+	
+	<sql id="modify_airPickupbillall_view_column">
+		A.ID,
+		A.AIR_LINE_CODE,
+		A.AIR_LINE_NAME,
+		A.AIR_WAYBILL_NO,
+		A.DEST_ORG_CODE,
+		A.DEST_ORG_NAME,
+		A.FLIGHT_NO,
+		A.ARRV_REGION_CODE,
+		A.ARRV_REGION_NAME,
+		A.FLIGHT_DATE,
+		A.CREATE_USER_CODE,
+		A.CREATE_USER_NAME,
+		A.ORIG_ORG_CODE,
+		A.ORIG_ORG_NAME,
+		A.CREATE_TIME,
+		A.MODIFY_USER_CODE,
+		A.MODIFY_USER_NAME,
+		A.MODIFY_TIME,
+		A.WAYBILL_QTY_TOTAL,
+		A.GOODS_QTY_TOTAL,
+		A.GROSS_WEIGHT_TOTAL,
+		A.DELIVER_FEE_TOTAL/100 AS DELIVER_FEE_TOTAL,
+		A.ARRIVAL_FEE_TOTAL/100 AS ARRIVAL_FEE_TOTAL,
+		A.COLLECTION_FEE_TOTAL/100 AS COLLECTION_FEE_TOTAL,
+		A.CURRENCY_CODE		 
+	</sql>
+	
+	<sql id="modify_airPickupbillDetailall_view_column">
+		A.AIR_PICKUPBILL_ID,
+		A.ID,
+		A.WAYBILL_NO,
+		A.ARRV_REGION_NAME,
+		A.GOODS_NAME,
+		A.GOODS_QTY AS AIRPICK_QTY, <!-- 清单件数 -->
+		A.GOODS_QTY AS GOODS_QTY, <!-- 开单件数 -->
+		A.WEIGHT,
+		A.BILLING_WEIGHT,
+		A.BE_TRANSFER,
+		A.PICKUP_TYPE,
+		A.DELIVER_FEE/100 AS DELIVER_FEE,
+		A.ARRIVAL_FEE/100 AS ARRIVAL_FEE,
+		A.COLLECTION_FEE/100 AS COLLECTION_FEE,
+		A.AIR_WAYBILL_NO,
+		A.CURRENCY_CODE,
+		A.CREATE_TIME,
+		A.RECEIVER_CONTACT_PHONE,
+		A.RECEIVER_ADDRESS,
+		A.RECEIVER_NAME,
+		A.NOTES		 
+	</sql>
+	
+	<!-- 根据正单号获取已保存的合大票明细list -->
+	<select id="queryAirPickupbillDetailList" parameterType="String" resultMap="modifyAirPickupbillDetailResultMap">
+		SELECT
+			A.AIR_PICKUPBILL_ID,
+			A.ID,
+			A.WAYBILL_NO,
+			A.ARRV_REGION_NAME,
+			A.GOODS_NAME,
+			A.GOODS_QTY AS AIRPICK_QTY, <!-- 清单件数 -->
+			A.WEIGHT,
+			A.BILLING_WEIGHT,
+			A.BE_TRANSFER,
+			A.PICKUP_TYPE,
+			A.DELIVER_FEE/100 AS DELIVER_FEE,
+			A.ARRIVAL_FEE/100 AS ARRIVAL_FEE,
+			A.COLLECTION_FEE/100 AS COLLECTION_FEE,
+			A.AIR_WAYBILL_NO,
+			A.CURRENCY_CODE,
+			A.CREATE_TIME,
+			A.RECEIVER_CONTACT_PHONE,
+			A.RECEIVER_ADDRESS,
+			A.RECEIVER_NAME,
+			A.NOTES,		 
+			w.product_code,
+			A.GOODS_QTY as GOODS_QTY <!--运单开单件数-->
+ 				FROM TFR.T_OPT_AIR_PICKUPBILL_DETAIL A
+ 				 JOIN pkp.t_srv_waybill w
+				   ON a.waybill_no=w.waybill_no
+				   AND w.active='Y'
+ 					<where>
+ 					 A.AIR_PICKUPBILL_ID IN 
+ 						(SELECT B.ID FROM TFR.T_OPT_AIR_PICKUPBILL B
+ 							WHERE B.AIR_WAYBILL_NO = #{airWaybillNo} 
+ 						)
+ 					</where> 
+	</select>
+	
+	<!-- 根据正单号获取已保存的合大票明细list -->
+	<select id="queryAirPickupbillDetailList1" parameterType="String" resultMap="modifyAirPickupbillDetailResultMap">
+		SELECT
+			<include refid="modify_airPickupbillDetailall_view_column"/>,w.product_code
+ 				FROM TFR.T_OPT_AIR_PICKUPBILL_DETAIL A
+ 				 JOIN TFR.T_OPT_AIR_WAYBILL_DETAIL w
+				   ON a.waybill_no=w.waybill_no
+ 					<where>
+ 					 A.AIR_PICKUPBILL_ID IN 
+ 						(SELECT B.ID FROM TFR.T_OPT_AIR_PICKUPBILL B
+ 							WHERE B.AIR_WAYBILL_NO = #{airWaybillNo} 
+ 						)
+ 					</where> 
+	</select>
+	
+	<!--根据id查询待导出的合大票明细list-->
+	<select id="queryPickupbillDetailWithExportEdi" parameterType="list" resultMap="modifyAirPickupbillDetailResultMap">
+		SELECT
+			<include refid="modify_airPickupbillDetailall_view_column"/> 
+		 	FROM TFR.T_OPT_AIR_PICKUPBILL_DETAIL A
+				WHERE A.ID IN 
+					<foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+				 		#{item}
+					</foreach>
+	</select>
+	
+	<!-- 根据运单号list查询符合条件的运单原始信息 -->
+	<select id="queryAirPickupbillDetailListByIds" parameterType="list" resultMap="modifyAirPickupbillDetailResultMap">
+		SELECT
+			<include refid="modify_airPickupbillDetailall_view_column"/>
+		 	FROM TFR.T_OPT_AIR_PICKUPBILL_DETAIL A
+			<where>
+				A.ID IN 
+				<foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+				 		#{item}
+					</foreach>
+			</where> 
+	</select>
+</mapper>
+

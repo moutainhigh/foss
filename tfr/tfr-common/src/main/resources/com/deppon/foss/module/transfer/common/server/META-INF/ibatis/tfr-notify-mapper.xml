@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.tfr.notify" >
+  <resultMap id="notifyResultMap" type="com.deppon.foss.module.transfer.common.api.shared.domain.TfrNotifyEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+	<result column="NOTIFY_TIME" property="notifyTime" jdbcType="TIMESTAMP" />
+    <result column="NOTIFY_TYPE" property="notifyType" jdbcType="VARCHAR" />
+    <result column="NOTIFY_PARAM1" property="notifyParam1" jdbcType="VARCHAR" />
+    <result column="NOTIFY_PARAM2" property="notifyParam2" jdbcType="VARCHAR" />
+    <result column="NOTIFY_PARAM3" property="notifyParam3" jdbcType="VARCHAR" />
+    <result column="NOTIFY_NUM" property="notifyNum" jdbcType="NUMERIC" />
+    <result column="NOTIFY_ERRORINFO" property="notifyErrorInfo" jdbcType="VARCHAR" />
+    <result column="PARAM_JSON" property="paramJson" jdbcType="CLOB" />
+  </resultMap>
+  
+  <sql id="notify_Column_List" >
+		ID,
+		NOTIFY_PARAM1,
+		NOTIFY_PARAM2,
+		NOTIFY_PARAM3,
+		PARAM_JSON,
+		NOTIFY_TYPE
+  </sql>
+  
+  <insert id="addTfrNotifyEntity" parameterType="com.deppon.foss.module.transfer.common.api.shared.domain.TfrNotifyEntity">
+  	insert into tfr.t_opt_fosstowk_notify
+  	/*中转-通用模块-将需要通知快递系统的任务添加到待通知表*/
+  	(
+  		 ID,                
+		 CREATE_TIME,      
+		 NOTIFY_TYPE,       
+		 NOTIFY_PARAM1,    
+		 NOTIFY_PARAM2,     
+		 NOTIFY_PARAM3, 
+		 PARAM_JSON,   
+		 NOTIFY_NUM      
+  	)
+  	values 
+  	(
+  		#{id,jdbcType=VARCHAR},
+  		sysdate,
+  		#{notifyType,jdbcType=VARCHAR},
+  		#{notifyParam1,jdbcType=VARCHAR},
+  		#{notifyParam2,jdbcType=VARCHAR},
+  		#{notifyParam3,jdbcType=VARCHAR},
+  		#{paramJson,jdbcType=CLOB},
+  		0
+  	)
+  </insert>
+  
+  
+  
+  <insert id="addTfrNotifyBeginEntity" parameterType="com.deppon.foss.module.transfer.common.api.shared.domain.TfrNotifyEntity">
+  	insert into tfr.t_opt_fosstowk_notify
+  	/*中转-通用模块-将需要通知快递系统的任务添加到待通知表*/
+  	(
+  		 ID,               
+		 CREATE_TIME,      
+		 NOTIFY_TIME,      
+		 NOTIFY_TYPE,       
+		 NOTIFY_PARAM1,    
+		 NOTIFY_PARAM2,     
+		 NOTIFY_PARAM3,
+		 PARAM_JSON,    
+		 NOTIFY_NUM      
+  	)
+  	values 
+  	(
+  		#{id,jdbcType=VARCHAR},
+  		sysdate,
+  		sysdate,
+  		#{notifyType,jdbcType=VARCHAR},
+  		#{notifyParam1,jdbcType=VARCHAR},
+  		#{notifyParam2,jdbcType=VARCHAR},
+  		#{notifyParam3,jdbcType=VARCHAR},
+  		#{paramJson,jdbcType=CLOB},
+  		1
+  	)
+  </insert>
+  
+  
+  <select id="selectTfrNotifyList" parameterType="HashMap"
+  	resultMap="notifyResultMap">
+  	select 
+  	/*中转-快递异步通知任务表-查询待通知数据*/
+  	<include refid="notify_Column_List" />
+  	from tfr.t_opt_fosstowk_notify nt
+  	<where>
+  		 job_id=#{jobId, jdbcType=VARCHAR}
+  	</where>
+  </select>
+  
+  
+  <update id="updateTfrNotifyIng" parameterType="ArrayList">
+	UPDATE  /*更新处理中任务*/
+	tfr.t_opt_fosstowk_notify nt
+		set nt.NOTIFY_TIME = sysdate,
+		nt.NOTIFY_NUM=nt.NOTIFY_NUM+1
+		where  nt.id in
+		<foreach collection="list" item="ids" open="(" close=")" separator=",">
+			 #{ids,jdbcType=VARCHAR} 
+		</foreach>
+  </update>
+ 
+  
+  <delete id="updateTfrNotifySuccess" parameterType="java.lang.String">
+  	DELETE 
+  	/*中转-通用模块-业务处理完毕后，将job待办表中的信息删除*/
+  	from tfr.t_opt_fosstowk_notify  nt where nt.id = #{id,jdbcType=VARCHAR}
+  </delete>
+  
+  
+  <update id="updateTfrNotifyFail" parameterType="com.deppon.foss.module.transfer.common.api.shared.domain.TfrNotifyEntity">
+	UPDATE  /*更新处理中任务*/
+		tfr.t_opt_fosstowk_notify nt
+	SET 
+		NOTIFY_ERRORINFO=#{notifyErrorInfo,jdbcType=VARCHAR},
+		job_id=#{jobId, jdbcType=VARCHAR}
+	where  
+		nt.ID = #{id,jdbcType=VARCHAR} 
+		and nt.NOTIFY_TYPE= #{notifyType,jdbcType=VARCHAR} 
+  </update>
+  
+  
+   <select id="queryNotifyConfig" parameterType="java.lang.String"
+  	resultType="com.deppon.foss.module.transfer.common.api.shared.domain.TfrNotifyConfig">
+  	SELECT 
+  		CLASS_NAME	className,
+	    SLEEP_TIME	sleepTime,
+	    NODATA_SLEEP_TIME	nodataSleepTime,
+	    NOTIFY_COUNT	notifyCount,
+	    NOTIFY_TIME_LAG	notifyTimeLag,
+	    NOTIFY_MAX_NUM	notifyMaxNum
+  	FROM tfr.t_opt_fosstowk_notify_CONFIG NC
+  	<where>
+  		NC.CLASS_NAME=#{className,jdbcType=VARCHAR} 
+  	</where>
+  </select>
+  
+  
+  <update id="updateTfrNotifyListJobId" parameterType="HashMap">
+  	  	/*中转-快递异步通知任务表-查询待通知数据*/
+  	update  tfr.t_opt_fosstowk_notify nt set nt.job_id=#{jobId,jdbcType=VARCHAR} 
+  	<where>
+  		1 = 1
+  		<if test="notifyType != null and id != ''">
+  			and nt.NOTIFY_TYPE in
+  			<foreach collection="notifyType" item="item" index="index" open="(" close=")" separator=",">
+           		#{item,jdbcType=VARCHAR}
+        	</foreach>
+  		</if>
+  		<if test="notifyNum != null and id != ''">
+  			and nt.NOTIFY_NUM <![CDATA[<]]> #{notifyNum,jdbcType=NUMERIC}
+  		</if>
+  		and (
+  			NOTIFY_TIME is null OR 
+  			NOTIFY_TIME <![CDATA[<=]]> sysdate-#{lag,jdbcType=NUMERIC}<![CDATA[/24/60]]>
+  		)
+  		and (job_id is null OR job_id = 'N/A')
+  		and  rownum <![CDATA[<=]]> #{count,jdbcType=NUMERIC}
+  	</where>
+  </update>
+</mapper>

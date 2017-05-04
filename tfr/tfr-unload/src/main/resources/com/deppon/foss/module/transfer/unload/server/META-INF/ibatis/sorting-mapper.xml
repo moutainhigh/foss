@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tfr.unload.sorting" >
+	<resultMap id="sortingScanEntityResultMap"
+		type="com.deppon.foss.module.transfer.unload.api.shared.domain.SortingScanEntity">
+		<result property="id" column="ID" />
+		<result property="wayBillNo" column="WAYBILL_NO" />
+		<result property="serialNo" column="SERIAL_NO" />
+		<result property="operatorName" column="OPERATOR_NAME" />
+		<result property="operatorCode" column="OPERATOR_CODE" />
+		<result property="orgCode" column="OPERATION_ORG_CODE" />
+		<result property="orgName" column="OPERATION_ORG_NAME" />
+		<result property="createTime" column="CREATE_TIME" />
+		<result property="scanType" column="SCAN_TYPE" />
+		<result property="scanTime" column="SCAN_TIME" />
+		<result property="deviceNo" column="DEVICE_NO" />
+		<result property="scanMode" column="SCAN_MODE"/>
+		<result property="deliveryCustomerCode" column="DELIVER_CUSTOMER_CODE"/>
+		
+	</resultMap>
+	
+	<!--用于分拣扫描比对查询结果-->
+	<resultMap id="sortingScanCompareDtoResultMap"
+		type="com.deppon.foss.module.transfer.unload.api.shared.dto.SortingScanCompareDto">
+		<result property="waybillNo" column="waybillNo" />
+		<result property="goodsAreaCode" column="goodsAreaCode" />
+		<result property="goodsAreaName" column="goodsAreaName" />
+		<result property="stockGoodsQty" column="stockGoodsQty" />
+		<result property="goodsQtyTotal" column="goodsQtyTotal" />
+		<result property="billTime" column="billTime" />
+		<result property="inStockTime" column="inStockTime" />
+		<result property="productCode" column="productCode" />
+		<result property="productName" column="productName" />
+		<result property="receiveMethod" column="receiveMethod" />
+		<result property="goodsWeightTotal" column="goodsWeightTotal" />
+	</resultMap>
+	
+	
+	<select id="selectSortingScan" parameterType="HashMap" resultMap="sortingScanEntityResultMap">
+		select 
+			          ID,
+					  WAYBILL_NO,
+					  SERIAL_NO,
+					  OPERATOR_NAME,
+					  OPERATOR_CODE,
+					  OPERATION_ORG_NAME,
+					  OPERATION_ORG_CODE,
+					  CREATE_TIME,
+					  SCAN_TYPE,
+					  SCAN_TIME,
+					  DEVICE_NO,
+					  SCAN_MODE
+		from tfr.T_OPT_SORTING_SCANNING
+		<where>
+		  <if test="wayBillNo != null and wayBillNo !=''">
+		  WAYBILL_NO = #{wayBillNo,jdbcType=VARCHAR}
+		  </if>
+		 <if test="serialNo != null and serialNo !=''">
+		  and SERIAL_NO = #{serialNo,jdbcType=VARCHAR}
+		  </if>
+		  <if test="operatorCode != null and operatorCode !=''">
+		  and OPERATOR_CODE = #{operatorCode,jdbcType=VARCHAR}
+		  </if>
+		  <if test="scanType != null and scanType !=''">
+		  and SCAN_TYPE = #{scanType,jdbcType=VARCHAR}
+		  </if>
+		  <if test="scanMode != 'ALL' and scanMode != '' and scanMode != null">
+		  and SCAN_MODE = #{scanMode,jdbcType=VARCHAR}
+		  </if>
+		  <if test="orgCode != null and orgCode !=''">
+		  and OPERATION_ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+		  </if>
+		 <![CDATA[ and SCAN_TIME <= #{queryTimeEnd,jdbcType=VARCHAR}
+		  and SCAN_TIME >= #{queryTimeBegin,jdbcType=VARCHAR}]]>
+		</where>
+	</select>
+	<!-- 插入分配记录 -->
+	<insert id="insertSortingScan" parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.SortingScanEntity" >
+			insert into tfr.T_OPT_SORTING_SCANNING
+				  (ID,
+				  WAYBILL_NO,
+				  SERIAL_NO,
+				  OPERATOR_NAME,
+				  OPERATOR_CODE,
+				  OPERATION_ORG_NAME,
+				  OPERATION_ORG_CODE,
+				  CREATE_TIME,
+				  SCAN_TYPE,
+				  SCAN_TIME,
+				  DEVICE_NO,
+				  SCAN_MODE
+				  )
+				values(	
+				#{id,jdbcType=VARCHAR}, 
+				#{wayBillNo,jdbcType=VARCHAR}, 
+				#{serialNo,jdbcType=VARCHAR}, 
+				#{operatorName,jdbcType=VARCHAR}, 
+				#{operatorCode,jdbcType=VARCHAR}, 
+				#{orgName,jdbcType=VARCHAR}, 
+				#{orgCode,jdbcType=VARCHAR}, 
+				#{createTime,jdbcType=VARCHAR}, 
+				#{scanType,jdbcType=VARCHAR}, 
+				#{scanTime,jdbcType=VARCHAR}, 
+				#{deviceNo,jdbcType=VARCHAR},
+				#{scanMode,jdbcType=VARCHAR}
+				)
+	</insert>
+
+	
+	<!--条件查询所有分拣扫描数据-->
+	<select id="querySortingScan" parameterType="com.deppon.foss.module.transfer.unload.api.shared.dto.SortingScanDto" resultMap="sortingScanEntityResultMap">
+		select 
+			      ID,
+					  WAYBILL_NO,
+					  SERIAL_NO,
+					  OPERATOR_NAME,
+					  OPERATOR_CODE,
+					  OPERATION_ORG_NAME,
+					  OPERATION_ORG_CODE,
+					  CREATE_TIME,
+					  SCAN_TYPE,
+					  SCAN_TIME,
+					  DEVICE_NO
+		from tfr.T_OPT_SORTING_SCANNING
+		<where>
+		  <if test="waybillNo != null and waybillNo !=''">
+		  WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+		  </if>
+		 <if test="serialNo != null and serialNo !=''">
+		  and SERIAL_NO = #{serialNo,jdbcType=VARCHAR}
+		  </if>
+		  <if test="operatorCode != null and operatorCode !=''">
+		  and OPERATOR_CODE = #{operatorCode,jdbcType=VARCHAR}
+		  </if>
+		  <if test="scanType != null and scanType !=''">
+		  and SCAN_TYPE = #{scanType,jdbcType=VARCHAR}
+		  </if>
+		  <if test="orgCode != null and orgCode !=''">
+		  and OPERATION_ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+		  </if>
+		 <![CDATA[ and SCAN_TIME <= #{queryTimeEnd,jdbcType=VARCHAR}
+		  and SCAN_TIME >= #{queryTimeBegin,jdbcType=VARCHAR}]]>
+		</where>
+	</select>
+	
+	<!--条件查询所有库存数据,用于分拣扫描数据比对-->
+	<select id="querySortingScanStock" parameterType="com.deppon.foss.module.transfer.unload.api.shared.dto.SortingScanDto" resultMap="sortingScanCompareDtoResultMap">
+			select 
+				 w.waybill_no waybillNo,
+			     ga.goods_area_code goodsAreaCode,
+			     ga.goods_area_name goodsAreaName,
+			     ws.stock_goods_qty stockGoodsQty,
+			     w.goods_qty_total goodsQtyTotal,
+			     w.bill_time billTime,
+			     ws.in_stock_time inStockTime,
+			     p.code productCode,
+			     p.name productName,
+			     w.receive_method receiveMethod,
+			     w.goods_weight_total goodsWeightTotal
+			from tfr.t_opt_waybill_stock ws     
+		    inner join pkp.t_srv_waybill w on ws.waybill_no = w.waybill_no and w.active = 'Y'
+		    left join bse.t_bas_goods_area ga 
+		              on ga.org_code = ws.org_code and ws.goods_area_code = ga.goods_area_code and ga.active='Y'
+		    left join pkp.t_srv_product p on p.code = w.product_code and p.active = 'Y' and p.levels = '3'
+		<trim prefix="where" prefixOverrides="and" >
+		 	  w.product_code in ('PACKAGE','RCP','EPEP','DEAP')              <!-- 只要快递 -->
+		  <if test="waybillNo != null and waybillNo !=''">
+		 	  and w.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		  </if>
+		  <if test="orgCode != null and orgCode !=''">
+			  and ws.org_code = #{orgCode,jdbcType=VARCHAR}
+		  </if>
+		 <![CDATA[ and ws.in_stock_time <= #{queryTimeEnd,jdbcType=VARCHAR}
+		 	 ]]>
+		</trim>
+	</select>
+
+	
+	<insert id="insertSortingScans" parameterType="java.util.List" >
+		begin 
+		<foreach collection="list" item="item" separator=";">
+				insert into tfr.T_OPT_SORTING_SCANNING
+				  (ID,
+				  WAYBILL_NO,
+				  SERIAL_NO,
+				  OPERATOR_NAME,
+				  OPERATOR_CODE,
+				  OPERATION_ORG_NAME,
+				  OPERATION_ORG_CODE,
+				  CREATE_TIME,
+				  SCAN_TYPE,
+				  SCAN_TIME,
+				  DEVICE_NO,
+				  SCAN_MODE
+				  )
+				values(	
+				#{item.id,jdbcType=VARCHAR}, 
+				#{item.wayBillNo,jdbcType=VARCHAR}, 
+				#{item.serialNo,jdbcType=VARCHAR}, 
+				#{item.operatorName,jdbcType=VARCHAR}, 
+				#{item.operatorCode,jdbcType=VARCHAR}, 
+				#{item.orgName,jdbcType=VARCHAR}, 
+				#{item.orgCode,jdbcType=VARCHAR}, 
+				#{item.createTime,jdbcType=VARCHAR}, 
+				#{item.scanType,jdbcType=VARCHAR}, 
+				#{item.scanTime,jdbcType=VARCHAR}, 
+				#{item.deviceNo,jdbcType=VARCHAR},
+				#{item.scanMode,jdbcType=VARCHAR}
+				)
+		</foreach>
+		;end;
+	</insert>
+<select id="queryEwayBillRecords" parameterType="com.deppon.foss.module.transfer.unload.api.shared.dto.SortingScanDto" resultMap ="sortingScanEntityResultMap">
+    select * from (
+    Select s.Waybill_No waybillNo,
+       w.delivery_customer_code deliveryCustomerCode,
+       s.Operator_Code operatorCode,
+       s.Operation_Org_Name orgCode,
+       max(s.Scan_Time) scanTime
+	From Tfr.T_Opt_Sorting_Scanning s
+	   left Join Pkp.T_Srv_Waybill w
+	   on S.Waybill_No = W.Waybill_No
+	<where>
+	   <if test="waybillNo != null and waybillNo !=''">s.Waybill_No = #{waybillNo}</if>
+	   <if test="waybillNo == null or  waybillNo ==''">
+		   <if test="deliveryCustomerCode != null and deliveryCustomerCode !=''">and w.delivery_customer_code = #{deliveryCustomerCode,jdbcType=VARCHAR}</if>
+		   <if test="operatorCode != null and operatorCode !=''"> and w.DRIVER_CODE =#{operatorCode,jdbcType=VARCHAR} </if>
+		   <if test="queryTimeBegin != null and queryTimeBegin !=''">and s.Scan_Time > = #{queryTimeBegin,jdbcType=VARCHAR}</if>
+		   <if test="queryTimeEnd != null and queryTimeEnd !=''">and s.Scan_Time <![CDATA[ <]]> #{queryTimeEnd,jdbcType=VARCHAR}</if>
+	   </if>
+	  <![CDATA[ and (w.is_ecs != 'Y' or w.is_ecs is null) ]]>
+	</where>
+	group by s.waybill_no,
+          w.delivery_customer_code,
+          s.Operator_Code,
+          s.Operation_Org_Name) a 
+     where rownum =1
+</select>
+
+<select id="queryEwayBillRecordsCount" parameterType="com.deppon.foss.module.transfer.unload.api.shared.dto.SortingScanDto" resultType="Long" >
+  
+  select * from (select count(1)
+      from Tfr.T_Opt_Sorting_Scanning s
+	   left Join Pkp.T_Srv_Waybill w
+	   on S.Waybill_No = W.Waybill_No
+	<where>
+	   <if test="waybillNo != null and waybillNo !=''">s.Waybill_No = #{waybillNo}</if>
+	   <if test="waybillNo == null or  waybillNo ==''">
+		   <if test="deliveryCustomerCode != null and deliveryCustomerCode !=''">and w.delivery_customer_code = #{deliveryCustomerCode,jdbcType=VARCHAR}</if>
+		   <if test="operatorCode != null and operatorCode !=''"> and w.DRIVER_CODE =#{operatorCode,jdbcType=VARCHAR} </if>
+		   <if test="queryTimeBegin != null and queryTimeBegin !=''">and s.Scan_Time > = #{queryTimeBegin,jdbcType=VARCHAR}</if>
+		   <if test="queryTimeEnd != null and queryTimeEnd !=''">and s.Scan_Time <![CDATA[ <]]> #{queryTimeEnd,jdbcType=VARCHAR}</if>
+	   </if>
+	</where>
+	group by s.waybill_no,
+          w.delivery_customer_code,
+          s.Operator_Code,
+          s.Operation_Org_Name ) a 
+   where rownum =1
+</select>
+
+	<select id="querySortingScanCount" parameterType="HashMap" resultType="int">
+		select COUNT(1)
+		from tfr.T_OPT_SORTING_SCANNING
+		<where>
+		  <if test="wayBillNo != null and wayBillNo !=''">
+		  WAYBILL_NO = #{wayBillNo,jdbcType=VARCHAR}
+		  </if>
+		 <if test="serialNo != null and serialNo !=''">
+		  and SERIAL_NO = #{serialNo,jdbcType=VARCHAR}
+		  </if>
+		  <if test="operatorCode != null and operatorCode !=''">
+		  and OPERATOR_CODE = #{operatorCode,jdbcType=VARCHAR}
+		  </if>
+		  <if test="scanType != null and scanType !=''">
+		  and SCAN_TYPE = #{scanType,jdbcType=VARCHAR}
+		  </if>
+		  <if test="scanMode != 'ALL' and scanMode != '' and scanMode != null">
+		  and SCAN_MODE = #{scanMode,jdbcType=VARCHAR}
+		  </if>
+		  <if test="orgCode != null and orgCode !=''">
+		  and OPERATION_ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+		  </if>
+		 <![CDATA[ and SCAN_TIME <= #{queryTimeEnd,jdbcType=VARCHAR}
+		  and SCAN_TIME >= #{queryTimeBegin,jdbcType=VARCHAR}]]>
+		</where>
+	</select>
+</mapper>

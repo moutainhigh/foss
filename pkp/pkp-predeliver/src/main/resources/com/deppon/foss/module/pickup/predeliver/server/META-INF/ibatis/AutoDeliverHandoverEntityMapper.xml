@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.deppon.foss.module.pickup.predeliver.api.server.dao.AutoDeliverHandoverEntityMapper" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.pickup.predeliver.api.shared.domain.AutoDeliverHandoverEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="JOB_ID" property="jobId" jdbcType="VARCHAR" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    ID, WAYBILL_NO, CREATE_TIME, JOB_ID
+  </sql>
+  <select id="selectByWaybillNo" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.domain.AutoDeliverHandoverEntity" >
+    select 
+    <include refid="Base_Column_List" />
+    from PKP.T_SRV_AUTO_DELIVER_HANDOVER
+     where waybill_No = #{waybillNo,jdbcType=VARCHAR}
+  </select>
+  <delete id="deleteByExample" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.domain.AutoDeliverHandoverEntity" >
+    delete from PKP.T_SRV_AUTO_DELIVER_HANDOVER
+     where waybill_No = #{waybillNo,jdbcType=VARCHAR}
+  </delete>
+  <insert id="insertSelective" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.domain.AutoDeliverHandoverEntity" >
+    insert into PKP.T_SRV_AUTO_DELIVER_HANDOVER
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="waybillNo != null" >
+        WAYBILL_NO,
+      </if>
+      <if test="createTime != null" >
+        CREATE_TIME,
+      </if>
+      <if test="jobId != null" >
+        JOB_ID,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="waybillNo != null" >
+        #{waybillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null" >
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="jobId != null" >
+        #{jobId,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateAutoDeliverJob"
+		parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.AutoPreDeliverHandoverbillDto">
+		update PKP.T_SRV_AUTO_DELIVER_HANDOVER CO
+			set CO.JOB_ID = #{jobId,jdbcType=VARCHAR} 
+		<where>
+			<if test="pid !=null and pid.size > 0">
+			AND CO.id in 
+			<foreach collection="pid" index="index" item="d" open="(" separator="," close=")">
+				#{d}
+			</foreach>
+			</if>
+			<if test="oldJobId != null and oldJobId != '' ">
+			<![CDATA[	AND CO.JOB_ID =#{oldJobId,jdbcType=VARCHAR} ]]>
+			</if>
+		</where>
+	</update>
+	<select id="selectList" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.domain.AutoDeliverHandoverEntity" >
+    select 
+    <include refid="Base_Column_List" />
+    from PKP.T_SRV_AUTO_DELIVER_HANDOVER
+    <where>
+		<if test="num != null and num != '' ">
+		<![CDATA[	AND ROWNUM < #{num,jdbcType=INTEGER} ]]>
+		</if>
+		AND JOB_ID = 'N/A'
+	</where>
+  </select>
+</mapper>

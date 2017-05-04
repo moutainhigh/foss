@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="foss.bse.bse-baseinfo.discountBackItemInfo">
+	<!-- 事后折扣信息返回的结果集，单表查 -->
+	<resultMap id="resultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.DiscountBackItemEntity">
+		<id property="id" column="ID" jdbcType="VARCHAR" />
+		<result property="crmId" column="CRM_ID" jdbcType="DECIMAL" />
+		<result property="discountCrmId" column="DISCOUNT_CRM_ID" jdbcType="DECIMAL" />
+		<result property="degree" column="DEGREE" jdbcType="VARCHAR" />
+		<result property="minMoney" column="MIN_MONEY" jdbcType="DECIMAL" />
+		<result property="maxMoney" column="MAX_MONEY"  jdbcType="DECIMAL" />
+		<result property="rate" column="RATE"  javaType="DECIMAL" />
+		<result property="createUser" column="CREATE_USER_CODE" javaType="String" jdbcType="VARCHAR" />
+		<result property="createDate" column="CREATE_TIME" javaType="Date" jdbcType="TIMESTAMP" />
+		<result property="modifyUser" column="MODIFY_USER_CODE" javaType="String" jdbcType="VARCHAR" />
+		<result property="modifyDate" column="MODIFY_TIME" javaType="Date" jdbcType="TIMESTAMP" />
+	</resultMap>
+
+	<!-- 单表查，操作的字段 -->
+	<sql id="query_columns">
+		C.ID,
+		C.CRM_ID, 
+		C.DISCOUNT_CRM_ID,
+		C.DEGREE,
+		C.MIN_MONEY/100,
+		C.MAX_MONEY/100,
+		C.RATE,
+		C.CREATE_USER_CODE,
+		C.CREATE_TIME,
+		C.MODIFY_USER_CODE,
+		C.MODIFY_TIME
+	</sql>
+	
+	<sql id="insert_columns">
+		C.ID,
+		C.CRM_ID, 
+		C.DISCOUNT_CRM_ID,
+		C.DEGREE,
+		C.MIN_MONEY,
+		C.MAX_MONEY,
+		C.RATE,
+		C.CREATE_USER_CODE,
+		C.CREATE_TIME,
+		C.MODIFY_USER_CODE,
+		C.MODIFY_TIME
+	</sql>
+	
+	<!-- 查询成本中心部门条件 -->
+	<sql id="query_params">
+		<where>
+	      	<if test="deptName!=null and deptName != ''">
+	        	AND C.DEPT_NAME like CONCAT(CONCAT('%', #{deptName,jdbcType=VARCHAR}), '%') 
+	      	</if>
+	      	<if test="active!=null and active != ''">
+	        	AND C.ACTIVE= #{active,jdbcType=CHAR} 
+	      	</if>
+	      	<if test="status!=null and status != ''">
+	        	AND C.STATEUS= #{status,jdbcType=CHAR} 
+	      	</if>
+	      	<if test="isFreeze!=null and isFreeze != ''">
+	        	AND C.ISFREEZE= #{isFreeze,jdbcType=CHAR} 
+	      	</if>
+	      	<if test="isCostOrgUnit!=null and isCostOrgUnit != ''">
+	        	AND C.ISCOSTORGUNIT= #{isCostOrgUnit,jdbcType=CHAR} 
+	      	</if> 
+	      	<if test="deptCode!=null and deptCode != ''">
+	        	AND C.DEPT_CODE= #{deptCode,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="simpleCode!=null and simpleCode != ''">
+	        	AND C.SIMPLE_CODE= #{simpleCode,jdbcType=VARCHAR} 
+	      	</if>
+	      	AND C.SIMPLE_CODE is not null
+		</where>
+	</sql>
+	
+	
+	<!-- 根据crmId查询foss表中是否存在该信息 -->
+	<select id="queryDiscountBackItemInfoByCrmId" parameterType="map"
+		resultMap="resultMap">
+        <![CDATA[
+			SELECT 
+			/** 综合:根据crmId查询foss表中是否存在该信息 **/
+		]]>
+		<include refid="query_columns" />
+		<![CDATA[
+		    FROM BSE.T_BAS_CUS_DISCOUNTBACK_ITEM C
+		]]>
+		<where>
+			<if test="crmId != null and crmId != ''">
+				CRM_ID = #{crmId,jdbcType=DECIMAL}
+			</if>
+		</where>
+	</select>
+	
+	<!--新增事后折概要信息-->
+	<insert id="insert" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.DiscountBackItemEntity">
+		<![CDATA[
+			INSERT /** 综合:新增成本中心部门信息**/ INTO BSE.T_BAS_CUS_DISCOUNTBACK_ITEM C (
+		]]>
+		<include refid="insert_columns"/>
+		<![CDATA[
+			) VALUES (
+		]]>
+		#{id,jdbcType=VARCHAR},
+		#{crmId,jdbcType=DECIMAL},
+		#{discountCrmId,jdbcType=DECIMAL},
+		#{degree,jdbcType=VARCHAR},
+		#{minMoney,jdbcType=DECIMAL}*100,
+		#{maxMoney,jdbcType=DECIMAL}*100,
+		#{rate,jdbcType=DECIMAL},
+		#{createUser,jdbcType=VARCHAR},
+		#{createDate,jdbcType=TIMESTAMP},
+		#{modifyUser,jdbcType=VARCHAR},
+		#{modifyDate,jdbcType=TIMESTAMP}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+	
+	<!--修改事后折信息-->
+	<update id="update" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.DiscountBackItemEntity">
+		UPDATE /** 修改事后折信息 **/ BSE.T_BAS_CUS_DISCOUNTBACK_ITEM
+		<set>
+			<if test="discountCrmId != null and discountCrmId != ''">
+				DISCOUNT_CRM_ID = #{discountCrmId,jdbcType=DECIMAL},
+			</if>
+			<if test="degree != null and degree != ''">
+				DEGREE = #{degree,jdbcType=VARCHAR},
+			</if>
+			<if test="minMoney != null and minMoney != ''">
+				MIN_MONEY = #{minMoney,jdbcType=DECIMAL}*100,
+			</if>
+			<if test="maxMoney != null and maxMoney != ''">
+				MAX_MONEY = #{maxMoney,jdbcType=DECIMAL}*100,
+			</if>
+			<if test="rate != null and rate != ''">
+				RATE = #{rate,jdbcType=DECIMAL},
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate != null and modifyDate != ''">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+		</set>
+		
+		<where>
+			<if test="crmId != null and crmId != ''">
+				CRM_ID = #{crmId,jdbcType=DECIMAL}
+			</if>
+		</where>
+	</update>
+	
+</mapper>

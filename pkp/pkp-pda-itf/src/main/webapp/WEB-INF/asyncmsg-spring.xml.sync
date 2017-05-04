@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://www.springframework.org/schema/jee 
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+			http://www.springframework.org/schema/aop 
+			http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">
+	<!-- 异步消息读取DAO -->
+	<bean id="asyncMsgReadDao"
+		class="com.deppon.pda.bdm.module.core.server.dao.impl.AsyncMsgReadDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory" />
+	</bean>
+
+	<!-- 消息上传DAO -->
+	<bean id="asyncMsgUploadDao"
+		class="com.deppon.pda.bdm.module.core.server.dao.impl.AsyncMsgUploadDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory" />
+	</bean>
+	<!-- 消息上传service -->
+	<bean id="asyncMsgUploadService"
+		class="com.deppon.pda.bdm.module.core.server.service.impl.AsyncMsgUploadService">
+		<property name="asyncMsgUploadDao" ref="asyncMsgUploadDao"></property>
+	</bean>
+	<!-- 消息同步DAO -->
+	<bean id="asyncMsgSyncDao"
+		class="com.deppon.pda.bdm.module.core.server.dao.impl.AsyncMsgSyncDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory" />
+	</bean>
+	<bean id="clusterAsyncDataReadLockDao"
+		class="com.deppon.pda.bdm.module.core.server.async.dao.ClusterAsyncDataReadLockDao">
+		<property name="dataSource">
+			<ref bean="dataSource" />
+		</property>
+	</bean>
+	<!-- 异步消息读取service -->
+	<bean id="asyncMsgReadService"
+		class="com.deppon.pda.bdm.module.core.server.service.impl.AsyncMsgReadService">
+		<property name="asyncMsgReadDao" ref="asyncMsgReadDao"></property>
+		<property name="clusterAsyncDataReadLockDao" ref="clusterAsyncDataReadLockDao"></property>
+	</bean>
+	<!-- 消息同步service -->
+	<bean id="asyncMsgSyncService"
+		class="com.deppon.pda.bdm.module.core.server.service.impl.AsyncMsgSyncService">
+		<property name="asyncMsgSyncDao" ref="asyncMsgSyncDao"></property>
+	</bean>
+	<bean id="rejExceHandler"
+		class="com.deppon.pda.bdm.module.core.server.async.threadpool.handler.WaitRejectedExecutionHandler">
+		<property name="waitTime">
+			<value>1000</value>
+		</property>
+	</bean>
+	<bean id="threadPoolExecutor"
+		class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+		<property name="corePoolSize" value="100" />
+		<property name="maxPoolSize" value="100" />
+		<property name="queueCapacity" value="150" />
+		<property name="rejectedExecutionHandler">
+			<ref bean="rejExceHandler" />
+		</property>
+	</bean>
+	<bean id="asyncDataSyncFactory"
+		class="com.deppon.pda.bdm.module.core.server.async.job.SimpleAsyncDataSyncFactory">
+		<property name="asyncDataReadService">
+			<ref bean="asyncMsgReadService" />
+		</property>
+		<property name="asyncDataSyncService">
+			<ref bean="asyncMsgSyncService" />
+		</property>
+		<property name="threadPoolExecutor">
+			<ref bean="threadPoolExecutor" />
+		</property>
+		<property name="properties">
+			<props>
+				<!-- 异步数据队列最小值，即队列小于该值时，将触发从数据库中读取异步数据 -->
+				<prop key="minQueueSize">1000</prop>
+				<!-- 每次从数据库中取的数量 -->
+				<prop key="perReadSize">1000</prop>
+				<!-- 轮询间隔时间 -->
+				<prop key="sleepTime">5000</prop>
+			</props>
+		</property>
+	</bean>
+	<bean id="asyncDataSyncMonitorJob"
+		class="com.deppon.pda.bdm.module.core.server.async.job.AsyncDataSyncMonitorJob">
+		<property name="asyncDataSyncFactory">
+			<ref bean="asyncDataSyncFactory" />
+		</property>
+	</bean>
+	<bean id="asyncScanMsgDataJobDetail"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="asyncDataSyncMonitorJob" />
+		</property>
+		<property name="targetMethod">
+			<value>start</value>
+		</property>
+		<property name="concurrent" value="false" />
+	</bean>
+
+	<bean id="asyncScanMsgDataTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean"
+		scope="prototype">
+		<property name="jobDetail">
+			<ref bean="asyncScanMsgDataJobDetail" />
+		</property>
+		<!-- 每天半个小时同步一次 -->
+		<property name="cronExpression" value="0 0/1 * * * ?" />
+	</bean>
+	<!--
+	<bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+		<property name="waitForJobsToCompleteOnShutdown" value="true" />
+		<property name="triggers">
+			<list>
+				<ref bean="asyncScanMsgDataTrigger" />
+			</list>
+		</property>
+		<property name="quartzProperties">
+			<props>
+				<prop key="org.quartz.threadPool.threadCount">1</prop>
+				<prop key="org.quartz.threadPool.threadPriority">5</prop>
+				<prop key="org.quartz.scheduler.instanceName">Data Export Job</prop>
+				<prop key="org.quartz.scheduler.instanceId">AUTO</prop>
+			</props>
+		</property>
+	</bean>-->
+	
+	<!-- ===============================数据源2(PDA使用)================================== -->
+	<!-- 
+	<bean id="pdaDataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver" />
+		<property name="url" value="jdbc:oracle:thin:@192.168.17.88:1521:pda" />
+		<property name="username" value="foss4pdatest" />
+		<property name="password" value="foss4pdatest" />
+    </bean>
+    -->
+	<!-- 数据连接管理 -->
+	<bean id="pdaTransactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="pdaDataSource" />
+	</bean>
+
+	<!-- 事务注解支持-->
+	<tx:annotation-driven transaction-manager="pdaTransactionManager" />
+	
+	<!-- myBatis文件 -->
+	<bean id="pdaSqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="configLocation" value="/WEB-INF/ibatis.xml" />
+		<property name="mapperLocations"
+			value="classpath*:com/deppon/**/META-INF/pdaibatis/*.xml" />
+		<property name="dataSource" ref="pdaDataSource" />
+	</bean>
+</beans>

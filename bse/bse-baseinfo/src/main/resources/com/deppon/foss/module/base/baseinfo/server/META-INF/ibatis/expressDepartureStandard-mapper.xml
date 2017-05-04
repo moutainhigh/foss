@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.expressDepartureStandard" >
+
+	<resultMap id="expressDepartureStandardResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressDepartureStandardEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="virtual_code" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="line_virtual_code" property="lineVirtualCode" jdbcType="VARCHAR" />
+		<result column="LEAVE_TIME" property="leaveTime" jdbcType="VARCHAR" />
+		<result column="ARRIVE_TIME" property="arriveTime" jdbcType="VARCHAR" />
+		<result column="ARRIVE_DEAD_TIME" property="deadTime" jdbcType="VARCHAR" />
+		<result column="ARRIVE_DAY" property="arriveDay" jdbcType="NUMERIC" />
+		<result column="ARRIVE_DEAD_DAY" property="deadDay" jdbcType="NUMERIC" />
+		<result column="active" property="active" jdbcType="CHAR" />
+		<result column="notes" property="notes" jdbcType="VARCHAR" />
+		<result column="create_time" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="modify_time" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="product_type" property="productType" jdbcType="VARCHAR" />
+		<result column="frequency_no" property="order" jdbcType="NUMERIC" />
+		<result column="VERSION_NO" property="version" jdbcType="NUMERIC" />
+	</resultMap>
+
+	<sql id="columns">
+		ID,
+		LEAVE_TIME,
+		ARRIVE_TIME,
+		ARRIVE_DEAD_TIME,
+		CREATE_TIME,
+		MODIFY_TIME,
+		ACTIVE,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE,
+		NOTES,
+		VIRTUAL_CODE,
+		LINE_VIRTUAL_CODE,
+		ARRIVE_DAY,
+		ARRIVE_DEAD_DAY,
+		PRODUCT_TYPE,
+		frequency_no,
+		VERSION_NO
+	</sql>
+	
+	<sql id="values">
+		#{id,jdbcType=VARCHAR},
+		#{leaveTime,jdbcType=VARCHAR}, 
+		#{arriveTime,jdbcType=VARCHAR}, 
+		#{deadTime,jdbcType=VARCHAR},  
+		#{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=CHAR}, 
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR}, 
+		#{notes,jdbcType=VARCHAR}, 
+		#{virtualCode, jdbcType=VARCHAR}, 
+		#{lineVirtualCode,jdbcType=VARCHAR},
+		#{arriveDay,jdbcType=NUMERIC},
+		#{deadDay,jdbcType=NUMERIC}, 
+		#{productType,jdbcType=VARCHAR}, 
+		#{order,jdbcType=NUMERIC},
+		#{version, jdbcType=NUMERIC}
+	</sql>
+
+	<insert id="addExpressDepartureStandard" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressDepartureStandardEntity">
+		insert into BSE.T_BAS_EXPRESS_DEPARTURE_STD (
+		<include refid="columns"/>
+		) values ( 
+		<include refid="values"/>
+		)
+	</insert>
+
+	<update id="deleteExpressDepartureStandard" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressDepartureStandardEntity">
+		update BSE.T_BAS_EXPRESS_DEPARTURE_STD 
+		set active = #{active, jdbcType=CHAR} 
+		, modify_time = #{modifyDate,jdbcType=TIMESTAMP} 
+		, version_no = #{version,jdbcType=NUMERIC}
+		, modify_user_code = #{modifyUser,jdbcType=VARCHAR} 
+		where VIRTUAL_CODE = #{virtualCode, jdbcType=VARCHAR}
+		and active = 'Y'
+	</update>
+
+	<update id="deleteExpressDepartureStandardByLine" parameterType="map">
+		update BSE.T_BAS_EXPRESS_DEPARTURE_STD 
+		set active = #{inactive, jdbcType=CHAR} 
+		, modify_time = #{modifyDate,jdbcType=TIMESTAMP} 
+		, version_no = #{version,jdbcType=NUMERIC}
+		, modify_user_code = #{modifyUser,jdbcType=VARCHAR} 
+		where LINE_VIRTUAL_CODE = #{lineVirtualCode,jdbcType=VARCHAR} 
+		and active = #{active,jdbcType=CHAR}
+	</update>
+
+	<select id="queryExpressDepartureStandardById" resultMap="expressDepartureStandardResultMap" parameterType="java.lang.String">
+		select 
+		<include refid="columns"/>
+		 from BSE.T_BAS_EXPRESS_DEPARTURE_STD where id = #{id}
+	</select>
+
+	<select id="queryExpressDepartureStandardListByLineVirtualCode" resultMap="expressDepartureStandardResultMap" parameterType="map" >
+		select 
+		<include refid="columns"/>
+		from BSE.T_BAS_EXPRESS_DEPARTURE_STD
+		where line_virtual_code = #{lineVirtualCode}
+		and active = #{active}
+		order by frequency_no
+	</select>
+	
+	<select id="queryExpressDepartureStandardByOrder" resultMap="expressDepartureStandardResultMap" parameterType="map" >
+		select 
+		<include refid="columns"/>
+		from BSE.T_BAS_EXPRESS_DEPARTURE_STD
+		where line_virtual_code = #{lineVirtualCode}
+		and active = #{active}
+		and frequency_no = #{order}
+	</select>
+
+	<select id="queryExpressDepartureStandardListForDownload" resultMap="expressDepartureStandardResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressDepartureStandardEntity">
+		select 
+		<include refid="columns"/>
+		from BSE.T_BAS_EXPRESS_DEPARTURE_STD 
+		<where>
+			<if test="version != null">
+				<![CDATA[ AND version_no >= #{version}  ]]>
+			</if>
+		</where>
+		order by version_no,ID ASC
+	</select>
+
+	<!-- 以下为 cache 使用 -->
+
+	<select id="queryExpressLastVersion" resultType="long">
+		<![CDATA[
+			SELECT MAX(VERSION_NO)
+			FROM BSE.T_BAS_EXPRESS_DEPARTURE_STD
+		]]>
+	</select>
+	
+	<select id="queryExpressDepartureStandardListForCache" resultMap="expressDepartureStandardResultMap" parameterType="string">
+		select 
+		<include refid="columns"/>
+		FROM BSE.T_BAS_EXPRESS_DEPARTURE_STD
+		where active = #{active,jdbcType=CHAR}
+		order by version_no ASC
+	</select>
+
+
+</mapper>

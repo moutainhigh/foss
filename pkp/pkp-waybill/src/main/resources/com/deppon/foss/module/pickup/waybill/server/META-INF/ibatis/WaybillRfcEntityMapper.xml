@@ -1,0 +1,1938 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.pkp.WaybillRfcEntityMapper">
+	<!-- 其它费用DTO -->
+	<resultMap id="BaseResultMapDto"
+		type="com.deppon.foss.module.pickup.waybill.shared.dto.WaybillOtherChargeDto">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="SUB_TYPE" property="code" jdbcType="VARCHAR" />
+		<result column="FEE" property="amount" jdbcType="VARCHAR" />
+		<result column="NAME" property="chargeName" jdbcType="VARCHAR" />
+		<result column="CACULATE_TYPE" property="type" jdbcType="VARCHAR" />
+		<result column="DESCRIPTION" property="descrition" jdbcType="VARCHAR" />
+		<result column="MAX_FEE" property="upperLimit" jdbcType="VARCHAR" />
+		<result column="MIN_FEE" property="lowerLimit" jdbcType="VARCHAR" />
+		<result column="CANMODIFY" property="isUpdate" jdbcType="CHAR" />
+		<result column="CANDELETE" property="isDelete" jdbcType="CHAR" />
+	</resultMap>
+
+	<select id="queryTransportRecord"
+		resultType="com.deppon.foss.module.pickup.waybill.shared.dto.TransportRecordDto">
+		select /*模块：接送货-运单-查询运单更改记录*/
+		rfc.RFC_TYPE as rfcType,
+		TARGET_ORG_CODE as targetOrgCode,
+		RECEIVE_METHOD as receiveMethod,
+		flight_shift as flightShift,
+		freight_method as freightMethod,
+		flight_number_type as flightNumberType,
+		CUSTOMER_PICKUP_ORG_CODE as customerPickupOrgCode,
+		PRODUCT_CODE as	productCode,
+		BILLING_TYPE as billingType,
+		rfc.TRANSPORT_FEE_RATE as unitPrice,
+		rfc.TRANSPORT_FEE as transportFee 
+		from pkp.T_SRV_WAYBILL
+		left join pkp.t_srv_waybillrfc rfc on
+		pkp.T_SRV_WAYBILL.Id =
+		rfc.New_Version_Waybill_Id
+		where nvl(rfc.RFC_TYPE,'N/A') in
+		<foreach item="item" index="index" collection="rfcTypes" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		and pkp.T_SRV_WAYBILL.Waybill_No= #{waybillNo,jdbcType=VARCHAR}
+		and nvl(rfc.status,'ACCECPT') = 'ACCECPT'
+        <![CDATA[
+        and pkp.T_SRV_WAYBILL.CREATE_TIME <= #{createTime,jdbcType=TIMESTAMP}
+		]]>
+		order by pkp.T_SRV_WAYBILL.CREATE_TIME asc
+	</select>
+	
+	
+	<select id="queryFirstRecord"
+		resultType="com.deppon.foss.module.pickup.waybill.shared.dto.TransportRecordDto">
+		select 
+		TARGET_ORG_CODE as targetOrgCode, 
+		RECEIVE_METHOD as receiveMethod, 
+		flight_shift as flightShift, 
+		freight_method as freightMethod, 
+		flight_number_type as flightNumberType, 
+		CUSTOMER_PICKUP_ORG_CODE as customerPickupOrgCode, 
+		PRODUCT_CODE as productCode,
+        BILLING_TYPE as billingType
+        FROM pkp.T_SRV_WAYBILL 
+		where  
+		 pkp.T_SRV_WAYBILL.Waybill_No= #{waybillNo,jdbcType=VARCHAR}
+        <![CDATA[
+        and pkp.T_SRV_WAYBILL.CREATE_TIME <= #{createTime,jdbcType=TIMESTAMP}
+		]]>
+		order by pkp.T_SRV_WAYBILL.CREATE_TIME asc
+	</select>
+	
+	
+	
+	
+	
+	<update id="updateWaybillRfcPrintTime" parameterType="java.lang.String">
+		update
+		PKP.T_SRV_WAYBILLRFC
+		set
+		PRINT_TIMES = PRINT_TIMES+1
+		where ID= #{id,jdbcType=VARCHAR}
+	</update>
+	<resultMap id="BaseResultMap"
+		type="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillRfcEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="RFC_SOURCE" property="rfcSource" jdbcType="VARCHAR" />
+		<result column="RFC_TYPE" property="rfcType" jdbcType="VARCHAR" />
+		<result column="RFC_REASON" property="rfcReason" jdbcType="VARCHAR" />
+		<result column="DRAFT_ORG_NAME" property="draftOrgName"
+			jdbcType="VARCHAR" />
+		<result column="DRAFT_ORG_CODE" property="draftOrgCode"
+			jdbcType="VARCHAR" />
+		<result column="DRAFTER" property="drafter" jdbcType="VARCHAR" />
+		<result column="DRAFTER_CODE" property="drafterCode" jdbcType="VARCHAR" />
+		<result column="DRAFT_TIME" property="draftTime" jdbcType="TIMESTAMP" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+		<result column="STATUS" property="status" jdbcType="VARCHAR" />
+		<result column="OPERATOR" property="operator" jdbcType="VARCHAR" />
+		<result column="OPERATOR_CODE" property="operatorCode"
+			jdbcType="VARCHAR" />
+		<result column="OPERATE_ORG_NAME" property="operateOrgName"
+			jdbcType="VARCHAR" />
+		<result column="OPERATE_ORG_CODE" property="operateOrgCode"
+			jdbcType="VARCHAR" />
+		<result column="OPERATE_TIME" property="operateTime" jdbcType="TIMESTAMP" />
+		<result column="OLD_VERSION_WAYBILL_ID" property="oldVersionWaybillId"
+			jdbcType="VARCHAR" />
+		<result column="NEW_VERSION_WAYBILL_ID" property="newVersionWaybillId"
+			jdbcType="VARCHAR" />
+		<result column="IS_FINANCE_CHANGE" property="isFinanceChange"
+			jdbcType="VARCHAR" />
+		<result column="CHANGE_ITEMS" property="changeItems" jdbcType="VARCHAR" />
+		<result column="RECEIVER_SMS" property="receiverSms" jdbcType="VARCHAR" />
+		<result column="DELIVER_SMS" property="deliverSms" jdbcType="VARCHAR" />
+		<result column="IS_CHANGE_DESTINATION" property="isChangeDestination"
+			jdbcType="VARCHAR" />
+		<result column="NEED_WRITE_OFF" property="needWriteOff"
+			jdbcType="VARCHAR" />
+		<result column="WRITE_OFF_STATUS" property="writeOffStatus"
+			jdbcType="VARCHAR" />
+		<result column="WRITE_OFF_NOTES" property="writeOffNotes"
+			jdbcType="VARCHAR" />
+		<result column="PDA_NOTICE" property="pdaNotice" jdbcType="VARCHAR" />
+		<result column="IS_CHANGE_WAYBILL_NO" property="isChangeWaybillNo" 
+			jdbcType="VARCHAR" />
+		<result column="IS_LABOUR_HANDLE" property="isLabourHandle" 
+			jdbcType="VARCHAR" />
+		
+		
+		<result column="TRANSPORT_FEE" property="transportFee" jdbcType="DECIMAL" />
+		<result column="TRANSPORT_FEE_RATE" property="transportFeeRate" jdbcType="DECIMAL" />
+		<result column="WRITE_OFF_EMP_NAME" property="writeOffEmpName" jdbcType="VARCHAR" />
+		<result column="WRITE_OFF_TIME" property="writeOffTime" jdbcType="TIMESTAMP" />
+		<result column="IS_ECS" property="isEcs" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<resultMap id="modifyBillWriteoffResultMap"
+		type="com.deppon.foss.module.pickup.waybill.shared.dto.ModifyBillWriteoffResultDto">
+		<id column="waybillChangeId" property="waybillChangeId" jdbcType="VARCHAR" />
+		<result column="waybillNumber" property="waybillNumber"
+			jdbcType="VARCHAR" />
+		<result column="changeReason" property="changeReason" jdbcType="VARCHAR" />
+		<result column="changeItems" property="changeItems" jdbcType="VARCHAR" />
+		<result column="oldToPayAmount" property="oldToPayAmount"
+			jdbcType="DECIMAL" />
+		<result column="newToPayAmount" property="newToPayAmount"
+			jdbcType="DECIMAL" />
+		<result column="oldPrePayAmount" property="oldPrePayAmount"
+			jdbcType="DECIMAL" />
+		<result column="newPrePayAmount" property="newPrePayAmount"
+			jdbcType="DECIMAL" />
+		<result column="writeoffStatus" property="writeoffStatus"
+			jdbcType="VARCHAR" />
+		<result column="writeOffEmpName" property="writeOffEmpName" jdbcType="VARCHAR" /><!-- 核销人姓名-->
+		<result column="writeOffTime" property="writeOffTime" jdbcType="TIMESTAMP" /><!-- 核销时间 -->	
+		<result column="darftOrgName" property="darftOrgName" jdbcType="VARCHAR" />
+		<result column="darfter" property="darfter" jdbcType="VARCHAR" />
+		<result column="writeOffNote" property="writeOffNote" jdbcType="VARCHAR" />
+		<result column="rfcType" property="rfcType" jdbcType="VARCHAR" />
+		<result column="billTime" property="createTime" jdbcType="TIMESTAMP" /><!-- 运单开单时间  -->
+		<result column="draftTime" property="draftTime" jdbcType="TIMESTAMP" /><!-- 更改单发起时间  -->
+		<result column="rfcOperateTime" property="rfcOperateTime" jdbcType="TIMESTAMP" /><!-- 更改单受理时间 -->
+		<result column="signTime" property="signTime" jdbcType="TIMESTAMP" /><!-- 运单出库时间 -->
+		<result column="rfcResource" property="rfcResource" jdbcType="VARCHAR" />
+		<result column="deliveryGoodsFeeNew" property="deliveryGoodsFeeNew" jdbcType="DECIMAL" />
+		<result column="deliveryGoodsFeeOld" property="deliveryGoodsFeeOld" jdbcType="DECIMAL" />
+		<result column="deliveryCustomerCodeNew" property="deliveryCustomerCodeNew" jdbcType="VARCHAR" />
+		<result column="deliveryCustomerCodeOld" property="deliveryCustomerCodeOld" jdbcType="VARCHAR" />
+		<result column="packageFeeNew" property="packageFeeNew" jdbcType="DECIMAL" />
+		<result column="packageFeeOld" property="packageFeeOld" jdbcType="DECIMAL" />
+		<result column="productCodeOld" property="productCodeOld" jdbcType="VARCHAR" />
+		<result column="productCodeNew" property="productCodeNew" jdbcType="VARCHAR" />
+	</resultMap>
+
+
+
+	<!-- 根据运单号查询运单出发更改单信息 结果集合 -->
+	<resultMap id="leaveChangeByWaybillNoResultMap"
+		type="com.deppon.foss.module.pickup.waybill.shared.dto.LeaveChangeByWaybillNoResultDto">
+		<result column="waybillNo" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="changeItems" property="changeItems" jdbcType="VARCHAR" />
+		<result column="draftTime" property="draftTime" jdbcType="TIMESTAMP" />
+		<result column="draftOrgName" property="draftOrgName" jdbcType="VARCHAR" />
+		<result column="notes" property="notes" jdbcType="VARCHAR" />
+		<result column="rfcReason" property="rfcReason" jdbcType="VARCHAR" />
+		<result column="rfcType" property="rfcType" jdbcType="VARCHAR" />
+		<result column="status" property="status" jdbcType="VARCHAR" />
+		<result column="needAcceptOrg" property="needAcceptOrg" jdbcType="VARCHAR" />
+		<result column="auditor" property="auditor" jdbcType="VARCHAR" />
+		<result column="isLabourHandle" property="isLabourHandle" jdbcType="VARCHAR" />
+		
+	</resultMap>
+
+
+	<sql id="Base_Column_List">
+		ID, WAYBILL_NO, RFC_SOURCE, RFC_TYPE, RFC_REASON,
+		DRAFT_ORG_NAME,
+		DRAFT_ORG_CODE,
+		DRAFTER, DRAFTER_CODE, DRAFT_TIME,
+		NOTES, STATUS, OPERATOR, OPERATOR_CODE,
+		OPERATE_ORG_NAME,
+		OPERATE_ORG_CODE, OPERATE_TIME, OLD_VERSION_WAYBILL_ID,
+		NEW_VERSION_WAYBILL_ID,
+		
+		IS_FINANCE_CHANGE, CHANGE_ITEMS, RECEIVER_SMS,
+		DELIVER_SMS, IS_CHANGE_DESTINATION, NEED_WRITE_OFF,
+		WRITE_OFF_STATUS,
+		WRITE_OFF_NOTES, PDA_NOTICE,IS_CHANGE_WAYBILL_NO,IS_LABOUR_HANDLE,  TRANSPORT_FEE, TRANSPORT_FEE_RATE,
+		WRITE_OFF_EMP_NAME,WRITE_OFF_TIME,IS_ECS
+	</sql>
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap"
+		parameterType="java.lang.String">
+		select
+		<include refid="Base_Column_List" />
+		from PKP.T_SRV_WAYBILLRFC
+		where ID = #{id,jdbcType=VARCHAR}
+	</select>
+	
+	
+	<select id="queryWaybillRfcEntityByNewVersionId" resultMap="BaseResultMap"
+		parameterType="java.lang.String">
+		select
+		<include refid="Base_Column_List" />
+		from PKP.T_SRV_WAYBILLRFC
+		where NEW_VERSION_WAYBILL_ID = #{id,jdbcType=VARCHAR}
+	</select>
+	
+	
+	
+	<select id="queryRfcEntityByWaybillId" resultMap="BaseResultMap"
+		parameterType="java.lang.String">
+		select  /*模块：接送货-运单-通过原始运单id查询更改单*/
+		<include refid="Base_Column_List" />
+		from PKP.T_SRV_WAYBILLRFC
+		where OLD_VERSION_WAYBILL_ID =
+		#{id,jdbcType=VARCHAR}
+		<if test="waybillRfcStatus!=null and waybillRfcStatus.size() &gt; 0">
+			<![CDATA[
+				AND STATUS IN
+			 ]]>
+			<foreach collection="waybillRfcStatus" item="status" open="("
+				close=")" separator=",">
+				#{status}
+			</foreach>
+		</if>
+		 for update 
+	</select>
+	
+	<select id="queryRfcChangeItemsByWaybillRfcId" resultType="java.lang.String"
+		parameterType="java.lang.String">
+		select  /*模块：接送货-运单-通过更改单id查询更改单*/
+		CHANGE_ITEMS
+		from PKP.T_SRV_WAYBILLRFC
+		where ID =
+		#{waybillRfcId,jdbcType=VARCHAR}
+	</select>
+
+	<select id="queryWaybillSignSituation" resultType="java.lang.String">
+		select  /*模块：接送货-运单-查询运单签收结果*/
+		SIGN_SITUATION
+		from PKP.T_SRV_WAYBILL_SIGN_RESULT
+		where WAYBILL_NO =
+		#{waybillNo,jdbcType=VARCHAR}
+		and ACTIVE = 'Y'
+	</select>
+
+
+	<delete id="deleteByPrimaryKey" parameterType="java.lang.String">
+		delete from
+		PKP.T_SRV_WAYBILLRFC
+		where ID = #{id,jdbcType=VARCHAR}
+	</delete>
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillRfcEntity">
+		insert into PKP.T_SRV_WAYBILLRFC (ID, WAYBILL_NO,
+		RFC_SOURCE,
+		RFC_TYPE, RFC_REASON, DRAFT_ORG_NAME,
+		DRAFT_ORG_CODE,
+		DRAFTER, DRAFTER_CODE,
+		DRAFT_TIME, NOTES, STATUS,
+		OPERATOR,
+		OPERATOR_CODE, OPERATE_ORG_NAME,
+		OPERATE_ORG_CODE, OPERATE_TIME,
+		OLD_VERSION_WAYBILL_ID,
+		NEW_VERSION_WAYBILL_ID, IS_FINANCE_CHANGE,
+		CHANGE_ITEMS, RECEIVER_SMS, DELIVER_SMS,
+		IS_CHANGE_DESTINATION,
+		NEED_WRITE_OFF,
+		WRITE_OFF_STATUS, WRITE_OFF_NOTES, PDA_NOTICE,IS_CHANGE_WAYBILL_NO,IS_LABOUR_HANDLE, TRANSPORT_FEE, TRANSPORT_FEE_RATE)
+		values
+		(#{id,jdbcType=VARCHAR},
+		#{waybillNo,jdbcType=VARCHAR},
+		#{rfcSource,jdbcType=VARCHAR},
+		#{rfcType,jdbcType=VARCHAR},
+		#{rfcReason,jdbcType=VARCHAR},
+		#{draftOrgName,jdbcType=VARCHAR},
+		#{draftOrgCode,jdbcType=VARCHAR},
+		#{drafter,jdbcType=VARCHAR},
+		#{drafterCode,jdbcType=VARCHAR},
+		#{draftTime,jdbcType=TIMESTAMP},
+		#{notes,jdbcType=VARCHAR},
+		#{draftTime,jdbcType=TIMESTAMP},
+		#{notes,jdbcType=VARCHAR},
+		#{status,jdbcType=VARCHAR},
+		#{operator,jdbcType=VARCHAR},
+		#{operatorCode,jdbcType=VARCHAR},
+		#{operateOrgName,jdbcType=VARCHAR},
+		#{operateOrgCode,jdbcType=VARCHAR}, #{operateTime,jdbcType=TIMESTAMP},
+		#{oldVersionWaybillId,jdbcType=VARCHAR},
+		#{newVersionWaybillId,jdbcType=VARCHAR},
+		#{isFinanceChange,jdbcType=VARCHAR},
+		#{changeItems,jdbcType=VARCHAR},
+		#{receiverSms,jdbcType=VARCHAR},
+		#{deliverSms,jdbcType=VARCHAR},
+		#{isChangeDestination,jdbcType=VARCHAR},
+		#{needWriteOff,jdbcType=VARCHAR},
+		#{writeOffStatus,jdbcType=VARCHAR},
+		#{writeOffNotes,jdbcType=VARCHAR},
+		#{pdaNotice,jdbcType=VARCHAR},
+		#{isChangeWaybillNo,jdbcType=VARCHAR},
+		#{isLabourHandle,jdbcType=VARCHAR},
+		#{transportFee,jdbcType=DECIMAL},
+		#{transportFeeRate,jdbcType=DECIMAL}
+		)
+	</insert>
+	<insert id="insertSelective"
+		parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillRfcEntity">
+		insert into PKP.T_SRV_WAYBILLRFC
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				ID,
+			</if>
+			<if test="waybillNo != null">
+				WAYBILL_NO,
+			</if>
+			<if test="rfcSource != null">
+				RFC_SOURCE,
+			</if>
+			<if test="rfcType != null">
+				RFC_TYPE,
+			</if>
+			<if test="rfcReason != null">
+				RFC_REASON,
+			</if>
+			<if test="draftOrgName != null">
+				DRAFT_ORG_NAME,
+			</if>
+			<if test="draftOrgCode != null">
+				DRAFT_ORG_CODE,
+			</if>
+			<if test="drafter != null">
+				DRAFTER,
+			</if>
+			<if test="drafterCode != null">
+				DRAFTER_CODE,
+			</if>
+			<if test="draftTime != null">
+				DRAFT_TIME,
+			</if>
+			<if test="notes != null">
+				NOTES,
+			</if>
+			<if test="status != null">
+				STATUS,
+			</if>
+			<if test="operator != null">
+				OPERATOR,
+			</if>
+			<if test="operatorCode != null">
+				OPERATOR_CODE,
+			</if>
+			<if test="operateOrgName != null">
+				OPERATE_ORG_NAME,
+			</if>
+			<if test="operateOrgCode != null">
+				OPERATE_ORG_CODE,
+			</if>
+			<if test="operateTime != null">
+				OPERATE_TIME,
+			</if>
+			<if test="oldVersionWaybillId != null">
+				OLD_VERSION_WAYBILL_ID,
+			</if>
+			<if test="newVersionWaybillId != null">
+				NEW_VERSION_WAYBILL_ID,
+			</if>
+			<if test="isFinanceChange != null">
+				IS_FINANCE_CHANGE,
+			</if>
+			<if test="changeItems != null">
+				CHANGE_ITEMS,
+			</if>
+			<if test="receiverSms != null">
+				RECEIVER_SMS,
+			</if>
+			<if test="deliverSms != null">
+				DELIVER_SMS,
+			</if>
+			<if test="isChangeDestination != null">
+				IS_CHANGE_DESTINATION,
+			</if>
+			<if test="needWriteOff != null">
+				NEED_WRITE_OFF,
+			</if>
+			<if test="writeOffStatus != null">
+				WRITE_OFF_STATUS,
+			</if>
+			<if test="writeOffNotes != null">
+				WRITE_OFF_NOTES,
+			</if>
+			<if test="pdaNotice != null">
+				PDA_NOTICE,
+			</if>
+			<if test="transportFee != null">
+				TRANSPORT_FEE,
+			</if>
+			<if test="transportFeeRate != null">
+				TRANSPORT_FEE_RATE,
+			</if>
+			<if test="isChangeWaybillNo != null">
+				IS_CHANGE_WAYBILL_NO,
+			</if>
+			<if test="isLabourHandle != null">
+				IS_LABOUR_HANDLE,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id,jdbcType=VARCHAR},
+			</if>
+			<if test="waybillNo != null">
+				#{waybillNo,jdbcType=VARCHAR},
+			</if>
+			<if test="rfcSource != null">
+				#{rfcSource,jdbcType=VARCHAR},
+			</if>
+			<if test="rfcType != null">
+				#{rfcType,jdbcType=VARCHAR},
+			</if>
+			<if test="rfcReason != null">
+				#{rfcReason,jdbcType=VARCHAR},
+			</if>
+			<if test="draftOrgName != null">
+				#{draftOrgName,jdbcType=VARCHAR},
+			</if>
+			<if test="draftOrgCode != null">
+				#{draftOrgCode,jdbcType=VARCHAR},
+			</if>
+			<if test="drafter != null">
+				#{drafter,jdbcType=VARCHAR},
+			</if>
+			<if test="drafterCode != null">
+				#{drafterCode,jdbcType=VARCHAR},
+			</if>
+			<if test="draftTime != null">
+				#{draftTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="notes != null">
+				#{notes,jdbcType=VARCHAR},
+			</if>
+			<if test="status != null">
+				#{status,jdbcType=VARCHAR},
+			</if>
+			<if test="operator != null">
+				#{operator,jdbcType=VARCHAR},
+			</if>
+			<if test="operatorCode != null">
+				#{operatorCode,jdbcType=VARCHAR},
+			</if>
+			<if test="operateOrgName != null">
+				#{operateOrgName,jdbcType=VARCHAR},
+			</if>
+			<if test="operateOrgCode != null">
+				#{operateOrgCode,jdbcTypTe=VARCHAR},
+			</if>
+			<if test="operateTime != null">
+				#{operateTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="oldVersionWaybillId != null">
+				#{oldVersionWaybillId,jdbcType=VARCHAR},
+			</if>
+			<if test="newVersionWaybillId != null">
+				#{newVersionWaybillId,jdbcType=VARCHAR},
+			</if>
+			<if test="isFinanceChange != null">
+				#{isFinanceChange,jdbcType=VARCHAR},
+			</if>
+			<if test="changeItems != null">
+				#{changeItems,jdbcType=VARCHAR},
+			</if>
+			<if test="receiverSms != null">
+				#{receiverSms,jdbcType=VARCHAR},
+			</if>
+			<if test="deliverSms != null">
+				#{deliverSms,jdbcType=VARCHAR},
+			</if>
+			<if test="isChangeDestination != null">
+				#{isChangeDestination,jdbcType=VARCHAR},
+			</if>
+			<if test="needWriteOff != null">
+				#{needWriteOff,jdbcType=VARCHAR},
+			</if>
+			<if test="writeOffStatus != null">
+				#{writeOffStatus,jdbcType=VARCHAR},
+			</if>
+			<if test="writeOffNotes != null">
+				#{writeOffNotes,jdbcType=VARCHAR},
+			</if>
+			<if test="pdaNotice != null">
+				#{pdaNotice,jdbcType=VARCHAR},
+			</if>
+			<if test="transportFee != null">
+				#{transportFee,jdbcType=DECIMAL},
+			</if>
+			<if test="transportFeeRate != null">
+				#{transportFeeRate,jdbcType=DECIMAL},
+			</if>
+			<if test="isChangeWaybillNo != null">
+				#{isChangeWaybillNo,jdbcType=VARCHAR},
+			</if>
+			<if test="isLabourHandle != null">
+				#{isLabourHandle,jdbcType=DECIMAL},
+			</if>
+			
+			
+		</trim>
+	</insert>
+	<update id="updateByPrimaryKeySelective"
+		parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillRfcEntity">
+		update PKP.T_SRV_WAYBILLRFC
+		<set>
+			<if test="waybillNo != null">
+				WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR},
+			</if>
+			<if test="rfcSource != null">
+				RFC_SOURCE = #{rfcSource,jdbcType=VARCHAR},
+			</if>
+			<if test="rfcType != null">
+				RFC_TYPE = #{rfcType,jdbcType=VARCHAR},
+			</if>
+			<if test="rfcReason != null">
+				RFC_REASON = #{rfcReason,jdbcType=VARCHAR},
+			</if>
+			<if test="draftOrgName != null">
+				DRAFT_ORG_NAME = #{draftOrgName,jdbcType=VARCHAR},
+			</if>
+			<if test="draftOrgCode != null">
+				DRAFT_ORG_CODE = #{draftOrgCode,jdbcType=VARCHAR},
+			</if>
+			<if test="drafter != null">
+				DRAFTER = #{drafter,jdbcType=VARCHAR},
+			</if>
+			<if test="drafterCode != null">
+				DRAFTER_CODE = #{drafterCode,jdbcType=VARCHAR},
+			</if>
+			<if test="draftTime != null">
+				DRAFT_TIME = #{draftTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="notes != null">
+				NOTES = #{notes,jdbcType=VARCHAR},
+			</if>
+			<if test="status != null">
+				STATUS = #{status,jdbcType=VARCHAR},
+			</if>
+			<if test="operator != null">
+				OPERATOR = #{operator,jdbcType=VARCHAR},
+			</if>
+			<if test="operatorCode != null">
+				OPERATOR_CODE = #{operatorCode,jdbcType=VARCHAR},
+			</if>
+			<if test="operateOrgName != null">
+				OPERATE_ORG_NAME = #{operateOrgName,jdbcType=VARCHAR},
+			</if>
+			<if test="operateOrgCode != null">
+				OPERATE_ORG_CODE = #{operateOrgCode,jdbcType=VARCHAR},
+			</if>
+			<if test="operateTime != null">
+				OPERATE_TIME = #{operateTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="oldVersionWaybillId != null">
+				OLD_VERSION_WAYBILL_ID =
+				#{oldVersionWaybillId,jdbcType=VARCHAR},
+			</if>
+			<if test="newVersionWaybillId != null">
+				NEW_VERSION_WAYBILL_ID =
+				#{newVersionWaybillId,jdbcType=VARCHAR},
+			</if>
+			<if test="isFinanceChange != null">
+				IS_FINANCE_CHANGE = #{isFinanceChange,jdbcType=VARCHAR},
+			</if>
+			<if test="changeItems != null">
+				CHANGE_ITEMS = #{changeItems,jdbcType=VARCHAR},
+			</if>
+			<if test="receiverSms != null">
+				RECEIVER_SMS = #{receiverSms,jdbcType=VARCHAR},
+			</if>
+			<if test="deliverSms != null">
+				DELIVER_SMS = #{deliverSms,jdbcType=VARCHAR},
+			</if>
+			<if test="isChangeDestination != null">
+				IS_CHANGE_DESTINATION =
+				#{isChangeDestination,jdbcType=VARCHAR},
+			</if>
+			<if test="needWriteOff != null">
+				NEED_WRITE_OFF = #{needWriteOff,jdbcType=VARCHAR},
+			</if>
+			<if test="writeOffStatus != null">
+				WRITE_OFF_STATUS = #{writeOffStatus,jdbcType=VARCHAR},
+			</if>
+			<if test="writeOffNotes != null">
+				WRITE_OFF_NOTES = #{writeOffNotes,jdbcType=VARCHAR},
+			</if>
+			<if test="pdaNotice != null">
+				PDA_NOTICE = #{pdaNotice,jdbcType=VARCHAR},
+			</if>
+			<if test="transportFee != null">
+				TRANSPORT_FEE = #{transportFee,jdbcType=DECIMAL},
+			</if>
+			<if test="transportFeeRate != null">
+				TRANSPORT_FEE_RATE = #{transportFeeRate,jdbcType=DECIMAL},
+			</if>
+			<if test="isChangeWaybillNo != null">
+				IS_CHANGE_WAYBILL_NO = #{isChangeWaybillNo,jdbcType=VARCHAR},
+			</if>
+			<if test=" isLabourHandle != null">
+				IS_LABOUR_HANDLE = #{isLabourHandle,jdbcType=VARCHAR},
+			</if>
+		</set>
+		where ID = #{id,jdbcType=VARCHAR}
+	</update>
+	<update id="updateByPrimaryKey"
+		parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillRfcEntity">
+		update PKP.T_SRV_WAYBILLRFC
+		set WAYBILL_NO =
+		#{waybillNo,jdbcType=VARCHAR},
+		RFC_SOURCE =
+		#{rfcSource,jdbcType=VARCHAR},
+		RFC_TYPE = #{rfcType,jdbcType=VARCHAR},
+		RFC_REASON = #{rfcReason,jdbcType=VARCHAR},
+		DRAFT_ORG_NAME =
+		#{draftOrgName,jdbcType=VARCHAR},
+		DRAFT_ORG_CODE =
+		#{draftOrgCode,jdbcType=VARCHAR},
+		DRAFTER =
+		#{drafter,jdbcType=VARCHAR},
+		DRAFTER_CODE =
+		#{drafterCode,jdbcType=VARCHAR},
+		DRAFT_TIME =
+		#{draftTime,jdbcType=TIMESTAMP},
+		NOTES = #{notes,jdbcType=VARCHAR},
+		STATUS =
+		#{status,jdbcType=VARCHAR},
+		OPERATOR =
+		#{operator,jdbcType=VARCHAR},
+		OPERATOR_CODE =
+		#{operatorCode,jdbcType=VARCHAR},
+		OPERATE_ORG_NAME =
+		#{operateOrgName,jdbcType=VARCHAR},
+		OPERATE_ORG_CODE =
+		#{operateOrgCode,jdbcType=VARCHAR},
+		OPERATE_TIME =
+		#{operateTime,jdbcType=TIMESTAMP},
+		OLD_VERSION_WAYBILL_ID =
+		#{oldVersionWaybillId,jdbcType=VARCHAR},
+		NEW_VERSION_WAYBILL_ID =
+		#{newVersionWaybillId,jdbcType=VARCHAR},
+		IS_FINANCE_CHANGE =
+		#{isFinanceChange,jdbcType=VARCHAR},
+		CHANGE_ITEMS =
+		#{changeItems,jdbcType=VARCHAR},
+		RECEIVER_SMS =
+		#{receiverSms,jdbcType=VARCHAR},
+		DELIVER_SMS =
+		#{deliverSms,jdbcType=VARCHAR},
+		IS_CHANGE_DESTINATION =
+		#{isChangeDestination,jdbcType=VARCHAR},
+		NEED_WRITE_OFF =
+		#{needWriteOff,jdbcType=VARCHAR},
+		WRITE_OFF_STATUS =
+		#{writeOffStatus,jdbcType=VARCHAR},
+		WRITE_OFF_NOTES =
+		#{writeOffNotes,jdbcType=VARCHAR},
+		PDA_NOTICE =
+		#{pdaNotice,jdbcType=VARCHAR},
+		TRANSPORT_FEE = 
+		#{transportFee,jdbcType=DECIMAL},
+		TRANSPORT_FEE_RATE = 
+		#{transportFeeRate,jdbcType=DECIMAL},
+		IS_CHANGE_WAYBILL_NO = #{isChangeWaybillNo,jdbcType=VARCHAR},
+			
+		IS_LABOUR_HANDLE = #{isLabourHandle,jdbcType=VARCHAR},
+		
+		
+		 
+		where ID = #{id,jdbcType=VARCHAR}
+	</update>
+
+	<select id="queryWaybillRFcByWaybillNos"
+		parameterType="com.deppon.foss.module.pickup.waybill.shared.dto.WaybillFRcQueryByWaybillNosDto"
+		resultType="java.lang.String">
+		select /*模块：接送货-运单-通过运单号集合拿到待处理的更改单*/
+		WAYBILL_NO from pkp.T_SRV_waybillrfc
+		where
+		STATUS=#{preAudit,jdbcType=VARCHAR} and
+		WAYBILL_NO in
+		<foreach collection="waybillNos" item="item" index="index"
+			open="(" separator=" , " close=")">
+			#{item,jdbcType=VARCHAR}
+		</foreach>
+		union all
+		select WAYBILL_NO from pkp.T_SRV_waybillrfc
+		where
+		STATUS=#{preAccecpt,jdbcType=VARCHAR} and
+		WAYBILL_NO in
+		<foreach collection="waybillNos" item="item" index="index"
+			open="(" separator=" , " close=")">
+			#{item,jdbcType=VARCHAR}
+		</foreach>
+	</select>
+
+
+	<select id="queryWaybillRFcByWaybillNo"
+		parameterType="com.deppon.foss.module.pickup.waybill.shared.dto.WaybillFRcQueryByWaybillNoDto"
+		resultType="java.lang.String">
+
+		select /*模块：接送货-运单-通过运单号来查询未受理更改单*/
+		WAYBILL_NO from pkp.t_srv_waybillrfc
+
+		where
+		(
+		STATUS=#{preAudit,jdbcType=VARCHAR} or STATUS=
+		#{preAccecpt,jdbcType=VARCHAR} ) and WAYBILL_NO =
+		#{waybillNo,jdbcType=VARCHAR}
+
+	</select>
+
+
+
+	<!--提供给结算，查询起草的更改单  dp-linwensheng 2013-01-28 -->
+	<select id="queryModifyBillWriteoffResult" resultMap="modifyBillWriteoffResultMap"
+		parameterType="com.deppon.foss.module.pickup.waybill.shared.dto.ModifyBillWriteoffDto">
+		SELECT /*模块：接送货-运单-提供给结算，查询起草的更改单*/
+		WAYBILLRFC.ID as waybillChangeId,
+		(  select count(wbpi.Id)
+		   from   pkp.t_srv_waybill_print_info wbpi 
+		   where WAYBILLRFC.Id = wbpi.t_srv_waybill_id 
+		   and wbpi.print_type = 'WAYBILLRFC'  )  as printCounts,
+		WAYBILLRFC.WAYBILL_NO as
+		waybillNumber,
+		WAYBILLRFC.Rfc_Reason as
+		changeReason,
+		WAYBILLRFC.Rfc_Type as
+		rfcType,
+		WAYBILLRFC.CHANGE_ITEMS as changeItems,
+		WAYBILL_OLD.TO_PAY_AMOUNT /100 as
+		oldToPayAmount,
+		WAYBILL_NEW.TO_PAY_AMOUNT /100
+		as newToPayAmount,
+		WAYBILL_OLD.PRE_PAY_AMOUNT /100 as oldPrePayAmount,
+		WAYBILL_NEW.PRE_PAY_AMOUNT /100 as newPrePayAmount,
+		WAYBILLRFC.WRITE_OFF_STATUS as writeoffStatus,
+		WAYBILLRFC.DRAFT_ORG_NAME as darftOrgName,
+		WAYBILLRFC.DRAFTER as darfter,
+		WAYBILLRFC.WRITE_OFF_NOTES as writeOffNote,
+		WAYBILL_NEW.PRODUCT_CODE as productType,
+		WAYBILL_NEW.BILL_TIME as billTime,
+		WAYBILLRFC.DRAFT_TIME as draftTime,
+		WAYBILLRFC.OPERATE_TIME as rfcOperateTime,
+		( SELECT MAX(SIGN.SIGN_TIME) 
+		  FROM PKP.T_SRV_WAYBILL_SIGN_RESULT SIGN 
+		  WHERE SIGN.WAYBILL_NO = WAYBILL_NEW.WAYBILL_NO) as signTime,
+		WAYBILLRFC.Rfc_Source as rfcSource
+		FROM
+		PKP.T_SRV_WAYBILLRFC WAYBILLRFC
+		LEFT JOIN PKP.T_SRV_WAYBILL
+		WAYBILL_OLD
+		ON WAYBILLRFC.OLD_VERSION_WAYBILL_ID =
+		WAYBILL_OLD.ID
+		LEFT
+		JOIN
+		PKP.T_SRV_WAYBILL WAYBILL_NEW ON
+		WAYBILLRFC.NEW_VERSION_WAYBILL_ID =
+		WAYBILL_NEW.ID
+		<where>
+			WAYBILLRFC.STATUS=#{status,jdbcType=VARCHAR} AND
+			WAYBILLRFC.NEED_WRITE_OFF='Y'
+			<if test="waybillNumbers!=null and waybillNumbers.size>0">
+				AND WAYBILLRFC.WAYBILL_NO in
+				<foreach collection="waybillNumbers" item="item" index="index"
+					open="(" separator=" , " close=")">
+
+					#{item,jdbcType=VARCHAR}
+				</foreach>
+			</if>
+			<if test="waybillNumbers==null">
+				
+				<if test="writeoffStatus!=null and writeoffStatus!=''">
+					AND
+					WAYBILLRFC.WRITE_OFF_STATUS=#{writeoffStatus,jdbcType=VARCHAR}
+				</if>
+			</if>
+			
+			<if test="darftOrgCodeList!=null and darftOrgCodeList!='' and darftOrgCodeList.size()>0">
+			AND
+			WAYBILLRFC.Draft_Org_Code In 
+			<foreach collection="darftOrgCodeList" item="item" index="index"	open="(" separator="," close=")">
+				#{item,jdbcType=VARCHAR}
+			</foreach>
+			</if>
+			
+			AND WAYBILLRFC.DRAFT_TIME between
+			#{acceptStartDate,jdbcType=TIMESTAMP}
+			AND
+			#{acceptEndDate,jdbcType=TIMESTAMP}
+			
+			AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = WAYBILLRFC.Draft_Org_Code<!-- 登录者部门等于还款部门过滤 -->
+     		)
+		</where>
+	</select>
+
+	<!--快递接口 ： 提供给结算，查询起草的更改单  dp-helong 2013-07-26 -->
+	<select id="queryExpressModifyBillWriteoffResult" resultMap="modifyBillWriteoffResultMap"
+		parameterType="com.deppon.foss.module.pickup.waybill.shared.dto.ModifyBillWriteoffDto">
+		SELECT * FROM 
+			(
+			SELECT /*模块：快递接送货-运单-提供给结算，查询起草的更改单*/
+			WAYBILLRFC.ID as waybillChangeId,
+			(  select count(wbpi.Id)
+			   from   pkp.t_srv_waybill_print_info wbpi 
+			   where WAYBILLRFC.Id = wbpi.t_srv_waybill_id 
+			   and wbpi.print_type = 'WAYBILLRFC'  )  as printCounts,
+			WAYBILLRFC.WAYBILL_NO as
+			waybillNumber,
+			WAYBILLRFC.Rfc_Reason as
+			changeReason,
+			WAYBILLRFC.Rfc_Type as
+			rfcType,
+			WAYBILLRFC.CHANGE_ITEMS as changeItems,
+			WAYBILL_OLD.TO_PAY_AMOUNT /100 as
+			oldToPayAmount,
+			WAYBILL_NEW.TO_PAY_AMOUNT /100
+			as newToPayAmount,
+			WAYBILL_OLD.PRE_PAY_AMOUNT /100 as oldPrePayAmount,
+			WAYBILL_NEW.PRE_PAY_AMOUNT /100 as newPrePayAmount,
+			WAYBILLRFC.WRITE_OFF_STATUS as writeoffStatus,
+			WAYBILLRFC.WRITE_OFF_EMP_NAME as writeOffEmpName,
+			WAYBILLRFC.WRITE_OFF_TIME as writeOffTime,
+			WAYBILLRFC.DRAFT_ORG_NAME as darftOrgName,
+			WAYBILLRFC.DRAFTER as
+			darfter,
+			WAYBILLRFC.WRITE_OFF_NOTES as writeOffNote,
+			WAYBILL_NEW.PRODUCT_CODE as productType,
+			WAYBILL_NEW.BILL_TIME as billTime,
+			WAYBILLRFC.DRAFT_TIME as draftTime,
+			WAYBILLRFC.OPERATE_TIME as rfcOperateTime,
+			( SELECT MAX(SIGN.SIGN_TIME) 
+			  FROM PKP.T_SRV_WAYBILL_SIGN_RESULT SIGN
+			  WHERE SIGN.WAYBILL_NO=WAYBILLRFC.WAYBILL_NO) as signTime,
+			WAYBILLRFC.Rfc_Source as rfcSource,
+			WAYBILL_NEW.DELIVERY_GOODS_FEE deliveryGoodsFeeNew,
+	        WAYBILL_OLD.DELIVERY_GOODS_FEE deliveryGoodsFeeOld,
+	        WAYBILL_NEW.DELIVERY_CUSTOMER_CODE deliveryCustomerCodeNew,
+	        WAYBILL_OLD.DELIVERY_CUSTOMER_CODE deliveryCustomerCodeOld,
+	        WAYBILL_NEW.PACKAGE_FEE packageFeeNew,
+	        WAYBILL_OLD.PACKAGE_FEE packageFeeOld,
+	        WAYBILL_NEW.PRODUCT_CODE as productCodeNew,
+	        WAYBILL_OLD.PRODUCT_CODE as productCodeOld
+			FROM
+			PKP.T_SRV_WAYBILLRFC WAYBILLRFC
+			LEFT JOIN PKP.T_SRV_WAYBILL
+			WAYBILL_OLD
+			ON WAYBILLRFC.OLD_VERSION_WAYBILL_ID =
+			WAYBILL_OLD.ID
+			LEFT
+			JOIN
+			PKP.T_SRV_WAYBILL WAYBILL_NEW ON
+			WAYBILLRFC.NEW_VERSION_WAYBILL_ID =
+			WAYBILL_NEW.ID
+			<where>
+				WAYBILL_NEW.IS_EXPRESS <![CDATA[<>]]> 'Y' AND WAYBILL_OLD.IS_EXPRESS <![CDATA[<>]]> 'Y' AND
+				WAYBILLRFC.STATUS=#{status,jdbcType=VARCHAR} AND
+				WAYBILLRFC.NEED_WRITE_OFF='Y'
+				<if test="waybillNumbers!=null and waybillNumbers.size>0">
+					AND WAYBILLRFC.WAYBILL_NO in
+					<foreach collection="waybillNumbers" item="item" index="index"
+						open="(" separator=" , " close=")">
+	
+						#{item,jdbcType=VARCHAR}
+					</foreach>
+				</if>
+				<if test="productType!=null and productType.size>0">
+					AND WAYBILL_NEW.PRODUCT_CODE in
+					<foreach collection="productType" item="item" index="index"
+						open="(" separator=" , " close=")">
+	
+						#{item,jdbcType=VARCHAR}
+					</foreach>
+				</if>
+				<if test="waybillNumbers==null">
+					
+					<if test="writeoffStatus!=null and writeoffStatus!=''">
+						AND
+						WAYBILLRFC.WRITE_OFF_STATUS=#{writeoffStatus,jdbcType=VARCHAR}
+					</if>
+				</if>
+			<!--<if test ="changeAmount!=null">
+				<![CDATA[ AND (WAYBILL_OLD.PRE_PAY_AMOUNT+WAYBILL_OLD.TO_PAY_AMOUNT-WAYBILL_NEW.PRE_PAY_AMOUNT-WAYBILL_NEW.TO_PAY_AMOUNT)>=#{changeAmount}*100 ]]>			
+				</if>-->
+				<if test="darftOrgCodeList!=null and darftOrgCodeList!='' and darftOrgCodeList.size()>0">
+				AND
+				WAYBILLRFC.Draft_Org_Code In 
+				<foreach collection="darftOrgCodeList" item="item" index="index"	open="(" separator="," close=")">
+					#{item,jdbcType=VARCHAR}
+				</foreach>
+				</if>
+				
+				AND WAYBILLRFC.OPERATE_TIME between
+				#{acceptStartDate,jdbcType=TIMESTAMP}
+				AND
+				#{acceptEndDate,jdbcType=TIMESTAMP}
+				
+				AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = WAYBILLRFC.Draft_Org_Code<!-- 登录者部门等于还款部门过滤 -->
+     		)
+			</where>
+		) T ORDER BY T.WAYBILLNUMBER
+	</select>
+
+	<!--快递接口 ： 提供给结算，查询起草的更改单  dp-helong 2013-07-26 -->
+	<select id="queryExpressModifyBillWriteoffResultTotalNumber" resultType="long"
+		parameterType="com.deppon.foss.module.pickup.waybill.shared.dto.ModifyBillWriteoffDto">
+		SELECT /*模块：快递接送货-运单-提供给结算，查询起草的更改单*/
+		count(WAYBILLRFC.ID)
+		FROM
+		PKP.T_SRV_WAYBILLRFC WAYBILLRFC
+		LEFT JOIN PKP.T_SRV_WAYBILL
+		WAYBILL_OLD
+		ON WAYBILLRFC.OLD_VERSION_WAYBILL_ID =
+		WAYBILL_OLD.ID
+		LEFT
+		JOIN
+		PKP.T_SRV_WAYBILL WAYBILL_NEW ON
+		WAYBILLRFC.NEW_VERSION_WAYBILL_ID =
+		WAYBILL_NEW.ID
+		<where>
+			WAYBILLRFC.STATUS=#{status,jdbcType=VARCHAR} AND
+			WAYBILLRFC.NEED_WRITE_OFF='Y'
+			<if test="waybillNumbers!=null and waybillNumbers.size>0">
+				AND WAYBILLRFC.WAYBILL_NO in
+				<foreach collection="waybillNumbers" item="item" index="index"
+					open="(" separator=" , " close=")">
+
+					#{item,jdbcType=VARCHAR}
+				</foreach>
+			</if>
+			<if test="productType!=null and productType.size>0">
+				AND WAYBILL_NEW.PRODUCT_CODE in
+				<foreach collection="productType" item="item" index="index"
+					open="(" separator=" , " close=")">
+
+					#{item,jdbcType=VARCHAR}
+				</foreach>
+			</if>
+			<if test ="changeAmount!=null">
+				<![CDATA[ AND (WAYBILL_OLD.PRE_PAY_AMOUNT+WAYBILL_OLD.TO_PAY_AMOUNT-WAYBILL_NEW.PRE_PAY_AMOUNT-WAYBILL_NEW.TO_PAY_AMOUNT)>=#{changeAmount}*100 ]]>				
+			</if>
+			<if test="waybillNumbers==null">
+				
+				<if test="writeoffStatus!=null and writeoffStatus!=''">
+					AND
+					WAYBILLRFC.WRITE_OFF_STATUS=#{writeoffStatus,jdbcType=VARCHAR}
+				</if>
+			</if>
+			
+			<if test="darftOrgCodeList!=null and darftOrgCodeList!='' and darftOrgCodeList.size()>0">
+			AND
+			WAYBILLRFC.Draft_Org_Code In 
+			<foreach collection="darftOrgCodeList" item="item" index="index"	open="(" separator="," close=")">
+				#{item,jdbcType=VARCHAR}
+			</foreach>
+			</if>
+			
+			AND WAYBILLRFC.DRAFT_TIME between
+			#{acceptStartDate,jdbcType=TIMESTAMP}
+			AND
+			#{acceptEndDate,jdbcType=TIMESTAMP}
+			
+			AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = WAYBILLRFC.Draft_Org_Code<!-- 登录者部门等于还款部门过滤 -->
+     		)
+		</where>
+	</select>
+
+	<!--查询更改单，总条数    dp-linwensheng 2013-01-28-->
+	<select id="queryModifyBillWriteoffResultTotalNumber"
+		resultType="long"
+		parameterType="com.deppon.foss.module.pickup.waybill.shared.dto.ModifyBillWriteoffDto">
+		SELECT /*模块：接送货-运单-查询更改单总条数*/
+		count(WAYBILLRFC.ID)
+		FROM
+		PKP.T_SRV_WAYBILLRFC WAYBILLRFC
+		<where>
+			WAYBILLRFC.STATUS=#{status,jdbcType=VARCHAR} AND
+			WAYBILLRFC.NEED_WRITE_OFF='Y'
+			<if test="waybillNumbers!=null and waybillNumbers.size>0">
+				AND WAYBILLRFC.WAYBILL_NO in
+				<foreach collection="waybillNumbers" item="item" index="index"
+					open="(" separator=" , " close=")">
+
+					#{item,jdbcType=VARCHAR}
+				</foreach>
+			</if>
+			<if test="waybillNumbers==null">
+				<!-- <if test="darftOrgCode!=null and darftOrgCode!=''">
+					AND
+					WAYBILLRFC.Draft_Org_Code=#{darftOrgCode,jdbcType=VARCHAR}
+				</if> -->
+				
+				<if test="darftOrgCodeList!=null and darftOrgCodeList!='' and darftOrgCodeList.size()>0 ">
+				AND
+				WAYBILLRFC.Draft_Org_Code In 
+				<foreach collection="darftOrgCodeList" item="item" index="index"	open="(" separator=" , " close=")">
+					#{item,jdbcType=VARCHAR}
+				</foreach>
+				</if>
+				<if test="writeoffStatus!=null and writeoffStatus!=''">
+					AND
+					WAYBILLRFC.WRITE_OFF_STATUS=#{writeoffStatus,jdbcType=VARCHAR}
+				</if>
+			</if>
+
+			<![CDATA[
+			AND WAYBILLRFC.DRAFT_TIME >=
+			#{acceptStartDate,jdbcType=TIMESTAMP}
+			AND WAYBILLRFC.DRAFT_TIME <
+			#{acceptEndDate,jdbcType=TIMESTAMP}
+			]]>
+			AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = WAYBILLRFC.Draft_Org_Code<!-- 登录者部门等于还款部门过滤 -->
+     		)	
+		</where>
+	</select>
+	
+
+
+
+
+
+
+	<update id="updateWriteOffStatus"
+		parameterType="com.deppon.foss.module.pickup.waybill.shared.dto.ModifyWriteOffStatus">
+		UPDATE pkp.t_srv_waybillrfc
+		<set>
+			<if test="writeoffStatus!=null">
+				WRITE_OFF_STATUS=#{writeoffStatus,jdbcType=VARCHAR}
+			</if>
+			<if test="writeOffNote!=null">
+				,WRITE_OFF_NOTES=#{writeOffNote,jdbcType=VARCHAR}
+			</if>
+			<if test="emp!=null and  emp.empName!=null and  emp.empName!=''">
+				,WRITE_OFF_EMP_NAME=#{emp.empName,jdbcType=VARCHAR}
+			</if>
+			<if test="writeOffTime!=null">
+				,WRITE_OFF_TIME=#{writeOffTime,jdbcType=TIMESTAMP}
+			</if>
+		</set>
+		where
+		<foreach collection="waybillChangIDs" item="item" index="index"
+			open="(" separator=" OR " close=")">
+			ID = #{item,jdbcType=VARCHAR}
+		</foreach>
+	</update>
+
+
+	<select id="queryAlreadyHandleWaybillRfcNos" resultType="java.lang.String"
+		parameterType="com.deppon.foss.module.pickup.waybill.shared.dto.ModifyWriteOffStatus">
+
+		SELECT /*模块：接送货-运单-查询已经处理的更改单*/
+		* FROM pkp.t_srv_waybillrfc WAYBILLRFC
+		<where>
+			WAYBILLRFC.WRITE_OFF_STATUS!=#{writeoffStatus,jdbcType=VARCHAR}
+			AND
+			<foreach collection="waybillChangIDs" item="item" index="index"
+				open="(" separator=" , " close=")">
+				WAYBILLRFC.ID =
+				#{item,jdbcType=VARCHAR}
+			</foreach>
+		</where>
+	</select>
+
+	<select id="queryNoHandleWaybillRfcNos" resultType="java.lang.String"
+		parameterType="com.deppon.foss.module.pickup.waybill.shared.dto.ModifyWriteOffStatus">
+
+		SELECT /*模块：接送货-运单-查询未处理的更改单*/
+		* FROM pkp.t_srv_waybillrfc WAYBILLRFC
+		<where>
+			WAYBILLRFC.WRITE_OFF_STATUS=#{writeoffStatus,jdbcType=VARCHAR}
+			AND
+			<foreach collection="waybillChangIDs" item="item" index="index"
+				open="(" separator=" OR " close=")">
+				WAYBILLRFC.ID =
+				#{item,jdbcType=VARCHAR}
+			</foreach>
+		</where>
+	</select>
+
+	<!-- 根据运单号查询费用明细中的其它费用 -->
+	<select id="queryOtherChargeByNo" resultMap="BaseResultMapDto"
+		parameterType="java.util.Map">
+		SELECT  /*模块：接送货-运单-根据运单号查询费用明细中的其它费用*/
+		P.PRICING_CRI_DETAIL_ID AS ID, P.PRICING_ENTRY_CODE AS SUB_TYPE, P.AMOUNT/100 as
+		FEE,C.CACULATE_TYPE,C.DESCRIPTION,C.MAX_FEE/100 as MAX_FEE,
+		E.NAME,C.MIN_FEE/100 as MIN_FEE,C.CANMODIFY,C.CANDELETE
+		FROM
+		PKP.T_SRV_PRICING_CRITERIA_DETAIL C,
+		PKP.t_Srv_Waybill_Charge_Detail P,
+		PKP.T_SRV_PRICING_ENTRY E
+	<where>
+    	<![CDATA[
+    	P.PRICING_CRI_DETAIL_ID = C.ID(+)
+		AND E.CODE = P.PRICING_ENTRY_CODE 
+		AND P.ACTIVE = #{active,jdbcType=VARCHAR}
+		AND P.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+		AND E.CODE IN (
+				SELECT CODE 
+				FROM PKP.T_SRV_PRICING_ENTRY
+				START WITH CODE IN (#{type1,jdbcType=VARCHAR}, #{type2,jdbcType=VARCHAR})
+				CONNECT BY REF_ID = PRIOR ID)
+		]]>
+		</where>
+	</select>
+	<!-- 是否自动受理 -->
+	<update id="updateIsLabourHandle" parameterType="java.util.Map">
+		update
+		pkp.t_srv_waybillrfc
+		set IS_LABOUR_HANDLE =
+		#{isLabourHandle,jdbcType=VARCHAR}
+		where ID =
+		#{waybillRfcNo,jdbcType=VARCHAR}
+	</update>
+
+	<!--根据运单号查询运单出发更改单信息 -->
+	<select id="queryLeaveChangeByWaybillNo" parameterType="java.lang.String"
+		resultMap="leaveChangeByWaybillNoResultMap">
+	select /*模块：接送货-运单-根据运单号查询运单出发更改单信息*/
+	c.id id,
+    c.waybill_no waybillNo,
+    c.change_items changeItems,
+    c.drafter drafter,
+    c.draft_time draftTime,
+    c.draft_org_Name draftOrgName,
+    c.operate_org_name operateOrgName,
+    c.operate_time operateTime,
+    c.operator auditor,
+    c.notes notes,
+    c.rfc_reason rfcReason,
+    c.rfc_type  rfcType ,
+		c.status status,
+    w.last_load_org_name needAcceptOrg,
+    c.is_Labour_handle isLabourHandle
+	from
+	pkp.t_srv_waybillrfc c
+    left join pkp.t_srv_waybill w on c.waybill_no=w.waybill_no and w.active='Y'
+		where c.waybill_no=#{waybillNo,jdbcType=VARCHAR}
+	</select>
+
+	<!--官网申请变更单 -->
+		<insert id="applyChangeOrder"
+		parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillRfcForAccountServiceEntity">
+		insert into PKP.T_SRV_WAYBILLRFC_ACCOUNT (
+		ID, 
+		APPLYPERSON,
+		UNIFIELDCODE,
+		APPLYTIME,
+		WAYBILLNUMBER,
+		CONTACTHANDY,
+		CONTACTNAME,
+		CHANGECONTENT,
+		ACTIVE)
+		values(
+		#{id,jdbcType=VARCHAR},
+		#{applyPerson,jdbcType=VARCHAR},
+		#{unifieldCode,jdbcType=VARCHAR},
+		#{applyTime,jdbcType=TIMESTAMP},
+		#{waybillNumber,jdbcType=VARCHAR},
+		#{contactHandy,jdbcType=VARCHAR},
+		#{contactName,jdbcType=VARCHAR},
+		#{changeContent,jdbcType=VARCHAR},
+		#{active,jdbcType=VARCHAR})
+	</insert>
+	
+	<!--官网查询变更单 -->
+	<resultMap
+		type="com.deppon.foss.module.pickup.waybill.shared.dto.WaybillRfcForAccountServiceDto"
+		id="WaybillRfcForAccountServiceResultMap">
+		<result column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="WAYBILLNUMBER" property="waybillNumber" jdbcType="VARCHAR" />
+		<result column="APPLYPERSON" property="applyPerson" jdbcType="VARCHAR" />
+		<result column="UNIFIELDCODE" property="unifieldCode" jdbcType="VARCHAR"/>
+		<result column="APPLYTIME" property="applyTime" jdbcType="TIMESTAMP" />
+		<result column="CONTACTHANDY" property="contactHandy" jdbcType="VARCHAR" />
+		<result column="CONTACTNAME" property="contact" jdbcType="VARCHAR" />
+		<result column="CHANGECONTENT" property="changeContent" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="VARCHAR" />
+		<result column="PROCESS_TIME" property="processTime" jdbcType="TIMESTAMP" />
+		<result column="PROCESS_USER_NAME" property="processUserName" jdbcType="VARCHAR" />
+		<result column="PROCESS_USER_CODE" property="processUserCode" jdbcType="VARCHAR" />
+		<result column="PROCESS_ORG_NAME" property="processOrgName" jdbcType="VARCHAR" />
+		<result column="PROCESS_ORG_CODE" property="processOrgCode" jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="select_account_Where">
+		way.active = 'Y'
+		<if test="createOrgCode != null and createOrgCode != ''">
+			<![CDATA[ 
+	 			AND way.create_Org_Code = #{createOrgCode,jdbcType=VARCHAR}
+	 		]]>
+		</if>
+		<if test="receiveOrgCode != null and receiveOrgCode != ''">
+			<![CDATA[ 
+	 			AND way.receive_Org_Code = #{receiveOrgCode,jdbcType=VARCHAR}
+	 		]]>
+		</if>
+		<choose>
+			<when test="waybillNumber != null and waybillNumber != ''">
+				<![CDATA[ 
+		 			AND ACCOUNT.WAYBILLNUMBER = #{waybillNumber,jdbcType=VARCHAR}
+		 		]]>
+			</when>
+			<otherwise>			
+				<if test="applyPerson != null and applyPerson != ''">
+					<![CDATA[ 
+			 			AND ACCOUNT.APPLYPERSON = #{applyPerson,jdbcType=VARCHAR}
+			 		]]>
+				</if>
+				<if test="changeBillId !=null and changeBillId != ''">
+			 		<![CDATA[ 
+			 			AND ACCOUNT.ID = #{changeBillId,jdbcType=VARCHAR}
+			 		]]>
+				</if>
+				<if test="startDate!=null">
+			 		<![CDATA[ 
+			 			AND ACCOUNT.APPLYTIME >= #{startDate,jdbcType=TIMESTAMP}
+			 		]]>
+				</if>
+				<if test="endDate != null">
+			 		<![CDATA[ 
+			 			AND ACCOUNT.APPLYTIME < #{endDate,jdbcType=TIMESTAMP}
+			 		]]>
+				</if>
+				<if test="active != null and active != ''">
+			 		<![CDATA[ 
+			 			AND ACCOUNT.ACTIVE = #{active,jdbcType=VARCHAR}
+			 		]]>
+				</if>
+				<if test="startProcessTime != null">
+			 		<![CDATA[ 
+			 			AND ACCOUNT.PROCESS_TIME >= #{startProcessTime,jdbcType=TIMESTAMP}
+			 		]]>
+				</if>
+				<if test="endProcessTime != null">
+			 		<![CDATA[ 
+			 			AND ACCOUNT.PROCESS_TIME < #{endProcessTime,jdbcType=TIMESTAMP}
+			 		]]>
+				</if>
+			</otherwise>
+		</choose>
+	</sql>
+	
+	<select id="queryChangeOrder" resultMap="WaybillRfcForAccountServiceResultMap"
+		parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillRfcForAccountServiceCondition">
+		SELECT  /*模块：接送货-运单-官网变更单查询*/
+		    ACCOUNT.ID ID,
+			ACCOUNT.APPLYPERSON APPLYPERSON,
+			ACCOUNT.UNIFIELDCODE UNIFIELDCODE,
+			ACCOUNT.APPLYTIME APPLYTIME,
+			ACCOUNT.WAYBILLNUMBER WAYBILLNUMBER,
+			ACCOUNT.CONTACTHANDY CONTACTHANDY,
+			ACCOUNT.CONTACTNAME CONTACTNAME,
+			ACCOUNT.CHANGECONTENT CHANGECONTENT,
+			ACCOUNT.PROCESS_TIME PROCESS_TIME,
+			ACCOUNT.PROCESS_USER_CODE PROCESS_USER_CODE,
+			ACCOUNT.PROCESS_USER_NAME PROCESS_USER_NAME,
+			ACCOUNT.PROCESS_ORG_CODE PROCESS_ORG_CODE,
+			ACCOUNT.PROCESS_ORG_NAME PROCESS_ORG_NAME,
+			ACCOUNT.ACTIVE ACTIVE
+		FROM PKP.T_SRV_WAYBILLRFC_ACCOUNT ACCOUNT inner join pkp.t_srv_waybill way on ACCOUNT.Waybillnumber = way.waybill_no
+		<where>
+			<include refid="select_account_Where"/>
+		</where>
+	</select>
+	<select id="queryChangeOrderCount" resultType="Long"
+		parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillRfcForAccountServiceCondition">
+		SELECT /*模块：接送货-运单-查询更改单的记录总数*/
+    COUNT(1)
+    FROM PKP.T_SRV_WAYBILLRFC_ACCOUNT ACCOUNT inner join pkp.t_srv_waybill way on ACCOUNT.Waybillnumber = way.waybill_no
+		<where>
+			<include refid="select_account_Where"/>
+		</where>
+	</select>
+	<update id="updateByKeys" parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillRfcForAccountServiceEntity" >
+	    update PKP.T_SRV_WAYBILLRFC_ACCOUNT WA
+	    <set >
+	        ACTIVE = #{active,jdbcType=VARCHAR},
+	        WA.PROCESS_TIME = #{processTime,jdbcType=TIMESTAMP},
+	        WA.PROCESS_USER_NAME = #{processUserName,jdbcType=VARCHAR},
+	        WA.PROCESS_USER_CODE = #{processUserCode,jdbcType=VARCHAR},
+	        WA.PROCESS_ORG_NAME = #{processOrgName,jdbcType=VARCHAR},
+	        WA.PROCESS_ORG_CODE = #{processOrgCode,jdbcType=VARCHAR}
+	    </set>
+	    <where>
+	    	WA.ID IN 
+	    	<foreach item="item" index="index" collection="ids" open="(" separator="," close=")">
+				#{item}
+			</foreach>
+			AND WA.ACTIVE != #{active,jdbcType=VARCHAR}
+	    </where>
+	  </update>
+	  
+	  
+	  <!-- 代理网点（偏线代理网点和空运代理网点） -->
+    <resultMap id="outerBranchResultMap"
+        type="com.deppon.foss.module.base.baseinfo.api.shared.domain.OuterBranchEntity">
+        <id column="ID" property="id" jdbcType="VARCHAR" />
+        <result column="AGENT_DEPT_CODE" property="agentDeptCode"
+            jdbcType="VARCHAR" />
+        <result column="AGENT_DEPT_NAME" property="agentDeptName"
+            jdbcType="VARCHAR" />
+        <result column="AGENT_COMPANY" property="agentCompany"
+            jdbcType="VARCHAR" />
+        <result column="MANAGEMENT" property="management" jdbcType="VARCHAR" />
+        <result column="SIMPLENAME" property="simplename" jdbcType="VARCHAR" />
+        <result column="PROV_CODE" property="provCode" jdbcType="VARCHAR" />
+        <result column="AIR_WAYBILL_TEL" property="airWaybillTel"
+            jdbcType="VARCHAR" />
+        <result column="AIR_WAYBILL_NAME" property="airWaybillName"
+            jdbcType="VARCHAR" />
+        <result column="CITY_CODE" property="cityCode" jdbcType="VARCHAR" />
+        <result column="CONTACT" property="contact" jdbcType="VARCHAR" />
+        <result column="COUNTY_CODE" property="countyCode" jdbcType="VARCHAR" />
+        <result column="ADDRESS" property="address" jdbcType="VARCHAR" />
+        <result column="PICKUP_SELF" property="pickupSelf" jdbcType="CHAR" />
+        <result column="PICKUP_TO_DOOR" property="pickupToDoor"
+            jdbcType="CHAR" />
+        <result column="RETURN_BILL" property="returnBill" jdbcType="CHAR" />
+        <result column="ARRIVE_CHARGE" property="arriveCharge"
+            jdbcType="CHAR" />
+        <result column="HELP_CHARGE" property="helpCharge" jdbcType="CHAR" />
+        <result column="PICKUP_AREA" property="pickupArea" jdbcType="VARCHAR" />
+        <result column="DELIVER_AREA" property="deliverArea" jdbcType="VARCHAR" />
+        <result column="LEAVE" property="leave" jdbcType="CHAR" />
+        <result column="TRANSFER" property="transfer" jdbcType="CHAR" />
+        <result column="ARRIVE" property="arrive" jdbcType="CHAR" />
+        <result column="CONTACT_PHONE" property="contactPhone"
+            jdbcType="VARCHAR" />
+        <result column="MOBILE_PHONE" property="mobilePhone" jdbcType="VARCHAR" />
+        <result column="NOTES" property="notes" jdbcType="VARCHAR" />
+        <result column="CREATE_TIME" property="createDate" jdbcType="DATE" />
+        <result column="MODIFY_TIME" property="modifyDate" jdbcType="DATE" />
+        <result column="ACTIVE" property="active" jdbcType="CHAR" />
+        <result column="CREATE_USER_CODE" property="createUser"
+            jdbcType="VARCHAR" />
+        <result column="MODIFY_USER_CODE" property="modifyUser"
+            jdbcType="VARCHAR" />
+        <result column="VIRTUAL_CODE" jdbcType="VARCHAR" property="virtualCode" />
+        <result column="BRANCHTYPE" property="branchtype" jdbcType="CHAR" />
+        <result column="PINYIN" property="pinyin" jdbcType="VARCHAR" />
+        <result column="VERSION_NO" property="versionNo" jdbcType="DECIMAL" />
+        <result column="STATION_NUMBER" property="stationNumber" jdbcType="VARCHAR" />
+    </resultMap>
+	  
+	  <!-- 根据代理网点编码 查询代理网点及其代理公司的信息 -->
+    <select id="queryAgencyBranchCompanyInfo"
+        resultMap="outerBranchResultMap">
+         select * from(SELECT
+        BRANCH.AGENT_DEPT_NAME AS AGENT_DEPT_NAME,
+        BRANCH.AGENT_DEPT_CODE AS AGENT_DEPT_CODE,
+        BRANCH.CONTACT_PHONE AS CONTACT_PHONE,
+        BRANCH.ADDRESS AS ADDRESS,
+        BRANCH.CITY_CODE AS CITY_CODE, 
+        BRANCH.STATION_NUMBER AS STATION_NUMBER,
+        BRANCH.PICKUP_SELF AS PICKUP_SELF,
+        BRANCH.HELP_CHARGE AS HELP_CHARGE,
+        BRANCH.ARRIVE_CHARGE AS ARRIVE_CHARGE,
+        BRANCH.PICKUP_TO_DOOR AS PICKUP_TO_DOOR
+        FROM BSE.T_BAS_OUTER_BRANCH BRANCH
+       where BRANCH.AGENT_DEPT_CODE =
+        #{agencyBranchCode,jdbcType=VARCHAR}
+         order by BRANCH.Create_Time desc 
+         ) where rownum=1
+    </select>
+    
+    <resultMap id="salesDepartmentResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.domain.SaleDepartmentEntity" >
+        <result property="id" column="ID"  jdbcType="VARCHAR" />
+        <result property="code" column="CODE"  jdbcType="VARCHAR" />
+        <result property="name" column="NAME"  jdbcType="VARCHAR" />
+        <result property="pinyin" column="PINYIN"  jdbcType="VARCHAR" />
+        <result property="leave" column="LEAVE"  jdbcType="CHAR" />
+        <result property="arrive" column="ARRIVE"  jdbcType="CHAR" />
+        <result property="station" column="STATION"  jdbcType="CHAR" />
+        <result property="slogans" column="SLOGANS"  jdbcType="VARCHAR" />
+        <result property="openingDate" column="OPENING_DATE"  jdbcType="DATE" />
+        <result property="maxTempArrears" column="MAX_TEMP_ARREARS"  jdbcType="VARCHAR" />
+        <result property="usedTempArrears" column="USED_TEMP_ARREARS"  jdbcType="VARCHAR" />
+        <result property="transferCenter" column="TRANSFER_CENTER"  jdbcType="VARCHAR" />
+        <result property="pickupSelf" column="PICKUP_SELF"  jdbcType="CHAR" />
+        <result property="delivery" column="DELIVERY"  jdbcType="CHAR" />
+        <result property="airArrive" column="AIR_ARRIVE"  jdbcType="CHAR" />
+        <result property="truckArrive" column="TRUCK_ARRIVE"  jdbcType="CHAR" />
+        <result property="singlePieceLimitkg" column="SINGLE_PIECE_LIMITKG"  jdbcType="VARCHAR" />
+        <result property="singleBillLimitkg" column="SINGLE_BILL_LIMITKG"  jdbcType="VARCHAR" />
+        <result property="singlePieceLimitvol" column="SINGLE_PIECE_LIMITVOL"  jdbcType="VARCHAR" />
+        <result property="singleBillLimitvol" column="SINGLE_BILL_LIMITVOL"  jdbcType="VARCHAR" />
+        <result property="pickupAreaDesc" column="PICKUP_AREA_DESC"  jdbcType="VARCHAR" />
+        <result property="deliveryAreaDesc" column="DELIVERY_AREA_DESC"  jdbcType="VARCHAR" />
+        <result property="createDate" column="CREATE_TIME"  jdbcType="DATE" />
+        <result property="modifyDate" column="MODIFY_TIME"  jdbcType="DATE" />
+        <result property="versionNo" column="VERSION_NO"  jdbcType="DECIMAL" />
+        <result property="active" column="ACTIVE"  jdbcType="CHAR" />
+        <result property="createUser" column="CREATE_USER_CODE"  jdbcType="VARCHAR" />
+        <result property="modifyUser" column="MODIFY_USER_CODE"  jdbcType="VARCHAR" />
+        <result property="deliveryCoordinate" column="DELIVERY_COORDINATE"  jdbcType="VARCHAR" />
+        <result property="inCentralizedShuttle" column="IN_CENTRALIZED_SHUTTLE"  jdbcType="CHAR" />
+        <result property="canPayServiceFee" column="CAN_PAY_SERVICE_FEE"  jdbcType="CHAR" />
+        <result property="canReturnSignBill" column="CAN_RETURN_SIGN_BILL"  jdbcType="CHAR" />
+        <result property="canCashOnDelivery" column="CAN_CASH_ON_DELIVERY"  jdbcType="CHAR" />
+        <result property="canAgentCollected" column="CAN_AGENT_COLLECTED"  jdbcType="CHAR" />
+        <result property="cancelArrivalDate" column="CANCEL_ARRIVAL_DATE"  jdbcType="DATE" />
+        <result property="transferGoodDept" column="TRANSFER_GOOD_DEPT"  jdbcType="VARCHAR" />
+        <result property="stationNumber" column="STATION_NUMBER"  jdbcType="VARCHAR" />
+  </resultMap>
+    
+        <!-- 根据 CODE 精确查询数据 -->
+    <select id="querySaleDepartmentByCode" resultMap="salesDepartmentResultMap">
+           select * from(SELECT 
+       ID, CODE, NAME, PINYIN, LEAVE, ARRIVE, STATION, SLOGANS, OPENING_DATE, MAX_TEMP_ARREARS, 
+    USED_TEMP_ARREARS, TRANSFER_CENTER, PICKUP_SELF, DELIVERY, AIR_ARRIVE, 
+    TRUCK_ARRIVE, SINGLE_PIECE_LIMITKG, SINGLE_BILL_LIMITKG, SINGLE_PIECE_LIMITVOL, SINGLE_BILL_LIMITVOL, 
+    PICKUP_AREA_DESC, DELIVERY_AREA_DESC, CREATE_TIME, MODIFY_TIME, ACTIVE, CREATE_USER_CODE, 
+    MODIFY_USER_CODE, DELIVERY_COORDINATE, 
+    VERSION_NO, IN_CENTRALIZED_SHUTTLE, CAN_PAY_SERVICE_FEE, CAN_RETURN_SIGN_BILL, CAN_CASH_ON_DELIVERY, 
+    CAN_AGENT_COLLECTED, CANCEL_ARRIVAL_DATE, TRANSFER_GOOD_DEPT, STATION_NUMBER
+            FROM BSE.T_BAS_SALES_DEPARTMENT A 
+         where   A.CODE=#{customerPickupOrgCode,jdbcType=VARCHAR} 
+          order by A.Create_Time desc 
+         ) where rownum=1
+    </select>
+   
+  <resultMap id="productResultMap" type="com.deppon.foss.module.pickup.pricing.api.shared.domain.ProductEntity" >
+   <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="CODE" property="code" jdbcType="VARCHAR" />
+    <result column="NAME" property="name" jdbcType="VARCHAR" />
+    <result column="ACTIVE" property="active" jdbcType="CHAR" />
+    <result column="DESCRIPTION" property="description" jdbcType="VARCHAR" />
+    <result column="VERSION_NO" property="versionNo" jdbcType="DECIMAL" />
+    <result column="BEGIN_TIME" property="beginTime" jdbcType="DATE" />
+    <result column="END_TIME" property="endTime" jdbcType="DATE" />
+    <result column="TRANSPORT_TYPE" property="transportType" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createDate" jdbcType="DATE" />
+    <result column="MODIFY_TIME" property="modifyDate" jdbcType="DATE" />
+    <result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+    <result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+    <result column="CREATE_ORG_CODE" property="createOrgCode" jdbcType="VARCHAR" />
+    <result column="MODIFY_ORG_CODE" property="modifyOrgCode" jdbcType="VARCHAR" />    
+    <result column="LEVELS" property="levels" jdbcType="DECIMAL" />
+    <result column="PARENT_CODE" property="parentCode" jdbcType="VARCHAR" />
+    <result column="REF_ID" property="refId" jdbcType="VARCHAR" />
+    <result column="SHORT_NAME" property="shortName" jdbcType="VARCHAR" />
+    <result column="PRIORITY" property="priority" jdbcType="VARCHAR" />
+    <result column="SEQ" property="seq" jdbcType="INTEGER" />
+    <result column="DEST_NET_TYPE" property="destNetType" jdbcType="VARCHAR" />
+  </resultMap>
+  
+  <sql id="product_join_Column_List" >
+    A.ID, A.CODE, A.NAME, A.ACTIVE, A.DESCRIPTION, A.VERSION_NO, A.BEGIN_TIME, A.END_TIME, A.TRANSPORT_TYPE, 
+    A.CREATE_TIME, A.MODIFY_TIME, A.CREATE_USER_CODE, A.MODIFY_USER_CODE, A.CREATE_ORG_CODE, A.MODIFY_ORG_CODE, 
+    A.LEVELS, A.PARENT_CODE, A.REF_ID, A.SHORT_NAME, A.PRIORITY, A.SEQ, A.DEST_NET_TYPE
+  </sql> 
+    
+  <!-- 通过营业部查询所属产品 -->
+  <select id="selectProductBySalesDept" resultMap="productResultMap" 
+  parameterType="com.deppon.foss.module.pickup.waybill.shared.dto.ProductDto" >
+    select 
+    <include refid="product_join_Column_List" />
+    from PKP.T_SRV_PRODUCT A,BSE.T_BAS_PRO_SALESDEPT B
+    where A.CODE = B.PRODUCT_CODE
+    	and A.LEVELS = #{levels,jdbcType=VARCHAR}
+    	and B.SALES_DEPT_CODE = #{salesDeptCode,jdbcType=VARCHAR}
+    	and A.ACTIVE = #{active,jdbcType=VARCHAR}
+    	and B.ACTIVE = #{active,jdbcType=VARCHAR}
+    	order by A.VERSION_NO DESC
+  </select>
+  
+     
+  <!-- 通过营业部查询所属产品 -->
+  <select id="searchProductBySalesDept" resultMap="productResultMap" 
+  parameterType="com.deppon.foss.module.pickup.waybill.shared.dto.ProductDto" >
+    select 
+    <include refid="product_join_Column_List" />
+    from PKP.T_SRV_PRODUCT A,BSE.T_BAS_PRO_SALESDEPT B
+    where A.CODE = B.PRODUCT_CODE
+    	and A.LEVELS = #{levels,jdbcType=VARCHAR}
+    	and B.SALES_DEPT_CODE = #{salesDeptCode,jdbcType=VARCHAR}
+    	and A.ACTIVE = #{active,jdbcType=VARCHAR}
+    	and B.ACTIVE = #{active,jdbcType=VARCHAR}
+    	<if test="salesType != null and salesType != '' ">
+    		and B.SALES_TYPE = #{salesType,jdbcType=VARCHAR}
+    	</if>
+    	 order by A.VERSION_NO DESC
+  </select>
+  
+  <!---->
+   <select id="queryWaybillRfcAcceptByWaybillNo" resultMap="BaseResultMap" 
+  	parameterType="java.util.Map" >
+    select
+	<include refid="Base_Column_List" />
+		from PKP.T_SRV_WAYBILLRFC rfc
+		<where>
+			<if test="waybillNo != null and waybillNo != ''">
+			<![CDATA[ 
+	 			AND rfc.waybill_no= #{waybillNo,jdbcType=VARCHAR}
+	 		]]>
+			</if>
+			<if test="status != null and status != ''">
+				<![CDATA[ 
+		 			AND rfc.status= #{status,jdbcType=VARCHAR}
+		 		]]>
+			</if>
+		</where>
+  </select>
+  
+  <select id="queryCZHCZFWF_SDTJByNo" resultMap="BaseResultMapDto"
+		parameterType="java.util.Map">
+		SELECT  /*模块：接送货-运单-根据运单号查询费用明细中的其它费用*/
+		P.PRICING_CRI_DETAIL_ID AS ID, P.PRICING_ENTRY_CODE AS SUB_TYPE, P.AMOUNT/100 as
+		FEE,C.CACULATE_TYPE,C.DESCRIPTION,C.MAX_FEE/100 as MAX_FEE,
+		E.NAME,C.MIN_FEE/100 as MIN_FEE,C.CANMODIFY,C.CANDELETE
+		FROM
+		PKP.T_SRV_PRICING_CRITERIA_DETAIL C,
+		PKP.t_Srv_Waybill_Charge_Detail P,
+		PKP.T_SRV_PRICING_ENTRY E
+	<where>
+    	<![CDATA[
+    	P.PRICING_CRI_DETAIL_ID = C.ID(+)
+		AND P.PRICING_ENTRY_CODE='CZHCZFWF_SDTJ' 
+        AND E.CODE='CZHCZFWF'
+		AND P.ACTIVE = #{active,jdbcType=VARCHAR}
+		AND P.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+		AND E.CODE IN (
+				SELECT CODE 
+				FROM PKP.T_SRV_PRICING_ENTRY
+				START WITH CODE IN (#{type1,jdbcType=VARCHAR}, #{type2,jdbcType=VARCHAR})
+				CONNECT BY REF_ID = PRIOR ID)
+		]]>
+		</where>
+	</select>
+  
+  	<select id="queryPrincipalNoBySatellite" resultType="java.lang.String" parameterType="java.lang.String">		
+		select /*模块：接送货-更改单-根据卫星点部门编码获取所属营业部的负责人CODE*/
+		o.principal_no from bse.t_bas_org o left join BSE.T_BAS_SATELLITEDEPT_SALESDEPT s
+ 		on o.code=s.salesdept_code
+ 		where o.active='Y' and s.active='Y' and ROWNUM = 1 
+    	 and s.satellitedept_code = #{sateCode,jdbcType=VARCHAR}
+	</select>
+	
+	
+	<select id="queryUnActiveRfcWaybillNo" resultType="java.lang.String" parameterType="java.util.Map">		
+		SELECT WAYBILLNUMBER FROM PKP.T_SRV_WAYBILLRFC_ACCOUNT
+		WHERE 
+		ACTIVE='N'
+		AND WAYBILLNUMBER IN
+		<foreach collection="waybillNoList" item="waybillNo" open="("
+				close=")" separator=",">
+				#{waybillNo}
+		</foreach>
+		
+	</select>
+	
+	<insert id="addWaybillRfcTransfer"
+		parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillRfcTranferEntity">
+		insert into PKP.T_SRV_WAYBILLRFC_TRANSFER
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				ID,
+			</if>
+			<if test="waybillRfcId != null">
+				WAYBILL_RFC_ID,
+			</if>
+			<if test="waybillNo != null">
+				WAYBILL_NO,
+			</if>
+			<if test="sourceTargerOrgCode != null">
+				SOURCE_TARGET_ORG_CODE,
+			</if>
+			<if test="changeTargerOrgCode != null">
+				CHANGE_TARGET_ORG_CODE,
+			</if>
+			<if test="sourceCustomerOrgCode != null">
+				SOURCE_CUSTOMER_ORG_CODE,
+			</if>
+			<if test="finalCustomerOrgCode != null">
+				FINAL_CUSTOMER_ORG_CODE,
+			</if>
+			<if test="goodsStatus != null">
+				GOODS_STATUS,
+			</if>
+			<if test="goodsRange != null">
+				GOODS_RANGE,
+			</if>
+			<if test="transportFee != null">
+				TRANSPORT_FEE,
+			</if>
+			<if test="active != null">
+				ACTIVE,
+			</if>
+			<if test="operateTime != null">
+				OPERATE_TIME,
+			</if>
+			<if test="isSum != null">
+				IS_SUM,
+			</if>
+			<if test="transportFeeRate != null">
+				TRANSPORT_FEE_RATE,
+			</if>
+			<if test="billingType != null">
+				BILLING_TYPE,
+			</if>
+			<if test="rfcType != null">
+				RFC_TYPE,
+			</if>
+			<if test="isTfrHandWrite != null">
+				IS_TFR_HAND_WRITE,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id,jdbcType=VARCHAR},
+			</if>
+			<if test="waybillRfcId != null">
+				#{waybillRfcId,jdbcType=VARCHAR},
+			</if>
+			<if test="waybillNo != null">
+				#{waybillNo,jdbcType=VARCHAR},
+			</if>
+			<if test="sourceTargerOrgCode != null">
+				#{sourceTargerOrgCode,jdbcType=VARCHAR},
+			</if>
+			<if test="changeTargerOrgCode != null">
+				#{changeTargerOrgCode,jdbcType=VARCHAR},
+			</if>
+			<if test="sourceCustomerOrgCode != null">
+				#{sourceCustomerOrgCode,jdbcType=VARCHAR},
+			</if>
+			<if test="finalCustomerOrgCode != null">
+				#{finalCustomerOrgCode,jdbcType=VARCHAR},
+			</if>
+			<if test="goodsStatus != null">
+				#{goodsStatus,jdbcType=VARCHAR},
+			</if>
+			<if test="goodsRange != null">
+				#{goodsRange,jdbcType=VARCHAR},
+			</if>
+			<if test="transportFee != null">
+				#{transportFee,jdbcType=DECIMAL},
+			</if>
+			<if test="active != null">
+				#{active,jdbcType=CHAR},
+			</if>
+			<if test="operateTime != null">
+				#{operateTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="isSum != null">
+				#{isSum,jdbcType=CHAR},
+			</if>
+			<if test="transportFeeRate != null">
+				#{transportFeeRate,jdbcType=DECIMAL},
+			</if>
+			<if test="billingType != null">
+				#{billingType,jdbcType=VARCHAR},
+			</if>
+			<if test="rfcType != null">
+				#{rfcType,jdbcType=VARCHAR},
+			</if>
+			<if test="isTfrHandWrite != null">
+				#{isTfrHandWrite,jdbcType=VARCHAR},
+			</if>
+		</trim>
+	</insert>
+	
+	  <resultMap id="rfcTranferMap"
+		type="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillRfcTranferEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="WAYBILL_RFC_ID" property="waybillRfcId" jdbcType="VARCHAR" />
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="SOURCE_TARGET_ORG_CODE" property="sourceTargerOrgCode" jdbcType="VARCHAR" />
+		<result column="CHANGE_TARGET_ORG_CODE" property="changeTargerOrgCode" jdbcType="VARCHAR" />
+		<result column="SOURCE_CUSTOMER_ORG_CODE" property="sourceCustomerOrgCode" jdbcType="VARCHAR" />
+		<result column="FINAL_CUSTOMER_ORG_CODE" property="finalCustomerOrgCode" jdbcType="VARCHAR" />
+		<result column="GOODS_STATUS" property="goodsStatus" jdbcType="VARCHAR" />
+		<result column="GOODS_RANGE" property="goodsRange" jdbcType="VARCHAR" />
+		<result column="TRANSPORT_FEE" property="transportFee" jdbcType="DECIMAL" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="OPERATE_TIME" property="operateTime" jdbcType="TIMESTAMP" />
+		<result column="IS_SUM" property="isSum" jdbcType="CHAR" />
+		<result column="TRANSPORT_FEE_RATE" property="transportFeeRate" jdbcType="DECIMAL" />
+		<result column="BILLING_TYPE" property="billingType" jdbcType="VARCHAR" />
+		<result column="RFC_TYPE" property="rfcType" jdbcType="VARCHAR" />
+		<result column="IS_TFR_HAND_WRITE" property="isTfrHandWrite" jdbcType="CHAR" />
+	</resultMap>
+	
+	 <select id="queryWaybillRfcTransferEntity"  parameterType="java.util.Map" resultMap="rfcTranferMap">
+    	select
+			ID,
+			WAYBILL_RFC_ID,
+			WAYBILL_NO,
+			SOURCE_TARGET_ORG_CODE,
+			CHANGE_TARGET_ORG_CODE,
+			SOURCE_CUSTOMER_ORG_CODE,
+			FINAL_CUSTOMER_ORG_CODE,
+			GOODS_STATUS,
+			GOODS_RANGE,
+			TRANSPORT_FEE,
+			ACTIVE,
+			OPERATE_TIME,
+			IS_SUM,
+			TRANSPORT_FEE_RATE,
+			BILLING_TYPE,
+			RFC_TYPE,
+			IS_TFR_HAND_WRITE
+		from PKP.T_SRV_WAYBILLRFC_TRANSFER 
+		<where> 
+			<if test="waybillNo != null and waybillNo != ''">
+			<![CDATA[ 
+	 			AND waybill_no= #{waybillNo,jdbcType=VARCHAR}
+	 		]]>
+			</if>
+			<if test="goodsRange != null and goodsRange != ''">
+				<![CDATA[ 
+		 			AND GOODS_RANGE= #{goodsRange,jdbcType=VARCHAR}
+		 		]]>
+			</if>
+			<if test="active != null and active != ''">
+				<![CDATA[ 
+		 			AND ACTIVE= #{active,jdbcType=CHAR}
+		 		]]>
+			</if>
+			<if test="rfcType != null and rfcType != ''">
+				<![CDATA[ 
+		 			AND RFC_TYPE= #{rfcType,jdbcType=VARCHAR}
+		 		]]>
+			</if>
+			<if test="waybillRfcId != null and waybillRfcId != ''">
+				<![CDATA[ 
+		 			AND WAYBILL_RFC_ID= #{waybillRfcId,jdbcType=VARCHAR}
+		 		]]>
+			</if>
+		</where>
+		 ORDER BY OPERATE_TIME DESC
+  </select>
+  
+   <select id="queryRfcTransferHistory"  parameterType="java.util.Map" resultMap="rfcTranferMap">
+    	select
+			ID,
+			WAYBILL_RFC_ID,
+			WAYBILL_NO,
+			SOURCE_TARGET_ORG_CODE,
+			CHANGE_TARGET_ORG_CODE,
+			SOURCE_CUSTOMER_ORG_CODE,
+			FINAL_CUSTOMER_ORG_CODE,
+			GOODS_STATUS,
+			GOODS_RANGE,
+			TRANSPORT_FEE,
+			ACTIVE,
+			OPERATE_TIME,
+			IS_SUM,
+			TRANSPORT_FEE_RATE,
+			BILLING_TYPE,
+			RFC_TYPE,
+			IS_TFR_HAND_WRITE
+		from PKP.T_SRV_WAYBILLRFC_TRANSFER 
+		<where> 
+			<if test="waybillNo != null and waybillNo != ''">
+			<![CDATA[ 
+	 			AND waybill_no= #{waybillNo,jdbcType=VARCHAR}
+	 		]]>
+			</if>
+			<if test="goodsRange != null and goodsRange != ''">
+				<![CDATA[ 
+		 			AND (GOODS_RANGE <> #{goodsRange,jdbcType=VARCHAR}  OR GOODS_RANGE IS NULL)
+		 		]]>
+			</if>
+			<if test="active != null and active != ''">
+				<![CDATA[ 
+		 			AND ACTIVE= #{active,jdbcType=CHAR}
+		 		]]>
+			</if>
+			<if test="rfcType != null and rfcType != ''">
+				<![CDATA[ 
+		 			AND RFC_TYPE= #{rfcType,jdbcType=VARCHAR}
+		 		]]>
+			</if>
+			<if test="waybillRfcId != null and waybillRfcId != ''">
+				<![CDATA[ 
+		 			AND WAYBILL_RFC_ID= #{waybillRfcId,jdbcType=VARCHAR}
+		 		]]>
+			</if>
+		</where>
+  </select>
+  
+
+	
+	<update id="updateRfcTranferEntity" parameterType="java.util.Map">
+		UPDATE 
+		PKP.T_SRV_WAYBILLRFC_TRANSFER T 
+		SET T.ACTIVE = #{active,jdbcType=VARCHAR}
+		<where>
+			<if test="waybillNo != null and waybillNo != ''">
+			<![CDATA[ 
+	 			AND T.waybill_no= #{waybillNo,jdbcType=VARCHAR}
+	 		]]>
+			</if>
+			<if test="goodsRange != null and goodsRange != ''">
+				<![CDATA[ 
+		 			AND T.GOODS_RANGE= #{goodsRange,jdbcType=VARCHAR}
+		 		]]>
+			</if>
+			<if test="sourceTargerOrgCode != null and sourceTargerOrgCode != ''">
+				<![CDATA[ 
+		 			AND T.SOURCE_TARGET_ORG_CODE= #{sourceTargerOrgCode,jdbcType=VARCHAR}
+		 		]]>
+			</if>
+			<if test="changeTargerOrgCode != null and changeTargerOrgCode != ''">
+				<![CDATA[ 
+		 			AND T.CHANGE_TARGET_ORG_CODE= #{changeTargerOrgCode,jdbcType=VARCHAR}
+		 		]]>
+			</if>
+			<if test="isSum != null and isSum != ''">
+				<![CDATA[ 
+		 			AND T.IS_SUM= #{isSum,jdbcType=CHAR}
+		 		]]>
+			</if>
+			<!--  <if test="active != null and active != ''">
+				<![CDATA[ 
+		 			AND T.ACTIVE= #{activePara,jdbcType=CHAR}
+		 		]]>
+			</if> -->
+			<if test="rfcType != null and rfcType != ''">
+				<![CDATA[ 
+		 			AND T.RFC_TYPE= #{rfcType,jdbcType=VARCHAR}
+		 		]]>
+			</if>
+			<if test="waybillRfcId != null and waybillRfcId != ''">
+				<![CDATA[ 
+		 			AND T.WAYBILL_RFC_ID= #{waybillRfcId,jdbcType=VARCHAR}
+		 		]]>
+			</if>
+		</where>
+	</update>
+	
+	<update id="updateRfcTranferRfcId" parameterType="java.util.Map">
+		UPDATE 
+		PKP.T_SRV_WAYBILLRFC_TRANSFER T 
+		SET T.WAYBILL_RFC_ID = #{waybillRfcId,jdbcType=VARCHAR}
+		<where>
+			<if test="waybillNo != null and waybillNo != ''">
+			<![CDATA[ 
+	 			AND T.waybill_no= #{waybillNo,jdbcType=VARCHAR}
+	 		]]>
+			</if>
+			<if test="id != null and id != ''">
+				<![CDATA[ 
+		 			AND T.ID= #{id,jdbcType=VARCHAR}
+		 		]]>
+			</if>
+		</where>
+	</update>
+	
+	<!--
+		 @项目：家装项目
+		 @功能：查询家装运单号是否交货
+		 @author:218371-foss-zhaoyanjun
+		 @date:2015-10-17下午16:32
+	 -->
+	<select id="homeRenovationWaybillState" resultType="java.lang.String" >
+		select
+		WAYSTAUS
+		from BSE.T_BAS_SALESDEPT_DELIVERYPROC
+		where WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+		and ACTIVE='Y'
+	</select>
+	<!--根据运单查询所有更改单的信息  -->
+	 <select id="queryRecentRfc" resultMap="BaseResultMap"  parameterType="java.util.Map">
+    select
+	<include refid="Base_Column_List" />
+		from PKP.T_SRV_WAYBILLRFC rfc
+		<where>
+			<if test="waybillNo != null and waybillNo != ''">
+			<![CDATA[ 
+	 			AND rfc.waybill_no= #{waybillNo,jdbcType=VARCHAR}
+	 		]]>
+			</if>
+		</where>
+		order by rfc.DRAFT_TIME desc
+  </select>
+  
+  <!-- add by taodongguo(354805) 根据装卸费开单部门和开单时间查询是否可开装卸费  - 2016-12-6 16:19:37 -->
+  <select id="queryCanPayServiceFeeByCodeAndTime" resultType="java.lang.String" parameterType="java.util.Map">
+  	SELECT * FROM(
+	  	SELECT T.CAN_PAY_SERVICE_FEE
+		  FROM BSE.T_BAS_SALES_DEPARTMENT T
+		 WHERE 1 = 1 
+		 	<if test="code != null and code != ''">
+			   AND T.CODE = #{code,jdbcType=VARCHAR}
+		 	</if>
+		   <if test="billTime != null and billTime != ''">
+		 		<![CDATA[
+		 			AND T.OPENING_DATE <= #{billTime,jdbcType=TIMESTAMP}
+		 		]]>
+		 		<![CDATA[
+		 			AND T.CREATE_TIME <= #{billTime,jdbcType=TIMESTAMP}
+		 		]]>
+		 		<![CDATA[
+		 			AND T.MODIFY_TIME >= #{billTime,jdbcType=TIMESTAMP}
+		 		]]>
+			</if>
+			ORDER BY T.CREATE_TIME DESC
+	) WHERE ROWNUM = 1
+  </select>
+  
+</mapper>

@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.pricing.publishPriceEntityMapper" >
+  <!-- 查询价格区域  resultMap -->
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.pickup.pricing.api.shared.dto.PublishPriceDto" >
+    <result column="PRODUCT_CODE" property="productCode" jdbcType="VARCHAR" />
+    <result column="GOODSTYPE_CODE" property="goodsTypeCode" jdbcType="VARCHAR" />
+    <result column="DEPT_REGION_ID" property="deptRegionId" jdbcType="VARCHAR" />
+    <result column="ARRV_REGION_ID" property="arrvRegionId" jdbcType="VARCHAR" />
+    <result column="CENTRALIZE_PICKUP" property="centralizePickup" jdbcType="VARCHAR" />
+    <result column="LONG_OR_SHORT" property="longOrShort" jdbcType="VARCHAR" />
+    <result column="PRICING_VALUATION_ID" property="pricingValuationId" jdbcType="VARCHAR" />
+    <result column="CACULATE_TYPE" property="caculateType" jdbcType="VARCHAR" />
+    <result column="FEE_RATE" property="feeRate" jdbcType="DECIMAL" />
+    <result column="MIN_FEE" property="minFee" jdbcType="DECIMAL" />
+    <result column="FLIGHT_SHIFT" property="flightShiftNo" jdbcType="VARCHAR" />
+    <result column="COMB_BILL_TYPE_CODE" property="combBillTypeCode" jdbcType="VARCHAR" />
+    <result column="LEFTRANGE" property="leftRange" jdbcType="DECIMAL" />
+    <result column="RIGHTRANGE" property="rightRange" jdbcType="DECIMAL" />
+    <result column="FEE" property="fixedCosts" jdbcType="DECIMAL" />
+  </resultMap>
+  
+  <!-- 查询公布价价格区域 Query Column sz at 2012-12-3 add --> 
+  <sql id="Combination_Column_List" >
+    va.PRODUCT_CODE AS PRODUCT_CODE,            <!-- 产品CODE-->
+    va.GOODS_TYPE_CODE AS GOODSTYPE_CODE,       <!-- 货物类型CODE-->
+    va.ARRV_REGION_ID AS ARRV_REGION_ID,        <!-- 目的区域ID-->
+    va.DEPT_REGION_ID AS DEPT_REGION_ID,        <!-- 出发区域ID-->
+    va.LONG_OR_SHORT AS LONG_OR_SHORT,                           <!-- 长短途-->
+    va.CENTRALIZE_PICKUP AS CENTRALIZE_PICKUP,                       <!-- 接送货-->
+    va.FLIGHT_SHIFT AS FLIGHT_SHIFT,                            <!-- 航班号-->
+    detail.PRICING_VALUATION_ID AS PRICING_VALUATION_ID, <!-- 计费规则ID-->
+    detail.CACULATE_TYPE AS CACULATE_TYPE,	    <!-- 计费类别-->
+    detail.FEE_RATE/100  AS FEE_RATE,				<!-- 费率或者单价 -->
+    detail.MIN_FEE/100 AS MIN_FEE,					<!-- 最低费用 -->
+    detail.LEFTRANGE AS LEFTRANGE,					<!-- 开始范围 -->
+    detail.RIGHTRANGE AS RIGHTRANGE,				<!-- 结束范围 -->
+    detail.FEE/100       As FEE,                    <!-- 固定费用-->
+    detail.COMB_BILL_TYPE_CODE as COMB_BILL_TYPE_CODE 			<!-- 合票类型Code -->
+  </sql>
+  
+  <!--  查询公布价价格区域  sz at 2012-11-29 add -->
+  <select id="findPublishPriceByCodition" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.pickup.pricing.api.shared.dto.PublishPriceDto" >
+     SELECT /*+ index(detail IDX1_SRV_PRICING_CRITERIA_DETA)*/ /** 综合-价格-根据综合条件查询公布价价格方面明细 **/
+    	<include refid="Combination_Column_List" />
+    	FROM 
+    	PKP.T_SRV_PRICE_PLAN pla 
+    	INNER JOIN PKP.T_SRV_PRICING_VALUATION va ON pla.id = va.PRICE_PLAN_ID
+    	INNER JOIN PKP.T_SRV_PRICING_CRITERIA_DETAIL detail ON va.ID = detail.PRICING_VALUATION_ID
+    	WHERE va.DEPT_REGION_ID = #{deptRegionId ,jdbcType=VARCHAR} <!--出发地区域-->
+    	AND va.ARRV_REGION_ID = #{arrvRegionId ,jdbcType=VARCHAR} <!--目的地区域-->
+    	AND va.TYPE = #{valuationType ,jdbcType=VARCHAR}         <!-- 规则类型 -->
+    	AND pla.ACTIVE = #{active ,jdbcType=VARCHAR}              <!--激活有效数据-->
+    	AND  <![CDATA[ pla.BEGIN_TIME <= ]]> #{receiveDate,jdbcType=TIMESTAMP}
+    	AND  <![CDATA[ pla.END_TIME > ]]> #{receiveDate,jdbcType=TIMESTAMP}
+    	AND pla.CUSTOMER_CODE IS NULL
+  </select>
+
+    <!--  查询精准包裹公布价价格区域  wangfeng add 2016.07.18 -->
+    <select id="findEcPublishPriceByCodition" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.pickup.pricing.api.shared.dto.PublishPriceDto" >
+        SELECT /*+ index(detail IDX1_SRV_PRICING_CRITERIA_DETA)*/ /** 综合-价格-根据综合条件查询公布价价格方面明细 **/
+        <include refid="Combination_Column_List" />
+        FROM
+        PKP.T_SRV_EC_PRICE_PLAN pla
+        INNER JOIN PKP.T_SRV_EC_PRICING_VALUATION va ON pla.id = va.PRICE_PLAN_ID
+        INNER JOIN PKP.T_SRV_EC_PRICING_CRI_DETAIL detail ON va.ID = detail.PRICING_VALUATION_ID
+        WHERE va.DEPT_REGION_ID = #{deptRegionId ,jdbcType=VARCHAR} <!--出发地区域-->
+        AND va.ARRV_REGION_ID = #{arrvRegionId ,jdbcType=VARCHAR} <!--目的地区域-->
+        AND va.TYPE = #{valuationType ,jdbcType=VARCHAR}         <!-- 规则类型 -->
+        AND pla.ACTIVE = #{active ,jdbcType=VARCHAR}              <!--激活有效数据-->
+        AND  <![CDATA[ pla.BEGIN_TIME <= ]]> #{receiveDate,jdbcType=TIMESTAMP}
+        AND  <![CDATA[ pla.END_TIME > ]]> #{receiveDate,jdbcType=TIMESTAMP}
+
+    </select>
+    
+    <select id="findPublishPriceByRegionIds" resultMap="BaseResultMap" parameterType="map" >
+    SELECT /*+ index(detail IDX1_SRV_PRICING_CRITERIA_DETA)*/ /** 综合-价格-根据始发和到达区域集合查询公布价价格方面明细 **/
+    	<include refid="Combination_Column_List" />
+    	FROM 
+    	PKP.T_SRV_PRICE_PLAN pla 
+    	INNER JOIN PKP.T_SRV_PRICING_VALUATION va ON pla.id = va.PRICE_PLAN_ID
+    	INNER JOIN PKP.T_SRV_PRICING_CRITERIA_DETAIL detail ON va.ID = detail.PRICING_VALUATION_ID
+    	WHERE va.TYPE = #{type, jdbcType=VARCHAR}         			<!--规则类型 -->
+    	AND pla.ACTIVE = #{active, jdbcType=VARCHAR}            	<!--激活有效数据-->
+    	<!--航班类型-->
+  		<if test="flightSort!=null and flightSort!=''"> 
+			AND va.FLIGHT_SHIFT = #{flightSort, jdbcType=VARCHAR}
+  		</if>
+  		
+    	AND  <![CDATA[ pla.BEGIN_TIME <= ]]> #{billDate,jdbcType=TIMESTAMP}
+    	AND  <![CDATA[ pla.END_TIME > ]]> #{billDate,jdbcType=TIMESTAMP}
+    	<![CDATA[AND pla.T_SRV_PRICE_REGION_ID in ]]>    
+    	 <!--出发地区域-->
+		<foreach collection="deptRegionIds" open="(" close=")" separator=","
+				item="id">
+		<![CDATA[	#{id,jdbcType=VARCHAR}  ]]>
+		</foreach>
+    	 <!--目的地区域-->
+    	 
+    	<![CDATA[AND va.ARRV_REGION_ID in ]]>                    
+    	
+		<foreach collection="arrvRegionIds" open="(" close=")" separator=","
+				item="id">
+			<![CDATA[	#{id,jdbcType=VARCHAR}  ]]>
+		</foreach>
+  </select>
+
+  
+  <select id="findPublishPriceByRegionIdsForFoss" resultMap="BaseResultMap" parameterType="map" >
+	  <if test="deptRegionIds != null and deptRegionIds.size() != 0">
+	    SELECT /** 综合-价格-根据始发和到达区域集合查询公布价价格方面明细     2016-07-21 346527-李金泽 **/
+	    	<include refid="Combination_Column_List" />
+	    	FROM 
+	    	PKP.T_SRV_PRICE_PLAN pla 
+	    	INNER JOIN PKP.T_SRV_PRICING_VALUATION va ON pla.id = va.PRICE_PLAN_ID
+	    	INNER JOIN PKP.T_SRV_PRICING_CRITERIA_DETAIL detail ON va.ID = detail.PRICING_VALUATION_ID
+	    	WHERE va.TYPE = #{type, jdbcType=VARCHAR}         			<!--规则类型 -->
+	    	AND pla.ACTIVE = #{active, jdbcType=VARCHAR}            	<!--激活有效数据-->
+	    	<!--航班类型-->
+	  		<if test="flightSort!=null and flightSort!=''"> 
+				AND va.FLIGHT_SHIFT = #{flightSort, jdbcType=VARCHAR}
+	  		</if>
+	  		
+	    	AND  <![CDATA[ pla.BEGIN_TIME <= ]]> #{billDate,jdbcType=TIMESTAMP}
+	    	AND  <![CDATA[ pla.END_TIME > ]]> #{billDate,jdbcType=TIMESTAMP}
+	    	<![CDATA[AND pla.T_SRV_PRICE_REGION_ID in ]]>    
+	    	 <!--出发地区域-->
+			<foreach collection="deptRegionIds" open="(" close=")" separator=","
+					item="id">
+			<![CDATA[	#{id,jdbcType=VARCHAR}  ]]>
+			</foreach>
+	    	 <!--目的地区域-->
+	    	 
+	    	<![CDATA[AND va.ARRV_REGION_ID in ]]>                    
+	    	
+			<foreach collection="arrvRegionIds" open="(" close=")" separator=","
+					item="id">
+				<![CDATA[	#{id,jdbcType=VARCHAR}  ]]>
+			</foreach>
+		</if>
+	<if test="deptRegionIds != null and deptRegionIds.size() != 0 and priceStartIds != null and priceStartIds.size() != 0">
+   union all 
+   	</if>
+	   <if test="priceStartIds != null and priceStartIds.size() != 0">
+	         SELECT  /** 综合-价格-根据始发和到达区域集合查询公布价价格方面明细       2016-07-21 346527-李金泽**/
+	    	<include refid="Combination_Column_List" />
+	    	FROM 
+	    	PKP.T_SRV_EC_PRICE_PLAN pla 
+	    	INNER JOIN PKP.T_SRV_EC_PRICING_VALUATION va ON pla.id = va.PRICE_PLAN_ID
+	    	INNER JOIN PKP.T_SRV_EC_PRICING_CRI_DETAIL detail ON va.ID = detail.PRICING_VALUATION_ID
+	    	WHERE va.TYPE = #{type, jdbcType=VARCHAR}         			<!--规则类型 -->
+	    	AND pla.ACTIVE = #{active, jdbcType=VARCHAR}            	<!--激活有效数据-->
+	    	<!--航班类型-->
+	  		<if test="flightSort!=null and flightSort!=''"> 
+				AND va.FLIGHT_SHIFT = #{flightSort, jdbcType=VARCHAR}
+	  		</if>
+	  		
+	    	AND  <![CDATA[ pla.BEGIN_TIME <= ]]> #{billDate,jdbcType=TIMESTAMP}
+	    	AND  <![CDATA[ pla.END_TIME > ]]> #{billDate,jdbcType=TIMESTAMP}
+	    	<![CDATA[AND pla.T_SRV_PRICE_REGION_ID in ]]>    
+	    	 <!--出发地区域-->
+			<foreach collection="priceStartIds" open="(" close=")" separator=","
+					item="id">
+			<![CDATA[	#{id,jdbcType=VARCHAR}  ]]>
+			</foreach>
+	    	 <!--目的地区域-->
+	    	 
+	    	<![CDATA[AND va.ARRV_REGION_ID in ]]>                    
+	    	
+			<foreach collection ="priceArrIds" open="(" close=")" separator=","
+					item="id">
+				<![CDATA[	#{id,jdbcType=VARCHAR}  ]]>
+			</foreach>
+	   </if>
+  </select>
+</mapper>

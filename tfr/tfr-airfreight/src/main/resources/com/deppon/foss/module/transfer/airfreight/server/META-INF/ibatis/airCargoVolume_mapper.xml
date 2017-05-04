@@ -1,0 +1,678 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.airfreight.aircargovolume" >
+
+	<!--空运货量结果集  -->
+	<resultMap  id="airCargoVolumeResultMap" type="com.deppon.foss.module.transfer.airfreight.api.shared.domain.AirCargoVolumeQueryEntity">
+		<result property="waybillNo" column="WAYBILL_NO"/>
+		<result property="createOrgCode" column="CREATE_ORG_NAME"/>
+		<result property="createOrgName" column="CREATE_ORG_NAME"/>		
+		<result property="createTime" column="CREATE_TIME"/>				
+		<result property="arrvRegionCode" column="TARGET_ORG_CODE"/>
+		<result property="arrvRegionName" column="TARGET_ORG_Name"/>		
+		<result property="stockStatus" column="STOCK_STATUS"/>
+		<result property="makeWaybillWay" column="MAKE_WAYBILL_WAY"/>
+		<result property="flightType" column="FLIGHT_TYPE"/>
+		<result property="goodsSize" column="GOODS_SIZE"/>
+		<result property="goodsWeight" column="GOODS_WEIGHT_TOTAL"/>
+		<result property="goodsVolume" column="GOODS_VOLUME_TOTAL"/>
+		<result property="goodsName" column="GOODS_NAME"/>	
+		<result property="handoverTime" column="HANDOVER_TIME"/>
+		<result property="fee" column="FEE"/>	
+		<result property="pickupType" column="PICKUP_TYPE"/>	
+		<result property="deptOrgName" column="DEPT_ORG_NAME"/>	
+		<result property="billWeight" column="BILL_WEIGHT"/>	
+		<result property="flightNo" column="FLIGHT_NO"/>	
+		<result property="airWaybillNo" column="AIR_WAYBILL_NO"/>
+	</resultMap>
+	
+	
+	<!-- 查询某件货物的库存信息集结果集-->
+	<resultMap  id="serialNumberStockResultMap" type="com.deppon.foss.module.transfer.airfreight.api.shared.domain.AirCargoVolumeQueryEntity">
+		<id property="id" column="id"/>
+		<result property="goodsWeightTotal" column="GOODS_WEIGHT_TOTAL"/>
+		<result property="goodsVolumeTotal" column="GOODS_VOLUME_TOTAL"/>
+	</resultMap>
+	
+	<!-- 航空公司舱位明细实体 -->
+	<resultMap id="airSpaceDetailResultMap" type="com.deppon.foss.module.transfer.airfreight.api.shared.domain.AirSpaceDetailVolumeEntity" >
+		<id property="id" column="id"/>
+		<result property="arrvRegionName" column="ARRV_REGION_NAME"/>		
+		<result property="takeOffDate" column="TAKE_OFF_DATE"/>	
+		<result  property="flightType"  column="FLIGHT_TYPE"/>
+	    <result property="spaceTotal"   column="SPACE_TOTAL"/>	  
+		<result property="earlySpaceTotal" column="EARLY_SPACE_TOTAL"/>			
+		<result property="middaySpaceTotal" column="MIDDAY_SPACE_TOTAL"/>
+		<result property="nightSpaceTotal" column="NIGHT_SPACE_TOTAL"/>	
+		<result property="transitSpaceTotal" column="TRANSIT_SPACE_TOTAL"/>			
+	</resultMap>
+	
+	<!-- 货量统计导出用结果集 -->
+	<resultMap type="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirCargoVolumeForExportDto" id="airCargoVolumeForExportResultMap">
+		<result property="waybillNo" column="WAYBILL_NO"/>
+		<result property="createOrgCode" column="CREATE_ORG_NAME"/>
+		<result property="createOrgName" column="CREATE_ORG_NAME"/>		
+		<result property="createTime" column="CREATE_TIME"/>				
+		<result property="arrvRegionCode" column="TARGET_ORG_CODE"/>
+		<result property="arrvRegionName" column="TARGET_ORG_Name"/>		
+		<result property="stockStatus" column="STOCK_STATUS"/>
+		<result property="makeWaybillWay" column="MAKE_WAYBILL_WAY"/>
+		<result property="flightType" column="FLIGHT_TYPE"/>
+		<result property="goodsSize" column="GOODS_SIZE"/>
+		<result property="goodsWeight" column="GOODS_WEIGHT_TOTAL"/>
+		<result property="goodsVolume" column="GOODS_VOLUME_TOTAL"/>
+		<result property="goodsName" column="GOODS_NAME"/>	
+		<result property="airName" column="AIR_NAME"/>	
+		<result property="handoverTime" column="HANDOVER_TIME"/>	
+		<result property="deptRegionName" column="DEPT_REGION_NAME"/>	
+		<result property="deptOrgName" column="DEPT_ORG_NAME"/>	
+		<result property="airWaybillNo" column="AIR_WAYBILL_NO"/>	
+		<result property="airAssembleType" column="AIR_ASSEMBLE_TYPE"/>	 
+		<result property="jointTicketNo" column="JOINT_TICKET_NO"/>	
+		<result property="flightNo" column="FLIGHT_NO"/>	
+		<result property="flightDate" column="FLIGHT_DATE"/>	
+		<result property="takeOffTime" column="TAKE_OFF_TIME"/>	
+		<result property="arriveTime" column="ARRIVE_TIME"/>	
+		<result property="paymentType" column="PAYMENT_TYPE"/>	
+		<result property="receiverName" column="RECEIVER_NAME"/>	
+		<result property="fee" column="FEE"/>	
+		<result property="agencyName" column="AGENCY_NAME"/>	
+		<result property="pickupType" column="PICKUP_TYPE"/>	
+		<result property="handoverCreateName" column="HANDOVER_CREATE_NAME"/>	
+		<result property="handoverCreateOrgName" column="HANDOVER_CREATE_ORG_NAME"/>	
+		<result property="totalFee" column="TOTAL_FEE"/>	
+		<result property="billWeight" column="BILL_WEIGHT"/>	
+		<result property="goodsQty" column="GOODS_QTY"/>	
+	</resultMap>
+	
+		<!-- 连表查询空运货量明细 -->
+	<select id="airCargoVolumeForquery" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirCargoVolumeDto"  resultMap="airCargoVolumeResultMap">
+		 select tab.WAYBILL_NO,
+                tab.bill_weight,
+                LISTAGG(to_char(tab.handover_time,'yyyy-mm-dd hh24:mi:ss'), ',') within group(order by tab.CREATE_TIME DESC) handover_time,
+		        LISTAGG(tab.dept_org_name,',') within group(order by tab.CREATE_TIME DESC) dept_org_name,
+		        LISTAGG(tab.AIR_WAYBILL_NO,',') within group(order by tab.CREATE_TIME DESC) AIR_WAYBILL_NO,
+		        LISTAGG(tab.FLIGHT_NO,',') within group(order by tab.CREATE_TIME DESC) FLIGHT_NO,
+		        LISTAGG(tab.FEE,',') within group(order by tab.CREATE_TIME DESC) FEE,
+		        tab.PICKUP_TYPE as PICKUP_TYPE,
+                tab.TARGET_ORG_Name,
+                tab.CREATE_TIME,
+                LISTAGG(tab.STOCK_STATUS, ',') within
+          group(
+          order by tab.CREATE_TIME DESC) STOCK_STATUS, tab.MAKE_WAYBILL_WAY, tab.FLIGHT_TYPE, tab.GOODS_WEIGHT_TOTAL, tab.GOODS_VOLUME_TOTAL, 
+          tab.GOODS_SIZE, tab.GOODS_NAME, tab.CREATE_ORG_CODE, tab.CREATE_ORG_NAME,max( tab.receviceDept) receviceDept, max(tab.codAmount/100) codAmount
+           from (SELECT distinct W.WAYBILL_NO,
+                                 w.bill_weight as bill_weight,
+                                 null as HANDOVER_TIME,
+                                 null as dept_org_name,
+                                 null as AIR_WAYBILL_NO,
+                                 null as FLIGHT_NO,
+                                 null as FEE,
+                                 W.RECEIVE_METHOD as PICKUP_TYPE,
+                                 W.TARGET_ORG_CODE AS TARGET_ORG_Name,
+                                 W.last_load_org_code,
+                                 W.CREATE_ORG_CODE,
+                                 O.Name AS CREATE_ORG_NAME,
+                                 W.CREATE_TIME,
+                                 D.ARRIVE_OR_LEAVE AS STOCK_STATUS,
+                                 W.FREIGHT_METHOD AS MAKE_WAYBILL_WAY,
+                                 W.GOODS_WEIGHT_TOTAL,
+                                 W.GOODS_VOLUME_TOTAL,
+                                 to_char(W.GOODS_SIZE) AS GOODS_SIZE,
+                                 W.GOODS_NAME,
+                                 W.FLIGHT_NUMBER_TYPE AS FLIGHT_TYPE,
+                                 o2.name as receviceDept,
+                                 w.cod_amount as codAmount
+                   FROM pkp.T_SRV_WAYBILL     W,
+                        TFR.T_OPT_PATH_DETAIL D,
+                        bse.t_bas_org         O,
+                        bse.t_bas_org         O2
+                  where D.Waybill_No = W.Waybill_No
+                    and W.CREATE_ORG_CODE = O.CODE
+                    and D.Objective_Org_Code = W.last_load_org_code
+                      and o2.code=w.receive_org_code
+                    and D.ARRIVE_OR_LEAVE in
+                    <foreach collection="stockStatusList" open="(" close=")" item="item" separator="," index="index"> 
+						#{item} 
+					</foreach>
+					and W.Active= #{active} 	
+			        and W.PRODUCT_CODE= #{productCode} 
+			        and  O.active =  #{active} 
+         			<include refid="airCargoVolume_Path_Where"/>
+                 union all
+                 select distinct W.WAYBILL_NO,
+                                 w.bill_weight as bill_weight,
+                                 AW.CREATE_TIME AS HANDOVER_TIME,
+                                 aw.dedt_org_name as dept_org_name,
+                                 aw.AIR_WAYBILL_NO as AIR_WAYBILL_NO,
+                                 aw.FLIGHT_NO as FLIGHT_NO,
+                                 aw.FEE /100 as FEE,
+                                 W.RECEIVE_METHOD as PICKUP_TYPE,
+                                 W.TARGET_ORG_CODE AS TARGET_ORG_Name,
+                                 W.last_load_org_code,
+                                 W.CREATE_ORG_CODE,
+                                 O.Name as CREATE_ORG_NAME,
+                                 W.CREATE_TIME,
+                                 D.Is_Loading AS STOCK_STATUS,
+                                 W.FREIGHT_METHOD AS MAKE_WAYBILL_WAY,
+                                 W.GOODS_WEIGHT_TOTAL,
+                                 W.GOODS_VOLUME_TOTAL,
+                                 to_char(W.GOODS_SIZE) AS GOODS_SIZE,
+                                 W.GOODS_NAME,
+                                 W.FLIGHT_NUMBER_TYPE AS FLIGHT_TYPE,
+                                 o2.name as receviceDept,
+                                 w.cod_amount as codAmount
+                   FROM pkp.T_SRV_WAYBILL                 W,
+                        tfr.T_OPT_AIR_WAYBILL_DETAIL      D,
+                        bse.t_bas_org                     O,
+                        bse.t_bas_org                     O2,
+                        tfr.t_opt_air_waybill             AW,
+                        tfr.t_opt_air_handoverbill        AH,
+                        tfr.t_opt_air_handoverbill_detail AHD
+                  where D.Waybill_No = W.Waybill_No
+                    and W.CREATE_ORG_CODE = O.CODE
+                    and w.receive_org_code=o2.code
+                    and d.air_waybill_id = aw.id(+)
+                    and aw.id = ahd.t_o_id(+)
+                    and ahd.air_handoverbill_id = ah.id(+)
+                    and D.Is_Loading= #{isLoad}  
+			        and W.Active= #{active} 	
+			        and W.PRODUCT_CODE= #{productCode} 
+			        and  O.active =  #{active} 
+         			<include refid="airCargoVolume_AirWaybill_Where"/> 
+			        ) tab
+         	<include refid="airCargoVolume_Where"/>
+          group by tab.WAYBILL_NO,
+                   tab.bill_weight,
+                   tab.TARGET_ORG_Name,
+                   tab.CREATE_TIME,
+                   tab.MAKE_WAYBILL_WAY,
+                   tab.FLIGHT_TYPE,
+                   tab.GOODS_WEIGHT_TOTAL,
+                   tab.GOODS_VOLUME_TOTAL,
+                   tab.GOODS_SIZE,
+                   tab.GOODS_NAME,
+                   tab.CREATE_ORG_CODE,
+                   tab.CREATE_ORG_NAME,
+		           tab.PICKUP_TYPE
+          order by tab.CREATE_TIME desc
+	</select>
+	
+	<!--查询空运货量明细 -->
+	<select id="airCargoVolumeQuery" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirCargoVolumeDto"  resultMap="airCargoVolumeResultMap">
+		SELECT W.WAYBILL_NO,W.CREATE_TIME FROM PKP.T_SRV_WAYBILL W  
+<!-- 		<include refid="airCargoVolume_Where"/> -->
+	</select>
+	<!-- 查询货物的库存数量 -->
+	<select id="querySerialNumberStock" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirCargoVolumeDto" resultMap="serialNumberStockResultMap" >
+	 	select sum(GOODS_VOLUME_TOTAL) AS GOODS_VOLUME_TOTAL ,sum(GOODS_WEIGHT_TOTAL)  AS GOODS_WEIGHT_TOTAL from(   
+    	 	select tab.WAYBILL_NO,
+                tab.bill_weight,
+                LISTAGG(to_char(tab.handover_time,'yyyy-mm-dd hh24:mi:ss'), ',') within group(order by tab.CREATE_TIME DESC) handover_time,
+		        LISTAGG(tab.dept_org_name,',') within group(order by tab.CREATE_TIME DESC) dept_org_name,
+		        LISTAGG(tab.AIR_WAYBILL_NO,',') within group(order by tab.CREATE_TIME DESC) AIR_WAYBILL_NO,
+		        LISTAGG(tab.FLIGHT_NO,',') within group(order by tab.CREATE_TIME DESC) FLIGHT_NO,
+		        LISTAGG(tab.FEE,',') within group(order by tab.CREATE_TIME DESC) FEE,
+		        tab.PICKUP_TYPE as PICKUP_TYPE,
+                tab.TARGET_ORG_Name,
+                tab.CREATE_TIME,
+                LISTAGG(tab.STOCK_STATUS, ',') within
+          group(
+          order by tab.CREATE_TIME DESC) STOCK_STATUS, tab.MAKE_WAYBILL_WAY, tab.FLIGHT_TYPE, tab.GOODS_WEIGHT_TOTAL, tab.GOODS_VOLUME_TOTAL, tab.GOODS_SIZE, tab.GOODS_NAME, tab.CREATE_ORG_CODE, tab.CREATE_ORG_NAME
+           from (SELECT distinct W.WAYBILL_NO,
+                                 w.bill_weight as bill_weight,
+                                 null as HANDOVER_TIME,
+                                 null as dept_org_name,
+                                 null as AIR_WAYBILL_NO,
+                                 null as FLIGHT_NO,
+                                 null as FEE,
+                                 W.RECEIVE_METHOD as PICKUP_TYPE,
+                                 W.TARGET_ORG_CODE AS TARGET_ORG_Name,
+                                 W.last_load_org_code,
+                                 W.CREATE_ORG_CODE,
+                                 O.Name AS CREATE_ORG_NAME,
+                                 W.CREATE_TIME,
+                                 D.ARRIVE_OR_LEAVE AS STOCK_STATUS,
+                                 W.FREIGHT_METHOD AS MAKE_WAYBILL_WAY,
+                                 W.GOODS_WEIGHT_TOTAL,
+                                 W.GOODS_VOLUME_TOTAL,
+                                 to_char(W.GOODS_SIZE) AS GOODS_SIZE,
+                                 W.GOODS_NAME,
+                                 W.FLIGHT_NUMBER_TYPE AS FLIGHT_TYPE
+                   FROM pkp.T_SRV_WAYBILL     W,
+                        TFR.T_OPT_PATH_DETAIL D,
+                        bse.t_bas_org         O
+                  where D.Waybill_No = W.Waybill_No
+                    and W.CREATE_ORG_CODE = O.CODE
+                    and D.Objective_Org_Code = W.last_load_org_code
+                    and D.ARRIVE_OR_LEAVE in
+                    <foreach collection="stockStatusList" open="(" close=")" item="item" separator="," index="index"> 
+						#{item} 
+					</foreach>
+					and W.Active= #{active} 	
+			        and W.PRODUCT_CODE= #{productCode} 
+			        and  O.active =  #{active} 
+         			<include refid="airCargoVolume_Path_Where"/>
+                 union all
+                 select distinct W.WAYBILL_NO,
+                                 w.bill_weight as bill_weight,
+                                 AW.CREATE_TIME AS HANDOVER_TIME,
+                                 aw.dedt_org_name as dept_org_name,
+                                 aw.AIR_WAYBILL_NO as AIR_WAYBILL_NO,
+                                 aw.FLIGHT_NO as FLIGHT_NO,
+                                 aw.FEE /100 as FEE,
+                                 W.RECEIVE_METHOD as PICKUP_TYPE,
+                                 W.TARGET_ORG_CODE AS TARGET_ORG_Name,
+                                 W.last_load_org_code,
+                                 W.CREATE_ORG_CODE,
+                                 O.Name as CREATE_ORG_NAME,
+                                 W.CREATE_TIME,
+                                 D.Is_Loading AS STOCK_STATUS,
+                                 W.FREIGHT_METHOD AS MAKE_WAYBILL_WAY,
+                                 W.GOODS_WEIGHT_TOTAL,
+                                 W.GOODS_VOLUME_TOTAL,
+                                 to_char(W.GOODS_SIZE) AS GOODS_SIZE,
+                                 W.GOODS_NAME,
+                                 W.FLIGHT_NUMBER_TYPE AS FLIGHT_TYPE
+                   FROM pkp.T_SRV_WAYBILL                 W,
+                        tfr.T_OPT_AIR_WAYBILL_DETAIL      D,
+                        bse.t_bas_org                     O,
+                        tfr.t_opt_air_waybill             AW,
+                        tfr.t_opt_air_handoverbill        AH,
+                        tfr.t_opt_air_handoverbill_detail AHD
+                  where D.Waybill_No = W.Waybill_No
+                    and W.CREATE_ORG_CODE = O.CODE
+                    and d.air_waybill_id = aw.id(+)
+                    and aw.id = ahd.t_o_id(+)
+                    and ahd.air_handoverbill_id = ah.id(+)
+                    and D.Is_Loading= #{isLoad}  
+			        and W.Active= #{active} 	
+			        and W.PRODUCT_CODE= #{productCode} 
+			        and  O.active =  #{active} 
+         			<include refid="airCargoVolume_AirWaybill_Where"/> 
+			        ) tab
+         	<include refid="airCargoVolume_Where"/>
+          group by tab.WAYBILL_NO,
+                   tab.bill_weight,
+                   tab.TARGET_ORG_Name,
+                   tab.CREATE_TIME,
+                   tab.MAKE_WAYBILL_WAY,
+                   tab.FLIGHT_TYPE,
+                   tab.GOODS_WEIGHT_TOTAL,
+                   tab.GOODS_VOLUME_TOTAL,
+                   tab.GOODS_SIZE,
+                   tab.GOODS_NAME,
+                   tab.CREATE_ORG_CODE,
+                   tab.CREATE_ORG_NAME,
+		           tab.PICKUP_TYPE
+          order by tab.CREATE_TIME desc)
+	</select>
+	
+	<!-- 查询空运货量条数-->
+	<select id="queryAirCargoVolumeCount" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirCargoVolumeDto" resultType="Long">
+		 select count(WAYBILL_NO) from (select tab.WAYBILL_NO,
+                tab.bill_weight,
+                LISTAGG(to_char(tab.handover_time,'yyyy-mm-dd hh24:mi:ss'), ',') within group(order by tab.CREATE_TIME DESC) handover_time,
+		        LISTAGG(tab.dept_org_name,',') within group(order by tab.CREATE_TIME DESC) dept_org_name,
+		        LISTAGG(tab.AIR_WAYBILL_NO,',') within group(order by tab.CREATE_TIME DESC) AIR_WAYBILL_NO,
+		        LISTAGG(tab.FLIGHT_NO,',') within group(order by tab.CREATE_TIME DESC) FLIGHT_NO,
+		        LISTAGG(tab.FEE,',') within group(order by tab.CREATE_TIME DESC) FEE,
+		        tab.PICKUP_TYPE as PICKUP_TYPE,
+                tab.TARGET_ORG_Name,
+                tab.CREATE_TIME,
+                LISTAGG(tab.STOCK_STATUS, ',') within
+          group(
+          order by tab.CREATE_TIME DESC) STOCK_STATUS, tab.MAKE_WAYBILL_WAY, tab.FLIGHT_TYPE, tab.GOODS_WEIGHT_TOTAL, tab.GOODS_VOLUME_TOTAL, tab.GOODS_SIZE, tab.GOODS_NAME, tab.CREATE_ORG_CODE, tab.CREATE_ORG_NAME
+           from (SELECT distinct W.WAYBILL_NO,
+                                 w.bill_weight as bill_weight,
+                                 null as HANDOVER_TIME,
+                                 null as dept_org_name,
+                                 null as AIR_WAYBILL_NO,
+                                 null as FLIGHT_NO,
+                                 null as FEE,
+                                 W.RECEIVE_METHOD as PICKUP_TYPE,
+                                 W.TARGET_ORG_CODE AS TARGET_ORG_Name,
+                                 W.last_load_org_code,
+                                 W.CREATE_ORG_CODE,
+                                 O.Name AS CREATE_ORG_NAME,
+                                 W.CREATE_TIME,
+                                 D.ARRIVE_OR_LEAVE AS STOCK_STATUS,
+                                 W.FREIGHT_METHOD AS MAKE_WAYBILL_WAY,
+                                 W.GOODS_WEIGHT_TOTAL,
+                                 W.GOODS_VOLUME_TOTAL,
+                                 to_char(W.GOODS_SIZE) AS GOODS_SIZE,
+                                 W.GOODS_NAME,
+                                 W.FLIGHT_NUMBER_TYPE AS FLIGHT_TYPE
+                   FROM pkp.T_SRV_WAYBILL     W,
+                        TFR.T_OPT_PATH_DETAIL D,
+                        bse.t_bas_org         O
+                  where D.Waybill_No = W.Waybill_No
+                    and W.CREATE_ORG_CODE = O.CODE
+                    and D.Objective_Org_Code = W.last_load_org_code
+                    and D.ARRIVE_OR_LEAVE in
+                    <foreach collection="stockStatusList" open="(" close=")" item="item" separator="," index="index"> 
+						#{item} 
+					</foreach>
+					and W.Active= #{active} 	
+			        and W.PRODUCT_CODE= #{productCode} 
+			        and  O.active =  #{active} 
+         			<include refid="airCargoVolume_Path_Where"/>
+                 union all
+                 select distinct W.WAYBILL_NO,
+                                 w.bill_weight as bill_weight,
+                                 AW.CREATE_TIME AS HANDOVER_TIME,
+                                 aw.dedt_org_name as dept_org_name,
+                                 aw.AIR_WAYBILL_NO as AIR_WAYBILL_NO,
+                                 aw.FLIGHT_NO as FLIGHT_NO,
+                                 aw.FEE /100 as FEE,
+                                 W.RECEIVE_METHOD as PICKUP_TYPE,
+                                 W.TARGET_ORG_CODE AS TARGET_ORG_Name,
+                                 W.last_load_org_code,
+                                 W.CREATE_ORG_CODE,
+                                 O.Name as CREATE_ORG_NAME,
+                                 W.CREATE_TIME,
+                                 D.Is_Loading AS STOCK_STATUS,
+                                 W.FREIGHT_METHOD AS MAKE_WAYBILL_WAY,
+                                 W.GOODS_WEIGHT_TOTAL,
+                                 W.GOODS_VOLUME_TOTAL,
+                                 to_char(W.GOODS_SIZE) AS GOODS_SIZE,
+                                 W.GOODS_NAME,
+                                 W.FLIGHT_NUMBER_TYPE AS FLIGHT_TYPE
+                   FROM pkp.T_SRV_WAYBILL                 W,
+                        tfr.T_OPT_AIR_WAYBILL_DETAIL      D,
+                        bse.t_bas_org                     O,
+                        tfr.t_opt_air_waybill             AW,
+                        tfr.t_opt_air_handoverbill        AH,
+                        tfr.t_opt_air_handoverbill_detail AHD
+                  where D.Waybill_No = W.Waybill_No
+                    and W.CREATE_ORG_CODE = O.CODE
+                    and d.air_waybill_id = aw.id(+)
+                    and aw.id = ahd.t_o_id(+)
+                    and ahd.air_handoverbill_id = ah.id(+)
+                    and D.Is_Loading= #{isLoad}  
+			        and W.Active= #{active} 	
+			        and W.PRODUCT_CODE= #{productCode} 
+			        and  O.active =  #{active}
+         			<include refid="airCargoVolume_AirWaybill_Where"/> 
+			        ) tab
+         	<include refid="airCargoVolume_Where"/>
+          group by tab.WAYBILL_NO,
+                   tab.bill_weight,
+                   tab.TARGET_ORG_Name,
+                   tab.CREATE_TIME,
+                   tab.MAKE_WAYBILL_WAY,
+                   tab.FLIGHT_TYPE,
+                   tab.GOODS_WEIGHT_TOTAL,
+                   tab.GOODS_VOLUME_TOTAL,
+                   tab.GOODS_SIZE,
+                   tab.GOODS_NAME,
+                   tab.CREATE_ORG_CODE,
+                   tab.CREATE_ORG_NAME,
+		           tab.PICKUP_TYPE
+          order by tab.CREATE_TIME desc)
+	</select>
+	
+	<!-- 运单库存查询条件 -->
+	<sql id="airCargoVolume_Where">
+		<where>
+			<if test="airCargoVolume.arrvRegionName!=null and airCargoVolume.arrvRegionName!='' ">	
+					AND tab.TARGET_ORG_Name = #{airCargoVolume.arrvRegionName} 				
+			</if>
+			<if test="stockStatusList!=null and stockStatusList!='' ">	
+					AND tab.stock_status in
+			        <foreach 
+						collection="stockStatusList" open="(" close=")" item="item" separator="," index="index"> 
+						#{item} 
+					</foreach>
+			</if>
+			<if test="airCargoVolume.flightType!=null and airCargoVolume.flightType!='' ">	
+					AND tab.FLIGHT_TYPE = #{airCargoVolume.flightType}
+			</if>
+			<if test="assembleOrgName!=null and assembleOrgName!='' ">	
+					AND tab.last_load_org_code = #{assembleOrgName}
+			</if>
+			
+			<if test="beginCreateTime!=null">
+				<![CDATA[ AND  tab.CREATE_TIME>= to_timestamp(#{beginCreateTime},'yyyy-mm-dd hh24:mi:ss')	 ]]> 
+			</if>
+			<if test=" endCreateTime!=null">
+				<![CDATA[ AND  tab.CREATE_TIME<= to_timestamp(#{endCreateTime},'yyyy-mm-dd hh24:mi:ss')	 ]]> 									
+			</if>
+			
+			<if test="handoverTimeBegin!=null and handoverTimeBegin!=''">
+				<![CDATA[AND tab.HANDOVER_TIME >= to_timestamp(#{handoverTimeBegin},'yyyy-mm-dd hh24:mi:ss')]]>
+			</if>
+			<if test="handoverTimeEnd!=null and handoverTimeEnd!=''">
+				<![CDATA[AND tab.HANDOVER_TIME <= to_timestamp(#{handoverTimeEnd},'yyyy-mm-dd hh24:mi:ss')]]>
+			</if>
+		</where>
+	</sql>
+	
+	<sql id="airCargoVolume_AirWaybill_Where">
+		<if test="airCargoVolume.arrvRegionName!=null and airCargoVolume.arrvRegionName!='' ">	
+				AND W.TARGET_ORG_CODE = #{airCargoVolume.arrvRegionName} 				
+		</if>
+		<if test="stockStatusList!=null and stockStatusList!='' ">	
+				AND D.Is_Loading in
+		        <foreach 
+					collection="stockStatusList" open="(" close=")" item="item" separator="," index="index"> 
+					#{item} 
+				</foreach>
+		</if>
+		<if test="airCargoVolume.flightType!=null and airCargoVolume.flightType!='' ">	
+				AND W.FLIGHT_NUMBER_TYPE = #{airCargoVolume.flightType}
+		</if>
+		<if test="assembleOrgName!=null and assembleOrgName!='' ">	
+				AND W.last_load_org_code = #{assembleOrgName}
+		</if>
+		
+		<if test="beginCreateTime!=null">
+			<![CDATA[ AND  w.CREATE_TIME>= to_timestamp(#{beginCreateTime},'yyyy-mm-dd hh24:mi:ss')	 ]]> 
+		</if>
+		<if test=" endCreateTime!=null">
+			<![CDATA[ AND  w.CREATE_TIME<= to_timestamp(#{endCreateTime},'yyyy-mm-dd hh24:mi:ss')	 ]]> 									
+		</if>
+		
+		<if test="handoverTimeBegin!=null and handoverTimeBegin!=''">
+			<![CDATA[AND AW.CREATE_TIME >= to_timestamp(#{handoverTimeBegin},'yyyy-mm-dd hh24:mi:ss')]]>
+		</if>
+		<if test="handoverTimeEnd!=null and handoverTimeEnd!=''">
+			<![CDATA[AND AW.CREATE_TIME <= to_timestamp(#{handoverTimeEnd},'yyyy-mm-dd hh24:mi:ss')]]>
+		</if>
+	</sql>
+	
+	<sql id="airCargoVolume_Path_Where">
+		<if test="airCargoVolume.arrvRegionName!=null and airCargoVolume.arrvRegionName!='' ">	
+				AND W.TARGET_ORG_CODE = #{airCargoVolume.arrvRegionName} 				
+		</if>
+		<if test="airCargoVolume.flightType!=null and airCargoVolume.flightType!='' ">	
+				AND W.FLIGHT_NUMBER_TYPE = #{airCargoVolume.flightType}
+		</if>
+		<if test="assembleOrgName!=null and assembleOrgName!='' ">	
+				AND W.last_load_org_code = #{assembleOrgName}
+		</if>
+		
+		<if test="beginCreateTime!=null">
+			<![CDATA[ AND  W.CREATE_TIME>= to_timestamp(#{beginCreateTime},'yyyy-mm-dd hh24:mi:ss')	 ]]> 
+		</if>
+		<if test=" endCreateTime!=null">
+			<![CDATA[ AND  W.CREATE_TIME<= to_timestamp(#{endCreateTime},'yyyy-mm-dd hh24:mi:ss')	 ]]> 									
+		</if>
+	</sql>
+	
+		<!-- 查询线路舱位明细 -->
+	<select id="airSpaceQuery" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirSpaceDetailVolumeDto" resultMap="airSpaceDetailResultMap" >
+		select S.ARRV_REGION_NAME, S.TAKE_OFF_DATE, D.FLIGHT_TYPE, SUM(D.SPACE_TOTAL) AS SPACE_TOTAL  FROM  tfr.T_OPT_AIR_SPACE S LEFT JOIN tfr.T_OPT_AIR_SPACE_DETAIL D ON S.ID=D.AIRSPACE_ID  
+		<where>
+	  		<if test="assembleOrgName!=null and assembleOrgName!=''">
+				AND S.ASSEMBLE_ORG_CODE = #{assembleOrgName} 
+			</if>	  		
+			<if test="arrvRegionName!=null and arrvRegionName!=''">
+				<![CDATA[AND S.ARRV_REGION_CODE = #{arrvRegionName}]]>
+			</if>
+			<if test="takeOffDate!=null and takeOffDate!=''">
+				<![CDATA[ AND  TAKE_OFF_DATE= to_timestamp(#{takeOffDate},'yyyy-mm-dd')	 ]]>				
+			</if>
+	  	</where>
+	  	<![CDATA[ group by S.ARRV_REGION_NAME, S.TAKE_OFF_DATE, D.FLIGHT_TYPE]]>
+	</select>
+	
+	<select id="airCargoVolumeForExport" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirCargoVolumeDto" resultMap="airCargoVolumeForExportResultMap">
+		select tab.WAYBILL_NO,
+                tab.bill_weight,
+                tab.total_fee,
+                LISTAGG(to_char(tab.handover_time,'yyyy-mm-dd hh24:mi:ss'), ',') within group(order by tab.CREATE_TIME DESC) handover_time,
+       			LISTAGG(tab.dept_org_name,',') within group(order by tab.CREATE_TIME DESC) dept_org_name,
+		        LISTAGG(tab.AIR_WAYBILL_NO,',') within group(order by tab.CREATE_TIME DESC) AIR_WAYBILL_NO,
+		        LISTAGG(tab.FLIGHT_NO,',') within group(order by tab.CREATE_TIME DESC) FLIGHT_NO,
+		        LISTAGG(tab.FEE,',') within group(order by tab.CREATE_TIME DESC) FEE,
+		        tab.PICKUP_TYPE as PICKUP_TYPE,
+		        LISTAGG(tab.air_name,',') within group(order by tab.CREATE_TIME DESC) air_name,
+		        LISTAGG(tab.dept_region_name,',') within group(order by tab.CREATE_TIME DESC) dept_region_name,
+		        LISTAGG(tab.AIR_ASSEMBLE_TYPE,',') within group(order by tab.CREATE_TIME DESC) AIR_ASSEMBLE_TYPE,
+		        LISTAGG(tab.JOINT_TICKET_NO,',') within group(order by tab.CREATE_TIME DESC) JOINT_TICKET_NO,
+		        LISTAGG(to_char(tab.FLIGHT_DATE,'yyyy-mm-dd'), ',') within group(order by tab.CREATE_TIME DESC) FLIGHT_DATE,
+		        LISTAGG(to_char(tab.TAKE_OFF_TIME,'hh24:mi'), ',') within group(order by tab.CREATE_TIME DESC) TAKE_OFF_TIME,
+		        LISTAGG(to_char(tab.ARRIVE_TIME,'hh24:mi'), ',') within group(order by tab.CREATE_TIME DESC) ARRIVE_TIME,
+		        LISTAGG(tab.GOODS_QTY,',') within group(order by tab.CREATE_TIME DESC) GOODS_QTY,
+		        LISTAGG(tab.PAYMENT_TYPE,',') within group(order by tab.CREATE_TIME DESC) PAYMENT_TYPE,
+		        LISTAGG(tab.RECEIVER_NAME,',') within group(order by tab.CREATE_TIME DESC) RECEIVER_NAME,
+		        LISTAGG(tab.AGENCY_NAME,',') within group(order by tab.CREATE_TIME DESC) AGENCY_NAME,
+		        LISTAGG(tab.HANDOVER_CREATE_NAME,',') within group(order by tab.CREATE_TIME DESC) HANDOVER_CREATE_NAME,
+		        LISTAGG(tab.HANDOVER_CREATE_ORG_NAME,',') within group(order by tab.CREATE_TIME DESC) HANDOVER_CREATE_ORG_NAME,
+                tab.TARGET_ORG_Name,
+                tab.CREATE_TIME,
+                LISTAGG(tab.STOCK_STATUS, ',') within
+          group(
+          order by tab.CREATE_TIME DESC) STOCK_STATUS, tab.MAKE_WAYBILL_WAY, tab.FLIGHT_TYPE, tab.GOODS_WEIGHT_TOTAL, tab.GOODS_VOLUME_TOTAL, tab.GOODS_SIZE, tab.GOODS_NAME, tab.CREATE_ORG_CODE, 
+          tab.CREATE_ORG_NAME,max( tab.receviceDept) receviceDept, max(tab.codAmount/100) codAmount
+           from (SELECT distinct W.WAYBILL_NO,
+                                 w.bill_weight as bill_weight,
+                                 w.total_fee / 100 as total_fee,
+                                 null as HANDOVER_TIME,
+                                 null as AIR_NAME,
+                                 null as dept_region_name,
+                                 null as dept_org_name,
+                                 null as AIR_WAYBILL_NO,
+                                 null as AIR_ASSEMBLE_TYPE,
+                                 null as JOINT_TICKET_NO,
+                                 null as FLIGHT_NO,
+                                 null as FLIGHT_DATE,
+                                 null as TAKE_OFF_TIME,
+                                 null as ARRIVE_TIME,
+                                 null as GOODS_QTY,
+                                 null as PAYMENT_TYPE,
+                                 null as RECEIVER_NAME,
+                                 null as FEE,
+                                 null as AGENCY_NAME,
+                                 W.RECEIVE_METHOD as PICKUP_TYPE,
+                                 null as HANDOVER_CREATE_NAME,
+                                 null as HANDOVER_CREATE_ORG_NAME,
+                                 W.TARGET_ORG_CODE AS TARGET_ORG_Name,
+                                 W.last_load_org_code,
+                                 W.CREATE_ORG_CODE,
+                                 O.Name AS CREATE_ORG_NAME,
+                                 W.CREATE_TIME,
+                                 D.ARRIVE_OR_LEAVE AS STOCK_STATUS,
+                                 W.FREIGHT_METHOD AS MAKE_WAYBILL_WAY,
+                                 W.GOODS_WEIGHT_TOTAL,
+                                 W.GOODS_VOLUME_TOTAL,
+                                 to_char(W.GOODS_SIZE) AS GOODS_SIZE,
+                                 W.GOODS_NAME,
+                                 W.FLIGHT_NUMBER_TYPE AS FLIGHT_TYPE,
+                                 o2.name as receviceDept,
+                                 w.cod_amount as codAmount
+                   FROM pkp.T_SRV_WAYBILL     W,
+                        TFR.T_OPT_PATH_DETAIL D,
+                        bse.t_bas_org         O,
+                        bse.t_bas_org         O2
+                  where D.Waybill_No = W.Waybill_No
+                    and W.CREATE_ORG_CODE = O.CODE
+                    and D.Objective_Org_Code = W.last_load_org_code
+                    and o2.code=w.receive_org_code
+                    and D.ARRIVE_OR_LEAVE in
+                    <foreach collection="stockStatusList" open="(" close=")" item="item" separator="," index="index"> 
+						#{item} 
+					</foreach>
+					and W.Active= #{active} 	
+			        and W.PRODUCT_CODE= #{productCode} 
+			        and  O.active =  #{active} 
+         			<include refid="airCargoVolume_Path_Where"/>
+                 union all
+                 select distinct W.WAYBILL_NO,
+                                 w.bill_weight as bill_weight,
+                                 w.total_fee / 100 as total_fee,
+                                 AW.CREATE_TIME AS HANDOVER_TIME,
+                                 AHD.AIR_LINE_NAME as air_name,
+                                 aw.dept_region_name as dept_region_name,
+                                 aw.dedt_org_name as dept_org_name,
+                                 aw.AIR_WAYBILL_NO as AIR_WAYBILL_NO,
+                                 aw.AIR_ASSEMBLE_TYPE as AIR_ASSEMBLE_TYPE,
+                                 aw.JOINT_TICKET_NO as JOINT_TICKET_NO,
+                                 aw.FLIGHT_NO as FLIGHT_NO,
+                                 aw.FLIGHT_DATE as FLIGHT_DATE,
+                                 aw.TAKE_OFF_TIME as TAKE_OFF_TIME,
+                                 aw.ARRIVE_TIME as ARRIVE_TIME,
+                                 aw.GOODS_QTY as GOODS_QTY,
+                                 aw.PAYMENT_TYPE as PAYMENT_TYPE,
+                                 aw.RECEIVER_NAME as RECEIVER_NAME,
+                                 aw.FEE /100 as FEE,
+                                 aw.AGENCY_NAME as AGENCY_NAME,
+                                 W.RECEIVE_METHOD as PICKUP_TYPE,
+                                 aw.CREATE_USER_NAME as HANDOVER_CREATE_NAME,
+                                 aw.CREATE_ORG_NAME as HANDOVER_CREATE_ORG_NAME,
+                                 W.TARGET_ORG_CODE AS TARGET_ORG_Name,
+                                 W.last_load_org_code,
+                                 W.CREATE_ORG_CODE,
+                                 O.Name as CREATE_ORG_NAME,
+                                 W.CREATE_TIME,
+                                 D.Is_Loading AS STOCK_STATUS,
+                                 W.FREIGHT_METHOD AS MAKE_WAYBILL_WAY,
+                                 W.GOODS_WEIGHT_TOTAL,
+                                 W.GOODS_VOLUME_TOTAL,
+                                 to_char(W.GOODS_SIZE) AS GOODS_SIZE,
+                                 W.GOODS_NAME,
+                                 W.FLIGHT_NUMBER_TYPE AS FLIGHT_TYPE,
+                                 o2.name as receviceDept,
+                                 w.cod_amount as codAmount
+                   FROM pkp.T_SRV_WAYBILL                 W,
+                        tfr.T_OPT_AIR_WAYBILL_DETAIL      D,
+                        bse.t_bas_org                     O,
+                        bse.t_bas_org                     O2,
+                        tfr.t_opt_air_waybill             AW,
+                        tfr.t_opt_air_handoverbill        AH,
+                        tfr.t_opt_air_handoverbill_detail AHD
+                  where D.Waybill_No = W.Waybill_No
+                    and W.CREATE_ORG_CODE = O.CODE
+                    and o2.code=w.receive_org_code
+                    and d.air_waybill_id = aw.id(+)
+                    and aw.id = ahd.t_o_id(+)
+                    and ahd.air_handoverbill_id = ah.id(+)
+                    and D.Is_Loading= #{isLoad}  
+			        and W.Active= #{active} 	
+			        and W.PRODUCT_CODE= #{productCode} 
+			        and  O.active =  #{active} 
+         			<include refid="airCargoVolume_AirWaybill_Where"/> 
+			        ) tab
+         	<include refid="airCargoVolume_Where"/>
+          group by tab.WAYBILL_NO,
+                   tab.bill_weight,
+                   tab.total_fee,
+                   tab.TARGET_ORG_Name,
+                   tab.CREATE_TIME,
+                   tab.MAKE_WAYBILL_WAY,
+                   tab.FLIGHT_TYPE,
+                   tab.GOODS_WEIGHT_TOTAL,
+                   tab.GOODS_VOLUME_TOTAL,
+                   tab.GOODS_SIZE,
+                   tab.GOODS_NAME,
+                   tab.CREATE_ORG_CODE,
+                   tab.CREATE_ORG_NAME,
+		           tab.PICKUP_TYPE
+          order by tab.CREATE_TIME desc
+		
+	</select>
+	
+</mapper>

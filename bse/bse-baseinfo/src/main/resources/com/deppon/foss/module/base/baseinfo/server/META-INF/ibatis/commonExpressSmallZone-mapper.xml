@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.commonExpressSmallZone">
+	<resultMap id="expressSmallZoneResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.CommonExpressSmallZoneEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="REGION_CODE" property="regionCode" jdbcType="VARCHAR" />
+		<result column="REGION_NAME" property="regionName" jdbcType="VARCHAR" />
+		<result column="MANAGEMENT" property="management" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+		<result column="VIRTUAL_CODE" jdbcType="VARCHAR" property="virtualCode" />
+		<result column="REGION_TYPE" property="regionType" jdbcType="VARCHAR" />
+		<result column="GISID" property="gisid" jdbcType="VARCHAR" />
+		<result column="BIGZONECODE" property="bigzonecode" jdbcType="VARCHAR" />
+		<result column="PROVCODE" property="provCode" jdbcType="VARCHAR" />
+		<result column="CITYCODE" property="cityCode" jdbcType="VARCHAR" />
+		<result column="COUNTYCODE" property="countyCode" jdbcType="VARCHAR" />
+		<result column="GIS_AREA" property="gisArea" jdbcType="VARCHAR" />
+	</resultMap>
+	<!-- 数据字段 -->
+	<sql id="smallZone_Column_List">
+		ID, REGION_CODE, REGION_NAME, MANAGEMENT,
+		CREATE_TIME,
+		MODIFY_TIME,
+		ACTIVE, CREATE_USER_CODE, MODIFY_USER_CODE,
+		NOTES,VIRTUAL_CODE,
+		REGION_TYPE, GISID,
+		BIGZONECODE,PROVCODE,CITYCODE,COUNTYCODE,GIS_AREA
+	</sql>
+
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="regionCode != null and regionCode != ''">
+				and REGION_CODE like
+				CONCAT(CONCAT('%',#{regionCode}),'%')
+			</if>
+			<if test="regionName != null and regionName != ''">
+				and REGION_NAME like
+				CONCAT(CONCAT('%',#{regionName}),'%')
+			</if>
+			<if test="regionType != null and regionType != ''">
+				and REGION_TYPE = #{regionType,jdbcType=VARCHAR}
+			</if>
+			 <if test="management != null and management != ''">
+				and MANAGEMENT = #{management,jdbcType=VARCHAR}
+			</if> 
+			<if test="managementCodeList!=null and managementCodeList.size > 0">
+				and MANAGEMENT in
+				<foreach collection="managementCodeList" index="index" item="code" open="("
+					separator="," close=")">
+					#{code}
+				</foreach>
+			</if>
+		</where>
+	</sql>
+	<select id="queryCommonExpressSmallZoneList" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CommonExpressSmallZoneEntity" resultMap="expressSmallZoneResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询集中接送货小区信息 **/
+		]]>
+		<include refid="smallZone_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_EXPRESS_SMALLZONE T
+		]]>
+		<include refid="queryWhere" />
+	</select>
+	<!-- 统计总记录数 -->
+	<select id="queryCommonExpressSmallZoneCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CommonExpressSmallZoneEntity">
+	    <![CDATA[
+	       	select/** 综合:统计总记录数 **/ count(*) from BSE.T_BAS_EXPRESS_SMALLZONE T
+	    ]]>
+		<include refid="queryWhere" />
+
+	</select>
+</mapper>

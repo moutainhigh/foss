@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!-- "外请车（拖头、挂车、厢式车）" -->
+<mapper namespace="foss.bse.bse-baseinfo.depotAddress">
+	<resultMap id="depotAddressMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.DepotAddressEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="DEPOT_NAME" property="depotName" jdbcType="VARCHAR" />
+		<result column="DEPOT_STATE" property="depotState" jdbcType="CHAR" />
+		<result column="DEPOT_TYPE" property="depotType" jdbcType="CHAR" />
+		<result column="DEPOT_REMARK" property="depotRemark" jdbcType="VARCHAR" />
+		<result column="PROV_CODE" property="provCode" jdbcType="VARCHAR" />
+		<result column="CITY_CODE" property="cityCode" jdbcType="VARCHAR" />
+		<result column="COUNTY_CODE" property="countyCode" jdbcType="VARCHAR" />
+		<result column="ADDRESS" property="address" jdbcType="VARCHAR" />
+		<result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+		<result column="LONGITUDE" property="longitude" jdbcType="VARCHAR" />
+		<result column="LATITUDE" property="latitude" jdbcType="VARCHAR" />
+		<result column="REPULSE_REASON" property="repulseReason" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="VARCHAR" />
+		<result column="PROVSTR" property="provCodeStr" jdbcType="VARCHAR" />
+		<result column="CITYSTR" property="cityCodeStr" jdbcType="VARCHAR" />
+		<result column="COUNTYSTR" property="countyCodeStr" jdbcType="VARCHAR" />
+		<result column="ORGNAME" property="orgName" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="CONFIRMDATETIME" property="confirmDateTime" jdbcType="TIMESTAMP" />
+	</resultMap>
+	
+	<sql id="columns">
+		ID,
+		DEPOT_NAME,
+		DEPOT_STATE,
+		DEPOT_TYPE,
+		DEPOT_REMARK,
+		PROV_CODE,
+		CITY_CODE,
+		COUNTY_CODE,
+		ADDRESS,
+		ORG_CODE,
+		LONGITUDE,
+		LATITUDE,
+		REPULSE_REASON,
+		CREATE_TIME,
+		MODIFY_TIME,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE,
+		ACTIVE,
+		PROVSTR,
+		CITYSTR,
+		COUNTYSTR,
+		ORGNAME,
+		CONFIRMDATETIME
+	</sql>
+	
+	<sql id="values">
+		#{id,jdbcType=VARCHAR},
+		#{depotName,jdbcType=VARCHAR}, 
+		#{depotState,jdbcType=CHAR}, 
+		#{depotType,jdbcType=CHAR},
+		#{depotRemark,jdbcType=VARCHAR}, 
+		#{provCode,jdbcType=VARCHAR},
+		#{cityCode,jdbcType=VARCHAR}, 
+		#{countyCode,jdbcType=VARCHAR},
+		#{address,jdbcType=VARCHAR},
+		#{orgCode,jdbcType=VARCHAR}, 
+		#{longitude, jdbcType=VARCHAR},
+		#{latitude, jdbcType=VARCHAR},
+		#{repulseReason, jdbcType=VARCHAR},
+		#{createDate, jdbcType=TIMESTAMP},
+		#{modifyDate, jdbcType=TIMESTAMP},
+		#{createUser, jdbcType=VARCHAR},
+		#{modifyUser, jdbcType=VARCHAR},
+		#{active, jdbcType=CHAR},
+		#{provCodeStr,jdbcType=VARCHAR},
+		#{cityCodeStr,jdbcType=VARCHAR},
+		#{countyCodeStr,jdbcType=VARCHAR},
+		#{orgName,jdbcType=VARCHAR},
+		#{confirmDateTime, jdbcType=TIMESTAMP}
+	</sql>
+	
+	<!-- 根据营业部查询进仓地址-->
+	<select id="queryDepotAddressByDepCode" resultMap="depotAddressMap"
+	 parameterType="java.lang.String">
+	 	SELECT
+	 	<include refid="columns"/>
+	 	FROM BSE.T_BAS_DEPOT_INFO o
+	 	WHERE
+	 		o.DEPOT_STATE = '2'
+	 		AND o.ORG_CODE =  #{depCode,jdbcType=VARCHAR}
+	 </select>
+	
+	<!-- 插入进仓地址 -->
+	<insert id="addDepotAddress" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.DepotAddressEntity">
+		insert into BSE.T_BAS_DEPOT_INFO (
+		<include refid="columns"/>
+		) values ( 
+		<include refid="values"/>
+		)
+	</insert>
+	
+	<!-- 分页查询进仓地址  -->
+	<select id="queryDepotAddress" resultMap="depotAddressMap" 
+	parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.DepotAddressEntity">
+		SELECT
+	 		<include refid="columns"/>
+	 	FROM BSE.T_BAS_DEPOT_INFO o
+	 	WHERE
+	 		<!-- o.ACTIVE = 'Y' -->
+	 		1 = 1  
+	 		<if test="orgCode != null and orgCode != ''">
+		     	AND o.ORG_CODE =  #{orgCode,jdbcType=VARCHAR}
+		    </if>
+		    <if test="depotState != null and depotState != ''">
+		     	AND o.DEPOT_STATE =  #{depotState,jdbcType=CHAR}
+		    </if>
+		    <if test="depotType != null and depotType != ''">
+		     	AND o.DEPOT_TYPE =  #{depotType,jdbcType=CHAR}
+		    </if>
+		    <if test="depotName != null and depotName != ''">
+		     	AND  o.DEPOT_NAME LIKE '%'||#{depotName}||'%'
+		    </if>
+		    <if test="provCode != null and provCode != ''">
+		     	AND o.PROV_CODE =  #{provCode,jdbcType=VARCHAR}
+		    </if>
+		    <if test="cityCode != null and cityCode != ''">
+		     	AND o.CITY_CODE =  #{cityCode,jdbcType=VARCHAR}
+		    </if>
+		    <if test="countyCode != null and countyCode != ''">
+		     	AND o.COUNTY_CODE =  #{countyCode,jdbcType=VARCHAR}
+		    </if>
+		 ORDER BY o.DEPOT_STATE,o.CREATE_TIME DESC
+	</select>
+	
+	
+	<!-- 查询进仓地址总数 -->
+	<select id="getCountByCondition" resultType="java.lang.Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.DepotAddressEntity">
+		select/** 综合:统计总记录数**/ count(*) from BSE.T_BAS_DEPOT_INFO o
+		WHERE
+	 		1 = 1
+	 		<if test="orgCode != null and orgCode != ''">
+		     	AND o.ORG_CODE =  #{orgCode,jdbcType=VARCHAR}
+		    </if>
+		    <if test="depotState != null and depotState != ''">
+		     	AND o.DEPOT_STATE =  #{depotState,jdbcType=CHAR}
+		    </if>
+		    <if test="depotType != null and depotType != ''">
+		     	AND o.DEPOT_TYPE =  #{depotType,jdbcType=CHAR}
+		    </if>
+		    <if test="depotName != null and depotName != ''">
+		     	AND o.DEPOT_NAME =  #{depotName,jdbcType=VARCHAR}
+		    </if>
+		    <if test="provCode != null and provCode != ''">
+		     	AND o.PROV_CODE =  #{provCode,jdbcType=VARCHAR}
+		    </if>
+		    <if test="cityCode != null and cityCode != ''">
+		     	AND o.CITY_CODE =  #{cityCode,jdbcType=VARCHAR}
+		    </if>
+		    <if test="countyCode != null and countyCode != ''">
+		     	AND o.COUNTY_CODE =  #{orgCode,jdbcType=VARCHAR}
+		    </if>
+	</select>
+	
+	
+	<!-- 修改进仓地址  -->
+	<update id="updateDepotAddress"
+	parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.DepotAddressEntity">
+	update/** 综合:修改信息**/ BSE.T_BAS_DEPOT_INFO o
+		<set>
+			
+			<if test="orgCode != null and orgCode != ''">
+		     	o.ORG_CODE =  #{orgCode,jdbcType=VARCHAR},
+		    </if>
+		    <if test="depotState != null and depotState != ''">
+		     	o.DEPOT_STATE =  #{depotState,jdbcType=CHAR},
+		    </if>
+		    <if test="depotType != null and depotType != ''">
+		     	o.DEPOT_TYPE =  #{depotType,jdbcType=CHAR},
+		    </if>
+		    <if test="depotName != null and depotName != ''">
+		     	o.DEPOT_NAME =  #{depotName,jdbcType=VARCHAR},
+		    </if>
+		    <if test="provCode != null and provCode != ''">
+		     	o.PROV_CODE =  #{provCode,jdbcType=VARCHAR},
+		    </if>
+		    <if test="cityCode != null and cityCode != ''">
+		     	o.CITY_CODE =  #{cityCode,jdbcType=VARCHAR},
+		    </if>
+		    <if test="countyCode != null and countyCode != ''">
+		     	o.COUNTY_CODE =  #{orgCode,jdbcType=VARCHAR},
+		    </if>
+		    <if test="depotRemark != null and depotRemark != ''">
+		     	o.REPULSE_REASON =  #{depotRemark,jdbcType=VARCHAR},
+		    </if>
+		    <if test="provCodeStr != null and provCodeStr != ''">
+		     	o.PROVSTR =  #{provCodeStr,jdbcType=VARCHAR},
+		    </if>
+		    <if test="cityCodeStr != null and cityCodeStr != ''">
+		     	o.CITYSTR =  #{cityCodeStr,jdbcType=VARCHAR},
+		    </if>
+		    <if test="countyCodeStr != null and countyCodeStr != ''">
+		     	o.COUNTYSTR =  #{countyCodeStr,jdbcType=VARCHAR},
+		    </if>
+		    <if test="address != null and address != ''">
+		     	o.ADDRESS =  #{address,jdbcType=VARCHAR},
+		    </if>
+		    <if test="orgName != null and orgName != ''">
+		     	o.ORGNAME =  #{orgName,jdbcType=VARCHAR},
+		    </if>
+		    <if test="confirmDateTime != null">
+		     	o.CONFIRMDATETIME =  #{confirmDateTime,jdbcType=TIMESTAMP},
+		    </if>
+		    <if test="longitude != null and longitude != ''">
+		     	o.LONGITUDE =  #{longitude,jdbcType=VARCHAR},
+		    </if>
+		    <if test="latitude != null and latitude != ''">
+		     	o.LATITUDE =  #{latitude,jdbcType=VARCHAR},
+		    </if>
+		    <if test="repulseReason != null and repulseReason != ''">
+		     	o.REPULSE_REASON =  #{repulseReason,jdbcType=VARCHAR},
+		    </if>
+		    <if test="active != null and active != ''">
+		     	o.ACTIVE =  #{active,jdbcType=CHAR},
+		    </if>
+		    <if test="modifyUser != null and modifyUser != ''">
+		     	o.MODIFY_USER_CODE =  #{modifyUser,jdbcType=VARCHAR},
+		    </if>
+		    <if test="modifyDate != null">
+		     	o.MODIFY_TIME =  #{modifyDate,jdbcType=TIMESTAMP},
+		    </if>
+		</set>
+		WHERE
+			1 = 1
+		    <if test="id != null and id != ''">
+		     	AND o.ID =  #{id,jdbcType=VARCHAR}
+		    </if>
+	</update>
+	
+	<!-- 作废 -->
+	<update id="deleteDepotAddress"
+	parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.DepotAddressEntity">
+	update/** 综合:修改信息**/ BSE.T_BAS_DEPOT_INFO o
+		<set>
+		    <if test="active != null and active != ''">
+		     	o.ACTIVE =  #{active,jdbcType=CHAR},
+		    </if>
+		    <if test="modifyUser != null and modifyUser != ''">
+		     	o.MODIFY_USER_CODE =  #{modifyUser,jdbcType=VARCHAR},
+		    </if>
+		    <if test="modifyDate != null">
+		     	o.MODIFY_TIME =  #{modifyDate,jdbcType=TIMESTAMP},
+		    </if>
+		    <if test="depotState != null and depotState != ''">
+		     	o.DEPOT_STATE =  #{depotState,jdbcType=CHAR},
+		    </if>
+		</set>
+		WHERE
+			1 = 1
+		    <if test="id != null and id != ''">
+		     	AND o.ID =  #{id,jdbcType=VARCHAR}
+		    </if>
+		    <if test="batchIds != null and batchIds != ''">
+		    	and o.ID in 
+					<foreach collection="batchIds" item="batchId" index="index" open="(" separator="," close=")" >
+			        	#{batchId}
+			    	</foreach>
+		    </if>
+		    
+	</update>
+</mapper>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://www.springframework.org/schema/jee 
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+			http://www.springframework.org/schema/aop 
+			http://www.springframework.org/schema/aop/spring-aop-3.0.xsd"
+	default-autowire="byName" default-lazy-init="true">
+
+	<!-- 接收应收信合和应收费用明细结果处理器 -->
+	<bean id="billReceivableNewPtpProcess" class="com.deppon.foss.module.settlement.ptpitf.server.esb.BillReceivableNewPtpProcess">
+	</bean>
+	
+	<!-- 接收应付信合和应付费用明细结果处理器 -->
+	<bean id="billPayableNewPtpProcess" class="com.deppon.foss.module.settlement.ptpitf.server.esb.BillPayableNewPtpProcess">
+	</bean>
+	
+	<!-- 接收更改应收单信息合和应收费用明细结果处理器 -->
+	<bean id="billReceivableFinaChangeProcessor" class="com.deppon.foss.module.settlement.ptpitf.server.esb.BillReceivableFinaChangeProcessor">
+	</bean>
+
+    <!-- 接收应付信合和应付费用明细结果处理器 -->
+    <bean id="billPayableFinaChangeProcessor" class="com.deppon.foss.module.settlement.ptpitf.server.esb.BillPayableFinaChangeProcessor">
+    </bean>
+    
+     <!-- 接收PTP自动付款结果回调 -->
+    <bean id="billAutoPayPtpCallBack" class="com.deppon.foss.module.settlement.ptpitf.server.esb.BillAutoPayPtpCallBack">
+    </bean>
+    
+    <!-- 网上支付核销与作废还款单 add by 269044-zhurongrong -->
+    <bean id ="sendStatusToPtpCallBack" class = "com.deppon.foss.module.settlement.ptpitf.server.inter.SendStatusToPtpCallBack">
+    </bean>
+	
+	<!-- 启动MQ监听 -->
+	<bean id="esbInitUtil" class="com.deppon.esb.api.util.ESBInitUtil" init-method="process" lazy-init="false">
+		<property name="processMap">
+			<map>
+				<entry key="FOSS_ESB2FOSS_ADD_RECEIVABLEBILL" value-ref="billReceivableNewPtpProcess" />
+				<entry key="FOSS_ESB2FOSS_ADD_PAYABLE_BILL" value-ref="billPayableNewPtpProcess" />
+				<entry key="FOSS_ESB2FOSS_UPDATE_RECEIVABLE" value-ref="billReceivableFinaChangeProcessor" />
+                <entry key="FOSS_ESB2FOSS_UPDATE_PAYABLE_BILL" value-ref="billPayableFinaChangeProcessor" />
+			</map>
+		</property>
+		
+		<!-- 异步接口回调 -->
+		<property name="callBackProcessMap">
+			<map>
+				 <entry key="ESB_FOSS2ESB_PARTNER_AUTOPAY" value-ref="billAutoPayPtpCallBack"></entry> 
+				 <entry key="ESB_FOSS2ESB_SEND_WITHHOLD_STATUS" value-ref="sendStatusToPtpCallBack"></entry>
+			</map>
+		</property>	
+	</bean>
+</beans>

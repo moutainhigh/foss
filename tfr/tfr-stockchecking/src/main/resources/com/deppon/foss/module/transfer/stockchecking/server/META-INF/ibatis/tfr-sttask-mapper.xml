@@ -1,0 +1,1028 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.tfr.StTaskDao" >
+  <resultMap id="stTaskResultMap" type="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StTaskEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="TASK_NO" property="taskNo" jdbcType="VARCHAR" />
+    <result column="GOODSAREACODE" property="goodsareacode" jdbcType="VARCHAR" />
+    <result column="GOODSAREANAME" property="goodsareaname" jdbcType="VARCHAR" />
+    <result column="TASK_STATUS" property="taskStatus" jdbcType="VARCHAR" />
+    <result column="DEPTCODE" property="deptcode" jdbcType="VARCHAR" />
+    <result column="CREATETIME" property="createtime" jdbcType="TIMESTAMP" />
+    <result column="FINISHTIME" property="finishtime" jdbcType="TIMESTAMP" />
+    <result column="ISPDA" property="ispda" jdbcType="CHAR" />
+    <result column="PDA_NO" property="pdaNo" jdbcType="VARCHAR" />
+    <result column="CREATOR_CODE" property="creatorCode" jdbcType="VARCHAR" />
+    <result column="CREATOR_NAME" property="creatorName" jdbcType="VARCHAR" />
+    <result column="startQty" property="startQty" jdbcType="INTEGER"/>
+    <result column="endQty" property="endQty" jdbcType="INTEGER"/>
+  </resultMap>
+  <resultMap id="stTaskDtoResultMap" type="com.deppon.foss.module.transfer.stockchecking.api.shared.dto.StTaskDto" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="TASK_NO" property="taskNo" jdbcType="VARCHAR" />
+    <result column="GOODSAREANAME" property="goodsareaname" jdbcType="VARCHAR" />
+    <result column="ISPDA" property="ispda" jdbcType="CHAR" />
+    <result column="TASK_STATUS" property="taskStatus" jdbcType="VARCHAR" />
+    <result column="taskStatusValue" property="taskStatusValue" jdbcType="VARCHAR" />
+    <result column="REPORT_CODE" property="reportCode" jdbcType="VARCHAR" />
+    <result column="HANDLE_STATUS" property="handleStatus" jdbcType="VARCHAR" />
+    <result column="EMP_NAME" property="empName" jdbcType="VARCHAR" />
+    <result column="CREATETIME" property="createtime" jdbcType="TIMESTAMP" />
+    <result column="FINISHTIME" property="finishtime" jdbcType="TIMESTAMP" />
+    <result column="transferCenter" property="transferCenter" jdbcType="VARCHAR" />
+    <result column="startQty" property="startQty" jdbcType="INTEGER"/>
+    <result column="endQty" property="endQty" jdbcType="INTEGER"/>
+    <result column="passTwoHours" property="passTwoHours" jdbcType="VARCHAR" />
+    <result column="RECEIVE_METHOD" property="receiveMethod" jdbcType="VARCHAR"/>
+    <result column="DISTRICT_CODE" property="districtCode" jdbcType="VARCHAR"/>
+    <result column="DISTRICT_NAME" property="districtName" jdbcType="VARCHAR"/>
+    <result column="GOODSAREACODE" property="goodsareacode" jdbcType="VARCHAR"/>
+    <result column="creator_code" property="creatorCode" jdbcType="VARCHAR"/>
+  </resultMap>
+  <resultMap id="goodsStockDtoResultMap" type="com.deppon.foss.module.transfer.stockchecking.api.shared.dto.GoodsStockDto" >
+    <id column="GOODS_AREA_CODE" property="goodsAreaCode" jdbcType="VARCHAR" />
+    <result column="GOODS_AREA_NAME" property="goodsAreaName" jdbcType="VARCHAR" />
+    <result column="waybillNum" property="waybillNum" jdbcType="VARCHAR" />
+    <result column="stockGoodsQty" property="stockGoodsQty" jdbcType="CHAR" />
+    <result column="goodWeightTotal" property="goodWeightTotal" jdbcType="DOUBLE" />
+    <result column="goodVolumeTotal" property="goodVolumeTotal" jdbcType="DOUBLE" />
+  </resultMap>
+  <resultMap id="stWaybillInfoDtoResultMap" type="com.deppon.foss.module.transfer.stockchecking.api.shared.dto.StWaybillInfoDto" >
+    <id column="waybillNo" property="waybillNo" jdbcType="VARCHAR" />
+    <result column="productCode" property="productCode" jdbcType="VARCHAR" />
+    <result column="productCodeDesc" property="productCodeDesc" jdbcType="VARCHAR" />
+    <result column="goodsAreaNum" property="goodsAreaNum" jdbcType="CHAR" />
+    <result column="scanNum" property="scanNum" jdbcType="VARCHAR" />
+    <result column="weight" property="weight" jdbcType="DOUBLE" />
+    <result column="volume" property="volume" jdbcType="DOUBLE" />
+  </resultMap>
+  <resultMap id="stTaskDtoSubResultMap" type="com.deppon.foss.module.transfer.stockchecking.api.shared.dto.StTaskDto" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="TASK_NO" property="taskNo" jdbcType="VARCHAR" />
+    <result column="GOODSAREACODE" property="goodsareacode" jdbcType="VARCHAR" />
+    <result column="GOODSAREANAME" property="goodsareaname" jdbcType="VARCHAR" />
+    <result column="TASK_STATUS" property="taskStatus" jdbcType="VARCHAR" />
+    <result column="DEPTCODE" property="deptcode" jdbcType="VARCHAR" />
+    <result column="CREATETIME" property="createtime" jdbcType="TIMESTAMP" />
+    <result column="FINISHTIME" property="finishtime" jdbcType="TIMESTAMP" />
+    <result column="ISPDA" property="ispda" jdbcType="CHAR" />
+    <collection property="stSnapshotList" column="ID" javaType="ArrayList"
+    	ofType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StTaskListEntity" 
+    	select="foss.tfr.StTaskListDao.selectStSnapshotListByStId">
+    </collection>
+    <collection property="stResultList" column="ID" javaType="ArrayList"
+    	ofType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StResultListEntity" 
+    	select="foss.tfr.StResultListDao.selectStResultListByStId">
+    </collection>
+  </resultMap>
+  <sql id="stTask_Column_List" >
+    ID, TASK_NO, GOODSAREACODE, GOODSAREANAME, TASK_STATUS, DEPTCODE, CREATETIME, FINISHTIME, 
+    ISPDA,PDA_NO,CREATOR_CODE,CREATOR_NAME,STARTQTY,ENDQTY
+  </sql>
+  <select id="queryStTaskById" resultMap="stTaskResultMap" parameterType="java.lang.String" >
+    select 
+    <include refid="stTask_Column_List" />
+    from TFR.T_OPT_ST_TASK
+    where ID = #{stTaskId,jdbcType=VARCHAR}
+  </select>
+  <select id="queryStTaskDtoList" resultMap="stTaskDtoResultMap" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.dto.StTaskDto">
+  	select distinct a.ID, a.TASK_NO, a.GOODSAREANAME, a.ISPDA, a.TASK_STATUS, a.TASK_STATUS as taskStatusValue, b.REPORT_CODE, b.HANDLE_STATUS, a.CREATETIME, a.FINISHTIME
+  			,case when (a.task_status = 'DOING' and  <![CDATA[a.createtime < sysdate - 2 / 24]]>) 
+  				 then 'Y' else  'N' end passTwoHours
+  		from TFR.t_opt_st_task a
+      		,TFR.t_opt_st_differ_report b
+          where a.id = b.st_task_id(+)
+            and a.DEPTCODE = #{currentDeptCode}
+   		  <if test="taskNo != null and taskNo != '' ">
+   		  	and a.TASK_NO like '%'||#{taskNo}||'%' 
+   		  </if>
+   		  <if test="goodsArea != null and goodsArea != '' ">
+   		  	and a.GOODSAREACODE = #{goodsArea} 
+   		  </if>
+   		  <if test="taskStatus != null and taskStatus != 'ALL' ">
+   		  	and a.TASK_STATUS = #{taskStatus,jdbcType=VARCHAR}
+   		  </if>
+   		  <if test="createtime != null ">
+   		  	<![CDATA[ and a.CREATETIME >= #{createtime,jdbcType=TIMESTAMP} ]]>
+   		  </if>
+   		  <if test="finishtime != null ">
+   		  	<![CDATA[ and a.CREATETIME <= #{finishtime,jdbcType=TIMESTAMP} ]]>
+   		  </if>
+   		  <if test="goodsAreaUsage != null and goodsAreaUsage != 'ALL' ">
+   		  	and c.GOODS_AREA_USAGE = #{goodsAreaUsage,jdbcType=VARCHAR}
+   		  </if>
+   		  <if test="empCode != null and empCode != '' ">
+   		  	and exists(select 1 from TFR.T_OPT_ST_OPERATOR ee 
+   		  	             where ee.ST_TASK_ID = a.ID and ee.EMP_CODE = #{empCode})
+   		  </if>
+   		  order by a.CREATETIME desc
+  </select>
+  <select id="queryTransferCenterStTaskDtoList" resultMap="stTaskDtoResultMap" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.dto.StTaskDto">
+  	select distinct a.ID, a.TASK_NO, a.GOODSAREANAME, a.ISPDA, a.TASK_STATUS, a.TASK_STATUS as taskStatusValue, b.REPORT_CODE, b.HANDLE_STATUS, a.CREATETIME, a.FINISHTIME
+  			,case when (a.task_status = 'DOING' and  <![CDATA[a.createtime < sysdate - 2 / 24]]>) 
+  				 then  'Y'  else  'N'  end passTwoHours
+  		from TFR.t_opt_st_task a
+      		,TFR.t_opt_st_differ_report b
+            ,bse.T_BAS_GOODS_AREA c
+          where a.id = b.st_task_id(+)
+            and a.goodsareacode = c.goods_area_code
+            and a.DEPTCODE = c.ORG_CODE
+            and a.DEPTCODE = #{currentDeptCode}
+            and c.ACTIVE = 'Y'
+   		  <if test="taskNo != null and taskNo != '' ">
+   		  	and a.TASK_NO like '%'||#{taskNo}||'%' 
+   		  </if>
+   		  <if test="goodsArea != null and goodsArea != '' ">
+   		  	and a.GOODSAREACODE = #{goodsArea} 
+   		  </if>
+   		  <if test="taskStatus != null and taskStatus != 'ALL' ">
+   		  	and a.TASK_STATUS = #{taskStatus,jdbcType=VARCHAR}
+   		  </if>
+   		  <if test="createtime != null ">
+   		  	<![CDATA[ and a.CREATETIME >= #{createtime,jdbcType=TIMESTAMP} ]]>
+   		  </if>
+   		  <if test="finishtime != null ">
+   		  	<![CDATA[ and a.CREATETIME <= #{finishtime,jdbcType=TIMESTAMP} ]]>
+   		  </if>
+   		  <if test="goodsAreaUsage != null and goodsAreaUsage != 'ALL' ">
+   		  	and c.GOODS_AREA_USAGE = #{goodsAreaUsage,jdbcType=VARCHAR}
+   		  </if>
+   		  <if test="empCode != null and empCode != '' ">
+   		  	and exists(select 1 from TFR.T_OPT_ST_OPERATOR ee 
+   		  	             where ee.ST_TASK_ID = a.ID and ee.EMP_CODE = #{empCode})
+   		  </if>
+   		  order by a.CREATETIME desc
+  </select>
+  <select id="queryStTaskDtoListCount" resultType="Long" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.dto.StTaskDto">
+	select count(distinct a.id)
+  		from TFR.t_opt_st_task a
+      		,TFR.t_opt_st_differ_report b
+          where a.id = b.st_task_id(+)
+            and a.DEPTCODE = #{currentDeptCode}
+   		  <if test="taskNo != null and taskNo != '' ">
+   		  	and a.TASK_NO like '%'||#{taskNo}||'%' 
+   		  </if>
+   		  <if test="goodsArea != null and goodsArea != '' ">
+   		  	and a.GOODSAREACODE = #{goodsArea}
+   		  </if>
+   		  <if test="taskStatus != null and taskStatus != 'ALL' ">
+   		  	and a.TASK_STATUS = #{taskStatus,jdbcType=VARCHAR}
+   		  </if>
+   		  <if test="createtime != null ">
+   		  	<![CDATA[ and a.CREATETIME >= #{createtime,jdbcType=TIMESTAMP} ]]>
+   		  </if>
+   		  <if test="finishtime != null ">
+   		  	<![CDATA[ and a.CREATETIME <= #{finishtime,jdbcType=TIMESTAMP} ]]>
+   		  </if>
+   		  <if test="goodsAreaUsage != null and goodsAreaUsage != 'ALL' ">
+   		  	and c.GOODS_AREA_USAGE = #{goodsAreaUsage,jdbcType=VARCHAR}
+   		  </if>
+   		  <if test="empCode != null and empCode != '' ">
+   		  	and exists(select 1 from TFR.T_OPT_ST_OPERATOR ee 
+   		  	             where ee.ST_TASK_ID = a.ID and ee.EMP_CODE = #{empCode})
+   		  </if>
+  </select>
+  <select id="queryTransferCenterStTaskDtoListCount" resultType="Long" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.dto.StTaskDto">
+	select count(distinct a.id)
+  		from TFR.t_opt_st_task a
+      		,TFR.t_opt_st_differ_report b
+            ,bse.T_BAS_GOODS_AREA c
+          where a.id = b.st_task_id(+)
+            and a.goodsareacode = c.goods_area_code
+            and a.DEPTCODE = c.ORG_CODE
+            and a.DEPTCODE = #{currentDeptCode}
+            and c.ACTIVE = 'Y'
+   		  <if test="taskNo != null and taskNo != '' ">
+   		  	and a.TASK_NO like '%'||#{taskNo}||'%' 
+   		  </if>
+   		  <if test="goodsArea != null and goodsArea != '' ">
+   		  	and a.GOODSAREACODE = #{goodsArea}
+   		  </if>
+   		  <if test="taskStatus != null and taskStatus != 'ALL' ">
+   		  	and a.TASK_STATUS = #{taskStatus,jdbcType=VARCHAR}
+   		  </if>
+   		  <if test="createtime != null ">
+   		  	<![CDATA[ and a.CREATETIME >= #{createtime,jdbcType=TIMESTAMP} ]]>
+   		  </if>
+   		  <if test="finishtime != null ">
+   		  	<![CDATA[ and a.CREATETIME <= #{finishtime,jdbcType=TIMESTAMP} ]]>
+   		  </if>
+   		  <if test="goodsAreaUsage != null and goodsAreaUsage != 'ALL' ">
+   		  	and c.GOODS_AREA_USAGE = #{goodsAreaUsage,jdbcType=VARCHAR}
+   		  </if>
+   		  <if test="empCode != null and empCode != '' ">
+   		  	and exists(select 1 from TFR.T_OPT_ST_OPERATOR ee 
+   		  	             where ee.ST_TASK_ID = a.ID and ee.EMP_CODE = #{empCode})
+   		  </if>
+  </select>
+  <select id="queryGoodsStockDtoList" resultMap="goodsStockDtoResultMap" parameterType="map">
+  	select waybillNum, stockGoodsQty, goodWeightTotal, goodVolumeTotal from (
+        select count(a.waybill_no) as waybillNum
+	     , nvl(sum(a.STOCK_GOODS_QTY), 0) as stockGoodsQty
+	     , nvl(sum(b.GOODS_WEIGHT_TOTAL), 0) as goodWeightTotal
+	     , nvl(sum(b.GOODS_VOLUME_TOTAL), 0) as goodVolumeTotal
+	  from TFR.t_opt_waybill_stock a
+	      ,pkp.T_SRV_WAYBILL b
+	    where a.WAYBILL_NO = b.WAYBILL_NO
+	      and b.ACTIVE = 'Y'
+	      <!--不下拉整车运单-->
+	      and b.is_whole_vehicle = 'N'
+	      and a.ORG_CODE = #{goodsStockDto.deptNo,jdbcType=VARCHAR}
+	      <![CDATA[and a.in_stock_time <= sysdate - #{beforeTime,jdbcType=INTEGER}/1440 ]]>) where 
+	      waybillNum != 0
+  </select>
+  <!-- 同上方法营业部建立清仓任务时查询库存信息(快递) -->
+  <select id="queryExpressGoodsStockDtoList" resultMap="goodsStockDtoResultMap" parameterType="map">
+  	select waybillNum, stockGoodsQty, goodWeightTotal, goodVolumeTotal from (
+        select count(a.waybill_no) as waybillNum
+	     , nvl(sum(a.STOCK_GOODS_QTY), 0) as stockGoodsQty
+	     , nvl(sum(b.GOODS_WEIGHT_TOTAL), 0) as goodWeightTotal
+	     , nvl(sum(b.GOODS_VOLUME_TOTAL), 0) as goodVolumeTotal
+	  from TFR.t_opt_waybill_stock a
+	      ,pkp.T_SRV_WAYBILL b
+	    where a.WAYBILL_NO = b.WAYBILL_NO and b.PRODUCT_CODE IN ('RCP','PACKAGE','EPEP','DEAP')
+	      and b.ACTIVE = 'Y'
+	      <!--不下拉整车运单-->
+	      and b.is_whole_vehicle = 'N'
+	      and a.ORG_CODE = #{goodsStockDto.deptNo,jdbcType=VARCHAR}
+	      <![CDATA[and a.in_stock_time <= sysdate - #{beforeTime,jdbcType=INTEGER}/1440 ]]>) where 
+	      waybillNum != 0
+  </select>
+  
+   <!-- 同上方法营业部建立清仓任务时查询库存信息(零担) -->
+  <select id="queryNoExpressGoodsStockDtoList" resultMap="goodsStockDtoResultMap" parameterType="map">
+  	select waybillNum, stockGoodsQty, goodWeightTotal, goodVolumeTotal from (
+        select count(a.waybill_no) as waybillNum
+	     , nvl(sum(a.STOCK_GOODS_QTY), 0) as stockGoodsQty
+	     , nvl(sum(b.GOODS_WEIGHT_TOTAL), 0) as goodWeightTotal
+	     , nvl(sum(b.GOODS_VOLUME_TOTAL), 0) as goodVolumeTotal
+	  from TFR.t_opt_waybill_stock a
+	      ,pkp.T_SRV_WAYBILL b
+	    where a.WAYBILL_NO = b.WAYBILL_NO and b.PRODUCT_CODE NOT IN ('RCP','PACKAGE','EPEP','DEAP')
+	      and b.ACTIVE = 'Y'
+	      <!--不下拉整车运单-->
+	      and b.is_whole_vehicle = 'N'
+	      and a.ORG_CODE = #{goodsStockDto.deptNo,jdbcType=VARCHAR}
+	      <![CDATA[and a.in_stock_time <= sysdate - #{beforeTime,jdbcType=INTEGER}/1440 ]]>) where 
+	      waybillNum != 0
+  </select>
+  <select id="queryTransferCenterGoodsStockDtoList" resultMap="goodsStockDtoResultMap" parameterType="map">
+  <!--
+  	select goodsAreaCode
+	      ,sum(waybillNum) as waybillNum
+	      ,sum(stockGoodsQty) as stockGoodsQty
+	      ,sum(goodWeightTotal) as goodWeightTotal
+	      ,sum(goodVolumeTotal) as goodVolumeTotal
+	from (
+	  select a.GOODS_AREA_CODE as goodsAreaCode
+	         , count(a.waybill_no) as waybillNum
+	         , sum(a.STOCK_GOODS_QTY) as stockGoodsQty
+	         , sum(b.GOODS_WEIGHT_TOTAL) as goodWeightTotal
+	         , sum(b.GOODS_VOLUME_TOTAL) as goodVolumeTotal
+	      from TFR.t_opt_waybill_stock a
+	          ,pkp.T_SRV_WAYBILL b
+	          ,bse.T_BAS_GOODS_AREA c
+	        where a.WAYBILL_NO = b.WAYBILL_NO
+	          and a.ORG_CODE = c.ORG_CODE
+	          and a.GOODS_AREA_CODE = c.GOODS_AREA_CODE
+	          and a.ORG_CODE = #{deptNo,jdbcType=VARCHAR}
+	          and b.ACTIVE = 'Y'
+	          and c.ACTIVE = 'Y'
+	          <if test="goodsArea != null and goodsArea != '' ">
+	   		  	and a.GOODS_AREA_CODE = #{goodsArea} 
+	   		  </if>
+	   		  <if test="goodsAreaUsage != null and goodsAreaUsage != 'ALL' ">
+	   		  	and c.GOODS_AREA_USAGE = #{goodsAreaUsage,jdbcType=VARCHAR}
+	   		  </if>
+	          group by a.goods_area_code
+	  UNION ALL        
+	  select  a.GOODS_AREA_CODE
+	          , count(a.waybill_no) as waybillNum
+	          , sum(a.STOCK_GOODS_QTY) as stockGoodsQty
+	          , nvl(sum(b.WEIGHT), 0) as goodWeightTotal 
+	          , nvl(sum(b.VOLUME), 0) as goodVolumeTotal 
+	      from TFR.t_opt_waybill_stock a
+	          ,tfr.T_OPT_NO_GOODS_LABEL b
+	          ,bse.T_BAS_GOODS_AREA c
+	        where a.ORG_CODE = c.ORG_CODE
+	          and a.ORG_CODE = b.FIND_ORG_CODE
+	          and a.WAYBILL_NO = b.NO_LABEL_BILL_NO
+	          and a.GOODS_AREA_CODE = c.GOODS_AREA_CODE
+	          and c.ACTIVE = 'Y'
+	          and a.ORG_CODE = #{deptNo,jdbcType=VARCHAR}
+	          <if test="goodsArea != null and goodsArea != '' ">
+	   		  	and a.GOODS_AREA_CODE = #{goodsArea} 
+	   		  </if>
+	   		  <if test="goodsAreaUsage != null and goodsAreaUsage != 'ALL' ">
+	   		  	and c.GOODS_AREA_USAGE = #{goodsAreaUsage,jdbcType=VARCHAR}
+	   		  </if>
+	        group by a.goods_area_code
+	) group by goodsAreaCode order by goodsAreaCode
+	-->
+	select g.goods_area_name,
+	       g.goods_Area_Code,
+	       nvl(t.waybillNum,0) as waybillNum,
+	       nvl(t.stockGoodsQty,0) as stockGoodsQty,
+	       nvl(t.goodWeightTotal,0) as goodWeightTotal,
+	       nvl(t.goodVolumeTotal,0) as goodVolumeTotal
+	from bse.t_bas_goods_area g 
+	left join
+			(
+				select goodsAreaCode ,
+				       max(waybillNum) as waybillNum ,
+				       max(stockGoodsQty) as stockGoodsQty ,
+				       sum(goodWeightTotal) as goodWeightTotal ,
+				       sum(goodVolumeTotal) as goodVolumeTotal 
+				from ( 
+				    select    s.GOODS_AREA_CODE as goodsAreaCode ,
+				              count(s.waybill_no) as waybillNum , 
+				              sum(s.STOCK_GOODS_QTY) as stockGoodsQty , 
+				              sum(w.GOODS_WEIGHT_TOTAL) as goodWeightTotal , 
+				              sum(w.GOODS_VOLUME_TOTAL) as goodVolumeTotal 
+				      from TFR.t_opt_waybill_stock s left join pkp.T_SRV_WAYBILL w on s.waybill_no=w.waybill_no and w.active='Y'
+				      where  s.ORG_CODE = #{goodsStockDto.deptNo,jdbcType=VARCHAR} 
+				      <![CDATA[and s.in_stock_time <= sysdate - #{beforeTime,jdbcType=INTEGER}/1440 ]]>
+				      and w.is_whole_vehicle = 'N'
+				      <if test="goodsStockDto.receiveMethodList != null">
+				      	 and w.receive_method in 
+							<foreach collection="goodsStockDto.receiveMethodList" open="(" close=")" separator="," index="index" item="item">
+								#{item,jdbcType=VARCHAR}
+						    </foreach>
+				      </if>
+				      <if test="goodsStockDto.districtCodeList != null">
+				      	and w.receive_customer_dist_code in
+				      		<foreach collection="goodsStockDto.districtCodeList" open="(" close=")" separator="," index="index" item="item">
+								#{item,jdbcType=VARCHAR}
+						    </foreach>
+				      </if>
+					  <if test="goodsStockDto.startQty != null and goodsStockDto.startQty > 0 
+					      			and goodsStockDto.endQty != null and goodsStockDto.endQty > 0">
+						  <![CDATA[ and w.goods_qty_total >= #{goodsStockDto.startQty,jdbcType=INTEGER}
+		                      and w.goods_qty_total <= #{goodsStockDto.endQty,jdbcType=INTEGER}]]>    
+					  </if>
+					  group by s.goods_area_code    
+				UNION ALL 
+			    select a.GOODS_AREA_CODE , 
+			           count(a.waybill_no) as waybillNum , 
+			           sum(a.STOCK_GOODS_QTY) as stockGoodsQty , 
+			           nvl(sum(b.WEIGHT), 0) as goodWeightTotal , 
+			           nvl(sum(b.VOLUME), 0) as goodVolumeTotal 
+			    from TFR.t_opt_waybill_stock a 
+			    left join 
+			         (select l.no_label_bill_no,max(WEIGHT) as WEIGHT,max(VOLUME) as VOLUME from tfr.T_OPT_NO_GOODS_LABEL l 
+			          where l.find_org_code=#{deptNo,jdbcType=VARCHAR} 
+				          	<if test="goodsStockDto.startQty != null and goodsStockDto.startQty > 0 
+					      			and goodsStockDto.endQty != null and goodsStockDto.endQty > 0">
+						      <![CDATA[and l.Goods_Qty >= #{goodsStockDto.startQty,jdbcType=INTEGER}
+                            and l.goods_qty <= #{goodsStockDto.endQty,jdbcType=INTEGER} ]]>
+					      	</if>
+			          		group by l.no_label_bill_no
+			          ) b on a.waybill_no=b.no_label_bill_no          
+			    where a.waybill_no=b.no_label_bill_no and
+			          a.ORG_CODE = #{goodsStockDto.deptNo,jdbcType=VARCHAR} 
+			          <![CDATA[and a.in_stock_time <= sysdate - #{beforeTime,jdbcType=INTEGER}/1440 ]]>
+			          group by a.goods_area_code 
+				) group by goodsAreaCode 
+				
+			) t on g.goods_area_code = t.goodsAreaCode
+	where g.org_code=#{goodsStockDto.deptNo,jdbcType=VARCHAR} and g.active='Y'      
+	      <if test="goodsStockDto.goodsArea != null and goodsStockDto.goodsArea != '' ">
+	   		  	and g.goods_area_code = #{goodsStockDto.goodsArea,jdbcType=VARCHAR} 
+   		  </if>
+   		  <if test="goodsStockDto.goodsAreaUsage != null and goodsStockDto.goodsAreaUsage != 'ALL' ">
+   		  		and g.GOODS_AREA_USAGE = #{goodsStockDto.goodsAreaUsage,jdbcType=VARCHAR}
+   		  </if>
+	      order by g.goods_area_name
+  </select>
+  
+  <!-- 查询外场任务列表(快递) -->
+  <select id="queryTransferCenterGoodsStockDtoListExpress" resultMap="goodsStockDtoResultMap" parameterType="map">
+	select g.goods_area_name,
+	       g.goods_Area_Code,
+	       nvl(t.waybillNum,0) as waybillNum,
+	       nvl(t.stockGoodsQty,0) as stockGoodsQty,
+	       nvl(t.goodWeightTotal,0) as goodWeightTotal,
+	       nvl(t.goodVolumeTotal,0) as goodVolumeTotal
+	from bse.t_bas_goods_area g 
+	left join
+			(
+				select goodsAreaCode ,
+				       max(waybillNum) as waybillNum ,
+				       max(stockGoodsQty) as stockGoodsQty ,
+				       sum(goodWeightTotal) as goodWeightTotal ,
+				       sum(goodVolumeTotal) as goodVolumeTotal 
+				from ( 
+				    select    s.GOODS_AREA_CODE as goodsAreaCode ,
+				              count(s.waybill_no) as waybillNum , 
+				              sum(s.STOCK_GOODS_QTY) as stockGoodsQty , 
+				              sum(w.GOODS_WEIGHT_TOTAL) as goodWeightTotal , 
+				              sum(w.GOODS_VOLUME_TOTAL) as goodVolumeTotal 
+				      from TFR.t_opt_waybill_stock s left join pkp.T_SRV_WAYBILL w on s.waybill_no=w.waybill_no and w.active='Y' 
+				      and w.PRODUCT_CODE IN ('RCP','PACKAGE','EPEP','DEAP') 
+				      where  s.ORG_CODE = #{goodsStockDto.deptNo,jdbcType=VARCHAR} 
+				      <![CDATA[and s.in_stock_time <= sysdate - #{beforeTime,jdbcType=INTEGER}/1440 ]]>
+				      and w.is_whole_vehicle = 'N'
+				      <if test="goodsStockDto.receiveMethodList != null">
+				      	 and w.receive_method in 
+							<foreach collection="goodsStockDto.receiveMethodList" open="(" close=")" separator="," index="index" item="item">
+								#{item,jdbcType=VARCHAR}
+						    </foreach>
+				      </if>
+				      <if test="goodsStockDto.districtCodeList != null">
+				      	and w.receive_customer_dist_code in
+				      		<foreach collection="goodsStockDto.districtCodeList" open="(" close=")" separator="," index="index" item="item">
+								#{item,jdbcType=VARCHAR}
+						    </foreach>
+				      </if>
+					  <if test="goodsStockDto.startQty != null and goodsStockDto.startQty > 0 
+					      			and goodsStockDto.endQty != null and goodsStockDto.endQty > 0">
+						  <![CDATA[ and w.goods_qty_total >= #{goodsStockDto.startQty,jdbcType=INTEGER}
+		                      and w.goods_qty_total <= #{goodsStockDto.endQty,jdbcType=INTEGER}]]>    
+					  </if>
+					  group by s.goods_area_code    
+				UNION ALL 
+			    select a.GOODS_AREA_CODE , 
+			           count(a.waybill_no) as waybillNum , 
+			           sum(a.STOCK_GOODS_QTY) as stockGoodsQty , 
+			           nvl(sum(b.WEIGHT), 0) as goodWeightTotal , 
+			           nvl(sum(b.VOLUME), 0) as goodVolumeTotal 
+			    from TFR.t_opt_waybill_stock a inner join pkp.T_SRV_WAYBILL w on a.waybill_no=w.waybill_no and w.PRODUCT_CODE IN ('RCP','PACKAGE','EPEP','DEAP')
+			    left join 
+			         (select l.no_label_bill_no,max(WEIGHT) as WEIGHT,max(VOLUME) as VOLUME from tfr.T_OPT_NO_GOODS_LABEL l 
+			          where l.find_org_code=#{deptNo,jdbcType=VARCHAR} 
+				          	<if test="goodsStockDto.startQty != null and goodsStockDto.startQty > 0 
+					      			and goodsStockDto.endQty != null and goodsStockDto.endQty > 0">
+						      <![CDATA[and l.Goods_Qty >= #{goodsStockDto.startQty,jdbcType=INTEGER}
+                            and l.goods_qty <= #{goodsStockDto.endQty,jdbcType=INTEGER} ]]>
+					      	</if>
+			          		group by l.no_label_bill_no
+			          ) b on a.waybill_no=b.no_label_bill_no          
+			    where a.waybill_no=b.no_label_bill_no and
+			          a.ORG_CODE = #{goodsStockDto.deptNo,jdbcType=VARCHAR} 
+			          <![CDATA[and a.in_stock_time <= sysdate - #{beforeTime,jdbcType=INTEGER}/1440 ]]>
+			          group by a.goods_area_code 
+				) group by goodsAreaCode 
+				
+			) t on g.goods_area_code = t.goodsAreaCode
+	where g.org_code=#{goodsStockDto.deptNo,jdbcType=VARCHAR} and g.active='Y'      
+	      <if test="goodsStockDto.goodsArea != null and goodsStockDto.goodsArea != '' ">
+	   		  	and g.goods_area_code = #{goodsStockDto.goodsArea,jdbcType=VARCHAR} 
+   		  </if>
+   		  <if test="goodsStockDto.goodsAreaUsage != null and goodsStockDto.goodsAreaUsage != 'ALL' ">
+   		  		and g.GOODS_AREA_USAGE = #{goodsStockDto.goodsAreaUsage,jdbcType=VARCHAR}
+   		  </if>
+	      order by g.goods_area_name
+  </select>
+  
+    <!-- 查询外场任务列表(零担) -->
+  <select id="queryTransferCenterGoodsStockDtoListNoExpress" resultMap="goodsStockDtoResultMap" parameterType="map">
+	select g.goods_area_name,
+	       g.goods_Area_Code,
+	       nvl(t.waybillNum,0) as waybillNum,
+	       nvl(t.stockGoodsQty,0) as stockGoodsQty,
+	       nvl(t.goodWeightTotal,0) as goodWeightTotal,
+	       nvl(t.goodVolumeTotal,0) as goodVolumeTotal
+	from bse.t_bas_goods_area g 
+	left join
+			(
+				select goodsAreaCode ,
+				       max(waybillNum) as waybillNum ,
+				       max(stockGoodsQty) as stockGoodsQty ,
+				       sum(goodWeightTotal) as goodWeightTotal ,
+				       sum(goodVolumeTotal) as goodVolumeTotal 
+				from ( 
+				    select    s.GOODS_AREA_CODE as goodsAreaCode ,
+				              count(s.waybill_no) as waybillNum , 
+				              sum(s.STOCK_GOODS_QTY) as stockGoodsQty , 
+				              sum(w.GOODS_WEIGHT_TOTAL) as goodWeightTotal , 
+				              sum(w.GOODS_VOLUME_TOTAL) as goodVolumeTotal 
+				      from TFR.t_opt_waybill_stock s left join pkp.T_SRV_WAYBILL w on s.waybill_no=w.waybill_no and w.active='Y' 
+				      and w.PRODUCT_CODE NOT IN ('RCP','PACKAGE','EPEP','DEAP') 
+				      where  s.ORG_CODE = #{goodsStockDto.deptNo,jdbcType=VARCHAR} 
+				      <![CDATA[and s.in_stock_time <= sysdate - #{beforeTime,jdbcType=INTEGER}/1440 ]]>
+				      and w.is_whole_vehicle = 'N'
+				      <if test="goodsStockDto.receiveMethodList != null">
+				      	 and w.receive_method in 
+							<foreach collection="goodsStockDto.receiveMethodList" open="(" close=")" separator="," index="index" item="item">
+								#{item,jdbcType=VARCHAR}
+						    </foreach>
+				      </if>
+				      <if test="goodsStockDto.districtCodeList != null">
+				      	and w.receive_customer_dist_code in
+				      		<foreach collection="goodsStockDto.districtCodeList" open="(" close=")" separator="," index="index" item="item">
+								#{item,jdbcType=VARCHAR}
+						    </foreach>
+				      </if>
+					  <if test="goodsStockDto.startQty != null and goodsStockDto.startQty > 0 
+					      			and goodsStockDto.endQty != null and goodsStockDto.endQty > 0">
+						  <![CDATA[ and w.goods_qty_total >= #{goodsStockDto.startQty,jdbcType=INTEGER}
+		                      and w.goods_qty_total <= #{goodsStockDto.endQty,jdbcType=INTEGER}]]>    
+					  </if>
+					  group by s.goods_area_code    
+				UNION ALL 
+			    select a.GOODS_AREA_CODE , 
+			           count(a.waybill_no) as waybillNum , 
+			           sum(a.STOCK_GOODS_QTY) as stockGoodsQty , 
+			           nvl(sum(b.WEIGHT), 0) as goodWeightTotal , 
+			           nvl(sum(b.VOLUME), 0) as goodVolumeTotal 
+			    from TFR.t_opt_waybill_stock a inner join pkp.T_SRV_WAYBILL w on a.waybill_no=w.waybill_no and w.PRODUCT_CODE IN ('RCP','PACKAGE','EPEP','DEAP')
+			    left join 
+			         (select l.no_label_bill_no,max(WEIGHT) as WEIGHT,max(VOLUME) as VOLUME from tfr.T_OPT_NO_GOODS_LABEL l 
+			          where l.find_org_code=#{deptNo,jdbcType=VARCHAR} 
+				          	<if test="goodsStockDto.startQty != null and goodsStockDto.startQty > 0 
+					      			and goodsStockDto.endQty != null and goodsStockDto.endQty > 0">
+						      <![CDATA[and l.Goods_Qty >= #{goodsStockDto.startQty,jdbcType=INTEGER}
+                            and l.goods_qty <= #{goodsStockDto.endQty,jdbcType=INTEGER} ]]>
+					      	</if>
+			          		group by l.no_label_bill_no
+			          ) b on a.waybill_no=b.no_label_bill_no          
+			    where a.waybill_no=b.no_label_bill_no and
+			          a.ORG_CODE = #{goodsStockDto.deptNo,jdbcType=VARCHAR} 
+			          <![CDATA[and a.in_stock_time <= sysdate - #{beforeTime,jdbcType=INTEGER}/1440 ]]>
+			          group by a.goods_area_code 
+				) group by goodsAreaCode 
+				
+			) t on g.goods_area_code = t.goodsAreaCode
+	where g.org_code=#{goodsStockDto.deptNo,jdbcType=VARCHAR} and g.active='Y'      
+	      <if test="goodsStockDto.goodsArea != null and goodsStockDto.goodsArea != '' ">
+	   		  	and g.goods_area_code = #{goodsStockDto.goodsArea,jdbcType=VARCHAR} 
+   		  </if>
+   		  <if test="goodsStockDto.goodsAreaUsage != null and goodsStockDto.goodsAreaUsage != 'ALL' ">
+   		  		and g.GOODS_AREA_USAGE = #{goodsStockDto.goodsAreaUsage,jdbcType=VARCHAR}
+   		  </if>
+	      order by g.goods_area_name
+  </select>
+  <select id="queryStTaskExportInfoById" resultType="com.deppon.foss.module.transfer.stockchecking.api.shared.dto.StTaskExportDto" parameterType="java.lang.String">
+  	select a.TASK_NO as taskNo
+	      ,a.GOODSAREANAME as goodsareaname
+	      ,a.CREATETIME as createtime
+	      ,b.WAYBILL_NO as waybillNo
+	      ,b.SERIAL_NO as serialNo
+	      ,c.GOODS_NAME as goodsName
+	      ,c.GOODS_PACKAGE as goodsPackage
+	      ,c.GOODS_WEIGHT_TOTAL as goodsWeight
+	      ,c.GOODS_VOLUME_TOTAL as goodsVolume
+	      ,b.IN_STOCK_TIME as stockTime
+	      ,e.totalWaybillNo as totalWaybillNo
+	      ,f.totalGoodsQty as totalGoodsQty
+	      ,g.totalGoodsWeight as totalGoodsWeight
+	      ,g.totalGoodsVolume as totalGoodsVolume
+	      ,pr.name as transproperty
+          ,c.goods_qty_total    as goodsQty
+	  from tfr.T_OPT_ST_TASK a
+	      ,tfr.T_OPT_ST_TASK_LIST b
+	      ,pkp.T_SRV_WAYBILL c
+	      <!--,tfr.T_OPT_STOCK d-->
+	      ,(select max(a1.ID) as stTaskId
+	            , count(max(b1.WAYBILL_NO)) as totalWaybillNo         <!-- 总票数 -->
+	          from tfr.T_OPT_ST_TASK a1
+	              ,tfr.T_OPT_ST_TASK_LIST b1
+	           where a1.ID = b1.ST_TASK_ID
+	             and a1.ID = #{stTaskId}
+	           group by a1.ID, b1.WAYBILL_NO) e
+	     ,(select max(a2.ID) as stTaskId
+	            , sum(count(b2.SERIAL_NO)) as totalGoodsQty           <!-- 总件数 -->
+	          from tfr.T_OPT_ST_TASK a2
+	              ,tfr.T_OPT_ST_TASK_LIST b2
+	           where a2.ID = b2.ST_TASK_ID
+	             and a2.ID = #{stTaskId}
+	           group by a2.ID, b2.SERIAL_NO) f
+	     ,(select max(max(a3.ID)) as stTaskId
+	             , sum(sum(c3.GOODS_WEIGHT_TOTAL)) as totalGoodsWeight <!-- 总重量 -->
+	             , sum(sum(c3.GOODS_VOLUME_TOTAL)) as totalGoodsVolume <!-- 总体积 -->
+	          from tfr.T_OPT_ST_TASK a3
+	              ,tfr.T_OPT_ST_TASK_LIST b3
+	              ,pkp.T_SRV_WAYBILL c3
+	            where a3.ID = b3.ST_TASK_ID
+	              and b3.WAYBILL_NO = c3.WAYBILL_NO
+	              and a3.ID = #{stTaskId}
+	            group by a3.ID,c3.waybill_no) g,
+	            (select code,name from pkp.t_srv_product 
+	              where active='Y') pr
+	    where a.ID = b.ST_TASK_ID
+	      and b.WAYBILL_NO = c.WAYBILL_NO
+	      <!--and b.WAYBILL_NO = d.WAYBILL_NO
+	      and b.SERIAL_NO = d.SERIAL_NO-->
+	      and a.ID = e.stTaskId
+	      and e.stTaskId = f.stTaskId
+	      and f.stTaskId = g.stTaskId
+	      and c.ACTIVE = 'Y'
+	      and c.product_code = pr.code(+)
+	  order by b.WAYBILL_NO, b.SERIAL_NO
+  </select>
+  <select id="queryStWaybillInfoDtoByStTaskId" resultMap="stWaybillInfoDtoResultMap" parameterType="java.util.Map">
+  	select a.WAYBILL_NO as waybillNo
+  	     , a.PRODUCT_CODE as productCode
+  	     , nvl(b.serialNoCount, 0) as goodsAreaNum
+  	     , a.GOODS_WEIGHT_TOTAL as weight
+  	     , a.GOODS_VOLUME_TOTAL as volume
+	  from pkp.T_SRV_WAYBILL a
+	      ,(select x.WAYBILL_NO, count(x.SERIAL_NO) as serialNoCount
+	        from tfr.T_OPT_ST_TASK_LIST x
+	          where x.ST_TASK_ID = #{stTaskId}
+	            group by x.WAYBILL_NO) b
+	    where b.WAYBILL_NO = a.WAYBILL_NO
+          and a.ACTIVE = 'Y'
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String">
+    delete from TFR.T_OPT_ST_TASK
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  <insert id="addStTaskEntity" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StTaskEntity" >
+    insert into TFR.T_OPT_ST_TASK (ID, TASK_NO, GOODSAREACODE, 
+      GOODSAREANAME, TASK_STATUS, DEPTCODE, 
+      CREATETIME, FINISHTIME, ISPDA, PDA_NO, CREATOR_CODE, CREATOR_NAME,
+      STARTQTY, ENDQTY, RECEIVE_METHOD,DISTRICT_CODE,DISTRICT_NAME)
+    values (#{id,jdbcType=VARCHAR}, #{taskNo,jdbcType=VARCHAR}, #{goodsareacode,jdbcType=VARCHAR}, 
+      #{goodsareaname,jdbcType=VARCHAR}, #{taskStatus,jdbcType=VARCHAR}, #{deptcode,jdbcType=VARCHAR}, 
+      #{createtime,jdbcType=TIMESTAMP}, #{finishtime,jdbcType=TIMESTAMP}, #{ispda,jdbcType=CHAR}, 
+      #{pdaNo,jdbcType=VARCHAR}, #{creatorCode,jdbcType=VARCHAR}, #{creatorName,jdbcType=VARCHAR},
+      #{startQty,jdbcType=INTEGER}, #{endQty,jdbcType=INTEGER},
+      #{receiveMethod,jdbcType=VARCHAR}, #{districtCode,jdbcType=VARCHAR}, #{districtName,jdbcType=VARCHAR})
+  </insert>
+  <insert id="updateStTaskStatus" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StTaskEntity" >
+    update TFR.T_OPT_ST_TASK
+    set TASK_STATUS = #{taskStatus,jdbcType=VARCHAR}
+      where ID = #{id,jdbcType=VARCHAR}
+  </insert>
+  <insert id="insertSelective" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StTaskEntity" >
+    insert into TFR.T_OPT_ST_TASK
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="taskNo != null" >
+        TASK_NO,
+      </if>
+      <if test="goodsareacode != null" >
+        GOODSAREACODE,
+      </if>
+      <if test="goodsareaname != null" >
+        GOODSAREANAME,
+      </if>
+      <if test="taskStatus != null" >
+        TASK_STATUS,
+      </if>
+      <if test="deptcode != null" >
+        DEPTCODE,
+      </if>
+      <if test="createtime != null" >
+        CREATETIME,
+      </if>
+      <if test="finishtime != null" >
+        FINISHTIME,
+      </if>
+      <if test="ispda != null" >
+        ISPDA,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="taskNo != null" >
+        #{taskNo,jdbcType=VARCHAR},
+      </if>
+      <if test="goodsareacode != null" >
+        #{goodsareacode,jdbcType=VARCHAR},
+      </if>
+      <if test="goodsareaname != null" >
+        #{goodsareaname,jdbcType=VARCHAR},
+      </if>
+      <if test="taskStatus != null" >
+        #{taskStatus,jdbcType=VARCHAR},
+      </if>
+      <if test="deptcode != null" >
+        #{deptcode,jdbcType=VARCHAR},
+      </if>
+      <if test="createtime != null" >
+        #{createtime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="finishtime != null" >
+        #{finishtime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="ispda != null" >
+        #{ispda,jdbcType=CHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StTaskEntity">
+    update TFR.T_OPT_ST_TASK
+    <set >
+      <if test="taskNo != null" >
+        TASK_NO = #{taskNo,jdbcType=VARCHAR},
+      </if>
+      <if test="goodsareacode != null" >
+        GOODSAREACODE = #{goodsareacode,jdbcType=VARCHAR},
+      </if>
+      <if test="goodsareaname != null" >
+        GOODSAREANAME = #{goodsareaname,jdbcType=VARCHAR},
+      </if>
+      <if test="taskStatus != null" >
+        TASK_STATUS = #{taskStatus,jdbcType=VARCHAR},
+      </if>
+      <if test="deptcode != null" >
+        DEPTCODE = #{deptcode,jdbcType=VARCHAR},
+      </if>
+      <if test="createtime != null" >
+        CREATETIME = #{createtime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="finishtime != null" >
+        FINISHTIME = #{finishtime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="ispda != null" >
+        ISPDA = #{ispda,jdbcType=CHAR},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  <update id="updateStTaskEntity" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StTaskEntity">
+    update TFR.T_OPT_ST_TASK
+    set TASK_NO = #{taskNo,jdbcType=VARCHAR},
+      GOODSAREACODE = #{goodsareacode,jdbcType=VARCHAR},
+      GOODSAREANAME = #{goodsareaname,jdbcType=VARCHAR},
+      TASK_STATUS = #{taskStatus,jdbcType=VARCHAR},
+      DEPTCODE = #{deptcode,jdbcType=VARCHAR},
+      CREATETIME = #{createtime,jdbcType=TIMESTAMP},
+      FINISHTIME = #{finishtime,jdbcType=TIMESTAMP},
+      ISPDA = #{ispda,jdbcType=CHAR}
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  <select id="queryStTaskStatus" resultMap="stTaskResultMap" parameterType="java.util.Map" >
+    select <include refid="stTask_Column_List" />
+      from (
+	    select <include refid="stTask_Column_List" />
+	      from TFR.T_OPT_ST_TASK
+	        where 
+	          <choose>
+				<when test="goodsAreaCode != null and goodsAreaCode != ''">
+					 GOODSAREACODE = #{goodsAreaCode}
+				</when>
+				<otherwise>
+					 GOODSAREACODE is null
+				</otherwise>
+			  </choose>
+	          and DEPTCODE = #{deptNo,jdbcType=VARCHAR}
+	          order by CREATETIME desc
+	    ) where rownum = 1
+  </select>
+  <select id="queryStTaskByBatch" resultMap="stTaskResultMap" parameterType="map">
+	  select a.ID, a.TASK_NO, a.GOODSAREACODE, a.GOODSAREANAME, a.TASK_STATUS, a.DEPTCODE, a.CREATETIME, a.FINISHTIME, 
+    		 a.ISPDA, a.PDA_NO, a.CREATOR_CODE, a.CREATOR_NAME
+	    from TFR.T_OPT_ST_TASK a
+	    where <![CDATA[a.FINISHTIME >= #{bizJobStartTime,jdbcType=TIMESTAMP} ]]>
+	      and <![CDATA[a.FINISHTIME < #{bizJobEndTime,jdbcType=TIMESTAMP} ]]>
+	      and a.TASK_STATUS = #{stTaskStatus}
+	      and not EXISTS (select 1 from tfr.T_OPT_ST_DIFFER_REPORT b where b.ST_TASK_ID = a.ID)
+	      and ORA_HASH(a.TASK_NO, #{threadCount}) = #{threadNo}
+	      order by a.FINISHTIME     
+  </select>
+  <select id="queryStTaskByNo" resultMap="stTaskResultMap" parameterType="string">
+	  select 
+	    <include refid="stTask_Column_List" />
+	    from TFR.T_OPT_ST_TASK
+	    where TASK_NO = #{stTaskNo,jdbcType=VARCHAR}
+  </select>
+  <select id="queryStTaskByReportId" resultMap="stTaskResultMap" parameterType="string">
+	  select a.ID, a.TASK_NO, a.GOODSAREACODE, a.GOODSAREANAME, a.TASK_STATUS, a.DEPTCODE, a.CREATETIME, a.FINISHTIME, 
+    		 a.ISPDA, a.PDA_NO, a.CREATOR_CODE, a.CREATOR_NAME
+	    from TFR.T_OPT_ST_TASK a
+	        ,TFR.T_OPT_ST_DIFFER_REPORT b
+	    where a.ID = b.ST_TASK_ID
+	      and b.ID = #{reportId,jdbcType=VARCHAR}
+  </select>
+  <select id="queryTaskInProcess" resultMap="stTaskDtoResultMap" parameterType="map">
+	  select a.ID, a.TASK_NO, a.startqty, a.endqty,a.ispda,a.GOODSAREACODE,
+	  		a.receive_method,a.district_code,a.district_name,a.creator_code,a.goodsareaname
+	    from TFR.T_OPT_ST_TASK a
+	      where a.TASK_STATUS = #{status}
+	        and a.DEPTCODE = #{deptCode}
+	        <if test="goodsAreaCode != null and goodsAreaCode != ''" >
+		      and a.GOODSAREACODE = #{goodsAreaCode,jdbcType=VARCHAR}
+		    </if>
+  </select>
+  <!-- 按件查询 -->
+  <!-- <select id="queryTransferStockDtoListByQty" resultMap="goodsStockDtoResultMap" parameterType="map">
+  	select g.goods_area_name,
+	       g.goods_Area_Code,
+	       nvl(t.waybillNum,0) as waybillNum,
+	       nvl(t.stockGoodsQty,0) as stockGoodsQty,
+	       nvl(t.goodWeightTotal,0) as goodWeightTotal,
+	       nvl(t.goodVolumeTotal,0) as goodVolumeTotal
+	from bse.t_bas_goods_area g 
+	left join
+			(
+				select goodsAreaCode ,
+				       max(waybillNum) as waybillNum ,
+				       max(stockGoodsQty) as stockGoodsQty ,
+				       sum(goodWeightTotal) as goodWeightTotal ,
+				       sum(goodVolumeTotal) as goodVolumeTotal 
+				from ( 
+				    select    s.GOODS_AREA_CODE as goodsAreaCode ,
+				              count(s.waybill_no) as waybillNum , 
+				              sum(s.STOCK_GOODS_QTY) as stockGoodsQty , 
+				              sum(w.GOODS_WEIGHT_TOTAL) as goodWeightTotal , 
+				              sum(w.GOODS_VOLUME_TOTAL) as goodVolumeTotal 
+				      from TFR.t_opt_waybill_stock s left join pkp.T_SRV_WAYBILL w on s.waybill_no=w.waybill_no and w.active='Y'
+				      where  s.ORG_CODE = #{goodsStockDto.deptNo,jdbcType=VARCHAR} 
+				      <![CDATA[and s.in_stock_time <= sysdate - #{beforeTime,jdbcType=INTEGER}/1440 ]]>
+				      and w.is_whole_vehicle = 'N'
+				     <![CDATA[ and w.goods_qty_total >= #{goodsStockDto.startQty,jdbcType=INTEGER}
+                      and w.goods_qty_total <= #{goodsStockDto.endQty,jdbcType=INTEGER}]]>
+				      group by s.goods_area_code
+				UNION ALL 
+			    select a.GOODS_AREA_CODE , 
+			           count(a.waybill_no) as waybillNum , 
+			           sum(a.STOCK_GOODS_QTY) as stockGoodsQty , 
+			           nvl(sum(b.WEIGHT), 0) as goodWeightTotal , 
+			           nvl(sum(b.VOLUME), 0) as goodVolumeTotal 
+			    from TFR.t_opt_waybill_stock a 
+			    left join 
+			         (select l.no_label_bill_no,max(WEIGHT) as WEIGHT,max(VOLUME) as VOLUME from tfr.T_OPT_NO_GOODS_LABEL l 
+			          where l.find_org_code=#{goodsStockDto.deptNo,jdbcType=VARCHAR}
+			         <![CDATA[and l.Goods_Qty >= #{goodsStockDto.startQty,jdbcType=INTEGER}
+                            and l.goods_qty <= #{goodsStockDto.endQty,jdbcType=INTEGER} ]]>
+                            group by l.no_label_bill_no
+			          ) b on a.waybill_no=b.no_label_bill_no          
+			    where a.waybill_no=b.no_label_bill_no and
+			          a.ORG_CODE = #{goodsStockDto.deptNo,jdbcType=VARCHAR} 
+			          <![CDATA[and a.in_stock_time <= sysdate - #{beforeTime,jdbcType=INTEGER}/1440 ]]>
+			          group by a.goods_area_code 
+				) group by goodsAreaCode 
+				
+			) t on g.goods_area_code = t.goodsAreaCode
+	where g.org_code=#{goodsStockDto.deptNo,jdbcType=VARCHAR} and g.active='Y'      
+	      <if test="goodsStockDto.goodsArea != null and goodsStockDto.goodsArea != '' ">
+	   		  	and g.goods_area_code = #{goodsStockDto.goodsArea,jdbcType=VARCHAR} 
+   		  </if>
+   		  <if test="goodsStockDto.goodsAreaUsage != null and goodsStockDto.goodsAreaUsage != 'ALL' ">
+   		  		and g.GOODS_AREA_USAGE = #{goodsStockDto.goodsAreaUsage,jdbcType=VARCHAR}
+   		  </if>
+	      order by g.goods_area_name
+  </select> -->
+  <!-- 按件建立清仓任务 -->
+  <!-- <insert id="addStTaskEntityByQty" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StTaskEntity" >
+    insert into TFR.T_OPT_ST_TASK (ID, TASK_NO, GOODSAREACODE, 
+      GOODSAREANAME, TASK_STATUS, DEPTCODE, 
+      CREATETIME, FINISHTIME, ISPDA, PDA_NO, CREATOR_CODE, CREATOR_NAME, STARTQTY, ENDQTY)
+    values (#{id,jdbcType=VARCHAR}, #{taskNo,jdbcType=VARCHAR}, #{goodsareacode,jdbcType=VARCHAR}, 
+      #{goodsareaname,jdbcType=VARCHAR}, #{taskStatus,jdbcType=VARCHAR}, #{deptcode,jdbcType=VARCHAR}, 
+      #{createtime,jdbcType=TIMESTAMP}, #{finishtime,jdbcType=TIMESTAMP}, #{ispda,jdbcType=CHAR}, 
+      #{pdaNo,jdbcType=VARCHAR}, #{creatorCode,jdbcType=VARCHAR}, #{creatorName,jdbcType=VARCHAR},
+      #{startQty,jdbcType=INTEGER}, #{endQty,jdbcType=INTEGER})
+  </insert> -->
+  <!-- 按件查询 -->
+  <!-- <select id="queryStTaskStatusByQty" resultMap="stTaskResultMap" parameterType="java.util.Map" >
+    select <include refid = "stTask_Column_List"/>
+        from TFR.T_OPT_ST_TASK 
+       where GOODSAREACODE = #{goodsAreaCode}
+         and DEPTCODE = #{deptNo,jdbcType=VARCHAR}
+         and task_status = 'DOING'
+       order by CREATETIME
+  </select> -->
+  <!--取消清仓任务-->
+  <update id="updateTask" parameterType="int">
+  	UPDATE TFR.T_OPT_ST_TASK T SET 
+  		T.TASK_STATUS = 'CANCEL', 
+    	T.FINISHTIME = SYSDATE
+  	WHERE <![CDATA[ T.CREATETIME < SYSDATE - #{hours,jdbcType=INTEGER} / 24 ]]>
+    	AND T.TASK_STATUS = 'DOING'
+  </update>
+  
+    <!--按配置部门和时间取消清仓任务-->
+  <update id="updateTaskByDeptCode" parameterType="map">
+  	UPDATE TFR.T_OPT_ST_TASK T SET 
+  		T.TASK_STATUS = 'CANCEL', 
+    	T.FINISHTIME = SYSDATE
+  	WHERE <![CDATA[ T.CREATETIME < SYSDATE - #{hours,jdbcType=INTEGER} / 24 ]]>
+    	AND T.TASK_STATUS = 'DOING'
+    	AND ( 
+    	<if test="deptCodeList !=null ">
+			
+			<foreach collection="deptCodeList" item="item" separator="OR" >
+                  	T.DEPTCODE=#{item,jdbcType=VARCHAR} 
+			</foreach>
+					
+		</if>
+		)
+  </update>
+  
+   <!--  统计转运场库区、任务信息Map-->
+  <resultMap id="statisticsMap" type="com.deppon.foss.module.transfer.stockchecking.api.shared.vo.StockcheckingVO" >
+	   <result column="goodsAreaCount" property="goodsAreaCount" jdbcType="VARCHAR" />
+	    <result column="taskDoneCount" property="taskDoneCount" jdbcType="VARCHAR" />
+	    <result column="areaUndoCount" property="areaUndoCount" jdbcType="VARCHAR" />
+	    
+  </resultMap>
+  
+  <!--  统计转运场库区、任务信息-->
+  <select id="statistics" parameterType="String"  resultMap="statisticsMap">
+  
+		select (
+				select count(distinct tba.goods_area_code) from bse.T_BAS_GOODS_AREA  tba 
+				where 
+					tba.goods_area_type in ('BSE_GOODSAREA_TYPE_EXCEPTION','BSE_GOODSAREA_TYPE_VALUABLE'
+					,'BSE_GOODSAREA_TYPE_OTHER','BSE_GOODSAREA_TYPE_COMMON','BSE_GOODSAREA_TYPE_FAST','BSE_GOODSAREA_TYPE_NORMAL')
+					and tba.org_code=#{orgCode}
+					and tba.active='Y'
+		     ) goodsAreaCount,
+		     (
+				select count (distinct tst.task_no) from TFR.t_opt_st_task tst  
+				inner join bse.t_bas_goods_area b on tst.goodsareacode=b.goods_area_code 
+                               and b.org_code=tst.deptcode and b.active='Y'
+				where
+				tst.task_status ='DONE'
+				AND to_char(tst.createtime,'yyyy-mm-dd')<![CDATA[=]]>to_char(SYSDATE,'yyyy-mm-dd')
+				 and b.goods_area_type not in
+		        	 (
+		             'BSE_GOODSAREA_TYPE_PACKING','BSE_GOODSAREA_TYPE_STATION',
+		             'BSE_GOODSAREA_TYPE_AIRFREIGHT','BSE_GOODSAREA_TYPE_EXPRESS'
+		             )
+		         and tst.deptcode=#{orgCode}     
+			) taskDoneCount,
+			((
+				select count(distinct tba.goods_area_code) from bse.T_BAS_GOODS_AREA  tba 
+				where 
+				tba.goods_area_type in ('BSE_GOODSAREA_TYPE_EXCEPTION','BSE_GOODSAREA_TYPE_VALUABLE'
+				,'BSE_GOODSAREA_TYPE_OTHER','BSE_GOODSAREA_TYPE_COMMON','BSE_GOODSAREA_TYPE_FAST','BSE_GOODSAREA_TYPE_NORMAL')
+				and tba.org_code=#{orgCode}
+				and tba.active='Y'
+			)
+			-
+			(
+				select count(distinct tst.goodsareacode) from TFR.t_opt_st_task tst
+				inner join bse.T_BAS_GOODS_AREA tba on  tst.deptcode=tba.org_code and  tst.goodsareacode=tba.goods_area_code
+					and tba.active='Y'
+				where
+				tst.task_status !='CANCEL' 
+				and to_char(tst.createtime,'yyyy-mm-dd')<![CDATA[=]]>to_char(SYSDATE,'yyyy-mm-dd')
+				and tba.goods_area_type in ('BSE_GOODSAREA_TYPE_EXCEPTION','BSE_GOODSAREA_TYPE_VALUABLE'
+				,'BSE_GOODSAREA_TYPE_OTHER','BSE_GOODSAREA_TYPE_COMMON','BSE_GOODSAREA_TYPE_FAST','BSE_GOODSAREA_TYPE_NORMAL')
+				and tst.deptcode=#{orgCode}
+		 	) ) areaUndoCount
+		from dual
+		
+  </select>
+  
+  
+  <select id="getNoSubmitPackageNumByStTaskNo" parameterType="String" resultType="int">
+  			SELECT count(1)
+			  from tfr.t_opt_package p
+			 where p.status != 'CANCELED'
+			   and p.status != 'ALREADY_CANCELED'
+			   and exists
+			 (SELECT 1
+			          FROM TFR.t_Opt_St_Task t2
+			         inner join TFR.t_Opt_St_Task_List t
+			            on t2.id = t.st_task_id
+			         inner join tfr.t_opt_package_detail pd
+			            on t.waybill_no = pd.waybill_no
+			           and t.package_no = pd.package_no
+			         INNER JOIN tfr.t_opt_stock s
+			            ON s.waybill_no = t.waybill_no
+			           AND s.serial_no = t.serial_no
+			           AND s.org_code = t2.deptcode
+			         WHERE t2.task_no = #{stTaskNo,jdbcType=VARCHAR}
+			           and not exists (select 1
+			                  FROM TFR.T_OPT_ST_RESULT_LIST t1
+			                 where t1.st_task_id = t2.id
+			                   and t1.package_no = t.package_no)
+			           and p.package_no = pd.package_no)
+  </select>
+  <select id="getNoSubmitWaybillNumByStTaskNo" parameterType="String" resultType="int">
+  			select count(1)
+			   from (SELECT tl.waybill_no
+			           FROM tfr.t_opt_st_task t
+			          INNER JOIN tfr.t_opt_st_task_list tl
+			             ON tl.st_task_id = t.id
+			            AND tl.package_no IS NULL
+			          INNER JOIN tfr.t_opt_stock s
+			          ON s.waybill_no = tl.waybill_no
+			         AND s.serial_no = tl.serial_no
+			         AND s.org_code = t.deptcode
+			          WHERE t.task_no = #{stTaskNo,jdbcType=VARCHAR}
+			            and not exists
+			          (select 1
+			                   FROM TFR.T_OPT_ST_RESULT_LIST t2
+			                  where t2.st_task_id = t.id
+			                    and t2.waybill_no = tl.waybill_no)
+			          group by tl.waybill_no)
+  </select>
+  <select id="getNoSubmitSerialNumByStTaskNo" parameterType="String" resultType="int">
+		 SELECT count(1)
+		   FROM tfr.t_opt_st_task t
+		  INNER JOIN tfr.t_opt_st_task_list tl
+		     ON tl.st_task_id = t.id
+		    AND tl.package_no IS NULL
+		  INNER JOIN tfr.t_opt_stock s
+		     ON s.waybill_no = tl.waybill_no
+		    AND s.serial_no = tl.serial_no
+		    AND s.org_code = t.deptcode
+		  WHERE t.task_no = #{stTaskNo,jdbcType=VARCHAR}
+		    and not exists (select 1
+		           FROM TFR.T_OPT_ST_RESULT_LIST t2
+		          where t2.st_task_id = t.id
+		            and t2.waybill_no = tl.waybill_no
+		            and t2.serial_no = tl.serial_no)
+  </select>
+</mapper>

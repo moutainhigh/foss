@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.bse.bse-baseinfo.markOptions">
+    <!--市场活动折扣对象-->
+	<resultMap id="markOptionsResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.domain.MarkOptionsEntity" >
+	<result column="ID" property="id" jdbcType="VARCHAR" />
+	<result column="ACTIVITE_CRM_ID" property="activeCrmId" jdbcType="DECIMAL" />
+	<result column="CRM_ID" property="crmId" jdbcType="DECIMAL" />
+	<result column="ACTIVITID" property="activeId" jdbcType="VARCHAR" />
+	<result column="INCLUDETYPE" property="includeType" jdbcType="VARCHAR" />
+	<result column="VALUE" property="value" jdbcType="DECIMAL" />
+	<result column="NAME" property="name" jdbcType="VARCHAR" />
+	<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+	<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+	<result column="ACTIVE" property="active" jdbcType="CHAR" />
+	<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+	<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+	<!-- 2015-01-30 增加最低费率字段 -->
+	<result column="CONTINUE_HEAVY_LOWEST_RATE" property="continueHeavyLowestRate" jdbcType="DECIMAL" />
+	</resultMap>
+	
+	<!--折扣列-->
+	<sql id="markOptions_column">
+	ID,
+    ACTIVITE_CRM_ID,
+    CRM_ID,
+    ACTIVITID,
+    NAME,
+    VALUE,
+    INCLUDETYPE,
+   	CREATE_TIME,
+   	MODIFY_TIME,
+   	ACTIVE,
+   	CREATE_USER_CODE,
+  	MODIFY_USER_CODE,
+  	CONTINUE_HEAVY_LOWEST_RATE
+	</sql>
+	
+	<!--新增一条市场活动折扣信息 -->
+	<insert id="addMarkActivitiesOptions" parameterType = "map">
+	 BEGIN 
+	<foreach  collection="optionList" item="item"  separator=";">
+    <![CDATA[
+      insert into BSE.T_BAS_MARK_OPTIONS (
+    ]]>
+    <include refid="markOptions_column"/>
+    <![CDATA[
+    )values(
+    ]]>
+    #{item.id,jdbcType=VARCHAR}, 
+    #{item.activeCrmId,jdbcType=DECIMAL},
+    #{item.crmId,jdbcType=DECIMAL},
+	#{item.activeId,jdbcType=VARCHAR},
+	#{item.name,jdbcType=VARCHAR},
+	#{item.value,jdbcType=DECIMAL},
+	#{item.includeType,jdbcType=VARCHAR},
+	#{item.createDate,jdbcType=TIMESTAMP},
+	#{item.modifyDate,jdbcType=TIMESTAMP},
+	#{item.active,jdbcType=VARCHAR},
+	#{item.createUser,jdbcType=VARCHAR},
+	#{item.modifyUser,jdbcType=VARCHAR},
+	#{item.continueHeavyLowestRate,jdbcType=DECIMAL}
+    <![CDATA[
+    )
+    ]]>
+     </foreach>
+	;END; 
+	</insert>
+	
+	<!--作废一条市场活动折扣信息 -->
+	<update id="updateMarkActivitiesOptions" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.MarkOptionsEntity">
+	<![CDATA[
+	  UPDATE BSE.T_BAS_MARK_OPTIONS 
+	]]>
+	  SET 	MODIFY_TIME = SYSDATE,
+   	        ACTIVE = 'N',
+  	        MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR}
+  	<where>
+  	            ACTIVE = 'Y'
+  	  <if test="crmId !=null"> 
+		       AND CRM_ID = #{crmId,jdbcType=DECIMAL}
+	  </if>
+	  <if test="activeCrmId !=null"> 
+		       AND activite_crm_id = #{activeCrmId,jdbcType=DECIMAL}
+	  </if>
+  	</where>
+	</update>
+	
+	<!--根据市场活动CrmId查询一条市场活动折扣信息是否存在 -->
+	<select id="queryMarkActivitiesOptionsByCrmId" parameterType="map" 
+	                        resultMap="markOptionsResultMap">
+	<![CDATA[
+	   SELECT 
+	]]>
+	<include refid="markOptions_column"/>
+	<![CDATA[
+	  FROM BSE.T_BAS_MARK_OPTIONS
+	]]>
+	<where>
+	      	   ACTIVE = 'Y'
+	   <if test="crmId !=null"> 
+		       AND CRM_ID = #{crmId,jdbcType=DECIMAL}
+	  </if>
+	</where>
+	</select>
+	
+	<!--查询活动的折扣信息（目前根据活动crmId和折扣名称查询）-->
+	<select id="queryMarkActivityOptions" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.MarkOptionsEntity" 
+	                        resultMap="markOptionsResultMap">
+	<![CDATA[
+	   SELECT 
+	]]>
+	<include refid="markOptions_column"/>
+	<![CDATA[
+	  FROM BSE.T_BAS_MARK_OPTIONS
+	]]>
+	<where>
+	      	   ACTIVE = 'Y'
+	   <if test="activeCrmId !=null and activeCrmId != ''"> 
+		       AND ACTIVITE_CRM_ID = #{activeCrmId,jdbcType=DECIMAL}
+	  </if>
+	  <if test="name != null and name != ''">
+	           AND NAME = #{name,jdbcType=VARCHAR}
+	  </if>
+	  <if test="includeType != null and includeType != ''">
+	  		   AND INCLUDETYPE = #{includeType,jdbcType=VARCHAR}
+	  </if>
+	</where>
+	</select>
+	
+	
+	<!--查询活动的折扣信息（目前根据活动crmId和折扣名称查询）（根据时间建模查询，适用于更改单）-->
+	<select id="queryMarkActivityOptionsByBillTime" parameterType="map" resultMap="markOptionsResultMap">	                        
+		<![CDATA[
+		   SELECT 
+		]]>
+		<include refid="markOptions_column"/>
+		<![CDATA[
+		  FROM BSE.T_BAS_MARK_OPTIONS
+		]]>
+		<where>		    
+		  <if test="activeCrmId !=null and activeCrmId != ''"> 
+			       AND ACTIVITE_CRM_ID = #{activeCrmId,jdbcType=DECIMAL}
+		  </if>
+		  <if test="name != null and name != ''">
+		           AND NAME = #{name,jdbcType=VARCHAR}
+		  </if>
+		  <if test="includeType != null and includeType != ''">
+		  		   AND INCLUDETYPE = #{includeType,jdbcType=VARCHAR}
+		  </if>
+		  <if test="billlingTime != null">
+			<![CDATA[ AND CREATE_TIME <= #{billlingTime,jdbcType=TIMESTAMP}
+			AND MODIFY_TIME >= #{billlingTime,jdbcType=TIMESTAMP}]]>
+		  </if>
+		</where>
+	</select>
+</mapper>

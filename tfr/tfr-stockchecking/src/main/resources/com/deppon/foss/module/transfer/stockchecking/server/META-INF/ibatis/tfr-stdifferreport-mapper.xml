@@ -1,0 +1,483 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.tfr.StDifferReportDao" >
+  <resultMap id="StDifferReportResultMap" type="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StDifferReportEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="ST_TASK_ID" property="stTaskId" jdbcType="VARCHAR" />
+    <result column="REPORT_CODE" property="reportCode" jdbcType="VARCHAR" />
+    <result column="EXCEED_GOODS_QTY" property="exceedGoodsQty" jdbcType="DECIMAL" />
+    <result column="LESS_GOODS_QTY" property="lessGoodsQty" jdbcType="DECIMAL" />
+    <result column="HANDLE_STATUS" property="handleStatus" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="GOODS_AREA_CODE" property="goodsAreaCode" jdbcType="VARCHAR" />
+    <result column="GOODS_AREA_NAME" property="goodsAreaName" jdbcType="VARCHAR" />
+    <result column="DEPTCODE" property="deptcode" jdbcType="VARCHAR" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    ID, ST_TASK_ID, REPORT_CODE, EXCEED_GOODS_QTY, LESS_GOODS_QTY, HANDLE_STATUS, CREATE_TIME, 
+    GOODS_AREA_CODE, GOODS_AREA_NAME, DEPTCODE
+  </sql>
+  <select id="queryStReportEntityById" resultMap="StDifferReportResultMap" parameterType="java.lang.String" >
+    select 
+    <include refid="Base_Column_List" />
+    from TFR.T_OPT_ST_DIFFER_REPORT
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+  
+  <select id="queryStReportDtoList" resultType="com.deppon.foss.module.transfer.stockchecking.api.shared.dto.StReportDto" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.dto.StReportDto" >
+    select a.ID as id
+	      ,a.REPORT_CODE as reportCode
+	      ,a.EXCEED_GOODS_QTY as exceedGoodsQty
+	      ,a.LESS_GOODS_QTY as lessGoodsQty
+	      ,a.GOODS_AREA_NAME as goodsAreaName
+	      ,a.HANDLE_STATUS as handleStatus
+	      ,a.CREATE_TIME as createTime
+	      ,a.ST_TASK_ID as taskId
+	      ,b.STARTQTY as startQty
+	      ,b.ENDQTY as endQty
+	      ,b.RECEIVE_METHOD as receiveMethod
+	      ,b.DISTRICT_NAME as districtName
+	  from tfr.T_OPT_ST_DIFFER_REPORT a
+	      ,tfr.T_OPT_ST_TASK b
+	    where a.ST_TASK_ID = b.ID
+	      <if test="startTime != null ">
+   		  	<![CDATA[ and a.CREATE_TIME >= #{startTime,jdbcType=TIMESTAMP} ]]>
+   		  </if>
+   		  <if test="endTime != null ">
+   		  	<![CDATA[ and a.CREATE_TIME <= #{endTime,jdbcType=TIMESTAMP} ]]>
+   		  </if>
+   		  <if test="reportCode != null and reportCode != '' ">
+   		  	and a.REPORT_CODE like '%' || #{reportCode} || '%' 
+   		  </if>
+   		  <if test="goodsAreaCode != null and goodsAreaCode != '' ">
+   		  	and a.GOODS_AREA_CODE = #{goodsAreaCode} 
+   		  </if>
+   		  <if test="deptcode != null and deptcode != '' ">
+   		  	and a.DEPTCODE like '%' || #{deptcode} || '%' 
+   		  </if>
+   		  <if test="deptcode == null or deptcode == '' ">
+   		  	and a.DEPTCODE = #{currentDeptCode}
+   		  </if>
+   		  <if test="handleStatus != null and handleStatus != 'ALL' ">
+   		  	and a.HANDLE_STATUS = #{handleStatus}
+   		  </if>
+   		  <if test="operator != null and operator != '' ">
+   		  	and exists(select 1 from TFR.T_OPT_ST_OPERATOR ee 
+   		  	             where ee.ST_TASK_ID = b.ID and ee.EMP_CODE = #{operator})
+   		  </if>
+   		  <if test="waybillNo != null and waybillNo != '' ">
+   		  	and exists(select 1 from TFR.t_Opt_St_Differ_Detail dd 
+                          INNER JOIN tfr.t_opt_st_differ_report r ON r.id = dd.st_differ_report_id
+                   		  where r.st_task_id = b.ID and dd.WAYBILL_NO = #{waybillNo})
+   		  </if>
+   		  <if test="exType != null and exType == 'LACK' ">
+   		  	and a.LESS_GOODS_QTY > 0
+   		  </if>
+   		  <if test="exType != null and exType == 'SURPLUS' ">
+   		  	and a.EXCEED_GOODS_QTY > 0
+   		  </if>
+   		  <if test="exType != null and exType == 'EXIST' ">
+   		  	and (a.EXCEED_GOODS_QTY > 0 or a.LESS_GOODS_QTY > 0)
+   		  </if>
+   		order by a.CREATE_TIME desc
+  </select>
+  
+  <select id="queryStReportDtoListCount" resultType="long" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.dto.StReportDto" >
+    select count(*)
+	  from tfr.T_OPT_ST_DIFFER_REPORT a
+	      ,tfr.T_OPT_ST_TASK b
+	    where a.ST_TASK_ID = b.ID
+	      and a.DEPTCODE = #{currentDeptCode}
+	      <if test="startTime != null ">
+   		  	<![CDATA[ and a.CREATE_TIME >= #{startTime,jdbcType=TIMESTAMP} ]]>
+   		  </if>
+   		  <if test="endTime != null ">
+   		  	<![CDATA[ and a.CREATE_TIME <= #{endTime,jdbcType=TIMESTAMP} ]]>
+   		  </if>
+   		  <if test="reportCode != null and reportCode != '' ">
+   		  	and a.REPORT_CODE like '%' || #{reportCode} || '%' 
+   		  </if>
+   		  <if test="goodsAreaCode != null and goodsAreaCode != '' ">
+   		  	and a.GOODS_AREA_CODE = #{goodsAreaCode} 
+   		  </if>
+   		  <if test="deptcode != null and deptcode != '' ">
+   		  	and a.DEPTCODE like '%' || #{deptcode} || '%' 
+   		  </if>
+   		  <if test="deptcode == null or deptcode == '' ">
+   		  	and a.DEPTCODE = #{currentDeptCode}
+   		  </if>
+   		  <if test="handleStatus != null and handleStatus != 'ALL' ">
+   		  	and a.HANDLE_STATUS = #{handleStatus}
+   		  </if>
+   		  <if test="operator != null and operator != '' ">
+   		  	and exists(select 1 from TFR.T_OPT_ST_OPERATOR ee 
+   		  	             where ee.ST_TASK_ID = b.ID and ee.EMP_CODE = #{operator})
+   		  </if>
+   		  <if test="waybillNo != null and waybillNo != '' ">
+   		  	and exists(select 1 from TFR.T_OPT_ST_TASK_LIST dd
+   		  	             where dd.ST_TASK_ID = b.ID and dd.WAYBILL_NO = #{waybillNo})
+   		  </if>
+   		  <if test="exType != null and exType == 'LACK' ">
+   		  	and a.LESS_GOODS_QTY > 0
+   		  </if>
+   		  <if test="exType != null and exType == 'SURPLUS' ">
+   		  	and a.EXCEED_GOODS_QTY > 0
+   		  </if>
+   		  <if test="exType != null and exType == 'EXIST' ">
+   		  	and (a.EXCEED_GOODS_QTY > 0 or a.LESS_GOODS_QTY > 0)
+   		  </if>
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String" >
+    delete from TFR.T_OPT_ST_DIFFER_REPORT
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  <insert id="addStDifferReport" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StDifferReportEntity" >
+    insert into TFR.T_OPT_ST_DIFFER_REPORT (ID, ST_TASK_ID, REPORT_CODE, 
+      EXCEED_GOODS_QTY, LESS_GOODS_QTY, HANDLE_STATUS, 
+      CREATE_TIME, GOODS_AREA_CODE, GOODS_AREA_NAME, 
+      DEPTCODE)
+    values (#{id,jdbcType=VARCHAR}, #{stTaskId,jdbcType=VARCHAR}, #{reportCode,jdbcType=VARCHAR}, 
+      #{exceedGoodsQty,jdbcType=DECIMAL}, #{lessGoodsQty,jdbcType=DECIMAL}, #{handleStatus,jdbcType=VARCHAR}, 
+      #{createTime,jdbcType=TIMESTAMP}, #{goodsAreaCode,jdbcType=VARCHAR}, #{goodsAreaName,jdbcType=VARCHAR}, 
+      #{deptcode,jdbcType=VARCHAR})
+  </insert>
+  <insert id="addBatchStDifferReport" parameterType="java.util.List" >
+    begin
+	<foreach collection="list" item="item" separator=";">
+    insert into TFR.T_OPT_ST_DIFFER_REPORT (ID, ST_TASK_ID, REPORT_CODE, 
+      EXCEED_GOODS_QTY, LESS_GOODS_QTY, HANDLE_STATUS, 
+      CREATE_TIME, GOODS_AREA_CODE, GOODS_AREA_NAME, 
+      DEPTCODE)
+    values (#{item.id,jdbcType=VARCHAR}, #{item.stTaskId,jdbcType=VARCHAR}, #{item.reportCode,jdbcType=VARCHAR}, 
+      #{item.exceedGoodsQty,jdbcType=DECIMAL}, #{item.lessGoodsQty,jdbcType=DECIMAL}, #{item.handleStatus,jdbcType=VARCHAR}, 
+      #{item.createTime,jdbcType=TIMESTAMP}, #{item.goodsAreaCode,jdbcType=VARCHAR}, #{item.goodsAreaName,jdbcType=VARCHAR}, 
+      #{item.deptcode,jdbcType=VARCHAR})
+  	</foreach>
+    ;end;
+  </insert>
+  <select id="queryStReportForDone" resultMap="StDifferReportResultMap" parameterType="map">
+    select 
+    <include refid="Base_Column_List" />
+    from TFR.T_OPT_ST_DIFFER_REPORT a
+    where a.ID in
+       <foreach collection="reportIdList"  index="index" item="item"  open="(" separator="," close=")">  
+	       #{item}
+	   </foreach>
+      and not exists(select 1 from TFR.T_OPT_ST_DIFFER_DETAIL b where a.ID = b.ST_DIFFER_REPORT_ID and b.HANDLE_STATUS = #{haventDone})
+  </select>
+  <insert id="insertSelective" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StDifferReportEntity" >
+    insert into TFR.T_OPT_ST_DIFFER_REPORT
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="stTaskId != null" >
+        ST_TASK_ID,
+      </if>
+      <if test="reportCode != null" >
+        REPORT_CODE,
+      </if>
+      <if test="exceedGoodsQty != null" >
+        EXCEED_GOODS_QTY,
+      </if>
+      <if test="lessGoodsQty != null" >
+        LESS_GOODS_QTY,
+      </if>
+      <if test="handleStatus != null" >
+        HANDLE_STATUS,
+      </if>
+      <if test="createTime != null" >
+        CREATE_TIME,
+      </if>
+      <if test="goodsAreaCode != null" >
+        GOODS_AREA_CODE,
+      </if>
+      <if test="goodsAreaName != null" >
+        GOODS_AREA_NAME,
+      </if>
+      <if test="deptcode != null" >
+        DEPTCODE,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="stTaskId != null" >
+        #{stTaskId,jdbcType=VARCHAR},
+      </if>
+      <if test="reportCode != null" >
+        #{reportCode,jdbcType=VARCHAR},
+      </if>
+      <if test="exceedGoodsQty != null" >
+        #{exceedGoodsQty,jdbcType=DECIMAL},
+      </if>
+      <if test="lessGoodsQty != null" >
+        #{lessGoodsQty,jdbcType=DECIMAL},
+      </if>
+      <if test="handleStatus != null" >
+        #{handleStatus,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null" >
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="goodsAreaCode != null" >
+        #{goodsAreaCode,jdbcType=VARCHAR},
+      </if>
+      <if test="goodsAreaName != null" >
+        #{goodsAreaName,jdbcType=VARCHAR},
+      </if>
+      <if test="deptcode != null" >
+        #{deptcode,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StDifferReportEntity" >
+    update TFR.T_OPT_ST_DIFFER_REPORT
+    <set >
+      <if test="stTaskId != null" >
+        ST_TASK_ID = #{stTaskId,jdbcType=VARCHAR},
+      </if>
+      <if test="reportCode != null" >
+        REPORT_CODE = #{reportCode,jdbcType=VARCHAR},
+      </if>
+      <if test="exceedGoodsQty != null" >
+        EXCEED_GOODS_QTY = #{exceedGoodsQty,jdbcType=DECIMAL},
+      </if>
+      <if test="lessGoodsQty != null" >
+        LESS_GOODS_QTY = #{lessGoodsQty,jdbcType=DECIMAL},
+      </if>
+      <if test="handleStatus != null" >
+        HANDLE_STATUS = #{handleStatus,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null" >
+        CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="goodsAreaCode != null" >
+        GOODS_AREA_CODE = #{goodsAreaCode,jdbcType=VARCHAR},
+      </if>
+      <if test="goodsAreaName != null" >
+        GOODS_AREA_NAME = #{goodsAreaName,jdbcType=VARCHAR},
+      </if>
+      <if test="deptcode != null" >
+        DEPTCODE = #{deptcode,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  <update id="updateBatchByPrimaryKeySelective" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StDifferReportEntity" >
+    begin
+	<foreach collection="list" item="item" separator=";">
+    update TFR.T_OPT_ST_DIFFER_REPORT
+    <set >
+      <if test="item.stTaskId != null" >
+        ST_TASK_ID = #{item.stTaskId,jdbcType=VARCHAR},
+      </if>
+      <if test="item.reportCode != null" >
+        REPORT_CODE = #{item.reportCode,jdbcType=VARCHAR},
+      </if>
+      <if test="item.exceedGoodsQty != null" >
+        EXCEED_GOODS_QTY = #{item.exceedGoodsQty,jdbcType=DECIMAL},
+      </if>
+      <if test="item.lessGoodsQty != null" >
+        LESS_GOODS_QTY = #{item.lessGoodsQty,jdbcType=DECIMAL},
+      </if>
+      <if test="item.handleStatus != null" >
+        HANDLE_STATUS = #{item.handleStatus,jdbcType=VARCHAR},
+      </if>
+      <if test="item.createTime != null" >
+        CREATE_TIME = #{item.createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="item.goodsAreaCode != null" >
+        GOODS_AREA_CODE = #{item.goodsAreaCode,jdbcType=VARCHAR},
+      </if>
+      <if test="item.goodsAreaName != null" >
+        GOODS_AREA_NAME = #{item.goodsAreaName,jdbcType=VARCHAR},
+      </if>
+      <if test="item.deptcode != null" >
+        DEPTCODE = #{item.deptcode,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where ID = #{item.id,jdbcType=VARCHAR}
+    </foreach>
+    ;end;
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StDifferReportEntity">
+    update TFR.T_OPT_ST_DIFFER_REPORT
+    set ST_TASK_ID = #{stTaskId,jdbcType=VARCHAR},
+      REPORT_CODE = #{reportCode,jdbcType=VARCHAR},
+      EXCEED_GOODS_QTY = #{exceedGoodsQty,jdbcType=DECIMAL},
+      LESS_GOODS_QTY = #{lessGoodsQty,jdbcType=DECIMAL},
+      HANDLE_STATUS = #{handleStatus,jdbcType=VARCHAR},
+      CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+      GOODS_AREA_CODE = #{goodsAreaCode,jdbcType=VARCHAR},
+      GOODS_AREA_NAME = #{goodsAreaName,jdbcType=VARCHAR},
+      DEPTCODE = #{deptcode,jdbcType=VARCHAR}
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  <select id="queryStReportForOAError" parameterType="map" resultMap="StDifferReportResultMap">
+	select distinct aa.ID as id
+		 from (
+		  select b.ID
+		    from tfr.T_OPT_ST_DIFFER_DETAIL a
+		        ,tfr.T_OPT_ST_DIFFER_REPORT b
+		        ,tfr.T_OPT_ST_TASK c
+		      where a.ST_DIFFER_REPORT_ID = b.ID
+			    and b.ST_TASK_ID = c.ID
+			    and a.OA_ERROR_NO = #{oaNullValue}
+    <![CDATA[   and b.CREATE_TIME > #{beginReportOATime}        ]]>
+	<![CDATA[   and c.CREATETIME < cast(SYSDATE-#{oaReportHourRule}/24 as timestamp)        ]]>
+	<![CDATA[   and b.CREATE_TIME between #{bizJobStartTime,jdbcType=TIMESTAMP} and #{bizJobEndTime,jdbcType=TIMESTAMP}  ]]>
+		        and a.DIFFERENCE_TYPE = #{goodsStatusLack}
+		  UNION ALL
+		  select b.ID
+		    from tfr.T_OPT_ST_DIFFER_DETAIL a
+		        ,tfr.T_OPT_ST_DIFFER_REPORT b
+		      where a.ST_DIFFER_REPORT_ID = b.ID
+		        and a.OA_ERROR_NO = #{oaNullValue}
+		        and (a.DIFFERENCE_TYPE = #{goodsStatusSurplusCarry} or a.DIFFERENCE_TYPE = #{goodsStatusSurplusCarryOthers})
+	<![CDATA[   and b.CREATE_TIME > #{beginReportOATime}        ]]>	        
+	<![CDATA[   and b.CREATE_TIME between #{bizJobStartTime,jdbcType=TIMESTAMP} and #{bizJobEndTime,jdbcType=TIMESTAMP}  ]]>
+		)aa  where ORA_HASH(aa.ID, #{threadCount}) = #{threadNo}
+  </select>
+  <select id="queryLackStReportForOAError" parameterType="map" resultMap="StDifferReportResultMap">
+  		select a.id from (
+		  select distinct b.ID as id
+		    from tfr.T_OPT_ST_DIFFER_REPORT b
+		    left join tfr.T_OPT_ST_DIFFER_DETAIL a ON b.id=a.st_differ_report_id
+		    where   
+				    a.OA_ERROR_NO = #{oaNullValue}
+		      and   a.HANDLE_STATUS = #{detailStatus}
+		      and  a.remark IS NULL
+		<!--<![CDATA[   and b.CREATE_TIME between #{bizJobStartTime,jdbcType=TIMESTAMP} and #{bizJobEndTime,jdbcType=TIMESTAMP}  ]]>-->
+			        and a.DIFFERENCE_TYPE = #{goodsStatusLack}
+			 		and ORA_HASH(b.ID, #{threadCount}) = #{threadNo}) a
+			 		<![CDATA[where rownum <= #{bundleNum}]]>
+  </select>
+  <select id="queryMoreStReportForOAError" parameterType="map" resultMap="StDifferReportResultMap">
+		  select distinct b.ID as id
+		    from tfr.T_OPT_ST_DIFFER_REPORT b
+		    left join tfr.T_OPT_ST_DIFFER_DETAIL a ON b.id=a.st_differ_report_id
+		    where 
+		        a.OA_ERROR_NO = #{oaNullValue}
+		        and (a.DIFFERENCE_TYPE = #{goodsStatusSurplusCarry} or a.DIFFERENCE_TYPE = #{goodsStatusSurplusCarryOthers})
+	<![CDATA[   and b.CREATE_TIME > #{beginReportOATime}        ]]>	        
+	<![CDATA[   and b.CREATE_TIME between #{bizJobStartTime,jdbcType=TIMESTAMP} and #{bizJobEndTime,jdbcType=TIMESTAMP}  ]]>
+				and ORA_HASH(b.ID, #{threadCount}) = #{threadNo}
+  </select>
+  <select id="queryStReportCountByTaskId" resultType="int" parameterType="string">
+    select count(*)
+	  from tfr.T_OPT_ST_DIFFER_REPORT a
+	    where a.ST_TASK_ID = #{taskId}
+  </select>
+
+  <select id="queryStReportDetailDtoCount" parameterType="string" resultType="long">
+    select count(1)
+     from (select dd.waybill_no
+           from tfr.t_opt_st_differ_detail dd
+           where dd.st_differ_report_id = #{id,jdbcType=VARCHAR}
+           group by dd.waybill_no)
+  </select>
+  
+  <select id="queryOperateTime" parameterType="map" resultType="date">
+  	select l.create_time as operateTime
+    from tfr.t_opt_st_result_list l
+    where l.st_task_id =
+       (select r.st_task_id from tfr.t_opt_st_differ_report r where r.id = #{reportId,jdbcType=VARCHAR})
+    and l.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+    and l.serial_no = #{serialNo,jdbcType=VARCHAR}
+  </select>
+
+	<!--  统计当天外场清仓差异报告的多货少货信息-->
+  <resultMap id="goodsCountInfoMap" type="com.deppon.foss.module.transfer.stockchecking.api.shared.vo.StReportVO" >
+	   <result column="lessGoodsCount" property="lessGoodsCount" jdbcType="VARCHAR" />
+	    <result column="exceedDoodsCount" property="exceedDoodsCount" jdbcType="VARCHAR" />
+	    <result column="errorGoodsAreaCount" property="errorGoodsAreaCount" jdbcType="VARCHAR" />
+		<result column="signCount" property="signCount" jdbcType="VARCHAR" />
+	    <result column="obsoleteCount" property="obsoleteCount" jdbcType="VARCHAR" />
+	    <result column="abortedCount" property="abortedCount" jdbcType="VARCHAR" />
+  </resultMap>
+   
+  <!--  统计转运场库区、任务信息 -->
+  <select id="goodsCountInfo" parameterType="String"  resultMap="goodsCountInfoMap" >
+	select   
+		(select decode( sum(a.less_goods_qty),null,0, sum(a.less_goods_qty))
+		    from tfr.T_OPT_ST_DIFFER_REPORT a
+		     inner join bse.T_BAS_GOODS_AREA b on  a.deptcode=b.org_code and  a.goods_area_code=b.goods_area_code
+          		and b.active='Y'
+		      where 
+		         a.deptcode=#{orgCode}
+		         and a.create_time<![CDATA[>=]]>to_date(to_char(SYSDATE,'yyyy-mm-dd'),'yyyy-mm-dd hh24:mi:ss')
+		         and a.create_time<![CDATA[<=sysdate]]>
+		         
+		  )lessGoodsCount,
+		 (
+		 (select decode(sum(a.exceed_goods_qty),null,0,sum(a.exceed_goods_qty))
+		    from tfr.T_OPT_ST_DIFFER_REPORT a
+		     inner join bse.T_BAS_GOODS_AREA b on  a.deptcode=b.org_code and  a.goods_area_code=b.goods_area_code
+          		and b.active='Y'
+		      where 
+		        a.deptcode=#{orgCode}
+		        and a.create_time<![CDATA[>=]]>to_date(to_char(SYSDATE,'yyyy-mm-dd'),'yyyy-mm-dd hh24:mi:ss')
+		        and a.create_time<![CDATA[<=sysdate]]>
+		        
+		   ) 
+		    -    
+		 (select count(d.id) from
+		     tfr.T_OPT_ST_DIFFER_REPORT a
+		    INNER join tfr.t_opt_st_differ_detail d on d.st_differ_report_id=a.id
+		     inner join bse.T_BAS_GOODS_AREA b on  a.deptcode=b.org_code and  a.goods_area_code=b.goods_area_code
+          		and b.active='Y'
+		       where d.difference_type='ERROR_GOODSAREA'
+		       and a.deptcode=#{orgCode}
+		       and a.create_time<![CDATA[>=]]>to_date(to_char(SYSDATE,'yyyy-mm-dd'),'yyyy-mm-dd hh24:mi:ss')
+		       and a.create_time<![CDATA[<=sysdate]]> 
+		       
+		    )
+		   ) exceedDoodsCount,
+		    (select count(d.id) from
+		     tfr.T_OPT_ST_DIFFER_REPORT a
+		    INNER join tfr.t_opt_st_differ_detail d on d.st_differ_report_id=a.id
+		     inner join bse.T_BAS_GOODS_AREA b on  a.deptcode=b.org_code and  a.goods_area_code=b.goods_area_code
+          		and b.active='Y'
+		       where d.difference_type='ERROR_GOODSAREA'
+		       and a.deptcode=#{orgCode}
+		       and a.create_time<![CDATA[>=]]>to_date(to_char(SYSDATE,'yyyy-mm-dd'),'yyyy-mm-dd hh24:mi:ss')
+		       and a.create_time<![CDATA[<=sysdate]]>
+		      
+		    ) errorGoodsAreaCount,
+		    (select count(d.id) from
+		     tfr.T_OPT_ST_DIFFER_REPORT a
+		    INNER join tfr.t_opt_st_differ_detail d on d.st_differ_report_id=a.id
+		     inner join bse.T_BAS_GOODS_AREA b on  a.deptcode=b.org_code and  a.goods_area_code=b.goods_area_code
+          		and b.active='Y'
+		       where d.difference_type='SIGN'
+		       and a.deptcode=#{orgCode}
+		       and a.create_time<![CDATA[>=]]>to_date(to_char(SYSDATE,'yyyy-mm-dd'),'yyyy-mm-dd hh24:mi:ss')
+		       and a.create_time<![CDATA[<=sysdate]]>
+		    ) signCount,
+		    (select count(d.id) from
+		     tfr.T_OPT_ST_DIFFER_REPORT a
+		    INNER join tfr.t_opt_st_differ_detail d on d.st_differ_report_id=a.id
+		     inner join bse.T_BAS_GOODS_AREA b on  a.deptcode=b.org_code and  a.goods_area_code=b.goods_area_code
+          		and b.active='Y'
+		       where d.difference_type='OBSOLETE'
+		       and a.deptcode=#{orgCode}
+		       and a.create_time<![CDATA[>=]]>to_date(to_char(SYSDATE,'yyyy-mm-dd'),'yyyy-mm-dd hh24:mi:ss')
+		       and a.create_time<![CDATA[<=sysdate]]>
+		    ) obsoleteCount,
+		    (select count(d.id) from
+		     tfr.T_OPT_ST_DIFFER_REPORT a
+		    INNER join tfr.t_opt_st_differ_detail d on d.st_differ_report_id=a.id
+		     inner join bse.T_BAS_GOODS_AREA b on  a.deptcode=b.org_code and  a.goods_area_code=b.goods_area_code
+          		and b.active='Y'
+		       where d.difference_type='ABORTED'
+		       and a.deptcode=#{orgCode}
+		       and a.create_time<![CDATA[>=]]>to_date(to_char(SYSDATE,'yyyy-mm-dd'),'yyyy-mm-dd hh24:mi:ss')
+		       and a.create_time<![CDATA[<=sysdate]]>
+		    ) abortedCount
+		from dual
+			
+  </select>
+  
+</mapper>

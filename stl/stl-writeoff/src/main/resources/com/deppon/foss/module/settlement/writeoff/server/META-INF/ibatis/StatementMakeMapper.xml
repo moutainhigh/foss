@@ -1,0 +1,869 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.stl.StatementOfAccountDEntityDao" >
+
+  <!-- 查询应收单字段 -->
+  <sql id="Query_Receivable_Column_List" >
+	SELECT /*结算-核销-查询应收单*/
+		 REC.RECEIVABLE_NO SOURCE_BILL_NO, REC.ID ID, REC.STATEMENT_BILL_NO STATEMENT_BILL_NO, REC.SOURCE_BILL_NO ORIG_SOURCE_BILL_NO,
+		 REC.WAYBILL_NO WAYBILL_NO, #{ysBillParentType,jdbcType=VARCHAR} BILL_PARENT_TYPE, REC.BILL_TYPE BILL_TYPE,
+		 REC.AMOUNT/100 AMOUNT, REC.VERIFY_AMOUNT/100 VERIFY_AMOUNT, REC.APPROVE_STATUS AUDIT_STATUS, REC.UNVERIFY_AMOUNT/100 UNVERIFY_AMOUNT,
+		 REC.DUNNING_ORG_CODE ORG_CODE, REC.DUNNING_ORG_NAME ORG_NAME, REC.ORIG_ORG_CODE ORIG_ORG_CODE, REC.ORIG_ORG_NAME ORIG_ORG_NAME,
+		 REC.DEST_ORG_CODE DEST_ORG_CODE, REC.DEST_ORG_NAME DEST_ORG_NAME, REC.CUSTOMER_CODE CUSTOMER_CODE, REC.CUSTOMER_NAME CUSTOMER_NAME,
+		 NULL DEPT_REGION_CODE, REC.TARGET_ORG_CODE ARRV_REGION_CODE, REC.CUSTOMER_PICKUP_ORG_CODE CUSTOMER_PICKUP_ORG_NAME,
+		 REC.GOODS_QTY_TOTAL QTY, REC.GOODS_VOLUME_TOTAL BILLING_VOLUME, REC.BILL_WEIGHT BILL_WEIGHT, REC.GOODS_NAME GOODS_NAME,
+		 REC.DELIVERY_CUSTOMER_CODE DELIVERY_CUSTOMER_CODE, REC.DELIVERY_CUSTOMER_NAME DELIVERY_CUSTOMER_NAME, REC.RECEIVE_CUSTOMER_CODE RECEIVE_CUSTOMER_CODE,
+		 REC.RECEIVE_CUSTOMER_NAME RECEIVE_CUSTOMER_NAME, REC.PAYMENT_TYPE PAYMENT_TYPE, REC.RECEIVE_METHOD RECEIVE_METHOD,
+		 REC.PRODUCT_CODE PRODUCT_CODE, REC.INSURANCE_FEE/100 INSURANCE_FEE, REC.TRANSPORT_FEE/100 TRANSPORT_FEE,
+		 REC.PACKAGING_FEE/100 PACKAGING_FEE, REC.delivery_goods_fee/100 DELIVER_FEE, REC.COD_FEE/100 COD_FEE,
+		 REC.OTHER_FEE/100 OTHER_FEE, REC.VALUE_ADD_FEE/100 VALUE_ADD_FEE, REC.PROMOTIONS_FEE/100 PROMOTIONS_FEE,
+		 REC.PICKUP_FEE/100 PICKUP_FEE, NULL IS_DELETE, NULL DISABLE_TIME, REC.BUSINESS_DATE BUSINESS_DATE, REC.ACCOUNT_DATE ACCOUNT_DATE,
+		 REC.CONREVEN_DATE SIGN_DATE, REC.CREATE_TIME CREATE_TIME, REC.NOTES NOTES, REC.VERSION_NO VERSION_NO, 
+		 W.UNIT_PRICE/100 UNITPRICE, W.INSURANCE_AMOUNT/100 INSURANCEAMOUNT,W.DELIVERY_CUSTOMER_CONTACT DELIVERYCUSTOMERCONTACT,REC.UNIFIED_SETTLEMENT UNIFIED_SETTLEMENT
+		  FROM STL.T_STL_BILL_RECEIVABLE REC
+		LEFT JOIN PKP.T_SRV_WAYBILL W ON W.WAYBILL_NO = REC.WAYBILL_NO AND W.ACTIVE = 'Y'
+  </sql>
+  <!-- 查询应收单总数 -->
+  <sql id="Query_Receivable_Count" >
+	SELECT /*结算-对账单-查询应收单总数*/
+		 count(rec.id)
+		  FROM STL.T_STL_BILL_RECEIVABLE REC
+		LEFT JOIN PKP.T_SRV_WAYBILL W ON W.WAYBILL_NO = REC.WAYBILL_NO AND W.ACTIVE = 'Y'
+  </sql>
+  <!-- 查询应付单字段 -->
+  <sql id="Query_Payable_Column_List" >
+    SELECT  /*结算-核销-查询应付单*/
+    PAYABLE_NO SOURCE_BILL_NO,ID, STATEMENT_BILL_NO, SOURCE_BILL_NO ORIG_SOURCE_BILL_NO, WAYBILL_NO, #{yfBillParentType,jdbcType=VARCHAR} BILL_PARENT_TYPE, BILL_TYPE, AMOUNT/100 AMOUNT, VERIFY_AMOUNT/100 VERIFY_AMOUNT,APPROVE_STATUS AUDIT_STATUS,
+    UNVERIFY_AMOUNT/100 UNVERIFY_AMOUNT,PAYABLE_ORG_CODE ORG_CODE,PAYABLE_ORG_NAME ORG_NAME,ORIG_ORG_CODE, ORIG_ORG_NAME, DEST_ORG_CODE, DEST_ORG_NAME, CUSTOMER_CODE, 
+    CUSTOMER_NAME,NULL DEPT_REGION_CODE,NULL ARRV_REGION_CODE,NULL CUSTOMER_PICKUP_ORG_NAME,NULL QTY, 
+    NULL BILLING_VOLUME,NULL BILL_WEIGHT,NULL GOODS_NAME,NULL DELIVERY_CUSTOMER_CODE,NULL DELIVERY_CUSTOMER_NAME,NULL RECEIVE_CUSTOMER_CODE,
+    NULL RECEIVE_CUSTOMER_NAME,NULL PAYMENT_TYPE,NULL RECEIVE_METHOD,PRODUCT_CODE PRODUCT_CODE,
+    NULL INSURANCE_FEE, NULL TRANSPORT_FEE, NULL PACKAGING_FEE, 
+    NULL DELIVER_FEE,NULL COD_FEE, NULL OTHER_FEE, NULL VALUE_ADD_FEE, NULL PROMOTIONS_FEE,
+    NULL PICKUP_FEE,NULL IS_DELETE, NULL DISABLE_TIME, BUSINESS_DATE, ACCOUNT_DATE, SIGN_DATE,
+    CREATE_TIME, NOTES, VERSION_NO
+    FROM STL.T_STL_BILL_PAYABLE PAY
+  </sql>
+  <!-- 查询预收单字段 -->
+  <sql id="Query_Deposit_Received_Column_List" >
+    SELECT  /*结算-核销-查询预收单*/
+    DEPOSIT_RECEIVED_NO SOURCE_BILL_NO,ID, STATEMENT_BILL_NO, NULL ORIG_SOURCE_BILL_NO, NULL WAYBILL_NO, #{usBillParentType,jdbcType=VARCHAR} BILL_PARENT_TYPE, BILL_TYPE, AMOUNT/100 AMOUNT, VERIFY_AMOUNT/100 VERIFY_AMOUNT,NULL AUDIT_STATUS, 
+    UNVERIFY_AMOUNT/100 UNVERIFY_AMOUNT,GENERATING_ORG_CODE ORG_CODE,GENERATING_ORG_NAME ORG_NAME,NULL ORIG_ORG_CODE,NULL ORIG_ORG_NAME,NULL DEST_ORG_CODE,NULL DEST_ORG_NAME, CUSTOMER_CODE, 
+    CUSTOMER_NAME,NULL DEPT_REGION_CODE,NULL ARRV_REGION_CODE,NULL CUSTOMER_PICKUP_ORG_NAME,NULL QTY, 
+    NULL BILLING_VOLUME,NULL BILL_WEIGHT,NULL GOODS_NAME,NULL DELIVERY_CUSTOMER_CODE,NULL DELIVERY_CUSTOMER_NAME,NULL RECEIVE_CUSTOMER_CODE,
+    NULL RECEIVE_CUSTOMER_NAME,PAYMENT_TYPE PAYMENT_TYPE,NULL RECEIVE_METHOD,NULL PRODUCT_CODE,
+    NULL INSURANCE_FEE, NULL TRANSPORT_FEE, NULL PACKAGING_FEE, 
+    NULL DELIVER_FEE,NULL COD_FEE, NULL OTHER_FEE, NULL VALUE_ADD_FEE, NULL PROMOTIONS_FEE,
+    NULL PICKUP_FEE,NULL IS_DELETE, NULL DISABLE_TIME, BUSINESS_DATE, ACCOUNT_DATE,NULL SIGN_DATE,
+    CREATE_TIME, NOTES, VERSION_NO
+    FROM STL.T_STL_BILL_DEPOSIT_RECEIVED DEP
+  </sql>
+  <!-- 查询空运预付单字段 -->
+    <sql id="Query_Advanced_Payment_Column_List" >
+    SELECT /*结算-核销-查询空运预付单*/
+    ADVANCES_NO SOURCE_BILL_NO,ID, STATEMENT_BILL_NO,NULL ORIG_SOURCE_BILL_NO, NULL WAYBILL_NO, #{ufBillParentType,jdbcType=VARCHAR} BILL_PARENT_TYPE, BILL_TYPE, AMOUNT/100 AMOUNT, VERIFY_AMOUNT/100 VERIFY_AMOUNT,AUDIT_STATUS AUDIT_STATUS ,
+    UNVERIFY_AMOUNT/100 UNVERIFY_AMOUNT,APPLY_ORG_CODE ORG_CODE,APPLY_ORG_NAME ORG_NAME,NULL ORIG_ORG_CODE,NULL ORIG_ORG_NAME,NULL DEST_ORG_CODE,NULL DEST_ORG_NAME, CUSTOMER_CODE, 
+    CUSTOMER_NAME,NULL DEPT_REGION_CODE,NULL ARRV_REGION_CODE,NULL CUSTOMER_PICKUP_ORG_NAME,NULL QTY, 
+    NULL BILLING_VOLUME,NULL BILL_WEIGHT,NULL GOODS_NAME,NULL DELIVERY_CUSTOMER_CODE,NULL DELIVERY_CUSTOMER_NAME,NULL RECEIVE_CUSTOMER_CODE,
+    NULL RECEIVE_CUSTOMER_NAME,PAYMENT_TYPE,NULL RECEIVE_METHOD,NULL PRODUCT_CODE,
+    NULL INSURANCE_FEE, NULL TRANSPORT_FEE, NULL PACKAGING_FEE, 
+    NULL DELIVER_FEE,NULL COD_FEE, NULL OTHER_FEE, NULL VALUE_ADD_FEE, NULL PROMOTIONS_FEE,
+    NULL PICKUP_FEE,NULL IS_DELETE, NULL DISABLE_TIME, BUSINESS_DATE, ACCOUNT_DATE,NULL SIGN_DATE,
+    CREATE_TIME, NOTES, VERSION_NO
+    FROM STL.T_STL_BILL_ADVANCED_PAYMENT ADV
+  </sql>
+  
+  <!-- 按日期查询应收单数据 -->
+  <select id="selectYSByParams" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.StatementOfAccountMakeQueryDto" 
+  resultMap="BaseResultMap">
+     <include refid="Query_Receivable_Column_List"/>
+     <where>
+          <!--DECODE函数用于减少函数索引的总数，未核销金额等于0的数据不进入索引  -->
+          REC.UNVERIFY_AMOUNT>0  AND
+          REC.STATEMENT_BILL_NO =#{statementBillNo ,jdbcType=VARCHAR} AND REC.ACTIVE =#{active ,jdbcType=VARCHAR}   AND
+          ((REC.APPROVE_STATUS=#{approveStatus ,jdbcType=VARCHAR} AND (REC.BILL_TYPE=#{rBillTypeAirOtherReceivable ,jdbcType=VARCHAR} OR REC.BILL_TYPE = 'LR' OR REC.BILL_TYPE = 'PR'))OR
+          (REC.BILL_TYPE!=#{rBillTypeAirOtherReceivable ,jdbcType=VARCHAR} AND REC.BILL_TYPE ! ='LR' AND REC.BILL_TYPE != 'PR'))
+          <!-- 如果单据类型为代收货款，则运输类型必须为空运，否则单据类型不能为代收货款应收单 -->
+          AND ((REC.BILL_TYPE=#{rBillTypeCODReceivable ,jdbcType=VARCHAR} 
+          AND  REC.PRODUCT_CODE IN
+          <foreach collection="productTypeList" index="index" item="item" open="(" separator="," close=")">
+           #{item}
+          </foreach>
+          ) OR REC.BILL_TYPE!=#{rBillTypeCODReceivable,jdbcType=VARCHAR} )
+          AND REC.BILL_TYPE != 'WOR'
+          AND REC.CUSTOMER_CODE NOT LIKE 'W%'
+          <![CDATA[AND (REC.UNLOCK_DATE_TIME IS NULL OR REC.UNLOCK_DATE_TIME<sysdate)]]>    
+             AND REC.DUNNING_ORG_CODE=#{orgCode}   AND REC.CUSTOMER_CODE=#{customerCode}  
+           <choose>
+          	<when test="dateType!=null and dateType!='' and dateType=='CO' ">
+          		<!-- 如果账期不为空，则查询本期数据，如果账期为空，则查询期初数据  -->     
+	          	<if test="periodType!=null">
+	            	  <![CDATA[ AND REC.CONREVEN_DATE>=#{periodBeginDate} AND REC.CONREVEN_DATE<#{periodEndDate}]]>
+	        	</if>
+	          	<if test="periodType==null">
+	              	<![CDATA[ AND REC.CONREVEN_DATE<#{periodBeginDate}]]>
+	          	</if>
+          	</when>
+			<otherwise>
+          		<!-- 如果账期不为空，则查询本期数据，如果账期为空，则查询期初数据  -->     
+	          	<if test="periodType!=null">
+	            	  <![CDATA[ AND REC.BUSINESS_DATE>=#{periodBeginDate} AND REC.BUSINESS_DATE<#{periodEndDate}]]>
+	        	</if>
+	          	<if test="periodType==null">
+	              	<![CDATA[ AND REC.BUSINESS_DATE<#{periodBeginDate}]]>
+	          	</if>
+          	</otherwise>
+          </choose>
+			
+          <if test="deliveryCustomerContact != '' and deliveryCustomerContact != null">
+          		AND W.DELIVERY_CUSTOMER_CONTACT=#{deliveryCustomerContact}
+          </if>
+		  <!-- 单字符自动转化成数字，所以必须转化成string，否则报NumberFormatException -->
+	      <if test='receivableUnified == "Y"'>
+				AND REC.UNIFIED_SETTLEMENT=#{receivableUnified,jdbcType=VARCHAR}
+	      </if>
+		  <if test="receivableUnified == 'N'.toString()">
+				AND (REC.UNIFIED_SETTLEMENT=#{receivableUnified,jdbcType=VARCHAR} OR REC.UNIFIED_SETTLEMENT IS NULL)
+	      </if>
+      </where>
+  </select>
+  
+  <!-- 按应收单号查询应收单数据 -->
+  <select id="selectYSByReceivabeNos" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.StatementOfAccountMakeQueryDto" 
+  resultMap="BaseResultMap">
+     <include refid="Query_Receivable_Column_List"/>
+     <where>
+          <!--DECODE函数用于减少函数索引的总数，未核销金额等于0的数据不进入索引  -->
+          REC.UNVERIFY_AMOUNT>0  AND
+          REC.STATEMENT_BILL_NO =#{statementBillNo ,jdbcType=VARCHAR} AND REC.ACTIVE =#{active ,jdbcType=VARCHAR}   AND
+          ((REC.APPROVE_STATUS=#{approveStatus ,jdbcType=VARCHAR} AND (REC.BILL_TYPE=#{rBillTypeAirOtherReceivable ,jdbcType=VARCHAR} OR REC.BILL_TYPE = 'LR' OR REC.BILL_TYPE = 'PR')) OR
+          (REC.BILL_TYPE!=#{rBillTypeAirOtherReceivable ,jdbcType=VARCHAR} AND REC.BILL_TYPE ! ='LR' AND REC.BILL_TYPE != 'PR'))
+          <!-- 如果单据类型为代收货款，则运输类型必须为空运，否则单据类型能为代收货款应收单 -->
+          AND ((REC.BILL_TYPE=#{rBillTypeCODReceivable ,jdbcType=VARCHAR} 
+          AND  REC.PRODUCT_CODE IN
+          <foreach collection="productTypeList" index="index" item="item" open="(" separator="," close=")">
+           #{item}
+          </foreach>
+          ) OR REC.BILL_TYPE!=#{rBillTypeCODReceivable,jdbcType=VARCHAR} )
+          AND REC.BILL_TYPE != 'WOR'
+          AND REC.CUSTOMER_CODE NOT LIKE 'W%'
+          <![CDATA[AND (REC.UNLOCK_DATE_TIME IS NULL OR REC.UNLOCK_DATE_TIME<sysdate)]]>    
+          AND REC.DUNNING_ORG_CODE=#{orgCode} 
+           AND REC.CUSTOMER_CODE IS NOT NULL
+          <if test="customerCode!=null">
+          AND REC.CUSTOMER_CODE=#{customerCode}  
+          </if>
+          <!-- 如果账期不为空，则查询本期数据 -->     
+          <if test="periodType!=null">
+          AND  REC.RECEIVABLE_NO IN 
+            <foreach collection="receivableBillNosList" index="index" item="item" open="(" separator="," close=")">
+              #{item}
+            </foreach> 
+          </if>
+          
+		  <!-- 单字符自动转化成数字，所以必须转化成string，否则报NumberFormatException -->
+	      <if test='receivableUnified == "Y"'>
+				AND REC.UNIFIED_SETTLEMENT=#{receivableUnified,jdbcType=VARCHAR}
+	      </if>
+		  <if test="receivableUnified == 'N'.toString()">
+				AND (REC.UNIFIED_SETTLEMENT=#{receivableUnified,jdbcType=VARCHAR} OR REC.UNIFIED_SETTLEMENT IS NULL)
+	      </if>
+          
+      </where>
+  </select>
+  
+  <!-- 按运单单号或者来源单号查询应收单数据 -->
+  <select id="selectYSByWaybillNos" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.StatementOfAccountMakeQueryDto" 
+  resultMap="BaseResultMap">
+     <include refid="Query_Receivable_Column_List"/>
+     <where>
+          <!--DECODE函数用于减少函数索引的总数，未核销金额等于0的数据不进入索引  -->
+          REC.UNVERIFY_AMOUNT>0  AND
+          REC.STATEMENT_BILL_NO =#{statementBillNo ,jdbcType=VARCHAR} AND REC.ACTIVE =#{active ,jdbcType=VARCHAR}   AND
+          ((REC.APPROVE_STATUS=#{approveStatus ,jdbcType=VARCHAR} AND (REC.BILL_TYPE=#{rBillTypeAirOtherReceivable ,jdbcType=VARCHAR} OR REC.BILL_TYPE = 'LR' OR REC.BILL_TYPE = 'PR')) OR
+          (REC.BILL_TYPE!=#{rBillTypeAirOtherReceivable ,jdbcType=VARCHAR} AND REC.BILL_TYPE ! ='LR' AND REC.BILL_TYPE != 'PR'))
+          <!-- 如果单据类型为代收货款，则运输类型必须为空运，否则单据类型能为代收货款应收单 -->
+          AND ((REC.BILL_TYPE=#{rBillTypeCODReceivable ,jdbcType=VARCHAR} 
+          AND  REC.PRODUCT_CODE IN
+          <foreach collection="productTypeList" index="index" item="item" open="(" separator="," close=")">
+           #{item}
+          </foreach>
+          ) OR REC.BILL_TYPE!=#{rBillTypeCODReceivable,jdbcType=VARCHAR} )
+          AND REC.BILL_TYPE != 'WOR'
+          AND REC.CUSTOMER_CODE NOT LIKE 'W%'
+          <![CDATA[AND (REC.UNLOCK_DATE_TIME IS NULL OR REC.UNLOCK_DATE_TIME<sysdate)]]>    
+          AND REC.DUNNING_ORG_CODE=#{orgCode}  
+          AND REC.CUSTOMER_CODE IS NOT NULL
+          AND (REC.SOURCE_BILL_NO IN 
+          <foreach collection="sourceBillNosList" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+          </foreach>
+          OR REC.WAYBILL_NO IN
+          <foreach collection="sourceBillNosList" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+          </foreach>
+          )
+          <!-- 单字符自动转化成数字，所以必须转化成string，否则报NumberFormatException -->
+	      <if test='receivableUnified == "Y"'>
+				AND REC.UNIFIED_SETTLEMENT=#{receivableUnified,jdbcType=VARCHAR}
+	      </if>
+		  <if test="receivableUnified == 'N'.toString()">
+				AND (REC.UNIFIED_SETTLEMENT=#{receivableUnified,jdbcType=VARCHAR} OR REC.UNIFIED_SETTLEMENT IS NULL)
+	      </if>
+      </where>
+  </select>
+  
+  <!-- 按开始和结束正单号查询应收单数据 -->
+  <select id="selectYSByAirWaybillBeginAndEndNo" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.StatementOfAccountMakeQueryDto" 
+  resultMap="BaseResultMap">
+     <include refid="Query_Receivable_Column_List"/>
+     <where>
+          <!--DECODE函数用于减少函数索引的总数，未核销金额等于0的数据不进入索引  -->
+          REC.UNVERIFY_AMOUNT>0  AND
+          REC.STATEMENT_BILL_NO =#{statementBillNo ,jdbcType=VARCHAR} AND REC.ACTIVE =#{active ,jdbcType=VARCHAR}   AND
+          ((REC.APPROVE_STATUS=#{approveStatus ,jdbcType=VARCHAR} AND (REC.BILL_TYPE=#{rBillTypeAirOtherReceivable ,jdbcType=VARCHAR} OR REC.BILL_TYPE = 'LR' OR REC.BILL_TYPE = 'PR')) OR
+          (REC.BILL_TYPE!=#{rBillTypeAirOtherReceivable ,jdbcType=VARCHAR} AND REC.BILL_TYPE ! ='LR' AND REC.BILL_TYPE != 'PR'))
+          <!-- 如果单据类型为代收货款，则运输类型必须为空运，否则单据类型能为代收货款应收单 -->
+          AND ((REC.BILL_TYPE=#{rBillTypeCODReceivable ,jdbcType=VARCHAR} 
+          AND REC.PRODUCT_CODE IN
+          <foreach collection="productTypeList" index="index" item="item" open="(" separator="," close=")">
+           #{item}
+          </foreach>
+          ) OR REC.BILL_TYPE!=#{rBillTypeCODReceivable,jdbcType=VARCHAR} )
+          AND REC.BILL_TYPE != 'WOR'
+          AND REC.CUSTOMER_CODE NOT LIKE 'W%'
+          <![CDATA[AND (REC.UNLOCK_DATE_TIME IS NULL OR REC.UNLOCK_DATE_TIME<sysdate)]]>    
+          AND REC.DUNNING_ORG_CODE=#{orgCode} 
+          AND REC.CUSTOMER_CODE=#{customerCode}  
+          <!-- 如果账期不为空，则查询本期数据 -->     
+          AND REC.SOURCE_BILL_NO IN 
+            <foreach collection="airWaybillNos" index="index" item="item" open="(" separator="," close=")">
+              #{item}
+            </foreach> 
+      </where>
+  </select>
+  
+  <!-- 按日期查询应付单数据 -->
+  <select id="selectYFByParams" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.StatementOfAccountMakeQueryDto" 
+  resultMap="BaseResultMap">
+     <include refid="Query_Payable_Column_List"/>
+     <where> 
+          <!--DECODE函数用于减少函数索引的总数，未核销金额等于0的数据不进入索引  -->
+          UNVERIFY_AMOUNT>0 
+          AND BILL_TYPE NOT IN ('APC','SF','CP','C','A','AAO','AAD','AO','PO','LDO','WOP','WP')
+          AND CUSTOMER_CODE NOT LIKE 'W%'
+          AND EFFECTIVE_STATUS=#{effectiveStatus ,jdbcType=VARCHAR} AND
+          STATEMENT_BILL_NO =#{statementBillNo ,jdbcType=VARCHAR} AND ACTIVE =#{active ,jdbcType=VARCHAR}   
+          AND PAYABLE_ORG_CODE=#{orgCode} AND CUSTOMER_CODE=#{customerCode}
+          AND APPROVE_STATUS=#{approveStatus,jdbcType=VARCHAR}    
+         <choose>
+         	<when test="dateType!=null and dateType!='' and dateType=='CO' ">
+         		<!--按日期查询， 查询本期和期初单据信息，如果账期不为空，则查询本期数据，如果账期为空，则查询期初数据 -->
+		        <if test="periodType!=null">
+		            <![CDATA[ AND SIGN_DATE>=#{periodBeginDate} AND SIGN_DATE<#{periodEndDate}]]>
+		        </if>
+		        <if test="periodType==null">
+		            <![CDATA[ AND SIGN_DATE<#{periodBeginDate}]]>
+		        </if>
+         	</when>
+			<otherwise>
+	         	<!--按日期查询， 查询本期和期初单据信息，如果账期不为空，则查询本期数据，如果账期为空，则查询期初数据 -->
+		        <if test="periodType!=null">
+		            <![CDATA[ AND BUSINESS_DATE>=#{periodBeginDate} AND BUSINESS_DATE<#{periodEndDate}]]>
+		        </if>
+		        <if test="periodType==null">
+		            <![CDATA[ AND BUSINESS_DATE<#{periodBeginDate}]]>
+		        </if>
+         	</otherwise>
+         </choose>
+		 
+          AND NOT EXISTS (SELECT PAYMENT_NO FROM STL.T_STL_BILL_PAYMENT PAYMENT
+          WHERE PAY.PAYMENT_NO=PAYMENT.PAYMENT_NO AND PAYMENT.REMIT_STATUS IN 
+            <foreach collection="remitStatusList" index="index" item="item" open="(" separator="," close=")">
+              #{item}
+            </foreach> 
+             AND PAYMENT.ACTIVE =#{active ,jdbcType=VARCHAR}
+           )
+     </where>
+  </select>
+    
+  <!-- 按应付单号查询应付单数据 -->
+  <select id="selectYFByPayableNos" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.StatementOfAccountMakeQueryDto" 
+  resultMap="BaseResultMap">
+     <include refid="Query_Payable_Column_List"/>
+     <where> 
+          <!--DECODE函数用于减少函数索引的总数，未核销金额等于0的数据不进入索引  -->
+          UNVERIFY_AMOUNT>0 
+          AND BILL_TYPE NOT IN ('APC','SF','CP','C','A','AAO','AAD','AO','PO','LDO','WOP','WP')
+          AND CUSTOMER_CODE NOT LIKE 'W%'
+          AND EFFECTIVE_STATUS=#{effectiveStatus ,jdbcType=VARCHAR} AND
+          STATEMENT_BILL_NO =#{statementBillNo ,jdbcType=VARCHAR} AND ACTIVE =#{active ,jdbcType=VARCHAR}   
+          AND PAYABLE_ORG_CODE=#{orgCode}  AND APPROVE_STATUS=#{approveStatus,jdbcType=VARCHAR}
+          <if test="customerCode!=null">
+          AND CUSTOMER_CODE=#{customerCode}  
+          </if>
+          <!-- 如果账期不为空，则查询本期数据 -->     
+          <if test="periodType!=null">
+           AND PAYABLE_NO IN 
+            <foreach collection="payableBillNosList" index="index" item="item" open="(" separator="," close=")">
+             #{item}
+            </foreach>
+          </if>
+          AND NOT EXISTS (SELECT PAYMENT_NO FROM STL.T_STL_BILL_PAYMENT PAYMENT
+          WHERE PAY.PAYMENT_NO=PAYMENT.PAYMENT_NO AND PAYMENT.REMIT_STATUS IN 
+            <foreach collection="remitStatusList" index="index" item="item" open="(" separator="," close=")">
+              #{item}
+            </foreach> 
+            AND PAYMENT.ACTIVE =#{active ,jdbcType=VARCHAR}
+           )
+     </where>
+  </select>
+  
+  <!-- 按运单单号查询应付单数据 -->
+  <select id="selectYFByWaybillNos" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.StatementOfAccountMakeQueryDto" 
+  resultMap="BaseResultMap">
+     <include refid="Query_Payable_Column_List"/>
+     <where> 
+          <!--DECODE函数用于减少函数索引的总数，未核销金额等于0的数据不进入索引  -->
+          UNVERIFY_AMOUNT>0 
+          AND BILL_TYPE NOT IN ('APC','SF','CP','C','A','AAO','AAD','AO','PO','LDO','WOP','WP')
+          AND CUSTOMER_CODE NOT LIKE 'W%'
+          AND EFFECTIVE_STATUS=#{effectiveStatus ,jdbcType=VARCHAR} AND
+          STATEMENT_BILL_NO =#{statementBillNo ,jdbcType=VARCHAR} AND ACTIVE =#{active ,jdbcType=VARCHAR}   
+          AND PAYABLE_ORG_CODE=#{orgCode} 
+          AND (SOURCE_BILL_NO IN 
+          <foreach collection="sourceBillNosList" index="index" item="item" open="(" separator="," close=")">
+             #{item}
+          </foreach>
+          OR WAYBILL_NO IN
+          <foreach collection="sourceBillNosList" index="index" item="item" open="(" separator="," close=")">
+             #{item}
+          </foreach>
+          )
+          AND APPROVE_STATUS=#{approveStatus,jdbcType=VARCHAR}
+          AND NOT EXISTS (SELECT PAYMENT_NO FROM STL.T_STL_BILL_PAYMENT PAYMENT
+          WHERE PAY.PAYMENT_NO=PAYMENT.PAYMENT_NO AND PAYMENT.REMIT_STATUS IN 
+            <foreach collection="remitStatusList" index="index" item="item" open="(" separator="," close=")">
+              #{item}
+            </foreach> 
+             AND PAYMENT.ACTIVE =#{active ,jdbcType=VARCHAR}
+           )
+     </where>
+  </select>
+  
+   <!-- 按开始和结束正单号查询应付单数据 -->
+  <select id="selectYFByAirWaybillBeginAndEndNo" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.StatementOfAccountMakeQueryDto" 
+  resultMap="BaseResultMap">
+     <include refid="Query_Payable_Column_List"/>
+     <where> 
+          <!--DECODE函数用于减少函数索引的总数，未核销金额等于0的数据不进入索引  -->
+          UNVERIFY_AMOUNT>0 
+          AND BILL_TYPE NOT IN ('APC','SF','CP','C','A','AAO','AAD','AO','PO','LDO','WOP','WP')
+          AND CUSTOMER_CODE NOT LIKE 'W%'
+          AND EFFECTIVE_STATUS=#{effectiveStatus ,jdbcType=VARCHAR} AND
+          STATEMENT_BILL_NO =#{statementBillNo ,jdbcType=VARCHAR} AND ACTIVE =#{active ,jdbcType=VARCHAR}   
+          AND PAYABLE_ORG_CODE=#{orgCode}  AND APPROVE_STATUS=#{approveStatus,jdbcType=VARCHAR}
+          <if test="customerCode!=null">
+          AND CUSTOMER_CODE=#{customerCode}  
+          </if>
+          AND SOURCE_BILL_NO IN 
+            <foreach collection="airWaybillNos" index="index" item="item" open="(" separator="," close=")">
+             #{item}
+            </foreach>
+          AND NOT EXISTS (SELECT PAYMENT_NO FROM STL.T_STL_BILL_PAYMENT PAYMENT
+          WHERE PAY.PAYMENT_NO=PAYMENT.PAYMENT_NO AND PAYMENT.REMIT_STATUS IN 
+            <foreach collection="remitStatusList" index="index" item="item" open="(" separator="," close=")">
+              #{item}
+            </foreach> 
+            AND PAYMENT.ACTIVE =#{active ,jdbcType=VARCHAR}
+           )
+     </where>
+  </select>
+  
+  <!-- 按日期查询预收单数据 -->
+  <select id="selectUSByParams" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.StatementOfAccountMakeQueryDto" 
+  resultMap="BaseResultMap">
+    <include refid="Query_Deposit_Received_Column_List"/>
+    <where>
+         <!--DECODE函数用于减少函数索引的总数，未核销金额等于0的数据不进入索引  -->
+         UNVERIFY_AMOUNT>0  AND STATEMENT_BILL_NO =#{statementBillNo ,jdbcType=VARCHAR} 
+         AND ACTIVE =#{active ,jdbcType=VARCHAR}  AND GENERATING_ORG_CODE=#{orgCode}  
+         AND CUSTOMER_CODE=#{customerCode}    
+         <!--按日期查询， 查询本期和期初单据信息，如果账期不为空，则查询本期数据，如果账期为空，则查询期初数据 -->
+         <if test="periodType!=null">
+            <![CDATA[ AND BUSINESS_DATE>=#{periodBeginDate} AND BUSINESS_DATE<#{periodEndDate}]]>
+         </if>
+         <if test="periodType==null">
+            <![CDATA[ AND BUSINESS_DATE<#{periodBeginDate}]]>
+         </if> 
+         AND DEP.PAYMENT_NO=#{paymentBillNo}
+         AND NOT EXISTS (SELECT PAYMENT_NO FROM STL.T_STL_BILL_PAYMENT PAYMENT
+          WHERE DEP.PAYMENT_NO=PAYMENT.PAYMENT_NO AND PAYMENT.REMIT_STATUS IN 
+            <foreach collection="remitStatusList" index="index" item="item" open="(" separator="," close=")">
+              #{item}
+            </foreach> 
+             AND PAYMENT.ACTIVE =#{active ,jdbcType=VARCHAR}
+           )
+    </where> 
+  </select>
+  
+  <!-- 按预收单号查询预收单数据 -->
+  <select id="selectUSByRepositReceivedNos" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.StatementOfAccountMakeQueryDto" 
+  resultMap="BaseResultMap">
+    <include refid="Query_Deposit_Received_Column_List"/>
+    <where>
+         <!--DECODE函数用于减少函数索引的总数，未核销金额等于0的数据不进入索引  -->
+         UNVERIFY_AMOUNT>0  AND STATEMENT_BILL_NO =#{statementBillNo ,jdbcType=VARCHAR} 
+         AND ACTIVE =#{active ,jdbcType=VARCHAR}  AND GENERATING_ORG_CODE=#{orgCode}  
+         <if test="customerCode!=null">
+          AND CUSTOMER_CODE=#{customerCode}  
+          </if>
+         <!-- 如果账期不为空，则查询本期数据 -->     
+         <if test="periodType!=null">
+         AND DEPOSIT_RECEIVED_NO  IN 
+           <foreach collection="depositReceivedBillNosList" index="index" item="item" open="(" separator="," close=")">
+             #{item}
+           </foreach>
+         </if>
+         AND DEP.PAYMENT_NO=#{paymentBillNo}
+         AND NOT EXISTS (SELECT PAYMENT_NO FROM STL.T_STL_BILL_PAYMENT PAYMENT
+          WHERE DEP.PAYMENT_NO=PAYMENT.PAYMENT_NO AND PAYMENT.REMIT_STATUS IN 
+            <foreach collection="remitStatusList" index="index" item="item" open="(" separator="," close=")">
+              #{item}
+            </foreach> 
+             AND PAYMENT.ACTIVE =#{active ,jdbcType=VARCHAR}
+           )
+    </where> 
+  </select>
+  
+  <!-- 按日期查询预付单数据 -->
+  <select id="selectUFByParams" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.StatementOfAccountMakeQueryDto" 
+  resultMap="BaseResultMap">
+    <include refid="Query_Advanced_Payment_Column_List"/>
+     <where>
+          <!--DECODE函数用于减少函数索引的总数，未核销金额等于0的数据不进入索引  -->
+          UNVERIFY_AMOUNT>0 
+          <!--按日期查询， 查询本期和期初单据信息，如果账期不为空，则查询本期数据，如果账期为空，则查询期初数据 -->
+          <if test="periodType!=null">
+             <![CDATA[ AND BUSINESS_DATE>=#{periodBeginDate} AND BUSINESS_DATE<#{periodEndDate}]]>
+          </if>
+          <if test="periodType==null">
+             <![CDATA[ AND BUSINESS_DATE<#{periodBeginDate}]]>
+          </if>
+          AND APPLY_ORG_CODE=#{orgCode}  AND STATEMENT_BILL_NO =#{statementBillNo ,jdbcType=VARCHAR} 
+          AND ACTIVE =#{active ,jdbcType=VARCHAR}   AND AUDIT_STATUS=#{auditStatus ,jdbcType=VARCHAR}                                
+          AND CUSTOMER_CODE=#{customerCode}     
+     </where>
+  </select>
+  
+  <!-- 按预付单号查询预付单数据 -->
+  <select id="selectUFByAdvancedNos" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.StatementOfAccountMakeQueryDto" 
+  resultMap="BaseResultMap">
+    <include refid="Query_Advanced_Payment_Column_List"/>
+     <where>
+          <!--DECODE函数用于减少函数索引的总数，未核销金额等于0的数据不进入索引  -->
+          UNVERIFY_AMOUNT>0 
+          AND APPLY_ORG_CODE=#{orgCode}  AND STATEMENT_BILL_NO =#{statementBillNo ,jdbcType=VARCHAR} 
+          AND ACTIVE =#{active ,jdbcType=VARCHAR}   AND AUDIT_STATUS=#{auditStatus ,jdbcType=VARCHAR}
+          <if test="customerCode!=null">
+          AND CUSTOMER_CODE=#{customerCode}  
+          </if>
+          <!-- 如果账期不为空，则查询本期数据 -->     
+          <if test="periodType!=null">                              
+           AND ADVANCES_NO IN 
+            <foreach collection="advancedPaymentBillNosList" index="index" item="item" open="(" separator="," close=")">
+              #{item}
+            </foreach> 
+          </if>  
+     </where>
+  </select>
+  
+  <resultMap id="ReceResultMap"
+		type="com.deppon.foss.module.settlement.common.api.shared.domain.BillReceivableEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="RECEIVABLE_NO" property="receivableNo"
+			jdbcType="VARCHAR" />
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="WAYBILL_ID" property="waybillId" jdbcType="VARCHAR" />
+		<result column="CREATE_TYPE" property="createType" jdbcType="VARCHAR" />
+		<result column="SOURCE_BILL_NO" property="sourceBillNo"
+			jdbcType="VARCHAR" />
+		<result column="SOURCE_BILL_TYPE" property="sourceBillType"
+			jdbcType="VARCHAR" />
+		<result column="BILL_TYPE" property="billType" jdbcType="VARCHAR" />
+		<result column="RECEIVABLE_ORG_CODE" property="receivableOrgCode"
+			jdbcType="VARCHAR" />
+		<result column="RECEIVABLE_ORG_NAME" property="receivableOrgName"
+			jdbcType="VARCHAR" />
+		<result column="GENERATING_ORG_CODE" property="generatingOrgCode"
+			jdbcType="VARCHAR" />
+		<result column="GENERATING_ORG_NAME" property="generatingOrgName"
+			jdbcType="VARCHAR" />
+		<result column="GENERATING_COM_CODE" property="generatingComCode"
+			jdbcType="VARCHAR" />
+		<result column="GENERATING_COM_NAME" property="generatingComName"
+			jdbcType="VARCHAR" />
+		<result column="DUNNING_ORG_CODE" property="dunningOrgCode"
+			jdbcType="VARCHAR" />
+		<result column="DUNNING_ORG_NAME" property="dunningOrgName"
+			jdbcType="VARCHAR" />
+		<result column="ORIG_ORG_CODE" property="origOrgCode" jdbcType="VARCHAR" />
+		<result column="ORIG_ORG_NAME" property="origOrgName" jdbcType="VARCHAR" />
+		<result column="DEST_ORG_CODE" property="destOrgCode" jdbcType="VARCHAR" />
+		<result column="DEST_ORG_NAME" property="destOrgName" jdbcType="VARCHAR" />
+		<result column="CUSTOMER_CODE" property="customerCode"
+			jdbcType="VARCHAR" />
+		<result column="CUSTOMER_NAME" property="customerName"
+			jdbcType="VARCHAR" />
+		<result column="DELIVERY_CUSTOMER_CODE" property="deliveryCustomerCode"
+			jdbcType="VARCHAR" />
+		<result column="DELIVERY_CUSTOMER_NAME" property="deliveryCustomerName"
+			jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_CODE" property="receiveCustomerCode"
+			jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_NAME" property="receiveCustomerName"
+			jdbcType="VARCHAR" />
+		<result column="AMOUNT" property="amount" jdbcType="DECIMAL" />
+		<result column="VERIFY_AMOUNT" property="verifyAmount"
+			jdbcType="DECIMAL" />
+		<result column="UNVERIFY_AMOUNT" property="unverifyAmount"
+			jdbcType="DECIMAL" />
+		<result column="CURRENCY_CODE" property="currencyCode"
+			jdbcType="VARCHAR" />
+		<result column="BUSINESS_DATE" property="businessDate"
+			jdbcType="TIMESTAMP" />
+		<result column="ACCOUNT_DATE" property="accountDate" jdbcType="TIMESTAMP" />
+		<result column="CONREVEN_DATE" property="conrevenDate"
+			jdbcType="TIMESTAMP" />
+		<result column="PAYMENT_TYPE" property="paymentType" jdbcType="VARCHAR" />
+		<result column="PRODUCT_CODE" property="productCode" jdbcType="VARCHAR" />
+		<result column="PRODUCT_ID" property="productId" jdbcType="VARCHAR" />
+		<result column="TRANSPORT_FEE" property="transportFee"
+			jdbcType="DECIMAL" />
+		<result column="PICKUP_FEE" property="pickupFee" jdbcType="DECIMAL" />
+		<result column="DELIVERY_GOODS_FEE" property="deliveryGoodsFee"
+			jdbcType="DECIMAL" />
+		<result column="PACKAGING_FEE" property="packagingFee"
+			jdbcType="DECIMAL" />
+		<result column="COD_FEE" property="codFee" jdbcType="DECIMAL" />
+		<result column="INSURANCE_FEE" property="insuranceFee"
+			jdbcType="DECIMAL" />
+		<result column="OTHER_FEE" property="otherFee" jdbcType="DECIMAL" />
+		<result column="VALUE_ADD_FEE" property="valueAddFee" jdbcType="DECIMAL" />
+		<result column="PROMOTIONS_FEE" property="promotionsFee"
+			jdbcType="DECIMAL" />
+		<result column="GOODS_NAME" property="goodsName" jdbcType="VARCHAR" />
+		<result column="BILL_WEIGHT" property="billWeight" jdbcType="DECIMAL" />
+		<result column="RECEIVE_METHOD" property="receiveMethod"
+			jdbcType="VARCHAR" />
+		<result column="CUSTOMER_PICKUP_ORG_CODE" property="customerPickupOrgCode"
+			jdbcType="VARCHAR" />
+		<result column="GOODS_QTY_TOTAL" property="goodsQtyTotal"
+			jdbcType="DECIMAL" />
+		<result column="GOODS_VOLUME_TOTAL" property="goodsVolumeTotal"
+			jdbcType="DECIMAL" />
+		<result column="TARGET_ORG_CODE" property="targetOrgCode"
+			jdbcType="VARCHAR" />
+		<result column="VERSION_NO" property="versionNo" jdbcType="DECIMAL" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="IS_RED_BACK" property="isRedBack" jdbcType="CHAR" />
+		<result column="IS_INIT" property="isInit" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUserCode"
+			jdbcType="VARCHAR" />
+		<result column="CREATE_USER_NAME" property="createUserName"
+			jdbcType="VARCHAR" />
+		<result column="CREATE_ORG_CODE" property="createOrgCode"
+			jdbcType="VARCHAR" />
+		<result column="CREATE_ORG_NAME" property="createOrgName"
+			jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_USER_CODE" property="modifyUserCode"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_NAME" property="modifyUserName"
+			jdbcType="VARCHAR" />
+		<result column="STATEMENT_BILL_NO" property="statementBillNo"
+			jdbcType="VARCHAR" />
+		<result column="UNLOCK_DATE_TIME" property="unlockDateTime"
+			jdbcType="TIMESTAMP" />
+		<result column="LOCK_CUSTOMER_CODE" property="lockCustomerCode"
+			jdbcType="VARCHAR" />
+		<result column="LOCK_CUSTOMER_NAME" property="lockCustomerName"
+			jdbcType="VARCHAR" />
+		<result column="COLLECTION_TYPE" property="collectionType"
+			jdbcType="VARCHAR" />
+		<result column="AUDIT_USER_CODE" property="auditUserCode"
+			jdbcType="VARCHAR" />
+		<result column="AUDIT_USER_NAME" property="auditUserName"
+			jdbcType="VARCHAR" />
+		<result column="APPROVE_STATUS" property="approveStatus"
+			jdbcType="VARCHAR" />
+		<result column="AUDIT_DATE" property="auditDate" jdbcType="TIMESTAMP" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+		<result column="STAMP" property="stamp" jdbcType="CHAR" />
+	</resultMap>
+  
+  	<sql id="Rece_Column_List">
+		SELECT REC.ID ID,REC.RECEIVABLE_NO RECEIVABLE_NO,REC.WAYBILL_NO WAYBILL_NO,REC.WAYBILL_ID WAYBILL_ID,REC.CREATE_TYPE CREATE_TYPE,
+	       REC.SOURCE_BILL_NO SOURCE_BILL_NO,REC.SOURCE_BILL_TYPE SOURCE_BILL_TYPE,REC.BILL_TYPE BILL_TYPE,REC.RECEIVABLE_ORG_CODE RECEIVABLE_ORG_CODE,
+	       REC.RECEIVABLE_ORG_NAME RECEIVABLE_ORG_NAME,REC.GENERATING_ORG_CODE GENERATING_ORG_CODE,REC.GENERATING_ORG_NAME GENERATING_ORG_NAME,
+	       REC.GENERATING_COM_CODE GENERATING_COM_CODE,REC.GENERATING_COM_NAME GENERATING_COM_NAME,REC.DUNNING_ORG_CODE DUNNING_ORG_CODE,
+	       REC.DUNNING_ORG_NAME DUNNING_ORG_NAME,REC.ORIG_ORG_CODE ORIG_ORG_CODE,REC.ORIG_ORG_NAME ORIG_ORG_NAME,
+	       REC.DEST_ORG_CODE DEST_ORG_CODE,REC.DEST_ORG_NAME DEST_ORG_NAME,REC.CUSTOMER_CODE CUSTOMER_CODE,REC.CUSTOMER_NAME CUSTOMER_NAME,
+	       REC.DELIVERY_CUSTOMER_CODE DELIVERY_CUSTOMER_CODE,REC.DELIVERY_CUSTOMER_NAME DELIVERY_CUSTOMER_NAME,
+	       REC.RECEIVE_CUSTOMER_CODE RECEIVE_CUSTOMER_CODE,REC.RECEIVE_CUSTOMER_NAME RECEIVE_CUSTOMER_NAME,
+	       REC.AMOUNT / 100 AMOUNT,REC.VERIFY_AMOUNT / 100 VERIFY_AMOUNT,REC.UNVERIFY_AMOUNT / 100 UNVERIFY_AMOUNT,
+	       REC.CURRENCY_CODE CURRENCY_CODE,REC.BUSINESS_DATE BUSINESS_DATE,REC.ACCOUNT_DATE ACCOUNT_DATE,REC.CONREVEN_DATE CONREVEN_DATE,
+	       REC.PAYMENT_TYPE PAYMENT_TYPE,REC.PRODUCT_CODE PRODUCT_CODE,REC.PRODUCT_ID PRODUCT_ID,REC.TRANSPORT_FEE / 100 TRANSPORT_FEE,
+	       REC.PICKUP_FEE / 100 PICKUP_FEE,REC.DELIVERY_GOODS_FEE / 100 DELIVERY_GOODS_FEE,REC.PACKAGING_FEE / 100 PACKAGING_FEE,
+	       REC.COD_FEE / 100 COD_FEE,REC.INSURANCE_FEE / 100 INSURANCE_FEE,REC.OTHER_FEE / 100 OTHER_FEE,REC.VALUE_ADD_FEE / 100 VALUE_ADD_FEE,
+	       REC.PROMOTIONS_FEE / 100 PROMOTIONS_FEE,REC.GOODS_NAME GOODS_NAME,REC.BILL_WEIGHT BILL_WEIGHT,REC.RECEIVE_METHOD RECEIVE_METHOD,
+	       REC.CUSTOMER_PICKUP_ORG_CODE CUSTOMER_PICKUP_ORG_CODE,REC.GOODS_QTY_TOTAL GOODS_QTY_TOTAL,REC.GOODS_VOLUME_TOTAL GOODS_VOLUME_TOTAL,
+	       REC.TARGET_ORG_CODE TARGET_ORG_CODE,REC.VERSION_NO VERSION_NO,REC.ACTIVE ACTIVE,REC.IS_RED_BACK IS_RED_BACK,
+	       REC.IS_INIT IS_INIT,REC.CREATE_USER_CODE CREATE_USER_CODE,REC.CREATE_USER_NAME CREATE_USER_NAME,REC.CREATE_ORG_CODE CREATE_ORG_CODE,
+	       REC.CREATE_ORG_NAME CREATE_ORG_NAME,REC.CREATE_TIME CREATE_TIME,REC.MODIFY_TIME MODIFY_TIME,REC.MODIFY_USER_CODE MODIFY_USER_CODE,
+	       REC.MODIFY_USER_NAME MODIFY_USER_NAME,REC.STATEMENT_BILL_NO STATEMENT_BILL_NO,REC.UNLOCK_DATE_TIME UNLOCK_DATE_TIME,
+	       REC.LOCK_CUSTOMER_CODE LOCK_CUSTOMER_CODE,REC.LOCK_CUSTOMER_NAME LOCK_CUSTOMER_NAME,REC.COLLECTION_TYPE COLLECTION_TYPE,
+	       REC.AUDIT_USER_CODE AUDIT_USER_CODE,REC.AUDIT_USER_NAME AUDIT_USER_NAME,REC.APPROVE_STATUS APPROVE_STATUS,REC.AUDIT_DATE AUDIT_DATE,
+	       REC.NOTES NOTES,REC.STAMP STAMP,W.UNIT_PRICE/100 UNITPRICE,W.INSURANCE_AMOUNT/100 INSURANCEAMOUNT,W.DELIVERY_CUSTOMER_CONTACT DELIVERYCUSTOMERCONTACT
+	  FROM STL.T_STL_BILL_RECEIVABLE REC
+	  LEFT JOIN PKP.T_SRV_WAYBILL W ON W.WAYBILL_NO = REC.WAYBILL_NO AND W.ACTIVE = 'Y'
+	</sql>
+  
+  	<!-- 根据应收单号查询应收单信息 -->
+	<select id="selectByReceivableNos" resultMap="ReceResultMap"
+		parameterType="java.util.Map">
+		<include refid="Rece_Column_List" />
+		<where>
+		REC.RECEIVABLE_NO IN
+		<foreach collection="receivableNos" index="index" item="item"
+			open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		<if test="active!=null and active!='' ">
+			AND REC.ACTIVE=#{active}
+		</if>
+		</where>
+	</select>
+  
+  
+    <!-- 按日期查询空运应付单数据 -->
+  <select id="selectYFKYByParams" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.StatementOfAccountMakeQueryDto" 
+  resultMap="BaseResultMap">
+     <include refid="Query_Payable_Column_List"/>
+     <where> 
+          <!--DECODE函数用于减少函数索引的总数，未核销金额等于0的数据不进入索引  -->
+          UNVERIFY_AMOUNT>0  AND BILL_TYPE IN ('A','AAO','AAD','AO','PO','LDO')
+          AND EFFECTIVE_STATUS=#{effectiveStatus ,jdbcType=VARCHAR} AND PAY_STATUS=#{payStatus ,jdbcType=VARCHAR} AND
+          STATEMENT_BILL_NO =#{statementBillNo ,jdbcType=VARCHAR} AND ACTIVE =#{active ,jdbcType=VARCHAR}   
+          AND PAYABLE_ORG_CODE=#{orgCode} AND CUSTOMER_CODE=#{customerCode}
+         <choose>
+         	<when test="dateType!=null and dateType!='' and dateType=='CO' ">
+         		<!--按日期查询， 查询本期和期初单据信息，如果账期不为空，则查询本期数据，如果账期为空，则查询期初数据 -->
+		        <if test="periodType!=null">
+		            <![CDATA[ AND SIGN_DATE>=#{periodBeginDate} AND SIGN_DATE<#{periodEndDate}]]>
+		        </if>
+		        <if test="periodType==null">
+		            <![CDATA[ AND SIGN_DATE<#{periodBeginDate}]]>
+		        </if>
+         	</when>
+			<otherwise>
+	         	<!--按日期查询， 查询本期和期初单据信息，如果账期不为空，则查询本期数据，如果账期为空，则查询期初数据 -->
+		        <if test="periodType!=null">
+		            <![CDATA[ AND BUSINESS_DATE>=#{periodBeginDate} AND BUSINESS_DATE<#{periodEndDate}]]>
+		        </if>
+		        <if test="periodType==null">
+		            <![CDATA[ AND BUSINESS_DATE<#{periodBeginDate}]]>
+		        </if>
+         	</otherwise>
+         </choose>
+          AND NOT EXISTS (SELECT PAYMENT_NO FROM STL.T_STL_BILL_PAYMENT PAYMENT
+          WHERE PAY.PAYMENT_NO=PAYMENT.PAYMENT_NO AND PAYMENT.REMIT_STATUS IN 
+            <foreach collection="remitStatusList" index="index" item="item" open="(" separator="," close=")">
+              #{item}
+            </foreach> 
+             AND PAYMENT.ACTIVE =#{active ,jdbcType=VARCHAR}
+           )
+     </where>
+  </select>
+  
+  <!-- 按开始和结束正单号查询空运应付单数据 -->
+  <select id="selectYFKYByAirWaybillBeginAndEndNo" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.StatementOfAccountMakeQueryDto" 
+  resultMap="BaseResultMap">
+     <include refid="Query_Payable_Column_List"/>
+     <where> 
+          <!--DECODE函数用于减少函数索引的总数，未核销金额等于0的数据不进入索引  -->
+          UNVERIFY_AMOUNT>0  AND BILL_TYPE IN ('A','AAO','AAD','AO','PO','LDO')
+          AND EFFECTIVE_STATUS=#{effectiveStatus ,jdbcType=VARCHAR} AND PAY_STATUS=#{payStatus ,jdbcType=VARCHAR} AND
+          STATEMENT_BILL_NO =#{statementBillNo ,jdbcType=VARCHAR} AND ACTIVE =#{active ,jdbcType=VARCHAR}   
+          AND PAYABLE_ORG_CODE=#{orgCode}
+          <if test="customerCode!=null">
+          AND CUSTOMER_CODE=#{customerCode}  
+          </if>
+          AND SOURCE_BILL_NO IN 
+            <foreach collection="airWaybillNos" index="index" item="item" open="(" separator="," close=")">
+             #{item}
+            </foreach>
+          AND NOT EXISTS (SELECT PAYMENT_NO FROM STL.T_STL_BILL_PAYMENT PAYMENT
+          WHERE PAY.PAYMENT_NO=PAYMENT.PAYMENT_NO AND PAYMENT.REMIT_STATUS IN 
+            <foreach collection="remitStatusList" index="index" item="item" open="(" separator="," close=")">
+              #{item}
+            </foreach> 
+            AND PAYMENT.ACTIVE =#{active ,jdbcType=VARCHAR}
+           )
+     </where>
+  </select>
+  
+  <!-- 按应付单号查询应付单数据 -->
+  <select id="selectYFKYByPayableNos" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.StatementOfAccountMakeQueryDto" 
+  resultMap="BaseResultMap">
+     <include refid="Query_Payable_Column_List"/>
+     <where> 
+          <!--DECODE函数用于减少函数索引的总数，未核销金额等于0的数据不进入索引  -->
+          UNVERIFY_AMOUNT>0  AND BILL_TYPE IN ('A','AAO','AAD','AO','PO','LDO')
+          AND EFFECTIVE_STATUS=#{effectiveStatus ,jdbcType=VARCHAR} AND PAY_STATUS=#{payStatus ,jdbcType=VARCHAR} AND
+          STATEMENT_BILL_NO =#{statementBillNo ,jdbcType=VARCHAR} AND ACTIVE =#{active ,jdbcType=VARCHAR}   
+          AND PAYABLE_ORG_CODE=#{orgCode}
+          <if test="customerCode!=null">
+          AND CUSTOMER_CODE=#{customerCode}  
+          </if>
+          <!-- 如果账期不为空，则查询本期数据 -->     
+          <if test="periodType!=null">
+           AND PAYABLE_NO IN 
+            <foreach collection="payableBillNosList" index="index" item="item" open="(" separator="," close=")">
+             #{item}
+            </foreach>
+          </if>
+          AND NOT EXISTS (SELECT PAYMENT_NO FROM STL.T_STL_BILL_PAYMENT PAYMENT
+          WHERE PAY.PAYMENT_NO=PAYMENT.PAYMENT_NO AND PAYMENT.REMIT_STATUS IN 
+            <foreach collection="remitStatusList" index="index" item="item" open="(" separator="," close=")">
+              #{item}
+            </foreach> 
+            AND PAYMENT.ACTIVE =#{active ,jdbcType=VARCHAR}
+           )
+     </where>
+  </select>
+  
+  <!-- 按运单单号查询空运应付单数据 -->
+  <select id="selectYFKYByWaybillNos" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.StatementOfAccountMakeQueryDto" 
+  resultMap="BaseResultMap">
+     <include refid="Query_Payable_Column_List"/>
+     <where> 
+          <!--DECODE函数用于减少函数索引的总数，未核销金额等于0的数据不进入索引  -->
+          UNVERIFY_AMOUNT>0  AND BILL_TYPE IN ('A','AAO','AAD','AO','PO','LDO')
+          AND EFFECTIVE_STATUS=#{effectiveStatus ,jdbcType=VARCHAR} AND PAY_STATUS=#{payStatus ,jdbcType=VARCHAR} AND
+          STATEMENT_BILL_NO =#{statementBillNo ,jdbcType=VARCHAR} AND ACTIVE =#{active ,jdbcType=VARCHAR}   
+          AND PAYABLE_ORG_CODE=#{orgCode} 
+          <if test="customerCode!=null">
+          AND CUSTOMER_CODE=#{customerCode}  
+          </if>
+          AND (SOURCE_BILL_NO IN 
+          <foreach collection="sourceBillNosList" index="index" item="item" open="(" separator="," close=")">
+             #{item}
+          </foreach>
+          OR WAYBILL_NO IN
+          <foreach collection="sourceBillNosList" index="index" item="item" open="(" separator="," close=")">
+             #{item}
+          </foreach>
+          )
+          AND NOT EXISTS (SELECT PAYMENT_NO FROM STL.T_STL_BILL_PAYMENT PAYMENT
+          WHERE PAY.PAYMENT_NO=PAYMENT.PAYMENT_NO AND PAYMENT.REMIT_STATUS IN 
+            <foreach collection="remitStatusList" index="index" item="item" open="(" separator="," close=")">
+              #{item}
+            </foreach> 
+             AND PAYMENT.ACTIVE =#{active ,jdbcType=VARCHAR}
+           )
+     </where>
+  </select>
+    <resultMap id="StatementMap"
+		type="com.deppon.foss.module.settlement.common.api.shared.domain.StatementOfAccountEntity">
+		<result column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="STATEMENT_BILL_NO" property="statementBillNo" jdbcType="VARCHAR" />
+		<result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+		<result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+	</resultMap>
+	<select id="queryStatementBIllEntity" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.StatementOfAccountMakeQueryDto" 
+  	resultMap="StatementMap">
+		SELECT SA.STATEMENT_BILL_NO STATEMENT_BILL_NO,
+		       SA.CUSTOMER_CODE CUSTOMER_CODE,
+		       SA.CUSTOMER_NAME CUSTOMER_NAME,
+		       SA.CREATE_TIME CREATE_TIME
+		  FROM STL.T_STL_STATEMENT_OF_ACCOUNT SA
+		 WHERE SA.UNPAID_AMOUNT > 0
+		 <if test="statementBillNo==null or statementBillNo==''">
+			 <if test="customerCode!=null and customerCode!=''">
+			   AND SA.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+			 </if>
+			 <if test="customerName!=null and customerName!=''">
+			   AND SA.CUSTOMER_NAME LIKE CONCAT(CONCAT('%', #{customerName,jdbcType=VARCHAR}), '%')
+			 </if>
+			 <if test="orgCode!=null and orgCode!=''">
+			   AND SA.CREATE_ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+			 </if>
+			 <if test="periodBeginDate!=null and periodEndDate!=null">
+			 	<![CDATA[ AND SA.CREATE_TIME >= #{periodBeginDate} AND SA.CREATE_TIME < #{periodEndDate}]]>
+			 </if>
+		 </if>
+		 <if test="statementBillNo!=null and statementBillNo!=''">
+		   AND SA.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+		 </if>
+  	</select>
+  <!-- 按日期查询应收单数据 -->
+  <select id="selectYSCountByParams" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.StatementOfAccountMakeQueryDto" 
+  resultType="Integer">
+     <include refid="Query_Receivable_Count"/>
+     <where>
+          <!--DECODE函数用于减少函数索引的总数，未核销金额等于0的数据不进入索引  -->
+          REC.UNVERIFY_AMOUNT>0  AND
+          REC.STATEMENT_BILL_NO =#{statementBillNo ,jdbcType=VARCHAR} AND REC.ACTIVE =#{active ,jdbcType=VARCHAR}   AND
+          ((REC.APPROVE_STATUS=#{approveStatus ,jdbcType=VARCHAR} AND (REC.BILL_TYPE=#{rBillTypeAirOtherReceivable ,jdbcType=VARCHAR} OR REC.BILL_TYPE = 'LR' OR REC.BILL_TYPE = 'PR'))OR
+          (REC.BILL_TYPE!=#{rBillTypeAirOtherReceivable ,jdbcType=VARCHAR} AND REC.BILL_TYPE ! ='LR' AND REC.BILL_TYPE != 'PR'))
+          <!-- 如果单据类型为代收货款，则运输类型必须为空运，否则单据类型不能为代收货款应收单 -->
+          AND ((REC.BILL_TYPE=#{rBillTypeCODReceivable ,jdbcType=VARCHAR} 
+          AND  REC.PRODUCT_CODE IN
+          <foreach collection="productTypeList" index="index" item="item" open="(" separator="," close=")">
+           #{item}
+          </foreach>
+          ) OR REC.BILL_TYPE!=#{rBillTypeCODReceivable,jdbcType=VARCHAR} )
+          AND REC.BILL_TYPE != 'WOR'
+          AND REC.CUSTOMER_CODE NOT LIKE 'W%'
+          <![CDATA[AND (REC.UNLOCK_DATE_TIME IS NULL OR REC.UNLOCK_DATE_TIME<sysdate)]]>    
+             AND REC.DUNNING_ORG_CODE=#{orgCode}   AND REC.CUSTOMER_CODE=#{customerCode}  
+           <choose>
+          	<when test="dateType!=null and dateType!='' and dateType=='CO' ">
+          		<!-- 如果账期不为空，则查询本期数据，如果账期为空，则查询期初数据  -->     
+	          	<if test="periodType!=null">
+	            	  <![CDATA[ AND REC.CONREVEN_DATE>=#{periodBeginDate} AND REC.CONREVEN_DATE<#{periodEndDate}]]>
+	        	</if>
+	          	<if test="periodType==null">
+	              	<![CDATA[ AND REC.CONREVEN_DATE<#{periodBeginDate}]]>
+	          	</if>
+          	</when>
+			<otherwise>
+          		<!-- 如果账期不为空，则查询本期数据，如果账期为空，则查询期初数据  -->     
+	          	<if test="periodType!=null">
+	            	  <![CDATA[ AND REC.BUSINESS_DATE>=#{periodBeginDate} AND REC.BUSINESS_DATE<#{periodEndDate}]]>
+	        	</if>
+	          	<if test="periodType==null">
+	              	<![CDATA[ AND REC.BUSINESS_DATE<#{periodBeginDate}]]>
+	          	</if>
+          	</otherwise>
+          </choose>
+			
+          <if test="deliveryCustomerContact != '' and deliveryCustomerContact != null">
+          		AND W.DELIVERY_CUSTOMER_CONTACT=#{deliveryCustomerContact}
+          </if>
+		  <!-- 单字符自动转化成数字，所以必须转化成string，否则报NumberFormatException -->
+	      <if test='receivableUnified == "Y"'>
+				AND REC.UNIFIED_SETTLEMENT=#{receivableUnified,jdbcType=VARCHAR}
+	      </if>
+		  <if test="receivableUnified == 'N'.toString()">
+				AND (REC.UNIFIED_SETTLEMENT=#{receivableUnified,jdbcType=VARCHAR} OR REC.UNIFIED_SETTLEMENT IS NULL)
+	      </if>
+      </where>
+  </select>
+  
+</mapper>

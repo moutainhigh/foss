@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.systemHelp">
+	<!-- 系统帮助信息 -->
+	<resultMap  id="systemHelpResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.domain.SystemHelpEntity">
+		<id property="id" column="ID" javaType="String" jdbcType="VARCHAR" />
+		<result property="topic" column="TOPIC" javaType="String" jdbcType="VARCHAR" />
+		<result property="systemHelp" column="SYSTEMHELP" javaType="String" jdbcType="VARCHAR" />
+		<result property="active" column="ACTIVE" jdbcType="CHAR"  />
+		<result property="createUser" column="CREATE_USER_CODE" javaType="String" jdbcType="VARCHAR" />
+		<result property="createDate" column="CREATE_TIME" javaType="Date" jdbcType="TIMESTAMP" />
+		<result property="modifyUser" column="MODIFY_USER_CODE" javaType="String" jdbcType="VARCHAR" />
+		<result property="modifyDate" column="MODIFY_TIME" javaType="Date" jdbcType="TIMESTAMP" />
+	</resultMap>
+	<!-- 数据字段 -->
+	<sql id="systemHelp_Column_List">
+		ID,
+		TOPIC,
+		SYSTEMHELP,
+		ACTIVE,
+		CREATE_USER_CODE,
+		CREATE_TIME,
+		MODIFY_USER_CODE,
+		MODIFY_TIME
+	</sql>
+
+	
+	<!-- 查询全部 -->
+	<select id="queryAllSystemHelp" parameterType="map"
+	resultMap="systemHelpResultMap">
+		<![CDATA[
+			SELECT	
+			/** 综合:查询所有公告信息**/
+		]]>
+			<include refid="systemHelp_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_SYSTEMHELP T
+		]]>
+		<where>
+			<if test="createUser !=null and createUser != ''">
+				<![CDATA[T.CREATE_USER_CODE =#{createUser,jdbcType=VARCHAR}]]>
+			</if>
+			<if test="topic !=null and topic !=''">
+				<![CDATA[and T.TOPIC LIKE CONCAT(CONCAT('%',#{topic,jdbcType=VARCHAR}),'%')]]>
+			</if>
+			<if test="active != null and active != ''">
+				<![CDATA[and T.ACTIVE = #{active,jdbcType=CHAR}]]>
+	
+			</if>
+		</where>
+	</select>
+	
+	<!-- 统计总数 -->
+	<select id="queryCount" resultType="Long" parameterType="map">
+	    <![CDATA[
+	       	select/** 综合:统计总记录数**/ count(*) FROM BSE.T_BAS_SYSTEMHELP T
+	    ]]>
+		<where>
+			<if test="createUser !=null and createUser != ''">
+				<![CDATA[T.CREATE_USER_CODE =#{createUser,jdbcType=VARCHAR}]]>
+			</if>
+			<if test="topic !=null and topic !=''">
+				<![CDATA[and T.TOPIC LIKE CONCAT(CONCAT('%',#{topic,jdbcType=VARCHAR}),'%')]]>
+			</if>
+			<if test="active != null and active != ''">
+				<![CDATA[and T.ACTIVE = #{active,jdbcType=CHAR}]]>
+	
+			</if>
+		</where>
+
+	</select>
+	
+	<!-- 添加 -->
+	<insert id="insert" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SystemHelpEntity">
+		<![CDATA[
+			INSERT/** 综合:新增信息**/ INTO BSE.T_BAS_SYSTEMHELP (
+		]]>
+		<include refid="systemHelp_Column_List"/>
+		<![CDATA[
+		)VALUES(
+		]]>
+			#{id, jdbcType=VARCHAR},
+			#{topic, jdbcType=VARCHAR},
+			#{systemHelp, jdbcType=VARCHAR},
+			#{active, jdbcType=CHAR},
+			#{createUser, jdbcType=VARCHAR},
+			#{createDate, jdbcType=TIMESTAMP},
+			#{modifyUser, jdbcType=VARCHAR},
+			#{modifyDate, jdbcType=TIMESTAMP}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+	
+	<!-- 修改 -->
+	<update id="update"
+			parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SystemHelpEntity">
+		update	/** 综合:修改信息**/ BSE.T_BAS_SYSTEMHELP 
+		<set>
+			<if test="topic !=null and topic !=''">
+				TOPIC =#{topic},
+			</if>
+			<if test="systemHelp != null and systemHelp != ''">
+				SYSTEMHELP =#{systemHelp},
+			</if>
+			<if test="createDate != null">
+				CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="createUser != null">
+				CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+		</set>
+		<where>
+			<if test="id != null">
+				ID = #{id}
+			</if>
+		</where>
+	</update>
+	
+	<!-- 废除 -->
+	<update id="deleteById" parameterType="map">
+		update/** 综合:作废信息**/ BSE.T_BAS_SYSTEMHELP
+		<set>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				MODIFY_USER_CODE = #{modifyUser, jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+		</set>
+		<where>
+			<if test="idList !=null and idList.size()>0">
+				ID in 
+				<foreach collection="idList" index="index" item="item" open="(" separator="," close=")">
+					#{item} 
+				</foreach>
+			</if>
+			<if test="activeY != null and activeY != ''">
+				and ACTIVE = #{activeY,jdbcType=CHAR}
+			</if>
+		</where>
+	</update>
+	<!-- 根据id查询公告信息 -->
+	<select id="queryById" parameterType="java.lang.String" resultMap="systemHelpResultMap">
+			<![CDATA[
+				SELECT	
+				/** 综合:根据id查询公告信息**/
+			]]>
+		<include refid="systemHelp_Column_List" />
+			<![CDATA[
+				FROM BSE.T_BAS_SYSTEMHELP T
+			]]>
+		<where>
+				T.ID =#{id, jdbcType=VARCHAR} 
+		</where>
+	</select>
+	
+</mapper>

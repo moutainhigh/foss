@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--zxy 20140422 MANA-2018 DEFECT-2587 修改:多处增加active=Y条件 -->
+<mapper namespace="foss.pkp.OnlineAddressMapper">
+
+	<select id="queryAllNations" resultMap="nationMapper">
+		<![CDATA[
+			SELECT 
+				CODE AS NATIONID,
+				NAME AS NATION,
+				0 AS DEGREE FROM BSE.T_BAS_DISTRICT 
+			WHERE DEGREE='NATION' 
+				AND ACTIVE='Y'
+				ORDER BY NLSSORT(NATION, 'NLS_SORT=SCHINESE_PINYIN_M')
+		]]>
+	</select>
+
+	<!-- 去掉行政区、省份后面的‘省’也去掉 -->
+	<!-- select FID,case when FPROVINCE like '%省' THEN LEFT(FPROVINCE,LENGTH(FPROVINCE)-1) 
+		ELSE FPROVINCE end as FPROVINCE,FINDEXID from T_BAS_PROVINCE where FPROVINCE 
+		not like '%区' -->
+	<select id="queryAllProvinces" resultMap="provinceMapper">
+		<![CDATA[
+			SELECT 
+				prov.CODE AS FID, 
+				prov.NAME AS FPROVINCE,
+				prov.PINYIN AS FPINYIN,
+				prov.PINYIN_ABBR AS FSHORTPY,
+				prov.PARENT_DISTRICT_CODE AS NATIONID,
+				prov.PARENT_DISTRICT_NAME AS NATION,
+				1 AS DEGREE 
+			FROM BSE.T_BAS_DISTRICT prov
+			WHERE prov.DEGREE='DISTRICT_PROVINCE' AND prov.ACTIVE='Y' 
+				ORDER BY NLSSORT(FPROVINCE, 'NLS_SORT=SCHINESE_PINYIN_M')
+		]]>
+	</select>
+	
+	<select id="queryAllChinaProvinces" resultMap="provinceMapper">
+		<![CDATA[
+			SELECT /*接送货-查询国内省份*/
+				prov.CODE AS FID, 
+				prov.NAME AS FPROVINCE,
+				prov.PINYIN AS FPINYIN,
+				prov.PINYIN_ABBR AS FSHORTPY,
+				prov.PARENT_DISTRICT_CODE AS NATIONID,
+				prov.PARENT_DISTRICT_NAME AS NATION,
+				1 AS DEGREE 
+			FROM BSE.T_BAS_DISTRICT prov
+			WHERE prov.DEGREE='DISTRICT_PROVINCE' AND prov.PARENT_DISTRICT_CODE = '100000' AND prov.ACTIVE='Y' 
+				ORDER BY NLSSORT(FPROVINCE, 'NLS_SORT=SCHINESE_PINYIN_M')
+		]]>
+	</select>
+	
+	<select id="queryAllCitys" resultMap="cityMapper">
+		<![CDATA[                                                      
+			SELECT 
+				a.CODE AS CITY_ID,
+				b.CODE AS PROVINCE_ID,
+				b.PARENT_DISTRICT_CODE AS NATIONID,
+				b.NAME AS FPROVINCE,
+				a.NAME AS FCITY,
+				b.PARENT_DISTRICT_NAME AS NATION,
+				a.PINYIN AS FPINYIN,
+				a.PINYIN_ABBR AS FSHORTPY,
+				2 AS DEGREE
+			FROM BSE.T_BAS_DISTRICT a
+				LEFT JOIN BSE.T_BAS_DISTRICT b ON a.PARENT_DISTRICT_CODE = b.CODE
+			WHERE a.DEGREE='CITY' AND b.DEGREE='DISTRICT_PROVINCE'
+			AND a.ACTIVE='Y' AND b.ACTIVE='Y' 
+		]]>
+	</select>
+	<select id="queryAllCountys" resultMap="countyMapper">
+		<![CDATA[                                                      
+			SELECT  city.CODE AS CITY_ID, prov.CODE AS PROVINCE_ID, 
+				county.CODE AS COUNTY_ID, prov.NAME AS FPROVINCE,county.NAME AS FCOUNTY, 
+				city.NAME AS FCITY,prov.PARENT_DISTRICT_CODE AS NATION_ID, prov.PARENT_DISTRICT_NAME AS NATION,
+			 	county.PINYIN AS FPINYIN, county.PINYIN_ABBR AS  FSHORTPY,3 AS DEGREE 
+			FROM BSE.T_BAS_DISTRICT county 
+				LEFT JOIN BSE.T_BAS_DISTRICT city ON county.PARENT_DISTRICT_CODE = city.CODE
+				LEFT JOIN BSE.T_BAS_DISTRICT prov ON city.PARENT_DISTRICT_CODE = prov.CODE
+			WHERE city.DEGREE='CITY' AND prov.DEGREE='DISTRICT_PROVINCE' AND county.DEGREE='DISTRICT_COUNTY' AND county.ACTIVE='Y'
+			    AND city.ACTIVE='Y' AND prov.ACTIVE='Y'
+		]]>
+	</select>
+
+	<select id="queryHotCitys" resultMap="cityMapper">
+		<![CDATA[ 
+			SELECT 
+				a.CODE AS CITY_ID,
+				b.CODE AS PROVINCE_ID,
+				b.PARENT_DISTRICT_CODE AS NATIONID,
+				b.NAME AS FPROVINCE,
+				a.NAME AS FCITY,
+				b.PARENT_DISTRICT_NAME AS NATION,
+				a.PINYIN AS FPINYIN,
+				a.PINYIN_ABBR AS FSHORTPY,
+				2 AS DEGREE
+			FROM BSE.T_BAS_DISTRICT a
+				LEFT JOIN BSE.T_BAS_DISTRICT b ON a.PARENT_DISTRICT_CODE = b.CODE
+			WHERE a.DEGREE='CITY' and b.DEGREE='DISTRICT_PROVINCE'
+				AND a.IS_HOT_CITY='Y' AND a.ACTIVE='Y' AND b.ACTIVE='Y' 
+				ORDER BY NLSSORT(FCITY, 'NLS_SORT=SCHINESE_PINYIN_M')
+		                                                     
+			
+		]]>
+	</select>
+
+	<select id="queryCountysByCityId" resultMap="countyMapper">
+		<![CDATA[                                                      
+			SELECT  
+				prov.PARENT_DISTRICT_CODE AS NATION_ID, prov.PARENT_DISTRICT_NAME AS NATION,
+				prov.CODE AS PROVINCE_ID, prov.NAME AS FPROVINCE,
+				city.CODE AS CITY_ID, city.NAME AS FCITY,
+				county.CODE AS COUNTY_ID, county.NAME AS FCOUNTY, 
+				county.PINYIN AS FPINYIN, county.PINYIN_ABBR AS  FSHORTPY, 
+				3 AS DEGREE 
+			FROM BSE.T_BAS_DISTRICT county 
+				LEFT JOIN BSE.T_BAS_DISTRICT city ON county.PARENT_DISTRICT_CODE = city.CODE
+				LEFT JOIN BSE.T_BAS_DISTRICT prov ON city.PARENT_DISTRICT_CODE = prov.CODE
+			WHERE city.CODE = #{cityId}  AND county.ACTIVE='Y' AND prov.ACTIVE='Y' AND city.ACTIVE='Y' 
+			ORDER BY NLSSORT(FCOUNTY, 'NLS_SORT=SCHINESE_PINYIN_M')
+		]]>
+	</select>
+
+	<!-- 根据城市名称查询对象 -->
+	<select id="queryCitysByName"  resultMap="cityMapper" parameterType="java.util.Map">
+		<![CDATA[  
+		SELECT DISTINCT 
+		   A.CODE        AS CITY_ID,
+	       B.CODE        AS PROVINCE_ID,
+	       B.NAME        AS FPROVINCE,
+	       A.NAME        AS FCITY,
+	       A.PINYIN      AS FPINYIN,
+	       A.PINYIN_ABBR AS FSHORTPY,
+	       2             AS DEGREE
+	  FROM BSE.T_BAS_DISTRICT A
+	  LEFT JOIN BSE.T_BAS_DISTRICT B
+	    ON A.PARENT_DISTRICT_CODE = B.CODE
+	 WHERE A.DEGREE = 'CITY'
+	   AND B.DEGREE = 'DISTRICT_PROVINCE'
+	   AND A.ACTIVE = #{active, jdbcType=CHAR}
+	   AND B.ACTIVE = #{active, jdbcType=CHAR}
+	   AND A.NAME LIKE CONCAT(CONCAT('%',#{name,jdbcType=VARCHAR}),'%')
+	  ]]>
+	</select>
+
+	<select id="queryCitysByProvinceId" resultMap="cityMapper">
+		<![CDATA[                                                      
+			SELECT 
+				city.CODE  AS CITY_ID,
+				prov.CODE AS PROVINCE_ID,
+				prov.NAME AS FPROVINCE,
+				city.NAME AS FCITY,
+				city.PINYIN AS FPINYIN,
+				city.PINYIN_ABBR AS FSHORTPY,
+				2 AS DEGREE
+			FROM BSE.T_BAS_DISTRICT city
+				LEFT JOIN BSE.T_BAS_DISTRICT prov ON city.PARENT_DISTRICT_CODE = prov.CODE
+			where prov.CODE = #{provinceId}  AND city.ACTIVE='Y' AND prov.ACTIVE='Y'
+			ORDER BY NLSSORT(FCITY, 'NLS_SORT=SCHINESE_PINYIN_M')
+		]]>
+	</select>
+	
+	<select id="queryProvincesByNationId" resultMap="provinceMapper">
+		<![CDATA[
+			SELECT 
+				prov.CODE AS FID, 
+				prov.NAME AS FPROVINCE,
+				1 AS DEGREE 
+			FROM BSE.T_BAS_DISTRICT prov 
+				LEFT JOIN BSE.T_BAS_DISTRICT nat ON prov.PARENT_DISTRICT_CODE = nat.CODE 
+			WHERE nat.CODE = #{nationId}  AND prov.ACTIVE='Y' AND nat.ACTIVE='Y' 
+			ORDER BY NLSSORT(FPROVINCE, 'NLS_SORT=SCHINESE_PINYIN_M')
+		]]>
+	</select>
+	
+	<!-- 根据国家code查询国家名称 -->
+	<select id="queryNationByCode" resultType="String">
+        <![CDATA[                                                      
+            SELECT 
+                NAME
+            FROM  BSE.T_BAS_DISTRICT 
+            where CODE = #{code, jdbcType=VARCHAR} AND ACTIVE='Y'
+        ]]>
+    </select>
+	
+	<select id="queryProviceByCode" resultType="String">
+        <![CDATA[                                                      
+            SELECT 
+                NAME
+            FROM  BSE.T_BAS_DISTRICT 
+            where CODE = #{code, jdbcType=VARCHAR} AND ACTIVE='Y'
+        ]]>
+    </select>
+    
+    <select id="queryCityByCode" resultType="String">
+        <![CDATA[                                                      
+            SELECT 
+                NAME
+            FROM  BSE.T_BAS_DISTRICT 
+            where CODE = #{code, jdbcType=VARCHAR} AND ACTIVE='Y'
+        ]]>
+    </select>
+    
+    <select id="queryCountyByCode" resultType="String">
+        <![CDATA[                                                      
+            SELECT 
+                NAME
+            FROM  BSE.T_BAS_DISTRICT 
+            where CODE = #{code, jdbcType=VARCHAR} AND ACTIVE='Y'
+        ]]>
+    </select>
+	
+	<!-- 根据省份code查询国家信息  354805-taoodongguo 用于根据电话号码等信息查询收发货地址信息时补齐国家信息 -->
+	<select id="queryNationByProvinceCode" resultMap="nationMapper">
+		SELECT 
+			PROV.PARENT_DISTRICT_NAME AS NATION, 
+			PROV.PARENT_DISTRICT_CODE AS NATIONID, 
+			0 AS DEGREE
+		  FROM BSE.T_BAS_DISTRICT PROV
+		 WHERE PROV.CODE = #{provinceCode, jdbcType=VARCHAR}
+		   AND PROV.DEGREE = 'DISTRICT_PROVINCE'
+		   AND PROV.ACTIVE = 'Y'
+	</select>
+
+	<resultMap
+		type="com.deppon.foss.module.pickup.waybill.shared.dto.AddressFieldDto"
+		id="nationMapper">
+		<result column="NATIONID" property="nationId" />
+		<result column="NATION" property="nationName" />
+		<result column="DEGREE" property="degree" />
+	</resultMap>
+	<resultMap
+		type="com.deppon.foss.module.pickup.waybill.shared.dto.AddressFieldDto"
+		id="provinceMapper">
+		<result column="FID" property="provinceId" />
+		<result column="FPROVINCE" property="provinceName" />
+		<result column="NATIONID" property="nationId" />
+		<result column="NATION" property="nationName" />
+		<result column="FPINYIN" property="pinyin" />
+		<result column="FSHORTPY" property="shortPinyin" />
+		<result column="DEGREE" property="degree" />
+	</resultMap>
+	<resultMap
+		type="com.deppon.foss.module.pickup.waybill.shared.dto.AddressFieldDto"
+		id="cityMapper">
+		<result column="CITY_ID" property="cityId" />
+		<result column="FCITY" property="cityName" />
+		<result column="PROVINCE_ID" property="provinceId" />
+		<result column="FPROVINCE" property="provinceName" />
+		<result column="NATIONID" property="nationId" />
+		<result column="NATION" property="nationName" />
+		<result column="FPINYIN" property="pinyin" />
+		<result column="FSHORTPY" property="shortPinyin" />
+		<result column="DEGREE" property="degree" />
+	</resultMap>
+	<resultMap
+		type="com.deppon.foss.module.pickup.waybill.shared.dto.AddressFieldDto"
+		id="countyMapper">
+		<result column="CITY_ID" property="cityId" />
+		<result column="FCITY" property="cityName" />
+		<result column="NATION_ID" property="nationId" />
+		<result column="NATION" property="nationName" />
+		<result column="PROVINCE_ID" property="provinceId" />
+		<result column="FPROVINCE" property="provinceName" />
+		<result column="COUNTY_ID" property="countyId" />
+		<result column="FCOUNTY" property="countyName" />
+		<result column="FPINYIN" property="pinyin" />
+		<result column="FSHORTPY" property="shortPinyin" />
+		<result column="DEGREE" property="degree" />
+	</resultMap>
+	
+	<!-- 根据城市名称查询对象 -->
+	<select id="onlineQueryProviceByName"  resultMap="provinceMapper" parameterType="java.util.Map">
+		<![CDATA[  
+		select /*根据城市名称查询对象*/
+				CODE AS FID, 
+				NAME AS FPROVINCE,
+				1 AS DEGREE from BSE.T_BAS_DISTRICT 
+				WHERE DEGREE='DISTRICT_PROVINCE'
+				AND ACTIVE='Y'
+	   AND NAME LIKE CONCAT(CONCAT('%',#{name,jdbcType=VARCHAR}),'%')
+	  ]]>
+	</select>
+	
+	<!-- 根据城市名称查询对象 -->
+	<select id="onlineQueryCountyByName"  resultMap="countyMapper" parameterType="java.util.Map">
+		<![CDATA[  
+		SELECT  city.CODE AS CITY_ID, 
+				prov.CODE AS PROVINCE_ID, 
+				county.CODE AS COUNTY_ID, 
+				prov.PARENT_DISTRICT_CODE AS NATION_ID,
+				prov.NAME AS FPROVINCE,
+				county.NAME AS FCOUNTY,
+				prov.PARENT_DISTRICT_NAME AS NATION, 
+				city.NAME AS FCITY,
+			 	county.PINYIN AS FPINYIN, 
+			 	county.PINYIN_ABBR AS  FSHORTPY,
+			 	3 AS DEGREE 
+			FROM BSE.T_BAS_DISTRICT county 
+				LEFT JOIN BSE.T_BAS_DISTRICT city ON county.PARENT_DISTRICT_CODE = city.CODE
+				LEFT JOIN BSE.T_BAS_DISTRICT prov ON city.PARENT_DISTRICT_CODE = prov.CODE
+			WHERE city.DEGREE='CITY' AND prov.DEGREE='DISTRICT_PROVINCE' AND county.DEGREE='DISTRICT_COUNTY' AND county.ACTIVE='Y'
+			    AND city.ACTIVE='Y' AND prov.ACTIVE='Y' 
+	   AND county.NAME LIKE CONCAT(CONCAT('%',#{name,jdbcType=VARCHAR}),'%')
+	  ]]>
+	</select>
+	
+	<!--根据区域ID查询乡镇信息  -->
+	<select id="queryCountyListByCountyId" resultMap="countryMapper">
+		<![CDATA[                                                      
+			select  city.CODE    AS CITY_ID,
+                prov.CODE    AS PROVINCE_ID,
+                county.CODE  AS COUNTY_ID,
+                prov.NAME    AS FPROVINCE,
+                city.NAME    AS FCITY,
+                county.NAME  AS FCOUNTY,
+                country.name AS VILLAGENAME,
+                country.code AS VILLAGEID,
+                4            AS DEGREE
+  FROM BSE.T_BAS_DISTRICT  country
+  LEFT JOIN BSE.T_BAS_DISTRICT  county ON country.parent_district_code =
+                                                         county.code
+                                                     AND COUNTY.ACTIVE = 'Y'
+  LEFT JOIN BSE.T_BAS_DISTRICT  city ON county.PARENT_DISTRICT_CODE =
+                                                       city.CODE
+                                                   AND CITY.ACTIVE = 'Y'
+  LEFT JOIN BSE.T_BAS_DISTRICT  prov ON city.PARENT_DISTRICT_CODE =
+                                                       prov.CODE
+                                                   AND PROV.ACTIVE = 'Y'
+ where county.CODE =#{countryId}
+   AND country.Active = 'Y'
+		]]>
+	</select>
+	
+	<resultMap
+		type="com.deppon.foss.module.pickup.waybill.shared.dto.AddressFieldDto"
+		id="countryMapper">
+		<result column="CITY_ID" property="cityId" />
+		<result column="FCITY" property="cityName" />
+		<result column="PROVINCE_ID" property="provinceId" />
+		<result column="FPROVINCE" property="provinceName" />
+		<result column="COUNTY_ID" property="countyId" />
+		<result column="FCOUNTY" property="countyName" />
+		<result column="DEGREE" property="degree" />
+		<result column="VILLAGENAME" property="villageTownName" />
+		<result column="VILLAGEID" property="villageTownId" />
+	</resultMap>
+	
+</mapper> 

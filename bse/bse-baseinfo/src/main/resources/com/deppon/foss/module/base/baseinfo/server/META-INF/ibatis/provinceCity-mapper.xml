@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="foss.bse.bse-baseinfo.provinceCity">
+	<!-- 银行省市信息省市信息 -->
+	<resultMap id="provinceCityResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.ProvinceCityEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="DISTRICT_CODE" property="districtCode"
+			jdbcType="VARCHAR" />
+		<result column="DISTRICT_NAME" property="districtName"
+			jdbcType="VARCHAR" />
+		<result column="PARENT_DISTRICT_CODE" property="parentDistrictCode"
+			jdbcType="VARCHAR" />
+		<result column="DISTRICT_DEGREE" property="districtDegree"
+			jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+	</resultMap>
+	<!-- 数据字段 -->
+	<sql id="provinceCity_Column_List">
+		ID, DISTRICT_CODE, DISTRICT_NAME, PARENT_DISTRICT_CODE,
+		DISTRICT_DEGREE,
+		CREATE_TIME,
+		MODIFY_TIME, CREATE_USER_CODE,
+		MODIFY_USER_CODE,ACTIVE
+	</sql>
+
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+            <if test="code != null and code != ''">
+                DISTRICT_CODE = #{code,jdbcType=VARCHAR}
+            </if>
+		</where>
+	</sql>
+
+	<!-- 查询所有银行省市信息信息 -->
+	<select id="queryAllInfos"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ProvinceCityEntity"
+		resultMap="provinceCityResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有银行省市信息信息  **/
+		]]>
+		<include refid="provinceCity_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_BANK_DISTRICT T
+		]]>
+		<include refid="queryWhere" />
+	</select>
+
+	<!-- 统计总记录数 -->
+	<select id="queryCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ProvinceCityEntity">
+	    <![CDATA[
+	       	select/** 综合:统计总记录数  **/ count(*) from BSE.T_BAS_BANK_DISTRICT T
+	    ]]>
+		<include refid="queryWhere" />
+
+	</select>
+
+	<!--根据省市编码查询省市信息 -->
+	<select id="queryCityEntityByCode" parameterType="map"
+		resultMap="provinceCityResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据省市编码查询省市信息  **/
+		]]>
+		<include refid="provinceCity_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_BANK_DISTRICT T
+		]]>
+		<where>
+			<if test="code != null and code != ''">
+                DISTRICT_CODE = #{code,jdbcType=VARCHAR}
+            </if>
+            <if test="active != null and active != ''">
+                AND ACTIVE = #{active,jdbcType=CHAR}
+            </if>
+		</where>
+	</select>
+
+	<!-- 新增信息 -->
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ProvinceCityEntity">
+		
+		<![CDATA[
+			INSERT/** 综合:新增信息  **/ INTO BSE.T_BAS_BANK_DISTRICT T	(
+		]]>
+		<include refid="provinceCity_Column_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, #{districtCode,jdbcType=VARCHAR},
+		#{districtName,jdbcType=VARCHAR},
+		#{parentDistrictCode,jdbcType=VARCHAR},
+		#{districtDegree,jdbcType=VARCHAR}, #{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP}, #{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR},
+		#{active,jdbcType=CHAR}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+
+	<!-- 修改信息 -->
+	<update id="update"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ProvinceCityEntity">
+		update/** 综合:修改信息  **/ BSE.T_BAS_BANK_DISTRICT
+		<set>
+			<!-- <if test="districtCode != null">
+				DISTRICT_CODE = #{districtCode,jdbcType=VARCHAR},
+			</if> -->
+			<if test="districtName != null">
+				DISTRICT_NAME = #{districtName,jdbcType=VARCHAR},
+			</if>
+			<if test="parentDistrictCode != null">
+				PARENT_DISTRICT_CODE =
+				#{parentDistrictCode,jdbcType=VARCHAR},
+			</if>
+			<if test="districtDegree != null">
+				DISTRICT_DEGREE = #{districtDegree,jdbcType=VARCHAR},
+			</if>
+			<!-- <if test="createDate != null"> CREATE_TIME = #{createDate,jdbcType=TIMESTAMP}, 
+				</if> -->
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<!-- <if test="createUser != null"> CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR}, 
+				</if> -->
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<!-- <if test="active != null">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if> -->
+		</set>
+
+		<where>
+			<if test="districtCode != null and districtCode != ''">
+				DISTRICT_CODE = #{districtCode,jdbcType=VARCHAR}
+			</if>
+		</where>
+
+	</update>
+	<!-- 作废信息 -->
+	<delete id="deleteProvinceCity" parameterType="map">
+		DELETE/** 综合:作废信息  **/ FROM BSE.T_BAS_BANK_DISTRICT
+		<where>
+			<if test="districtCode != null and districtCode != ''">
+				DISTRICT_CODE = #{districtCode,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</delete>
+	
+	<!-- 作废信息 （非物理删除）-->
+	<update id="deleteByCode" parameterType="map">
+		update/** 综合:作废信息 （非物理删除）  **/ BSE.T_BAS_BANK_DISTRICT
+		<set>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				MODIFY_USER_CODE = #{modifyUser, jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+		</set>
+		<where>
+			<if test="districtCode !=null and districtCode != ''">
+				DISTRICT_CODE = #{districtCode,jdbcType=VARCHAR}
+			</if>
+			<if test="active0 != null and active0 != ''">
+				AND ACTIVE = #{active0,jdbcType=CHAR}
+			</if>
+		</where>
+	</update>
+</mapper>

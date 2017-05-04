@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.macWhite">
+	<resultMap id="macWhiteResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.MacWhiteEntity">
+		<result column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="MAC_ADDRESS" property="macAddress" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="USER_CODE" property="userCode" jdbcType="VARCHAR" />
+		<result column="USER_NAME" property="userName" jdbcType="VARCHAR" />
+		<result column="DEPT_NAME" property="deptName" jdbcType="VARCHAR" />
+		<result column="BIG_ZONE" property="bigZone" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<!-- 数据字段 -->
+	<sql id="macWhite_Column_List">
+		ID, MAC_ADDRESS, CREATE_TIME, ACTIVE,USER_CODE,USER_NAME,DEPT_NAME,BIG_ZONE
+	</sql>
+	
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<if test="macAddress != null and macAddress != ''">
+				T.MAC_ADDRESS = #{macAddress,jdbcType=VARCHAR}
+			</if>
+			<if test="userCode != null and userCode != ''">
+				AND T.USER_CODE = #{userCode,jdbcType=CHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+
+	</sql>
+	
+	<!-- 验证白名单的MAC地址是否存在 -->
+	<select id="queryMacAddressByMac" parameterType="map" resultMap="macWhiteResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:验证白名单的MAC地址是否存在 **/
+		]]>
+		<include refid="macWhite_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_MAC_WHITE T
+		]]>
+		<where>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="macAddress != null and macAddress != ''">
+				AND MAC_ADDRESS = #{macAddress,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 查询所有MacWhite信息 -->
+	<select id="queryAllMacWhite"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.MacWhiteEntity"
+		resultMap="macWhiteResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有MacWhite信息**/
+		]]>
+		<include refid="macWhite_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_MAC_WHITE T
+		]]>
+		<include refid="queryWhere" />
+	</select>
+	
+	<!-- 统计总记录数 -->
+	<select id="queryCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.MacWhiteEntity">
+	    <![CDATA[
+	       	select/** 综合:统计总记录数**/ count(*) FROM BSE.T_BAS_MAC_WHITE T 
+	    ]]>
+		<include refid="queryWhere" />
+
+	</select>
+	
+	<!-- 新增信息 -->
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.MacWhiteEntity">
+		
+		<![CDATA[
+			INSERT/** 综合:新增信息**/ INTO BSE.T_BAS_MAC_WHITE T	(
+		]]>
+		<include refid="macWhite_Column_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, #{macAddress,jdbcType=VARCHAR},
+		#{createDate,jdbcType=TIMESTAMP}, 
+		#{active,jdbcType=CHAR},
+		#{userCode,jdbcType=VARCHAR},
+		#{userName,jdbcType=VARCHAR},
+		#{deptName,jdbcType=VARCHAR},
+		#{bigZone,jdbcType=VARCHAR}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+	
+	<!-- 修改信息 -->
+	<update id="update"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.MacWhiteEntity">
+		update/** 综合:修改信息**/ BSE.T_BAS_MAC_WHITE
+		<set>
+			<if test="macAddress != null">
+				MAC_ADDRESS = #{macAddress,jdbcType=VARCHAR},
+			</if>
+			<if test="createDate != null">
+				CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="userCode != null">
+				USER_CODE = #{userCode,jdbcType=VARCHAR},
+			</if>
+			<if test="userName != null">
+				USER_NAME = #{userName,jdbcType=VARCHAR},
+			</if>
+			<if test="deptName != null">
+				DEPT_NAME = #{deptName,jdbcType=VARCHAR},
+			</if>
+			<if test="bigZone != null">
+				BIG_ZONE = #{bigZone,jdbcType=VARCHAR},
+			</if>
+		</set>
+
+		<where>
+			<if test="id != null">
+				ID = #{id,jdbcType=VARCHAR}
+			</if>
+		</where>
+
+	</update>
+	
+	<!-- 作废信息 -->
+	<update id="deleteById" parameterType="map">
+		update/** 综合:作废信息**/ BSE.T_BAS_MAC_WHITE
+
+		<set>
+			<if test="inactive != null and inactive != ''">
+				ACTIVE = #{inactive,jdbcType=CHAR},
+			</if>
+		</set>
+
+		<where>
+			<if test="idList!=null and idList.size > 0">
+				ID in
+				<foreach collection="idList" index="index" item="code" open="("
+					separator="," close=")">
+					#{code}
+				</foreach>
+			</if>
+			<if test="active != null and active != ''">
+				and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</update>
+	
+</mapper>

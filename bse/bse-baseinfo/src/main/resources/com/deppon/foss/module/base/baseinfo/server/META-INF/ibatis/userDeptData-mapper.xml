@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.userDeptData">
+
+	<resultMap id="userDeptDataResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.dto.UserDeptDataDto">
+		<result property="userCode" column="EMP_CODE"/>
+		<collection property="orgCodes" column="ORG_CODE" ofType="String">
+			<result column="ORG_CODE" />
+		</collection>
+	</resultMap>
+
+	<select id="getUserDeptDataByCode" parameterType="string" resultMap="userDeptDataResultMap">
+		<![CDATA[
+			SELECT EMP_CODE, ORG_CODE
+			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW
+			WHERE EMP_CODE = #{userCode,jdbcType=VARCHAR}
+		]]>
+	</select>
+	
+	<select id="refreshUserDeptData"  statementType="CALLABLE" parameterType="string">
+		<![CDATA[
+			{CALL BSE.P_BAS_USER_ORG_AUTH_PROC(#{userCode,jdbcType=VARCHAR})}
+		]]>
+	</select>
+	
+	<select id="addUserDeptBySyncOrg"  statementType="CALLABLE" parameterType="string">
+		<![CDATA[
+			{CALL BSE.P_BAS_SYNC_ORG_AUTH_PROC(#{orgCode,jdbcType=VARCHAR})}
+		]]>
+	</select>
+</mapper>

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.QueryPodInfoDao" >
+ 
+  <!-- 临时租车付款报表明细界面数据 -->
+  <select id="selectAll" resultType="com.deppon.foss.module.settlement.consumer.api.shared.dto.PodDto"
+  								  parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.PodDto" >
+       select 
+       p.id   id,
+       p.waybill_no waybillNo,
+       p.pod_date podDate, 
+       p.pod_type podType,
+       p.pod_user_code podUserCode,
+       p.pod_user_name podUserName,
+       p.pod_org_code podOrgCode,
+       p.pod_org_name podOrgName,
+       p.create_time createTime,
+       p.is_init isInit
+       from stl.t_stl_pod p
+           where 1=1
+           and
+      <choose>  
+         <!--==============  按日期查询 ============== -->
+         <when test="queryType!=null and queryType!='' and queryType=='TD' ">
+ 			<!-- 按用车日期查询 -->
+ 			<![CDATA[   pod_date >=#{podStartDate}  and  pod_date <#{podEndDate} 
+	   		]]>
+            <if test="podOrgCode!=null and podOrgCode!=''">
+                and  p.pod_org_code = #{podOrgCode}
+          	</if>
+          	 <if test="podType!=null and podType!=''">
+                and  p.pod_type = #{podType}
+          	</if>
+         </when> 
+ 		 <!--============== 按运单号查询==============-->
+ 		<when test="queryType!=null and queryType!='' and queryType=='WB' ">
+ 			<if test="waybillNos!=null">
+ 				p.waybill_no in
+ 				<foreach collection="waybillNos" index="index" item="item" open="(" separator="," close=")">
+ 					#{item}
+ 				</foreach>
+ 			</if>
+ 		</when>
+       </choose>  
+  </select>
+    <!-- 临时租车付款报表明细界面数据 -->
+  <select id="selectCount" resultType="int"
+  								  parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.PodDto" >
+       select count(*)
+       from stl.t_stl_pod p
+           where 1=1
+           and
+      <choose>  
+         <!--==============  按日期查询 ============== -->
+         <when test="queryType!=null and queryType!='' and queryType=='TD' ">
+ 			<!-- 按用车日期查询 -->
+ 			<![CDATA[ pod_date >=#{podStartDate}  and  pod_date <#{podEndDate} 
+	   		]]>
+            <if test="podOrgCode!=null and podOrgCode!=''">
+                and  p.pod_org_code = #{podOrgCode}
+          	</if>
+          	 <if test="podType!=null and podType!=''">
+                and  p.pod_type = #{podType}
+          	</if>
+         </when> 
+ 		 <!--============== 按运单号查询==============-->
+ 		<when test="queryType!=null and queryType!='' and queryType=='WB' ">
+ 			<if test="waybillNos!=null">
+ 				p.waybill_no in
+ 				<foreach collection="waybillNos" index="index" item="item" open="(" separator="," close=")">
+ 					#{item}
+ 				</foreach>
+ 			</if>
+ 		</when>
+       </choose>  
+  </select>
+</mapper>

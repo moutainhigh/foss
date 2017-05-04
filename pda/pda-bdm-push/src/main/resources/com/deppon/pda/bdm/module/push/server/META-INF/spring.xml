@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+	http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+	http://www.springframework.org/schema/context 
+	http://www.springframework.org/schema/context/spring-context-3.0.xsd
+	http://www.springframework.org/schema/jee 
+	http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+	http://www.springframework.org/schema/tx 
+	http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+	http://www.springframework.org/schema/aop 
+	http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">
+
+	<!-- 2、推送Dao，将需要推送的信息保存到数据库 -->
+	<bean id="pushDao" class="com.deppon.pda.bdm.module.push.server.dao.impl.PushDao" >
+		<property name="sqlSessionFactory">
+			<ref bean="sqlSessionFactory" />
+		</property>
+	</bean>
+	<!-- 1、推送service -->
+	<bean id="pushService"
+		class="com.deppon.pda.bdm.module.push.server.service.impl.PushService">
+		<property name="pushDao">
+			<ref bean='pushDao'/>
+		</property>
+	</bean>
+	
+	<!-- 2、读取推送信息Dao，从数据库中读取 
+	<bean id="pushReadDao" class="com.deppon.pda.bdm.module.push.server.dao.impl.PushReadDao" >
+		<property name="sqlSessionFactory">
+			<ref bean="sqlSessionFactory" />
+		</property>
+	</bean>-->
+	<!-- 1、读取推送信息service
+	 <bean id="pushReadService"  class="com.deppon.pda.bdm.module.push.server.service.impl.PushReadService" >
+    	<property name="pushReadDao" ref="pushReadDao"></property>
+    </bean>  -->
+	
+	<!-- 4、配置job 
+	 <bean id="pushMessageReadJob"  class="com.deppon.pda.bdm.module.push.job.PushMessageReadJob" >
+    	<property name="pushReadService" ref="pushReadService"/>
+    </bean>   -->
+	
+	<!-- 3、配置定时器指定的job 
+	 <bean id="pushMessageJobDetail" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">  
+        <property name="targetObject">  
+            <ref bean="pushMessageReadJob" />  
+        </property>  
+        <property name="targetMethod">  
+            <value>start</value>  
+        </property>  
+        <property name="concurrent" value="false" />
+    </bean>  -->
+	
+	<!-- 2、配置定时器 
+	 <bean id="pushMessageTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">  
+        <property name="jobDetail">  
+            <ref bean="pushMessageJobDetail" />  
+        </property>  
+        <property name="cronExpression"> -->
+            <!-- 每半分钟执行一次
+     		<value>0/30 * * * * ?</value>  
+        </property>  
+    </bean>    -->
+    
+	<!-- spring配置job 1、2、3、4 1、注册定时器实体 集合 
+	<bean  class="org.springframework.scheduling.quartz.SchedulerFactoryBean">  
+        <property name="waitForJobsToCompleteOnShutdown" value="true" />
+		<property name="triggers">
+			<ref bean="pushMessageTrigger" />
+		</property>
+		<property name="quartzProperties">
+			<props>
+				<prop key="org.quartz.threadPool.threadCount">1</prop>
+				<prop key="org.quartz.threadPool.threadPriority">5</prop>
+				<prop key="org.quartz.scheduler.instanceName">PushMessage Job</prop>
+				<prop key="org.quartz.scheduler.instanceId">AUTO</prop>
+			</props>
+		</property>
+    </bean>  -->
+	
+</beans>

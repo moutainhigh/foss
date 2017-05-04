@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="pkp-pricing" default="deploy" basedir=".">
+	<property name="classes.dir" value="${basedir}/target/classes" />
+	<property name="target.file" value="target/${project.name}.zip" />
+	<property name="apphome.path" value="${appHomeDirectory}/plugins/${project.artifactId}" />
+	<!--删除旧版本-->
+	<target name="init">
+		<delete dir="${appHomeDirectory}/plugins/${project.artifactId}" failonerror="false" quiet="true" />
+	</target>
+	<target name="gohome" depends="init, zip-file, move-to-home">
+	</target>
+
+	<!--将目录文件打包-->
+	<target name="zip-file">
+		<mkdir dir="${apphome.path}" />
+		<zip destfile="${basedir}/${target.file}">
+			<zipfileset dir="${classes.dir}" prefix="classes" >
+				<include name="**/*.*" />
+				<include name="**/*" />
+				<exclude name="**/*.java" />
+				<exclude name="**/*.js" />
+				<exclude name="**/*.jsp" />
+				<exclude name="**/*.png" />
+				<exclude name="**/action/*.*" />
+				<!--  
+				<exclude name="**/cache/*.*" />
+				-->
+				<exclude name="**/server/META-INF/*.*" />
+				<!-- 以下配置在客户端不需要用到 打zip包时去掉 不用再客户端启动时   节约客户端内存-->
+				<exclude name="**/AirlinesValueAddMapper.xml" />
+				<exclude name="**/FlightPricePlanDetailEntityMapper.xml" />
+				<exclude name="**/FlightPricePlanEntityMapper.xml" />
+				
+				
+			</zipfileset>
+			<zipfileset dir="${classes.dir}/com/deppon/foss/module/pickup/pricing/server/META-INF/messages"
+				prefix="classes/com/deppon/foss/META-INF/message">
+					<include name="*.properties"/>
+			</zipfileset>
+			<fileset dir="${basedir}">
+				<include name="plugin.xml" />
+			</fileset>
+		</zip>
+	</target>
+
+	<target name="move-to-home">
+		<copy file="${basedir}/${target.file}" 
+			tofile="${apphome.path}/${target.file}" />
+	</target>
+
+	<target name="deploy">
+	</target>
+
+</project>

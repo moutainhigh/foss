@@ -1,0 +1,481 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="com.deppon.foss.module.transfer.platform.api.server.dao.ILineCargoDao">
+
+	<resultMap
+		type="com.deppon.foss.module.transfer.platform.api.shared.dto.LineCargoDto"
+		id="lineCargoDto">
+		<result property="origDeptCode" column="origDeptCode" />
+		<result property="destDeptCode" column="destDeptCode" />
+		<result property="destDeptName" column="destDeptName" />
+		<result property="waybillNo" column="waybillNo" />
+		<result property="statusCode" column="statusCode" />
+		<result property="statusName" column="statusName" />
+		<result property="waybillQty" column="waybillQty" />
+		<result property="currentQty" column="currentQty" />
+		<result property="currentWeight" column="currentWeight" />
+		<result property="currentVolume" column="currentVolume" />
+		<result property="productName" column="productName" />
+		<result property="billTime" column="billTime" />
+		<result property="vehicleassembleNo" column="vehicleassembleNo" />
+		<result property="vehicleNo" column="vehicleNo" />
+	</resultMap>
+
+	<resultMap
+		type="com.deppon.foss.module.transfer.platform.api.shared.dto.LineCargoTotalDto"
+		id="lineCargoTotalDto">
+		<result property="totalVote" column="totalVote" />
+		<result property="totalQty" column="totalQty" />
+		<result property="totalVolume" column="totalVolume" />
+		<result property="totalWeight" column="totalWeight" />
+	</resultMap>
+
+	<resultMap
+		type="com.deppon.foss.module.transfer.platform.api.shared.dto.LineCargoSerialNoDto"
+		id="lineCargoSerialNoDto">
+		<result property="waybillNo" column="waybillNo" />
+		<result property="serialNo" column="serialNo" />
+	</resultMap>
+	
+	<sql id="sql_where_caluse">
+		WHERE w.bill_time BETWEEN #{beginTime,jdbcType=TIMESTAMP} AND #{endTime,jdbcType=TIMESTAMP}
+		   AND w.active = 'Y'
+		   <if test="productCode != null and productCode != '' and productCode != 'ALL'">
+			   AND w.product_code = #{productCode,jdbcType=VARCHAR}
+		   </if>
+		   <if test="waybillNo != null and waybillNo != ''">
+			   AND w.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		   </if>
+	</sql>
+	
+	<!-- 
+	pkp.t_srv_waybill,tfr.t_opt_path_detail,tfr.t_opt_handoverbil,
+	tfr.t_opt_handoverbill_detail,tfr.t_opt_vehicleassemblebill
+	相关表为了此功能ogg单独同步为
+	pkp.t_plat_waybill,tfr.t_plat_path_detail,tfr.t_plat_handoverbil,
+	tfr.t_plat_handoverbill_detail,tfr.t_plat_vehicleassemblebill
+	 -->
+
+	<!-- 未交接 -->
+	<sql id="sql_no_handover">
+	   FROM pkp.t_srv_waybill w
+	 INNER JOIN tfr.t_opt_path_detail pd
+	    ON pd.objective_org_code = #{origDeptCode,jdbcType=VARCHAR}
+	   AND pd.next_dest_org_code = #{destDeptCode,jdbcType=VARCHAR}
+	   AND pd.waybill_no = w.waybill_no
+	</sql>
+	<!-- 悟空系统到场站数据同步 -->
+	<sql id="sql_no_handover_wukong_to_station">
+	   FROM ecs.mv_pkp_t_srv_waybill w
+	 INNER JOIN ecs.mv_tfr_t_opt_path_detail pd
+	    ON pd.objective_org_code = #{origDeptCode,jdbcType=VARCHAR}
+	   AND pd.next_dest_org_code = #{destDeptCode,jdbcType=VARCHAR}
+	   AND pd.waybill_no = w.waybill_no
+	</sql>
+	
+	<select id="queryNoHandover" resultMap="lineCargoDto"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.LineCargoQcDto">
+		SELECT #{destDeptCode,jdbcType=VARCHAR} destDeptCode,
+		       (SELECT o.name
+		          FROM bse.t_bas_org o
+		         WHERE o.code = #{destDeptCode,jdbcType=VARCHAR}
+		           AND o.active = 'Y'
+		           AND ROWNUM = 1) destDeptName,
+		       w.waybill_no waybillNo,
+		       #{origDeptCode,jdbcType=VARCHAR} origDeptCode,
+		       #{statusCode,jdbcType=VARCHAR} statusCode,
+		       #{statusName,jdbcType=VARCHAR} statusName,
+		       MAX(w.goods_qty_total) waybillQty,
+		       MAX(s.stock_goods_qty) currentQty,
+		       round(MAX(w.goods_weight_total) * MAX(s.stock_goods_qty) /
+		             MAX(w.goods_qty_total),
+		             3) currentWeight,
+		       round(MAX(w.goods_volume_total) * MAX(s.stock_goods_qty) /
+		             MAX(w.goods_qty_total),
+		             3) currentVolume,
+		       MAX(p.name) productName,
+		       MAX(w.bill_time) billTime
+		  FROM pkp.t_srv_waybill w
+		 INNER JOIN tfr.t_opt_path_detail pd
+		    ON pd.objective_org_code = #{origDeptCode,jdbcType=VARCHAR}
+		   AND pd.next_dest_org_code = #{destDeptCode,jdbcType=VARCHAR}
+		   AND pd.waybill_no = w.waybill_no
+		 INNER JOIN tfr.t_opt_waybill_stock s
+		    ON s.waybill_no = pd.waybill_no
+		   AND s.org_code = pd.orig_org_code
+		  LEFT JOIN pkp.t_srv_product p
+		    ON p.code = w.product_code
+		   AND p.active = 'Y'
+		 <include refid="sql_where_caluse"/>
+		 GROUP BY w.waybill_no union all
+		 SELECT #{destDeptCode,jdbcType=VARCHAR} destDeptCode,
+		       (SELECT o.name
+		          FROM bse.t_bas_org o
+		         WHERE o.code = #{destDeptCode,jdbcType=VARCHAR}
+		           AND o.active = 'Y'
+		           AND ROWNUM = 1) destDeptName,
+		       w.waybill_no waybillNo,
+		       #{origDeptCode,jdbcType=VARCHAR} origDeptCode,
+		       #{statusCode,jdbcType=VARCHAR} statusCode,
+		       #{statusName,jdbcType=VARCHAR} statusName,
+		       MAX(w.goods_qty_total) waybillQty,
+		       MAX(s.stock_goods_qty) currentQty,
+		       round(MAX(w.goods_weight_total) * MAX(s.stock_goods_qty) /
+		             MAX(w.goods_qty_total),
+		             3) currentWeight,
+		       round(MAX(w.goods_volume_total) * MAX(s.stock_goods_qty) /
+		             MAX(w.goods_qty_total),
+		             3) currentVolume,
+		       MAX(p.name) productName,
+		       MAX(w.bill_time) billTime
+		  FROM ecs.mv_pkp_t_srv_waybill w
+		 INNER JOIN ecs.mv_tfr_t_opt_path_detail pd
+		    ON pd.objective_org_code = #{origDeptCode,jdbcType=VARCHAR}
+		   AND pd.next_dest_org_code = #{destDeptCode,jdbcType=VARCHAR}
+		   AND pd.waybill_no = w.waybill_no
+		 INNER JOIN ecs.v_tfr_t_opt_waybill_stock s
+		    ON s.waybill_no = pd.waybill_no
+		   AND s.org_code = pd.orig_org_code
+		  LEFT JOIN ecs.v_pkp_t_srv_product p
+		    ON p.code = w.product_code
+		   AND p.active = 'Y'
+		 <include refid="sql_where_caluse"/>
+		 GROUP BY w.waybill_no
+	</select>
+
+	<select id="queryNoHandoverTotal" resultMap="lineCargoTotalDto"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.LineCargoQcDto">
+		SELECT COUNT(1) totalVote,
+		       SUM(currentQty) totalQty,
+		       round(SUM(currentWeight) / 1000, 3) totalWeight,
+		       round(SUM(currentVolume), 3) totalVolume
+		  FROM (SELECT DISTINCT w.waybill_no waybillNo,
+		  						s.stock_goods_qty currentQty,
+		                        w.goods_weight_total * s.stock_goods_qty / w.goods_qty_total currentWeight,
+		                        w.goods_volume_total * s.stock_goods_qty / w.goods_qty_total currentVolume
+		          <include refid="sql_no_handover"/>
+		         INNER JOIN tfr.t_opt_waybill_stock s
+		            ON s.waybill_no = pd.waybill_no
+		           AND s.org_code = pd.orig_org_code
+		         <include refid="sql_where_caluse"/>)
+	</select>
+
+	<select id="queryNoHandoverSerialNos" resultMap="lineCargoSerialNoDto"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.LineCargoQcDto">
+		select * from (SELECT DISTINCT s.waybill_no waybillNo, s.serial_no serialNo
+		 <include refid="sql_no_handover"/>
+		 INNER JOIN tfr.t_opt_stock s
+		    ON s.waybill_no = pd.waybill_no
+		   AND s.org_code = pd.orig_org_code
+		 WHERE w.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		   AND w.active = 'Y'
+		  union all 
+		 SELECT DISTINCT s.waybill_no waybillNo, s.serial_no serialNo
+		 <include refid="sql_no_handover_wukong_to_station"/>
+		 INNER JOIN ecs.v_tfr_t_opt_stock s
+		    ON s.waybill_no = pd.waybill_no
+		   AND s.org_code = pd.orig_org_code
+		 WHERE w.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		   AND w.active = 'Y') a
+		 ORDER BY  a.serialno
+	</select>
+	
+	<!-- 在库 -->
+	<sql id="sql_in_stock">
+	   FROM pkp.t_srv_waybill w
+	 INNER JOIN tfr.t_opt_path_detail pd
+	    ON pd.orig_org_code = #{origDeptCode,jdbcType=VARCHAR}
+	   AND pd.objective_org_code = #{destDeptCode,jdbcType=VARCHAR}
+	   AND pd.waybill_no = w.waybill_no
+	</sql>
+	<sql id="sql_in_stock_wukong_to_station">
+	   FROM ecs.mv_pkp_t_srv_waybill w
+	 INNER JOIN ecs.mv_tfr_t_opt_path_detail pd
+	    ON pd.orig_org_code = #{origDeptCode,jdbcType=VARCHAR}
+	   AND pd.objective_org_code = #{destDeptCode,jdbcType=VARCHAR}
+	   AND pd.waybill_no = w.waybill_no
+	</sql>
+
+	<select id="queryInStock" resultMap="lineCargoDto"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.LineCargoQcDto">
+		SELECT #{destDeptCode,jdbcType=VARCHAR} destDeptCode,
+		       (SELECT o.name
+		          FROM bse.t_bas_org o
+		         WHERE o.code = #{destDeptCode,jdbcType=VARCHAR}
+		           AND o.active = 'Y'
+		           AND ROWNUM = 1) destDeptName,
+		       w.waybill_no waybillNo,
+		       #{origDeptCode,jdbcType=VARCHAR} origDeptCode,
+		       #{statusCode,jdbcType=VARCHAR} statusCode,
+		       #{statusName,jdbcType=VARCHAR} statusName,
+		       MAX(w.goods_qty_total) waybillQty,
+		       MAX(s.stock_goods_qty) currentQty,
+		       round(MAX(w.goods_weight_total) * MAX(s.stock_goods_qty) /
+		             MAX(w.goods_qty_total),
+		             3) currentWeight,
+		       round(MAX(w.goods_volume_total) * MAX(s.stock_goods_qty) /
+		             MAX(w.goods_qty_total),
+		             3) currentVolume,
+		       MAX(p.name) productName,
+		       MAX(w.bill_time) billTime
+		  FROM pkp.t_srv_waybill w
+		 INNER JOIN tfr.t_opt_path_detail pd
+		    ON pd.orig_org_code = #{origDeptCode,jdbcType=VARCHAR}
+		   AND pd.objective_org_code = #{destDeptCode,jdbcType=VARCHAR}
+		   AND pd.waybill_no = w.waybill_no
+		 INNER JOIN tfr.t_opt_waybill_stock s
+		    ON s.waybill_no = pd.waybill_no
+		   AND s.org_code = pd.orig_org_code
+		  LEFT JOIN pkp.t_srv_product p
+		    ON p.code = w.product_code
+		   AND p.active = 'Y'
+		  <include refid="sql_where_caluse"/>
+		 GROUP BY w.waybill_no union all
+		 SELECT #{destDeptCode,jdbcType=VARCHAR} destDeptCode,
+		       (SELECT o.name
+		          FROM bse.t_bas_org o
+		         WHERE o.code = #{destDeptCode,jdbcType=VARCHAR}
+		           AND o.active = 'Y'
+		           AND ROWNUM = 1) destDeptName,
+		       w.waybill_no waybillNo,
+		       #{origDeptCode,jdbcType=VARCHAR} origDeptCode,
+		       #{statusCode,jdbcType=VARCHAR} statusCode,
+		       #{statusName,jdbcType=VARCHAR} statusName,
+		       MAX(w.goods_qty_total) waybillQty,
+		       MAX(s.stock_goods_qty) currentQty,
+		       round(MAX(w.goods_weight_total) * MAX(s.stock_goods_qty) /
+		             MAX(w.goods_qty_total),
+		             3) currentWeight,
+		       round(MAX(w.goods_volume_total) * MAX(s.stock_goods_qty) /
+		             MAX(w.goods_qty_total),
+		             3) currentVolume,
+		       MAX(p.name) productName,
+		       MAX(w.bill_time) billTime
+		  FROM ecs.mv_pkp_t_srv_waybill w
+		 INNER JOIN ecs.mv_tfr_t_opt_path_detail pd
+		    ON pd.orig_org_code = #{origDeptCode,jdbcType=VARCHAR}
+		   AND pd.objective_org_code = #{destDeptCode,jdbcType=VARCHAR}
+		   AND pd.waybill_no = w.waybill_no
+		 INNER JOIN ecs.v_tfr_t_opt_waybill_stock s
+		    ON s.waybill_no = pd.waybill_no
+		   AND s.org_code = pd.orig_org_code
+		  LEFT JOIN ecs.v_pkp_t_srv_product p
+		    ON p.code = w.product_code
+		   AND p.active = 'Y'
+		  <include refid="sql_where_caluse"/>
+		 GROUP BY w.waybill_no
+	</select>
+
+	<select id="queryInStockTotal" resultMap="lineCargoTotalDto"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.LineCargoQcDto">
+		SELECT COUNT(1) totalVote,
+		       SUM(currentQty) totalQty,
+		       round(SUM(currentWeight) / 1000, 3) totalWeight,
+		       round(SUM(currentVolume), 3) totalVolume
+		  FROM (SELECT DISTINCT w.waybill_no waybillNo,
+		                        s.stock_goods_qty currentQty,
+		                        w.goods_weight_total * s.stock_goods_qty / w.goods_qty_total currentWeight,
+		                        w.goods_volume_total * s.stock_goods_qty / w.goods_qty_total currentVolume
+		         <include refid="sql_in_stock"/>
+		         INNER JOIN tfr.t_opt_waybill_stock s
+		            ON s.waybill_no = w.waybill_no
+		           AND s.org_code = pd.orig_org_code
+		         <include refid="sql_where_caluse"/>)
+	</select>
+
+	<select id="queryInStockSerialNos" resultMap="lineCargoSerialNoDto"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.LineCargoQcDto">
+		select * from(SELECT DISTINCT s.waybill_no waybillNo, s.serial_no serialNo
+		 <include refid="sql_in_stock"/>
+		 INNER JOIN tfr.t_opt_stock s
+		    ON s.waybill_no = w.waybill_no
+		   AND s.org_code = pd.orig_org_code
+		 WHERE w.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		   AND w.active = 'Y'
+		  union all 
+		 SELECT DISTINCT s.waybill_no waybillNo, s.serial_no serialNo
+		 <include refid="sql_in_stock_wukong_to_station"/>
+		 INNER JOIN ecs.v_tfr_t_opt_stock s
+		    ON s.waybill_no = w.waybill_no
+		   AND s.org_code = pd.orig_org_code
+		 WHERE w.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		   AND w.active = 'Y') b
+		 ORDER BY b.serialNo
+	</select>
+
+	<!-- 交接单状态的不同则分别表示不同的类型 -->
+	<sql id="sql_handover">
+	  FROM pkp.t_srv_waybill w
+	 INNER JOIN tfr.t_opt_path_detail pd
+	    ON pd.orig_org_code = #{origDeptCode,jdbcType=VARCHAR}
+	   AND pd.objective_org_code = #{destDeptCode,jdbcType=VARCHAR}
+	   AND pd.waybill_no = w.waybill_no
+	 INNER JOIN tfr.t_opt_handoverbill h
+	    ON h.dest_org_code = pd.orig_org_code
+	   AND h.handoverbill_state IN 
+ 	   <foreach collection="handoverStatus" close=")" open="(" item="item" separator=",">
+			#{item,jdbcType=NUMERIC}
+	   </foreach>
+	 INNER JOIN tfr.t_opt_handoverbill_detail hd
+	    ON hd.handover_no = h.handover_no
+	   AND hd.waybill_no = w.waybill_no
+	</sql>
+	<!-- 悟空到场站数据同步 -->
+	<sql id="sql_handover_wukong_to_station">
+	  FROM ecs.mv_pkp_t_srv_waybill w
+	 INNER JOIN ecs.mv_tfr_t_opt_path_detail pd
+	    ON pd.orig_org_code = #{origDeptCode,jdbcType=VARCHAR}
+	   AND pd.objective_org_code = #{destDeptCode,jdbcType=VARCHAR}
+	   AND pd.waybill_no = w.waybill_no
+	 INNER JOIN ecs.v_tfr_t_opt_handoverbill h
+	    ON h.dest_org_code = pd.orig_org_code
+	   AND h.handoverbill_state IN 
+ 	   <foreach collection="handoverStatus" close=")" open="(" item="item" separator=",">
+			#{item,jdbcType=NUMERIC}
+	   </foreach>
+	 INNER JOIN ecs.mv_tfr_t_opt_handoverbil_detai hd
+	    ON hd.handover_no = h.handover_no
+	   AND hd.waybill_no = w.waybill_no
+	</sql>
+
+	<select id="queryHandover" resultMap="lineCargoDto"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.LineCargoQcDto">
+		SELECT #{destDeptCode,jdbcType=VARCHAR} destDeptCode,
+		       (SELECT o.name
+		          FROM bse.t_bas_org o
+		         WHERE o.code = #{destDeptCode,jdbcType=VARCHAR}
+		           AND o.active = 'Y'
+		           AND ROWNUM = 1) destDeptName,
+		       w.waybill_no waybillNo,
+		       #{origDeptCode,jdbcType=VARCHAR} origDeptCode,
+		       #{statusCode,jdbcType=VARCHAR} statusCode,
+		       #{statusName,jdbcType=VARCHAR} statusName,
+		       MAX(w.goods_qty_total) waybillQty,
+		       MAX(hd.handover_goods_qty) currentQty,
+		       round(MAX(w.goods_weight_total) * MAX(hd.handover_goods_qty) /
+		             MAX(w.goods_qty_total),
+		             3) currentWeight,
+		       round(MAX(w.goods_volume_total) * MAX(hd.handover_goods_qty) /
+		             MAX(w.goods_qty_total),
+		             3) currentVolume,
+		       MAX(hd.transport_type) productName,
+		       MAX(w.bill_time) billTime,
+		       MAX(v.vehicleassemble_no) vehicleassembleNo,
+		       MAX(h.vehicle_no) vehicleNo
+		  FROM pkp.t_srv_waybill w
+		 INNER JOIN tfr.t_opt_path_detail pd
+		    ON pd.orig_org_code = #{origDeptCode,jdbcType=VARCHAR}
+		   AND pd.objective_org_code = #{destDeptCode,jdbcType=VARCHAR}
+		   AND pd.waybill_no = w.waybill_no
+		 INNER JOIN tfr.t_opt_handoverbill h
+		    ON h.dest_org_code = pd.orig_org_code
+		   AND h.handoverbill_state IN
+		  <foreach collection="handoverStatus" close=")" open="(" item="item" separator=",">
+			#{item,jdbcType=NUMERIC}
+	      </foreach>
+		   AND h.create_time >= #{beginTime,jdbcType=TIMESTAMP} /*交接时间一定在运单开单之后*/
+		 INNER JOIN tfr.t_opt_handoverbill_detail hd
+		    ON hd.handover_no = h.handover_no
+		   AND hd.waybill_no = w.waybill_no
+		  LEFT JOIN tfr.t_opt_vehicleassemble_detail vd
+		    ON vd.handover_no = h.handover_no
+		  LEFT JOIN tfr.t_opt_vehicleassemblebill v
+		    ON vd.vehicleassemblebill_id = v.id
+		   AND v.state != '90'
+		 <include refid="sql_where_caluse"/>
+		 GROUP BY h.handover_no, w.waybill_no union all
+		 SELECT #{destDeptCode,jdbcType=VARCHAR} destDeptCode,
+		       (SELECT o.name
+		          FROM bse.t_bas_org o
+		         WHERE o.code = #{destDeptCode,jdbcType=VARCHAR}
+		           AND o.active = 'Y'
+		           AND ROWNUM = 1) destDeptName,
+		       w.waybill_no waybillNo,
+		       #{origDeptCode,jdbcType=VARCHAR} origDeptCode,
+		       #{statusCode,jdbcType=VARCHAR} statusCode,
+		       #{statusName,jdbcType=VARCHAR} statusName,
+		       MAX(w.goods_qty_total) waybillQty,
+		       MAX(hd.handover_goods_qty) currentQty,
+		       round(MAX(w.goods_weight_total) * MAX(hd.handover_goods_qty) /
+		             MAX(w.goods_qty_total),
+		             3) currentWeight,
+		       round(MAX(w.goods_volume_total) * MAX(hd.handover_goods_qty) /
+		             MAX(w.goods_qty_total),
+		             3) currentVolume,
+		       MAX(hd.transport_type) productName,
+		       MAX(w.bill_time) billTime,
+		       MAX(v.vehicleassemble_no) vehicleassembleNo,
+		       MAX(h.vehicle_no) vehicleNo
+		  FROM ecs.mv_pkp_t_srv_waybill w
+		 INNER JOIN ecs.mv_tfr_t_opt_path_detail pd
+		    ON pd.orig_org_code = #{origDeptCode,jdbcType=VARCHAR}
+		   AND pd.objective_org_code = #{destDeptCode,jdbcType=VARCHAR}
+		   AND pd.waybill_no = w.waybill_no
+		 INNER JOIN ecs.v_tfr_t_opt_handoverbill h
+		    ON h.dest_org_code = pd.orig_org_code
+		   AND h.handoverbill_state IN
+		  <foreach collection="handoverStatus" close=")" open="(" item="item" separator=",">
+			#{item,jdbcType=NUMERIC}
+	      </foreach>
+		   AND h.create_time >= #{beginTime,jdbcType=TIMESTAMP} /*交接时间一定在运单开单之后*/
+		 INNER JOIN ecs.mv_tfr_t_opt_handoverbil_detai hd
+		    ON hd.handover_no = h.handover_no
+		   AND hd.waybill_no = w.waybill_no
+		  LEFT JOIN ecs.v_tfr_t_opt_vmble_detail vd
+		    ON vd.handover_no = h.handover_no
+		  LEFT JOIN ecs.v_tfr_t_opt_vehicleassemblebi v
+		    ON vd.vehicleassemblebill_id = v.id
+		   AND v.state != '90'
+		 <include refid="sql_where_caluse"/>
+		 GROUP BY h.handover_no, w.waybill_no
+	</select>
+
+	<select id="queryHandoverTotal" resultMap="lineCargoTotalDto"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.LineCargoQcDto">
+		SELECT COUNT(1) totalVote,
+		       SUM(currentQty) totalQty,
+		       round(SUM(currentWeight) / 1000, 3) totalWeight,
+		       round(SUM(currentVolume), 3) totalVolume
+		  FROM (SELECT DISTINCT w.waybill_no waybillNo,
+		                        hd.handover_goods_qty currentQty,
+		                        w.goods_weight_total * hd.handover_goods_qty / w.goods_qty_total currentWeight,
+		                        w.goods_volume_total * hd.handover_goods_qty / w.goods_qty_total currentVolume,
+		                        v.vehicleassemble_no vehicleassembleNo,
+		                		h.vehicle_no vehicleNo
+		         <include refid="sql_handover"/>
+				  LEFT JOIN tfr.t_opt_vehicleassemble_detail vd
+				    ON vd.handover_no = h.handover_no
+				  LEFT JOIN tfr.t_opt_vehicleassemblebill v
+				    ON vd.vehicleassemblebill_id = v.id
+				   AND v.state != '90'
+				 <include refid="sql_where_caluse"/>)
+	</select>
+
+	<select id="queryHandoverSerialNos" resultMap="lineCargoSerialNoDto"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.LineCargoQcDto">
+		select * from(SELECT DISTINCT hs.waybill_no waybillNo, hs.serial_no serialNo
+		 <include refid="sql_handover"/>
+		 INNER JOIN tfr.t_opt_handoverbill_serialno hs
+		    ON hs.handoverbill_no = hd.handover_no
+		   AND hs.waybill_no = hd.waybill_no
+		 WHERE w.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		   AND w.active = 'Y'
+		   AND h.vehicle_no = #{vehicleNo,jdbcType=VARCHAR}
+		 union all
+		 SELECT DISTINCT hs.waybill_no waybillNo, hs.serial_no serialNo
+		 <include refid="sql_handover_wukong_to_station"/>
+		 INNER JOIN ecs.mv_tfr_t_opt_handoverbi_seri hs
+		    ON hs.handoverbill_no = hd.handover_no
+		   AND hs.waybill_no = hd.waybill_no
+		 WHERE w.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		   AND w.active = 'Y'
+		   AND h.vehicle_no = #{vehicleNo,jdbcType=VARCHAR}
+		   ) c 
+		 ORDER BY c.serialNo
+		 
+	</select>
+
+</mapper>

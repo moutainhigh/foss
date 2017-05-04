@@ -1,0 +1,257 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.BillPayableEntityDao" >
+  <!-- 根据业务时间和客户信息查询应付单列表  dp-liqin-->
+  <select id="selectByPayableParams" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.BillRecWriteoffBillPayDto" >
+    SELECT /*结算-核销-根据业务时间和客户信息查询应付单列表*/
+    <include refid="Base_Column_List" />
+    from STL.T_STL_BILL_PAYABLE P
+    <where>  
+    		<!-- 应付单按时间查询 -->
+    		<![CDATA[ P.BUSINESS_DATE >=#{payBusinessStartDate} AND   P.BUSINESS_DATE <#{payBusinessEndDate} AND P.ACCOUNT_DATE>=#{payBusinessStartDate}]]>
+    		AND P.UNVERIFY_AMOUNT>0  <!-- 未核销金额大于0 -->
+    		AND P.APPROVE_STATUS=#{approveStatus}<!-- 审核状态 -->
+    	<!-- 客户编码不为空 -->
+		<if test="customerCode!=null and customerCode!=''"> 
+			AND P.CUSTOMER_CODE=#{customerCode}
+		</if> 
+		   <!-- 应付单必须是有效和非红单 -->
+			AND P.ACTIVE = #{payActive}
+			AND P.IS_RED_BACK=#{payIsRedBack}
+		<!-- 当应付单为代收货款类型时，应付单必须为审核退并已生效 -->
+		<if test="payableBillTypeList!=null and payableBillTypeList.size()>0">
+			AND((((
+				<!-- 应付单为代收货款时 -->
+				 P.BILL_TYPE IN 
+				<foreach collection="payableBillTypeList" index="index" item="item" open="(" separator="," close=")">
+					#{item}
+				</foreach>
+				
+				<!-- 代收货款必须为审核退 -->
+				AND P.COD_TYPE IN 
+				<foreach collection="codTypeList " index="index" item="item" open="(" separator="," close=")">
+					#{item}
+				</foreach>
+				) OR P.BILL_TYPE IN ('DC','FDC','HIP'))
+				AND P.EFFECTIVE_STATUS=#{effectiveStatus}<!-- 应付单生效状态为已生效 -->
+			   )
+				OR P.BILL_TYPE NOT IN ('APC','DC','FDC')
+			)
+		</if>
+		
+		
+		<!-- 应付单不能为装卸费和服务补救 -->
+		<if test="billPayTypeList!=null">
+			AND P.BILL_TYPE NOT IN
+			<foreach collection="billPayTypeList" index="index" item="item" open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		
+		
+		<!--能够核销的应付单需要满足以下三点-->
+		<!--1、应付单的支付状态为未支付的-->
+		<!--2、应付单的支付状态为已支付时，与之关联的付款单的的汇款状态为已汇款对应数据字典‘TD’-->
+		AND( P.PAY_STATUS = #{payStatusNo} OR
+         (P.PAY_STATUS = #{payStatusYes} AND EXISTS
+          (SELECT ID
+             FROM STL.T_STL_BILL_PAYMENT PA
+            WHERE PA.PAYMENT_NO = P.PAYMENT_NO
+              AND PA.REMIT_STATUS = #{remitStatus})))
+	
+		<if test="generatingOrgCode!=null">
+			 AND P.PAYABLE_ORG_CODE = #{generatingOrgCode}<!-- 登录部门等于应付单所属部门过滤数据 -->
+		</if>
+		
+		<!-- 理赔类型应付单支付类型为现金和电汇时，不允许核销 -->
+		AND ((P.BILL_TYPE = #{claimsPaybleType}
+		AND P.PAYMENT_CATEGORIES NOT IN
+		<foreach collection="paymentTypeList" index="index" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		)
+		OR
+       	P.BILL_TYPE !=#{claimsPaybleType})
+       	
+       	<!-- 应付单如果已经冻结了不允许核销 -->
+        <!-- 放开代收货款反核销之后的单 使其可以参与核销 -->
+       	AND (P.FROZEN_STATUS=#{noFrozenStatus}
+          OR (P.FROZEN_STATUS=#{billFrozenStaFrozen} AND EXISTS
+        (SELECT 1
+			FROM STL.T_STL_COD C
+           WHERE C.WAYBILL_NO = P.WAYBILL_NO
+             AND C.STATUS=#{codStatusRD})))
+		 <![CDATA[ AND   ROWNUM <=#{maxShowNum} ]]>
+	</where>
+  </select>
+  
+
+  
+    <!-- 根据输入应收单号查询可用于核销的应付单 -->
+	<select id="selectWriteOffBillPayableNos" resultMap="BaseResultMap"
+		parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.BillRecWriteoffBillPayDto">
+		SELECT /*结算-核销-根据输入应付单号查询可用于核销的应付单*/
+		<include refid="Base_Column_List" />
+		FROM STL.T_STL_BILL_PAYABLE P<!-- 可核销应付单类型：始发应付、小票应付、专线到付运费、偏线到付运费、空运到付运费、空运机场代理应付、空运机场其他应付 -->
+		<where>
+		<!-- 应付款单号 --> 
+		P.PAYABLE_NO IN
+		<foreach collection="payableNos" index="index" item="item"
+			open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		<!-- 非红单且有效 -->
+		AND P.UNVERIFY_AMOUNT>0  <!-- 未核销金额大于0 -->
+		AND P.APPROVE_STATUS=#{approveStatus}<!-- 审核状态 -->
+		AND P.ACTIVE = #{payActive}<!-- 有效 -->
+		AND P.IS_RED_BACK = #{payIsRedBack}<!-- 非红单 -->
+
+       	<!-- 当应付单为代收货款类型时，应付单必须为审核退并已生效 -->
+		<if test="payableBillTypeList!=null and payableBillTypeList.size()>0">
+			AND((((
+				<!-- 应付单为代收货款时 -->
+				 P.BILL_TYPE IN 
+				<foreach collection="payableBillTypeList" index="index" item="item" open="(" separator="," close=")">
+					#{item}
+				</foreach>
+				
+				<!-- 代收货款必须为审核退 -->
+				AND P.COD_TYPE IN 
+				<foreach collection="codTypeList " index="index" item="item" open="(" separator="," close=")">
+					#{item}
+				</foreach>
+				) OR P.BILL_TYPE IN ('DC','FDC','HIP'))
+				AND P.EFFECTIVE_STATUS=#{effectiveStatus}<!-- 应付单生效状态为已生效 -->
+			   )
+				OR P.BILL_TYPE NOT IN ('APC','DC','FDC')
+			)
+		</if>
+        		
+		<!-- 应付单不能为装卸费和服务补救 -->
+		<if test="billPayTypeList!=null and billPayTypeList.size()>0">
+			AND P.BILL_TYPE NOT IN
+			<foreach collection="billPayTypeList" index="index" item="item" open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		
+	    <!--能够核销的应付单需要满足以下三点-->
+		<!--1、应付单的支付状态为未支付的-->
+		<!--2、应付单的支付状态为已支付时，与之关联的付款单的的汇款状态为已汇款对应数据字典‘TD’-->
+
+		AND( P.PAY_STATUS = #{payStatusNo} OR
+         (P.PAY_STATUS = #{payStatusYes} AND EXISTS
+          (SELECT ID
+             FROM STL.T_STL_BILL_PAYMENT PA
+            WHERE PA.PAYMENT_NO = P.PAYMENT_NO
+              AND PA.REMIT_STATUS = #{remitStatus})))
+              
+		<!-- 登录部门等于应付单所属部门过滤数据 -->
+		<if test="generatingOrgCode!=null">
+			 AND P.PAYABLE_ORG_CODE = #{generatingOrgCode}
+		</if>
+		
+		<!-- 理赔类型应付单支付类型为现金和电汇时，不允许核销 -->
+		AND ((P.BILL_TYPE = #{claimsPaybleType}
+		AND P.PAYMENT_CATEGORIES NOT IN
+		<foreach collection="paymentTypeList" index="index" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		)
+		OR
+       	P.BILL_TYPE !=#{claimsPaybleType})
+		<!-- 应付单如果已经冻结了不允许核销 -->
+        <!-- 放开代收货款反核销之后的单 使其可以参与核销 -->
+       	AND (P.FROZEN_STATUS=#{noFrozenStatus}
+          OR (P.FROZEN_STATUS=#{billFrozenStaFrozen} AND EXISTS
+        (SELECT 1
+			FROM STL.T_STL_COD C
+           WHERE C.WAYBILL_NO = P.WAYBILL_NO
+             AND C.STATUS=#{codStatusRD})))
+	  </where>
+	</select>
+	
+
+	
+	<!-- 根据 运单号查询可用于核销的应付单-->
+	<select id="selectBillPayForWaybill" resultMap="BaseResultMap"
+		parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.BillRecWriteoffBillPayDto">
+		SELECT /*结算-核销-根据 运单号查询可用于核销的应付单*/
+		<include refid="Base_Column_List" />
+		FROM STL.T_STL_BILL_PAYABLE P
+		<where>
+		<!-- 根据运单查询 -->
+		 P.WAYBILL_NO IN 
+		<foreach collection="sourceBillNosList" index="index" item="item"
+			open="(" separator="," close=")">
+			#{item}
+		</foreach> 
+		<!-- 非红单且有效 -->
+		AND P.UNVERIFY_AMOUNT>0  <!-- 未核销金额大于0 -->
+		AND P.APPROVE_STATUS=#{approveStatus}<!-- 审核状态 -->
+		AND P.ACTIVE = #{payActive}<!-- 有效 -->
+		AND P.IS_RED_BACK = #{payIsRedBack}<!-- 非红单 -->
+		
+		<!-- 当应付单为代收货款类型时，应付单必须为审核退并已生效 -->
+		<if test="payableBillTypeList!=null and payableBillTypeList.size()>0">
+			AND((((
+				<!-- 应付单为代收货款时 -->
+				 P.BILL_TYPE IN 
+				<foreach collection="payableBillTypeList" index="index" item="item" open="(" separator="," close=")">
+					#{item}
+				</foreach>
+				
+				<!-- 代收货款必须为审核退 -->
+				AND P.COD_TYPE IN 
+				<foreach collection="codTypeList " index="index" item="item" open="(" separator="," close=")">
+					#{item}
+				</foreach>
+				) OR P.BILL_TYPE IN ('DC','FDC','HIP'))
+				AND P.EFFECTIVE_STATUS=#{effectiveStatus}<!-- 应付单生效状态为已生效 -->
+			   )
+				OR P.BILL_TYPE NOT IN ('APC','DC','FDC')
+			)
+		</if>
+		
+		<!-- 应付单子类型不能为装卸费和服务补救 -->
+		<if test="billPayTypeList!=null and billPayTypeList.size()>0">
+			AND P.BILL_TYPE NOT IN
+			<foreach collection="billPayTypeList" index="index" item="item" open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		
+		<!--能够核销的应付单需要满足以下三点-->
+		<!--1、应付单的支付状态为未支付的-->
+		<!--2、应付单的支付状态为已支付时，与之关联的付款单的的汇款状态为已汇款对应数据字典‘TD’-->
+		AND( P.PAY_STATUS = #{payStatusNo} OR
+         (P.PAY_STATUS = #{payStatusYes} AND EXISTS
+          (SELECT ID
+             FROM STL.T_STL_BILL_PAYMENT PA
+            WHERE PA.PAYMENT_NO = P.PAYMENT_NO
+              AND PA.REMIT_STATUS = #{remitStatus})))
+              
+		<if test="generatingOrgCode!=null">
+			 AND P.PAYABLE_ORG_CODE = #{generatingOrgCode}<!-- 登录部门等于应付单所属部门过滤数据 -->
+		</if>
+		<!-- 理赔类型应付单支付类型为现金和电汇时，不允许核销 -->
+		AND ((P.BILL_TYPE = #{claimsPaybleType}
+		AND P.PAYMENT_CATEGORIES NOT IN 
+		<foreach collection="paymentTypeList" index="index" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		)
+		OR
+       	P.BILL_TYPE !=#{claimsPaybleType})
+       	<!-- 应付单如果已经冻结了不允许核销 -->
+        <!-- 放开代收货款反核销之后的单 使其可以参与核销 -->
+       	AND (P.FROZEN_STATUS=#{noFrozenStatus}
+          OR (P.FROZEN_STATUS=#{billFrozenStaFrozen} AND EXISTS
+        (SELECT 1
+			FROM STL.T_STL_COD C
+           WHERE C.WAYBILL_NO = P.WAYBILL_NO
+             AND C.STATUS=#{codStatusRD})))	
+	  </where>
+	</select>	
+
+</mapper>

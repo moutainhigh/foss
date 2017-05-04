@@ -1,0 +1,592 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	  "-//mybatis.org//DTD Mapper 3.0//EN" 
+	  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.bse.bse-common.toDoMsgDao">
+	<resultMap id="toDoMsgResultMap"  type="com.deppon.foss.module.base.common.api.shared.dto.ToDoMsgDto">
+		<id column="ID" property="id" />
+	    <result column="TITLE" property="title" jdbcType="VARCHAR" />
+	    <result column="RECEIVE_ORG_CODE" property="receiveOrgCode" jdbcType="VARCHAR" />
+	    <result column="RECEIVE_SUB_ORG_CODE" property="receiveSubOrgCode" jdbcType="VARCHAR" />
+	    <result column="RECEIVE_SUB_ORG_NAME" property="receiveSubOrgName" jdbcType="VARCHAR" />
+	    <result column="RECEIVE_ROLE_CODE" property="receiveRoleCode" jdbcType="VARCHAR" />
+	    <result column="RECEIVE_TYPE" property="receiveType" jdbcType="VARCHAR" />
+	    <result column="BUSINESS_TYPE" property="businessType" jdbcType="VARCHAR" />
+	    <result column="SERIAL_NUMBER" property="serialNumber" jdbcType="VARCHAR" />
+	    <result column="BUSINESS_NO" property="businessNo" jdbcType="VARCHAR" />
+	    <result column="DEAL_URL" property="dealUrl" jdbcType="VARCHAR" />
+	    <result column="URL_TYPE" property="urlType" jdbcType="VARCHAR" />
+	    <result column="STATUS" property="status" jdbcType="VARCHAR" />
+	    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+	    <result column="CREATE_USER_CODE" property="createUserCode" jdbcType="VARCHAR" />
+	    <result column="CREATE_USER_NAME" property="createUserName" jdbcType="VARCHAR" /> 
+	    <result column="NO_DEAL_NUM" property="noDealNum" jdbcType="NUMERIC"/>
+	</resultMap>
+	
+	<!-- 查询字段 -->
+	<sql id="select_param">
+		ID,
+		TITLE, 
+		RECEIVE_ORG_CODE, 
+		RECEIVE_SUB_ORG_CODE, 
+		RECEIVE_SUB_ORG_NAME, 
+		RECEIVE_ROLE_CODE, 
+		RECEIVE_TYPE, 
+    	BUSINESS_TYPE, 
+    	SERIAL_NUMBER, 
+    	BUSINESS_NO, 
+    	DEAL_URL, 
+    	URL_TYPE,
+    	STATUS, 
+    	CREATE_TIME, 
+    	CREATE_USER_CODE, 
+    	CREATE_USER_NAME 
+	</sql>
+	
+	<!-- 根据条件查询单据  -->
+	<select id="selectToDoMsgDetailByCondition" resultMap="toDoMsgResultMap" parameterType="java.util.Map">
+		<![CDATA[
+			SELECT 
+			/** 综合:根据条件查询单据 **/
+		]]>
+		<include refid="select_param" />
+		<![CDATA[
+			FROM BSE.T_BAS_TODO_MSG T WHERE RECEIVE_SUB_ORG_CODE = #{receiveSubOrgCode,jdbcType=VARCHAR} AND (
+				        T.RECEIVE_TYPE=#{receiveType_O,jdbcType=VARCHAR}
+				     OR (
+				     		T.RECEIVE_TYPE=#{receiveType_OR,jdbcType=VARCHAR} 
+		 ]]>  
+		 <if test="receiveRoleCodes != null ">
+		  	AND  T.RECEIVE_ROLE_CODE IN 
+	        	<foreach collection="receiveRoleCodes"  index="index" item="item"  open="(" separator="," close=")">  
+        			#{item} 
+				</foreach>
+		 </if>
+		<![CDATA[ 
+				)
+		      )
+		]]>
+		<if test="receiveRoleCode != null and receiveRoleCode != ''">
+			 AND T.RECEIVE_ROLE_CODE  = #{receiveRoleCode}
+		</if>
+		<if test="businessType != null and businessType != ''">
+			AND T.BUSINESS_TYPE = #{businessType}
+		</if>
+		<if test="status != null and status != ''">
+			AND T.STATUS = #{status}
+		</if> 
+		<if test="urlType != null and urlType != ''">
+			AND T.URL_TYPE = #{urlType}
+		</if> 
+	</select>
+	
+	
+	<!-- 根据条件查询单据只取一条记录 防止数据量太大  -->
+	<select id="selectToDoMsgDetailByConditionOne" resultMap="toDoMsgResultMap" parameterType="java.util.Map">
+		<![CDATA[
+			SELECT 
+			/** 综合:根据条件查询单据 **/
+		]]>
+		<include refid="select_param" />
+		<![CDATA[
+			FROM BSE.T_BAS_TODO_MSG T WHERE RECEIVE_SUB_ORG_CODE = #{receiveSubOrgCode,jdbcType=VARCHAR} AND (
+				        T.RECEIVE_TYPE=#{receiveType_O,jdbcType=VARCHAR}
+				     OR (
+				     		T.RECEIVE_TYPE=#{receiveType_OR,jdbcType=VARCHAR} 
+		 ]]>  
+		 <if test="receiveRoleCodes != null ">
+		  	AND  T.RECEIVE_ROLE_CODE IN 
+	        	<foreach collection="receiveRoleCodes"  index="index" item="item"  open="(" separator="," close=")">  
+        			#{item} 
+				</foreach>
+		 </if>
+		<![CDATA[ 
+				)
+		      )
+		]]>
+		<if test="receiveRoleCode != null and receiveRoleCode != ''">
+			 AND T.RECEIVE_ROLE_CODE  = #{receiveRoleCode}
+		</if>
+		<if test="businessType != null and businessType != ''">
+			AND T.BUSINESS_TYPE = #{businessType}
+		</if>
+		<if test="status != null and status != ''">
+			AND T.STATUS = #{status}
+		</if>
+		<if test="urlType != null and urlType != ''">
+			AND T.URL_TYPE = #{urlType}
+		</if> 
+			AND rownum=1
+	</select>
+	
+	<!-- 分businesstype类统计代办个数 -->
+	<select id="countToDoMsgDetailGroupByBusinessType" resultMap="toDoMsgResultMap" parameterType="java.util.Map">
+		<![CDATA[
+			SELECT 
+				BUSINESS_TYPE,
+		    	count(*) as NO_DEAL_NUM 
+	
+			FROM BSE.T_BAS_TODO_MSG T WHERE RECEIVE_SUB_ORG_CODE = #{receiveSubOrgCode,jdbcType=VARCHAR} AND (
+				   T.RECEIVE_TYPE=#{receiveType_O,jdbcType=VARCHAR}
+				     OR ( T.RECEIVE_TYPE=#{receiveType_OR,jdbcType=VARCHAR} ))
+		AND T.URL_TYPE='GUI'
+			AND T.STATUS = #{status} group by BUSINESS_TYPE
+		]]>
+	</select>
+	
+	
+	<!-- 根据待办实体参数查询待办信息  -->
+	<select id="selectToDoMsgDetailByEntity" resultMap="toDoMsgResultMap" parameterType="java.util.Map">
+		<![CDATA[
+			SELECT 
+			/** 综合:根据待办实体参数查询待办信息 **/
+		]]>
+		<include refid="select_param" />
+		<![CDATA[
+			FROM BSE.T_BAS_TODO_MSG T WHERE RECEIVE_SUB_ORG_CODE = #{dto.receiveSubOrgCode,jdbcType=VARCHAR}
+			 AND (
+				        T.RECEIVE_TYPE=#{receiveType_O,jdbcType=VARCHAR}
+				     OR (
+				     		T.RECEIVE_TYPE=#{receiveType_OR,jdbcType=VARCHAR}   
+		 ]]>  
+			  <if test="dto.receiveRoleCodes != null ">
+			   AND  T.RECEIVE_ROLE_CODE IN 
+		        	<foreach collection="dto.receiveRoleCodes"  index="index" item="item"  open="(" separator="," close=")">  
+	        			#{item} 
+					</foreach>
+			 </if>
+		<![CDATA[ 
+				)
+		      )
+		]]>
+		<if test="dto.businessType != null and dto.businessType != ''">
+			AND T.BUSINESS_TYPE = #{dto.businessType,jdbcType=VARCHAR} 
+		</if>
+		<if test="dto.status != null and dto.status != ''">
+			AND T.STATUS = #{dto.status,jdbcType=VARCHAR} 
+		</if>
+		<if test="dto.serialNumber != null and dto.serialNumber != ''">
+			AND T.SERIAL_NUMBER = #{dto.serialNumber,jdbcType=VARCHAR}
+		</if> 
+		<if test="dto.businessNo != null and dto.businessNo != ''">
+			AND T.BUSINESS_NO = #{dto.businessNo,jdbcType=VARCHAR}
+		</if> 
+		<if test="dto.createStartTime != null  and dto.createEndTime != null ">
+			<![CDATA[ AND T.CREATE_TIME >=#{dto.createStartTime,jdbcType=TIMESTAMP} and T.CREATE_TIME <#{dto.createEndTime,jdbcType=TIMESTAMP} ]]>  
+		</if>
+		<if test="urlType != null and urlType != ''">
+			AND T.URL_TYPE = #{urlType,jdbcType=VARCHAR}
+		</if> 
+		ORDER BY T.CREATE_TIME DESC
+	</select>
+	<!-- 根据待办Dto参数查询待办信息  -->
+	<select id="selectToDoMsgDetailByDto" resultMap="toDoMsgResultMap" parameterType="com.deppon.foss.module.base.common.api.shared.dto.ToDoMsgDto">
+		<![CDATA[
+			SELECT 
+			/** 根据待办Dto参数查询待办信息 **/
+		]]>
+		<include refid="select_param" />
+			FROM BSE.T_BAS_TODO_MSG T 
+		<where>
+			<if test="receiveOrgCode != null and receiveOrgCode != ''">
+				T.RECEIVE_SUB_ORG_CODE = #{receiveOrgCode,jdbcType=VARCHAR} 
+			</if>
+			<if test="receiveRoleCodes != null and receiveRoleCodes.size()>0 ">
+				   AND  T.RECEIVE_ROLE_CODE IN 
+			        	<foreach collection="receiveRoleCodes"  index="index" item="item"  open="(" separator="," close=")">  
+		        			#{item} 
+						</foreach>
+			</if> 
+			<if test="businessType != null and businessType != ''">
+				AND T.BUSINESS_TYPE = #{businessType,jdbcType=VARCHAR} 
+			</if>
+			<if test="status != null and status != ''">
+				AND T.STATUS = #{status,jdbcType=VARCHAR} 
+			</if>
+			<if test="serialNumber != null and serialNumber != ''">
+				AND T.SERIAL_NUMBER = #{serialNumber,jdbcType=VARCHAR}
+			</if> 
+			<if test="businessNo != null and businessNo != ''">
+				AND T.BUSINESS_NO = #{businessNo,jdbcType=VARCHAR}
+			</if> 
+			<if test="createStartTime != null  and createEndTime != null ">
+				<![CDATA[ AND T.CREATE_TIME >=#{createStartTime,jdbcType=TIMESTAMP} and T.CREATE_TIME <#{createEndTime,jdbcType=TIMESTAMP} ]]>  
+			</if>
+			<if test="urlType != null and urlType != ''">
+				AND T.URL_TYPE = #{urlType,jdbcType=VARCHAR}
+			</if> 
+		</where>
+		ORDER BY T.CREATE_TIME ASC
+	</select>
+	<!-- 根据待办实体参数查询待办信息总条数 -->
+	<select id="countSelectToDoMsgDetailByEntity" resultType="Long" parameterType="java.util.Map">
+		<![CDATA[
+			SELECT/** 综合:根据待办实体参数查询待办信息总条数 **/ COUNT(1)
+			FROM BSE.T_BAS_TODO_MSG T WHERE RECEIVE_SUB_ORG_CODE = #{dto.receiveSubOrgCode,jdbcType=VARCHAR}
+			 AND (
+				        T.RECEIVE_TYPE=#{receiveType_O,jdbcType=VARCHAR}
+				     OR (
+				     		T.RECEIVE_TYPE=#{receiveType_OR,jdbcType=VARCHAR} 
+		 ]]>  
+	 	<if test="dto.receiveRoleCodes != null ">
+		   AND T.RECEIVE_ROLE_CODE IN 
+	        	<foreach collection="dto.receiveRoleCodes"  index="index" item="item"  open="(" separator="," close=")">  
+        			#{item} 
+				</foreach>
+		 </if>
+	        	
+		<![CDATA[ 
+				)
+		      )
+		]]>
+		<if test="dto.businessType != null and dto.businessType != ''">
+			AND T.BUSINESS_TYPE = #{dto.businessType,jdbcType=VARCHAR} 
+		</if>
+		<if test="dto.status != null and dto.status != ''">
+			AND T.STATUS = #{dto.status,jdbcType=VARCHAR} 
+		</if>
+		<if test="dto.serialNumber != null and dto.serialNumber != ''">
+			AND T.SERIAL_NUMBER = #{dto.serialNumber,jdbcType=VARCHAR}
+		</if> 
+		<if test="dto.businessNo != null and dto.businessNo != ''">
+			AND T.BUSINESS_NO = #{dto.businessNo,jdbcType=VARCHAR}
+		</if> 
+		<if test="dto.createStartTime != null  and dto.createEndTime != null ">
+			<![CDATA[ AND T.CREATE_TIME >=#{dto.createStartTime,jdbcType=TIMESTAMP} and T.CREATE_TIME <#{dto.createEndTime,jdbcType=TIMESTAMP} ]]>  
+		</if>
+		<if test="dto.urlType != null and dto.urlType != ''">
+			AND T.URL_TYPE = #{dto.urlType,jdbcType=VARCHAR}
+		</if> 
+	</select>
+	
+  	<!-- 批量保存待办 -->
+	<insert id="batchSaveToDoMsg" parameterType="java.util.List">
+		BEGIN
+		/** 综合:批量保存待办 **/
+			<foreach  collection="list" item="item"  separator=";">
+				INSERT INTO BSE.T_BAS_TODO_MSG
+				(
+					ID, 
+					TITLE, 
+					RECEIVE_ORG_CODE, 
+					RECEIVE_SUB_ORG_CODE, 
+					RECEIVE_SUB_ORG_NAME,  
+    				RECEIVE_ROLE_CODE, 
+    				RECEIVE_TYPE,  
+    				BUSINESS_TYPE, 
+					SERIAL_NUMBER, 
+					BUSINESS_NO,  
+    				DEAL_URL,
+					URL_TYPE,
+    				STATUS,  
+    				CREATE_TIME, 
+					CREATE_USER_CODE, 
+					CREATE_USER_NAME 
+				)
+				  VALUES
+				  (
+					#{item.id,jdbcType=VARCHAR} ,
+					#{item.title,jdbcType=VARCHAR},
+				    #{item.receiveOrgCode,jdbcType=VARCHAR}, 
+				    #{item.receiveSubOrgCode,jdbcType=VARCHAR}, 
+					#{item.receiveSubOrgName,jdbcType=VARCHAR}, 
+                    #{item.receiveRoleCode,jdbcType=VARCHAR},
+                    #{item.receiveType,jdbcType=VARCHAR},
+                    #{item.businessType,jdbcType=VARCHAR},
+                    #{item.serialNumber,jdbcType=VARCHAR},
+					#{item.businessNo,jdbcType=VARCHAR},
+				    #{item.dealUrl,jdbcType=VARCHAR}, 
+				    #{item.urlType,jdbcType=VARCHAR}, 
+				    #{item.status,jdbcType=VARCHAR}, 
+					#{item.createTime,jdbcType=TIMESTAMP}, 
+                    #{item.createUserCode,jdbcType=VARCHAR},
+                    #{item.createUserName,jdbcType=VARCHAR} 
+   				  )
+			</foreach>
+		;END;
+	</insert>
+	<!-- 保存待办 -->
+	<insert id="saveToDoMsg"
+		parameterType="com.deppon.foss.module.base.common.api.shared.domain.ToDoMsgEntity">
+		INSERT INTO BSE.T_BAS_TODO_MSG
+		(
+		ID,
+		TITLE,
+		RECEIVE_ORG_CODE,
+		RECEIVE_SUB_ORG_CODE,
+		RECEIVE_SUB_ORG_NAME,
+		RECEIVE_ROLE_CODE,
+		RECEIVE_TYPE,
+		BUSINESS_TYPE,
+		SERIAL_NUMBER,
+		BUSINESS_NO,
+		DEAL_URL,
+		URL_TYPE,
+		STATUS,
+		CREATE_TIME,
+		CREATE_USER_CODE,
+		CREATE_USER_NAME
+		)
+		VALUES
+		(
+		#{id,jdbcType=VARCHAR} ,
+		#{title,jdbcType=VARCHAR},
+		#{receiveOrgCode,jdbcType=VARCHAR},
+		#{receiveSubOrgCode,jdbcType=VARCHAR},
+		#{receiveSubOrgName,jdbcType=VARCHAR},
+		#{receiveRoleCode,jdbcType=VARCHAR},
+		#{receiveType,jdbcType=VARCHAR},
+		#{businessType,jdbcType=VARCHAR},
+		#{serialNumber,jdbcType=VARCHAR},
+		#{businessNo,jdbcType=VARCHAR},
+		#{dealUrl,jdbcType=VARCHAR},
+		#{urlType,jdbcType=VARCHAR},
+		#{status,jdbcType=VARCHAR},
+		#{createTime,jdbcType=TIMESTAMP},
+		#{createUserCode,jdbcType=VARCHAR},
+		#{createUserName,jdbcType=VARCHAR}
+		)
+	</insert>
+	<!-- 批量删除待办  接收方组织+接收角色+接收方类型+业务类型-->
+	<delete id="batchDeleteToDoMsg" parameterType="java.util.List">
+		BEGIN
+		/** 综合:批量删除待办  接收方组织+接收角色+接收方类型+业务类型 **/
+			<foreach  collection="list" item="item"  separator=";">
+				DELETE FROM  BSE.T_BAS_TODO_MSG T WHERE 
+					T.RECEIVE_ORG_CODE=#{item.receiveOrgCode} 
+					<if test="item.receiveRoleCode != null and item.receiveRoleCode != ''">
+			 			AND T.RECEIVE_ROLE_CODE  = #{item.receiveRoleCode}
+					</if>
+					<if test="item.receiveType != null and item.receiveType != ''">
+			 			AND T.RECEIVE_TYPE  = #{item.receiveType}
+					</if>
+					<if test="item.businessType != null and item.businessType != ''">
+			 			AND T.BUSINESS_TYPE  = #{item.businessType}
+					</if>
+					<if test="item.urlType != null and item.urlType != ''">
+						AND T.URL_TYPE = #{item.urlType,jdbcType=VARCHAR}
+					</if> 
+			</foreach>
+		;END;
+	</delete>
+	
+	<!-- 单独删除待办  接收方组织+接收角色+接收方类型+业务类型 -->
+	<delete id="deleteToDoMsgOne" parameterType="com.deppon.foss.module.base.common.api.shared.domain.ToDoMsgEntity">
+			DELETE FROM  BSE.T_BAS_TODO_MSG T WHERE 
+			T.RECEIVE_ORG_CODE=#{receiveOrgCode} 
+			<if test="receiveRoleCode != null and receiveRoleCode != ''">
+	 			AND T.RECEIVE_ROLE_CODE  = #{receiveRoleCode}
+			</if>
+			<if test="receiveType != null and receiveType != ''">
+	 			AND T.RECEIVE_TYPE  = #{receiveType}
+			</if>
+			<if test="businessType != null and businessType != ''">
+	 			AND T.BUSINESS_TYPE  = #{businessType}
+			</if>
+			<if test="urlType != null and urlType != ''">
+				AND T.URL_TYPE = #{urlType,jdbcType=VARCHAR}
+			</if> 
+	</delete>
+		<!-- 或根据单号，类型 结束待办 -->
+	<update id="updateToDoMsgByNoAndType" parameterType="java.util.Map">
+  
+		UPDATE/** 综合:根据接收方编码 ，待办业类型，待办流水号  结束待办 **/ BSE.T_BAS_TODO_MSG T
+		SET T.STATUS =  #{status}	 
+		<where>
+				<if test="businessType != null and businessType != ''">
+		 			AND T.BUSINESS_TYPE  = #{businessType}
+				</if>
+				<if test="businessNo != null and businessNo != ''">
+		 			AND T.BUSINESS_NO = #{businessNo,jdbcType=VARCHAR}
+				</if>
+				
+		</where>		
+  </update>
+	<!-- 根据接收方编码 ，待办业类型，待办流水号  结束待办 -->
+   <update id="updateToDoMsgByCondition" parameterType="java.util.Map">
+		UPDATE/** 综合:根据接收方编码 ，待办业类型，待办流水号  结束待办 **/ BSE.T_BAS_TODO_MSG T
+		SET
+			   T.STATUS =  #{status}
+		WHERE  T.SERIAL_NUMBER=#{serialNumber} 
+				<if test="receiveOrgCode != null and receiveOrgCode != ''">
+			 			AND T.RECEIVE_ORG_CODE  = #{receiveOrgCode}
+				</if>
+				<if test="businessType != null and businessType != ''">
+		 			AND T.BUSINESS_TYPE  = #{businessType}
+				</if>
+				<if test="urlType != null and urlType != ''">
+		 			AND T.URL_TYPE = #{urlType,jdbcType=VARCHAR}
+				</if>
+  </update>
+  <!-- 根据接收方编码 ，待办业类型，待办流水号  结束待办 -->
+    <update id="updateMsgByCondition" parameterType="java.util.Map">
+		UPDATE/** 综合:根据接收方编码 ，待办业类型，待办流水号  结束待办 **/ BSE.T_BAS_TODO_MSG T
+		SET
+			   T.STATUS =  #{status}
+		WHERE  T.BUSINESS_NO=#{serialNumber} 
+				<if test="receiveOrgCode != null and receiveOrgCode != ''">
+			 			AND T.RECEIVE_ORG_CODE  = #{receiveOrgCode}
+				</if>
+				<if test="businessType != null and businessType != ''">
+		 			AND T.BUSINESS_TYPE  = #{businessType}
+				</if>
+				<if test="urlType != null and urlType != ''">
+		 			AND T.URL_TYPE = #{urlType,jdbcType=VARCHAR}
+				</if>
+   </update>
+  	<!-- 查询同类型未处理待办事项   -->
+	<select id="queryToDoMsgByBisType" resultMap="toDoMsgResultMap" parameterType="java.util.Map">
+		<![CDATA[ 
+		   SELECT  
+		   /** 综合:查询同类型未处理待办事项 **/
+		]]>  
+			<include refid="select_param" />
+		<![CDATA[ 
+			FROM BSE.T_BAS_TODO_MSG T
+			WHERE T.STATUS = #{status,jdbcType=VARCHAR} 
+			  AND T.RECEIVE_SUB_ORG_CODE = #{receiveSubOrgCode,jdbcType=VARCHAR}
+			  AND (
+			        T.RECEIVE_TYPE=#{receiveType_O,jdbcType=VARCHAR}
+			     OR (
+			     		T.RECEIVE_TYPE=#{receiveType_OR,jdbcType=VARCHAR} 
+			        AND 
+			        	T.RECEIVE_ROLE_CODE IN 
+		 ]]>  
+	        	<foreach collection="receiveRoleCodes"  index="index" item="item"  open="(" separator="," close=")">  
+        			#{item} 
+				</foreach>
+		<![CDATA[ 
+				)
+		      ) 
+		]]>
+		<if test="urlType != null and urlType != ''">
+		 	AND T.URL_TYPE = #{urlType,jdbcType=VARCHAR}
+		</if>
+	</select>
+	
+	<!-- 查询同类型未处理待办事项总条数  -->
+	<select id="countQueryToDoMsgByBisType" resultType="Long" parameterType="java.util.Map">
+		<![CDATA[ 
+		   SELECT 
+		   /** 综合:查询同类型未处理待办事项总条数 **/ 
+		 		COUNT(*)
+			FROM BSE.T_BAS_TODO_MSG T
+			WHERE T.STATUS = #{status,jdbcType=VARCHAR} 
+			  AND T.RECEIVE_SUB_ORG_CODE = #{receiveSubOrgCode,jdbcType=VARCHAR}
+			  AND T.BUSINESS_TYPE  = #{businessType}
+			  AND (
+			        T.RECEIVE_TYPE=#{receiveType_O,jdbcType=VARCHAR}
+			     OR (
+			     		T.RECEIVE_TYPE=#{receiveType_OR,jdbcType=VARCHAR} 
+			        AND 
+			        	T.RECEIVE_ROLE_CODE IN 
+		 ]]>  
+	        	<foreach collection="receiveRoleCodes"  index="index" item="item"  open="(" separator="," close=")">  
+        			#{item} 
+				</foreach>
+		<![CDATA[ 
+				)
+		      ) 
+		]]>  
+		<if test="urlType != null and urlType != ''">
+		 	AND T.URL_TYPE = #{urlType,jdbcType=VARCHAR}
+		</if>
+	</select>
+  
+	 <!-- 统计未处理待办事项  -->
+	<select id="queryToDoMsgTotal" resultMap="toDoMsgResultMap" parameterType="java.util.Map">
+	  <![CDATA[
+			SELECT/** 综合:统计未处理待办事项 **/ BUSINESS_TYPE,
+				   NO_DEAL_NUM
+		    FROM 
+			(
+				SELECT T.BUSINESS_TYPE,
+				       COUNT(*) NO_DEAL_NUM 
+				FROM BSE.T_BAS_TODO_MSG T
+				WHERE T.STATUS = #{status,jdbcType=VARCHAR} 
+				  AND T.RECEIVE_SUB_ORG_CODE = #{receiveSubOrgCode,jdbcType=VARCHAR}
+				  
+				  AND (
+				        T.RECEIVE_TYPE=#{receiveType_O,jdbcType=VARCHAR}
+				     OR (
+				     		T.RECEIVE_TYPE=#{receiveType_OR,jdbcType=VARCHAR} 
+				        AND 
+				        	T.RECEIVE_ROLE_CODE IN 
+		 ]]>  
+	        	<foreach collection="receiveRoleCodes"  index="index" item="item"  open="(" separator="," close=")">  
+        			#{item} 
+				</foreach>
+		<![CDATA[ 
+				)
+		      )
+		 ]]>  
+		    <if test="urlType != null and urlType != ''">
+		 		AND T.URL_TYPE = #{urlType,jdbcType=VARCHAR}
+			</if>
+		<![CDATA[ 
+		      GROUP BY T.BUSINESS_TYPE 
+			) WHERE ROWNUM  < #{rowNum,jdbcType=NUMERIC}
+		]]>  
+	</select>
+	
+	
+	
+		 <!-- 统计未处理待办事项  -->
+	<select id="queryTOdoMsgTotalFromWaybill" resultType="java.lang.Integer" parameterType="com.deppon.foss.module.base.common.api.shared.dto.TodoDto">
+	  <![CDATA[
+		
+			select count(distinct rfc.ID) 
+			 from PKP.T_SRV_WAYBILLRFC rfc 
+			        inner join PKP.T_SRV_LABELEDGOOD_TODO todo 
+			        on rfc.id = todo.T_SRV_WAYBILL_RFC_ID
+			        inner join PKP.T_SRV_WAYBILL wnew 
+        			on wnew.id= rfc.NEW_VERSION_WAYBILL_ID
+        	 ]]>
+        	
+        	<if test=" lastLoadOrgCode != null  and lastLoadOrgCode != ''  ">
+	        INNER JOIN PKP.T_SRV_WAYBILL wb 
+	        ON wb.id = rfc.old_version_waybill_id
+      		 </if>		
+        	<![CDATA[		
+			 where rfc.STATUS= 'ACCECPT'
+			        and (todo.handle_org_code = #{currentDept,jdbcType=VARCHAR}
+			        ]]>
+			        <if test=" handleOrgCode != null  and handleOrgCode != ''  ">
+        				 or todo.handle_org_code = #{handleOrgCode,jdbcType=VARCHAR}
+					</if>)
+			       <![CDATA[  and todo.remind_time>= sysdate-31 and todo.remind_time<=sysdate ]]>
+		       
+			and todo.IS_PRINTED ='N'  and todo.STATUS = 'Y'
+		   <if test=" lastLoadOrgCode != null  and lastLoadOrgCode != ''  ">
+	        and (wb.last_load_org_code = #{lastLoadOrgCode,jdbcType=VARCHAR} or wb.create_org_code = #{lastLoadOrgCode,jdbcType=VARCHAR})
+      		 </if>
+	</select>
+	 <!-- 统计查询库存超过90天，自动弃货未处理总数（根据当前传入的部门）  -->
+	<select id="queryAutoAbandGoodsMsgTotal" resultType="java.lang.Integer" parameterType="com.deppon.foss.module.base.common.api.shared.dto.TodoDto">
+	 SELECT COUNT( APP.WAYBILL_NO)
+  FROM PKP.T_SRV_ABANDON_GOODS_APP APP
+ INNER JOIN PKP.T_SRV_WAYBILL W
+    ON APP.WAYBILL_NO = W.WAYBILL_NO
+ WHERE APP.ABANDONEDGOODS_TYPE = 'ABANDGOODS_TYPE_AUTO' 
+ and app.preabandonedgoods_time <![CDATA[  >= sysdate-30 ]]>
+   AND APP.STATUS IN ('ABANDGOODS_STATUS_NEW',
+                      'ABANDGOODS_STATUS_APPROVAL',
+                      'ABANDGOODS_STATUS_REFUSE')
+		   <if test=" lastLoadOrgCode != null  and lastLoadOrgCode != ''  ">
+		    AND (W.LAST_LOAD_ORG_CODE =#{lastLoadOrgCode,jdbcType=VARCHAR} OR
+       W.RECEIVE_ORG_CODE =#{lastLoadOrgCode,jdbcType=VARCHAR})
+         AND W.ACTIVE = 'Y'
+      		 </if>
+	</select>
+	<!-- 统计cc催单消息  -->
+	<select id="queryCallCenterWaybillMsgTotal" resultType="java.lang.Integer" parameterType="com.deppon.foss.module.base.common.api.shared.dto.TodoDto" >
+		<![CDATA[
+				SELECT 
+				       COUNT(*) 
+				FROM BSE.T_BAS_CALLCENTER_WAYBILL_INFO T
+				WHERE T.DEAL_DEPT =#{lastLoadOrgCode,jdbcType=VARCHAR}
+				  AND T.HAS_DONE='N'
+				  ]]>  
+				
+	</select>
+</mapper>

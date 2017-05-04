@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+	<!--录入重量体积mapper-->
+<mapper namespace="foss.partialline.inputWeightVolumnMoreMapper" >
+	<resultMap id="InputWeightVolumnMoreMap" type="com.deppon.foss.module.transfer.partialline.api.shared.dto.InputWeightVolumnMoreDto" >
+		<id column="id" property="id" jdbcType="VARCHAR" />  
+		<result column="waybillNo" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="serialNo" property="serialNo" jdbcType="VARCHAR"/>
+		<result column="weight" property="weight" jdbcType="VARCHAR" />
+		<result column="volumn" property="volumn" jdbcType="VARCHAR" />
+		<result column="goodsQtyTotal" property="goodsQtyTotal" jdbcType="VARCHAR"/>
+		<result column="modifyUserCode" property="modifyUserCode" jdbcType="VARCHAR" />
+		<result column="modifyUserName" property="modifyUserName" jdbcType="VARCHAR" />
+		<result column="modifyTime" property="modifyTime" jdbcType="VARCHAR" />
+	</resultMap>
+	<resultMap id="InputWeightVolumnEntityMap" type="com.deppon.foss.module.transfer.partialline.api.shared.domain.InputWeightVolumnEntity" >
+		<id column="id" property="id" jdbcType="VARCHAR" />  
+		<result column="waybillNo" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="weight" property="weight" jdbcType="VARCHAR" />
+		<result column="serialNo" property="serialNo" jdbcType="VARCHAR"/>
+		<result column="volumn" property="volumn" jdbcType="VARCHAR" />
+		<result column="modifyUserCode" property="modifyUserCode" jdbcType="VARCHAR" />
+		<result column="modifyUserName" property="modifyUserName" jdbcType="VARCHAR" />
+		<result column="modifyTime" property="modifyTime" jdbcType="VARCHAR" />
+	</resultMap>	
+	<sql id="WeightVolumnMore_Column_List">
+		w.waybill_No waybillNo,
+		S.SERIAL_NO serialNo,
+		NVL(c.weight,decode(W.GOODS_QTY_TOTAL,0,W.GOODS_WEIGHT_TOTAL,ROUND(W.GOODS_WEIGHT_TOTAL/W.GOODS_QTY_TOTAL,2))) weight,
+		NVL(c.volumn,DECODE(W.GOODS_QTY_TOTAL,0,W.GOODS_VOLUME_TOTAL,ROUND(w.goods_volume_total/W.GOODS_QTY_TOTAL,2))) volumn,
+		w.goods_qty_total goodsQtyTotal,
+		c.modify_user_code modifyUserCode,
+		c.modify_user_name modifyUserName,
+		c.modify_time modifyTime
+	</sql>
+	<sql id="Where_Clause" >
+		<where >
+			w.active = 'Y'
+			and w.product_code in ('PACKAGE','RCP','EPEP')
+			and w.goods_qty_total > 1
+			<if test="waybillNoList !=null and waybillNoList.size > 0 ">
+				and w.waybill_no in 
+					<foreach collection="waybillNoList" item="item" index="index" open=" ("   separator="," close=")">                  
+		           		 #{item,jdbcType=VARCHAR} 
+					</foreach> 
+					<if test ="deptCode !=null">
+						and s.orgcode = #{deptCode,jdbcType=VARCHAR}
+					</if>
+			</if>
+
+			<if test="handOverBillList !=null and handOverBillList.size > 0 ">
+				and h.handoverbill_state in (10,20,30,40,50)
+				and h.handover_type = 'LDP_HANDOVER'
+				and h.handover_no in 
+					<foreach collection="handOverBillList" item="item" index="index" open=" ("   separator="," close=")">                  
+		           		 #{item,jdbcType=VARCHAR} 
+					</foreach> 
+			</if>
+			<if test="beginInStockTime !=null and endInStockTime != null ">
+				and s.org_code = #{deptCode,jdbcType=VARCHAR}
+				<![CDATA[and s.in_stock_time >= #{beginInStockTime,jdbcType=TIMESTAMP}]]>
+      			<![CDATA[and s.in_stock_time <= #{endInStockTime,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="beginHandOverTime !=null and endHandOverTime != null ">
+				and h.handoverbill_state in (10,20,30,40,50)
+				and h.handover_type = 'LDP_HANDOVER'
+				and h.orig_org_code = #{deptCode,jdbcType=VARCHAR}
+				<![CDATA[and h.create_time >= #{beginHandOverTime,jdbcType=TIMESTAMP}]]>
+      			<![CDATA[and h.create_time <= #{endHandOverTime,jdbcType=TIMESTAMP}]]>
+			</if>
+			and not exists (select 1 from  tfr.t_opt_ldp_external_bill b where b.waybill_no = w.waybill_no and b.serial_no=lg.serial_no and b.is_transfer_external = 'N' and b.audit_status !='INVALID')
+			and not exists (select 1 from pkp.t_srv_waybill_relate_detail d where d.waybill_no = w.waybill_no)
+		</where>
+	</sql>
+	
+	<select id = "queryInputWeightVolumnMoreList" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.InputWeightVolumnMoreDto" resultMap="InputWeightVolumnMoreMap">
+		with aa as(
+		select 
+	      <include refid="WeightVolumnMore_Column_List"/>
+	    from pkp.t_srv_waybill w
+	    inner join bse.t_bas_outer_branch ob
+	         on w.customer_pickup_org_code = ob.agent_dept_code and ob.active = 'Y'
+	         inner join pkp.t_srv_labeled_good lg on
+	         w.waybill_no = lg.waybill_no and lg.active = 'Y'
+	        left join tfr.t_opt_czm_input_info c
+	        on lg.waybill_no = c.waybill_no and lg.serial_no = c.serial_no and c.active='Y' 
+	    <if test="waybillNoList !=null and waybillNoList.size > 0 ">
+	       inner join((select d.waybill_no,s.serial_no,h.orig_org_code orgcode
+	             from tfr.t_opt_handoverbill_serialno s
+	                   inner join tfr.t_opt_handoverbill_detail d on s.handoverbill_no = d.handover_no
+	                   and s.waybill_no = d.waybill_no
+	             inner join tfr.t_opt_handoverbill h on d.handover_no =h.handover_no
+	           where h.handoverbill_state in (10, 20, 30, 40, 50)
+	           and h.handover_type = 'LDP_HANDOVER')
+	           UNION (select s.waybill_no,s.serial_no,s.org_code orgcode from tfr.t_opt_stock s)
+	        ) s on s.waybill_no = w.waybill_no and lg.serial_no = s.serial_no
+	    </if>
+	    <if test="(handOverBillList !=null and handOverBillList.size > 0)  or (beginHandOverTime !=null and endHandOverTime != null)">
+	      inner join tfr.t_opt_handoverbill_detail d on d.waybill_no = w.waybill_no
+	      inner join tfr.t_opt_handoverbill_serialno s on s.handoverbill_no = d.handover_no
+	            and s.waybill_no = lg.waybill_no and lg.serial_no = s.serial_no
+	      inner join tfr.t_opt_handoverbill h on d.handover_no = h.handover_no
+	    </if>
+	    <if test="beginInStockTime !=null and endInStockTime != null ">
+	      inner join tfr.t_opt_stock s on s.waybill_no = w.waybill_no and s.serial_no=lg.serial_no
+	    </if>
+		<include refid="Where_Clause"/>
+		)
+		select waybillNo,serialNo,modifyUserCode,modifyUserName,modifyTime,goodsQtyTotal,weight,volumn from (
+			select aa.* , row_number() over(partition by waybillNo,serialNo order by waybillno) rn from aa)
+		where rn='1'
+	</select>
+	
+	<select id="queryInputWeightVolumnMoreListCount" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.InputWeightVolumnMoreDto" resultType="Long">
+       	with aa as(
+		select 
+	      <include refid="WeightVolumnMore_Column_List"/>
+	    from pkp.t_srv_waybill w
+	    inner join bse.t_bas_outer_branch ob
+	         on w.customer_pickup_org_code = ob.agent_dept_code and ob.active = 'Y'
+	         inner join pkp.t_srv_labeled_good lg on
+	         w.waybill_no = lg.waybill_no 
+	        left join tfr.t_opt_czm_input_info c
+	        on lg.waybill_no = c.waybill_no and lg.serial_no = c.serial_no and c.active='Y' 
+	    <if test="waybillNoList !=null and waybillNoList.size > 0 ">
+	       inner join((select d.waybill_no,s.serial_no,h.orig_org_code orgcode
+	             from tfr.t_opt_handoverbill_serialno s
+	                   inner join tfr.t_opt_handoverbill_detail d on s.handoverbill_no = d.handover_no
+	                   and s.waybill_no = d.waybill_no
+	             inner join tfr.t_opt_handoverbill h on d.handover_no =h.handover_no
+	           where h.handoverbill_state in (10, 20, 30, 40, 50)
+	           and h.handover_type = 'LDP_HANDOVER')
+	           UNION (select s.waybill_no,s.serial_no,s.org_code orgcode from tfr.t_opt_stock s)
+	        ) s on s.waybill_no = w.waybill_no and lg.serial_no = s.serial_no
+	    </if>
+	    <if test="(handOverBillList !=null and handOverBillList.size > 0)  or (beginHandOverTime !=null and endHandOverTime != null)">
+	      inner join tfr.t_opt_handoverbill_detail d on d.waybill_no = w.waybill_no
+	      inner join tfr.t_opt_handoverbill_serialno s on s.handoverbill_no = d.handover_no
+	            and s.waybill_no = d.waybill_no and lg.serial_no = s.serial_no
+	      inner join tfr.t_opt_handoverbill h on d.handover_no = h.handover_no
+	    </if>
+	    <if test="beginInStockTime !=null and endInStockTime != null ">
+	      inner join tfr.t_opt_stock s on s.waybill_no = w.waybill_no and lg.serial_no = s.serial_no
+	    </if>
+		<include refid="Where_Clause"/>
+		)
+		select count(1) from (
+			select aa.* , row_number() over(partition by waybillNo,serialNo order by waybillno) rn from aa)
+		where rn='1'
+	</select>
+	<!--更新重量体积信息-->
+	<update id = "updateWeightVolumnMoreInfo" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.InputWeightVolumnMoreDto">
+		update tfr.t_opt_czm_input_info set 
+			weight=#{weight,jdbcType=DECIMAL},volumn=#{volumn,jdbcType=DECIMAL},
+			modify_user_code=#{modifyUserCode,jdbcType=VARCHAR},
+			modify_org_code =#{modifyOrgCode,jdbcType=VARCHAR},
+			modify_org_name =#{modifyOrgName,jdbcType=VARCHAR},
+			modify_user_name=#{modifyUserName,jdbcType=VARCHAR},
+			modify_time = sysdate
+		where waybill_no = #{waybillNo,jdbcType=VARCHAR} 
+			  and serial_no = #{serialNo,jdbcType=VARCHAR}
+			  and active='Y'
+	</update>
+	<!--新增重量体积信息-->
+	<update id = "addWeightVolumnMoreInfo" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.InputWeightVolumnMoreDto">
+		insert into tfr.t_opt_czm_input_info(
+		id,waybill_no,serial_no,active,weight,volumn,modify_user_code,modify_org_code,modify_time,modify_user_name,modify_org_name)
+		values(
+			#{id,jdbcType=VARCHAR},
+			#{waybillNo,jdbcType=VARCHAR},
+			#{serialNo,jdbcType=VARCHAR},
+			'Y',
+			#{weight,jdbcType=DECIMAL},
+			#{volumn,jdbcType=DECIMAL},
+			#{modifyUserCode,jdbcType=VARCHAR},
+			#{modifyOrgCode,jdbcType=VARCHAR},
+			sysdate,
+			#{modifyUserName,jdbcType=VARCHAR},
+			#{modifyOrgName,jdbcType=VARCHAR}
+		)
+	</update>
+	<select id="queryEntityByWaybillNoSerialNo" parameterType="map" resultMap="InputWeightVolumnEntityMap">
+		select i.id id,
+		       i.waybill_no waybillNo,
+		       i.active active,
+		       i.weight weight,
+		       i.volumn volumn,
+		       i.modify_user_code modifyUserCode,
+		       i.modify_user_name modifyUserName,
+		       i.modify_org_code modifyOrgCode,
+		       i.modify_org_name modifyOrgName,
+		       i.modify_time modifyTime
+		 from tfr.t_opt_czm_input_info i
+		 where i.waybill_no=#{waybillNo,jdbcType=VARCHAR} 
+		 and i.serial_No = #{serialNo,jdbcType=VARCHAR} and i.active ='Y'
+	</select>
+</mapper>	

@@ -1,0 +1,815 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!-- 用户组织角色信息 -->
+<mapper namespace="foss.bse.bse-baseinfo.userorgrole">
+	<resultMap id="userOrgRoleResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.UserOrgRoleEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="EMP_CODE" property="empCode" jdbcType="VARCHAR" />
+		<result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+		<result column="ROLE_CODE" property="roleCode" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+		<result column="VERSION_NO" property="version" jdbcType="NUMERIC" />
+		<result property="orgUnifiedCode" column="ORG_UNIFIED_CODE"
+			jdbcType="VARCHAR" />
+		<result property="virtualCode" column="VIRTUAL_CODE" jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="userOrgRole_ResultMap_Param">
+		<![CDATA[
+			ID, EMP_CODE, ORG_CODE, ROLE_CODE, CREATE_TIME,
+			MODIFY_TIME, ACTIVE,
+			CREATE_USER_CODE,
+			MODIFY_USER_CODE,
+			VERSION_NO,
+			ORG_UNIFIED_CODE,
+			VIRTUAL_CODE
+		]]>
+	</sql>
+	<!--根据entity精确查询的查询条件 ，如果属性为空，则此属性不作为条件 -->
+	<sql id="userOrgRole_Pagination_Where_Base_Param">
+		<trim prefix="WHERE" prefixOverrides="AND | OR">
+			<if test="id != null">
+				AND AND ID = #{id,jdbcType=VARCHAR}
+			</if>
+			<if test="empCode != null">
+				AND EMP_CODE = #{empCode,jdbcType=VARCHAR}
+			</if>
+			<if test="orgCode != null">
+				AND ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+			</if>
+			<if test="roleCode != null">
+				AND ROLE_CODE = #{roleCode,jdbcType=VARCHAR}
+			</if>
+			<if test="createDate != null">
+				AND CREATE_TIME = #{createDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="modifyDate != null">
+				AND MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="active != null">
+				AND ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="createUser != null">
+				AND CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR}
+			</if>
+			<if test="modifyUser != null">
+				AND MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR}
+			</if>
+			<if test="version != null and version != ''">
+				AND VERSION_NO = #{version,jdbcType=NUMERIC}
+			</if>
+			<if test="orgUnifiedCode!=null and orgUnifiedCode != ''">
+				AND ORG_UNIFIED_CODE = #{orgUnifiedCode,jdbcType=VARCHAR}
+			</if>
+			<if test="virtualCode != null and virtualCode != ''">
+				AND VIRTUAL_CODE = #{virtualCode,jdbcType=NUMERIC}
+			</if>
+		</trim>
+	</sql>
+	<!-- 查询用户组织角色信息-->
+	<select id="queryUserOrgRoleListBySelective" resultMap="userOrgRoleResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.UserOrgRoleEntity">
+		select
+		/** 综合:查询用户组织角色信息 **/
+		<include refid="userOrgRole_ResultMap_Param" />
+		from BSE.T_BAS_USER_ORG_ROLE
+		<include refid="userOrgRole_Pagination_Where_Base_Param" />
+	</select>
+	<select id="queryUserOrgRoleListBySelectiveCondition" resultMap="userOrgRoleResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.UserOrgRoleEntity">
+		select
+		<include refid="userOrgRole_ResultMap_Param" />
+		from BSE.T_BAS_USER_ORG_ROLE
+		<include refid="userOrgRole_Pagination_Where_Base_Param" />
+	</select>
+	<!--zxy 20140408 修改:增加id排序  增加版本号等于的判断条件 -->
+	<select id="queryUserOrgRoleListForDownload" resultMap="userOrgRoleResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.UserOrgRoleEntity">
+		select
+		<include refid="userOrgRole_ResultMap_Param" />
+		from BSE.T_BAS_USER_ORG_ROLE
+		<trim prefix="WHERE" prefixOverrides="AND | OR">
+			<if test="empCode != null and empCode != ''">
+				AND EMP_CODE =
+				#{empCode,jdbcType=VARCHAR}
+			</if>
+			<if test="orgCode != null and orgCode != ''">
+				AND ORG_CODE =
+				#{orgCode,jdbcType=VARCHAR}
+			</if>
+			<if test="version != null">
+				AND VERSION_NO >= #{version,jdbcType=NUMERIC}
+			</if>
+		</trim>
+		ORDER BY VERSION_NO,ID ASC
+	</select>
+	<!-- 删除用户组织角色信息 -->
+	<delete id="deleteUserOrgRole" parameterType="java.lang.String">
+		delete/** 综合:删除用户组织角色信息 **/ from
+		BSE.T_BAS_USER_ORG_ROLE
+		where ID = #{id,jdbcType=VARCHAR}
+	</delete>
+	<!-- 新增用户组织角色信息 -->
+	<insert id="addUserOrgRole"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.UserOrgRoleEntity">
+		insert/** 综合:新增用户组织角色信息 **/ into BSE.T_BAS_USER_ORG_ROLE (ID, EMP_CODE,
+		ORG_CODE,
+		ROLE_CODE, CREATE_TIME, MODIFY_TIME,
+		ACTIVE, CREATE_USER_CODE,
+		MODIFY_USER_CODE,
+		VERSION_NO,
+		ORG_UNIFIED_CODE,
+		VIRTUAL_CODE
+		)
+		values
+		(#{id,jdbcType=VARCHAR},
+		#{empCode,jdbcType=VARCHAR},
+		#{orgCode,jdbcType=VARCHAR},
+		#{roleCode,jdbcType=VARCHAR},
+		#{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=CHAR},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR},
+		#{version,jdbcType=NUMERIC},
+		#{orgUnifiedCode, jdbcType=VARCHAR},
+		#{virtualCode, jdbcType=VARCHAR}
+		)
+	</insert>
+	<insert id="addUserOrgRoleBySelective"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.UserOrgRoleEntity">
+		insert into BSE.T_BAS_USER_ORG_ROLE
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				ID,
+			</if>
+			<if test="empCode != null">
+				EMP_CODE,
+			</if>
+			<if test="orgCode != null">
+				ORG_CODE,
+			</if>
+			<if test="roleCode != null">
+				ROLE_CODE,
+			</if>
+			<if test="createDate != null">
+				CREATE_TIME,
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME,
+			</if>
+			<if test="active != null">
+				ACTIVE,
+			</if>
+			<if test="createUser != null">
+				CREATE_USER_CODE,
+			</if>
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE,
+			</if>
+			<if test="version != null">
+				VERSION_NO,
+			</if>
+			<if test="orgUnifiedCode !=null and orgUnifiedCode != ''">
+				ORG_UNIFIED_CODE,
+			</if>
+			<if test="virtualCode !=null and virtualCode != ''">
+				VIRTUAL_CODE,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id,jdbcType=VARCHAR},
+			</if>
+			<if test="empCode != null">
+				#{empCode,jdbcType=VARCHAR},
+			</if>
+			<if test="orgCode != null">
+				#{orgCode,jdbcType=VARCHAR},
+			</if>
+			<if test="roleCode != null">
+				#{roleCode,jdbcType=VARCHAR},
+			</if>
+			<if test="createDate != null">
+				#{createDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyDate != null">
+				#{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="active != null">
+				#{active,jdbcType=CHAR},
+			</if>
+			<if test="createUser != null">
+				#{createUser,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyUser != null">
+				#{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="version != null">
+				#{version,jdbcType=NUMERIC}
+			</if>
+			<if test="orgUnifiedCode != null">
+				#{orgUnifiedCode,jdbcType=VARCHAR},
+			</if>
+			<if test="virtualCode != null">
+				#{virtualCode,jdbcType=VARCHAR},
+			</if>
+		</trim>
+	</insert>
+	<!-- 新增无效的用户组织角色信息进无效表 -->
+	<insert id="addUnactiveUserOrgRoleBySelective"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.UserOrgRoleEntity">
+		insert into BSE.T_BAS_UACTIVE_USER_ORG_ROLE
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				ID,
+			</if>
+			<if test="empCode != null">
+				EMP_CODE,
+			</if>
+			<if test="orgCode != null">
+				ORG_CODE,
+			</if>
+			<if test="roleCode != null">
+				ROLE_CODE,
+			</if>
+			<if test="createDate != null">
+				CREATE_TIME,
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME,
+			</if>
+			<if test="active != null">
+				ACTIVE,
+			</if>
+			<if test="createUser != null">
+				CREATE_USER_CODE,
+			</if>
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE,
+			</if>
+			<if test="version != null">
+				VERSION_NO,
+			</if>
+			<if test="orgUnifiedCode !=null and orgUnifiedCode != ''">
+				ORG_UNIFIED_CODE,
+			</if>
+			<if test="virtualCode !=null and virtualCode != ''">
+				VIRTUAL_CODE,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id,jdbcType=VARCHAR},
+			</if>
+			<if test="empCode != null">
+				#{empCode,jdbcType=VARCHAR},
+			</if>
+			<if test="orgCode != null">
+				#{orgCode,jdbcType=VARCHAR},
+			</if>
+			<if test="roleCode != null">
+				#{roleCode,jdbcType=VARCHAR},
+			</if>
+			<if test="createDate != null">
+				#{createDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyDate != null">
+				#{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="active != null">
+				#{active,jdbcType=CHAR},
+			</if>
+			<if test="createUser != null">
+				#{createUser,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyUser != null">
+				#{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="version != null">
+				#{version,jdbcType=NUMERIC},
+			</if>
+			<if test="orgUnifiedCode != null">
+				#{orgUnifiedCode,jdbcType=VARCHAR},
+			</if>
+			<if test="virtualCode != null">
+				#{virtualCode,jdbcType=VARCHAR},
+			</if>
+		</trim>
+	</insert>
+	<!-- 修改用户组织角色信息 -->
+	<update id="updateUserOrgRoleBySelective"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.UserOrgRoleEntity">
+		update/** 综合:修改用户组织角色信息 **/ BSE.T_BAS_USER_ORG_ROLE
+		<set>
+			<if test="empCode != null">
+				EMP_CODE = #{empCode,jdbcType=VARCHAR},
+			</if>
+			<if test="orgCode != null">
+				ORG_CODE = #{orgCode,jdbcType=VARCHAR},
+			</if>
+			<if test="roleCode != null">
+				ROLE_CODE = #{roleCode,jdbcType=VARCHAR},
+			</if>
+			<if test="createDate != null">
+				CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="active != null">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="createUser != null">
+				CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="version != null">
+				VERSION_NO = #{version,jdbcType=NUMERIC},
+			</if>
+			<if test="orgUnifiedCode != null">
+				ORG_UNIFIED_CODE = #{orgUnifiedCode,jdbcType=VARCHAR},
+			</if>
+			<if test="virtualCode != null">
+				VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR},
+			</if>
+		</set>
+		where ID = #{id,jdbcType=VARCHAR}
+	</update>
+	<update id="updateUserOrgRole"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.UserOrgRoleEntity">
+		update BSE.T_BAS_USER_ORG_ROLE
+		set EMP_CODE =
+		#{empCode,jdbcType=VARCHAR},
+		ORG_CODE = #{orgCode,jdbcType=VARCHAR},
+		ROLE_CODE = #{roleCode,jdbcType=VARCHAR},
+		CREATE_TIME =
+		#{createDate,jdbcType=TIMESTAMP},
+		MODIFY_TIME =
+		#{modifyDate,jdbcType=TIMESTAMP},
+		ACTIVE = #{active,jdbcType=CHAR},
+		CREATE_USER_CODE =
+		#{createUser,jdbcType=VARCHAR},
+		MODIFY_USER_CODE =
+		#{modifyUser,jdbcType=VARCHAR},
+		VERSION_NO =
+		#{version,jdbcType=NUMERIC},
+		ORG_UNIFIED_CODE =
+		#{orgUnifiedCode,jdbcType=VARCHAR},
+		VIRTUAL_CODE =
+		#{virtualCode,jdbcType=VARCHAR}
+		where ID = #{id,jdbcType=VARCHAR}
+	</update>
+
+
+
+
+
+	<!-- 087584-foss-lijun 添加以下内容 -->
+	<resultMap id="userOrgRoleQueryResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.UserOrgRoleEntity">
+		<result property="id" column="ID" jdbcType="VARCHAR" />
+		<!-- 待数据库添加 -->
+		<result property="virtualCode" column="VIRTUAL_CODE" jdbcType="VARCHAR" />
+
+		<result property="empCode" column="EMP_CODE" jdbcType="VARCHAR" />
+		<result property="orgCode" column="ORG_CODE" jdbcType="VARCHAR" />
+		<result property="orgUnifiedCode" column="ORG_UNIFIED_CODE"
+			jdbcType="VARCHAR" />
+		<result property="roleCode" column="ROLE_CODE" jdbcType="VARCHAR" />
+		<result property="createDate" column="CREATE_TIME" jdbcType="TIMESTAMP" />
+		<result property="modifyDate" column="MODIFY_TIME" jdbcType="TIMESTAMP" />
+		<result property="active" column="ACTIVE" jdbcType="CHAR" />
+		<result property="createUser" column="CREATE_USER_CODE"
+			jdbcType="VARCHAR" />
+		<result property="modifyUser" column="MODIFY_USER_CODE"
+			jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 插入数据 ： -->
+	<insert id="addUserOrgRoleByEntity"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.UserOrgRoleEntity">
+		INSERT/** 综合:插入数据 **/ INTO BSE.T_BAS_USER_ORG_ROLE(
+		ID,
+		VIRTUAL_CODE,
+		EMP_CODE,
+		ORG_CODE,
+		ORG_UNIFIED_CODE,
+		ROLE_CODE,
+		VERSION_NO,
+		CREATE_TIME,
+		MODIFY_TIME,
+		ACTIVE,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE) VALUES
+		(
+		#{id, jdbcType=VARCHAR},
+		#{virtualCode, jdbcType=VARCHAR},
+		#{empCode, jdbcType=VARCHAR},
+		#{orgCode, jdbcType=VARCHAR},
+		#{orgUnifiedCode, jdbcType=VARCHAR},
+		#{roleCode, jdbcType=VARCHAR},
+		#{version, jdbcType=NUMERIC},
+		#{createDate, jdbcType=TIMESTAMP},
+		#{modifyDate, jdbcType=TIMESTAMP},
+		#{active, jdbcType=CHAR},
+		#{createUser, jdbcType=VARCHAR},
+		#{modifyUser, jdbcType=VARCHAR}
+		)
+	</insert>
+
+	<!-- 根据用户编码EMP_CODE作废数据： -->
+	<update id="deleteUserOrgRoleByEmpCode" parameterType="map">
+		DELETE FROM BSE.T_BAS_USER_ORG_ROLE A
+		<where>
+			A.EMP_CODE=#{entity.empCode,jdbcType=VARCHAR}
+			AND A.ACTIVE=#{conditionActive,jdbcType=CHAR}
+		</where>
+	
+<!-- 		UPDATE/** 综合:根据用户编码EMP_CODE，作废数据 **/ BSE.T_BAS_USER_ORG_ROLE A -->
+<!-- 		SET A.ACTIVE=#{entity.active,jdbcType=CHAR}, -->
+<!-- 			A.VERSION_NO=#{entity.version,jdbcType=NUMERIC}, -->
+<!-- 		A.MODIFY_USER_CODE=#{entity.modifyUser,jdbcType=TIMESTAMP}, -->
+<!-- 		A.MODIFY_TIME = #{entity.modifyDate,jdbcType=TIMESTAMP} -->
+<!-- 		<where> -->
+<!-- 			A.EMP_CODE=#{entity.empCode,jdbcType=VARCHAR} -->
+<!-- 			AND A.ACTIVE=#{conditionActive,jdbcType=CHAR} -->
+<!-- 		</where> -->
+	</update>
+
+	<!-- 根据用户编码EMP_CODE，部门编码ORG_CODE 作废数据： -->
+	<update id="deleteUserOrgRoleMore" parameterType="map">
+		DELETE/** 综合:根据用户编码EMP_CODE，部门编码ORG_CODE 作废数据 **/FROM BSE.T_BAS_USER_ORG_ROLE A
+<!-- 		SET A.ACTIVE=#{entity.active,jdbcType=CHAR}, -->
+<!-- 			A.VERSION_NO=#{entity.version,jdbcType=NUMERIC}, -->
+<!-- 		A.MODIFY_USER_CODE=#{entity.modifyUser,jdbcType=VARCHAR}, -->
+<!-- 		A.MODIFY_TIME = #{entity.modifyDate,jdbcType=TIMESTAMP} -->
+		<where>
+			A.EMP_CODE=#{entity.empCode,jdbcType=VARCHAR}
+			AND A.ORG_UNIFIED_CODE=#{entity.orgUnifiedCode,jdbcType=VARCHAR}
+			AND ROLE_CODE in
+			<foreach collection="codes" index="index" item="code" open="("
+				separator="," close=")">
+				#{code}
+			</foreach>
+			AND A.ACTIVE=#{conditionActive,jdbcType=CHAR}
+		</where>
+	</update>
+
+
+
+
+
+
+
+
+
+	<!-- 查询人员DTO，先把人员选出来分页 -->
+	<resultMap id="userOrgRoleDtoQueryResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.dto.UserOrgRoleDto">
+		<result property="empCode" column="EMP_CODE" jdbcType="VARCHAR" />
+		<result property="empName" column="EMP_NAME" jdbcType="VARCHAR" />
+		<result property="title" column="TITLE" jdbcType="VARCHAR" />
+		<result property="orgUnifiedCode" column="ORG_UNIFIED_CODE"
+			jdbcType="VARCHAR" />
+		<result property="orgName" column="ORG_NAME" jdbcType="VARCHAR" />
+		<result property="unifiedCode" column="UNIFIELD_CODE" jdbcType="VARCHAR" />
+		<result property="phone" column="PHONE" jdbcType="VARCHAR" />
+		<result property="operateOrgUnifiedCode" column="OPERATE_ORG_UNIFIED"
+			jdbcType="TIMESTAMP" />
+		<result property="operateOrgName" column="OPERATE_ORG_NAME"
+			jdbcType="VARCHAR" />
+	</resultMap>
+	<!-- 根据用户部门角色的userOrgRole用户工号，employee人员姓名，userOrgRole部门标杆编码（精确），role角色名称 
+		查询, 如果属性的值为null或者空白则无效： -->
+	<sql id="query_userOrgRoleDto_condition">
+		<!-- 用户部门角色查询-工号 -->
+		<if test="userOrgRole.empCode!=null and userOrgRole.empCode != ''">
+			AND B.EMP_CODE like CONCAT(CONCAT('%',
+			#{userOrgRole.empCode,jdbcType=VARCHAR}), '%')
+		</if>
+		<!-- 用户部门角色查询-部门标杆编码，由于部门标杆编码从选择器中选择，所以为精确查询 -->
+		<if
+			test="userOrgRole.orgUnifiedCode!=null and userOrgRole.orgUnifiedCode != ''">
+			AND B.ORG_UNIFIED_CODE=#{userOrgRole.orgUnifiedCode,jdbcType=VARCHAR}
+		</if>
+		<if test="userOrgRole.roleCode!=null and userOrgRole.roleCode != ''">
+			AND B.ROLE_CODE like CONCAT(CONCAT('%',
+			#{userOrgRole.roleCode,jdbcType=VARCHAR}), '%')
+		</if>
+		<!-- 人员姓名 -->
+		<if test="employee.empName!=null and employee.empName != ''">
+			AND F.EMP_NAME like CONCAT(CONCAT('%',
+			#{employee.empName,jdbcType=VARCHAR}), '%')
+		</if>
+		<!-- 角色名称 -->
+		<if test="role.name!=null and role.name!= ''">
+			AND E.NAME like CONCAT(CONCAT('%', #{role.name,jdbcType=VARCHAR}), '%')
+		</if>
+	</sql>
+	<!-- 根据用户部门角色的userOrgRole用户工号，employee人员姓名，userOrgRole部门标杆编码（精确），role角色名称 
+		查询, 如果属性的值为null或者空白则无效： -->
+	<select id="queryUserOrgRoleDto" resultMap="userOrgRoleDtoQueryResultMap"
+		parameterType="map">
+		SELECT/** 综合:根据用户部门角色的userOrgRole用户工号，employee人员姓名，userOrgRole部门标杆编码（精确），role角色名称查询, 如果属性的值为null或者空白则无效 **/ distinct
+		A.EMP_NAME AS EMP_NAME, /** 职员姓名 **/
+		A.EMP_CODE AS EMP_CODE, /** 工号 **/
+		A.TITLE AS TITLE, /** 职位 **/
+		H.UNIFIED_CODE AS UNIFIELD_CODE, /** 所属部门标杆编码 **/
+		H.NAME AS ORG_NAME, /** 所属部门名称 **/
+		A.PHONE AS PHONE, /** 电话 **/
+		G.UNIFIED_CODE AS OPERATE_ORG_UNIFIED, /** 操作部门编码 **/
+		G.NAME AS OPERATE_ORG_NAME /** 操作部门名称 **/
+		FROM(
+<!-- 		SELECT F.EMP_NAME AS EMP_NAME, -->
+<!-- 		F.EMP_CODE AS EMP_CODE, -->
+<!-- 		F.PHONE AS PHONE, -->
+<!-- 		F.TITLE AS TITLE, -->
+<!-- 		/** 为了左连接 **/ -->
+<!-- 		F.UNIFIELD_CODE AS UNIFIELD_CODE, -->
+<!-- 		/** 为了分析SQL语句的数据 -->
+<!-- 		B.ROLE_CODE AS ROLE_CODE, -->
+<!-- 		**/ -->
+<!-- 		/** 为了左连接 **/ -->
+<!-- 		B.ORG_UNIFIED_CODE AS ORG_UNIFIED_CODE -->
+<!-- 		FROM BSE.T_BAS_USER_ORG_ROLE B , -->
+<!-- 		BSE.T_BAS_ROLE E, -->
+<!-- 		BSE.T_BAS_EMPLOYEE F -->
+ SELECT                         F.EMP_NAME         AS EMP_NAME,
+                               F.EMP_CODE         AS EMP_CODE,
+                               F.PHONE            AS PHONE,
+                               v.value_name       AS TITLE, /** 为了左连接 **/
+                               F.UNIFIELD_CODE    AS UNIFIELD_CODE, /** 为了分析SQL语句的数据 B.ROLE_CODE AS ROLE_CODE, **/ /** 为了左连接 **/
+                               B.ORG_UNIFIED_CODE AS ORG_UNIFIED_CODE
+                          FROM BSE.T_BAS_USER_ORG_ROLE       B,
+                               BSE.T_BAS_ROLE                E,
+                               BSE.T_BAS_EMPLOYEE            F,
+                               bse.t_bas_data_postion_degree V
+		<where>
+			B.ACTIVE=#{conditionActive,jdbcType=CHAR}
+			AND B.ROLE_CODE = E.CODE AND E.ACTIVE=#{conditionActive,jdbcType=CHAR}
+			AND B.EMP_CODE = F.EMP_CODE AND
+			F.ACTIVE=#{conditionActive,jdbcType=CHAR}
+		    and f.title = v.value_code
+            and v.active = 'Y'
+			<include refid="query_userOrgRoleDto_condition" />
+		</where>
+		) A
+		LEFT JOIN BSE.T_BAS_ORG G ON A.ORG_UNIFIED_CODE = G.UNIFIED_CODE AND
+		G.ACTIVE=#{conditionActive,jdbcType=CHAR} /** 操作部门，来自用户部门角色 **/
+		LEFT
+		JOIN BSE.T_BAS_ORG H ON A.UNIFIELD_CODE = H.UNIFIED_CODE AND
+		H.ACTIVE=#{conditionActive,jdbcType=CHAR} /** 所属部门,来自人员 **/
+	</select>
+	<!-- 查询总数, 根据用户部门角色的userOrgRole用户工号，employee人员姓名，userOrgRole部门标杆编码（精确），role角色名称 
+		查询 如果属性的值为null或者空白则无效： -->
+	<select id="queryUserOrgRoleDtoCount" resultType="Long"
+		parameterType="map">
+		SELECT COUNT(1) FROM
+		(
+		SELECT distinct
+		A.EMP_NAME AS EMP_NAME, /** 职员姓名 **/
+		A.EMP_CODE AS EMP_CODE, /** 工号 **/
+		A.TITLE AS TITLE, /** 职位 **/
+		H.UNIFIED_CODE AS UNIFIELD_CODE, /** 所属部门标杆编码 **/
+		H.NAME AS ORG_NAME, /** 所属部门名称 **/
+		A.PHONE AS PHONE, /** 电话 **/
+		G.UNIFIED_CODE AS OPERATE_ORG_UNIFIED, /** 操作部门编码 **/
+		G.NAME AS OPERATE_ORG_NAME /** 操作部门名称 **/
+		FROM(
+		SELECT                         F.EMP_NAME         AS EMP_NAME,
+                               F.EMP_CODE         AS EMP_CODE,
+                               F.PHONE            AS PHONE,
+                               v.value_name       AS TITLE, /** 为了左连接 **/
+                               F.UNIFIELD_CODE    AS UNIFIELD_CODE, /** 为了分析SQL语句的数据 B.ROLE_CODE AS ROLE_CODE, **/ /** 为了左连接 **/
+                               B.ORG_UNIFIED_CODE AS ORG_UNIFIED_CODE
+                          FROM BSE.T_BAS_USER_ORG_ROLE       B,
+                               BSE.T_BAS_ROLE                E,
+                               BSE.T_BAS_EMPLOYEE            F,
+                               bse.t_bas_data_postion_degree V
+		<where>
+			B.ACTIVE=#{conditionActive,jdbcType=CHAR}
+			AND B.ROLE_CODE = E.CODE AND E.ACTIVE=#{conditionActive,jdbcType=CHAR}
+			AND B.EMP_CODE = F.EMP_CODE AND
+			F.ACTIVE=#{conditionActive,jdbcType=CHAR}
+			and f.title = v.value_code
+            and v.active = 'Y'
+			<include refid="query_userOrgRoleDto_condition" />
+		</where>
+		) A
+		LEFT JOIN BSE.T_BAS_ORG G ON A.ORG_UNIFIED_CODE = G.UNIFIED_CODE AND
+		G.ACTIVE=#{conditionActive,jdbcType=CHAR} /** 操作部门，来自用户部门角色 **/
+		LEFT JOIN BSE.T_BAS_ORG H ON A.UNIFIELD_CODE = H.UNIFIED_CODE AND
+		H.ACTIVE=#{conditionActive,jdbcType=CHAR} /** 所属部门,来自人员 **/
+		)
+	</select>
+
+
+
+	<!-- 根据employee工号，employee人员姓名 模糊 查询(适用于未传入角色，没有被分配角色的人员也需要查询出来的情况), 如果属性的值为null或者空白则无效： -->
+	<sql id="query_userOrgRoleDtoByEmployee_condition">
+		<!-- 人员工号 -->
+		<if test="employee.empCode!=null and employee.empCode != ''">
+			AND F.EMP_CODE =#{employee.empCode,jdbcType=VARCHAR}
+		</if>
+		<!-- 人员姓名 -->
+		<if test="employee.empName!=null and employee.empName != ''">
+			AND F.EMP_NAME like CONCAT(#{employee.empName,jdbcType=VARCHAR}, '%')
+		</if>
+	</sql>
+	<!-- 根据employee工号，employee人员姓名 模糊 查询, 如果属性的值为null或者空白则无效： -->
+	<select id="queryUserOrgRoleDtoByEmployee" resultMap="userOrgRoleDtoQueryResultMap"
+		parameterType="map">
+		SELECT A.EMP_NAME AS EMP_NAME, /** 职员姓名 **/
+		A.EMP_CODE AS EMP_CODE, /** 工号 **/
+		A.TITLE AS TITLE, /** 职位 **/
+		H.UNIFIED_CODE AS UNIFIELD_CODE, /** 所属部门标杆编码 **/
+		H.NAME AS ORG_NAME, /** 所属部门名称 **/
+		A.PHONE AS PHONE, /** 电话 **/
+		A.ORG_UNIFIED_CODE AS ORG_UNIFIED_CODE, /** 用户部门角色中的部门标杆编码 **/
+		G.UNIFIED_CODE AS OPERATE_ORG_UNIFIED, /** 操作部门编码 **/
+		G.NAME AS OPERATE_ORG_NAME /** 操作部门名称 **/
+		FROM (
+<!-- 		SELECT DISTINCT F.EMP_NAME AS EMP_NAME, -->
+<!-- 		F.EMP_CODE AS EMP_CODE, -->
+<!-- 		e.value_name AS TITLE, -->
+<!-- 		F.PHONE AS PHONE, /** 为了左连接 **/ -->
+<!-- 		F.UNIFIELD_CODE AS UNIFIELD_CODE, /** 人员的部门标杆编码, **/ -->
+<!-- 		B.ORG_UNIFIED_CODE AS ORG_UNIFIED_CODE /** 操作部门标杆编码, **/ -->
+<!-- 		FROM BSE.T_BAS_USER C, BSE.T_BAS_EMPLOYEE F -->
+<!-- 		LEFT JOIN BSE.T_BAS_USER_ORG_ROLE B ON F.EMP_CODE = B.EMP_CODE -->
+<!-- 		AND B.ACTIVE = 'Y' -->
+<!-- 		left join bse.t_bas_data_postion_degree E -->
+<!--         on f.title = e.value_code -->
+<!--         and e.active = 'Y' -->
+select DISTINCT f.emp_name         AS EMP_NAME,
+                F.EMP_CODE         AS EMP_CODE,
+                e.value_name       AS TITLE,
+                F.PHONE            AS PHONE, /** 为了左连接 **/
+                F.UNIFIELD_CODE    AS UNIFIELD_CODE, /** 人员的部门标杆编码, **/
+                B.ORG_UNIFIED_CODE AS ORG_UNIFIED_CODE /** 操作部门标杆编码, **/
+				  from bse.t_bas_user_org_role b
+				 inner join bse.t_bas_employee f
+				    on b.emp_code = f.emp_code
+				  left join bse.t_bas_data_postion_degree e
+				    on f.title = e.value_code
+				   and e.active = 'Y'
+				   and e.type = 'UUMS_POSITION'
+<!--  where b.active = 'Y' -->
+<!--    and f.active = 'Y' -->
+		<where>
+			b.active = 'Y'
+		 	and f.active = 'Y'
+<!-- 			C.EMP_CODE = F.EMP_CODE -->
+<!-- 			AND C.ACTIVE = #{conditionActive,jdbcType=CHAR} -->
+			AND F.ACTIVE = #{conditionActive,jdbcType=CHAR}
+			<include refid="query_userOrgRoleDtoByEmployee_condition" />
+		</where>
+		-- ORDER BY F.EMP_CODE ASC
+		) A
+
+		LEFT JOIN BSE.T_BAS_ORG H ON A.UNIFIELD_CODE = H.UNIFIED_CODE
+		AND H.ACTIVE = #{conditionActive,jdbcType=CHAR} /** 所属部门 **/
+		LEFT JOIN BSE.T_BAS_ORG G ON A.ORG_UNIFIED_CODE = G.UNIFIED_CODE
+		AND G.ACTIVE = #{conditionActive,jdbcType=CHAR} /** 操作部门 **/
+		ORDER BY A.EMP_CODE ASC
+	</select>
+	<!-- 查询总数, 根据employee工号，employee人员姓名 模糊 查询, 如果属性的值为null或者空白则无效： -->
+	<select id="queryUserOrgRoleDtoByEmployeeCount" resultType="Long"
+		parameterType="map">
+		SELECT COUNT(1) FROM
+		(
+		SELECT A.EMP_NAME AS EMP_NAME, /** 职员姓名 **/
+		A.EMP_CODE AS EMP_CODE, /** 工号 **/
+		A.TITLE AS TITLE, /** 职位 **/
+		H.UNIFIED_CODE AS UNIFIELD_CODE, /** 所属部门标杆编码 **/
+		H.NAME AS ORG_NAME, /** 所属部门名称 **/
+		A.PHONE AS PHONE, /** 电话 **/
+		A.ORG_UNIFIED_CODE AS ORG_UNIFIED_CODE, /** 用户部门角色中的部门标杆编码 **/
+		G.UNIFIED_CODE AS OPERATE_ORG_UNIFIED, /** 操作部门编码 **/
+		G.NAME AS OPERATE_ORG_NAME /** 操作部门名称 **/
+		FROM (
+<!-- 		SELECT DISTINCT F.EMP_NAME AS EMP_NAME, -->
+<!-- 		F.EMP_CODE AS EMP_CODE, -->
+<!-- 		F.TITLE AS TITLE, -->
+<!-- 		F.PHONE AS PHONE, /** 为了左连接 **/ -->
+<!-- 		F.UNIFIELD_CODE AS UNIFIELD_CODE, /** 人员的部门标杆编码, **/ -->
+<!-- 		B.ORG_UNIFIED_CODE AS ORG_UNIFIED_CODE /** 操作部门标杆编码, **/ -->
+<!-- 		FROM BSE.T_BAS_USER C, BSE.T_BAS_EMPLOYEE F -->
+<!-- 		LEFT JOIN BSE.T_BAS_USER_ORG_ROLE B ON F.EMP_CODE = B.EMP_CODE -->
+<!-- 		AND B.ACTIVE = 'Y' -->
+<!-- 		left join bse.t_bas_data_postion_degree E -->
+<!--         on f.title = e.value_code -->
+<!--         and e.active = 'Y' -->
+select DISTINCT f.emp_name         AS EMP_NAME,
+                F.EMP_CODE         AS EMP_CODE,
+                e.value_name       AS TITLE,
+                F.PHONE            AS PHONE, /** 为了左连接 **/
+                F.UNIFIELD_CODE    AS UNIFIELD_CODE, /** 人员的部门标杆编码, **/
+                B.ORG_UNIFIED_CODE AS ORG_UNIFIED_CODE /** 操作部门标杆编码, **/
+				  from bse.t_bas_user_org_role b
+				 inner join bse.t_bas_employee f
+				    on b.emp_code = f.emp_code
+				  left join bse.t_bas_data_postion_degree e
+				    on f.title = e.value_code
+				   and e.active = 'Y'
+				   and e.type = 'UUMS_POSITION'
+<!--  where b.active = 'Y' -->
+<!--    and f.active = 'Y' -->
+		<where>
+			  b.active = 'Y'
+  			 and f.active = 'Y'
+<!-- 			C.EMP_CODE = F.EMP_CODE -->
+<!-- 			AND C.ACTIVE = #{conditionActive,jdbcType=CHAR} -->
+			AND F.ACTIVE = #{conditionActive,jdbcType=CHAR}
+			<include refid="query_userOrgRoleDtoByEmployee_condition" />
+		</where>
+		-- ORDER BY F.EMP_CODE ASC
+		) A
+
+		LEFT JOIN BSE.T_BAS_ORG H ON A.UNIFIELD_CODE = H.UNIFIED_CODE
+		AND H.ACTIVE = #{conditionActive,jdbcType=CHAR} /** 所属部门 **/
+		LEFT JOIN BSE.T_BAS_ORG G ON A.ORG_UNIFIED_CODE = G.UNIFIED_CODE
+		AND G.ACTIVE = #{conditionActive,jdbcType=CHAR} /** 操作部门 **/
+		ORDER BY A.EMP_CODE ASC
+		)
+	</select>
+
+
+	<!-- 用户部门角色 公用的查询结果 -->
+	<sql id="query_userOrgRole_param">
+		A.ID AS ID, /** ID **/
+		A.VIRTUAL_CODE AS VIRTUAL_CODE, /** 虚拟编码 **/
+		A.EMP_CODE AS EMP_CODE, /** 用户 **/
+		A.ORG_CODE AS ORG_CODE, /** 部门 编码 **/
+		A.ORG_UNIFIED_CODE AS ORG_UNIFIED_CODE, /** 部门标杆编码 **/
+		A.ROLE_CODE AS ROLE_CODE, /** 角色 **/
+		A.VERSION_NO AS VERSION_NO,		/** 数据版本     **/
+		A.CREATE_TIME AS CREATE_TIME, /** 创建时间 **/
+		A.MODIFY_TIME AS MODIFY_TIME, /** 更新时间 **/
+		A.ACTIVE AS ACTIVE, /** 是否启用 **/
+		A.CREATE_USER_CODE AS CREATE_USER_CODE, /** 创建人 **/
+		A.MODIFY_USER_CODE AS MODIFY_USER_CODE /** 更新人 **/
+	</sql>
+	<!-- 根据entity精确查询的查询条件 ，如果属性为空，则此属性不作为条件 -->
+	<sql id="query_queryUserOrgRoleExactByEntity_condition">
+		<where>
+			<if test="id!=null and id != ''">
+				AND A.ID = #{id,jdbcType=VARCHAR}
+			</if>
+			<!-- 待数据库添加 <if test="virtualCode!=null and virtualCode != ''"> AND A.VIRTUAL_CODE 
+				= #{virtualCode,jdbcType=VARCHAR} </if> -->
+			<if test="empCode!=null and empCode != ''">
+				AND A.EMP_CODE = #{empCode,jdbcType=VARCHAR}
+			</if>
+			<if test="orgCode!=null and orgCode != ''">
+				AND A.ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+			</if>
+			<if test="orgUnifiedCode!=null and orgUnifiedCode != ''">
+				AND A.ORG_UNIFIED_CODE = #{orgUnifiedCode,jdbcType=VARCHAR}
+			</if>
+			<if test="roleCode!=null and roleCode != ''">
+				AND A.ROLE_CODE = #{roleCode,jdbcType=VARCHAR}
+			</if>
+			AND A.ACTIVE = #{active,jdbcType=CHAR}
+		</where>
+	</sql>
+	<!-- 根据实体动态条件精确查询,如果属性的值为null或者空白则无效： -->
+	<select id="queryUserOrgRoleExactByEntity" resultMap="userOrgRoleQueryResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.UserOrgRoleEntity">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据实体动态条件精确查询,如果属性的值为null或者空白则无效 **/
+		]]>
+		<include refid="query_userOrgRole_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_USER_ORG_ROLE A 
+		]]>
+		<include refid="query_queryUserOrgRoleExactByEntity_condition" />
+	</select>
+	<!-- 根据实体动态条件精确查询总数,如果属性的值为null或者空白则无效： -->
+	<select id="queryUserOrgRoleExactByEntityCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.UserOrgRoleEntity">
+		<![CDATA[
+			 SELECT/** 综合:根据实体动态条件精确查询总数,如果属性的值为null或者空白则无效 **/ count(*) 
+			 FROM BSE.T_BAS_USER_ORG_ROLE A 
+		]]>
+		<include refid="query_queryUserOrgRoleExactByEntity_condition" />
+	</select>
+
+	<!-- 根据标杆编码查询，该部门下所属员工 -->
+	<select id="queryUserOrgRoleListByUnifieldCode" resultMap="userOrgRoleResultMap" parameterType="map">
+		SELECT/** 综合:根据标杆编码查询，该部门下所属员工 **/ T.ORG_CODE,T.EMP_CODE FROM BSE.T_BAS_USER_ORG_ROLE T
+		WHERE T.ACTIVE = #{active,jdbcType=VARCHAR}
+		  AND T.ORG_UNIFIED_CODE = #{orgUnifiedCode,jdbcType=VARCHAR} 
+		  GROUP BY T.ORG_CODE,T.EMP_CODE
+	</select>
+</mapper>

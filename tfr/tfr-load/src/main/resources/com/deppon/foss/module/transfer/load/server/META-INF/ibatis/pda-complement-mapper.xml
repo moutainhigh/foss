@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.load.express.complement">
+	<resultMap id="pdaComplementDtoResultMap"
+		type="com.deppon.foss.module.transfer.pda.api.shared.dto.PDAComplementDto">
+		<result property="wayBillNo" column="wayBillNo" />
+		<result property="targetOrgCode" column="targetOrgCode" />
+		<result property="receiveCustomerAddress" column="receiveCustomerAddress" />
+		<result property="complementTime" column="complementTime" />
+		<result property="reachOrgCode" column="reachOrgCode" />
+		<result property="reachOrgName" column="reachOrgName" />
+		<result property="beAddCode" column="beAddCode" />
+		<result property="finalOutDept" column="finalOutDept" />
+		<result property="beEWaybill" column="beEWaybill" />
+		<result property="productCode" column="productCode" />
+	</resultMap>
+	
+	<!--根据理货员查询快递包-->
+	<select id="queryComplement" resultMap="pdaComplementDtoResultMap" 
+		parameterType="HashMap">
+			select
+			 /* 模块:零担轻货上分拣,上线日期:2017-04-28*/
+			 w.waybill_no wayBillNo,
+			       w.receive_customer_address receiveCustomerAddress,
+			       w.target_org_code targetOrgCode,
+			       null complementTime,
+				   og.complement_simple_name reachOrgCode,
+			       w.CUSTOMER_PICKUP_ORG_NAME reachOrgName,
+			       'N' beAddCode,
+			       o.name finalOutDept,
+			       sp.name productCode,
+			       decode(af.waybill_type,'EWAYBILL','Y','N') beEWaybill
+			  from pkp.t_srv_waybill w
+			   left join bse.t_bas_org og on og.code = w.customer_pickup_org_code and og.active = 'Y'
+               inner join bse.t_bas_org o on o.code = w.LAST_LOAD_ORG_CODE and o.active = 'Y'
+               left join pkp.t_srv_actual_freight af on af.waybill_no = w.waybill_no 
+               inner join pkp.T_SRV_PRODUCT sp on w.product_code = sp.code and sp.active='Y'
+			 <where>
+				w.waybill_no = #{wayBillNo}
+				and w.active = 'Y'
+			   <![CDATA[and rownum <= 100]]>
+			  </where>
+	</select>
+	
+	<!-- 返回部门简称  需求变更为:补码简称 -->
+	<select id="queryLastOrgNameByWaybillNo" parameterType="String" resultType="String">
+		select dd.org_simple_name from (
+			select distinct pd.waybill_no,
+			                pd.orig_org_code,
+			                a.Complement_Simple_Name org_simple_name
+			                ,pd.route_no
+			  from tfr.t_opt_path_detail pd
+			  left join bse.t_bas_org a
+			    on a.code = pd.orig_org_code
+			   and a.active = 'Y'
+			 where pd.waybill_no = #{wayBillNo} order by to_number(pd.route_no) desc
+			 ) dd where rownum=1
+	</select>
+</mapper>

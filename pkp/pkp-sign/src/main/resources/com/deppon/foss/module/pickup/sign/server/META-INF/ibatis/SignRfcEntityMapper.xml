@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper
+	namespace="com.deppon.foss.module.pickup.sign.api.shared.domain.SignRfcEntity">
+<resultMap id="BaseResultMap" type="com.deppon.foss.module.pickup.sign.api.shared.domain.SignRfcEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+    <result column="RFC_TYPE" property="rfcType" jdbcType="VARCHAR" />
+    <result column="DRAFT_ORG_NAME" property="draftOrgName" jdbcType="VARCHAR" />
+    <result column="DRAFT_ORG_CODE" property="draftOrgCode" jdbcType="VARCHAR" />
+    <result column="DRAFTER" property="drafter" jdbcType="VARCHAR" />
+    <result column="DRAFTER_CODE" property="drafterCode" jdbcType="VARCHAR" />
+    <result column="DRAFT_TIME" property="draftTime" jdbcType="TIMESTAMP" />
+    <result column="REASON" property="reason" jdbcType="VARCHAR" />
+    <result column="NOTES" property="notes" jdbcType="VARCHAR" />
+    <result column="STATUS" property="status" jdbcType="VARCHAR" />
+    <result column="OPERATOR" property="operator" jdbcType="VARCHAR" />
+    <result column="OPERATOR_CODE" property="operatorCode" jdbcType="VARCHAR" />
+    <result column="OPERATE_ORG_NAME" property="operateOrgName" jdbcType="VARCHAR" />
+    <result column="OPERATE_ORG_CODE" property="operateOrgCode" jdbcType="VARCHAR" />
+    <result column="OPERATE_TIME" property="operateTime" jdbcType="TIMESTAMP" />
+    <result column="T_SRV_ARRIVESHEET_ID" property="tSrvArrivesheetId" jdbcType="VARCHAR" />
+    <result column="T_SRV_REPAYMENT_ID" property="tSrvRepaymentId" jdbcType="VARCHAR" />
+    <result column="T_SRV_WAYBILL_SIGN_RESULT_ID" property="tSrvWaybillSignResultId" jdbcType="VARCHAR" />
+    <result column="RFC_NO" property="rfcNo" jdbcType="VARCHAR" />
+    <result column="TYPE" property="rfcDetailType" jdbcType="VARCHAR" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    distinct(ID) ID, WAYBILL_NO, RFC_TYPE, DRAFT_ORG_NAME, DRAFT_ORG_CODE, DRAFTER, DRAFTER_CODE, 
+    DRAFT_TIME, REASON, NOTES, STATUS, OPERATOR, OPERATOR_CODE, OPERATE_ORG_NAME, OPERATE_ORG_CODE, 
+    OPERATE_TIME, T_SRV_ARRIVESHEET_ID, T_SRV_REPAYMENT_ID, T_SRV_WAYBILL_SIGN_RESULT_ID,RFC_NO
+  </sql>
+    <sql id="Collect_Column_List" >
+    distinct(signRfc.ID) ID, signRfc.WAYBILL_NO WAYBILL_NO, signRfc.RFC_TYPE RFC_TYPE,signRfc.DRAFT_ORG_NAME DRAFT_ORG_NAME,
+    signRfc.DRAFT_ORG_CODE DRAFT_ORG_CODE, signRfc.DRAFTER DRAFTER, signRfc.DRAFTER_CODE DRAFTER_CODE,signRfc.DRAFT_TIME DRAFT_TIME, 
+    signRfc.REASON REASON, signRfc.NOTES NOTES, signRfc.STATUS STATUS, signRfc.OPERATOR OPERATOR, signRfc.OPERATOR_CODE OPERATOR_CODE,
+	signRfc.OPERATE_ORG_NAME OPERATE_ORG_NAME, signRfc.OPERATE_ORG_CODE OPERATE_ORG_CODE, signRfc.OPERATE_TIME OPERATE_TIME, 
+	signRfc.T_SRV_ARRIVESHEET_ID T_SRV_ARRIVESHEET_ID, signRfc.T_SRV_REPAYMENT_ID T_SRV_REPAYMENT_ID, signRfc.T_SRV_WAYBILL_SIGN_RESULT_ID T_SRV_WAYBILL_SIGN_RESULT_ID,
+    signRfc.RFC_NO RFC_NO,detail.TYPE TYPE
+  </sql>
+  <select id="querySignRfcList" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.SignRfcEntity" >
+    select /*模块：接送货-变更签收-获得变更申请LIST*/
+    <include refid="Base_Column_List" />
+    from PKP.T_SRV_SIGN_RFC signRfc,BSE.MV_BAS_USER_ORG_AUTH_VIEW v
+    <include refid="select_Where_signRfc" />
+  </select>
+  
+  <select id="querySignRfcListByWaybill" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.SignRfcEntity" >
+    select /*模块：接送货-变更签收-根据运单号查询*/
+    <include refid="Base_Column_List" />
+    from PKP.T_SRV_SIGN_RFC signRfc
+    where signRfc.WAYBILL_NO =#{waybillNo}
+    AND signRfc.STATUS =#{status}
+    <if test="rfcType != null and rfcType != ''">
+    	AND signRfc.RFC_TYPE=#{rfcType}
+	</if>
+  </select>
+  
+  <select id="getWaybillNotApprovalCount"
+		parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.SignRfcEntity"
+		resultType="Long">
+		select count(1) 
+		from PKP.T_SRV_SIGN_RFC signRfc
+		/*模块：接送货-到达更改-获得申请条数*/
+		where signRfc.WAYBILL_NO =#{waybillNo} and signRfc.STATUS =#{status}
+	</select>
+	<!-- 查询签收变更已申请或已同意的运单数量 -->
+	<select id="getWaybillApprovalCountling"
+		parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.SignRfcEntity"
+		resultType="Integer">
+		select count(1) 
+		from PKP.T_SRV_SIGN_RFC signRfc
+		/*模块：接送货-到达更改-获得申请条数*/
+		where signRfc.WAYBILL_NO =#{waybillNo} and signRfc.STATUS =#{status}
+	</select>
+  <select id="getTotalCount"
+		parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.SignRfcEntity"
+		resultType="Long">
+	<![CDATA[ 
+		select count(distinct(signRfc.id)) 
+		from PKP.T_SRV_SIGN_RFC signRfc,BSE.MV_BAS_USER_ORG_AUTH_VIEW v
+	]]>
+	/*模块：接送货-变更签收-获得申请条数*/
+		<include refid="select_Where_signRfc" />
+	</select>
+  <sql id="select_Where_signRfc">
+		<where>
+			signRfc.DRAFT_ORG_CODE = v.ORG_CODE
+			<!--数据权限控制，对会计区间的人控制-->
+			<if test="createUser != null and createUser != ''">
+			<![CDATA[ AND v.EMP_CODE =#{createUser} ]]>
+			</if>
+			<if test="waybillNo != null and waybillNo != ''">
+			<![CDATA[ AND signRfc.WAYBILL_NO =#{waybillNo} ]]>
+			</if>
+			<if test="rfcType != null and rfcType != ''">
+			<![CDATA[ AND signRfc.RFC_TYPE =#{rfcType} ]]>
+			</if>
+			<if test="draftOrgCode != null and draftOrgCode != ''">
+			<![CDATA[ AND signRfc.DRAFT_ORG_CODE =#{draftOrgCode} ]]>
+			</if>
+			<if test="status != null and status != ''">
+			<![CDATA[ AND signRfc.STATUS =#{status} ]]>
+			</if>
+			<if test="arrivesheetNo != null and arrivesheetNo != ''">
+			<![CDATA[ AND signRfc.T_SRV_ARRIVESHEET_ID = (select ID from T_SRV_ARRIVESHEET where ARRIVESHEET_NO =#{arrivesheetNo} and ACTIVE='Y' and DESTROYED='N') ]]>
+			</if>
+			<if test=" draftTimeStart != null  and draftTimeStart != ''  ">
+			<![CDATA[and signRfc.DRAFT_TIME >= #{draftTimeStart,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test=" draftTimeEnd != null  and draftTimeEnd != ''  ">
+			<![CDATA[and signRfc.DRAFT_TIME <= #{draftTimeEnd,jdbcType=TIMESTAMP}]]>
+			</if>
+		</where>
+	</sql>
+  <select id="selectById" resultMap="BaseResultMap" parameterType="java.lang.String" >
+    select /*模块：接送货-变更签收-获得申请数据详细*/
+    <include refid="Base_Column_List" />
+    from PKP.T_SRV_SIGN_RFC
+    where ID = #{value,jdbcType=VARCHAR}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String" >
+    delete from PKP.T_SRV_SIGN_RFC
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  <insert id="insertSelective" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.SignRfcEntity" >
+    insert into PKP.T_SRV_SIGN_RFC
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="waybillNo != null" >
+        WAYBILL_NO,
+      </if>
+      <if test="rfcType != null" >
+        RFC_TYPE,
+      </if>
+      <if test="draftOrgName != null" >
+        DRAFT_ORG_NAME,
+      </if>
+      <if test="draftOrgCode != null" >
+        DRAFT_ORG_CODE,
+      </if>
+      <if test="drafter != null" >
+        DRAFTER,
+      </if>
+      <if test="drafterCode != null" >
+        DRAFTER_CODE,
+      </if>
+      <if test="draftTime != null" >
+        DRAFT_TIME,
+      </if>
+      <if test="reason != null" >
+        REASON,
+      </if>
+      <if test="notes != null" >
+        NOTES,
+      </if>
+      <if test="status != null" >
+        STATUS,
+      </if>
+      <if test="operator != null" >
+        OPERATOR,
+      </if>
+      <if test="operatorCode != null" >
+        OPERATOR_CODE,
+      </if>
+      <if test="operateOrgName != null" >
+        OPERATE_ORG_NAME,
+      </if>
+      <if test="operateOrgCode != null" >
+        OPERATE_ORG_CODE,
+      </if>
+      <if test="operateTime != null" >
+        OPERATE_TIME,
+      </if>
+      <if test="tSrvArrivesheetId != null" >
+        T_SRV_ARRIVESHEET_ID,
+      </if>
+      <if test="tSrvRepaymentId != null" >
+        T_SRV_REPAYMENT_ID,
+      </if>
+      <if test="tSrvWaybillSignResultId != null" >
+        T_SRV_WAYBILL_SIGN_RESULT_ID,
+      </if>
+      <if test="rfcNo != null" >
+        RFC_NO,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="waybillNo != null" >
+        #{waybillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="rfcType != null" >
+        #{rfcType,jdbcType=VARCHAR},
+      </if>
+      <if test="draftOrgName != null" >
+        #{draftOrgName,jdbcType=VARCHAR},
+      </if>
+      <if test="draftOrgCode != null" >
+        #{draftOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="drafter != null" >
+        #{drafter,jdbcType=VARCHAR},
+      </if>
+      <if test="drafterCode != null" >
+        #{drafterCode,jdbcType=VARCHAR},
+      </if>
+      <if test="draftTime != null" >
+        #{draftTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="reason != null" >
+        #{reason,jdbcType=VARCHAR},
+      </if>
+      <if test="notes != null" >
+        #{notes,jdbcType=VARCHAR},
+      </if>
+      <if test="status != null" >
+        #{status,jdbcType=VARCHAR},
+      </if>
+      <if test="operator != null" >
+        #{operator,jdbcType=VARCHAR},
+      </if>
+      <if test="operatorCode != null" >
+        #{operatorCode,jdbcType=VARCHAR},
+      </if>
+      <if test="operateOrgName != null" >
+        #{operateOrgName,jdbcType=VARCHAR},
+      </if>
+      <if test="operateOrgCode != null" >
+        #{operateOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="operateTime != null" >
+        #{operateTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="tSrvArrivesheetId != null" >
+        #{tSrvArrivesheetId,jdbcType=VARCHAR},
+      </if>
+      <if test="tSrvRepaymentId != null" >
+        #{tSrvRepaymentId,jdbcType=VARCHAR},
+      </if>
+      <if test="tSrvWaybillSignResultId != null" >
+        #{tSrvWaybillSignResultId,jdbcType=VARCHAR},
+      </if>
+      <if test="rfcNo != null" >
+        #{rfcNo,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.SignRfcEntity" >
+    update PKP.T_SRV_SIGN_RFC
+    <set >
+      <if test="waybillNo != null" >
+        WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="rfcType != null" >
+        RFC_TYPE = #{rfcType,jdbcType=VARCHAR},
+      </if>
+      <if test="draftOrgName != null" >
+        DRAFT_ORG_NAME = #{draftOrgName,jdbcType=VARCHAR},
+      </if>
+      <if test="draftOrgCode != null" >
+        DRAFT_ORG_CODE = #{draftOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="drafter != null" >
+        DRAFTER = #{drafter,jdbcType=VARCHAR},
+      </if>
+      <if test="drafterCode != null" >
+        DRAFTER_CODE = #{drafterCode,jdbcType=VARCHAR},
+      </if>
+      <if test="draftTime != null" >
+        DRAFT_TIME = #{draftTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="reason != null" >
+        REASON = #{reason,jdbcType=VARCHAR},
+      </if>
+      <if test="notes != null" >
+        NOTES = #{notes,jdbcType=VARCHAR},
+      </if>
+      <if test="status != null" >
+        STATUS = #{status,jdbcType=VARCHAR},
+      </if>
+      <if test="operator != null" >
+        OPERATOR = #{operator,jdbcType=VARCHAR},
+      </if>
+      <if test="operatorCode != null" >
+        OPERATOR_CODE = #{operatorCode,jdbcType=VARCHAR},
+      </if>
+      <if test="operateOrgName != null" >
+        OPERATE_ORG_NAME = #{operateOrgName,jdbcType=VARCHAR},
+      </if>
+      <if test="operateOrgCode != null" >
+        OPERATE_ORG_CODE = #{operateOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="operateTime != null" >
+        OPERATE_TIME = #{operateTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="tSrvArrivesheetId != null" >
+        T_SRV_ARRIVESHEET_ID = #{tSrvArrivesheetId,jdbcType=VARCHAR},
+      </if>
+      <if test="tSrvRepaymentId != null" >
+        T_SRV_REPAYMENT_ID = #{tSrvRepaymentId,jdbcType=VARCHAR},
+      </if>
+      <if test="tSrvWaybillSignResultId != null" >
+        T_SRV_WAYBILL_SIGN_RESULT_ID = #{tSrvWaybillSignResultId,jdbcType=VARCHAR},
+      </if>
+      <if test="rfcNo != null" >
+        RFC_NO = #{rfcNo,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR} and STATUS = #{oldStatus,jdbcType=VARCHAR}
+  </update>
+  
+  <select id="querySignRfcListByCondition" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.SignRfcEntity" >
+    select /*模块：接送货-反签收信息-根据运单号查询变更记录及部分详细信息*/
+    <include refid="Collect_Column_List" />
+    from PKP.T_SRV_SIGN_RFC signRfc 
+      inner join  pkp.t_srv_reverse_sign_detail detail
+      on signRfc.id = detail.t_srv_sign_rfc_id 
+    where signRfc.WAYBILL_NO =#{waybillNo}
+    AND signRfc.STATUS =#{status}
+    <if test="rfcType != null and rfcType != ''">
+    	AND signRfc.RFC_TYPE=#{rfcType}
+	</if>
+  </select>
+</mapper>

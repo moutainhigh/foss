@@ -1,0 +1,399 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.deppon.foss.module.pickup.predeliver.api.shared.dto.ArriveDeliverQueryDto">
+  
+  <select id="selectArriveDeliverListByParams" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.ArriveDeliverQueryDto" resultType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.ArriveDeliverDto">
+   select w.waybill_no waybillNo /*单号*/,
+       arr.arrivesheet_no arrivesheetNo /*到达联编号*/,
+       w.receive_method receiveMethod /*开单提货方式*/,
+       af.arrive_time arriveTime /*到达时间*/,
+       ws.in_stock_time inStockTime, /*入库时间*/
+       w.GOODS_NAME              cargoName /*货物名称*/,
+       w.insurance_amount /100          insuranceValue /*保险声明价值*/,
+       w.insurance_fee / 100            insuranceFee /*保价费*/,
+       PRODUCT.Name             productCode /*运输性质*/,
+       w.receive_customer_contact receiveCustomerContact /*收货人*/,
+       w.goods_qty_total goodsQtyTotal /*开单件数*/,
+       w.goods_weight_total goodsWeightTotal /*开单重量*/,
+       w.goods_volume_total goodsVolumeTotal /*开单体积*/,
+       w.cod_amount / 100 codAmount, /*代收货款*/
+       w.to_pay_amount / 100 toPayAmount, /*到付金额*/
+       af.settle_status settleStatus, /*是否已结清*/
+       w.receive_org_name receiveOrgCode, /*出发部门*/
+       bill.driver_name driverName, /*送货人或代理*/
+       w.BILL_TIME billTime, /*收货日期*/
+       w.receive_customer_prov_code receiveCustomerProvCode,
+       w.receive_customer_city_code receiveCustomerCityCode,
+       w.receive_customer_dist_code receiveCustomerDistCode,
+       w.RECEIVE_CUSTOMER_ADDRESS receiveCustomerAddress, /*收货人地址*/
+       w.RECEIVE_CUSTOMER_PHONE receiveCustomerPhone, /*收货人电话*/
+       w.RECEIVE_CUSTOMER_MOBILEPHONE receiveCustomerMobilePhone, /*收货人手机*/
+       af.arrive_goods_qty arriveGoodsQty, /*到达件数*/
+       af.RECEIVE_CUSTOMER_ADDRESS_NOTE receiveCustomerAddressNote,/*收货人地址备注*/
+       w.transport_type transportType, /*运输类型*/
+       /*库存状态*/
+       CASE
+         WHEN WS.STOCK_GOODS_QTY IS  NULL and (arr.status is null or arr.status = 'NEW') THEN
+          '未入库'
+         WHEN  WS.STOCK_GOODS_QTY IS NOT NULL
+			and (arr.status is null or arr.status in('NEW', 'REFUSE')) THEN
+          '库存中'
+          ELSE
+          '已出库'
+       END AS stockType,
+       DECODE(WS.STOCK_GOODS_QTY,null,'',#{endStockOrgName, jdbcType=VARCHAR}) orgCode, /*库存部门*/
+       DECODE(ws.STOCK_GOODS_QTY,NULL,0,ws.STOCK_GOODS_QTY) stockGoodsQty,/*库存件数*/
+       af.notification_result notificationResult, /*是否已经通知*/
+      DECODE(arr.deliveryman_name,'N/A','',arr.deliveryman_name)  deliveryMan, /*取货人*/
+      w.return_bill_type returnBillType, /*返单类型*/
+       pro.returnbill_status returnBillStatus, /*返单情况*/
+       CASE
+         WHEN af.arrange_goods_qty > 0 THEN
+          '是'
+         ELSE
+          '否'
+       END as isArrange, /*是否已排单*/
+       bill.deliverbill_no deliverbillNo, /*派送单单号*/
+       ARR.SIGN_TIME  signTime, /*签收时间*/
+       ARR.SITUATION situation,/*签收情况*/
+       arr.sign_note signNote,/*签收备注*/
+       w.DELIVERY_GOODS_FEE / 100 deliverGoodsFee, /*送货费*/
+       w.OTHER_FEE/ 100 otherFee,  /*其他费用*/
+       CASE
+         WHEN arr.status = 'SIGN' THEN
+          '是'
+         ELSE
+          '否'
+       END as isSign, /*是否签收*/
+      arr.DELIVER_REQUIRE deliverRequire, /*送货要求*/
+      w.pre_pay_amount/100 prePayAmount,/*预付金额*/
+      bill.operate_time operateTime,/*送货时间*/
+      w.TARGET_ORG_CODE targetOrgCode,/*目的站*/
+      bill.status deliverbillStatus,/*派送情况*/
+     w.total_fee/100 codToPayAmount  /*收货总额=预付金额+到付金额  已和游春文确认*/
+  from pkp.t_srv_waybill w
+ inner join pkp.t_srv_actual_freight af
+    on w.waybill_no = af.waybill_no
+ left join tfr.t_opt_waybill_stock ws
+    on af.waybill_no = ws.waybill_no
+    and ws.org_code = #{endStockOrgCode,jdbcType=VARCHAR}
+    <!--add by chenjunying DMANA-9499 判断保留之前的条件，新加多库区查询条件-->
+    <if test="goodsAreaCode!= null and goodsAreaCode !=''">
+    and ws.GOODS_AREA_CODE = #{goodsAreaCode,jdbcType=VARCHAR}
+    </if>
+	<if test="goodsAreaCodes!= null and goodsAreaCodes.size>0">
+		and ws.GOODS_AREA_CODE  in
+		<foreach collection="goodsAreaCodes" open="(" close=")" separator=","
+			item="mgoodsAreaCode">
+       	      #{mgoodsAreaCode,jdbcType=VARCHAR}
+		</foreach>
+    </if>
+  left join pkp.t_srv_arrivesheet arr
+    on arr.waybill_no = af.waybill_no
+   and arr.active = 'Y'
+   AND ARR.DESTROYED = 'N'
+  left join pkp.t_srv_deliverbill_detail detail
+    on arr.waybill_no = detail.waybill_no
+ 	 and detail.arrivesheet_no = arr.arrivesheet_no
+  left join pkp.t_srv_returnbill_process pro
+    on af.waybill_no = pro.waybill_no
+  left join pkp.t_srv_deliverbill bill
+   on bill.id = detail.t_srv_deliverbill_id 
+  inner join pkp.T_SRV_PRODUCT PRODUCT
+   on PRODUCT.Code = w.product_code
+  and PRODUCT.Active = 'Y'
+ WHERE W.ACTIVE = #{active, jdbcType=VARCHAR}
+    <include refid="selectByParams_Where" />
+  </select>
+  <select id="selectArriveDeliverCountByParams" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.ArriveDeliverQueryDto" resultType="Long">
+   select 
+      count(1)
+  from pkp.t_srv_waybill w
+ inner join pkp.t_srv_actual_freight af
+    on w.waybill_no = af.waybill_no
+     <if test ="inStockSituation =='NOT_IN_STOCK' or inStockSituation =='IN_STOCK' or (inStockTimeStart!=null and inStockTimeStart!='') or (inStockTimeEnd!=null and inStockTimeEnd!='')"> 
+ 	left join tfr.t_opt_waybill_stock ws
+    on af.waybill_no = ws.waybill_no
+    and ws.org_code = #{endStockOrgCode,jdbcType=VARCHAR}
+    <!--add by chenjunying DMANA-9499 判断保留之前的条件，新加多库区查询条件-->
+    <if test="goodsAreaCode!= null and goodsAreaCode !=''">
+    and ws.GOODS_AREA_CODE = #{goodsAreaCode,jdbcType=VARCHAR}
+    </if>
+	<if test="goodsAreaCodes!= null and goodsAreaCodes.size>0">
+		and ws.GOODS_AREA_CODE  in
+		<foreach collection="goodsAreaCodes" open="(" close=")" separator=","
+			item="mgoodsAreaCode">
+       	      #{mgoodsAreaCode,jdbcType=VARCHAR}
+		</foreach>
+    </if>
+     </if>
+  left join pkp.t_srv_arrivesheet arr
+    on arr.waybill_no = af.waybill_no
+   and arr.active = 'Y'
+   AND ARR.DESTROYED = 'N'
+   <if test="(deliverStatus != null and deliverStatus != '') or inStockSituation =='OUT_STOCK' or( operateTimeStart!=null and operateTimeStart!='') or (operateTimeEnd!=null and operateTimeEnd!='')">
+  left join pkp.t_srv_deliverbill_detail detail
+    on arr.waybill_no = detail.waybill_no
+ 	 and detail.arrivesheet_no = arr.arrivesheet_no
+  left join pkp.t_srv_deliverbill bill
+   on bill.id = detail.t_srv_deliverbill_id
+   </if>
+   <!-- 返单状态 -->
+   <if test="returnbillStatus != null and returnbillStatus != ''">
+   left join pkp.t_srv_returnbill_process pro
+    on af.waybill_no = pro.waybill_no
+   </if>
+ WHERE W.ACTIVE = #{active, jdbcType=VARCHAR}
+    <include refid="selectByParams_Where" />
+  </select>
+  <select id="selectArriveDeliverTotalByParams" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.ArriveDeliverQueryDto" resultType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.ArriveDeliverTotalDto">
+   select count(total.id) totalVotes, /*总票数*/
+       sum(total.goods_qty_total) goodsQtyTotal, /*总件数*/
+       sum(total.goods_weight_total) goodsWeightTotal, /*总重量（千克）*/
+       sum(total.goods_volume_total) goodsVolumeTotal, /*总体积（立方）*/
+       sum(total.arrive_goods_qty) arrivegoodsQtyTotal, /*到达总件数*/
+       sum(total.stock_goods_qty) stockgoodsQtyTotal, /*库存总件数*/
+       sum(total.prePayAmountTotal) prePayAmountTotal, /*预付金额*/
+       sum(total.toPayAmountTotal) toPayAmountTotal, /*到付金额（总）*/
+       sum(total.codAmountTotal) codAmountTotal /*代收货款（总）*/
+from 
+ (select distinct w.id , /*总票数*/
+       w.goods_qty_total , /*总件数*/
+       w.goods_weight_total , /*总重量（千克）*/
+       w.goods_volume_total , /*总体积（立方）*/
+       af.arrive_goods_qty , /*到达总件数*/
+       ws.stock_goods_qty , /*库存总件数*/
+       w.pre_pay_amount / 100 prePayAmountTotal, /*预付金额*/
+       w.to_pay_amount / 100 toPayAmountTotal, /*到付金额（总）*/
+       w.cod_amount / 100 codAmountTotal /*代收货款（总）*/
+          from pkp.t_srv_waybill w
+         inner join pkp.t_srv_actual_freight af on w.waybill_no =af.waybill_no
+          left join pkp.t_srv_arrivesheet arr on arr.waybill_no =af.waybill_no
+                 and arr.active = 'Y' AND ARR.DESTROYED = 'N'
+           <if test="(deliverStatus != null and deliverStatus != '') or inStockSituation =='OUT_STOCK' or( operateTimeStart!=null and operateTimeStart!='') or (operateTimeEnd!=null and operateTimeEnd!='')">
+          left join pkp.t_srv_deliverbill_detail detail on arr.waybill_no =detail.waybill_no
+                      and detail.arrivesheet_no =arr.arrivesheet_no
+          left join pkp.t_srv_deliverbill bill on bill.id = detail.t_srv_deliverbill_id
+           </if>
+          left join tfr.t_opt_waybill_stock ws on af.waybill_no = ws.waybill_no
+                     and ws.org_code =#{endStockOrgCode,jdbcType=VARCHAR}
+                     <!--add by chenjunying DMANA-9499 判断保留之前的条件，新加多库区查询条件-->
+    				 <if test="goodsAreaCode!= null and goodsAreaCode !=''">
+   					 and ws.GOODS_AREA_CODE = #{goodsAreaCode,jdbcType=VARCHAR}
+   					 </if>
+                     <if test="goodsAreaCodes!= null and goodsAreaCodes.size>0">
+						and ws.GOODS_AREA_CODE  in
+						<foreach collection="goodsAreaCodes" open="(" close=")" separator=","
+							item="mgoodsAreaCode">
+				       	      #{mgoodsAreaCode,jdbcType=VARCHAR}
+						</foreach>
+				    </if>
+           <!-- 返单状态 -->
+		  <if test="returnbillStatus != null and returnbillStatus != ''">
+          left join pkp.t_srv_returnbill_process pro on af.waybill_no = pro.waybill_no
+          </if>
+                     where w.active = #{active, jdbcType=VARCHAR}
+                     <include refid="selectByParams_Where" />
+            ) total
+    
+  </select>
+	<sql id="selectByParams_Where">
+		<choose>
+			<when test="endStockOrgCode != null and endStockOrgCode != ''"><!-- -->
+				and af.end_stock_org_code = #{endStockOrgCode,jdbcType=VARCHAR}
+		    </when>
+			<otherwise>
+				and af.end_stock_org_code = ''
+			</otherwise>
+		</choose>
+  		<choose>
+			<when test="waybillNo != null and waybillNo != ''"><!-- 运单号-->
+				AND w.waybill_no = #{waybillNo, jdbcType=VARCHAR}
+		    </when>
+			<otherwise>
+				<include refid="select_otherParams" />
+			</otherwise>
+		</choose>
+		<!-- 当前登录部门-->
+		<choose>
+			<when test="lastLoadOrgCode != null and lastLoadOrgCode != ''"><!-- -->
+				AND w.last_load_org_code = #{lastLoadOrgCode, jdbcType=VARCHAR}
+		    </when>
+			<otherwise>
+				AND w.last_load_org_code = ''
+			</otherwise>
+		</choose>
+	</sql>
+	<sql id="select_otherParams">
+  		<!-- 收货人姓名* -->
+		<if test="receiveCustomerContact != null and receiveCustomerContact != ''">	
+			AND w.receive_customer_contact = #{receiveCustomerContact, jdbcType=VARCHAR}
+		</if>
+		<!-- 地址 -->
+		<if test="receiveCustomerAddress != null and receiveCustomerAddress != ''">	
+			AND w.receive_customer_address like '%'||#{receiveCustomerAddress, jdbcType=VARCHAR} ||'%'
+		</if>
+		<!-- 电话-->
+		<if test="receiveCustomerPhone != null and receiveCustomerPhone != ''">	
+			AND w.receive_customer_phone = #{receiveCustomerPhone, jdbcType=VARCHAR}
+		</if>
+		<!-- 手机 -->
+		<if test="receiveCustomerMobilephone != null and receiveCustomerMobilephone != ''">	
+			AND w.receive_customer_mobilephone = #{receiveCustomerMobilephone, jdbcType=VARCHAR}
+		</if>
+		<!-- 目的站 -->
+		<if test="targetOrgCode != null and targetOrgCode != ''">	
+			AND w.TARGET_ORG_CODE like  '%'|| #{targetOrgCode, jdbcType=VARCHAR} ||'%'
+		</if>
+		<!-- 派送情况 -->
+		<if test="deliverStatus != null and deliverStatus != ''">	
+			AND bill.status = #{deliverStatus, jdbcType=VARCHAR}
+		</if>
+		<!-- 返单状态 -->
+		<if test="returnbillStatus != null and returnbillStatus != ''">	
+			AND pro.returnbill_status = #{returnbillStatus, jdbcType=VARCHAR}
+		</if>
+		<!-- 返单类型 -->
+		<if test="returnbillType != null and returnbillType != ''">	
+			AND w.return_bill_type = #{returnbillType, jdbcType=VARCHAR}
+		</if>
+		<!-- 入库情况  未入库-->
+		<if test="inStockSituation =='NOT_IN_STOCK'">	
+			AND WS.STOCK_GOODS_QTY IS  NULL
+			and (arr.status is null or arr.status = 'NEW')
+		</if> 
+		<!-- 入库情况  库存中-->
+		<if test="inStockSituation =='IN_STOCK'">	
+			AND WS.STOCK_GOODS_QTY IS NOT NULL
+			and (arr.status is null or arr.status in('NEW', 'REFUSE'))
+		</if> 
+		<!-- 入库情况  已出库-->
+		<if test="inStockSituation =='OUT_STOCK'">	
+			AND (arr.status = 'SIGN' 
+				or bill.status in ('LOADED', 'CONFIRMED', 'PDA_DOWNLOADED')) 
+		</if> 
+		<!-- 签收情况（已签收、未签收）-->
+		<if test="isSign =='Yes'">	
+			AND arr.status = 'SIGN'
+		</if>
+		<!-- 签收情况（已签收、未签收）-->
+		<if test="isSign =='No'">	
+			AND arr.status != 'SIGN'
+		</if>
+		<!-- 提货方式（全部、派送和自提）-->
+		<if test="receiveMethod != null and receiveMethod != ''">	
+			AND w.RECEIVE_METHOD like '%'|| #{receiveMethod, jdbcType=VARCHAR}||'%'
+		</if>
+		<!-- 收货时间起 -->
+  		<if test = "billTimeStart!=null and billTimeStart!=''">
+    		<![CDATA[and w.bill_time >= #{billTimeStart,jdbcType=TIMESTAMP}]]>
+    	</if>
+    	<!-- 收货时间止 -->
+    	<if test = "billTimeEnd!=null and billTimeEnd!=''">
+    		<![CDATA[and w.bill_time <= #{billTimeEnd,jdbcType=TIMESTAMP}]]>
+    	</if>
+		
+		<!-- 到达时间起 -->
+  		<if test = "arriveTimeStart!=null and arriveTimeStart!=''">
+    		<![CDATA[and af.arrive_time >= #{arriveTimeStart,jdbcType=TIMESTAMP}]]>
+    	</if>
+    	<!-- 到达时间止 -->
+    	<if test = "arriveTimeEnd!=null and arriveTimeEnd!=''">
+    		<![CDATA[and af.arrive_time <= #{arriveTimeEnd,jdbcType=TIMESTAMP}]]>
+    	</if>
+		
+    	<!-- 入库时间起 -->
+  		<if test = "inStockTimeStart!=null and inStockTimeStart!=''">
+    		<![CDATA[and ws.in_stock_time >= #{inStockTimeStart,jdbcType=TIMESTAMP}]]>
+    	</if>
+    	<!-- 入库时间止 -->
+    	<if test = "inStockTimeEnd!=null and inStockTimeEnd!=''">
+    		<![CDATA[and ws.in_stock_time <= #{inStockTimeEnd,jdbcType=TIMESTAMP}]]>
+    	</if>
+    	<!-- 送货时间起 -->
+  		<if test = "operateTimeStart!=null and operateTimeStart!=''">
+    		<![CDATA[and bill.operate_time >= #{operateTimeStart,jdbcType=TIMESTAMP}]]>
+    	</if>
+    	<!-- 送货时间止 -->
+    	<if test = "operateTimeEnd!=null and operateTimeEnd!=''">
+    		<![CDATA[and bill.operate_time <= #{operateTimeEnd,jdbcType=TIMESTAMP}]]>
+    	</if>
+    	<!-- 签收时间起 -->
+  		<if test = "signTimeStart!=null and signTimeStart!=''">
+    		<![CDATA[and arr.sign_time >= #{signTimeStart,jdbcType=TIMESTAMP}]]>
+    	</if>
+    	<!-- 签收时间止-->
+    	<if test = "signTimeEnd!=null and signTimeEnd!=''">
+    		<![CDATA[and arr.sign_time <= #{signTimeEnd,jdbcType=TIMESTAMP}]]>
+    		 and arr.status = 'SIGN'
+    		<!-- 收货时间起 -->
+  			<if test = "billTimeStart==null or billTimeStart==''">
+    			<![CDATA[and w.bill_time >= #{signTimeEnd,jdbcType=TIMESTAMP}-365]]>
+    			<![CDATA[and w.bill_time <= #{signTimeEnd,jdbcType=TIMESTAMP}]]>
+    		</if>
+    	</if>
+    	<!-- 运输性质  -->
+		<if test="productCode != null and productCode != ''">	
+			AND w.product_code = #{productCode, jdbcType=VARCHAR}
+		</if>
+		<!-- 运输类型 -->
+		<if test="transportType != null and transportType != ''">	
+			AND w.TRANSPORT_TYPE = #{transportType, jdbcType=VARCHAR}
+		</if>
+		<!-- 是否经过到达部门 -->
+		<if test="isPassOwnDepartment != null and isPassOwnDepartment != '' and isPassOwnDepartment == 'NO'">	
+			AND w.IS_PASS_OWN_DEPARTMENT = 'N'
+			AND W.RECEIVE_ORG_CODE=arr.operate_org_code
+		</if>
+		<!-- 结清状态 -->
+		<if test="settleStatus != null and settleStatus != ''">	
+			AND af.settle_status = #{settleStatus, jdbcType=VARCHAR}
+		</if>
+		<choose>
+			<when test="situation != null and situation != '' and situation=='UNNORMAL_SIGN'"><!--签收情况 -->
+				AND arr.status = 'SIGN'
+				and arr.situation not in ('NORMAL_SIGN','PARTIAL_SIGN','UNNORMAL_ABANDONGOODS')
+		    </when>
+		    <when test="situation != null and situation != '' "><!--签收情况 -->
+		   		AND arr.status = 'SIGN'
+				AND arr.situation = #{situation, jdbcType=VARCHAR}
+		    </when>
+			<otherwise>
+			</otherwise>
+		</choose>
+		<choose>
+			<when test="signStatus != null and signStatus != '' and signStatus=='SIGN_STATUS_ALL'"><!--签收状态 -全部签收-->
+				AND arr.status = 'SIGN'
+				and arr.arrive_sheet_goods_qty =arr.sign_goods_qty
+		    </when>
+		    <when test="signStatus != null and signStatus != '' and signStatus=='SIGN_STATUS_PARTIAL'"><!--签收状态-部分签收 -->
+		   		AND arr.status = 'SIGN'
+				<![CDATA[AND arr.arrive_sheet_goods_qty >arr.sign_goods_qty]]>
+		    </when>
+		    <when test="signStatus != null and signStatus != '' and signStatus=='SIGN_STATUS_NO'"><!--签收状态-未签收 -->
+		   		AND arr.status = 'REFUSE'
+		    </when>
+			<otherwise>
+			</otherwise>
+		</choose>
+    	<!-- 送货时间起止不为空-->
+  		<if test = " (operateTimeStart!=null and operateTimeStart!='') or (operateTimeEnd!=null and operateTimeEnd!='')">
+    		<if test="deliverStatusList!= null and deliverStatusList.size>0">
+					and bill.status in
+					<foreach collection="deliverStatusList" open="(" close=")" separator=","
+						item="status">
+		        	      #{status,jdbcType=VARCHAR}
+					</foreach>
+		    </if>
+    	</if>
+    	<if test="signOperateOrgCodes!= null and signOperateOrgCodes.size>0">
+					and arr.operate_org_code in
+					<foreach collection="signOperateOrgCodes" open="(" close=")" separator=","
+						item="orgCode">
+		        	      #{orgCode,jdbcType=VARCHAR}
+					</foreach>
+		    </if>
+	</sql>
+</mapper>

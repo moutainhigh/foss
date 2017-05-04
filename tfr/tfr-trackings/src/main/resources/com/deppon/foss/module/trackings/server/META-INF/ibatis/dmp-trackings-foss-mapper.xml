@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.trackings.DMPTrackingsToFoss" >
+  <resultMap id="DMPSynTrackingMap" type="com.deppon.foss.module.trackings.api.shared.domain.DMPSynTrackingEntity">
+  	<id column="ID" property="id" jdbcType="VARCHAR"/>
+  	<result column="WAYBILL_NO" property="wayBillNo" jdbcType="VARCHAR"/>
+  	<result column="CURRENT_STATUS" property="currentStatus" jdbcType="VARCHAR"/>
+  	<result column="OPERATE_ORG_NAME" property="operateOrgName" jdbcType="VARCHAR"/>
+  	<result column="OPERATOR_NAME" property="operateName" jdbcType="VARCHAR"/>
+  	<result column="OPERATOR_TYPE_NAME" property="operateTypeName" jdbcType="VARCHAR"/>
+  	<result column="OPERATOR_TIME" property="operateTime" jdbcType="TIMESTAMP"/>
+  	<result column="OPERATOR_NUMBER" property="operateNumber" jdbcType="INTEGER"/>
+  	<result column="NOTES" property="notes" jdbcType="VARCHAR"/>
+  </resultMap>
+  <sql id="Trackings_Column_List">
+   	   ID,
+   	   WAYBILL_NO,
+       CURRENT_STATUS,
+       OPERATE_ORG_NAME,
+       OPERATOR_NAME,
+       OPERATOR_TYPE_NAME,
+       OPERATOR_TIME,
+       OPERATOR_NUMBER,
+       NOTES 
+   	</sql>
+  <insert id="addSynTracking" parameterType="com.deppon.foss.module.trackings.api.shared.domain.DMPSynTrackingEntity">
+  	insert into TFR.T_OPT_TRACK_DMPSYN(
+		ID,
+		WAYBILL_NO,
+		CURRENT_STATUS,
+		OPERATE_ORG_NAME,
+		OPERATOR_NAME,
+		OPERATOR_TYPE_NAME,
+		OPERATOR_TIME,
+		OPERATOR_NUMBER,
+		NOTES
+		)
+		values
+		(#{id,jdbcType=VARCHAR},
+		 #{wayBillNo,jdbcType=VARCHAR},
+		 #{currentStatus,jdbcType=VARCHAR},
+		 #{operateOrgName,jdbcType=VARCHAR},
+		 #{operateName,jdbcType=VARCHAR},
+		 #{operateTypeName,jdbcType=VARCHAR},
+		 #{operateTime,jdbcType=TIMESTAMP},
+		 #{operateNumber,jdbcType=INTEGER},
+		 #{notes,jdbcType=VARCHAR}
+		 )
+  </insert>
+	<select id="querySynTracking" parameterType="com.deppon.foss.module.trackings.api.shared.domain.DMPSynTrackingEntity" resultMap="DMPSynTrackingMap">
+		select 
+			 <include refid="Trackings_Column_List"/>
+			from TFR.T_OPT_TRACK_DMPSYN 
+			where WAYBILL_NO= #{wayBillNo,jdbcType=VARCHAR}
+			  and CURRENT_STATUS=#{currentStatus,jdbcType=VARCHAR}
+			order by OPERATOR_TIME desc
+	</select>
+	<select id="querySynTrackingsByWayBillNo" parameterType="com.deppon.foss.module.trackings.api.shared.domain.DMPSynTrackingEntity" resultMap="DMPSynTrackingMap">
+		select 
+			 <include refid="Trackings_Column_List"/> 
+			from TFR.T_OPT_TRACK_DMPSYN 
+			where WAYBILL_NO= #{wayBillNo,jdbcType=VARCHAR}
+			order by OPERATOR_TIME desc
+	</select>
+	<!-- 删除轨迹信息  -->
+	<delete id="deleteSynTracking" parameterType="com.deppon.foss.module.trackings.api.shared.domain.DMPSynTrackingEntity">
+		delete from TFR.T_OPT_TRACK_DMPSYN s 
+		where s.WAYBILL_NO = #{wayBillNo,jdbcType=VARCHAR}
+		and s.CURRENT_STATUS=#{currentStatus,jdbcType=VARCHAR}
+	</delete>
+</mapper>

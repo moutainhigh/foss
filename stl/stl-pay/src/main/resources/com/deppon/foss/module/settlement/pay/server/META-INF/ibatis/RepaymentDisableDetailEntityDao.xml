@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.stl.RepaymentDisableDetailEntityDao" >
+  <resultMap id="repaymentDisableDetailEntityResultMap" type="com.deppon.foss.module.settlement.pay.api.shared.domain.RepaymentDisableDetailEntity" >
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="REPAYMENT_APPLICATION_ID" property="repaymentApplicationId" jdbcType="VARCHAR" />
+		<result column="WRITEOFF_BILL_NO" property="writeOffBillNo" jdbcType="VARCHAR" />
+		<result column="BEGIN_NO" property="repaymentNo" jdbcType="VARCHAR" />
+		<result column="END_NO" property="receviceNo" jdbcType="VARCHAR" />
+		<result column="END_WAYBILL_NO" property="receviceWaybillNo" jdbcType="VARCHAR" />
+		<result column="STATEMENT_BILL_NO" property="statementNo" jdbcType="VARCHAR" />
+		<result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+		<result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+		<result column="AMOUNT" property="amount" jdbcType="DECIMAL" />
+		<result column="WRITEOFF_TYPE" property="writeoffType" jdbcType="VARCHAR" />
+		<result column="WRITEOFF_TIME" property="writeoffTime" jdbcType="TIMESTAMP" />
+		<result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+		<result column="ORG_NAME" property="orgName" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="IS_INIT" property="isInit" jdbcType="CHAR" />
+	</resultMap>
+	<sql id="Base_Column_List" >
+    ID, REPAYMENT_APPLICATION_ID, WRITEOFF_BILL_NO, BEGIN_NO, END_NO ,END_WAYBILL_NO,
+    STATEMENT_BILL_NO, CUSTOMER_CODE, CUSTOMER_NAME, AMOUNT/100 AMOUNT,  WRITEOFF_TYPE, WRITEOFF_TIME,
+    ORG_CODE, ORG_NAME ,CREATE_TIME ,MODIFY_TIME
+  	</sql>
+  	<insert id="addDisableDetail" parameterType="com.deppon.foss.module.settlement.pay.api.shared.domain.RepaymentDisableDetailEntity">
+  		INSERT /*新增还款单作废申请明细*/ INTO STL.T_STL_REPAYMENT_DISDETAIL
+  		(ID, REPAYMENT_APPLICATION_ID, WRITEOFF_BILL_NO, BEGIN_NO, END_NO ,END_WAYBILL_NO,
+    	STATEMENT_BILL_NO, CUSTOMER_CODE, CUSTOMER_NAME, AMOUNT,  WRITEOFF_TYPE, WRITEOFF_TIME,
+   	    ORG_CODE, ORG_NAME,CREATE_TIME ,MODIFY_TIME) 
+  		VALUES
+  		(#{id,jdbcType=VARCHAR},#{repaymentApplicationId,jdbcType=VARCHAR},#{writeOffBillNo,jdbcType=VARCHAR},#{repaymentNo,jdbcType=VARCHAR},
+  		#{receviceNo,jdbcType=VARCHAR},#{receviceWaybillNo,jdbcType=VARCHAR},#{statementNo,jdbcType=VARCHAR},#{customerCode,jdbcType=VARCHAR},
+  		#{customerName,jdbcType=VARCHAR},#{amount,jdbcType=VARCHAR}*100,#{writeoffType,jdbcType=VARCHAR},
+  		#{writeoffTime,jdbcType=TIMESTAMP},#{orgCode,jdbcType=VARCHAR},#{orgName,jdbcType=TIMESTAMP},#{createTime,jdbcType=TIMESTAMP},#{modifyTime,jdbcType=TIMESTAMP}
+  		)
+  	</insert>
+  	<select id="queryDisableDetailByDto" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillRepaymentDisableDto"
+  		resultMap="repaymentDisableDetailEntityResultMap"
+  	>
+  		SELECT /**查询还款单作废明细*/
+  		<include refid="Base_Column_List"/>
+  		FROM STL.T_STL_REPAYMENT_DISDETAIL
+  		<where>
+  		<if test="repaymentNo !=null and repaymentNo != ''">
+  			AND BEGIN_NO = #{repaymentNo,jdbcType=VARCHAR}
+  		</if>
+  		<if test="detailId != null and detailId !=''">
+  		    AND ID = #{detailId,jdbcType=VARCHAR}
+  		</if>
+  		<if test="applyId != null and applyId !=''">
+  			AND REPAYMENT_APPLICATION_ID = #{applyId,jdbcType=VARCHAR}
+  		</if>
+  		<if test="active !=null and active !=''">
+  			AND ACTIVE = #{active,jdbcType=VARCHAR}
+  		</if>
+  		</where>
+  	</select>
+  	<update id="updateDisableDetailByDto" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillRepaymentDisableDto">
+  		UPDATE  /**更新还款单作废明细*/
+  		STL.T_STL_REPAYMENT_DISDETAIL
+  		<set>
+  			ACTIVE = #{active,jdbcType=VARCHAR}
+  		</set>
+  		WHERE REPAYMENT_APPLICATION_ID IN
+  		<foreach collection="applyIDs" item="item" index="index" open="(" close=")" separator=",">
+  			#{item,jdbcType=VARCHAR}
+  		</foreach>
+  	</update>
+</mapper>

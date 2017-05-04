@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.deppon.foss.module.pickup.predeliver.api.server.dao.IHandoverbillReturnDao" >
+	
+	<resultMap id="BaseResultMap" type="com.deppon.foss.module.pickup.predeliver.api.shared.domain.VisibleHandBillReturnEntity" >
+    <result column="CREATE_DATE" property="createDate" jdbcType="TIMESTAMP" />
+    <result column="RETURN_REASON" property="returnReason" jdbcType="VARCHAR" />
+    <result column="RETURN_REASON_NOTES" property="returnReasonNotes" jdbcType="VARCHAR" />
+    <result column="CREATER_CODE" property="createrCode" jdbcType="VARCHAR" />
+    <result column="CREATER_NAME" property="createrName" jdbcType="VARCHAR" />
+    <result column="CREATE_ORG_CODE" property="createOrgCode" jdbcType="VARCHAR" />
+    <result column="CREATE_ORG_NAME" property="createOrgName" jdbcType="VARCHAR" />
+   </resultMap>
+   
+	<!-- 新增退回记录 -->
+	<insert id="insertHandBillReturn" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.domain.NotificationEntity" >
+    insert into PKP.T_SRV_HANDOVERBILL_RETURN
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="waybillNo != null" >
+        WAYBILL_NO,
+      </if>
+      <if test="returnReason != null" >
+        RETURN_REASON,
+      </if>
+      <if test="returnReasonNotes != null" >
+        RETURN_REASON_NOTES,
+      </if>
+      <if test="createrCode != null" >
+        CREATER_CODE,
+      </if>
+      <if test="createrName != null" >
+        CREATER_NAME,
+      </if>
+      <if test="createOrgCode != null" >
+        CREATE_ORG_CODE,
+      </if>
+      <if test="createOrgName != null" >
+        CREATE_ORG_NAME,
+      </if>
+      <if test="notes != null" >
+        NOTES,
+      </if>
+      <if test="createDate != null" >
+        CREATE_DATE,
+      </if>
+      <if test="modifyDate != null" >
+        MODIFY_DATE,
+      </if>
+      <if test="active != null" >
+        ACTIVE,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="waybillNo != null" >
+        #{waybillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="returnReason != null" >
+        #{returnReason,jdbcType=VARCHAR},
+      </if>
+      <if test="returnReasonNotes != null" >
+        #{returnReasonNotes,jdbcType=DECIMAL},
+      </if>
+      <if test="createrCode != null" >
+        #{createrCode,jdbcType=VARCHAR},
+      </if>
+      <if test="createrName != null" >
+        #{createrName,jdbcType=VARCHAR},
+      </if>
+      <if test="createOrgCode != null" >
+        #{createOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="createOrgName != null" >
+        #{createOrgName,jdbcType=VARCHAR},
+      </if>
+      <if test="notes != null" >
+        #{notes,jdbcType=VARCHAR},
+      </if>
+      <if test="createDate != null" >
+				#{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifyDate != null" >
+				 #{modifyDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="active != null" >
+      	 #{active,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+	
+	<!-- 是否退回记录 -->
+	<select id="selectIsHandBillReturn" resultType="String" parameterType="java.util.Map">
+		select /*模块：接送货-可视化排单-查询是否存在退回记录*/
+			  ren.ID 
+		from pkp.T_SRV_HANDOVERBILL_RETURN ren
+		 where ren.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+			and ren.ACTIVE='Y'
+	</select>
+	
+	<!-- 更新待排运单退回记录表 -->
+	<update id="updateHandBillReturn"
+		parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.domain.NotificationEntity">
+		update pkp.T_SRV_HANDOVERBILL_RETURN ren
+			set ren.ACTIVE = #{active,jdbcType=VARCHAR},
+					ren.MODIFY_DATE = sysdate
+		where ren.id = #{id,jdbcType=VARCHAR}
+	</update>
+	<!-- 根据运单号查询退回记录 -->
+	<select id="queryHandBillReturnByWaybillNo" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.domain.VisibleHandBillReturnEntity" resultMap="BaseResultMap">
+		select /*模块：接送货-可视化排单-查询退回记录列表*/
+			  ren.CREATE_DATE,ren.RETURN_REASON,ren.RETURN_REASON_NOTES,ren.CREATER_CODE,ren.CREATER_NAME,
+			  ren.CREATE_ORG_CODE,ren.CREATE_ORG_NAME
+		from pkp.T_SRV_HANDOVERBILL_RETURN ren
+		 where 1=1
+		  	<if test=" waybillNo != null  and waybillNo != ''  ">
+                and ren.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+            </if>
+		order by ren.CREATE_DATE desc
+	</select>
+</mapper>  

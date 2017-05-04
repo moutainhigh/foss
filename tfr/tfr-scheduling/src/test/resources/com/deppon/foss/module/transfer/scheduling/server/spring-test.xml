@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://www.springframework.org/schema/jee 
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+			http://www.springframework.org/schema/aop 
+			http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">
+	
+	<!-- 数据源 -->
+	<bean id="dataSource"
+		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver" />
+		<property name="url" value="jdbc:oracle:thin:@192.168.10.119:1521:fossdb" />
+		<property name="username" value="tfr" />
+		<property name="password" value="fossdev" />
+	</bean>
+
+	<!-- JDBC模版 -->
+	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+		<constructor-arg ref="dataSource" />
+	</bean>
+
+	<!-- 数据连接管理 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<!-- 事务注解支持 -->
+	<tx:annotation-driven transaction-manager="transactionManager" />
+	<aop:config proxy-target-class="true"></aop:config>
+
+	<!-- myBatis文件 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="configLocation"
+			value="/com/deppon/foss/module/transfer/scheduling/server/mybatis.xml" />
+		<!-- 正式测试环境路径 -->
+		<property name="mapperLocations"
+			value="classpath*:com/deppon/**/META-INF/ibatis/*-mapper.xml" />
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<context:annotation-config />
+	<tx:annotation-driven/>
+	<context:component-scan base-package="com.deppon.foss.module.transfer.scheduling" />
+
+	<bean id="orgAdministrativeInfoService" class="com.deppon.foss.module.base.baseinfo.server.service.impl.OrgAdministrativeInfoService"/>
+	<bean id="transportationPathDao"	class="com.deppon.foss.module.transfer.scheduling.server.dao.impl.TransportationPathDao" />
+    <bean id="pathDetailDao"	class="com.deppon.foss.module.transfer.scheduling.server.dao.impl.PathDetailDao" />
+	<bean id="calculateTransportPathService" class="com.deppon.foss.module.transfer.scheduling.server.service.impl.CalculateTransportPathService">
+		<property name="transportationPathDao" ref="transportationPathDao"/>
+		<property name="signInTimeInterval" value="2"/>
+		<property name="unsignInTimeInterval" value="7"/>
+		<property name="invalidTimeInterval" value="7"/>
+		<property name="pathDetailDao" ref="pathDetailDao"/>
+		<property name="orgAdministrativeInfoService" ref="orgAdministrativeInfoService"/>
+		<property name="waybillManagerService" ref="waybillManagerService"/>
+		<property name="freightRouteService" ref="freightRouteService"/>
+	</bean>
+	<bean id="waybillDao" class="com.deppon.foss.module.pickup.waybill.server.dao.impl.WaybillDao"/>
+	<bean id="waybillManagerService" class="com.deppon.foss.module.pickup.waybill.server.service.impl.WaybillManagerService">
+		<property name="waybillDao" ref="waybillDao"/>
+	</bean>
+	<bean id="freightRouteLineDao" class="com.deppon.foss.module.base.baseinfo.server.dao.impl.FreightRouteLineDao"/>
+	<bean id="freightRouteService" class="com.deppon.foss.module.base.baseinfo.server.service.impl.FreightRouteService">
+		<property name="freightRouteLineDao" ref="freightRouteLineDao"/>
+	</bean>
+	<bean id="changePathDao" class="com.deppon.foss.module.transfer.scheduling.server.dao.impl.ChangePathDao"/>
+
+	<!-- 获取外请车信息和更新外请车状态Service -->
+	<bean id="inviteVehicleInfoService" class="com.deppon.foss.module.transfer.scheduling.server.service.impl.InviteVehicleInfoService" scope="prototype">
+		<property name="inviteVehicleInfoDao" ref="inviteVehicleInfoDao"></property>
+	</bean>
+	
+	<!-- 获取外请车信息和更新外请车状态Dao -->
+	<bean id="inviteVehicleInfoDao" class="com.deppon.foss.module.transfer.scheduling.server.dao.impl.InviteVehicleInfoDao" scope="prototype">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+	
+	<bean id="passInviteApplyDao" class="com.deppon.foss.module.transfer.scheduling.server.dao.impl.PassInviteApplyDao" scope="prototype">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+	
+	<bean id="inviteVehicleDao" class="com.deppon.foss.module.transfer.scheduling.server.dao.impl.InviteVehicleDao" scope="prototype">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+	
+	<bean id="truckDepartPlanDetailDao" class="com.deppon.foss.module.transfer.scheduling.server.dao.impl.TruckDepartPlanDetailDao" scope="prototype">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+
+</beans>

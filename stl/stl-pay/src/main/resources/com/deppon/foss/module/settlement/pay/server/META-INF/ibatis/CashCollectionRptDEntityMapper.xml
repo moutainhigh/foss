@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.CashCollectionRptDEntityDao" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.pay.api.shared.domain.CashCollectionRptDEntity" >
+    <result column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="REPORT_NO" property="reportNo" jdbcType="VARCHAR" />
+    <result column="SOURCE_BILL_NO" property="sourceBillNo" jdbcType="VARCHAR" />
+    <result column="SOURCE_BILL_TYPE" property="sourceBillType" jdbcType="VARCHAR" />
+    <result column="PAYMENT_TYPE" property="paymentType" jdbcType="VARCHAR" />
+    <result column="BUSINESS_DATE" property="businessDate" jdbcType="TIMESTAMP" />
+    <result column="COLLECTION_ORG_NAME" property="collectionOrgName" jdbcType="VARCHAR" />
+    <result column="COLLECTION_ORG_CODE" property="collectionOrgCode" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+    <result column="AMOUNT" property="amount" jdbcType="DECIMAL" />
+    <result column="OVERDUE_AMOUNT" property="overdueAmount" jdbcType="DECIMAL" />
+    <result column="STATUS" property="status" jdbcType="VARCHAR" />
+    <result column="PAID_AMOUNT" property="paidAmount" jdbcType="DECIMAL" />
+    <result column="CLERKS_AMOUNT" property="clerksAmount" jdbcType="DECIMAL" />
+    <result column="UNCLERKS_AMOUNT" property="unclerksAmount" jdbcType="DECIMAL" />
+    <result column="PRECOLLECTED_AMOUNT" property="precollectedAmount" jdbcType="DECIMAL" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="GENERATING_ORG_NAME" property="generatingOrgName" jdbcType="VARCHAR" />
+    <result column="GENERATING_ORG_CODE" property="generatingOrgCode" jdbcType="VARCHAR" />
+    <result column="CASH_CONFIRM_TIME" property="cashConfirmTime" jdbcType="TIMESTAMP" />
+    <result column="CASH_CONFIRM_USER_CODE" property="cashConfirmUserCode" jdbcType="VARCHAR" />
+    <result column="CASH_CONFIRM_USER_NAME" property="cashConfirmUserName" jdbcType="VARCHAR" />
+    <result column="ACCOUNT_DATE" property="accountDate" jdbcType="TIMESTAMP" />
+    <result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+    <result column="CUSTOMER_TYPE" property="customerType" jdbcType="VARCHAR" />
+    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+    <result column="VERSION_NO" property="versionNo" jdbcType="VARCHAR" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    ID, REPORT_NO, SOURCE_BILL_NO, SOURCE_BILL_TYPE,PAYMENT_TYPE, BUSINESS_DATE, COLLECTION_ORG_CODE, COLLECTION_ORG_NAME, 
+    CUSTOMER_CODE, CUSTOMER_NAME, AMOUNT/100 AMOUNT, OVERDUE_AMOUNT/100 OVERDUE_AMOUNT,STATUS, PAID_AMOUNT/100 PAID_AMOUNT, CLERKS_AMOUNT/100 CLERKS_AMOUNT, 
+    UNCLERKS_AMOUNT/100 UNCLERKS_AMOUNT, PRECOLLECTED_AMOUNT/100 PRECOLLECTED_AMOUNT, CREATE_TIME,GENERATING_ORG_NAME,GENERATING_ORG_CODE,CASH_CONFIRM_TIME,
+    CASH_CONFIRM_USER_CODE,CASH_CONFIRM_USER_NAME,ACCOUNT_DATE,MODIFY_TIME,WAYBILL_NO,CUSTOMER_TYPE,VERSION_NO
+  </sql>
+  
+  <!-- 现金收入缴款报表总条数 resulMap liqin dp 2012-12-13-->  
+  <resultMap type="com.deppon.foss.module.settlement.pay.api.shared.dto.BillCashRecPayInDResultDto" id="query_cashRecD_Count_map">
+  		<!-- 总条数 -->
+  		<result column="TOTALCOUNT"  property="totalCount" jdbcType="INTEGER" />
+  		<!-- 应缴款-->
+  		<result column="TOTALAMOUNT" property="totalAmount" jdbcType="DECIMAL" />
+  		<!-- 已缴款 -->
+    	<result column="TOTALPAIDAMOUNT" property="totalPaidAmount" jdbcType="DECIMAL" />
+    	<!-- 未缴款 -->
+    	<result column="TOTALOVERDUEAMOUNT" property="totalOverdueAmount" jdbcType="DECIMAL" />
+ </resultMap>
+   
+ <!-- 查询现金收入报表明细界面显示列表 dp liqin 2012-12-13 -->
+ <select id="selectCashRecPayInDetail" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillCashRecPayInDDto" resultMap="BaseResultMap">
+		<![CDATA[
+			SELECT /*查询现金收入报表明细界面显示列表 */
+		]]>
+		<include refid="Base_Column_List" />
+		FROM
+		STL.T_STL_CASH_COLLECTION_RPT_D SCD
+		WHERE
+		<![CDATA[SCD.ACCOUNT_DATE >=#{businessStartDate} AND SCD.ACCOUNT_DATE <#{businessEndDate}]]>
+		<!-- 报表登录部门 -->
+		AND SCD.COLLECTION_ORG_CODE=#{collectionOrgCode,jdbcType=VARCHAR}
+		<!-- 来源单据类型 -->
+		<if test="sourceBillType!=null and sourceBillType!='' ">
+			AND SCD.SOURCE_BILL_TYPE = #{sourceBillType,jdbcType=VARCHAR}
+		</if>
+		<!-- 支付方式 -->
+		<if test="paymentType!=null and paymentType!=''">
+			AND SCD.PAYMENT_TYPE = #{paymentType,jdbcType=VARCHAR}
+		</if>
+		<if test="collectionOrgCode!=null and collectionOrgCode!=''">
+			AND SCD.COLLECTION_ORG_CODE = #{collectionOrgCode,jdbcType=VARCHAR}
+		</if>
+		AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = SCD.COLLECTION_ORG_CODE<!-- 登录者部门等于应付部门过滤 -->
+     	)	
+ </select>
+	
+ <!-- 查询现金收入缴款报表明细总条数 -->
+ <!-- MODIFY BY 092036-FOSS-BOCHENLONG CHECKED -->
+ <select id="selectCountCashRecPayInDetail" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillCashRecPayInDDto" resultMap="query_cashRecD_Count_map">
+		<![CDATA[
+			SELECT /*查询现金收入缴款报表明细总条数*/
+		]]>
+			COUNT(SCD.ID) TOTALCOUNT,
+			SUM(SCD.AMOUNT) /100 TOTALAMOUNT,
+			SUM(SCD.PAID_AMOUNT) /100 TOTALPAIDAMOUNT,
+			SUM(SCD.OVERDUE_AMOUNT) /100 TOTALOVERDUEAMOUNT
+		FROM
+		STL.T_STL_CASH_COLLECTION_RPT_D SCD
+		WHERE
+		<![CDATA[SCD.ACCOUNT_DATE >=#{businessStartDate} AND SCD.ACCOUNT_DATE <#{businessEndDate}]]>
+		
+		AND SCD.COLLECTION_ORG_CODE=#{collectionOrgCode}
+		
+		<if test="sourceBillType!=null and sourceBillType!='' ">
+			AND SCD.SOURCE_BILL_TYPE = #{sourceBillType,jdbcType=VARCHAR}
+		</if>
+		
+		<if test="paymentType!=null and paymentType!=''">
+			AND SCD.PAYMENT_TYPE = #{paymentType,jdbcType=VARCHAR}
+		</if>
+		<if test="collectionOrgCode!=null and collectionOrgCode!=''">
+			AND SCD.COLLECTION_ORG_CODE = #{collectionOrgCode,jdbcType=VARCHAR}
+		</if>
+		AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = SCD.COLLECTION_ORG_CODE<!-- 登录者部门等于应付部门过滤 -->
+     	)	
+ </select>
+	
+
+ <!-- 查询现金收入报表明细 dp liqin 2012-12-14 -->
+ <!-- MODIFY BY 092036-FOSS-BOCHENLONG CHECKED -->
+ <select id="selectUpdateCashRecPayInDetail"
+		parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillCashRecPayInDDto"
+		resultMap="BaseResultMap">
+		<![CDATA[
+		SELECT /*查询现金收入报表明细*/
+		]]>
+		<include refid="Base_Column_List" />
+		FROM
+		STL.T_STL_CASH_COLLECTION_RPT_D SCD
+		WHERE
+			SCD.COLLECTION_ORG_CODE = #{collectionOrgCode,jdbcType=VARCHAR}
+			AND SCD.PAYMENT_TYPE IN 
+			<foreach collection="paymentTypes" item="item" index="index" open="(" close=")" separator=",">
+				#{item,jdbcType=VARCHAR}
+			</foreach>
+			<if test="verifyType == 1">
+				AND SCD.OVERDUE_AMOUNT <![CDATA[<>0]]> 
+				ORDER BY SCD.BUSINESS_DATE ASC
+			</if>
+			<if test="verifyType == -1 and businessDate != null and businessDate != ''">
+				AND SCD.PAID_AMOUNT <![CDATA[>0
+				AND SCD.BUSINESS_DATE >= #{businessDate,jdbcType=TIMESTAMP}
+				]]>
+				ORDER BY SCD.BUSINESS_DATE DESC
+			</if>
+ </select>
+ 
+ <!-- 反核销时用于查询已缴款金额 -->
+ <select id="queryPaiAmount" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillCashRecPayInDDto" resultType="java.math.BigDecimal">
+ 	    <![CDATA[
+		SELECT /*查询已缴款金额*/
+		]]>
+		NVL(SUM(SCD.PAID_AMOUNT),0)/100 AMOUNT
+		FROM
+		STL.T_STL_CASH_COLLECTION_RPT_D SCD
+		WHERE
+			SCD.COLLECTION_ORG_CODE = #{collectionOrgCode,jdbcType=VARCHAR}
+			AND SCD.PAYMENT_TYPE IN 
+			<foreach collection="paymentTypes" item="item" index="index" open="(" close=")" separator=",">
+				#{item,jdbcType=VARCHAR}
+			</foreach>
+			<if test="verifyType == -1">
+				AND SCD.PAID_AMOUNT <![CDATA[>0
+				AND SCD.BUSINESS_DATE >= #{businessDate,jdbcType=TIMESTAMP}
+				]]>
+			</if>
+ </select>
+ 
+ <select id="queryEarLiestDate" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillCashRecPayInDDto" resultType="java.util.Date">
+ 	    <![CDATA[
+		SELECT /*查询已缴款金额*/
+		]]>
+		MIN(SCD.BUSINESS_DATE) BUSINESSDATE
+		FROM
+		STL.T_STL_CASH_COLLECTION_RPT_D SCD
+		WHERE
+			SCD.COLLECTION_ORG_CODE = #{collectionOrgCode,jdbcType=VARCHAR}
+			AND SCD.PAYMENT_TYPE IN 
+			<foreach collection="paymentTypes" item="item" index="index" open="(" close=")" separator=",">
+				#{item,jdbcType=VARCHAR}
+			</foreach>
+			<if test="verifyType == -1">
+				AND SCD.PAID_AMOUNT <![CDATA[>0
+				]]>
+			</if>
+ </select>
+     
+  
+ <!-- 更新现金收入报表明细的已缴款金额和未缴款金额(核销  反核销) dp liqin 2012-12-15 -->
+ <!-- MODIFY BY 092036-FOSS-BOCHENLONG CHECKED -->
+ <update id="updateCashRecPayInD" parameterType="map">
+		UPDATE   /*更新现金收入报表明细的已缴款金额和未缴款金额*/
+		STL.T_STL_CASH_COLLECTION_RPT_D
+		<set>
+			<if test="billCashRecDDto.paidAmount != null and billCashRecDDto.paidAmount != ''
+			and billCashRecDDto.overdueAmount != null and billCashRecDDto.overdueAmount != ''">
+				OVERDUE_AMOUNT = #{billCashRecDDto.overdueAmount,jdbcType=DECIMAL}*100,
+				PAID_AMOUNT = #{billCashRecDDto.paidAmount,jdbcType=DECIMAL}*100,
+			</if>
+			<if test="(billCashRecDDto.paidAmount == null or billCashRecDDto.paidAmount == ''
+			or billCashRecDDto.overdueAmount == null or billCashRecDDto.overdueAmount == '') and billCashRecDDto.verifyType == 1">
+				OVERDUE_AMOUNT = 0,
+				PAID_AMOUNT = AMOUNT,
+			</if>
+			<if test="(billCashRecDDto.paidAmount == null or billCashRecDDto.paidAmount == ''
+			or billCashRecDDto.overdueAmount == null or billCashRecDDto.overdueAmount == '') and billCashRecDDto.verifyType == -1">
+				PAID_AMOUNT = 0,
+				OVERDUE_AMOUNT = AMOUNT,
+			</if>
+			MODIFY_TIME = #{billCashRecDDto.modifyTime,jdbcType=TIMESTAMP},
+			VERSION_NO = VERSION_NO + 1
+		</set>
+		WHERE (ID,VERSION_NO) IN 
+		 <foreach collection="perList" index="index" item="item" open="(" close=")" separator=",">
+			(#{item.id,jdbcType=VARCHAR},#{item.versionNo,jdbcType=VARCHAR})
+		</foreach>
+ </update>
+	
+ <!-- 查询部门未缴款预收金额、 liqin dp 2013-4-26   查询缴款报表里面的支付方式为现金、并且预收单累计未核销金额  现金收款单和还款单累计核销金额-->
+ <!-- MODIFY BY 092036-FOSS-BOCHENLONG CHECKED -->
+ <select id="selectDeptUncollectedAmount" parameterType="map" resultMap="BaseResultMap">    	    
+     <![CDATA[ 
+      	SELECT /*查询缴款报表里面的支付方式为现金、并且预收单累计未核销金额  现金收款单和还款单累计核销金额*/
+      ]]>
+      		SCR.SOURCE_BILL_TYPE         AS SOURCE_BILL_TYPE,
+      		SUM(SCR.OVERDUE_AMOUNT)/100  AS OVERDUE_AMOUNT
+       FROM STL.T_STL_CASH_COLLECTION_RPT_D SCR 
+      WHERE SCR.COLLECTION_ORG_CODE = #{orgCode}
+      	AND SCR.PAYMENT_TYPE = #{paymentType}
+      	AND (SCR.OVERDUE_AMOUNT <![CDATA[>0]]> OR SCR.OVERDUE_AMOUNT <![CDATA[<0]]>)
+      	GROUP BY SCR.SOURCE_BILL_TYPE
+ </select>
+</mapper>

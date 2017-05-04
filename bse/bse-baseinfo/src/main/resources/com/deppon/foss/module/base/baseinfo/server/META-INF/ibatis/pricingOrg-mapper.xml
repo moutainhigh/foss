@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.pricingOrg">
+
+	<!-- 公共选择组件 -->
+	<resultMap id="commonOrgResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.CommonOrgEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="NAME" property="name" jdbcType="VARCHAR" />
+		<result column="CODE" property="code" jdbcType="VARCHAR" />
+		<result column="UNIFIED_CODE" property="unifiedCode" jdbcType="VARCHAR" />
+		<result column="SIMPLE_NAME" property="simpleName" jdbcType="VARCHAR" />
+		<result column="PINYIN" property="pinYin" jdbcType="VARCHAR" />
+		<result column="PROV_CODE" property="provinceCode" jdbcType="VARCHAR" />
+		<result column="CITY_CODE" property="cityCode" jdbcType="VARCHAR" />
+		<result column="CONUNTY_CODE" property="countyCode" jdbcType="VARCHAR" />
+		<result column="TYPE" property="type" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="DIVISION" property="division" jdbcType="CHAR" />
+		<result column="DO_AIR_DISPATCH" property="doAirDispatch" jdbcType="CHAR" />
+		<result column="TRANSFER_CENTER" property="transferCenter"
+			jdbcType="CHAR" />
+		<result column="BIG_REGION" property="bigRegion" jdbcType="CHAR" />
+		<result column="SMALL_REGION" property="smallRegion" jdbcType="CHAR" />
+		<result column="AIR_DISPATCH" property="airDispatch" jdbcType="CHAR" />
+		<result column="SALES_DEPARTMENT" property="salesDepartment"
+			jdbcType="CHAR" />
+		<result column="TRANS_DEPARTMENT" property="transDepartment"
+			jdbcType="CHAR" />
+		<result column="TRANS_TEAM" property="transTeam" jdbcType="CHAR" />
+		<result column="DISPATCH_TEAM" property="dispatchTeam"
+			jdbcType="CHAR" />
+		<result column="BILLING_GROUP" property="billingGroup"
+			jdbcType="CHAR" />
+		<result column="IS_DELIVER_SCHEDULE" property="isDeliverSchedule"
+			jdbcType="CHAR" />
+		<result column="IS_ARRANGE_GOODS" property="isArrangeGoods"
+			jdbcType="CHAR" />
+		<result column="IS_ENTITY_FINANCE" property="isEntityFinance"
+			jdbcType="CHAR" />
+	</resultMap>
+
+	<!-- 数据字段 -->
+	<sql id="commonOrg_Column_List">
+		T.ID AS ID,
+		T.NAME AS NAME,
+		T.CODE AS CODE,
+		T.UNIFIED_CODE AS UNIFIED_CODE,
+		T.SIMPLENAME AS SIMPLE_NAME,
+		T.PINYIN AS PINYIN,
+		T.PROV_CODE AS PROV_CODE,
+		T.CREATE_TIME AS CREATE_TIME,
+		T.MODIFY_TIME AS MODIFY_TIME,
+		T.ACTIVE AS ACTIVE,
+		T.CITY_CODE AS CITY_CODE,
+		T.COUNTY_CODE AS CONUNTY_CODE,
+		T.TYPE AS TYPE,
+		T.DIVISION AS DIVISION,
+		T.DO_AIR_DISPATCH AS DO_AIR_DISPATCH,
+		T.TRANSFER_CENTER AS TRANSFER_CENTER,
+		T.BIG_REGION AS BIG_REGION,
+		T.SMALL_REGION AS SMALL_REGION,
+		T.AIR_DISPATCH AS AIR_DISPATCH,
+		T.SALES_DEPARTMENT AS SALES_DEPARTMENT,
+		T.TRANS_DEPARTMENT AS TRANS_DEPARTMENT,
+		T.TRANS_TEAM AS TRANS_TEAM,
+		T.BILLING_GROUP AS BILLING_GROUP,
+		T.IS_DELIVER_SCHEDULE AS IS_DELIVER_SCHEDULE,
+		T.IS_ARRANGE_GOODS AS IS_ARRANGE_GOODS,
+		T.DISPATCH_TEAM AS DISPATCH_TEAM,
+		T.IS_ENTITY_FINANCE AS IS_ENTITY_FINANCE
+	</sql>
+
+	<sql id="commonDept_Column_List">
+		T.ID AS ID,
+		T.NAME AS NAME,
+		T.CODE AS CODE,
+		T.UNIFIED_CODE AS UNIFIED_CODE,
+		T.ORG_SIMPLE_NAME AS SIMPLE_NAME,
+		T.PINYIN AS PINYIN,
+		T.PROV_CODE AS PROV_CODE,
+		T.CREATE_TIME AS CREATE_TIME,
+		T.MODIFY_TIME AS MODIFY_TIME,
+		T.ACTIVE AS ACTIVE,
+		T.CITY_CODE AS CITY_CODE,
+		T.COUNTY_CODE AS CONUNTY_CODE,
+		T.DIVISION AS DIVISION,
+		T.DO_AIR_DISPATCH AS DO_AIR_DISPATCH,
+		T.TRANSFER_CENTER AS TRANSFER_CENTER,
+		T.BIG_REGION AS BIG_REGION,
+		T.SMALL_REGION AS SMALL_REGION,
+		T.AIR_DISPATCH AS AIR_DISPATCH,
+		T.SALES_DEPARTMENT AS SALES_DEPARTMENT,
+		T.TRANS_DEPARTMENT AS TRANS_DEPARTMENT,
+		T.TRANS_TEAM AS TRANS_TEAM,
+		T.BILLING_GROUP AS BILLING_GROUP,
+		T.IS_DELIVER_SCHEDULE AS IS_DELIVER_SCHEDULE,
+		T.IS_ARRANGE_GOODS AS IS_ARRANGE_GOODS,
+		T.DISPATCH_TEAM AS DISPATCH_TEAM,
+		T.IS_ENTITY_FINANCE AS IS_ENTITY_FINANCE
+	</sql>
+
+	<select id="queryBatchOrgByCondition" resultType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CommonOrgEntity"
+		parameterType="map">
+	   	SELECT   /** 综合-价格-根据综合条件查询网点信息**/
+	    <include refid="commonOrg_Column_List" />
+	    FROM BSE.MV_DEST_NET T
+		<where>
+			<if test="active != null and active != '' ">
+				T.ACTIVE = #{active}
+			</if>
+			<if test="type != null and type != '' ">
+				AND T.TYPE = #{type}
+			</if>
+			<if test="codes != null">
+				<![CDATA[ AND T.CODE IN ]]>
+		        <foreach collection="codes" open="(" close=")" separator="," item="code">
+				<![CDATA[#{code}]]>
+				</foreach>
+	        </if>
+	        <if test="unifiedCodes != null">
+				<![CDATA[ AND T.UNIFIED_CODE IN ]]>
+		        <foreach collection="unifiedCodes" open="(" close=")" separator="," item="unifiedCode">
+				<![CDATA[#{unifiedCode}]]>
+				</foreach>
+	        </if>
+		</where>
+	</select>
+	
+	<select id="queryOrgByBatchCodes" resultType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CommonOrgEntity"
+		parameterType="map">
+	   	SELECT   /** 综合-价格-根据综合条件查询网点信息**/
+	    <include refid="commonOrg_Column_List" />
+	    FROM BSE.MV_DEST_NET T
+		<where>
+			T.ACTIVE = 'Y'
+			AND (T.TYPE = 'PX' OR (T.TYPE = 'ORG' AND T.SALES_DEPARTMENT = 'Y') OR T.TYPE = 'KY')
+			<if test="codes != null">
+				<![CDATA[ AND T.CODE IN ]]>
+		        <foreach collection="codes" open="(" close=")" separator="," item="code">
+				<![CDATA[#{code}]]>
+				</foreach>
+	        </if>
+	        <if test="unifiedCodes != null">
+				<![CDATA[ AND T.UNIFIED_CODE IN ]]>
+		        <foreach collection="unifiedCodes" open="(" close=")" separator="," item="unifiedCode">
+				<![CDATA[#{unifiedCode}]]>
+				</foreach>
+	        </if>
+		</where>
+	</select>
+	
+	<select id="queryStartDeptByDistrict" resultType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CommonOrgEntity"
+		parameterType="map">
+	   	SELECT  /** 综合-价格-根据行政区域CODE查询营业部信息**/
+	    <include refid="commonDept_Column_List" />
+	    FROM BSE.T_BAS_SALES_DEPARTMENT T1 JOIN
+  		BSE.T_BAS_ORG T ON T1.CODE = T.CODE
+		<where>
+			<if test="active != null and active != '' ">
+			T1.ACTIVE = 'Y' 
+			</if>
+			<if test="leave != null and leave != '' ">
+			AND T1.LEAVE='Y'
+			</if>
+			<if test="districtCode != null and districtCode != '' ">
+				AND (T.COUNTY_CODE = #{districtCode} OR T.CITY_CODE = #{districtCode} OR T.PROV_CODE = #{districtCode})
+			</if>
+			<if test="beginTime != null and beginTime != '' ">
+			<![CDATA[AND T.CREATE_TIME <= #{beginTime, jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="endTime != null and endTime != '' ">
+			<![CDATA[AND T.MODIFY_TIME > #{endTime, jdbcType=TIMESTAMP}]]>
+			</if>
+		</where>
+	</select>
+	
+	<select id="queryStartOrgByDistrict" resultType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CommonOrgEntity"
+		parameterType="map">
+	   	SELECT  /** 综合-价格-根据行政区域CODE查询网点信息**/
+	    <include refid="commonOrg_Column_List" />
+	    FROM BSE.MV_DEST_NET T
+		<where>
+			<if test="active != null and active != '' ">
+				T.ACTIVE = #{active}
+			</if>
+			<if test="districtCode != null and districtCode != '' ">
+				AND (T.COUNTY_CODE = #{districtCode} OR T.CITY_CODE = #{districtCode} OR T.PROV_CODE = #{districtCode})
+			</if>
+			AND T.TYPE = 'ORG' AND T.sales_department = 'Y'
+		</where>
+	</select>
+	
+	<select id="queryArrvOrgByDistrict" resultType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CommonOrgEntity"
+		parameterType="map">
+	   	SELECT  /** 综合-价格-根据行政区域CODE查询网点信息**/
+	    <include refid="commonOrg_Column_List" />
+	    FROM BSE.MV_DEST_NET T
+		<where>
+			<if test="active != null and active != '' ">
+				T.ACTIVE = #{active}
+			</if>
+			<if test="districtCode != null and districtCode != '' ">
+				AND (T.COUNTY_CODE = #{districtCode} OR T.CITY_CODE = #{districtCode} OR T.PROV_CODE = #{districtCode})
+			</if>
+			AND (T.TYPE = 'PX' OR (T.TYPE = 'ORG' AND T.sales_department = 'Y') OR T.TYPE = 'KY' OR (T.TYPE = 'ORG' AND T.EXPRESS_SALES_DEPARTMENT = 'Y'))
+		</where>
+	</select>
+	
+	<select id="queryOrgByCode" resultType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CommonOrgEntity"
+		parameterType="map">
+	   	SELECT  /** 综合-价格-根据网点CODE查询网点信息**/
+	    <include refid="commonOrg_Column_List" />
+	    FROM BSE.MV_DEST_NET T 
+		<where>
+			T.ACTIVE = #{active}
+			AND T.CODE = #{code}
+			AND (T.TYPE = 'PX' OR T.TYPE = 'ORG' OR T.TYPE = 'KY')
+		</where>
+	</select>
+</mapper>

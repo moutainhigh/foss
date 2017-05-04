@@ -1,0 +1,639 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.tfr.StTaskListDao" >
+  <resultMap id="stTaskListResultMap" type="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StTaskListEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="PACKAGE_NO" property="packageNo" jdbcType="VARCHAR" />
+    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+    <result column="SERIAL_NO" property="serialNo" jdbcType="VARCHAR" />
+    <result column="ST_TASK_ID" property="stTaskId" jdbcType="VARCHAR" />
+    <result column="IN_STOCK_TIME" property="inStockTime" jdbcType="TIMESTAMP" />
+  </resultMap>
+  <resultMap id="stTaskWaybillNoListResultMap" type="com.deppon.foss.module.transfer.stockchecking.api.shared.dto.StTaskWaybillNoListDto">
+    <id column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+    <result column="wayBillNoDesc" property="wayBillNoDesc" jdbcType="VARCHAR" />
+    <result column="serialNoNum" property="serialNoNum" jdbcType="NUMERIC" />
+    <result column="serialNoNumDesc" property="serialNoNumDesc" jdbcType="VARCHAR" />
+  </resultMap>
+  <sql id="StTaskList_Column_List" >
+    ID, WAYBILL_NO, SERIAL_NO, ST_TASK_ID
+  </sql>
+  <select id="selectStTaskListByPrimaryKey" resultMap="stTaskListResultMap" parameterType="java.lang.String" >
+    select 
+    <include refid="StTaskList_Column_List" />
+    from TFR.T_OPT_ST_TASK_LIST
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+  <select id="queryStTaskListByStTaskId" resultMap="stTaskListResultMap" parameterType="java.lang.String" >
+    select <include refid="StTaskList_Column_List" />
+      from TFR.T_OPT_ST_TASK_LIST
+        where ST_TASK_ID = #{stTaskId,jdbcType=VARCHAR} order by WAYBILL_NO, SERIAL_NO
+  </select>
+  <select id="selectStSnapshotListByStId" resultMap="stTaskListResultMap" parameterType="java.lang.String" >
+    select <include refid="StTaskList_Column_List" />
+      from TFR.T_OPT_ST_TASK_LIST
+        where ST_TASK_ID = #{id,jdbcType=VARCHAR} order by WAYBILL_NO, SERIAL_NO
+  </select>
+  <select id="queryStTaskWaybillNoListByStTaskId" resultMap="stTaskWaybillNoListResultMap" parameterType="java.lang.String">
+    select a.WAYBILL_NO, a.WAYBILL_NO as wayBillNoDesc, count(a.SERIAL_NO) as serialNoNum from TFR.T_OPT_ST_TASK_LIST a
+      where a.ST_TASK_ID = #{stTaskId,jdbcType=VARCHAR}
+        group by a.WAYBILL_NO
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String" >
+    delete from TFR.T_OPT_ST_TASK_LIST
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  <delete id="deleteByStTaskId" parameterType="java.lang.String" >
+    delete from TFR.T_OPT_ST_TASK_LIST
+    where ST_TASK_ID = #{stTaskId,jdbcType=VARCHAR}
+  </delete>
+  
+   <insert id="addStTaskListFromStock" parameterType="map">
+     insert into TFR.T_OPT_ST_TASK_LIST (ID, WAYBILL_NO, SERIAL_NO, ST_TASK_ID, IN_STOCK_TIME, PACKAGE_NO) 
+			select sys_guid(),
+				   s.waybill_no,
+				   s.serial_no, 
+				   #{stTaskId},
+				   s.in_stock_time,
+				   ppd.package_no
+			from TFR.t_opt_stock s
+			inner join pkp.t_srv_waybill w on s.waybill_no = w.waybill_no
+			left join (SELECT pd.package_no package_no, pd.waybill_no waybill_no, pd.serial_no serial_no 
+						from tfr.t_opt_package_detail pd , tfr.t_opt_package p
+                     	where pd.package_no = p.package_no 
+                     	and  p.depart_org_code = #{orgCode,jdbcType=VARCHAR}
+                     	and  p.status in ('UNSTART','FINISHED','PROGRESS')
+                   ) ppd on s.waybill_no = ppd.waybill_no and s.serial_no = ppd.serial_no
+			where w.active = 'Y'
+    		and w.is_whole_vehicle = 'N' 
+			and s.ORG_CODE = #{orgCode,jdbcType=VARCHAR} 
+			<![CDATA[
+			and s.in_stock_time <= sysdate - #{beforeTime,jdbcType=INTEGER}/1440 
+     		 ]]>
+			<choose>
+			<when test="goodsAreaCode != null and goodsAreaCode!=''">
+				AND s.GOODS_AREA_CODE = #{goodsAreaCode,jdbcType=VARCHAR}
+			</when>
+			<otherwise>
+				AND s.GOODS_AREA_CODE = 'N/A'
+			</otherwise>
+			</choose>
+			<if test="receiveMethodList != null">
+				 and w.receive_method in 
+				<foreach collection="receiveMethodList" open="(" close=")" separator="," index="index" item="item">
+					#{item,jdbcType=VARCHAR}
+				</foreach>			
+			</if>      	
+			<if test="districtCodeList != null">
+				and w.receive_customer_dist_code in
+				<foreach collection="districtCodeList" open="(" close=")" separator="," index="index" item="item">
+					#{item,jdbcType=VARCHAR}
+				 </foreach>
+			</if>
+			<if test="startQty != null and startQty > 0  and endQty != null and endQty > 0">
+			 	<![CDATA[ and w.goods_qty_total >= #{startQty,jdbcType=INTEGER}
+		                  and w.goods_qty_total <= #{endQty,jdbcType=INTEGER}
+		                  ]]>    
+			</if>
+			<![CDATA[
+				and not exists
+	 			(select distinct /*t.task_no,*/ d.waybill_no, ls.serial_no
+	            from tfr.t_opt_load_serialno ls
+	            inner join tfr.t_opt_load_waybill_detail d on d.id = ls.load_waybill_detail_id
+	         	inner join tfr.t_opt_load_task t on t.id = d.load_task_id
+	         	inner join tfr.t_opt_load_dest_org dest on dest.load_task_id = t.id
+	         	inner join (select area.goods_area_code,area.arrive_region_code,area.org_code
+	                      from bse.t_bas_goods_area area
+	                     where  area.active = 'Y') a on a.arrive_region_code = dest.dest_org_code
+	           where  t.task_state = 'LOADING'
+	           and t.load_start_time >= sysdate - 48/24
+	           and t.load_start_time <= sysdate
+	           and LS.Be_Loaded = 'Y'
+	           and t.orig_org_code = s.org_code
+	           and a.org_code =  s.org_code
+	           and a.goods_area_code = s.goods_area_code          
+	           and d.waybill_no = s.waybill_no
+	           and ls.serial_no = s.serial_no)
+            ]]>
+		  order by WAYBILL_NO,SERIAL_NO 
+  </insert>
+  <!-- 新增一个清仓快照(只清快递的) -->
+  <insert id="addStTaskListFromStockForExpress" parameterType="map">
+     insert into TFR.T_OPT_ST_TASK_LIST (ID, WAYBILL_NO, SERIAL_NO, ST_TASK_ID, IN_STOCK_TIME, PACKAGE_NO) 
+			select sys_guid(),
+				   s.waybill_no,
+				   s.serial_no, 
+				   #{stTaskId},
+				   s.in_stock_time,
+				   ppd.package_no
+			from TFR.t_opt_stock s
+			inner join pkp.t_srv_waybill w on s.waybill_no = w.waybill_no and w.product_code in ('RCP','PACKAGE','EPEP','DEAP')
+			left join (SELECT pd.package_no package_no, pd.waybill_no waybill_no, pd.serial_no serial_no 
+						from tfr.t_opt_package_detail pd , tfr.t_opt_package p
+                     	where pd.package_no = p.package_no 
+                     	and  p.depart_org_code = #{orgCode,jdbcType=VARCHAR}
+                     	and  p.status in ('UNSTART','FINISHED','PROGRESS')
+                   ) ppd on s.waybill_no = ppd.waybill_no and s.serial_no = ppd.serial_no
+			where w.active = 'Y'
+    		and w.is_whole_vehicle = 'N' 
+			and s.ORG_CODE = #{orgCode,jdbcType=VARCHAR} 
+			<![CDATA[
+			and s.in_stock_time <= sysdate - #{beforeTime,jdbcType=INTEGER}/1440 
+     		 ]]>
+			<choose>
+			<when test="goodsAreaCode != null and goodsAreaCode!=''">
+				AND s.GOODS_AREA_CODE = #{goodsAreaCode,jdbcType=VARCHAR}
+			</when>
+			<otherwise>
+				AND s.GOODS_AREA_CODE = 'N/A'
+			</otherwise>
+			</choose>
+			<if test="receiveMethodList != null">
+				 and w.receive_method in 
+				<foreach collection="receiveMethodList" open="(" close=")" separator="," index="index" item="item">
+					#{item,jdbcType=VARCHAR}
+				</foreach>			
+			</if>      	
+			<if test="districtCodeList != null">
+				and w.receive_customer_dist_code in
+				<foreach collection="districtCodeList" open="(" close=")" separator="," index="index" item="item">
+					#{item,jdbcType=VARCHAR}
+				 </foreach>
+			</if>
+			<if test="startQty != null and startQty > 0  and endQty != null and endQty > 0">
+			 	<![CDATA[ and w.goods_qty_total >= #{startQty,jdbcType=INTEGER}
+		                  and w.goods_qty_total <= #{endQty,jdbcType=INTEGER}
+		                  ]]>    
+			</if>
+			<![CDATA[
+				and not exists
+	 			(select distinct /*t.task_no,*/ d.waybill_no, ls.serial_no
+	            from tfr.t_opt_load_serialno ls
+	            inner join tfr.t_opt_load_waybill_detail d on d.id = ls.load_waybill_detail_id
+	         	inner join tfr.t_opt_load_task t on t.id = d.load_task_id
+	         	inner join tfr.t_opt_load_dest_org dest on dest.load_task_id = t.id
+	         	inner join (select area.goods_area_code,area.arrive_region_code,area.org_code
+	                      from bse.t_bas_goods_area area
+	                     where  area.active = 'Y') a on a.arrive_region_code = dest.dest_org_code
+	           where  t.task_state = 'LOADING'
+	           and t.load_start_time >= sysdate - 48/24
+	           and t.load_start_time <= sysdate
+	           and LS.Be_Loaded = 'Y'
+	           and t.orig_org_code = s.org_code
+	           and a.org_code =  s.org_code
+	           and a.goods_area_code = s.goods_area_code          
+	           and d.waybill_no = s.waybill_no
+	           and ls.serial_no = s.serial_no)
+            ]]>
+		  order by WAYBILL_NO,SERIAL_NO 
+  </insert>
+    <!-- 新增一个清仓快照(只清零担的) -->
+  <insert id="addStTaskListFromStockForNoExpress" parameterType="map">
+     insert into TFR.T_OPT_ST_TASK_LIST (ID, WAYBILL_NO, SERIAL_NO, ST_TASK_ID, IN_STOCK_TIME, PACKAGE_NO) 
+			select sys_guid(),
+				   s.waybill_no,
+				   s.serial_no, 
+				   #{stTaskId},
+				   s.in_stock_time,
+				   ppd.package_no
+			from TFR.t_opt_stock s
+			inner join pkp.t_srv_waybill w on s.waybill_no = w.waybill_no and w.product_code not in ('RCP','PACKAGE','EPEP','DEAP')
+			left join (SELECT pd.package_no package_no, pd.waybill_no waybill_no, pd.serial_no serial_no 
+						from tfr.t_opt_package_detail pd , tfr.t_opt_package p
+                     	where pd.package_no = p.package_no 
+                     	and  p.depart_org_code = #{orgCode,jdbcType=VARCHAR}
+                     	and  p.status in ('UNSTART','FINISHED','PROGRESS')
+                   ) ppd on s.waybill_no = ppd.waybill_no and s.serial_no = ppd.serial_no
+			where w.active = 'Y'
+    		and w.is_whole_vehicle = 'N' 
+			and s.ORG_CODE = #{orgCode,jdbcType=VARCHAR} 
+			<![CDATA[
+			and s.in_stock_time <= sysdate - #{beforeTime,jdbcType=INTEGER}/1440 
+     		 ]]>
+			<choose>
+			<when test="goodsAreaCode != null and goodsAreaCode!=''">
+				AND s.GOODS_AREA_CODE = #{goodsAreaCode,jdbcType=VARCHAR}
+			</when>
+			<otherwise>
+				AND s.GOODS_AREA_CODE = 'N/A'
+			</otherwise>
+			</choose>
+			<if test="receiveMethodList != null">
+				 and w.receive_method in 
+				<foreach collection="receiveMethodList" open="(" close=")" separator="," index="index" item="item">
+					#{item,jdbcType=VARCHAR}
+				</foreach>			
+			</if>      	
+			<if test="districtCodeList != null">
+				and w.receive_customer_dist_code in
+				<foreach collection="districtCodeList" open="(" close=")" separator="," index="index" item="item">
+					#{item,jdbcType=VARCHAR}
+				 </foreach>
+			</if>
+			<if test="startQty != null and startQty > 0  and endQty != null and endQty > 0">
+			 	<![CDATA[ and w.goods_qty_total >= #{startQty,jdbcType=INTEGER}
+		                  and w.goods_qty_total <= #{endQty,jdbcType=INTEGER}
+		                  ]]>    
+			</if>
+			<![CDATA[
+				and not exists
+	 			(select distinct /*t.task_no,*/ d.waybill_no, ls.serial_no
+	            from tfr.t_opt_load_serialno ls
+	            inner join tfr.t_opt_load_waybill_detail d on d.id = ls.load_waybill_detail_id
+	         	inner join tfr.t_opt_load_task t on t.id = d.load_task_id
+	         	inner join tfr.t_opt_load_dest_org dest on dest.load_task_id = t.id
+	         	inner join (select area.goods_area_code,area.arrive_region_code,area.org_code
+	                      from bse.t_bas_goods_area area
+	                     where  area.active = 'Y') a on a.arrive_region_code = dest.dest_org_code
+	           where  t.task_state = 'LOADING'
+	           and t.load_start_time >= sysdate - 48/24
+	           and t.load_start_time <= sysdate
+	           and LS.Be_Loaded = 'Y'
+	           and t.orig_org_code = s.org_code
+	           and a.org_code =  s.org_code
+	           and a.goods_area_code = s.goods_area_code          
+	           and d.waybill_no = s.waybill_no
+	           and ls.serial_no = s.serial_no)
+            ]]>
+		  order by WAYBILL_NO,SERIAL_NO 
+  </insert>
+  <insert id="addStTaskListEntity" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StTaskListEntity">
+    insert into TFR.T_OPT_ST_TASK_LIST (ID, WAYBILL_NO, SERIAL_NO, 
+      ST_TASK_ID)
+    values (#{id,jdbcType=VARCHAR}, #{waybillNo,jdbcType=VARCHAR}, #{serialNo,jdbcType=VARCHAR}, 
+      #{stTaskId,jdbcType=VARCHAR})
+  </insert>
+  <insert id="addStTaskListEntityBatch" parameterType="java.util.List">
+  	begin
+	<foreach collection="list" item="item" separator=";">
+    insert into TFR.T_OPT_ST_TASK_LIST (ID, WAYBILL_NO, SERIAL_NO, ST_TASK_ID)
+      values (#{item.id,jdbcType=VARCHAR}, #{item.waybillNo,jdbcType=VARCHAR}, #{item.serialNo,jdbcType=VARCHAR},
+              #{item.stTaskId,jdbcType=VARCHAR})
+    </foreach>
+	;end;
+  </insert>
+  <insert id="insertSelective" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StTaskListEntity">
+    insert into TFR.T_OPT_ST_TASK_LIST
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="waybillNo != null" >
+        WAYBILL_NO,
+      </if>
+      <if test="serialNo != null" >
+        SERIAL_NO,
+      </if>
+      <if test="stTaskId != null" >
+        ST_TASK_ID,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="waybillNo != null" >
+        #{waybillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="serialNo != null" >
+        #{serialNo,jdbcType=VARCHAR},
+      </if>
+      <if test="stTaskId != null" >
+        #{stTaskId,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StTaskListEntity" >
+    update TFR.T_OPT_ST_TASK_LIST
+    <set >
+      <if test="waybillNo != null" >
+        WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="serialNo != null" >
+        SERIAL_NO = #{serialNo,jdbcType=VARCHAR},
+      </if>
+      <if test="stTaskId != null" >
+        ST_TASK_ID = #{stTaskId,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StTaskListEntity" >
+    update TFR.T_OPT_ST_TASK_LIST
+    set WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR},
+      SERIAL_NO = #{serialNo,jdbcType=VARCHAR},
+      ST_TASK_ID = #{stTaskId,jdbcType=VARCHAR}
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  <select id="queryPdaLackList" resultMap="stTaskListResultMap" parameterType="java.lang.String"> 
+	SELECT ID, PACKAGE_NO, WAYBILL_NO, SERIAL_NO, ST_TASK_ID
+	 FROM tfr.T_OPT_ST_TASK_LIST a
+	  WHERE a.ST_TASK_ID = #{stTaskId}
+	    and NOT EXISTS (SELECT 1 FROM tfr.T_OPT_ST_RESULT_LIST b 
+	                      WHERE b.ST_TASK_ID = #{stTaskId}
+	                        and a.WAYBILL_NO = b.WAYBILL_NO
+	                        and a.SERIAL_NO = b.SERIAL_NO)
+  </select>
+  <!-- 刷新清仓任务列表(所有的) -->
+  <select id="queryPdaStTaskDtoList" resultType="com.deppon.foss.module.transfer.pda.api.shared.dto.PdaStTaskDto" parameterType="map"> 
+	<![CDATA[ 
+	select   o.stTaskNo as stTaskNo
+        ,o.deptCode as deptCode
+        ,o.waybillNo as waybillNo
+        ,o.serialNo as serialNo
+        ,m.PRODUCT_CODE as productCode
+        ,ROUND(m.GOODS_WEIGHT_TOTAL / m.GOODS_QTY_TOTAL, 2) as goodsWeight
+        ,ROUND(m.GOODS_VOLUME_TOTAL / m.GOODS_QTY_TOTAL, 2) as goodsVolume
+        ,m.GOODS_NAME as goodsName
+        ,n.IN_STOCK_TIME as inStockTime
+        ,m.PRECIOUS_GOODS as preciousGoods
+       ,(case when o.needWoodenPackage > 0 then 'Y' else 'N' end ) as needWoodenPackage  
+       ,(case when o.contraband > 0 then 'Y' else 'N' end ) as contraband
+        ,m.CREATE_USER_CODE as creatorCode
+        ,m.GOODS_PACKAGE as packageType
+        ,m.RECEIVE_ORG_CODE as receiveOrgCode
+        ,m.TARGET_ORG_CODE as targetOrgCode
+        ,m.GOODS_QTY_TOTAL as wayBillQty
+        ,nvl(sd.station_number,ob.station_number) as stationNumber
+        ,ds.name as receiveCustomerDistName
+    from pkp.t_srv_waybill m
+        ,tfr.t_opt_stock n
+        ,(select　bd.code,bd.name　from bse.t_bas_district bd where bd.active='Y') ds
+        ,(select a.TASK_NO as stTaskNo
+               ,a.DEPTCODE as deptCode
+               ,b.WAYBILL_NO as waybillNo
+               ,b.SERIAL_NO as serialNo
+               ,count(c.WAYBILL_NO) as contraband
+               ,count(d.WAYBILL_NO) as needWoodenPackage
+            from tfr.T_OPT_ST_TASK a
+                ,tfr.T_OPT_ST_TASK_LIST b
+                ,(select cc.WAYBILL_NO from  tfr.T_OPT_CONTRABAND cc where cc.PROCESS_RESULT = #{contraband}) c
+                ,(select dd.WAYBILL_NO from tfr.t_opt_package_request_detail dd where dd.is_packed = 'N') d
+              where a.ID = b.ST_TASK_ID
+                and a.TASK_NO = #{stTaskNo}
+                and b.PACKAGE_NO is null
+                and b.WAYBILL_NO = c.WAYBILL_NO(+)
+                and b.WAYBILL_NO = d.WAYBILL_NO(+)
+                group by a.TASK_NO, a.DEPTCODE, b.WAYBILL_NO,b.SERIAL_NO) o
+         ,(select * from bse.t_bas_sales_department where active = 'Y') sd
+         ,(select * from bse.t_bas_outer_branch where active = 'Y') ob
+      where o.waybillNo = m.WAYBILL_NO
+        and m.ACTIVE = 'Y'
+        and o.waybillNo = n.WAYBILL_NO
+        and o.serialNo = n.SERIAL_NO
+        and sd.code(+) = m.customer_pickup_org_code
+        and ob.agent_dept_code(+) = m.customer_pickup_org_code
+        and m.receive_customer_dist_code=ds.code(+)
+     order by waybillNo, serialNo    ]]>
+  </select>
+  <!-- 刷新快递清仓任务列表 (快递)-->
+   <select id="queryPdaStTaskDtoListExpress" resultType="com.deppon.foss.module.transfer.pda.api.shared.dto.PdaStTaskDto" parameterType="map"> 
+	<![CDATA[ 
+	select   o.stTaskNo as stTaskNo
+        ,o.deptCode as deptCode
+        ,o.waybillNo as waybillNo
+        ,o.serialNo as serialNo
+        ,m.PRODUCT_CODE as productCode
+        ,ROUND(m.GOODS_WEIGHT_TOTAL / m.GOODS_QTY_TOTAL, 2) as goodsWeight
+        ,ROUND(m.GOODS_VOLUME_TOTAL / m.GOODS_QTY_TOTAL, 2) as goodsVolume
+        ,m.GOODS_NAME as goodsName
+        ,n.IN_STOCK_TIME as inStockTime
+        ,m.PRECIOUS_GOODS as preciousGoods
+       ,(case when o.needWoodenPackage > 0 then 'Y' else 'N' end ) as needWoodenPackage  
+       ,(case when o.contraband > 0 then 'Y' else 'N' end ) as contraband
+        ,m.CREATE_USER_CODE as creatorCode
+        ,m.GOODS_PACKAGE as packageType
+        ,m.RECEIVE_ORG_CODE as receiveOrgCode
+        ,m.TARGET_ORG_CODE as targetOrgCode
+        ,m.GOODS_QTY_TOTAL as wayBillQty
+        ,nvl(sd.station_number,ob.station_number) as stationNumber
+        ,ds.name as receiveCustomerDistName
+    from pkp.t_srv_waybill m
+        ,tfr.t_opt_stock n
+        ,(select　bd.code,bd.name　from bse.t_bas_district bd where bd.active='Y') ds
+        ,(select a.TASK_NO as stTaskNo
+               ,a.DEPTCODE as deptCode
+               ,b.WAYBILL_NO as waybillNo
+               ,b.SERIAL_NO as serialNo
+               ,count(c.WAYBILL_NO) as contraband
+               ,count(d.WAYBILL_NO) as needWoodenPackage
+            from tfr.T_OPT_ST_TASK a
+                ,tfr.T_OPT_ST_TASK_LIST b
+                ,(select cc.WAYBILL_NO from  tfr.T_OPT_CONTRABAND cc where cc.PROCESS_RESULT = #{contraband}) c
+                ,(select dd.WAYBILL_NO from tfr.t_opt_package_request_detail dd where dd.is_packed = 'N') d
+              where a.ID = b.ST_TASK_ID
+                and a.TASK_NO = #{stTaskNo}
+                and b.PACKAGE_NO is null
+                and b.WAYBILL_NO = c.WAYBILL_NO(+)
+                and b.WAYBILL_NO = d.WAYBILL_NO(+)
+                group by a.TASK_NO, a.DEPTCODE, b.WAYBILL_NO,b.SERIAL_NO) o
+         ,(select * from bse.t_bas_sales_department where active = 'Y') sd
+         ,(select * from bse.t_bas_outer_branch where active = 'Y') ob
+      where o.waybillNo = m.WAYBILL_NO
+        and m.ACTIVE = 'Y'
+        and o.waybillNo = n.WAYBILL_NO
+        and o.serialNo = n.SERIAL_NO
+        and sd.code(+) = m.customer_pickup_org_code
+        and ob.agent_dept_code(+) = m.customer_pickup_org_code
+        and m.receive_customer_dist_code=ds.code(+)
+        and m.PRODUCT_CODE IN ('RCP','PACKAGE','EPEP','DEAP')
+     order by waybillNo, serialNo    ]]>
+  </select>
+  <!-- 刷新零担清仓任务列表 -->
+   <select id="queryPdaStTaskDtoListNotExpress" resultType="com.deppon.foss.module.transfer.pda.api.shared.dto.PdaStTaskDto" parameterType="map"> 
+	<![CDATA[ 
+	select   o.stTaskNo as stTaskNo
+        ,o.deptCode as deptCode
+        ,o.waybillNo as waybillNo
+        ,o.serialNo as serialNo
+        ,m.PRODUCT_CODE as productCode
+        ,ROUND(m.GOODS_WEIGHT_TOTAL / m.GOODS_QTY_TOTAL, 2) as goodsWeight
+        ,ROUND(m.GOODS_VOLUME_TOTAL / m.GOODS_QTY_TOTAL, 2) as goodsVolume
+        ,m.GOODS_NAME as goodsName
+        ,n.IN_STOCK_TIME as inStockTime
+        ,m.PRECIOUS_GOODS as preciousGoods
+       ,(case when o.needWoodenPackage > 0 then 'Y' else 'N' end ) as needWoodenPackage  
+       ,(case when o.contraband > 0 then 'Y' else 'N' end ) as contraband
+        ,m.CREATE_USER_CODE as creatorCode
+        ,m.GOODS_PACKAGE as packageType
+        ,m.RECEIVE_ORG_CODE as receiveOrgCode
+        ,m.TARGET_ORG_CODE as targetOrgCode
+        ,m.GOODS_QTY_TOTAL as wayBillQty
+        ,nvl(sd.station_number,ob.station_number) as stationNumber
+        ,ds.name as receiveCustomerDistName
+    from pkp.t_srv_waybill m
+        ,tfr.t_opt_stock n
+        ,(select　bd.code,bd.name　from bse.t_bas_district bd where bd.active='Y') ds
+        ,(select a.TASK_NO as stTaskNo
+               ,a.DEPTCODE as deptCode
+               ,b.WAYBILL_NO as waybillNo
+               ,b.SERIAL_NO as serialNo
+               ,count(c.WAYBILL_NO) as contraband
+               ,count(d.WAYBILL_NO) as needWoodenPackage
+            from tfr.T_OPT_ST_TASK a
+                ,tfr.T_OPT_ST_TASK_LIST b
+                ,(select cc.WAYBILL_NO from  tfr.T_OPT_CONTRABAND cc where cc.PROCESS_RESULT = #{contraband}) c
+                ,(select dd.WAYBILL_NO from tfr.t_opt_package_request_detail dd where dd.is_packed = 'N') d
+              where a.ID = b.ST_TASK_ID
+                and a.TASK_NO = #{stTaskNo}
+                and b.PACKAGE_NO is null
+                and b.WAYBILL_NO = c.WAYBILL_NO(+)
+                and b.WAYBILL_NO = d.WAYBILL_NO(+)
+                group by a.TASK_NO, a.DEPTCODE, b.WAYBILL_NO,b.SERIAL_NO) o
+         ,(select * from bse.t_bas_sales_department where active = 'Y') sd
+         ,(select * from bse.t_bas_outer_branch where active = 'Y') ob
+      where o.waybillNo = m.WAYBILL_NO
+        and m.ACTIVE = 'Y'
+        and o.waybillNo = n.WAYBILL_NO
+        and o.serialNo = n.SERIAL_NO
+        and sd.code(+) = m.customer_pickup_org_code
+        and ob.agent_dept_code(+) = m.customer_pickup_org_code
+        and m.receive_customer_dist_code=ds.code(+)
+        and m.PRODUCT_CODE NOT IN ('RCP','PACKAGE','EPEP','DEAP')
+     order by waybillNo, serialNo    ]]>
+  </select>
+  <!-- PDA刷新包清仓任务列表 -->
+  <select id="queryPdaPackageStTastDtoList" resultType="com.deppon.foss.module.transfer.pda.api.shared.dto.PdaPackageStTastDto" parameterType="java.lang.String"> 
+  	select distinct a.TASK_NO stTaskNo,
+  					a.ID stTaskId,
+  					b.package_no packageNo,
+  					c.SERIAL_QTY wayBillQiy,
+					c.WEIGHT packageWeight,
+					c.VOLUME packageVolume,
+					c.ARRIVE_ORG_NAME arriveOrgName,
+					c.END_TIME inStockTime
+            from tfr.T_OPT_ST_TASK a,
+            tfr.T_OPT_ST_TASK_LIST b,
+            tfr.T_OPT_PACKAGE c
+            where a.ID = b.ST_TASK_ID
+                  and a.TASK_NO = #{stTaskNo}
+                  and b.package_no = c.package_no
+                  and b.package_no is not null
+  </select>
+  <select id="queryEntityCountByGoodsInfo" resultType="Long" parameterType="map">
+  	select count(*)
+      from TFR.T_OPT_ST_TASK_LIST
+        where ST_TASK_ID = #{stTaskId,jdbcType=VARCHAR}
+          and WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+          and SERIAL_NO = #{serialNo,jdbcType=VARCHAR}
+  </select>
+  <!-- 按件手工创建清仓任务时，新增明细 -->
+   <insert id="addStTaskListFromStockByQty" parameterType="map">
+     insert into TFR.T_OPT_ST_TASK_LIST (ID, WAYBILL_NO, SERIAL_NO, ST_TASK_ID, IN_STOCK_TIME) 
+			select sys_guid(),
+				   s.waybill_no,
+				   s.serial_no, 
+				   #{stTaskId},
+				   s.in_stock_time
+			from TFR.t_opt_stock s
+			inner join pkp.t_srv_waybill w on s.waybill_no = w.waybill_no
+			where w.active = 'Y'
+    		and w.is_whole_vehicle = 'N' 
+			and s.ORG_CODE = #{orgCode,jdbcType=VARCHAR} 
+			<![CDATA[
+			and s.in_stock_time <= sysdate - #{beforeTime,jdbcType=INTEGER}/1440 
+			and w.goods_qty_total >= #{startQty,jdbcType=INTEGER}
+     		and w.goods_qty_total <= #{endQty,jdbcType=INTEGER}
+     		 ]]>
+			<choose>
+			<when test="goodsAreaCode != null and goodsAreaCode!=''">
+				AND s.GOODS_AREA_CODE = #{goodsAreaCode,jdbcType=VARCHAR}
+			</when>
+			<otherwise>
+				AND s.GOODS_AREA_CODE = 'N/A'
+			</otherwise>
+			</choose>
+			<![CDATA[
+				and not exists
+	 			(select distinct /*t.task_no,*/ d.waybill_no, ls.serial_no
+	            from tfr.t_opt_load_serialno ls
+	            inner join tfr.t_opt_load_waybill_detail d on d.id = ls.load_waybill_detail_id
+	         	inner join tfr.t_opt_load_task t on t.id = d.load_task_id
+	         	inner join tfr.t_opt_load_dest_org dest on dest.load_task_id = t.id
+	         	inner join (select area.goods_area_code,area.arrive_region_code,area.org_code
+	                      from bse.t_bas_goods_area area
+	                     where  area.active = 'Y') a on a.arrive_region_code = dest.dest_org_code
+	           where  t.task_state = 'LOADING'
+	           and t.load_start_time >= sysdate - 48/24
+	           and t.load_start_time <= sysdate
+	           and LS.Be_Loaded = 'Y'
+	           and t.orig_org_code = s.org_code
+	           and a.org_code =  s.org_code
+	           and a.goods_area_code = s.goods_area_code          
+	           and d.waybill_no = s.waybill_no
+	           and ls.serial_no = s.serial_no)
+            ]]>
+			order by WAYBILL_NO,SERIAL_NO 
+  </insert>
+
+	<select id="queryPdaStSnap" parameterType="java.lang.String"
+		resultType="com.deppon.foss.module.transfer.pda.api.shared.dto.PdaStTaskDto">
+		SELECT t.task_no       stTaskNo,
+		       t.deptcode      deptCode,
+		       tl.waybill_no   waybillNo,
+		       tl.serial_no    serialNo,
+		       s.in_stock_time inStockTime
+		  FROM tfr.t_opt_st_task t
+		 INNER JOIN tfr.t_opt_st_task_list tl
+		    ON tl.st_task_id = t.id
+		   AND tl.package_no IS NULL
+		 INNER JOIN tfr.t_opt_stock s
+		    ON s.waybill_no = tl.waybill_no
+		   AND s.serial_no = tl.serial_no
+		   AND s.org_code = t.deptcode
+		 WHERE t.task_no = #{stTaskNo,jdbcType=VARCHAR}
+		 ORDER BY tl.waybill_no, tl.serial_no 
+	</select>
+
+	<select id="queryWaybillInfo" parameterType="java.lang.String"
+		resultType="com.deppon.foss.module.transfer.pda.api.shared.dto.PdaStTaskDto">
+		SELECT w.product_code productCode,
+		       w.goods_name goodsName,
+		       w.precious_goods preciousGoods,
+		       w.goods_package packageType,
+		       w.receive_org_code receiveOrgCode,
+		       w.target_org_code targetOrgCode,
+		       w.goods_qty_total wayBillQty,
+		       w.create_user_code creatorCode,
+		       ROUND(w.goods_weight_total / w.goods_qty_total, 2) goodsWeight,
+		       ROUND(w.goods_volume_total / w.goods_qty_total, 2) goodsVolume,
+		       dis.name receiveCustomerDistName,
+		       w.customer_pickup_org_code customerPickupOrgCode
+		  FROM pkp.t_srv_waybill w
+		  LEFT JOIN bse.t_bas_district dis
+		    ON dis.active = 'Y'
+		   AND dis.code = w.receive_customer_dist_code
+		 WHERE w.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		   AND w.active = 'Y'
+	</select>
+	
+	<select id="queryContraband" parameterType="java.lang.String" resultType="java.lang.Long">
+		SELECT count(1)
+		  FROM tfr.t_opt_contraband t
+		 WHERE t.process_result = 'CONTRABAND_PROCESS_RESULT'
+		 and t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="queryNeedPack" parameterType="java.lang.String" resultType="java.lang.Long">
+		SELECT count(1)
+		  FROM tfr.t_opt_package_request_detail t
+		 WHERE t.is_packed = ' N'
+		 and t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="queryOrgStationNum" parameterType="java.lang.String" resultType="java.lang.String">
+		SELECT t.station_number
+		  FROM bse.t_bas_sales_department t
+		 WHERE t.active = 'Y'
+		   AND t.code = #{code,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="queryOuterBranchStationNum" parameterType="java.lang.String" resultType="java.lang.String">
+		SELECT t.station_number
+		  FROM bse.t_bas_outer_branch t
+		 WHERE t.active = 'Y'
+		   AND t.agent_dept_code = #{code,jdbcType=VARCHAR}
+	</select>
+	
+  
+</mapper>

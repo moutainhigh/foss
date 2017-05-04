@@ -1,0 +1,409 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.load.createworkload" >
+  <resultMap id="loaderWorkloadDetailDtoResultMap" 
+  		type="com.deppon.foss.module.transfer.load.api.shared.dto.LoaderWorkloadDetailDto" >
+    <id column="id" property="id" />
+    <result column="taskNo" property="taskNo" />
+    <result column="vehicleNo" property="vehicleNo" />
+    <result column="handleType" property="handleType" />
+    <result column="taskType" property="taskType" />
+    <result column="taskBeginDate" property="taskBeginDate" />
+    <result column="taskEndTime" property="taskEndTime" />
+    <result column="orgCode" property="orgCode" />
+    <result column="goodsType" property="goodsType" />
+  </resultMap>
+  
+  <resultMap id="queryBillAndPkgCountMap" 
+  		type="com.deppon.foss.module.transfer.load.api.shared.dto.BillAndPkgCountDto" >
+    <id column="id" property="id" />
+    <result column="Loader_Code" property="empCode" />
+    <result column="Waybillcount" property="wayBillCount" />
+    <result column="Packagecount" property="packageCount" />
+    <result column="Goodscount" property="goodsCount" />
+  </resultMap>
+
+	<resultMap id="loaderParticipationDtoResultMap" 
+		type="com.deppon.foss.module.transfer.load.api.shared.dto.LoaderParticipationDto">
+		<id column="ID" property="id" />
+		<result column="LOADER_NAME" property="loaderName"/>
+		<result column="LOADER_CODE" property="loaderCode"/>
+		<result column="LOAD_ORG_CODE" property="loadOrgCode"/>
+		<result column="LOAD_ORG_NAME" property="loadOrgName"/>
+		<result column="JOIN_TIME" property="joinTime"/>
+		<result column="LEAVE_TIME" property="leaveTime"/>
+		<result column="BE_CREATOR" property="beCreator"/>
+		<result column="TASK_TYPE" property="taskType"/>
+		<result column="TASK_ID" property="taskId"/>
+		<result column="orgCode" property="orgCode"/>
+		<result column="orgName" property="orgName"/>
+		<result column="expressgoodsQty" property="expressGoodsQty"/>
+	    <result column="ldgoodsQty" property="ldGoodsQty"/>
+	    <result column="expresswaybillQty" property="expressWaybillQty"/> 
+	    <result column="ldwaybillQty" property="ldWaybillQty"/> 
+	    <result column="expressWeight" property="expressWeight"/>
+	    <result column="ldWeight" property="ldWeight"/>
+	    <result column="expressVolume" property="expressVolume"/>
+	    <result column="ldVolume" property="ldVolume"/>
+	    <result column="ExpressOrLd" property="ExpressOrLd"/>  
+    
+	</resultMap>
+ 
+ 
+	<!--查询未生成装卸车工作量卸车任务 -->
+		<select id="queryUnCreateWorkLoadUnloadTask" resultMap="loaderWorkloadDetailDtoResultMap">
+	   Select *
+       From (Select T.Id As Id,
+               Max(T.Vehicle_No) Vehicleno,
+               Max(T.Unload_Task_No) As Taskno,
+               Max(T.Unload_Type) As Tasktype,
+               'UNLOAD' As Handletype,
+               Max(To_Char(T.Unload_Start_Time, 'yyyy-mm-dd hh24:mi:ss')) As Taskbegindate,
+               Max(To_Char(T.Unload_End_Time, 'yyyy-mm-dd hh24:mi:ss')) As Taskendtime,
+               Max(T.Unload_Org_Code) As Orgcode,
+               Sum(W.Operation_Goods_Qty) As Totgoodsqty
+          From Tfr.T_Opt_Unload_Task t
+          Join Tfr.T_Opt_Unload_Waybill_Detail w
+            On W.Unload_Task_Id = T.Id
+           And W.Task_Begin_Time >= Trunc(Sysdate) - 1
+         Where T.Unload_Start_Time >= Trunc(Sysdate) - 1
+           And T.Be_Create_Workload = 'N'
+           And T.Task_State = 'FINISHED'
+           And T.Unload_Type In ('DELIVER',
+                                 'LONG_DISTANCE',
+                                 'SHORT_DISTANCE',
+                                 'BUSINESS_AIR',
+                                 'SC_EXPRESS',
+                                 'EXPRESS_PICK',
+                                 'DIVISION')
+        
+              Group By T.Id)
+         Where <![CDATA[ Rownum <= 2000]]>
+	</select>
+
+ 	<!--查询未生成装卸车工作量装车任务 -->
+	<select id="queryUnCreateWorkLoadLoadTask" resultMap="loaderWorkloadDetailDtoResultMap">
+			Select *
+  From (Select T.Id As Id,
+               Max(T.Vehicle_No) Vehicleno,
+               Max(T.Task_No) As Taskno,
+               Max(T.Task_Type) As Tasktype,
+               'LOAD' As Handletype,
+               Max(To_Char(T.Load_Start_Time, 'yyyy-mm-dd hh24:mi:ss')) As Taskbegindate,
+               Max(To_Char(T.Load_End_Time, 'yyyy-mm-dd hh24:mi:ss')) As Taskendtime,
+               Max(T.Orig_Org_Code) As Orgcode,
+               Sum(D.Load_Qty) As Totgoodsqty,
+               Max(T.Goods_Type) As Goodstype
+          From Tfr.T_Opt_Load_Task t
+          Join Tfr.T_Opt_Load_Waybill_Detail d
+            On D.Load_Task_Id = T.Id
+           And D.Task_Begin_Time >= Trunc(Sysdate) - 1
+         Where T.Load_Start_Time >= Trunc(Sysdate) - 1
+           And T.Be_Create_Workload = 'N'
+           And T.Task_State In ('FINISHED', 'SUBMITED')
+           And T.Task_Type In ('PARTIALLINE_LOAD',
+                               'LONG_DISTANCE_LOAD',
+                               'SHORT_DISTANCE_LOAD',
+                               'SC_EXPRESS',
+                               'EXPRESS_PICK',
+                               'EXPRESS_CONNECTION_LOAD',
+                               'LDP_LOAD',
+                               'DIVISION_LOAD',
+                               'DELIVER_LOAD')
+              
+           And T.Load_Way = 'PDA'
+         Group By T.Id)
+       Where <![CDATA[ Rownum <= 2000]]>
+	</select>
+	
+	<!---根据理货员参与情况id查询装车情况 -->
+	<select id="queryLoadParticipationDtoByTaskId" resultMap="loaderParticipationDtoResultMap" parameterType="String">
+			<![CDATA[select pid as ID,
+			   max(loader_name) as LOADER_NAME,
+		       max(loader_code) as LOADER_CODE,
+		       max(load_org_code) as LOAD_ORG_CODE,
+		       max(load_org_name) as LOAD_ORG_NAME,
+		       max(join_time) as JOIN_TIME,
+		       max(leave_time) as LEAVE_TIME,
+		       max(orgCode) as orgCode,
+		       max(orgName) as orgName,
+		       isExpress as ExpressOrLd, 
+		       sum(decode(isExpress,'Y',loadGoodsQty,0)) as expressGoodsQty,
+		       sum(decode(isExpress,'N',loadGoodsQty,0)) as ldGoodsQty,
+		       sum(decode(isExpress,'Y',decode(loadGoodsQty,0,0,1),0)) as expressWaybillQty,
+		       sum(decode(isExpress,'N',decode(loadGoodsQty,0,0,1),0)) as ldWaybillQty,
+		       nvl(decode(isExpress,'Y',sum(weight),0),0) as expressWeight,
+		       nvl(decode(isExpress,'N',sum(weight),0),0) as ldWeight,
+		       nvl(decode(isExpress,'Y',sum(volume),0),0) as expressVolume,
+		       nvl(decode(isExpress,'N',sum(volume),0),0) as ldVolume
+		  from (select distinct w.waybill_no as waybill_no,
+		                        p.id as pid,
+		                        decode(pwb.product_code,'RCP','Y','PACKAGE','Y','EPEP','Y','DEAP','Y','N') as isExpress,
+		                        p.loader_code as loader_code,
+		                        p.loader_name as loader_name,
+		                        p.load_org_code as load_org_code,
+		                        p.load_org_name as load_org_name,
+		                        p.join_time as join_time,
+		                        p.leave_time as leave_time,
+		                        team.parent_org_code as orgCode,
+		                        org.name as orgName,
+		                        (sum(nvl2(s.id, 1, 0))
+		                         over(partition by w.waybill_no,p.id)),
+		                        w.load_weight_total *
+		                        (count(s.id) over(partition by w.waybill_no,p.id)) /
+		                        decode( w.load_qty,
+		                               0,
+		                               1,
+		                                w.load_qty) as weight,
+		                        w.load_volume_total *
+		                        (count(s.id) over(partition by w.waybill_no,p.id)) /
+		                        decode( w.load_qty,
+		                               0,
+		                               1,
+		                               w.load_qty) as volume,
+		                        count(s.id) over(partition by w.waybill_no,p.id) as loadGoodsQty
+		          from tfr.t_opt_loader_participation p
+		          left join bse.t_bas_load_unload_team team on team.code =
+		                                                       p.load_org_code
+		                                                   and team.active = 'Y'
+		          left join bse.t_bas_org org on org.code = team.parent_org_code
+		                                     and org.active = 'Y'
+		          left join tfr.t_opt_load_waybill_detail w on w.load_task_id =
+		                                                         p.task_id and w.LOAD_QTY > 0
+		          left join tfr.t_opt_load_serialno s on s.load_waybill_detail_id = w.id
+		                                               and s.be_loaded='Y'
+		                                               and s.load_time <=
+		                                                   p.leave_time
+		                                               and s.load_time >=
+		                                                   p.join_time
+		         LEFT JOIN pkp.t_srv_waybill pwb ON pwb.waybill_no=w.waybill_no AND pwb.active='Y'                                                                                                                      
+		         where p.task_id=#{id}
+		         and w.waybill_no is not null
+		         and p.be_creator<>'C'
+		         )]]>
+		         group by pid,isExpress
+	</select>
+	<!--根据理货员参与情况id查询卸车情况 -->
+		<select id="queryUnloadParticipationDtoByTaskId" resultMap="loaderParticipationDtoResultMap" parameterType="String">
+			<![CDATA[select  pid as ID,
+			   max(loader_name) as LOADER_NAME,
+					/**中转-统计装卸车工作量模块-按卸车任务ID统计理货员工作量*/
+		       max(loader_code) as LOADER_CODE,
+		       max(load_org_code) as LOAD_ORG_CODE,
+		       max(load_org_name) as LOAD_ORG_NAME,
+		       max(join_time) as JOIN_TIME,
+		       max(leave_time) as LEAVE_TIME,
+		       max(orgCode) as orgCode,
+		       max(orgName) as orgName,
+		       isExpress as ExpressOrLd,
+               sum(decode(isExpress,'Y',unloadGoodsQty,0)) as expressGoodsQty,
+		       sum(decode(isExpress,'N',unloadGoodsQty,0)) as ldGoodsQty,
+		       sum(decode(isExpress,'Y',decode(unloadGoodsQty,0,0,1),0)) as expressWaybillQty,
+		       sum(decode(isExpress,'N',decode(unloadGoodsQty,0,0,1),0)) as ldWaybillQty,
+		       nvl(decode(isExpress,'Y',sum(weight),0),0) as expressWeight,
+		       nvl(decode(isExpress,'N',sum(weight),0),0) as ldWeight,
+		       nvl(decode(isExpress,'Y',sum(volume),0),0) as expressVolume,
+		       nvl(decode(isExpress,'N',sum(volume),0),0) as ldVolume  
+		  from (select distinct w.waybill_no as waybill_no,
+		 						p.id as pid,
+		 						decode(pwb.product_code,'RCP','Y','PACKAGE','Y','EPEP','Y','DEAP','Y','N') as isExpress,
+		                        p.loader_code as loader_code,
+		                        p.loader_name as loader_name,
+		                        p.load_org_code as load_org_code,
+		                        p.load_org_name as load_org_name,
+		                        p.join_time as join_time,
+		                        p.leave_time as leave_time,
+		                        team.parent_org_code as orgCode,
+		                        org.name as orgName,
+		                        (sum(nvl2(s.id, 1, 0))
+		                         over(partition by w.waybill_no,p.id)),
+		                        w.unload_weight_total *
+		                        (count(s.id) over(partition by w.waybill_no,p.id)) /
+		                        decode(w.operation_goods_qty,
+		                               0,
+		                               1,
+		                               w.operation_goods_qty) as weight,
+		                        w.unload_volume_total *
+		                        (count(s.id) over(partition by w.waybill_no,p.id)) /
+		                        decode(w.operation_goods_qty,
+		                               0,
+		                               1,
+		                               w.operation_goods_qty) as volume,
+		                        count(s.id) over(partition by w.waybill_no,p.id) as unloadGoodsQty
+		          from tfr.t_opt_loader_participation p
+		          left join tfr.t_opt_unload_task t on t.id = p.task_id
+		          left join bse.t_bas_load_unload_team team on team.code =
+		                                                       p.load_org_code
+		                                                   and team.active = 'Y'
+		          left join bse.t_bas_org org on org.code = team.parent_org_code
+		                                     and org.active = 'Y'
+		          left join tfr.t_opt_unload_waybill_detail w on w.unload_task_id =
+		                                                         p.task_id and w.OPERATION_GOODS_QTY > 0
+		          left join tfr.t_opt_unload_serialno s on s.unload_waybill_detail_id = w.id
+		                                               and s.goods_state in
+		                                                   ('NORMAL',
+		                                                    'MORE_ENTRAINED',
+		                                                    'MORE_ALLOPATRY_ENTRAINED')
+		                                               and s.unload_time <=
+		                                                   p.leave_time
+		                                               and s.unload_time >=
+		                                                   p.join_time
+		          LEFT JOIN pkp.t_srv_waybill pwb ON pwb.waybill_no=w.waybill_no AND pwb.active='Y'             
+		         where p.task_id=#{id}
+		          and w.waybill_no is not null
+		          and ((t.unload_way = 'PDA' and p.be_creator in('N','Y')) or
+       			 (t.unload_way = 'NO_PDA' and p.be_creator = 'N'))
+       		)]]>
+		         group by pid,isExpress
+	</select>
+	<!-- 插入工作量 -->
+	<insert id="insertWorkLoad" parameterType="java.util.List" >
+		begin 
+		<foreach collection="list" item="item" separator=";">
+			insert into tfr.t_opt_loader_workload
+				  (id,
+				   loader_code,
+				   loader_name,
+				   load_org_code,
+				   load_org_name,
+				   handover_no,
+				   vehicle_no,
+				   handle_type,
+				   task_type,
+				   task_no,
+				   task_id,
+				   join_time,
+				   leave_time,
+				   weight,
+				   waybill_qty,
+				   goods_qty,
+				   volume,
+				   org_code,
+				   org_name,
+				   create_time,
+				   LOADER_ORG_CODE,
+				   LOADER_ORG_NAME,
+				   GOODS_TYPE,
+				  EXPRESS_OR_LD)
+				values(	
+				#{item.id,jdbcType=VARCHAR},
+				#{item.loaderCode,jdbcType=VARCHAR},
+				#{item.loaderName,jdbcType=VARCHAR},
+				#{item.loadOrgCode,jdbcType=VARCHAR},
+				#{item.loadOrgName,jdbcType=VARCHAR},
+				#{item.handoverNo,jdbcType=VARCHAR},
+				#{item.vehicleNo,jdbcType=VARCHAR},
+				#{item.handleType,jdbcType=VARCHAR},
+				#{item.taskType,jdbcType=VARCHAR},
+				#{item.taskNo,jdbcType=VARCHAR},
+				#{item.taskId,jdbcType=VARCHAR},
+				#{item.joinTime,jdbcType=TIMESTAMP},
+				#{item.leaveTime,jdbcType=TIMESTAMP},
+				#{item.weight,jdbcType=DECIMAL},
+				#{item.waybillQty,jdbcType=DECIMAL},
+				#{item.goodsQty,jdbcType=DECIMAL},
+				#{item.volume,jdbcType=DECIMAL},
+				#{item.orgCode,jdbcType=VARCHAR},
+				#{item.orgName,jdbcType=VARCHAR},
+				#{item.createTime,jdbcType=TIMESTAMP},
+				#{item.loaderOrgCode,jdbcType=VARCHAR},
+				#{item.loaderOrgName,jdbcType=VARCHAR},
+				#{item.goodsType,jdbcType=VARCHAR},
+				#{item.expressOrLd,jdbcType=VARCHAR}
+				)
+		</foreach>
+		;end;
+	</insert>
+	<!-- 更新是否生成装车工作量 -->
+	<update id="updateLoadTaskBeCreateWorkLoad" parameterType="HashMap" >
+		update tfr.t_opt_load_task t set t.BE_CREATE_WORKLOAD=#{beCreateWorkLoad} where t.id=#{taskId}
+	</update>
+    <!-- 更新是未生成装车工作量 装车任务-->
+	<update id="updateunCreateLoadTask" parameterType="String" >
+		update tfr.t_opt_load_task t set t.BE_CREATE_WORKLOAD='W' where t.id=#{taskId}
+	</update>
+	 <!-- 更新是否生成卸车工作量 -->
+	<update id="updateunCreateUnLoadTask" parameterType="String" >
+		update tfr.t_opt_unload_task t set t.BE_CREATE_WORKLOAD='W' where t.id=#{taskId}
+	</update>
+	<!-- 更新是否生成卸车工作量 -->
+	<update id="updateUnloadTaskBeCreateWorkLoad" parameterType="HashMap" >
+		update tfr.t_opt_unload_task t set t.BE_CREATE_WORKLOAD=#{beCreateWorkLoad} where t.id=#{taskId}
+	</update>
+	 <!--根据装车任务id查询理货员参与情况id -->
+	<select id="queryLoaderParticipationByTaskId" resultType="String"  parameterType="String" >
+			select p.id
+			  from tfr.t_opt_loader_participation p
+			 where p.task_id = #{taskId}
+			   and p.join_time is not null
+			   and p.leave_time is not null
+	</select>
+	 <!--查询卸车货物类型 -->
+	<select id="queryUnloadGoodsType" resultType="String"  parameterType="String" >
+			select nvl(nvl(h.goods_type, v.goods_type), 'ALL')
+			  from tfr.t_opt_unload_bill_detail b
+			  left join tfr.t_opt_handoverbill h on h.handover_no = b.bill_no
+			  left join tfr.t_opt_vehicleassemblebill v on v.vehicleassemble_no =
+			                                               b.bill_no
+			 where b.unload_task_id = #{taskId}
+	</select>
+	
+	<!--根据卸车任务编号获取当前卸车任务下所有的单据号以 "xxxxxx,xxxxxxx" 这样的方式展示-->
+	<select id="queryBillNosByTaskNo" resultType="String" parameterType="String">
+		<![CDATA[
+			select Wm_concat(d.bill_no)
+			  from tfr.t_opt_unload_task t
+			 inner join tfr.t_opt_unload_bill_detail d
+			    on d.unload_task_id = t.id
+			 where t.unload_task_no = #{taskNo}
+		]]>
+	</select>
+	
+	<!-- 根据装车任务ID查询理货员装车票数和包数  271297 2016-1-12 12:00:30-->
+	<select id="queryBillAndPkgCountByTaskID" resultMap="queryBillAndPkgCountMap" parameterType="String">
+		<![CDATA[
+             Select p.id as id,
+            P.Loader_Code Loader_Code,
+            Count(Distinct t1.Waybill_No) Waybillcount,
+            Count(Distinct t1.Package_No) Packagecount,
+            count(t1.Waybill_No) Goodscount
+       From Tfr.T_Opt_Loader_Participation p
+       left join (
+            select d.*,s.load_time from Tfr.T_Opt_Load_Waybill_Detail d,tfr.t_opt_load_serialno s
+               where  d.package_no is not null and d.LOAD_QTY > 0 and 
+                      s.load_waybill_detail_id = d.id and s.be_loaded = 'Y'
+                      and d.Load_Task_Id=#{loadTaskID}
+       ) t1 on P.Task_Id = t1.Load_Task_Id   and t1.load_time <=  p.leave_time  and t1.load_time >=  p.join_time
+       where P.Task_Id =#{loadTaskID}
+        and p.be_creator <> 'C'
+      Group By p.id,P.Loader_Code
+		]]>
+	</select>
+	<!-- 根据卸车任务ID查询理货员装车票数和包数  271297 2016-1-12 12:00:30-->
+	<select id="queryUnLoadBillAndPkgCountByTaskID" resultMap="queryBillAndPkgCountMap" parameterType="String">
+		<![CDATA[
+		  SELECT P.id as id,
+            Count(Distinct t1.Waybill_No) Waybillcount,
+            Count(Distinct t1.Package_No) Packagecount,
+            count(t1.Waybill_No) Goodscount,
+            p.LOADER_CODE asLoader_Code
+       From Tfr.T_Opt_Loader_Participation p
+       left join tfr.t_opt_unload_task t
+         on t.id = p.task_id
+      LEFT JOIN (SELECT ddd.*,s.unload_time FROM  tfr.t_opt_unload_waybill_detail ddd,tfr.t_opt_unload_serialno s WHERE 
+            s.unload_waybill_detail_id = ddd.id
+          AND  ddd.Package_No Is Not Null
+        and s.goods_state in
+            ('NORMAL', 'MORE_ENTRAINED', 'MORE_ALLOPATRY_ENTRAINED')
+            AND ddd.unload_task_id =#{loadTaskID}
+            ) t1
+         On P.Task_Id = t1.unload_task_id
+       and t1.unload_time <= p.leave_time
+        and t1.unload_time >= p.join_time
+      Where 1=1 AND p.Task_Id =#{loadTaskID}
+        and ((t.unload_way = 'PDA' and p.be_creator in ('N', 'Y')) or
+            (t.unload_way = 'NO_PDA' and p.be_creator = 'N'))
+            GROUP BY P.id,p.LOADER_CODE
+		]]>
+	</select>
+</mapper>

@@ -1,0 +1,503 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tfr-load">
+	<resultMap id="assignLoadTaskResultMap"
+		type="com.deppon.foss.module.transfer.load.api.shared.domain.AssignLoadTaskEntity">
+		<result property="id" column="id" />
+		<result property="assignTime" column="assignTime" />
+		<result property="taskState" column="taskState" />
+		<result property="beCancelled" column="beCancelled" />
+		<association property="bill" column="billId" resultMap="billResultMap"/>
+		<association property="loader" column="loaderId" resultMap="loaderResultMap"/>
+	</resultMap>
+	<resultMap id="loaderResultMap" type="com.deppon.foss.module.transfer.load.api.shared.domain.LoaderEntity">
+		<id property="id" column="loaderId"/>
+		<result property="loaderCode" column="loaderCode"/>
+		<result property="loaderName" column="loaderName"/>
+		<result property="orgCode" column="orgCode"/>
+		<result property="orgName" column="orgName"/>
+		<result property="title" column="title"/>
+		<result property="unfinishedWeight" column="unfinishedWeight"/>
+		<result property="unfinishedTaskQty" column="unfinishedTaskQty"/>
+		<result property="assignedWeight" column="assignedWeight"/>
+		<result property="finishedWeight" column="finishedWeight"/>
+	</resultMap>
+	<resultMap id="billResultMap" type="com.deppon.foss.module.transfer.load.api.shared.domain.DeliverBillEntity">
+		<id property="id" column="billId"/>
+		<result property="billNo" column="billNo"/>
+		<result property="vehicleNo" column="vehicleNo"/>
+		<result property="driver" column="driver"/>
+		<result property="state" column="state"/>
+		<result property="wayBillQtyTotal" column="wayBillQtyTotal"/>
+		<result property="fastWayBillQtyTotal" column="fastWayBillQtyTotal"/>
+		<result property="goodsQtyTotal" column="goodsQtyTotal"/>
+		<result property="volumeTotal" column="volumeTotal"/>
+		<result property="weightTotal" column="weightTotal"/>
+		<result property="arriveFeeTotal" column="arriveFeeTotal"/>
+		<result property="createTime" column="createTime"/>
+	</resultMap>
+	
+	<!--派送单-->
+	<resultMap id="deliverBillResultMap"
+		type="com.deppon.foss.module.transfer.load.api.shared.domain.DeliverBillEntity">
+		<result property="billNo" column="billNo" />
+		<result property="vehicleNo" column="vehicleNo" />
+		<result property="operateTime" column="operateTime" />
+	</resultMap>
+	
+	<!--派送单明细（运单）-->
+	<resultMap id="deliverBillDetailResultMap"
+		type="com.deppon.foss.module.transfer.load.api.shared.domain.LoadWaybillDetailEntity">
+		<result property="billNo" column="billNo" />
+		<result property="waybillNo" column="waybillNo" />
+		<result property="consignee" column="consignee" />
+		<result property="goodsName" column="goodsName" />
+		<result property="waybillGoodsQty" column="waybillGoodsQty" />
+		<result property="deliverBillQty" column="deliverBillQty" />
+		<result property="stockQty" column="stockQty" />
+		<result property="loadQty" column="loadQty" />
+		<result property="notes" column="notes" />
+		<result property="transportType" column="transportType" />
+		<result property="pack" column="pack" />
+		<result property="receiveOrgName" column="receiveOrgName" />
+		<result property="reachOrgName" column="reachOrgName" />
+		<result property="taskBeginTime" column="taskBeginTime" />
+		<result property="origOrgCode" column="origOrgCode" />
+		<result property="beJoinCar" column="beJoinCar" />
+		<result property="loadWeightTotal" column="loadWeightTotal" />
+		<result property="loadVolumeTotal" column="loadVolumeTotal" />
+	</resultMap>
+	
+	<!-- 根据派送单单号获取派送单信息 -->
+	<select id="queryDeliverBillByNo" parameterType="String" resultMap="deliverBillResultMap">
+		select
+			 db.deliverbill_no billNo,
+			 db.vehicle_no vehicleNo,
+			 db.OPERATE_TIME operateTime 
+			 from pkp.t_srv_deliverbill db
+		<where>
+			 db.deliverbill_no = #{billNo,jdbcType=VARCHAR}
+			 <![CDATA[and db.STATUS<>'CANCELED']]>
+		</where>
+	</select>
+	
+	<!-- 根据派送单单号获取派送单详细信息 -->
+	<select id="queryDeliverBillDetailListByNo" parameterType="com.deppon.foss.module.transfer.load.api.shared.dto.DeliverBillQueryConditionDto" 
+			resultMap="deliverBillDetailResultMap">
+		select 
+		         dd.waybill_no waybillNo,
+		         dd.goods_name goodsName,
+		         dd.consignee consignee,
+		         ws.stock_goods_qty stockQty,
+		         dd.arrange_goods_qty deliverBillQty,
+		         dd.waybill_goods_qty waybillGoodsQty,
+		         0 loadQty,
+		         p.name transportType,
+		         w.goods_package pack,
+		         md1.name receiveOrgName,
+		         md2.name reachOrgName,
+		         'N' beJoinCar,
+		         round((w.goods_volume_total / w.goods_qty_total)*ws.stock_goods_qty,2) loadVolumeTotal,
+					   round((w.goods_weight_total / w.goods_qty_total)*ws.stock_goods_qty,2) loadWeightTotal
+		        from pkp.t_srv_deliverbill_detail dd
+		          inner join pkp.t_srv_deliverbill db 
+		          on dd.t_srv_deliverbill_id = db.id 
+		          inner join pkp.t_srv_waybill w
+		          on dd.waybill_no = w.waybill_no and w.active = 'Y'
+		          inner join pkp.t_srv_product p
+		          on w.product_code = p.code and p.levels = 3 and p.active = 'Y'
+		          left join bse.mv_dest_net md1 
+		          on w.receive_org_code = md1.code and md1.active = 'Y'
+		          left join bse.mv_dest_net md2
+		          on w.customer_pickup_org_code = md2.code and md2.active = 'Y'
+		         left join (select sum(ws.stock_goods_qty) stock_goods_qty,
+                    waybill_no,
+                    max(ws.org_code) org_code
+               from tfr.t_opt_waybill_stock ws
+               left join bse.t_bas_goods_area ga
+                 on ws.goods_area_code = ga.goods_area_code
+                and ga.active = 'Y'
+                and ga.org_code = #{loginOrgCode,jdbc=VARCHAR}
+              where ws.org_code = #{loginOrgCode,jdbc=VARCHAR}
+              and (ga.goods_area_type not in 
+			 (
+				<foreach collection="unnormalGoodsAreaTypeList" item="item" separator=",">
+									  #{item,jdbcType=VARCHAR}
+				</foreach>
+				) 
+				or ga.goods_area_type is null
+			)
+              group by ws.waybill_no) ws
+				 on dd.waybill_no = ws.waybill_no and ws.org_code = #{loginOrgCode,jdbc=VARCHAR}
+		<where>
+			 db.deliverbill_no = #{billNo,jdbcType=VARCHAR}
+			 <![CDATA[and db.STATUS<>'CANCELED']]>
+		</where>
+	</select>
+
+	<!--查询已分配、已完成工作量 -->
+	<select id="queryWorkLoad" parameterType="HashMap" resultMap="loaderResultMap">
+		<![CDATA[
+				select  a.loader_code as loaderCode,
+				        sum(a.weight_total) as assignedWeight,
+				        sum(case when a.task_state='FINISHED' then 1 else 0 end) as finishedWeight
+			   	from tfr.t_opt_de_load_assign_task a
+		]]>
+		<where>
+			a.be_cancelled = 'N'<!-- 是否取消为否 -->
+			and a.loader_code in
+ 			<foreach 
+				collection="loaders" open="(" close=")" item="item" separator="," index="index"> 
+				#{item.loaderCode} 
+			</foreach>
+			<if test="queryTimeEnd !=null and queryTimeEnd !=''"><![CDATA[ and a.create_time <= to_date(#{queryTimeEnd}, 'yyyy-mm-dd hh24:mi:ss')]]></if>
+			<if test="queryTimeBegin != null  and queryTimeBegin !=''" ><![CDATA[ and a.create_time >=to_date(#{queryTimeBegin}, 'yyyy-mm-dd hh24:mi:ss')]]></if>
+		</where>
+		group by a.loader_code 
+	</select>
+	
+	<!--查询未完成工作量 -->
+	<select id="queryUnfinishedWorkLoad" parameterType="HashMap" resultMap="loaderResultMap">
+	<![CDATA[
+			select a.loader_code as loaderCode,sum(a.weight_total) as unfinishedWeight,count(a.id) as unfinishedTaskQty 
+			from tfr.t_opt_de_load_assign_task a
+		    ]]>
+		<where>
+			a.be_cancelled = 'N'<!-- 是否取消为否 -->
+			and a.loader_code in
+ 			<foreach 
+				collection="loaders" open="(" close=")" item="item" separator="," index="index"> 
+				#{item.loaderCode} 
+			</foreach>
+			and a.task_state !='FINISHED' 
+		</where>
+		group by a.loader_code
+	</select>
+	<!--查询派送单-->
+	<select id="queryDeliverBillByCondition" parameterType="HashMap" resultMap="billResultMap">
+	<![CDATA[
+			select d.deliverbill_no as billNo,
+		       d.vehicle_no as vehicleNo,
+		       d.driver_name as driver,
+		       d.waybill_qty_total as wayBillQtyTotal,
+		       d.goods_qty_total as goodsQtyTotal,
+		       d.pay_amount_total/100 as arriveFeeTotal,
+		       d.weight_total as weightTotal,
+		       d.volume_total as volumeTotal,
+		       to_char(d.submit_time,'yyyy-mm-dd hh24:mi:ss') as createTime,
+		       d.status as state,
+		       d.fast_waybill_qty as fastWayBillQtyTotal
+		  from pkp.t_srv_deliverbill d 
+		    ]]>
+		   <include refid="selectDeliverBill_Where"/>
+	</select>
+	<!--查询派送单记录条数-->
+	<select id="queryDeliverBillCount" parameterType="HashMap" resultType="Long">
+	<![CDATA[
+			select count(id)
+		  		from pkp.t_srv_deliverbill d 
+		    ]]>
+		<include refid="selectDeliverBill_Where"/>
+	</select>
+	<!--派送单查询条件-->
+	<sql id="selectDeliverBill_Where">
+		<where>
+			<![CDATA[d.status=#{deliverState}]]>
+			<if test="createTimeEnd!=null and createTimeEnd!=''"><![CDATA[and d.submit_time <= to_date(#{createTimeEnd}, 'yyyy-mm-dd hh24:mi:ss')]]></if>
+			<if test="createTimeBegin!=null and createTimeBegin!=''"><![CDATA[and d.submit_time >= to_date(#{createTimeBegin}, 'yyyy-mm-dd hh24:mi:ss')]]></if>
+			<if test="vehicleNo!=null and vehicleNo!=''"><![CDATA[and d.VEHICLE_NO = #{vehicleNo}]]></if>
+			<if test="transferCenterCode!=null and transferCenterCode!=''"><![CDATA[and d.TRANSFER_CENTER = #{transferCenterCode}]]></if>
+			<if test="loginOrgCode!=null and loginOrgCode!=''"><![CDATA[and d.CREATE_ORG_CODE = #{loginOrgCode}]]></if>
+			<if test="billNo!=null and billNo!=''"><![CDATA[and d.DELIVERBILL_NO = #{billNo}]]></if>
+		</where>
+	</sql>
+	<!--查询派送单状态-->
+	<select id="queryDeliverBillState" parameterType="String" resultType="String">
+	<![CDATA[
+			select d.status from pkp.t_srv_deliverbill d 
+		    ]]>
+		<where>
+			d.deliverbill_no=#{assignBillNo}
+		<![CDATA[and d.STATUS<>'CANCELED']]>
+		</where>
+	</select>
+	<!--插入分配记录 -->
+	<insert id="insertAssignItem" 
+		parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.AssignLoadTaskEntity" >
+		
+	 	insert into tfr.t_opt_de_load_assign_task
+		  (ID,
+		  <if test="bill.billNo !=null and bill.billNo !=''">
+		   DELIVERBILL_NO,
+		   </if>
+		   <if test="bill.vehicleNo !=null and bill.vehicleNo !=''">
+		   VEHICLE_NO,
+		   </if>
+		   <if test="bill.createTime !=null and bill.createTime !=''">
+		   BILLING_TIME,
+		   </if>
+		   <if test="bill.weightTotal !=null and bill.weightTotal !=''">
+		   WEIGHT_TOTAL,
+		   </if>
+		   <if test="bill.volumeTotal !=null and bill.volumeTotal !=''">
+		   VOLUME_TOTAL,
+		   </if>
+		   <if test="bill.goodsQtyTotal !=null and bill.goodsQtyTotal !=''">
+		   GOODS_QTY_TOTAL,
+		   </if>
+		   <if test="bill.fastWayBillQtyTotal !=null and bill.fastWayBillQtyTotal !=''">
+		   FAST_WAYBIL_QTY_TOTAL,
+		   </if>
+		   <if test="bill.wayBillQtyTotal !=null and bill.wayBillQtyTotal !=''">
+		   WAYBILL_QTY_TOTAL,
+		   </if>
+		   <if test="bill.arriveFeeTotal !=null and bill.arriveFeeTotal !=''">
+		   ARRIVE_FEE,
+		   </if>
+		   <if test="bill.driver !=null and bill.driver !=''">
+		   DRIVER_NAME,
+		   </if>
+		   <if test="loader.loaderCode !=null and loader.loaderCode !=''">
+		   LOADER_CODE,
+		   </if>
+		   <if test="loader.loaderName !=null and loader.loaderName !=''">
+		   LOADER_NAME,
+		   </if>
+		   <if test="loader.orgCode !=null and loader.orgCode !=''">
+		   LOAD_ORG_CODE,
+		   </if>
+		   <if test="loader.orgName !=null and loader.orgName !=''">
+		   LOAD_ORG_NAME,
+		   </if>
+		   BE_CANCELLED,
+		   <if test="taskState !=null and taskState !=''">
+		   TASK_STATE,
+		   </if>
+		   <if test="loader.title !=null and loader.title !=''">
+		   LOADER_TITLE,
+		   </if>
+		   <if test="assignTime !=null and assignTime !=''">
+		   CREATE_TIME,
+		   MODIFY_TIME,
+		   </if>
+		   <if test="createUserName !=null and createUserName !=''">
+		   CREATE_USER_NAME,
+		   </if>
+		   <if test="createUserCode !=null and createUserCode !=''">
+		   CREATE_USER_CODE,
+		   </if>
+		   <if test="modifyUserName !=null and modifyUserName !=''">
+		   MODIFY_USER_CODE,
+		   </if>
+		   <if test="modifyUserCode !=null and modifyUserCode !=''">
+		   MODIFY_USER_NAME,
+		   </if>
+		   <if test="createOrgCode !=null and createOrgCode !=''">
+		 	CREATE_ORG_CODE,
+		 	</if>
+		 	<if test="createOrgName !=null and createOrgName !=''">
+		 	CREATE_ORG_NAME
+		 	</if>
+		   )values(
+	 		#{id},
+	 		<if test="bill.billNo !=null and bill.billNo !=''">
+	 		#{bill.billNo},
+	 		</if>
+	 		<if test="bill.vehicleNo !=null and bill.vehicleNo !=''">
+		 	#{bill.vehicleNo},
+		 	</if>
+		 	<if test="bill.createTime !=null and bill.createTime !=''">
+		 	to_date(#{bill.createTime},'yyyy-mm-dd hh24:mi:ss'),
+		 	</if>
+		 	<if test="bill.weightTotal !=null and bill.weightTotal !=''">
+		 	#{bill.weightTotal},
+		 	</if>
+		 	<if test="bill.volumeTotal !=null and bill.volumeTotal !=''">
+		 	#{bill.volumeTotal},
+		 	</if>
+		 	<if test="bill.goodsQtyTotal !=null and bill.goodsQtyTotal !=''">
+		 	#{bill.goodsQtyTotal},
+		 	</if>
+		 	<if test="bill.fastWayBillQtyTotal !=null and bill.fastWayBillQtyTotal !=''">
+		 	#{bill.fastWayBillQtyTotal},
+		 	</if>
+		 	<if test="bill.wayBillQtyTotal !=null and bill.wayBillQtyTotal !=''">
+		 	#{bill.wayBillQtyTotal},
+		 	</if>
+		 	<if test="bill.arriveFeeTotal !=null and bill.arriveFeeTotal !=''">
+		 	#{bill.arriveFeeTotal},
+		 	</if>
+		 	<if test="bill.driver !=null and bill.driver !=''">
+		 	#{bill.driver},
+		 	</if>
+		 	<if test="loader.loaderCode !=null and loader.loaderCode !=''">
+		 	#{loader.loaderCode},
+		 	</if>
+		 	<if test="loader.loaderName !=null and loader.loaderName !=''">
+		 	#{loader.loaderName},
+		 	</if>
+		 	<if test="loader.orgCode !=null and loader.orgCode !=''">
+		 	#{loader.orgCode},
+		 	</if>
+		 	<if test="loader.orgName !=null and loader.orgName !=''">
+		 	#{loader.orgName},
+		 	</if>
+		 	'N',
+		 	<if test="taskState !=null and taskState !=''">
+		 	#{taskState},
+		 	</if>
+		 	<if test="loader.title !=null and loader.title !=''">
+		 	#{loader.title},
+		 	</if>
+		 	<if test="assignTime !=null and assignTime !=''">
+		 	to_date(#{assignTime},'yyyy-mm-dd hh24:mi:ss'),
+		 	to_date(#{assignTime},'yyyy-mm-dd hh24:mi:ss'),
+		 	</if>
+		 	<if test="createUserName !=null and createUserName !=''">
+		 	#{createUserName},
+		 	</if>
+		 	<if test="createUserCode !=null and createUserCode !=''">
+		 	#{createUserCode},
+		 	</if>
+		 	<if test="modifyUserName !=null and modifyUserName !=''">
+		 	#{modifyUserName},
+		 	</if>
+		 	<if test="modifyUserCode !=null and modifyUserCode !=''">
+		 	#{modifyUserCode},
+		 	</if>
+		 	<if test="createOrgCode !=null and createOrgCode !=''">
+		 	#{createOrgCode},
+		 	</if>
+		 	<if test="createOrgName !=null and createOrgName !=''">
+		 	#{createOrgName}
+		 	</if>
+	 	)
+	</insert>
+	<!--刷新:查询未开始的分配记录-->
+	<select id="queryUnstartAssignLoadTask" parameterType="String" resultMap="assignLoadTaskResultMap">
+	<![CDATA[
+		select a.id as id,
+       a.deliverbill_no as billNo,
+       a.vehicle_no as vehicleNo,
+       to_char(a.billing_time,'yyyy-mm-dd hh24:mi:ss') as createTime,
+       a.weight_total as weightTotal,
+       a.volume_total as volumeTotal,
+       a.goods_qty_total as goodsQtyTotal,
+       a.fast_waybil_qty_total as fastWayBillQtyTotal,
+       a.waybill_qty_total as wayBillQtyTotal,
+       a.arrive_fee as arriveFeeTotal,
+       a.driver_name as driver,
+       a.loader_code as loaderCode,
+       a.loader_name as loaderName,
+       a.loader_title as title,
+       a.load_org_code as orgCode,
+       a.load_org_name as orgName,
+       to_char(a.create_time,'yyyy-mm-dd hh24:mi:ss') as assignTime
+	from tfr.t_opt_de_load_assign_task a
+		    ]]>
+	<include refid="refrushAssignLoadTask_Where"/>    
+	</select>
+	<!--刷新:查询未开始的分配记录数量-->
+	<select id="queryUnstartAssignLoadTaskCount" parameterType="HashMap" resultType="Long">
+	<![CDATA[
+		select count(id) 
+		from tfr.t_opt_de_load_assign_task a
+	]]>
+	<include refid="refrushAssignLoadTask_Where"/>    
+	</select>
+	<!--未开始任务查询条件-->
+	<sql id="refrushAssignLoadTask_Where">
+		<where>
+			a.be_cancelled = 'N'<!--没有取消-->
+			<if test="loginOrgCode!=null and loginOrgCode!=''"><![CDATA[and a.create_org_code = #{loginOrgCode}]]></if>
+			<if test="taskState!=null and taskState!=''"><![CDATA[and a.task_state = #{taskState}]]></if>
+		</where>	
+	</sql>
+	<!-- 查询任务状态 -->
+	<select id="getAssignTaskState" parameterType="HashMap" resultMap="assignLoadTaskResultMap">
+	<![CDATA[
+		select a.be_cancelled as beCancelled,a.task_state as taskState
+		  from tfr.t_opt_de_load_assign_task a
+		  where a.id = #{assignTaskId}
+		    ]]>
+	</select>
+	<!-- 查询任务状态 -->
+	<select id="queryAssignState" parameterType="HashMap" resultType="String">
+	<![CDATA[
+		select a.task_state
+		  from tfr.t_opt_de_load_assign_task a
+		 where a.deliverbill_no = #{deliverNo}
+		   and a.loader_code = #{loaderCode}
+		   and a.be_cancelled = 'N'
+		and rownum<=1
+		    ]]>
+	</select>
+	<!-- 逻辑删除分配记录 -->
+	<update id='cancelAssignTask' parameterType="HashMap">
+		update tfr.t_opt_de_load_assign_task a set 
+		a.be_cancelled = 'Y',<!--已取消-->
+		a.modify_time =to_date(#{modifyTime,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss') ,
+		a.modify_user_code=#{modifyUserCode,jdbcType=VARCHAR},
+		a.modify_user_name=#{modifyUserName,jdbcType=VARCHAR}
+		where a.id = #{id}
+	</update>
+	<!--更新派送单状态-->
+	<update id='updateDeliverBillState' parameterType="HashMap">
+		update pkp.t_srv_deliverbill d 
+		set d.STATUS=#{bill.state},
+		 	d.MODIFY_TIME = #{bill.modifyTime,jdbcType=TIMESTAMP}
+		where d.DELIVERBILL_NO=#{bill.billNo}
+		      <![CDATA[and d.STATUS<>'CANCELED']]>
+			<if test="beforeState !=null and beforeState !=''">and d.STATUS=#{beforeState}</if>
+	</update>
+	<!--查询:按条件查询分配记录-->
+	<select id="queryAssignLoadTaskByCondition" parameterType="HashMap" resultMap="assignLoadTaskResultMap">
+	<![CDATA[
+		select a.id as id,
+       a.deliverbill_no as billNo,
+       a.vehicle_no as vehicleNo,
+       a.task_state as taskState,
+       to_char(a.billing_time,'yyyy-mm-dd hh24:mi:ss') as createTime,
+       a.weight_total as weightTotal,
+       a.volume_total as volumeTotal,
+       a.goods_qty_total as goodsQtyTotal,
+       a.fast_waybil_qty_total as fastWayBillQtyTotal,
+       a.waybill_qty_total as wayBillQtyTotal,
+       a.arrive_fee as arriveFeeTotal,
+       a.driver_name as driver,
+       a.loader_code as loaderCode,
+       a.loader_name as loaderName,
+       a.loader_title as title,
+       a.load_org_code as orgCode,
+       a.load_org_name as orgName,
+       to_char(a.create_time,'yyyy-mm-dd hh24:mi:ss') as assignTime
+		from tfr.t_opt_de_load_assign_task a ]]>
+		<include refid="selectAssignLoadTask_Where"/>    
+	</select>
+	<select id="queryAssignLoadTaskCountByCondition" parameterType="HashMap" resultType="Long">
+	<![CDATA[
+		select count(a.id) 
+		from tfr.t_opt_de_load_assign_task a ]]>
+		<include refid="selectAssignLoadTask_Where"/>    
+	</select>
+		<!--分配派送装车任务查询条件-->
+	<sql id="selectAssignLoadTask_Where">
+		<where>
+			a.be_cancelled = 'N'<!-- 没有取消 -->
+			<if test="loginOrgCode!=null and loginOrgCode!=''"><![CDATA[and a.create_org_code = #{loginOrgCode}]]></if>
+			<if test="loaderCode!=null and loaderCode!=''"><![CDATA[and a.loader_code = #{loaderCode}]]></if>
+			<if test="taskState!=null and taskState!=''"><![CDATA[and a.task_state = #{taskState}]]></if>
+			<if test="assignTimeEnd!=null and assignTimeEnd!=''"><![CDATA[and a.create_time <= to_date(#{assignTimeEnd}, 'yyyy-mm-dd hh24:mi:ss')]]></if>
+			<if test="assignTimeBegin!=null and assignTimeBegin!=''"><![CDATA[and a.create_time >= to_date(#{assignTimeBegin}, 'yyyy-mm-dd hh24:mi:ss')]]></if>
+			<if test="vehicleNo!=null and vehicleNo!=''"><![CDATA[and a.vehicle_no = #{vehicleNo}]]></if>
+			<if test="billNo!=null and billNo!=''"><![CDATA[and a.deliverbill_no = #{billNo}]]></if>
+		</where>	
+	</sql>
+	<!-- 更新分配记录状态 -->
+	<update id='updateAssignedItemState' parameterType="HashMap">
+		update tfr.t_opt_de_load_assign_task t set t.task_state=#{changeToTaskState} 
+		where t.be_cancelled=#{beCancelled} and t.deliverbill_no=#{deliverBillNo} and t.deliverbill_no=#{deliverBillNo} and t.TASK_STATE=#{conditionTaskState}
+	</update>
+</mapper>

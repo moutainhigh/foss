@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="pkp.prohibitGoodsMapper" >
+
+  <resultMap id="prohibitGoodsResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.domain.ProhibitedArticlesEntity" >
+    	<result property="id" column="ID"  jdbcType="VARCHAR" />
+		<result property="virtualCode" column="VIRTUAL_CODE"  jdbcType="VARCHAR" />
+		<result property="goodsName" column="GOODS_NAME"  jdbcType="VARCHAR" />
+		<result property="goodsType" column="GOODS_TYPE"  jdbcType="VARCHAR" />
+		<result property="goodsLevel" column="GOODS_LEVEL"  jdbcType="VARCHAR" />
+		<result property="goodsSort" column="GOODS_SORT"  jdbcType="VARCHAR" />
+		<result property="notes" column="NOTES"  jdbcType="VARCHAR" />
+		<result property="createDate" column="CREATE_TIME"  jdbcType="DATE" />
+		<result property="modifyDate" column="MODIFY_TIME"  jdbcType="DATE" />
+		<result property="versionNo" column="VERSION_NO"  jdbcType="NUMERIC" />
+		<result property="active" column="ACTIVE"  jdbcType="CHAR" />
+		<result property="createUser" column="CREATE_USER_CODE"  jdbcType="VARCHAR" />
+		<result property="modifyUser" column="MODIFY_USER_CODE"  jdbcType="VARCHAR" />
+		<result property="keyWords" column="KEY_WORDS"  jdbcType="VARCHAR" />
+  </resultMap>
+  
+  <sql id="prohibitGoods_Column_List" >
+    ID, GOODS_NAME, GOODS_TYPE, GOODS_LEVEL, GOODS_SORT, NOTES,
+    ACTIVE, VIRTUAL_CODE, KEY_WORDS
+  </sql>
+  
+  <select id="selectProhibitGoodsByPrimaryKey" resultMap="prohibitGoodsResultMap" parameterType="java.lang.String" >
+    select 
+    <include refid="prohibitGoods_Column_List" />
+    from BSE.T_BAS_PROHIBIT_GOODS
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+  
+  <select id="selectProhibitGoodsAllActive" resultMap="prohibitGoodsResultMap" parameterType="java.lang.String">
+    select 
+    <include refid="prohibitGoods_Column_List" />
+    from BSE.T_BAS_PROHIBIT_GOODS
+    where ACTIVE = #{active,jdbcType=CHAR} 
+  </select>
+  
+  <select id="selectProhibitGoodsByType" resultMap="prohibitGoodsResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ProhibitedArticlesEntity">
+    select 
+    <include refid="prohibitGoods_Column_List" />
+    from BSE.T_BAS_PROHIBIT_GOODS
+    where ACTIVE = #{active,jdbcType=CHAR} 
+    <if test="goodsSort != null" >
+        AND GOODS_SORT=#{goodsSort,jdbcType=VARCHAR}
+    </if>    
+  </select>
+  
+  <select id="selectProhibitGoodsForAutomobile" resultMap="prohibitGoodsResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ProhibitedArticlesEntity">
+    select 
+    <include refid="prohibitGoods_Column_List" />
+    from BSE.T_BAS_PROHIBIT_GOODS
+    where ACTIVE = #{active,jdbcType=CHAR}    
+    AND GOODS_SORT not in (${goodsSort})
+  </select>
+  
+  <select id="selectProhibitGoodsByName" resultMap="prohibitGoodsResultMap" 
+  parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ProhibitedArticlesEntity" >
+    select 
+    <include refid="prohibitGoods_Column_List" />
+    from BSE.T_BAS_PROHIBIT_GOODS
+    where ACTIVE = #{active,jdbcType=CHAR} 
+    	and GOODS_NAME like 
+    	CONCAT(CONCAT('%',#{goodsName,jdbcType=VARCHAR}),'%')
+  </select>
+  
+  <delete id="deleteProhibitGoodsByPrimaryKey" parameterType="java.lang.String" >
+    delete from BSE.T_BAS_PROHIBIT_GOODS
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  
+  <insert id="insertProhibitGoods" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ProhibitedArticlesEntity" >
+    INSERT INTO BSE.T_BAS_PROHIBIT_GOODS(
+		ID,
+		VIRTUAL_CODE,
+		GOODS_NAME,
+		GOODS_TYPE,
+		GOODS_LEVEL,
+		GOODS_SORT,
+		NOTES,
+		CREATE_TIME,
+		MODIFY_TIME,
+		VERSION_NO,
+		ACTIVE,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE,
+		KEY_WORDS) VALUES	
+	(
+		#{id, jdbcType=VARCHAR},
+		#{virtualCode, jdbcType=VARCHAR},
+		#{goodsName, jdbcType=VARCHAR},
+		#{goodsType, jdbcType=VARCHAR},
+		#{goodsLevel, jdbcType=VARCHAR},
+		#{goodsSort, jdbcType=VARCHAR},
+		#{notes, jdbcType=VARCHAR},
+		#{createDate, jdbcType=DATE},
+		#{modifyDate, jdbcType=DATE},
+		#{versionNo, jdbcType=NUMERIC},
+		#{active, jdbcType=CHAR},
+		#{createUser, jdbcType=VARCHAR},
+		#{modifyUser, jdbcType=VARCHAR},
+		#{keyWords, jdbcType=VARCHAR}
+	)
+  </insert>
+  
+  <insert id="insertProhibitGoodsSelective" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ProhibitedArticlesEntity" >
+    insert into BSE.T_BAS_PROHIBIT_GOODS
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="goodsName != null" >
+        GOODS_NAME,
+      </if>
+      <if test="goodsType != null" >
+        GOODS_TYPE,
+      </if>
+      <if test="goodsLevel != null" >
+        GOODS_LEVEL,
+      </if>
+      <if test="goodsSort != null" >
+        GOODS_SORT,
+      </if>
+      <if test="notes != null" >
+        NOTES,
+      </if>
+      <if test="createDate != null" >
+        CREATE_TIME,
+      </if>
+      <if test="modifyDate != null" >
+        MODIFY_TIME,
+      </if>
+      <if test="active != null" >
+        ACTIVE,
+      </if>
+      <if test="createUser != null" >
+        CREATE_USER_CODE,
+      </if>
+      <if test="modifyUser != null" >
+        MODIFY_USER_CODE,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="goodsName != null" >
+        #{goodsName,jdbcType=VARCHAR},
+      </if>
+      <if test="goodsType != null" >
+        #{goodsType,jdbcType=VARCHAR},
+      </if>
+      <if test="goodsLevel != null" >
+        #{goodsLevel,jdbcType=VARCHAR},
+      </if>
+      <if test="goodsSort != null" >
+        #{goodsSort,jdbcType=VARCHAR},
+      </if>
+      <if test="notes != null" >
+        #{notes,jdbcType=VARCHAR},
+      </if>
+      <if test="createDate != null" >
+        #{createDate,jdbcType=DATE},
+      </if>
+      <if test="modifyDate != null" >
+        #{modifyDate,jdbcType=DATE},
+      </if>
+      <if test="active != null" >
+        #{active,jdbcType=CHAR},
+      </if>
+      <if test="createUser != null" >
+        #{createUser,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyUser != null" >
+        #{modifyUser,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  
+  <update id="updateProhibitGoodsByPrimaryKeySelective" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ProhibitedArticlesEntity" >
+    update BSE.T_BAS_PROHIBIT_GOODS
+    <set >
+      <if test="goodsName != null" >
+        GOODS_NAME = #{goodsName,jdbcType=VARCHAR},
+      </if>
+      <if test="goodsType != null" >
+        GOODS_TYPE = #{goodsType,jdbcType=VARCHAR},
+      </if>
+      <if test="goodsLevel != null" >
+        GOODS_LEVEL = #{goodsLevel,jdbcType=VARCHAR},
+      </if>
+      <if test="goodsSort != null" >
+        GOODS_SORT = #{goodsSort,jdbcType=VARCHAR},
+      </if>
+      <if test="notes != null" >
+        NOTES = #{notes,jdbcType=VARCHAR},
+      </if>
+      <if test="createDate != null" >
+        CREATE_TIME = #{createDate,jdbcType=DATE},
+      </if>
+      <if test="modifyDate != null" >
+        MODIFY_TIME = #{modifyDate,jdbcType=DATE},
+      </if>
+      <if test="active != null" >
+        ACTIVE = #{active,jdbcType=CHAR},
+      </if>
+      <if test="createUser != null" >
+        CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyUser != null" >
+        MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+      </if>
+      <if test="keyWords != null" >
+        KEY_WORDS = #{keyWords,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  
+  <update id="updateProhibitGoodsByPrimaryKey" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ProhibitedArticlesEntity" >
+    UPDATE BSE.T_BAS_PROHIBIT_GOODS A SET 
+		A.ID = #{id, jdbcType=VARCHAR},
+		A.VIRTUAL_CODE = #{virtualCode, jdbcType=VARCHAR},
+		A.GOODS_NAME = #{goodsName, jdbcType=VARCHAR},
+		A.GOODS_TYPE = #{goodsType, jdbcType=VARCHAR},
+		A.GOODS_LEVEL = #{goodsLevel, jdbcType=VARCHAR},
+		A.GOODS_SORT = #{goodsSort, jdbcType=VARCHAR},
+		A.NOTES = #{notes, jdbcType=VARCHAR},
+		A.CREATE_TIME = #{createDate, jdbcType=DATE},
+		A.MODIFY_TIME = #{modifyDate, jdbcType=DATE},
+		A.VERSION_NO = #{versionNo, jdbcType=NUMERIC},
+		A.ACTIVE = #{active, jdbcType=CHAR},
+		A.CREATE_USER_CODE = #{createUser, jdbcType=VARCHAR},
+		A.MODIFY_USER_CODE = #{modifyUser, jdbcType=VARCHAR},
+		A.KEY_WORDS = #{keyWords, jdbcType=VARCHAR}
+		<where>
+     		ID = #{id,jdbcType=VARCHAR}
+     	</where>	
+  </update>
+  
+  <select id="selectById" resultType="String"
+		parameterType="java.util.Map">
+		<![CDATA[
+		SELECT 
+	        ID
+	    	FROM BSE.T_BAS_PROHIBIT_GOODS
+		]]>
+		<where>
+			ID = #{id,jdbcType=VARCHAR}	
+		</where>
+	</select>
+	
+   <delete id="delete" 
+	parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ProhibitedArticlesEntity">
+		delete from BSE.T_BAS_PROHIBIT_GOODS
+		where ID =  #{id,jdbcType=VARCHAR}	
+	</delete>
+	 
+</mapper>

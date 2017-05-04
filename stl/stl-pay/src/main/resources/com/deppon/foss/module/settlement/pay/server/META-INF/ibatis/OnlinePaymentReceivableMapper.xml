@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.stl.BillReceivableEntityDao" >
+  <resultMap id="CountResultMap" type="com.deppon.foss.module.settlement.pay.api.shared.dto.BillSOADOnlineResultDto" >
+    <result column="COUNT_NUM" property="countNum" jdbcType="INTEGER"/>
+  </resultMap>
+  <!-- 根据客户编码查询应收单  -->
+  <select id="selectByCustomer" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillReceivableOnlineQueryDto" >
+    SELECT /*根据客户编码查询应收单*/
+    <include refid="Base_Column_List" />
+    FROM STL.T_STL_BILL_RECEIVABLE A
+    WHERE ACTIVE=#{active} AND IS_RED_BACK = #{isRedBack} AND CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+    AND UNVERIFY_AMOUNT>0   AND BILL_TYPE IN 
+    <foreach collection="receivableTypeList" item="item" index="index" open="(" separator="," close=")" >
+      #{item}
+    </foreach>
+    AND SOURCE_BILL_TYPE=#{sourceType}
+    <!-- 不存在未受理的财务更改单 -->
+    AND NOT EXISTS (SELECT B.WAYBILL_NO
+          from pkp.t_srv_waybillrfc B
+         where A.WAYBILL_NO = B.WAYBILL_NO
+         AND B.STATUS IN 
+         <foreach collection="waybillRFCStatus" item="item" index="index" open="(" separator="," close=")" >
+           #{item}
+         </foreach> 
+         AND B.IS_FINANCE_CHANGE=#{isFinanceChange})
+    <!-- 未进入已确认的对账单 -->
+    AND NOT EXISTS
+        (SELECT c.statement_bill_no
+           FROM stl.t_stl_statement_of_account c
+          WHERE c.confirm_status = #{statementConfirmStatus}
+            AND a.statement_bill_no = c.statement_bill_no) 
+    <!-- 如果是到达应收，则不能有代收货款记录 -->
+    AND NOT EXISTS (SELECT D.WAYBILL_NO
+          FROM STL.T_STL_COD D
+         WHERE A.WAYBILL_NO = D.WAYBILL_NO
+            AND A.BILL_TYPE=#{receivableBillType}
+            AND D.ACTIVE=#{active}
+          )  
+    ORDER BY A.ACCOUNT_DATE DESC       
+  </select>
+  
+   <!-- 根据客户编码查询应收单（其合计总条数）  -->
+  <select id="selectCountByCustomer" resultMap="CountResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillReceivableOnlineQueryDto" >
+    SELECT /*根据客户编码查询应收单（其合计总条数）*/
+    COUNT(*) countNum
+   FROM STL.T_STL_BILL_RECEIVABLE A
+    WHERE ACTIVE=#{active} AND IS_RED_BACK = #{isRedBack} AND CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+    AND UNVERIFY_AMOUNT>0  AND BILL_TYPE IN 
+    <foreach collection="receivableTypeList" item="item" index="index" open="(" separator="," close=")" >
+      #{item}
+    </foreach>
+    AND SOURCE_BILL_TYPE=#{sourceType}
+    <!-- 不存在未受理的财务更改单 -->
+    AND NOT EXISTS (SELECT B.WAYBILL_NO
+          from pkp.t_srv_waybillrfc B
+         where A.WAYBILL_NO = B.WAYBILL_NO
+         AND B.STATUS IN 
+         <foreach collection="waybillRFCStatus" item="item" index="index" open="(" separator="," close=")" >
+           #{item}
+         </foreach>  
+         AND B.IS_FINANCE_CHANGE=#{isFinanceChange})
+    <!-- 未进入已确认的对账单 -->
+    AND NOT EXISTS
+        (SELECT c.statement_bill_no
+           FROM stl.t_stl_statement_of_account c
+          WHERE c.confirm_status = #{statementConfirmStatus}
+            AND a.statement_bill_no = c.statement_bill_no) 
+    <!-- 如果是到达应收，则不能有代收货款记录 -->
+    AND NOT EXISTS (SELECT D.WAYBILL_NO
+          FROM STL.T_STL_COD D
+         WHERE A.WAYBILL_NO = D.WAYBILL_NO
+            AND A.BILL_TYPE=#{receivableBillType}
+            AND D.ACTIVE=#{active}
+          )                   
+  </select>
+
+  <!-- 根据运单号查询应收单  -->
+  <select id="selectByWaybillNo" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillReceivableOnlineQueryDto" >
+    SELECT 
+    <include refid="Base_Column_List" />
+    FROM STL.T_STL_BILL_RECEIVABLE A
+    WHERE ACTIVE=#{active} AND IS_RED_BACK = #{isRedBack} AND UNVERIFY_AMOUNT>0 
+
+    AND WAYBILL_NO IN
+    <foreach collection="wayBillNos" item="item" index="index" open="(" separator="," close=")"> #{item}</foreach>
+    AND BILL_TYPE IN 
+    <foreach collection="receivableTypeList" item="item" index="index" open="(" separator="," close=")" >
+      #{item}
+    </foreach>
+     --增加产品类型限制  如果为到付，则不能为精准空运和汽运偏线
+    AND ((BILL_TYPE ='DR' AND PRODUCT_CODE NOT IN('PLF','AF')) OR BILL_TYPE!='DR')
+    AND SOURCE_BILL_TYPE=#{sourceType}
+     <!-- 不存在未受理的财务更改单 -->
+    AND NOT EXISTS (SELECT B.WAYBILL_NO
+          from pkp.t_srv_waybillrfc B
+         where A.WAYBILL_NO = B.WAYBILL_NO
+         AND B.STATUS IN 
+         <foreach collection="waybillRFCStatus" item="item" index="index" open="(" separator="," close=")" >
+           #{item}
+         </foreach> 
+         AND B.IS_FINANCE_CHANGE=#{isFinanceChange}
+         AND B.WAYBILL_NO IN
+    <foreach collection="wayBillNos" item="item" index="index" open="(" separator="," close=")"> #{item}</foreach>
+         )
+    <!-- 未进入已确认的对账单 -->
+    AND NOT EXISTS
+        (SELECT c.statement_bill_no
+           FROM stl.t_stl_statement_of_account c
+          WHERE c.confirm_status = #{statementConfirmStatus}
+            AND a.statement_bill_no = c.statement_bill_no
+         ) 
+    <!-- 如果是到达应收，则不能有代收货款记录 -->
+    AND NOT EXISTS (SELECT D.WAYBILL_NO
+          FROM STL.T_STL_COD D
+         WHERE A.WAYBILL_NO = D.WAYBILL_NO
+           AND D.ACTIVE=#{active}
+           AND A.BILL_TYPE=#{receivableBillType}
+           AND D.WAYBILL_NO IN
+    <foreach collection="wayBillNos" item="item" index="index" open="(" separator="," close=")"> #{item}</foreach>
+          )          
+  </select>
+  
+  <!-- 根据日期查询应收单  -->
+  <select id="selectByDate" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillReceivableOnlineQueryDto" >
+    SELECT 
+    <include refid="Base_Column_List" />
+    FROM STL.T_STL_BILL_RECEIVABLE A
+    WHERE ACTIVE=#{active} AND IS_RED_BACK = #{isRedBack} AND CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+    AND UNVERIFY_AMOUNT>0  AND
+    <![CDATA[BUSINESS_DATE>=#{beginDate} AND BUSINESS_DATE<#{endDate}]]>
+    AND ACCOUNT_DATE>=BUSINESS_DATE
+    <if test="payWay!=null and payWay!=''">
+    AND PAYMENT_TYPE = #{payWay,jdbcType=VARCHAR}
+    </if> 
+    <if test="consigneeName!=null and consigneeName!=''">
+    AND RECEIVE_CUSTOMER_NAME like CONCAT(CONCAT('%', #{consigneeName}), '%')
+    </if>
+    <if test="cargoName!=null and cargoName!=''">
+    AND GOODS_NAME like CONCAT(CONCAT('%', #{cargoName}), '%')
+    </if>
+    AND BILL_TYPE IN 
+    <foreach collection="receivableTypeList" item="item" index="index" open="(" separator="," close=")" >
+      #{item}
+    </foreach>
+    AND SOURCE_BILL_TYPE=#{sourceType}
+     <!-- 不存在未受理的财务更改单 -->
+    AND NOT EXISTS (SELECT B.WAYBILL_NO
+          from pkp.t_srv_waybillrfc B
+         where A.WAYBILL_NO = B.WAYBILL_NO
+         AND B.STATUS IN 
+         <foreach collection="waybillRFCStatus" item="item" index="index" open="(" separator="," close=")" >
+           #{item}
+         </foreach> 
+         AND B.IS_FINANCE_CHANGE=#{isFinanceChange})
+    <!-- 未进入已确认的对账单 -->
+    AND NOT EXISTS
+        (SELECT c.statement_bill_no
+           FROM stl.t_stl_statement_of_account c
+          WHERE c.confirm_status = #{statementConfirmStatus}
+            AND a.statement_bill_no = c.statement_bill_no) 
+    <!-- 如果是到达应收，则不能有代收货款记录 -->
+    AND NOT EXISTS (SELECT D.WAYBILL_NO
+          FROM STL.T_STL_COD D
+         WHERE A.WAYBILL_NO = D.WAYBILL_NO
+           AND D.ACTIVE=#{active}
+           AND A.BILL_TYPE=#{receivableBillType}
+          ) 
+   ORDER BY A.ACCOUNT_DATE DESC             
+  </select>
+  
+   <!-- 根据日期查询应收单（求合计总数）  -->
+  <select id="selectCountByDate" resultMap="CountResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillReceivableOnlineQueryDto" >
+    SELECT 
+    COUNT(*) countNum
+    FROM STL.T_STL_BILL_RECEIVABLE A
+    WHERE ACTIVE=#{active} AND IS_RED_BACK = #{isRedBack} AND CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+    AND UNVERIFY_AMOUNT>0  AND
+    <![CDATA[BUSINESS_DATE>=#{beginDate} AND BUSINESS_DATE<#{endDate}]]>
+    AND ACCOUNT_DATE>=#{beginDate}
+    <if test="payWay!=null and payWay!=''">
+    AND PAYMENT_TYPE = #{payWay,jdbcType=VARCHAR}
+    </if> 
+    <if test="consigneeName!=null and consigneeName!=''">
+    AND RECEIVE_CUSTOMER_NAME like CONCAT(CONCAT('%', #{consigneeName}), '%')
+    </if>
+    <if test="cargoName!=null and cargoName!=''">
+    AND GOODS_NAME like CONCAT(CONCAT('%', #{cargoName}), '%')
+    </if>
+    AND BILL_TYPE IN 
+    <foreach collection="receivableTypeList" item="item" index="index" open="(" separator="," close=")" >
+      #{item}
+    </foreach>
+    AND SOURCE_BILL_TYPE=#{sourceType}
+     <!-- 不存在未受理的财务更改单 -->
+    AND NOT EXISTS (SELECT B.WAYBILL_NO
+          from pkp.t_srv_waybillrfc B
+         where A.WAYBILL_NO = B.WAYBILL_NO
+         AND B.STATUS IN 
+         <foreach collection="waybillRFCStatus" item="item" index="index" open="(" separator="," close=")" >
+           #{item}
+         </foreach>  
+         AND B.IS_FINANCE_CHANGE=#{isFinanceChange}
+         )
+    <!-- 未进入已确认的对账单 -->
+    AND NOT EXISTS
+        (SELECT c.statement_bill_no
+           FROM stl.t_stl_statement_of_account c
+          WHERE c.confirm_status = #{statementConfirmStatus}
+            AND a.statement_bill_no = c.statement_bill_no
+            ) 
+    <!-- 如果是到达应收，则不能有代收货款记录 -->
+    AND NOT EXISTS (SELECT D.WAYBILL_NO
+          FROM STL.T_STL_COD D
+         WHERE A.WAYBILL_NO = D.WAYBILL_NO
+           AND D.ACTIVE=#{active}
+           AND A.BILL_TYPE=#{receivableBillType}
+          )             
+  </select>
+  
+  <!-- 根据运单号+客户编码查询应收单  -->
+  <select id="selectByWaybillNoAndCustomer" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillReceivableOnlineQueryDto" >
+    SELECT 
+    <include refid="Base_Column_List" />
+    FROM STL.T_STL_BILL_RECEIVABLE A
+    WHERE ACTIVE=#{active} AND IS_RED_BACK = #{isRedBack} AND UNVERIFY_AMOUNT>0 
+    AND CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+    AND WAYBILL_NO=#{waybillNo}
+    AND BILL_TYPE IN 
+    <foreach collection="receivableTypeList" item="item" index="index" open="(" separator="," close=")" >
+      #{item}
+    </foreach>
+      AND SOURCE_BILL_TYPE=#{sourceType}
+     <!-- 不存在未受理的财务更改单 -->
+    AND NOT EXISTS (SELECT B.WAYBILL_NO
+          from pkp.t_srv_waybillrfc B
+         where A.WAYBILL_NO = B.WAYBILL_NO
+         AND B.STATUS IN 
+         <foreach collection="waybillRFCStatus" item="item" index="index" open="(" separator="," close=")" >
+           #{item}
+         </foreach> 
+         AND B.IS_FINANCE_CHANGE=#{isFinanceChange}
+         AND B.WAYBILL_NO=#{waybillNo})
+    <!-- 未进入已确认的对账单 -->
+    AND NOT EXISTS
+        (SELECT c.statement_bill_no
+           FROM stl.t_stl_statement_of_account c
+          WHERE c.confirm_status = #{statementConfirmStatus}
+            AND a.statement_bill_no = c.statement_bill_no) 
+    <!-- 如果是到达应收，则不能有代收货款记录 -->
+    AND NOT EXISTS (SELECT D.WAYBILL_NO
+          FROM STL.T_STL_COD D
+         WHERE A.WAYBILL_NO = D.WAYBILL_NO
+           AND D.ACTIVE=#{active}
+           AND A.BILL_TYPE=#{receivableBillType}
+           AND D.WAYBILL_NO=#{waybillNo})
+  </select>
+  <!-- 锁定应收单 -->
+  <select id="updateForUnlockDate" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillReceivableOnlineQueryDto" >
+    UPDATE STL.T_STL_BILL_RECEIVABLE
+    SET
+    UNLOCK_DATE_TIME = SYSDATE+#{lockTime}/60/24,
+    LOCK_CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR},
+    VERSION_NO=VERSION_NO+1
+    <where>
+    RECEIVABLE_NO = #{receivableNo,jdbcType=VARCHAR} AND  ACCOUNT_DATE = #{accountDate,jdbcType=TIMESTAMP} 
+    AND UNVERIFY_AMOUNT>0 
+    </where>  
+  </select>
+</mapper>

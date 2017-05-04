@@ -1,0 +1,59 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stv.DvrReturnCodEntityMapper" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.closing.api.shared.domain.DvrReturnCodEntity" >
+    <result column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="PAYMENT_DATE" property="paymentDate" jdbcType="TIMESTAMP" />
+    <result column="PERIOD" property="period" jdbcType="VARCHAR" />
+    <result column="PAYABLE_ORG_CODE" property="payableOrgCode" jdbcType="VARCHAR" />
+    <result column="PAYABLE_ORG_NAME" property="payableOrgName" jdbcType="VARCHAR" />
+    <result column="UNIFIED_CODE" property="unifiedCode" jdbcType="VARCHAR" />
+    <result column="PAYABLE_COM_CODE" property="payableComCode" jdbcType="VARCHAR" />
+    <result column="PAYABLE_COM_NAME" property="payableComName" jdbcType="VARCHAR" />
+    <result column="RETURN_ORG" property="returnOrg" jdbcType="VARCHAR" />
+    <result column="RETURN_COM_ORG" property="returnComOrg" jdbcType="VARCHAR" />
+    <result column="PRODUCT_CODE" property="productCode" jdbcType="VARCHAR" />
+    <result column="BANK_ACCOUNT" property="bankAccount" jdbcType="VARCHAR" />
+    <result column="REFUND_PATH" property="refundPath" jdbcType="VARCHAR" />
+    <result column="COD_AMOUNT" property="codAmount" jdbcType="DECIMAL" />
+  </resultMap> 
+  <sql id="Base_Column_List" >
+	  ID, PAYMENT_DATE, PERIOD, 
+      PAYABLE_ORG_CODE, PAYABLE_ORG_NAME, UNIFIED_CODE, 
+      PAYABLE_COM_CODE, PAYABLE_COM_NAME, RETURN_ORG, 
+      RETURN_COM_ORG, PRODUCT_CODE, BANK_ACCOUNT, 
+      REFUND_PATH,  COD_AMOUNT / 100 COD_AMOUNT
+  </sql>
+  <select id="queryDvrReturnCodByConditions" resultMap="BaseResultMap" parameterType="java.util.Map" >
+    SELECT /*结算-凭证报表-根据条件查询退代收货款月报表*/ 
+    <include refid="Base_Column_List" />
+    FROM STV.T_STL_DVR_RETURN_COD
+    WHERE 
+    	PERIOD = #{period} 
+		<if test="refundPath!=null and refundPath!=''">
+			AND REFUND_PATH = #{refundPath} <!-- 客户不为空时，根据客户编码过滤 -->
+		</if>
+	   	<if test="payableOrgCode!=null and payableOrgCode!=''">
+			AND PAYABLE_ORG_CODE = #{payableOrgCode} 
+		</if>
+		<if test="productCode!=null and productCode!=''">
+			AND PRODUCT_CODE = #{productCode} 
+		</if>
+  </select>
+  <select id="queryDvrReturnCodByConditionCount" resultType="long" parameterType="java.util.Map" >
+    SELECT /*结算-凭证报表-根据条件查询退代收货款月报表总条数*/
+    count(*)
+    FROM STV.T_STL_DVR_RETURN_COD
+    WHERE 
+    	PERIOD = #{period} 
+		<if test="refundPath!=null and refundPath!=''">
+			AND REFUND_PATH = #{refundPath} <!-- 客户不为空时，根据客户编码过滤 -->
+		</if>
+	   	<if test="payableOrgCode!=null and payableOrgCode!=''">
+			AND PAYABLE_ORG_CODE = #{payableOrgCode} 
+		</if>
+		<if test="productCode!=null and productCode!=''">
+			AND PRODUCT_CODE = #{productCode} 
+		</if>
+  </select>
+</mapper>

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.BillPayableDEntityDao">
+	<resultMap id="BaseResultMap"
+		type="com.deppon.foss.module.settlement.common.api.shared.domain.BillPayableDEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="SOURCE_BILL_NO" property="sourceBillNo" jdbcType="VARCHAR" />
+		<result column="PAYABLE_NO" property="payableNo" jdbcType="VARCHAR" />
+		<result column="AMOUNT" property="amount" jdbcType="DECIMAL" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUserCode" jdbcType="VARCHAR" />
+		<result column="CREATE_USER_NAME" property="createUserName" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="PAYABLE_TYPE" property="payableType" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<sql id="Base_Column_List">
+		ID,
+		SOURCE_BILL_NO,
+		PAYABLE_NO,
+		AMOUNT/100 AMOUNT,
+		ACTIVE,
+		CREATE_USER_CODE,
+		CREATE_USER_NAME,
+		CREATE_TIME,
+		PAYABLE_TYPE
+	</sql>
+	
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.settlement.common.api.shared.domain.BillPayableDEntity">
+		insert into /*结算-应付单明细-新增应付单明细*/ STL.T_STL_BILL_PAYABLE_D
+		(ID,
+		 SOURCE_BILL_NO,
+		 PAYABLE_NO,
+		 AMOUNT,
+		 ACTIVE,
+		 CREATE_USER_CODE,
+		 CREATE_USER_NAME,
+		 CREATE_TIME,
+		 PAYABLE_TYPE)
+		values (
+		#{id,jdbcType=VARCHAR},#{sourceBillNo,jdbcType=VARCHAR},
+		#{payableNo,jdbcType=VARCHAR},#{amount,jdbcType=DECIMAL}*100,
+		#{active,jdbcType=CHAR},#{createUserCode,jdbcType=VARCHAR},
+		#{createUserName,jdbcType=VARCHAR},#{createTime,jdbcType=TIMESTAMP}, 
+		#{payableType,jdbcType=VARCHAR}
+		)
+	</insert>
+
+
+	<!-- 根据应付单号查询应付单明细信息 -->
+	<select id="selectByPayableNos" resultMap="BaseResultMap"
+		parameterType="java.util.Map">
+		SELECT /*结算-应付单明细-根据应付单号查询应付单信息*/
+		<include refid="Base_Column_List" />
+		FROM STL.T_STL_BILL_PAYABLE_D T WHERE PAYABLE_NO IN
+		<foreach collection="payableNos" index="index" item="item"
+			open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		<if test="active!=null and active!='' ">
+			AND ACTIVE=#{active}
+		</if>
+	</select>
+	
+	<!-- 根据来源单据单号查询应付单明细信息 -->
+	<select id="selectBySourceBillNos" resultMap="BaseResultMap"
+		parameterType="java.util.Map">
+		SELECT /*结算-应付单明细-根据来源单据单号查询应付单信息*/
+		<include refid="Base_Column_List" />
+		FROM STL.T_STL_BILL_PAYABLE_D WHERE SOURCE_BILL_NO IN
+		<foreach collection="sourceBillNos" index="index" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		<if test="active!=null and active!='' ">
+			AND ACTIVE=#{active}
+		</if>
+	</select>
+
+</mapper>

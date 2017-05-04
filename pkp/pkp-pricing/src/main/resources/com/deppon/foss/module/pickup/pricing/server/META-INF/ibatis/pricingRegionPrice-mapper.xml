@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.pricing.RegionPriceEntityMapper" >
+  <!-- 查询价格方案明细  ResultMap  --> 
+  <resultMap id="RegionPriceMap" type="com.deppon.foss.module.pickup.pricing.api.shared.dto.RegionPriceDto" >
+  	<result column="PRODUCT_ID" property="productId" jdbcType="VARCHAR" />
+    <result column="PRODUCT_CODE" property="productCode" jdbcType="VARCHAR" />
+ 	<result column="PRICING_VALUATION_ID" property="pricingValuationId" jdbcType="VARCHAR" />
+    <result column="CITY_CODE" property="cityCode" jdbcType="VARCHAR" />
+    <result column="COUNTY_CODE" property="countyCode" jdbcType="VARCHAR" />
+    <result column="FEE_RATE" property="feeRate" jdbcType="DECIMAL" />
+    <result column="CACULATE_TYPE" property="caculateType" jdbcType="VARCHAR" />
+  </resultMap>
+  
+  <!-- 查询合伙人价格方案明细  ResultMap  --> 
+  <resultMap id="RegionPartnerPriceMap" type="com.deppon.foss.module.pickup.pricing.api.shared.dto.RegionPartnerPriceDto" >
+    <result column="PRODUCT_ID" property="productId" jdbcType="VARCHAR" />
+    <result column="PRODUCT_CODE" property="productCode" jdbcType="VARCHAR" />
+ 	<result column="PRICING_VALUATION_ID" property="pricingValuationId" jdbcType="VARCHAR" />
+  	<result column="ARRV_REGION_ID" property="arrvRegionId" jdbcType="VARCHAR" />
+  	<result column="CENTRALIZE_PICKUP" property="centralizePickup" jdbcType="VARCHAR" />
+  	<result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+  	<result column="ORG_NAME" property="orgName" jdbcType="VARCHAR" />
+    <result column="CITY_CODE" property="cityCode" jdbcType="VARCHAR" />
+    <result column="COUNTY_CODE" property="countyCode" jdbcType="VARCHAR" />
+    <result column="FEE_RATE" property="feeRate" jdbcType="DECIMAL" />
+    <result column="CACULATE_TYPE" property="caculateType" jdbcType="VARCHAR" />
+    <result column="ARR_TYPE" property="arrType" jdbcType="VARCHAR" />
+    <result column="RK" property="rk" jdbcType="VARCHAR" />
+    <result column="COUNTY_NAME" property="countyName" jdbcType="VARCHAR" />
+    <result column="CITY_NAME" property="cityName" jdbcType="VARCHAR" />
+    <result column="PROV_NAME" property="provName" jdbcType="VARCHAR" />
+    
+  </resultMap>
+  
+   <!-- 查询价格方案明细  Query Column --> 
+  <sql id="Combination_Column_List" >
+  					v.PRODUCT_ID   AS PRODUCT_ID,<!-- 产品ID -->
+                    v.PRODUCT_CODE AS PRODUCT_CODE,<!-- 产品CODE -->
+                    v.ID 		   AS PRICING_VALUATION_ID,<!-- 计价条目ID -->
+                    arr.CITY_CODE  AS CITY_CODE,<!-- 城市code-->
+                    arr.COUNTY_CODE 	 AS COUNTY_CODE,<!-- 区县code -->
+                    detail.FEE_RATE/100  AS FEE_RATE, <!-- 费率或者单价 -->
+                    detail.CACULATE_TYPE AS CACULATE_TYPE <!-- 计费类别-->
+  </sql>
+  
+  <!--  查询同一始发区域下的空运价格明细信息   -->
+  <select id="findPriceByQueryPriceBean" resultMap="RegionPriceMap" parameterType="java.util.Map" >
+     SELECT /*综合-价格-价格表-查询同一始发区域下的汽运价格明细信息*/ 
+    	<include refid="Combination_Column_List" />
+          FROM pkp.t_srv_price_plan p
+          inner join pkp.t_srv_pricing_valuation v on v.price_plan_id = p.id
+          inner join pkp.t_srv_pricing_criteria_detail detail on detail.pricing_valuation_id = v.id
+          inner join pkp.t_srv_price_arrive_region arr on arr.id = v.arrv_region_id
+    <where>
+    	 <if test="currentDateTime!=null and currentDateTime!=''">
+    	 	<![CDATA[ AND P.BEGIN_TIME <= #{currentDateTime} 
+    	 			  AND P.END_TIME > #{currentDateTime}
+    	 			  AND v.BEGIN_TIME <= #{currentDateTime}
+    	 			  AND v.END_TIME > #{currentDateTime} ]]>
+    	 </if>
+    	 <if test="active!=null and active!=''">
+    	 	    AND v.ACTIVE = #{active,jdbcType=VARCHAR} 	
+                AND detail.ACTIVE = #{active,jdbcType=VARCHAR} 	
+    	 </if>
+    	 <if test="planId!=null and planId!=''">
+    	 	    and p.ID = #{planId,jdbcType=VARCHAR}
+    	 </if>
+    	 <if test="productType!=null and productType!=''">
+    	 	    and v.PRODUCT_CODE = #{productType,jdbcType=VARCHAR}
+    	 </if>
+     	 <if test="arrType!=null and arrType!=''">
+    	 	    and arr.type= #{arrType,jdbcType=VARCHAR}
+    	 </if>
+      	 <if test="centralize_pickup!=null and centralize_pickup!=''">
+    	 	    and v.centralize_pickup= #{centralize_pickup,jdbcType=VARCHAR}
+    	 </if>
+    	 
+    </where>
+  </select>
+  <!-- 合伙人汽运价格表票查询 -->
+  <select id="queryNetworkRegionPriceEntities" resultMap="RegionPartnerPriceMap" parameterType="java.util.Map">
+      select t1.* from 
+		(
+		  SELECT /*综合-价格-价格表-查询同一始发区域下的汽运价格明细信息*/
+		         V.PRODUCT_ID AS PRODUCT_ID,
+		         V.PRODUCT_CODE AS PRODUCT_CODE,
+		         V.ID AS PRICING_VALUATION_ID,
+		         V.ARRV_REGION_ID,
+		         NVL(V.CENTRALIZE_PICKUP, 'N') CENTRALIZE_PICKUP,
+		         ARR_ORG.INCLUDE_ORG_CODE AS ORG_CODE,
+		         BAS_ORG.NAME AS ORG_NAME,
+		          district3.NAME AS COUNTY_NAME,
+       			  district2.NAME AS CITY_NAME,
+      			  district.NAME AS PROV_NAME,
+		         BAS_ORG.CITY_CODE AS CITY_CODE,
+		         BAS_ORG.COUNTY_CODE AS COUNTY_CODE,
+		         DETAIL.FEE_RATE / 100 AS FEE_RATE,
+		         DETAIL.CACULATE_TYPE AS CACULATE_TYPE,
+		         ARR.TYPE AS ARR_TYPE,        
+		         ROW_NUMBER() OVER(PARTITION BY ARR_ORG.INCLUDE_ORG_CODE, DETAIL.CACULATE_TYPE, V.ARRV_REGION_ID 
+		                               ORDER BY NVL(V.CENTRALIZE_PICKUP, 'N') ASC) RK
+		    FROM pkp.t_srv_price_plan p
+		   inner join pkp.t_srv_pricing_valuation v on v.price_plan_id = p.id
+		   inner join pkp.t_srv_pricing_criteria_detail detail on detail.pricing_valuation_id = v.id
+		   inner join pkp.t_srv_price_arrive_region arr on arr.id = v.arrv_region_id
+		   inner join pkp.t_srv_price_arrive_region_org arr_org on arr.id = arr_org.t_srv_price_region_id
+		   inner join bse.t_bas_org bas_org on arr_org.include_org_code = bas_org.code
+		   inner join bse.t_bas_district district on district.code = BAS_ORG.prov_code and district.active = 'Y'
+		   inner join bse.t_bas_district district2 on district2.code = BAS_ORG.city_code  and district2.active = 'Y'
+		   left  join bse.t_bas_district district3  on district3.code = BAS_ORG.county_code  and district3.active = 'Y'
+		   <where>
+		    <if test="currentDateTime!=null and currentDateTime!=''">
+		        <![CDATA[
+		   		 P.BEGIN_TIME <= #{currentDateTime} 
+		     AND P.END_TIME > #{currentDateTime} 
+		     AND v.BEGIN_TIME <= #{currentDateTime} 
+		     AND v.END_TIME > #{currentDateTime} 
+		     AND arr_org.begin_time <= #{currentDateTime} 
+		     AND arr_org.end_time > #{currentDateTime} 
+		     ]]>
+		     </if>
+		      <if test="active!=null and active!=''">
+		     AND p.active = #{active}
+		     AND v.ACTIVE = #{active}
+		     AND detail.ACTIVE = #{active}
+		     AND arr_org.active = #{active}
+		     AND bas_org.active = #{active}
+		     </if>
+		     <if test="id!=null and id!=''">
+		     AND p.ID = #{id} 
+		     </if>
+		     <if test="productCode!=null and productCode!=''">
+		     AND v.PRODUCT_CODE = #{productCode}
+		     </if>
+		     <if test="arrType!=null and arrType!=''">
+		     AND arr.type = #{arrType}
+		     </if>
+		     </where>
+		) t1 
+		
+		<where>
+		     t1.rk = 1
+		</where>
+		      
+  </select>
+  <select id="queryCityRegionPriceEntities" resultMap="RegionPartnerPriceMap" parameterType="java.util.Map">
+      select t1.* from 
+(
+  SELECT /*综合-价格-价格表-查询同一始发区域下的汽运价格明细信息：终点为城市*/
+         v.PRODUCT_ID AS PRODUCT_ID,
+         v.PRODUCT_CODE AS PRODUCT_CODE,
+         v.ID AS PRICING_VALUATION_ID,
+         v.ARRV_REGION_ID AS ARRV_REGION_ID,
+         NVL(V.CENTRALIZE_PICKUP, 'N') CENTRALIZE_PICKUP,
+         arr.CITY_CODE AS CITY_CODE,
+         arr.COUNTY_CODE AS COUNTY_CODE,
+         district2.NAME AS CITY_NAME,
+      	 district.NAME AS PROV_NAME,
+         detail.FEE_RATE / 100 AS FEE_RATE,
+         detail.CACULATE_TYPE AS CACULATE_TYPE,
+         ARR.TYPE AS ARR_TYPE, 
+         ROW_NUMBER() OVER(PARTITION BY DETAIL.CACULATE_TYPE, V.ARRV_REGION_ID 
+                               ORDER BY NVL(V.CENTRALIZE_PICKUP, 'N') ASC) RK
+    FROM pkp.t_srv_price_plan p
+   inner join pkp.t_srv_pricing_valuation v on v.price_plan_id = p.id
+   inner join pkp.t_srv_pricing_criteria_detail detail on detail.pricing_valuation_id = v.id
+   inner join pkp.t_srv_price_arrive_region arr on arr.id = v.arrv_region_id
+   inner join bse.t_bas_district district on district.code = arr.prov_code and district.active = 'Y'
+   inner join bse.t_bas_district district2 on district2.code = arr.city_code  and district2.active = 'Y'  
+   
+   <where>
+       
+     	 <if test="currentDateTime!=null and currentDateTime!=''">
+		        <![CDATA[
+		   		 P.BEGIN_TIME <= #{currentDateTime} 
+		     AND P.END_TIME > #{currentDateTime} 
+		     AND v.BEGIN_TIME <= #{currentDateTime} 
+		     AND v.END_TIME > #{currentDateTime} 
+		     ]]>
+		</if>
+		<if test="active!=null and active!=''">   
+		     AND p.active = #{active}
+		     AND v.ACTIVE = #{active}
+		     AND detail.ACTIVE = #{active}
+    	 </if>
+     	 <if test="id!=null and id!=''">
+		     AND p.ID = #{id} 
+		</if>
+ 		<if test="productCode!=null and productCode!=''">
+		     AND v.PRODUCT_CODE = #{productCode}		
+    	 </if>
+ 	     <if test="arrType!=null and arrType!=''">
+		     AND arr.type = #{arrType}
+		 </if>
+   
+     AND arr.county_code is null and arr.city_code is not null
+     AND exists(select 1 from bse.t_bas_org bas_org
+                  where bas_org.city_code = arr.city_code 
+                    and bas_org.active = 'Y')
+  </where>
+			) t1 
+		<where> 
+		    t1.rk = 1
+		</where>
+  </select>
+  
+     	 
+  <select id="queryCountyRegionPriceEntities" resultMap="RegionPartnerPriceMap" parameterType="java.util.Map">
+      select t1.* from 
+(
+  SELECT /*综合-价格-价格表-查询同一始发区域下的汽运价格明细信息:终点为区域*/
+         v.PRODUCT_ID AS PRODUCT_ID,
+         v.PRODUCT_CODE AS PRODUCT_CODE,
+         v.ID AS PRICING_VALUATION_ID,
+         v.ARRV_REGION_ID AS ARRV_REGION_ID,
+         NVL(V.CENTRALIZE_PICKUP, 'N') CENTRALIZE_PICKUP,
+         arr.CITY_CODE AS CITY_CODE,
+         arr.COUNTY_CODE AS COUNTY_CODE,
+         district3.NAME AS COUNTY_NAME,
+         district2.NAME AS CITY_NAME,
+      	 district.NAME AS PROV_NAME,
+         detail.FEE_RATE / 100 AS FEE_RATE,
+         detail.CACULATE_TYPE AS CACULATE_TYPE,
+         ARR.TYPE AS ARR_TYPE, 
+         ROW_NUMBER() OVER(PARTITION BY DETAIL.CACULATE_TYPE, V.ARRV_REGION_ID 
+                               ORDER BY NVL(V.CENTRALIZE_PICKUP, 'N') ASC) RK
+    FROM pkp.t_srv_price_plan p
+   inner join pkp.t_srv_pricing_valuation v on v.price_plan_id = p.id
+   inner join pkp.t_srv_pricing_criteria_detail detail on detail.pricing_valuation_id = v.id
+   inner join pkp.t_srv_price_arrive_region arr on arr.id = v.arrv_region_id
+   inner join bse.t_bas_district district on district.code = arr.prov_code and district.active = 'Y'
+   inner join bse.t_bas_district district2 on district2.code = arr.city_code  and district2.active = 'Y'
+   left  join bse.t_bas_district district3  on district3.code = arr.county_code  and district3.active = 'Y'
+   
+   <where>
+     	 <if test="currentDateTime!=null and currentDateTime!=''">
+		        <![CDATA[
+		   		 P.BEGIN_TIME <= #{currentDateTime} 
+		     AND P.END_TIME > #{currentDateTime} 
+		     AND v.BEGIN_TIME <= #{currentDateTime} 
+		     AND v.END_TIME > #{currentDateTime} 
+		     ]]>
+		</if>
+		<if test="active!=null and active!=''">   
+		     AND p.active = #{active}
+		     AND v.ACTIVE = #{active}
+		     AND detail.ACTIVE = #{active}
+     	</if>
+      <if test="id!=null and id!=''">
+		     AND p.ID = #{id} 
+	  </if>
+	  <if test="productCode!=null and productCode!=''">
+		     AND v.PRODUCT_CODE = #{productCode}		
+    	 </if>
+ 	     <if test="arrType!=null and arrType!=''">
+		     AND arr.type = #{arrType}
+		 </if>
+     AND arr.COUNTY_CODE IS NOT NULL
+     AND exists(select 1 from bse.t_bas_org bas_org
+                 where bas_org.county_code = arr.county_code 
+                   and bas_org.active = 'Y')
+     </where>
+) t1 where t1.rk = 1
+  </select>
+</mapper>

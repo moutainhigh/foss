@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.announcement">
+	<!-- 公告信息 -->
+	<resultMap  id="announcementResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.domain.AnnouncementEntity">
+		<id property="id" column="ID" javaType="String" jdbcType="VARCHAR" />
+		<result property="topic" column="TOPIC" javaType="String" jdbcType="VARCHAR" />
+		<result property="announcement" column="ANNOUNCEMENT" javaType="String" jdbcType="VARCHAR" />
+		<result property="active" column="ACTIVE" jdbcType="CHAR"  />
+		<result property="createUser" column="CREATE_USER_CODE" javaType="String" jdbcType="VARCHAR" />
+		<result property="createDate" column="CREATE_TIME" javaType="Date" jdbcType="TIMESTAMP" />
+		<result property="modifyUser" column="MODIFY_USER_CODE" javaType="String" jdbcType="VARCHAR" />
+		<result property="modifyDate" column="MODIFY_TIME" javaType="Date" jdbcType="TIMESTAMP" />
+	</resultMap>
+	<!-- 数据字段 -->
+	<sql id="Announcement_Column_List">
+		ID,
+		TOPIC,
+		ANNOUNCEMENT,
+		ACTIVE,
+		CREATE_USER_CODE,
+		CREATE_TIME,
+		MODIFY_USER_CODE,
+		MODIFY_TIME
+	</sql>
+
+	
+	<!-- 查询全部 -->
+	<select id="queryAllAnnouncement" parameterType="map"
+	resultMap="announcementResultMap">
+		<![CDATA[
+			SELECT	
+			/** 综合:查询所有公告信息**/
+		]]>
+			<include refid="Announcement_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_ANNOUNCEMENT T
+		]]>
+		<where>
+			<if test="createUser !=null and createUser != ''">
+				<![CDATA[T.CREATE_USER_CODE =#{createUser,jdbcType=VARCHAR}]]>
+			</if>
+			<if test="topic !=null and topic !=''">
+				<![CDATA[and T.TOPIC LIKE CONCAT(CONCAT('%',#{topic,jdbcType=VARCHAR}),'%')]]>
+			</if>
+			<if test="active != null and active != ''">
+				<![CDATA[and T.ACTIVE = #{active,jdbcType=CHAR}]]>
+	
+			</if>
+			<if test="startTime != null and startTime != ''">
+				<![CDATA[and T.CREATE_TIME > #{startTime,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="endTime != null and endTime != ''">
+				<![CDATA[and T.CREATE_TIME <= #{endTime,jdbcType=TIMESTAMP}]]>
+			</if>
+		</where>
+	</select>
+	
+	<!-- 统计总数 -->
+	<select id="queryCount" resultType="Long" parameterType="map">
+	    <![CDATA[
+	       	select/** 综合:统计总记录数**/ count(*) FROM BSE.T_BAS_ANNOUNCEMENT T
+	    ]]>
+		<where>
+			<if test="createUser !=null and createUser != ''">
+				<![CDATA[T.CREATE_USER_CODE =#{createUser,jdbcType=VARCHAR}]]>
+			</if>
+			<if test="topic !=null and topic !=''">
+				<![CDATA[and T.TOPIC LIKE CONCAT(CONCAT('%',#{topic,jdbcType=VARCHAR}),'%')]]>
+			</if>
+			<if test="active != null and active != ''">
+				<![CDATA[and T.ACTIVE = #{active,jdbcType=CHAR}]]>
+	
+			</if>
+			<if test="startTime != null and startTime != ''">
+				<![CDATA[and T.CREATE_TIME > #{startTime,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="endTime != null and endTime != ''">
+				<![CDATA[and T.CREATE_TIME <= #{endTime,jdbcType=TIMESTAMP}]]>
+			</if>
+		</where>
+
+	</select>
+	
+	<!-- 添加公告 -->
+	<insert id="insert" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AnnouncementEntity">
+		<![CDATA[
+			INSERT/** 综合:新增信息**/ INTO BSE.T_BAS_ANNOUNCEMENT (
+		]]>
+		<include refid="Announcement_Column_List"/>
+		<![CDATA[
+		)VALUES(
+		]]>
+			#{id, jdbcType=VARCHAR},
+			#{topic, jdbcType=VARCHAR},
+			#{announcement, jdbcType=VARCHAR},
+			#{active, jdbcType=CHAR},
+			#{createUser, jdbcType=VARCHAR},
+			#{createDate, jdbcType=TIMESTAMP},
+			#{modifyUser, jdbcType=VARCHAR},
+			#{modifyDate, jdbcType=TIMESTAMP}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+	
+	<!-- 修改公告 -->
+	<update id="update"
+			parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AnnouncementEntity">
+		update	/** 综合:修改信息**/ BSE.T_BAS_ANNOUNCEMENT 
+		<set>
+			<if test="topic !=null and topic !=''">
+				TOPIC =#{topic},
+			</if>
+			<if test="announcement != null and announcement != ''">
+				ANNOUNCEMENT =#{announcement},
+			</if>
+			<if test="createDate != null">
+				CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="createUser != null">
+				CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+		</set>
+		<where>
+			<if test="id != null">
+				ID = #{id}
+			</if>
+		</where>
+	</update>
+	
+	<!-- 废除公告 -->
+	<update id="deleteById" parameterType="map">
+		update/** 综合:作废信息**/ BSE.T_BAS_ANNOUNCEMENT
+		<set>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				MODIFY_USER_CODE = #{modifyUser, jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+		</set>
+		<where>
+			<if test="ids !=null and ids.length>0">
+				ID in 
+				<foreach collection="idList" index="index" item="id" open="("
+					separator="," close=")">
+					#{id}
+				</foreach>
+			</if>
+			<if test="active0 != null and active0 != ''">
+				and ACTIVE = #{active0,jdbcType=CHAR}
+			</if>
+		</where>
+	</update>
+	<!-- 根据id查询公告信息 -->
+	<select id="queryById" parameterType="java.lang.String" resultMap="announcementResultMap">
+			<![CDATA[
+				SELECT	
+				/** 综合:根据id查询公告信息**/
+			]]>
+		<include refid="Announcement_Column_List" />
+			<![CDATA[
+				FROM BSE.T_BAS_ANNOUNCEMENT T
+			]]>
+		<where>
+				T.ID =#{id, jdbcType=VARCHAR} 
+		</where>
+	</select>
+	
+</mapper>

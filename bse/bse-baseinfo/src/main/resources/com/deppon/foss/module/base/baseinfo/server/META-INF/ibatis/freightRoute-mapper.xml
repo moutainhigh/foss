@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.freightRoute" >
+
+	<resultMap id="freightRouteResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.FreightRouteEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="virtual_code" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="orig_org_code" property="orginalOrganizationCode" jdbcType="VARCHAR" />
+		<result column="dest_org_code" property="destinationOrganizationCode" jdbcType="VARCHAR" />
+		<result column="orig_type" property="orginalType" jdbcType="VARCHAR" />
+		<result column="dest_type" property="destinationType" jdbcType="VARCHAR" />
+		<result column="TRANSPORT_TYPE" property="transType" jdbcType="VARCHAR" />
+		<result column="aging" property="aging" jdbcType="NUMERIC" />
+		<result column="default_route" property="defaultRoute" jdbcType="CHAR" />
+		<!-- <result column="do_packing" property="doPacking" jdbcType="CHAR" />
+		<result column="TRANSFER_CENTER_PACKING" property="packingOrganizationCode" jdbcType="VARCHAR" /> -->
+		<result column="active" property="active" jdbcType="CHAR" />
+		<result column="notes" property="notes" jdbcType="VARCHAR" />
+		<result column="create_time" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="modify_time" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="VERSION_NO" property="version" jdbcType="NUMERIC" />
+		<result column="VALID" property="valid" jdbcType="CHAR" />
+	</resultMap>
+
+	<sql id="columns">
+		ID,
+		TRANSPORT_TYPE,
+		ORIG_ORG_CODE,
+		DEST_ORG_CODE,
+		ORIG_TYPE,
+		DEST_TYPE,
+		AGING,
+		DEFAULT_ROUTE,
+		<!-- DO_PACKING, -->
+		TRANSFER_CENTER_PACKING,
+		CREATE_TIME,
+		MODIFY_TIME,
+		ACTIVE,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE,
+		NOTES,
+		VIRTUAL_CODE,
+		VERSION_NO,
+		VALID
+	</sql>
+	
+	<sql id="values">
+		#{id,jdbcType=VARCHAR},
+		#{transType,jdbcType=VARCHAR}, 
+		#{orginalOrganizationCode,jdbcType=VARCHAR},  
+		#{destinationOrganizationCode,jdbcType=VARCHAR}, 
+		#{orginalType,jdbcType=VARCHAR}, 
+		#{destinationType,jdbcType=VARCHAR}, 
+		#{aging,jdbcType=NUMERIC}, 
+		#{defaultRoute, jdbcType=CHAR}, 
+		<!-- #{doPacking, jdbcType=CHAR}, -->
+		#{packingOrganizationCode, jdbcType=VARCHAR},
+		#{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=CHAR}, 
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR}, 
+		#{notes,jdbcType=VARCHAR}, 
+		#{virtualCode, jdbcType=VARCHAR},  
+		#{version, jdbcType=NUMERIC},
+		#{valid, jdbcType=CHAR}
+	</sql>
+
+	<insert id="addFreightRoute" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.FreightRouteEntity">
+		insert into BSE.T_BAS_FREIGHT_ROUTE (
+		<include refid="columns"/>
+		) values ( 
+		<include refid="values"/>
+		)
+	</insert>
+
+	<update id="deleteFreightRoute" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.FreightRouteEntity">
+		update BSE.T_BAS_FREIGHT_ROUTE 
+		set active = #{active, jdbcType=CHAR} 
+		, modify_time = #{modifyDate,jdbcType=TIMESTAMP} 
+		, VERSION_NO = #{version, jdbcType=NUMERIC}
+		, modify_user_code = #{modifyUser,jdbcType=VARCHAR} 
+		where VIRTUAL_CODE = #{virtualCode, jdbcType=VARCHAR}
+		and active = 'Y'
+	</update>
+
+	<update id="validFreightRoute" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.FreightRouteEntity">
+		update BSE.T_BAS_FREIGHT_ROUTE 
+		set valid = #{valid, jdbcType=CHAR} 
+		<!-- , DO_PACKING = #{doPacking, jdbcType=CHAR}
+		, TRANSFER_CENTER_PACKING = #{packingOrganizationCode, jdbcType=VARCHAR} -->
+		, modify_time = #{modifyDate,jdbcType=TIMESTAMP} 
+		, version_no = #{version,jdbcType=NUMERIC}
+		, modify_user_code = #{modifyUser,jdbcType=VARCHAR} 
+		where VIRTUAL_CODE = #{virtualCode, jdbcType=VARCHAR}
+		and active = #{active, jdbcType=CHAR}
+	</update>
+
+	<select id="queryFreightRouteById" resultMap="freightRouteResultMap" parameterType="java.lang.String">
+		select 
+		<include refid="columns"/>
+		 from BSE.T_BAS_FREIGHT_ROUTE where id = #{id}
+	</select>
+
+	<select id="queryFreightRouteByVirtualCode" resultMap="freightRouteResultMap" parameterType="map">
+		select 
+		<include refid="columns"/>
+		from BSE.T_BAS_FREIGHT_ROUTE where virtual_code = #{virtualCode} and active = #{active}
+	</select>
+
+
+	<sql id="whereFreightRouteListByCondition">
+		FROM BSE.T_BAS_FREIGHT_ROUTE
+		<where>
+			<if test="active != null and active != ''">
+				AND active = #{active}  
+			</if>
+			<if test="orginalOrganizationCode != null and orginalOrganizationCode != ''">
+				AND ORIG_ORG_CODE = #{orginalOrganizationCode} 
+			</if>
+			<if test="destinationOrganizationCode != null and destinationOrganizationCode != ''">
+				AND DEST_ORG_CODE = #{destinationOrganizationCode} 
+			</if>
+			<if test="transType != null and transType != ''">
+				AND transport_type = #{transType} 
+			</if>
+			<if test="defaultRoute != null and defaultRoute != ''">
+				AND default_route = #{defaultRoute}
+			</if>
+			<if test="valid != null and valid != ''">
+				AND valid = #{valid} 
+			</if>
+			<if test="lineVirtualCode != null and lineVirtualCode != ''">
+				AND VIRTUAL_CODE in (
+					SELECT DISTINCT FREIGHT_ROUTE_VIRTUAL_CODE
+					FROM BSE.T_BAS_FREIGHT_ROUTE_LINE 
+					WHERE LINE_VIRTUAL_CODE = #{lineVirtualCode}
+					AND active = 'Y'  
+				)
+			</if>
+		</where>
+	</sql>
+
+	<select id="queryFreightRouteListByCondition" resultMap="freightRouteResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.FreightRouteEntity">
+		select 
+		<include refid="columns"/>
+		<include refid="whereFreightRouteListByCondition"/>
+		order by VERSION_NO desc
+	</select>
+	
+	<select id="countFreightRouteListByCondition" resultType="long" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.FreightRouteEntity">
+		select count(1) 
+		<include refid="whereFreightRouteListByCondition"/>
+	</select>
+
+	<select id="queryFreightRouteForDownload" resultMap="freightRouteResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.FreightRouteEntity">
+		select 
+		<include refid="columns"/>
+		from BSE.t_bas_freight_route 
+		<where>
+			<if test="transferCodeList != null and transferCodeList.size > 0">
+				AND ORIG_ORG_CODE in 
+				<foreach collection="transferCodeList" open="(" close=")" separator="," item="transferCode">
+					#{transferCode} 
+				</foreach>
+			</if>
+			<if test="version != null">
+				<![CDATA[ AND version_no >= #{version} ]]>
+			</if>
+		</where>
+		order by version_no,id ASC
+	</select>
+
+	<!-- 以下为 cache 使用 -->
+
+	<select id="queryLastVersion" resultType="long">
+		<![CDATA[
+			SELECT MAX(VERSION_NO)
+			FROM BSE.t_bas_freight_route
+		]]>
+	</select>
+	
+	<select id="queryFreightRouteListForCache" resultMap="freightRouteResultMap" parameterType="string">
+		select 
+		<include refid="columns"/>
+		FROM BSE.t_bas_freight_route
+		where active = #{active,jdbcType=CHAR}
+		order by version_no ASC
+	</select>
+
+	<select id="queryAirFreightRouteList" resultMap="freightRouteResultMap" parameterType="string">
+		SELECT 
+			A.ID,
+			A.TRANSPORT_TYPE,
+			A.ORIG_ORG_CODE,
+			A.DEST_ORG_CODE,
+			A.VALID
+		FROM BSE.T_BAS_FREIGHT_ROUTE A, BSE.T_BAS_ORG B
+		WHERE A.ACTIVE = 'Y'
+			 AND A.VALID = 'Y'
+			 AND B.ACTIVE = 'Y'
+			 AND B.AIR_DISPATCH = 'Y'
+			 AND A.DEST_ORG_CODE = B.CODE
+			 AND A.ORIG_ORG_CODE = #{sourceCode,jdbcType=VARCHAR}
+	</select>
+
+</mapper>

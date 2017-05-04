@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.deppon.pda.bdm.module.foss.accept.server.dao.impl.AcctPdaDao">
+	
+	<!-- 获取快递点部营业部信息（即快递收入部门信息） -->
+	<select id="queryKdPartSalesDeptEntitys" parameterType="string" resultType="com.deppon.pda.bdm.module.foss.accept.shared.domain.KdPartSalesDeptEntity">
+		SELECT DD.DEPTNAME salesdeptname, 
+		       PD.SALESDEPTCODE salesdeptcode
+		  FROM T_SVR_USER U
+		  JOIN T_SVR_DEPT D
+		    ON U.DEPTID = D.ID
+		  JOIN T_BASE_EXPRESS_PART_SALES_DEPT PD
+		    ON PD.PARTCODE = D.DEPTCODE
+		  JOIN T_SVR_DEPT DD
+		    ON PD.SALESDEPTCODE = DD.DEPTCODE
+		 WHERE U.OPERFLAG = 1
+		   AND D.OPERFLAG = 1
+		   AND PD.OPERFLAG = 1
+		   AND DD.OPERFLAG = 1
+		   AND U.EMPCODE = #{userCode,jdbcType=VARCHAR}
+	</select>
+	
+	
+		
+	<!-- 获取快递员出发部门都十分可以开一票多件 -->
+	<select id="queryDeptEntitysIsOneMany" parameterType="string"  resultType="string">
+		 select 
+		 dp.isonemany
+		  from t_svr_express_vehicle vc 
+		 inner join  t_svr_dept Dp on dp.deptcode=vc.orgcode and dp.operflag=1
+		 where 
+		 vc.operflag=1
+		 and 
+		 vc.empcode=#{userCode,jdbcType=VARCHAR}   
+	</select>	
+	
+	<!-- 获取快递运输性质限定重量临界值 -->
+	<select id="queryExpLimitWeight" parameterType="string"  resultType="string">
+		SELECT 
+            a.conf_value
+        FROM T_svr_SYS_CONFIG A              
+            where A.CODE = 'EXPRESS_WEIGHT_CUT'                 
+            AND A.ORG_CODE = 'DIP'         
+            AND A.CONF_TYPE = 'SYSTEM_CONFIG_PARM__PKP'         
+            AND a.operflag=1
+	</select>	
+	
+
+	<!-- 保存快递接货各时间节点 --> 
+	<insert id="saveTimeNode" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.AllTimeNode">
+		INSERT INTO T_BASE_KD_PICKUP(
+			ID,
+			WAYBILLCODE,
+			EMPCODE,
+			ORDERRECEIVE, 
+			SEEDETAIL, 
+			BILLSTART, 
+			RECEIVEBILL, 
+			BILLEND, 
+			SELECTDESTINATIONSTART,
+		    SELECTDESTINATIONEND,
+		    VALUEADDSTART,
+		    VALUEADDEND,
+		    CALCARRIAGESTART,
+		    CALCARRIAGEEND,
+		    CARDSTART,
+		    CARDEND,
+		    PAYTYPE,
+		    CURTIME,
+		    DEPTCODE)
+		 VALUES(
+		 	sys_guid(),
+		 	#{waybillcode,jdbcType=VARCHAR},
+		 	#{empcode,jdbcType=VARCHAR},
+		 	to_date(#{orderreceive,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss'),
+		 	to_date(#{seedetail,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss'),
+		 	to_date(#{billstart,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss'),
+		 	to_date(#{receivebill,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss'),
+		 	to_date(#{billend,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss'),
+			to_date(#{selectdestinationstart,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss'),
+			to_date(#{selectdestinationend,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss'),
+			to_date(#{valueaddstart,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss'),
+			to_date(#{valueaddend,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss'),
+		 	to_date(#{calcarriagestart,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss'),
+		 	to_date(#{calcarriageend,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss'),
+		 	to_date(#{cardstart,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss'),
+		 	to_date(#{cardend,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss'),
+		 	#{paytype,jdbcType=VARCHAR},
+		 	sysdate,
+		 	#{deptcode,jdbcType=VARCHAR})
+		<!--  
+		VALUES(sys_guid(),#{waybillcode},#{empcode},to_date(#{orderreceive},'yyyy-mm-dd hh24:mi:ss'),#{seedetail},#{billstart},#{receivebill},#{billend},#{selectdestinationstart},
+		#{selectdestinationend},#{valueaddstart},#{valueaddend},#{calcarriagestart},#{calcarriageend},#{cardstart},#{cardend},#{paytype},sysdate,#{deptCode}) -->
+	</insert>
+	
+	<!-- 快递外发保价申明价值 获取  //author:245960 Date:2015-08-22 comment:骆敏霞需求获取  快递保价申明价值上限  1104   快递外发保价申明价值 1105-->
+	<select id="queryKdInsuredEntity" resultType="com.deppon.pda.bdm.module.foss.accept.shared.domain.KdInsuredEntity">
+		select t.conf_name confName, 
+			   t.conf_value confValue
+ 		 from T_svr_SYS_CONFIG t
+ 		where t.code in ('1104', '1105')
+  		 and t.operflag = '1'
+	</select>
+	<!-- PDA-开单一票多件限制优化需求 -->
+	<select id="queryOneManyLimit" parameterType="string"  resultType="com.deppon.pda.bdm.module.foss.accept.shared.domain.KdOneManyLimitEntity">
+		select
+		t.conf_name confName,  
+		t.conf_value confValue
+		from t_svr_sys_config t  
+		where t.code in
+		('ONEGOODSQTYTOTAL_WEIGHT','ONEGOODSQTYTOTAL_GOODS','ONEGOODSQTYTOTAL_VOLUME') 
+		and t.operflag='1'
+	</select>
+	<!-- 当前快递员所对应的所用营业区 -->
+	<select id="queryCourierAllSalesArea" parameterType="string" resultType="com.deppon.pda.bdm.module.foss.accept.shared.domain.kdPartSalesAreaEntitys">
+	SELECT de.deptcode as areaCode,de.deptname as areaName FROM t_svr_user t 
+	JOIN t_svr_dept dp ON t.deptid=dp.id
+	JOIN t_svr_dept de ON dp.deptcity=de.deptcity
+	AND t.operflag='1'
+	AND de.operflag='1'
+	AND dp.operflag='1'
+	AND de.deptname LIKE '%营业区' WHERE t.empcode = #{empCode,jdbcType=VARCHAR}
+	</select>
+	<!-- 当前快递员所对应的营业区的所有营业部 -->
+	<select id="queryAllSalesDept" parameterType="string" resultType="com.deppon.pda.bdm.module.foss.accept.shared.domain.KdPartSalesDeptEntity">
+	SELECT t.deptcode salesdeptCode,t.deptname salesdeptName from t_svr_dept t 
+	WHERE t.parent_org_code = #{areaCode,jdbcType=VARCHAR}
+	AND t.operflag='1' 
+	AND t.salesdepartment='N'
+	AND t.deptname LIKE '%营业部'
+	</select>
+	<!-- 当前快递员所对应的默认营业区 -->
+	<select id="queryDefaultAreaCode" parameterType="string"
+		resultType="com.deppon.pda.bdm.module.foss.accept.shared.domain.KdBusinessAreasEntity">
+		SELECT de.deptcode defaultAreaCode,de.deptname defaultAreaName 
+		from t_svr_express_vehicle v JOIN t_svr_dept
+		t ON v.orgcode=t.deptcode
+		JOIN t_svr_dept de ON t.parent_org_code=de.deptcode
+		WHERE v.empcode = #{empCode,jdbcType=VARCHAR} AND t.operflag='1' AND de.operflag='1' AND v.operflag='1'
+	</select>
+	<!-- 非现金盘点 保存刷卡失败数据 -->
+	<insert id="saveNCIPaymentCard" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.AccountStatementEntitys">
+		insert into t_nci_card(id ,userCode,tradeSerialNo ,serialAmount ,operateTime 
+		,cardDeptCode ,belongModule ,errorCause,billDetail)
+		values(sys_guid(),#{createUserCode,jdbcType=VARCHAR} ,#{tradeSerialNo,jdbcType=VARCHAR},
+		#{serialAmount,jdbcType=VARCHAR},#{operateTime,jdbcType=TIMESTAMP},#{cardDeptCode,jdbcType=VARCHAR},
+		#{belongModule,jdbcType=VARCHAR},#{errorCause,jdbcType=VARCHAR},#{content,jdbcType=VARCHAR})
+	</insert>
+</mapper>

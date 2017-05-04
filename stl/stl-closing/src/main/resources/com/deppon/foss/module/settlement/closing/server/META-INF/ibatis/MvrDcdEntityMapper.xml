@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stv.MvrDcdMapper">
+    <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.closing.api.shared.domain.MvrDcdEntity">
+        <!--<id column="ID" property="id" jdbcType="VARCHAR" />-->
+        <result column="PERIOD" property="period" jdbcType="VARCHAR" />
+        <result column="INVOICE_MARK" property="invoiceMark" jdbcType="VARCHAR" />
+        <result column="PRODUCT_CODE" property="productCode" jdbcType="VARCHAR" />
+        <result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+        <result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+        <result column="ORIG_ORG_CODE" property="origOrgCode" jdbcType="VARCHAR" />
+        <result column="ORIG_ORG_NAME" property="origOrgName" jdbcType="VARCHAR" />
+        <result column="DEST_ORG_CODE" property="destOrgCode" jdbcType="VARCHAR" />
+        <result column="DEST_ORG_NAME" property="destOrgName" jdbcType="VARCHAR" />
+        <result column="ORIG_UNIFIED_CODE" property="origUnifiedCode" jdbcType="VARCHAR" />
+        <result column="DEST_UNIFIED_CODE" property="destUnifiedCode" jdbcType="VARCHAR" />
+        <result column="CUSTOMER_TYPE" property="customerType" jdbcType="VARCHAR" />
+        <result column="UNIFIED_SETTLEMENT_TYPE" property="unifiedSettlementType" jdbcType="VARCHAR" />
+        <result column="CONTRACT_ORG_CODE" property="contractOrgCode" jdbcType="VARCHAR" />
+        <result column="CONTRACT_ORG_NAME" property="contractOrgName" jdbcType="VARCHAR" />
+        <result column="DCD_DEST_APPLY_WO_INCOMET" property="dcdDestApplyWoIncomet" jdbcType="DECIMAL"/>
+        <result column="DCD_DEST_APPLY_WO_COSTT" property="dcdDestApplyWoCostt" jdbcType="DECIMAL"/>
+        <result column="LDCD_DEST_INCOMEO" property="ldcdDestIncomeo" jdbcType="DECIMAL"/>
+        <result column="LDCD_DEST_COSTO" property="ldcdDestCosto" jdbcType="DECIMAL"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+    PERIOD,
+    INVOICE_MARK,
+    PRODUCT_CODE,
+    CUSTOMER_CODE,
+    CUSTOMER_NAME,
+    ORIG_ORG_CODE,
+    ORIG_ORG_NAME,
+    DEST_ORG_CODE,
+    DEST_ORG_NAME,
+    ORIG_UNIFIED_CODE,
+    DEST_UNIFIED_CODE,
+    UNIFIED_SETTLEMENT_TYPE,
+    CONTRACT_ORG_CODE,
+    CONTRACT_ORG_NAME,
+    DCD_DEST_APPLY_WO_INCOMET /100 DCD_DEST_APPLY_WO_INCOMET,
+    DCD_DEST_APPLY_WO_COSTT /100 DCD_DEST_APPLY_WO_COSTT,
+    LDCD_DEST_INCOMEO /100 LDCD_DEST_INCOMEO,
+    LDCD_DEST_COSTO /100	LDCD_DEST_COSTO
+ </sql>
+
+    <!-- 按条件查询列表 -->
+    <select id="query" resultMap="BaseResultMap"
+            parameterType="com.deppon.foss.module.settlement.closing.api.shared.dto.MvrDcdQueryDto">
+        SELECT /*结算-凭证报表-根据条件查询折扣调整到达月报表*/
+        <include refid="Base_Column_List"/>
+        FROM STV.T_STL_MVR_DCD T
+        <where>
+            t.PERIOD= #{period}
+            <!-- 运输性质 -->
+            <if test="productCodeList != null">
+                and t.PRODUCT_CODE in
+                <foreach collection="productCodeList" item="productCode"
+                         open="(" close=")" separator=",">
+                    #{productCode,jdbcType=VARCHAR}
+                </foreach>
+            </if>
+
+            <if test="customerCode!=null and customerCode!='' ">
+                AND t.CUSTOMER_CODE=#{customerCode}
+            </if>
+            <!-- 始发部门编码 -->
+            <if test="origOrgCode != null and origOrgCode != ''">
+                and t.ORIG_ORG_CODE =#{origOrgCode}
+            </if>
+            <if test="destOrgCode!=null and destOrgCode!='' ">
+                AND t.DEST_ORG_CODE=#{destOrgCode}
+            </if>
+        </where>
+    </select>
+
+    <!-- 按条件查询汇总 -->
+    <select id="queryTotal" resultType="com.deppon.foss.module.settlement.closing.api.shared.dto.MvrDcdResultDto"
+            parameterType="com.deppon.foss.module.settlement.closing.api.shared.dto.MvrDcdQueryDto">
+        SELECT /*结算-凭证报表-根据条件查询折扣调整到达月报表总条数，总金额*/
+        --总条数
+        COUNT(1) count,
+        SUM(DCD_DEST_APPLY_WO_INCOMET) /100 dcdDestApplyWoIncomet,
+        SUM(DCD_DEST_APPLY_WO_COSTT) /100 dcdDestApplyWoCostt,
+        SUM(LDCD_DEST_INCOMEO) /100 ldcdDestIncomeo,
+        SUM(LDCD_DEST_COSTO) /100 ldcdDestCosto
+        FROM STV.T_STL_MVR_DCD T
+        <where>
+            t.PERIOD= #{period}
+            <!-- 运输性质 -->
+            <if test="productCodeList != null">
+                and t.PRODUCT_CODE in
+                <foreach collection="productCodeList" item="productCode"
+                         open="(" close=")" separator=",">
+                    #{productCode,jdbcType=VARCHAR}
+                </foreach>
+            </if>
+
+            <if test="customerCode!=null and customerCode!='' ">
+                AND t.CUSTOMER_CODE=#{customerCode}
+            </if>
+            <!-- 始发部门编码 -->
+            <if test="origOrgCode != null and origOrgCode!='' ">
+                and t.ORIG_ORG_CODE =#{origOrgCode}
+            </if>
+            <if test="destOrgCode!=null and destOrgCode!='' ">
+                AND t.DEST_ORG_CODE=#{destOrgCode}
+            </if>
+        </where>
+    </select>
+</mapper>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.pda.bdm.module.core.server.dao.impl.PdaDeviceDao" >
+    <resultMap id="deviceMap" type="com.deppon.pda.bdm.module.core.shared.domain.PdaDeviceEntity">
+    	<id property="id" column="ID"/>
+    	<result property="dvcCode" column="DVCCODE"/>
+    	<result property="sernbr" column="SERNBR"/>
+    	<result property="remark" column="REMARK"/>
+    	<result property="simcardCode" column="SIMCARDCODE"/>
+    	<result property="model" column="MODEL"/>
+    	<result property="companyCode" column="COMPANYCODE"/>
+    	<result property="purDate" column="PURDATE"/>
+    	<result property="lastUpdaterCode" column="LASTUPDATERCODE"/>
+    	<result property="lastUpdaterNm" column="LASTUPDATERNM"/>
+    	<result property="lastUpddate" column="LASTUPDDATE"/>
+    	<result property="status" column="STATUS"/>
+    </resultMap>
+    
+    <!-- 最后修改时间 -->
+    <select id="getLastModifyTime" resultType="date">
+    	select max(LASTUPDDATE) from t_SVR_device
+    </select>
+	
+	<!-- 通过设备号获取设备实体 -->
+	<select id="getEntityById" resultMap="deviceMap" parameterType="string">
+    	SELECT
+    		ID,
+	    	DVCCODE,
+	    	SERNBR,
+	    	REMARK,
+	    	SIMCARDCODE,
+	    	MODEL,
+	    	COMPANYCODE,
+	    	PURDATE,
+	    	LASTUPDATERCODE,
+	    	LASTUPDATERNM,
+	    	LASTUPDDATE,
+	    	STATUS
+    	FROM t_SVR_device
+    	WHERE DVCCODE = #{pdaCode}
+    </select>
+    <!-- 获取最后更新时间大于某个时间的实体 -->
+    <select id="getEntitiesByLastModifyTime" resultMap="deviceMap">
+    	SELECT 
+    		DVCCODE,
+	    	SERNBR,
+	    	REMARK,
+	    	SIMCARDCODE,
+	    	MODEL,
+	    	COMPANYCODE,
+	    	PURDATE,
+	    	LASTUPDATERCODE,
+	    	LASTUPDATERNM,
+	    	LASTUPDDATE,
+	    	STATUS
+    	FROM t_SVR_device
+    	WHERE LASTUPDDATE > #{date}
+    </select>
+    
+    <!-- 通过一个PDA编号集合获取设备实体 -->
+    <select id="getEntityByIds" resultMap="deviceMap">
+    	SELECT 
+    		DVCCODE,
+	    	SERNBR,
+	    	REMARK,
+	    	SIMCARDCODE,
+	    	MODEL,
+	    	COMPANYCODE,
+	    	PURDATE,
+	    	LASTUPDATERCODE,
+	    	LASTUPDATERNM,
+	    	LASTUPDDATE,
+	    	STATUS
+    	FROM t_SVR_device
+    	WHERE DVCCODE in
+    	<foreach collection="list" item="pdaCode" open="(" separator="," close=")">
+    		#{pdaCode}
+    	</foreach>
+    </select>
+</mapper>

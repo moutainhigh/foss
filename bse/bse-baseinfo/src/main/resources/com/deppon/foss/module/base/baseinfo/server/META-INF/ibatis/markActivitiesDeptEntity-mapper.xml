@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.bse.bse-baseinfo.markActivitiesDept">
+    <!--市场活动开展部门对象-->
+	<resultMap id="markActivitiesDeptResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.domain.MarkActivitiesDeptEntity" >
+	<result column="ID" property="id" jdbcType="VARCHAR" />
+	<result column="CRM_ID" property="crmId" jdbcType="DECIMAL" />
+	<result column="ACTIVITE_CRM_ID" property="activiteCrmId" jdbcType="DECIMAL" />
+	<result column="ACTIVITEID" property="activiteId" jdbcType="VARCHAR" />
+	<result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+	<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+	<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+	<result column="ACTIVE" property="active" jdbcType="CHAR" />
+	<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+	<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<!--开展部门列-->
+	<sql id="markActivitiesDept_column">
+	ID,
+    CRM_ID,
+    ACTIVITE_CRM_ID,
+    ACTIVITEID,
+    ORG_CODE,
+   	CREATE_TIME,
+   	MODIFY_TIME,
+   	ACTIVE,
+   	CREATE_USER_CODE,
+  	MODIFY_USER_CODE
+	</sql>
+	
+	<!--新增一条市场活动开展部门信息 -->
+	<insert id="addMarkActivitiesDept" parameterType = "map">
+	 BEGIN 
+	<foreach  collection="deptList" item="item"  separator=";">
+    <![CDATA[
+      insert into BSE.T_BAS_MARK_ACTIVITIES_DEPT (
+    ]]>
+    <include refid="markActivitiesDept_column"/>
+    <![CDATA[
+    )values(
+    ]]>
+    #{item.id,jdbcType=VARCHAR}, 
+    #{item.crmId,jdbcType=DECIMAL},
+    #{item.activiteCrmId,jdbcType=DECIMAL},
+	#{item.activiteId,jdbcType=VARCHAR},
+	#{item.orgCode,jdbcType=VARCHAR},
+	#{item.createDate,jdbcType=TIMESTAMP},
+	#{item.modifyDate,jdbcType=TIMESTAMP},
+	#{item.active,jdbcType=VARCHAR},
+	#{item.createUser,jdbcType=VARCHAR},
+	#{item.modifyUser,jdbcType=VARCHAR}
+    <![CDATA[
+    )
+    ]]>
+     </foreach>
+	;END;  
+	</insert>
+	
+	<!--作废一条市场活动开展部门信息 -->
+	<update id="updateMarkActivitiesDept" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.MarkActivitiesDeptEntity">
+	<![CDATA[
+	  UPDATE BSE.T_BAS_MARK_ACTIVITIES_DEPT 
+	]]>
+	  SET 	MODIFY_TIME = SYSDATE,
+   	        ACTIVE = 'N',
+  	        MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR}
+  	<where>
+  	            ACTIVE = 'Y'
+  	  <if test="crmId !=null"> 
+		       AND CRM_ID = #{crmId,jdbcType=DECIMAL}
+	  </if>
+	   <if test="activiteCrmId !=null"> 
+		       AND ACTIVITE_CRM_ID = #{activiteCrmId,jdbcType=DECIMAL}
+	  </if>
+  	</where>
+	</update>
+	
+	<!--根据市场活动CrmId查询一条市场活动开展部门信息是否存在 -->
+	<select id="queryMarkActivitiesDeptByCrmId" parameterType="map" 
+	                        resultMap="markActivitiesDeptResultMap">
+	<![CDATA[
+	   SELECT 
+	]]>
+	<include refid="markActivitiesDept_column"/>
+	<![CDATA[
+	  FROM BSE.T_BAS_MARK_ACTIVITIES_DEPT
+	]]>
+	<where>
+	      	   ACTIVE = 'Y'
+	   <if test="crmId !=null"> 
+		       AND CRM_ID = #{crmId,jdbcType=DECIMAL}
+	  </if>
+	</where>
+	</select>
+	
+	<!--查询活动开展部门信息（活动crmId和部门编码） -->
+	<select id="queryMarkActivitiesDept" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.MarkActivitiesDeptEntity" 
+	                        resultMap="markActivitiesDeptResultMap">
+	<![CDATA[
+	   SELECT 
+	]]>
+	<include refid="markActivitiesDept_column"/>
+	<![CDATA[
+	  FROM BSE.T_BAS_MARK_ACTIVITIES_DEPT
+	]]>
+	<where>
+	      	   ACTIVE = 'Y'
+<!-- 	   <if test="orgCode !=null and orgCode != ''">  -->
+<!-- 		       AND ORG_CODE = #{orgCode,jdbcType=VARCHAR} -->
+<!-- 	  </if> -->
+	  <if test="activiteCrmId != null">
+	           AND ACTIVITE_CRM_ID = #{activiteCrmId,jdbcType=DECIMAL}
+	  </if>
+	</where>
+	</select>
+	
+	<!--查询活动开展部门信息（活动crmId和部门编码）(根据时间建模查询，适用于更改单) -->
+	<select id="queryMarkActivitiesDeptByBillTime" parameterType="map" resultMap="markActivitiesDeptResultMap">	                        
+		<![CDATA[
+		   SELECT 
+		]]>
+		<include refid="markActivitiesDept_column"/>
+		<![CDATA[
+		  FROM BSE.T_BAS_MARK_ACTIVITIES_DEPT
+		]]>
+		<where>
+		  <if test="activiteCrmId != null">
+		           AND ACTIVITE_CRM_ID = #{activiteCrmId,jdbcType=DECIMAL}
+		  </if>
+		  <if test="billlingTime != null">
+			<![CDATA[ AND CREATE_TIME <= #{billlingTime,jdbcType=TIMESTAMP}
+			AND MODIFY_TIME >= #{billlingTime,jdbcType=TIMESTAMP}]]>
+		  </if>
+		</where>
+	</select>
+</mapper>

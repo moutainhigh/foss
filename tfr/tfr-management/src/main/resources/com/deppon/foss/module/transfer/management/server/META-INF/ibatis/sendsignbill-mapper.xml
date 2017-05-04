@@ -1,0 +1,430 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.management.sendsignbill" >
+  <resultMap id="SendSignBillResultMap" type="com.deppon.foss.module.transfer.management.api.shared.domain.SendSignBillEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="SIGN_BILL_NO" property="signBillNo" jdbcType="VARCHAR" />
+    <result column="HANDOVER_NO" property="handoverNo" jdbcType="VARCHAR" />
+    <result column="USE_TRUCK_ORG_CODE" property="useTruckOrgCode" jdbcType="VARCHAR" />
+    <result column="USE_TRUCK_ORG_NAME" property="useTruckOrgName" jdbcType="VARCHAR" />
+    <result column="DRIVER_CODE" property="driverCode" jdbcType="VARCHAR" />
+    <result column="DRIVER_NAME" property="driverName" jdbcType="VARCHAR" />
+    <result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />    
+    <result column="VEHICLE_TYPE_LENGTH" property="vehicleTypeLength" jdbcType="VARCHAR" />
+    <result column="VEHICLE_TYPE_LENGTH_NAME" property="vehicleTypeLengthName" jdbcType="VARCHAR" />
+    <result column="SEND_BILL_QTY" property="sendBillQty" jdbcType="DECIMAL" />
+    <result column="VOLUME" property="volume" jdbcType="DECIMAL" />
+    <result column="WEIGHT" property="weight" jdbcType="DECIMAL" />
+    <result column="IN_STOCK_BILL_QTY" property="inStockBillQty" jdbcType="DECIMAL" />
+    <result column="UPSTAIRS_BILL_QTY" property="upstairsBillQty" jdbcType="DECIMAL" />
+    <result column="DISTANCE" property="distance" jdbcType="DECIMAL" />
+    <result column="IS_SINGLE_SEND" property="isSingleSend" jdbcType="CHAR" />
+    <result column="UPSTAIRS_FEE" property="upstairsFee" jdbcType="DECIMAL" />
+    <result column="NO_IN_STOCK_BILL_FEE" property="noInStockBillFee" jdbcType="DECIMAL" />
+    <result column="IN_STOCK_BILL_FEE" property="inStockBillFee" jdbcType="DECIMAL" />
+    <result column="DRIVER_ROYALTY_AMOUNT" property="driverRoyaltyAmount" jdbcType="DECIMAL" />
+    <result column="USE_TRUCK_FEE" property="useTruckFee" jdbcType="DECIMAL" />
+    <result column="OTHER_FEE" property="otherFee" jdbcType="DECIMAL" />
+    <result column="UPSTAIRS_FEE_ROYALTY" property="upstairsFeeRoyalty" jdbcType="DECIMAL" />
+    <result column="SIGN_BILL_DATE" property="signBillDate" jdbcType="DATE" />
+    <result column="RECEIVER_CODE" property="receiverCode" jdbcType="VARCHAR" />
+    <result column="RECEIVER_NAME" property="receiverName" jdbcType="VARCHAR" />
+    <result column="SEND_NO" property="sendNo" jdbcType="VARCHAR" />
+    <result column="HAUL_BACK_BILL_QTY" property="haulBackBillQty" jdbcType="VARCHAR" />
+    <result column="ORG_CODE" property="orgCode"  />    
+    <result column="ORG_NAME" property="orgName"  />    
+  </resultMap>
+  
+  
+  <resultMap id="SendSignBillDtoResultMap" type="com.deppon.foss.module.transfer.management.api.shared.dto.SendSignBillDto" >
+    <result column="DRIVER_COUNT" property="driverCount"  />
+    <result column="SEND_BILL_QTY_TOTAL" property="sendBillQtyTotal"  />
+    <result column="VOLUME_TOTAL" property="volumeTotal" />
+    <result column="WEIGHT_TOTAL" property="weightTotal"  />
+    <result column="IN_STOCK_BILL_QTY_TOAAL" property="inStockBillQtyTotal"  />    
+    <result column="UPSTAIRS_FEE_TOTAL" property="upstairsFeeTotal"  />
+    <result column="DISTANCE_TOTAL" property="distanceTotal"  />
+  </resultMap>
+  
+  <sql id="SendSignBill_Column_List" >
+    T.ID,
+       T.SIGN_BILL_NO,
+       T.HANDOVER_NO,
+       T.USE_TRUCK_ORG_CODE,
+       T.USE_TRUCK_ORG_NAME,
+       T.DRIVER_CODE,
+       T.DRIVER_NAME,
+       T.VEHICLE_NO,
+       T.VEHICLE_TYPE_LENGTH,
+       T.SEND_BILL_QTY,
+       T.VOLUME,
+       T.WEIGHT,
+       T.IN_STOCK_BILL_QTY,
+       T.UPSTAIRS_BILL_QTY,
+       T.DISTANCE,
+       T.IS_SINGLE_SEND,
+       T.UPSTAIRS_FEE / 100 AS UPSTAIRS_FEE,
+       T.NO_IN_STOCK_BILL_FEE / 100 AS NO_IN_STOCK_BILL_FEE,
+       T. IN_STOCK_BILL_FEE / 100 AS IN_STOCK_BILL_FEE,
+       T.DRIVER_ROYALTY_AMOUNT / 100 AS DRIVER_ROYALTY_AMOUNT,
+       T.USE_TRUCK_FEE / 100 AS USE_TRUCK_FEE,
+       T.OTHER_FEE / 100 AS OTHER_FEE,
+       T.SIGN_BILL_DATE,
+       T. RECEIVER_CODE,
+       T.RECEIVER_NAME,
+       T.SEND_NO,
+       T.HAUL_BACK_BILL_QTY,
+       T.UPSTAIRS_FEE_ROYALTY / 100 AS UPSTAIRS_FEE_ROYALTY,
+       VL.Vehicle_Length_Name AS VEHICLE_TYPE_LENGTH_NAME
+  </sql>
+  <select id="querySendSignBillEntityById" resultMap="SendSignBillResultMap" parameterType="java.lang.String" >
+    select 
+    <include refid="SendSignBill_Column_List" />
+  	from TFR.T_OPT_SEND_SIGN_BILL T  LEFT JOIN  bse.t_bas_vehicle_type_length VL on  VL.Vehicle_Length_Code=T.VEHICLE_TYPE_LENGTH  
+    where T.ID = #{id,jdbcType=VARCHAR}
+  </select>
+  
+  <select id="querySendSignBill" resultMap="SendSignBillResultMap" parameterType="com.deppon.foss.module.transfer.management.api.shared.dto.SendSignBillDto" >
+    select 
+    <include refid="SendSignBill_Column_List" />
+    from TFR.T_OPT_SEND_SIGN_BILL T  LEFT JOIN  bse.t_bas_vehicle_type_length VL on  VL.Vehicle_Length_Code=T.VEHICLE_TYPE_LENGTH  
+     <include refid="sendSignBill_where"/>
+  </select>
+  
+  <select id="queryCount" resultType="Long" parameterType="com.deppon.foss.module.transfer.management.api.shared.dto.SendSignBillDto" >
+    select   count(ID)  from TFR.T_OPT_SEND_SIGN_BILL  
+    <include refid="sendSignBill_where"/> 
+  </select>
+  
+  <select id="querySendSignBillByFee" resultMap="SendSignBillDtoResultMap" parameterType="com.deppon.foss.module.transfer.management.api.shared.dto.SendSignBillDto">
+    select count(DISTINCT DRIVER_CODE) AS DRIVER_COUNT,
+       sum(SEND_BILL_QTY) AS SEND_BILL_QTY_TOTAL,
+       sum(VOLUME) AS VOLUME_TOTAL,
+       sum(WEIGHT) AS WEIGHT_TOTAL,
+       sum(IN_STOCK_BILL_QTY) AS IN_STOCK_BILL_QTY_TOAAL,
+       sum(UPSTAIRS_FEE/100) AS UPSTAIRS_FEE_TOTAL,
+       sum(DISTANCE) AS DISTANCE_TOTAL
+  from TFR.T_OPT_SEND_SIGN_BILL
+   <include refid="sendSignBill_where"/>
+  </select>
+  
+  <select id="queryExportSendSignBill" resultMap="SendSignBillResultMap" parameterType="com.deppon.foss.module.transfer.management.api.shared.dto.SendSignBillDto" >
+    select 
+    <include refid="SendSignBill_Column_List" />
+    from TFR.T_OPT_SEND_SIGN_BILL T  LEFT JOIN  bse.t_bas_vehicle_type_length VL on  VL.Vehicle_Length_Code=T.VEHICLE_TYPE_LENGTH  
+    <include refid="sendSignBill_where"/>
+  </select>
+  
+  <sql id="sendSignBill_where">
+ 	 <where>
+			<if test="useTruckOrgCode!=null and useTruckOrgCode!='' ">	
+					AND USE_TRUCK_ORG_CODE=#{useTruckOrgCode} 				
+			</if>
+			<if test="orgCodes != null">
+		      AND ORG_CODE IN
+				<foreach 
+					collection="orgCodes" open="(" close=")" item="item" separator="," index="index"> 
+					#{item} 
+				</foreach>
+		    </if>	
+			<if test="driverCode!=null and driverCode!='' ">	
+					AND  DRIVER_CODE = #{driverCode}
+			</if>						 
+			<if test="vehicleNo!=null and  vehicleNo!=''">
+				AND  VEHICLE_NO = #{vehicleNo}					
+			</if>
+			<if test="vehicleTypeLength!=null and  vehicleTypeLength!=''">
+				AND VEHICLE_TYPE_LENGTH = #{vehicleTypeLength}					
+			</if> 
+			<if test="beginSignBillDate!=null and beginSignBillDate!=''">
+				<![CDATA[ AND  SIGN_BILL_DATE>= to_date(#{beginSignBillDate},'yyyy-mm-dd hh24:mi:ss')	 ]]> 
+			</if>
+			<if test="endSignBillDate!=null  and endSignBillDate!=''">
+				<![CDATA[ AND  SIGN_BILL_DATE<= to_date(#{endSignBillDate},'yyyy-mm-dd hh24:mi:ss')	 ]]> 									
+			</if>		
+	</where>
+  </sql>
+  <delete id="deleteSendSignBill" parameterType="java.lang.String" >
+    delete from TFR.T_OPT_SEND_SIGN_BILL
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  
+   <insert id="addSendSignBill" parameterType="com.deppon.foss.module.transfer.management.api.shared.domain.SendSignBillEntity" >
+    insert into TFR.T_OPT_SEND_SIGN_BILL
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="signBillNo != null" >
+        SIGN_BILL_NO,
+      </if>
+      <if test="handoverNo != null" >
+        HANDOVER_NO,
+      </if>
+      <if test="useTruckOrgCode != null" >
+        USE_TRUCK_ORG_CODE,
+      </if>
+      <if test="useTruckOrgName != null" >
+        USE_TRUCK_ORG_NAME,
+      </if>
+      <if test="orgCode != null" >
+        ORG_CODE,
+      </if>
+      <if test="orgName != null" >
+        ORG_NAME,
+      </if>
+      <if test="driverCode != null" >
+        DRIVER_CODE,
+      </if>
+      <if test="driverName != null" >
+        DRIVER_NAME,
+      </if>
+      <if test="vehicleNo != null" >
+        VEHICLE_NO,
+      </if>
+      <if test="vehicleTypeLength != null   and vehicleTypeLength !='' " >
+        VEHICLE_TYPE_LENGTH,
+      </if>
+      <if test="sendBillQty != null" >
+        SEND_BILL_QTY,
+      </if>
+      <if test="volume != null   and volume !='' " >
+        VOLUME,
+      </if>
+      <if test="weight != null   and  weight  !='' " >
+        WEIGHT,
+      </if>
+      <if test="inStockBillQty != null   and  inStockBillQty  !='' " >
+        IN_STOCK_BILL_QTY,
+      </if>
+      <if test="upstairsBillQty != null   and  upstairsBillQty !='' " >
+        UPSTAIRS_BILL_QTY,
+      </if>
+      <if test="distance != null" >
+        DISTANCE,
+      </if>
+      <if test="isSingleSend != null" >
+        IS_SINGLE_SEND,
+      </if>
+      <if test="upstairsFee != null   and  upstairsFee !='' " >
+        UPSTAIRS_FEE,
+      </if>
+      <if test="noInStockBillFee != null" >
+        NO_IN_STOCK_BILL_FEE,
+      </if>
+      <if test="inStockBillFee != null" >
+        IN_STOCK_BILL_FEE,
+      </if>
+      <if test="driverRoyaltyAmount != null" >
+        DRIVER_ROYALTY_AMOUNT,
+      </if>
+      <if test="useTruckFee != null" >
+        USE_TRUCK_FEE,
+      </if>
+      <if test="otherFee != null" >
+        OTHER_FEE,
+      </if>
+      <if test="signBillDate != null" >
+        SIGN_BILL_DATE,
+      </if>
+      <if test="receiverCode != null" >
+        RECEIVER_CODE,
+      </if>
+      <if test="receiverName != null" >
+        RECEIVER_NAME,
+      </if>
+      <if test="sendNo != null" >
+        SEND_NO,
+      </if>
+      <if test="haulBackBillQty != null" >
+        HAUL_BACK_BILL_QTY,
+      </if>
+      <if test="upstairsFeeRoyalty != null" >
+        UPSTAIRS_FEE_ROYALTY,
+      </if>
+      <if test="currencyCode != null" >
+        CURRENCY_CODE,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="signBillNo != null" >
+        #{signBillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="handoverNo != null" >
+        #{handoverNo,jdbcType=VARCHAR},
+      </if>
+      <if test="useTruckOrgCode != null" >
+        #{useTruckOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="useTruckOrgName != null" >
+        #{useTruckOrgName,jdbcType=VARCHAR},
+      </if>
+      <if test="orgCode != null" >
+        #{orgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="orgName != null" >
+        #{orgName,jdbcType=VARCHAR},
+      </if>
+      <if test="driverCode != null" >
+        #{driverCode,jdbcType=VARCHAR},
+      </if>
+      <if test="driverName != null" >
+        #{driverName,jdbcType=VARCHAR},
+      </if>
+      <if test="vehicleNo != null" >
+        #{vehicleNo,jdbcType=VARCHAR},
+      </if>
+      <if test="vehicleTypeLength != null   and vehicleTypeLength !='' " >
+        #{vehicleTypeLength,jdbcType=VARCHAR},
+      </if>
+      <if test="sendBillQty != null" >
+        #{sendBillQty,jdbcType=DECIMAL},
+      </if>
+      <if test="volume != null   and volume !='' " >
+        #{volume,jdbcType=DECIMAL},
+      </if>
+      <if test="weight != null   and  weight  !='' " >
+        #{weight,jdbcType=DECIMAL},
+      </if>
+      <if test="inStockBillQty != null   and  inStockBillQty  !='' " >
+        #{inStockBillQty,jdbcType=DECIMAL},
+      </if>
+      <if test="upstairsBillQty != null   and  upstairsBillQty !='' " >
+        #{upstairsBillQty,jdbcType=DECIMAL},
+      </if>
+      <if test="distance != null" >
+        #{distance,jdbcType=DECIMAL},
+      </if>
+      <if test="isSingleSend != null" >
+        #{isSingleSend,jdbcType=CHAR},
+      </if>
+      <if test="upstairsFee != null   and  upstairsFee !='' " >
+        #{upstairsFee,jdbcType=DECIMAL},
+      </if>
+      <if test="noInStockBillFee != null" >
+        #{noInStockBillFee,jdbcType=DECIMAL},
+      </if>
+      <if test="inStockBillFee != null" >
+        #{inStockBillFee,jdbcType=DECIMAL},
+      </if>
+      <if test="driverRoyaltyAmount != null" >
+        #{driverRoyaltyAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="useTruckFee != null" >
+        #{useTruckFee,jdbcType=DECIMAL},
+      </if>
+      <if test="otherFee != null" >
+        #{otherFee,jdbcType=DECIMAL},
+      </if>
+      <if test="signBillDate != null" >
+        #{signBillDate,jdbcType=DATE},
+      </if>
+       <if test="receiverCode != null" >
+         #{receiverCode,jdbcType=VARCHAR},
+      </if>
+      <if test="receiverName != null" >
+        #{receiverName,jdbcType=VARCHAR},
+      </if>
+      <if test="sendNo != null" >
+        #{sendNo,jdbcType=VARCHAR},
+      </if>
+      <if test="haulBackBillQty != null" >
+        #{haulBackBillQty},
+      </if>
+      <if test="upstairsFeeRoyalty != null" >
+        #{upstairsFeeRoyalty},
+      </if>
+      <if test="currencyCode != null" >
+         #{currencyCode},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateSendSignBillEntity" parameterType="com.deppon.foss.module.transfer.management.api.shared.domain.SendSignBillEntity" >
+    update TFR.T_OPT_SEND_SIGN_BILL
+    <set >
+      <if test="signBillNo != null" >
+        SIGN_BILL_NO = #{signBillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="handoverNo != null" >
+        HANDOVER_NO = #{handoverNo,jdbcType=VARCHAR},
+      </if>
+      <if test="useTruckOrgCode != null" >
+        USE_TRUCK_ORG_CODE = #{useTruckOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="useTruckOrgName != null" >
+        USE_TRUCK_ORG_NAME = #{useTruckOrgName,jdbcType=VARCHAR},
+      </if>
+      <if test="driverCode != null" >
+        DRIVER_CODE = #{driverCode,jdbcType=VARCHAR},
+      </if>
+      <if test="driverName != null" >
+        DRIVER_NAME = #{driverName,jdbcType=VARCHAR},
+      </if>
+      <if test="vehicleNo != null" >
+        VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR},
+      </if>
+      <if test="vehicleTypeLength != null   and vehicleTypeLength !='' " >
+        VEHICLE_TYPE_LENGTH = #{vehicleTypeLength,jdbcType=VARCHAR},
+      </if>
+      <if test="sendBillQty != null" >
+        SEND_BILL_QTY = #{sendBillQty,jdbcType=DECIMAL},
+      </if>
+      <if test="volume != null   and volume !='' " >
+        VOLUME = #{volume,jdbcType=DECIMAL},
+      </if>
+      <if test="weight != null   and  weight  !='' " >
+        WEIGHT = #{weight,jdbcType=DECIMAL},
+      </if>
+     	IN_STOCK_BILL_QTY = #{inStockBillQty,jdbcType=DECIMAL},
+       UPSTAIRS_BILL_QTY = #{upstairsBillQty,jdbcType=DECIMAL},
+      <if test="distance != null" >
+        DISTANCE = #{distance,jdbcType=DECIMAL},
+      </if>
+      <if test="isSingleSend != null" >
+        IS_SINGLE_SEND = #{isSingleSend,jdbcType=CHAR},
+      </if>
+        UPSTAIRS_FEE = #{upstairsFee,jdbcType=DECIMAL},
+      <if test="noInStockBillFee != null" >
+        NO_IN_STOCK_BILL_FEE = #{noInStockBillFee,jdbcType=DECIMAL},
+      </if>
+      <if test="inStockBillFee != null" >
+        IN_STOCK_BILL_FEE = #{inStockBillFee,jdbcType=DECIMAL},
+      </if>
+      <if test="driverRoyaltyAmount != null" >
+        DRIVER_ROYALTY_AMOUNT = #{driverRoyaltyAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="useTruckFee != null" >
+        USE_TRUCK_FEE = #{useTruckFee,jdbcType=DECIMAL},
+      </if>
+      <if test="otherFee != null" >
+        OTHER_FEE = #{otherFee,jdbcType=DECIMAL},
+      </if>
+      <if test="signBillDate != null" >
+        SIGN_BILL_DATE = #{signBillDate,jdbcType=DATE},
+      </if>
+      <if test="receiverCode != null" >
+        RECEIVER_CODE= #{receiverCode,jdbcType=VARCHAR},
+      </if>
+      <if test="receiverName != null" >
+       RECEIVER_NAME= #{receiverName,jdbcType=VARCHAR},
+      </if>
+      <if test="sendNo != null" >
+       SEND_NO= #{sendNo,jdbcType=VARCHAR},
+      </if>
+      <if test="haulBackBillQty != null" >
+       HAUL_BACK_BILL_QTY= #{haulBackBillQty},
+      </if>
+      <if test="upstairsFeeRoyalty != null" >
+       UPSTAIRS_FEE_ROYALTY= #{upstairsFeeRoyalty},
+      </if>
+      <if test="currencyCode != null" >
+        CURRENCY_CODE= #{currencyCode},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  
+</mapper>

@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.WithholdingEntityDao" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.pay.api.shared.domain.WithholdingEntity" >
+    <result column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="COSTDEPT_CODE" property="costDeptCode" jdbcType="VARCHAR" />
+    <result column="COSTDEPT_NAME" property="costDeptName" jdbcType="VARCHAR" />
+    <result column="COST_TYPE" property="costType" jdbcType="VARCHAR" />
+    <result column="COST_DATE" property="costDate" jdbcType="TIMESTAMP" />
+    <result column="INVOICE_CODE" property="invoiceCode" jdbcType="VARCHAR" />
+    <result column="INVOICE_NAME" property="invoiceName" jdbcType="VARCHAR" />
+    <result column="AMOUNT" property="amount" jdbcType="DECIMAL" />
+    <result column="notes" property="notes" jdbcType="VARCHAR" />
+    <result column="WORKFLOW_NO" property="workflowNo" jdbcType="VARCHAR" />
+    <result column="FAILURE_REASON" property="failureReason" jdbcType="VARCHAR" />
+    <result column="WITHHOLDING_STATUS" property="withholdingStatus" jdbcType="VARCHAR" />
+    <result column="ACTIVE" property="active" jdbcType="VARCHAR" />
+    <result column="WITHHOLDING_NO" property="withholdingNo" jdbcType="VARCHAR" />
+    <result column="CREATE_USER_CODE" property="createUserCode" jdbcType="VARCHAR" />
+    <result column="CREATE_USER_NAME" property="createUserName" jdbcType="VARCHAR" />
+    <result column="CREATE_ORG_CODE" property="createOrgCode" jdbcType="VARCHAR" />
+    <result column="CREATE_ORG_NAME" property="createOrgName" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+    <result column="MODIFY_USER_CODE" property="modifyUserCode" jdbcType="VARCHAR" />
+    <result column="MODIFY_USER_NAME" property="modifyUserName" jdbcType="VARCHAR" />
+  </resultMap>
+  
+  <sql id="baseColumn">
+ 	  COSTDEPT_CODE, COSTDEPT_NAME, 
+  	  COST_TYPE, COST_DATE, INVOICE_CODE, 
+      INVOICE_NAME, AMOUNT/100 AMOUNT, notes, 
+      WORKFLOW_NO, FAILURE_REASON, WITHHOLDING_STATUS, 
+      ACTIVE, WITHHOLDING_NO,
+      CREATE_USER_CODE, CREATE_USER_NAME, CREATE_ORG_CODE, 
+      CREATE_ORG_NAME, CREATE_TIME, MODIFY_TIME, 
+      MODIFY_USER_CODE, MODIFY_USER_NAME
+  </sql>
+  <!-- 插入预提单据 -->
+  <insert id="insert" parameterType="com.deppon.foss.module.settlement.pay.api.shared.domain.WithholdingEntity" >
+    insert into STL.T_STL_BILL_WITHHOLDING (ID, COSTDEPT_CODE, COSTDEPT_NAME, 
+      COST_TYPE, COST_DATE, INVOICE_CODE, 
+      INVOICE_NAME, AMOUNT, notes, 
+      WORKFLOW_NO, FAILURE_REASON, WITHHOLDING_STATUS, 
+      ACTIVE, WITHHOLDING_NO, 
+      CREATE_USER_CODE, CREATE_USER_NAME, CREATE_ORG_CODE, 
+      CREATE_ORG_NAME, CREATE_TIME, MODIFY_TIME, 
+      MODIFY_USER_CODE, MODIFY_USER_NAME)
+    values (#{id,jdbcType=VARCHAR}, #{costDeptCode,jdbcType=VARCHAR}, #{costDeptName,jdbcType=VARCHAR}, 
+      #{costType,jdbcType=VARCHAR}, #{costDate,jdbcType=DATE}, #{invoiceCode,jdbcType=VARCHAR}, 
+      #{invoiceName,jdbcType=VARCHAR}, #{amount,jdbcType=DECIMAL}*100, #{notes,jdbcType=VARCHAR}, 
+      #{workflowNo,jdbcType=VARCHAR}, #{failureReason,jdbcType=VARCHAR}, #{withholdingStatus,jdbcType=VARCHAR}, 
+      #{active,jdbcType=VARCHAR}, #{withholdingNo,jdbcType=VARCHAR}, 
+      #{createUserCode,jdbcType=VARCHAR}, #{createUserName,jdbcType=VARCHAR}, #{createOrgCode,jdbcType=VARCHAR}, 
+      #{createOrgName,jdbcType=VARCHAR}, #{createTime,jdbcType=TIMESTAMP}, #{modifyTime,jdbcType=TIMESTAMP}, 
+      #{modifyUserCode,jdbcType=VARCHAR}, #{modifyUserName,jdbcType=VARCHAR})
+  </insert>
+  <!-- 根据传入的单号，类型，和预提状态来查询 -->
+  <select id="selectByNosAndType" resultMap="BaseResultMap" parameterType="java.util.Map">
+  	 SELECT <include refid="baseColumn"/>
+  	 FROM STL.T_STL_BILL_WITHHOLDING W
+  	 where 
+  	 <choose>
+  	 	<!-- 按预提单号查询 -->
+  	 	<when test="billType!='' and billType!=null and billType='WC'">
+  	 		W.WITHHOLDING_NO IN
+  	 		<foreach collection="billNos" open="(" index="index" item="item" separator="," close=")">
+  	 			#{item,jdbcType=VARCHAR}
+  	 		</foreach>
+  	 	</when>
+  	 	<!-- 按工作流号查询 -->
+  	 	<when test="billType!='' and billType!=null and billType='WFC'">
+  	 		W.WORKFLOW_NO IN
+  	 		<foreach collection="billNos" open="(" index="index" item="item" separator="," close=")">
+  	 			#{item,jdbcType=VARCHAR}
+  	 		</foreach>
+  	 	</when>
+  	 	<otherwise>
+  	 		1=2
+  	 	</otherwise>
+  	 </choose>
+  	 <!-- 预提状态 -->
+  	 <if test="status!=null and status.size>0">
+  	 	AND W.withholding_status in 
+  	 	<foreach collection="status" open="(" index="index" item="item" separator="," close=")">
+ 			#{item,jdbcType=VARCHAR}
+ 		</foreach>
+  	 </if>
+  	 <if test="active!=null and active!='' ">
+  	 	AND W.ACTIVE = #{active,jdbcType=VARCHAR}
+  	 </if>  	 
+  </select>
+  <update id="wipePayableWorkflowNo" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.WithholdingDto">
+		UPDATE /* 结算 - 预提失败 - 按工作流号清空应付单上的预提工作流号 */ 
+		       STL.T_STL_BILL_PAYABLE PAY
+		   SET PAY.WORKFLOW_NO = '',
+			   PAY.MODIFY_TIME = SYSDATE,
+			   PAY.VERSION_NO  = PAY.VERSION_NO + 1
+		 WHERE PAY.PAYABLE_NO IN
+			   (SELECT WD.PAYABLE_NO
+				  FROM STL.T_STL_BILL_WITHHOLDING W
+				 INNER JOIN STL.T_STL_BILL_WITHHOLDING_DETAIL WD
+					ON W.WITHHOLDING_NO = WD.WITHHOLDING_NO
+				 WHERE W.ACTIVE = 'Y'
+				   AND WORKFLOW_NO = #{workflowNo,jdbcType=VARCHAR})
+	</update>
+	<update id="updateWithholdingSuccessByWorkflowNo" parameterType="com.deppon.foss.module.settlement.pay.api.shared.domain.WithholdingEntity">
+		UPDATE /* 结算 - 预提成功 - 按预提工作流号更新预提单的预提状态 */
+			   STL.T_STL_BILL_WITHHOLDING W
+		   SET W.WITHHOLDING_STATUS = #{withholdingStatus,jdbcType=VARCHAR}, 
+		       W.MODIFY_TIME = SYSDATE
+		 WHERE W.WORKFLOW_NO = #{workflowNo,jdbcType=VARCHAR}
+	</update>
+	<update id="updateWithholdingFailedByWorkflowNo" parameterType="com.deppon.foss.module.settlement.pay.api.shared.domain.WithholdingEntity">
+		/* 结算 - 预提失败 - 按工作流号清空预提单上的预提工作流号 */
+		UPDATE STL.T_STL_BILL_WITHHOLDING W
+		SET W.WITHHOLDING_STATUS = #{withholdingStatus,jdbcType=VARCHAR},
+			W.MODIFY_TIME = SYSDATE,
+			W.Failure_Reason = #{failReasion,jdbcType=VARCHAR},
+			W.ACTIVE = 'N'
+	 	 WHERE W.WORKFLOW_NO = #{workflowNo,jdbcType=VARCHAR}
+	</update>
+</mapper>

@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!-- 外发快递轨迹查询 -->
+<mapper namespace="foss.partialline.queryLdpTrajectoryMapper">
+    <!-- 外发快递轨迹查询集 -->
+    <resultMap id="queryLdpTrajectoryResultMap" type="com.deppon.foss.module.transfer.partialline.api.shared.domain.QueryLdpTrajectoryEntity" >
+    <result column="wayBillNo" property="wayBillNo" jdbcType="VARCHAR" />
+    <result column="status" property="status" jdbcType="VARCHAR" />
+    <result column="lastOperateTime" property="lastOperateTime" jdbcType="TIMESTAMP" />
+    <result column="inputedDays" property="inputedDays" jdbcType="VARCHAR" />
+    <result column="lastOperator" property="lastOperator" jdbcType="VARCHAR" />
+    <result column="agentOrgName" property="agentOrgName" jdbcType="VARCHAR" />
+    <result column="agentOrgCode" property="agentOrgCode" jdbcType="VARCHAR" />
+    <result column="agentCompanyName" property="agentCompanyName" jdbcType="VARCHAR" />
+    <result column="agentCompanyCode" property="agentCompanyCode" jdbcType="VARCHAR" />
+    </resultMap>
+    
+    <select id="queryLdpTrajectory" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.vo.QueryLdpTrajectoryVo" resultMap="queryLdpTrajectoryResultMap">
+      
+			 select * from (
+				 select lb.waybill_no wayBillNo,
+				 		decode((select count(1)
+			                   	 from tfr.t_opt_expresstrack_records t
+				                   where t.waybill_no = lb.waybill_no
+				                   and trunc(t.manualoperation_time)=trunc(sysdate)), 0,'unentered','entered') status,
+				          			t.manualoperation_time lastOperateTime,
+				      		(select count(distinct to_char(t.manualoperation_time, 'yyyy-mm-dd'))
+				             	from tfr.t_opt_expresstrack_records t
+				            	where t.waybill_no = lb.waybill_no) inputedDays,
+				       		t.operationusername lastOperator,
+				      		lb.agent_company_name agentCompanyName,
+				      		lb.AGENT_COMPANY_CODE agentCompanyCode,
+				      		lb.AGENT_ORG_CODE 	agentOrgCode,
+				      		AGENT_ORG_NAME		agentOrgName,
+				      		rank()over(partition by t.waybill_no order by t.manualoperation_time desc ) mm       
+				   from tfr.t_opt_ldp_external_bill lb
+				   left join tfr.t_opt_expresstrack_records t on t.waybill_no = lb.waybill_no
+				   left join tfr.t_opt_handoverbill h on h.handover_no = lb.handover_no 
+				   	and h.handoverbill_state <![CDATA[<>]]> 90
+				 where lb.audit_status in ('WAITINGAUDIT', 'HASAUDITED', 'BACKAUDIT') and lb.serial_no='0001'
+				<choose>
+		           <when test="wayBillNo!=null and wayBillNo!='' " >  
+		          		and lb.waybill_no = #{wayBillNo,jdbcType=VARCHAR}
+		           </when>  
+		           <otherwise>  
+		           	  and lb.register_time <![CDATA[>=]]> #{billGenerationBeginTime,jdbcType=TIMESTAMP}  
+				      and lb.register_time<![CDATA[<=]]>#{billGenerationEndTime,jdbcType=TIMESTAMP}
+				      
+				      <if test="agentCompanyCode !=null and agentCompanyCode!='' ">
+							and lb.agent_company_code=#{agentCompanyCode,jdbcType=VARCHAR} 
+					  </if>
+					   <if test="status=='entered'">
+					 		and exists (select t.id
+		                      				from tfr.t_opt_expresstrack_records t
+		                    	 			where t.waybill_no = lb.waybill_no
+		                     			    and trunc(t.manualoperation_time)=trunc(sysdate)
+		                     			)
+					  </if>
+					  <if test="status=='unentered'">
+							 and not exists (select t.id
+						                      from tfr.t_opt_expresstrack_records t
+						                      where t.waybill_no = lb.waybill_no
+						                      and trunc(t.manualoperation_time)=trunc(sysdate)
+						                     )
+					  </if>
+					   and h.create_time > sysdate - 30
+				   and not exists (select rt.id
+							          from pkp.t_srv_waybill_sign_result rt
+							          where rt.waybill_no = lb.waybill_no
+							          and rt.active = 'Y'
+							       )
+					and lb.external_org_code = #{orgCode,jdbcType=VARCHAR}
+					and lb.is_transfer_external = 'N' 
+		          	 </otherwise>   
+				</choose>
+				   )
+			where mm = 1
+    </select>
+    
+    
+    <select id="queryLdpTrajectoryCount" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.vo.QueryLdpTrajectoryVo" resultType="long">
+       select count(*) from (
+				 select lb.waybill_no wayBillNo,
+				 		decode((select count(1)
+			                   	 from tfr.t_opt_expresstrack_records t
+				                   where t.waybill_no = lb.waybill_no
+				                   and trunc(t.manualoperation_time)=trunc(sysdate)), 0,'unentered','entered') status,
+				          			t.manualoperation_time lastOperateTime,
+				      		(select count(distinct to_char(t.manualoperation_time, 'yyyy-mm-dd'))
+				             	from tfr.t_opt_expresstrack_records t
+				            	where t.waybill_no = lb.waybill_no) inputedDays,
+				       		t.operationusername lastOperator,
+				      		lb.agent_company_name agentOrgName,
+				      		rank()over(partition by t.waybill_no order by t.manualoperation_time desc ) mm       
+				   from tfr.t_opt_ldp_external_bill lb
+				   left join tfr.t_opt_expresstrack_records t on t.waybill_no = lb.waybill_no
+				   left join tfr.t_opt_handoverbill h on h.handover_no = lb.handover_no 
+				   	and h.handoverbill_state <![CDATA[<>]]> 90
+				 where lb.audit_status in ('WAITINGAUDIT', 'HASAUDITED', 'BACKAUDIT')
+				<choose>
+		           <when test="wayBillNo!=null and wayBillNo!='' " >  
+		          		and lb.waybill_no = #{wayBillNo,jdbcType=VARCHAR}
+		           </when>  
+		           <otherwise>  
+		           	  and lb.register_time <![CDATA[>=]]> #{billGenerationBeginTime,jdbcType=TIMESTAMP}  
+				      and lb.register_time<![CDATA[<=]]>#{billGenerationEndTime,jdbcType=TIMESTAMP}
+				      
+				      <if test="agentCompanyCode !=null and agentCompanyCode!='' ">
+							and lb.agent_company_code=#{agentCompanyCode,jdbcType=VARCHAR} 
+					  </if>
+					   <if test="status=='entered'">
+					 		and exists (select t.id
+		                      				from tfr.t_opt_expresstrack_records t
+		                    	 			where t.waybill_no = lb.waybill_no
+		                     			    and trunc(t.manualoperation_time)=trunc(sysdate)
+		                     			)
+					  </if>
+					  <if test="status=='unentered'">
+							 and not exists (select t.id
+						                      from tfr.t_opt_expresstrack_records t
+						                      where t.waybill_no = lb.waybill_no
+						                      and trunc(t.manualoperation_time)=trunc(sysdate)
+						                     )
+					  </if>
+		          	 </otherwise>    
+				</choose>
+				   and h.create_time > sysdate - 30
+				   and not exists (select rt.id
+							          from pkp.t_srv_waybill_sign_result rt
+							          where rt.waybill_no = lb.waybill_no
+							          and rt.active = 'Y'
+							       )
+				and lb.external_org_code = ''
+				and lb.is_transfer_external = 'N')
+			where mm = 1
+    
+    </select>
+    <!-- 插入快件轨迹 -->
+    <insert id="insertLdpExternalBillTrack" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.domain.LdpExternalBillTrackEntity">
+    	insert into tfr.t_opt_ldp_external_bill_track (
+	    	ID, TRACEID, WAYBILL_NO, AGENT_COMPANY_CODE, AGENT_COMPANY_NAME, 
+	    	AGENT_ORG_CODE, AGENT_ORG_NAME, OPERATIONCITY, OPERATIONTYPE, DISPATCHNAME,
+	    	 DISPATCHPHONENO, OPERATIONTIME, OPERATIONUSERNAME, OPERATIONDESCRIBE
+	    	 )
+		values (
+			#{id,jdbcType=VARCHAR}, #{traceId,jdbcType=VARCHAR}, #{waybillNo,jdbcType=VARCHAR}, #{agentCompanyCode,jdbcType=VARCHAR}, 
+			#{agentCompanyName,jdbcType=VARCHAR}, #{agentOrgCode,jdbcType=VARCHAR}, #{agentOrgName,jdbcType=VARCHAR}, #{operationcity,jdbcType=VARCHAR}, 
+			#{operationtype,jdbcType=VARCHAR}, #{dispatchname,jdbcType=VARCHAR},#{dispatchphoneno,jdbcType=VARCHAR} , #{operationTime,jdbcType=TIMESTAMP},
+			 #{operationUserName,jdbcType=VARCHAR},  #{operationDescribe,jdbcType=VARCHAR})
+    </insert>
+    
+    <!--插入快件操作轨迹记录 -->
+    <insert id="insertLdpTrajectory" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.domain.ExpressOpreateRecordEntity">
+    	insert into  tfr.t_opt_expresstrack_records (
+	    	ID, WAYBILL_NO, OPERATION_CITY, OPERATION_TYPE, UPDATE_TIME, 
+	    	MANUALOPERATION_TIME, NOTES, OPERATIONUSERNAME,OPERATIONUSERCODE,TRANSFER_TYPE
+	    	 )
+		values (
+			#{id,jdbcType=VARCHAR},  #{wayBillNo,jdbcType=VARCHAR}, #{operationCity,jdbcType=VARCHAR}, 
+			#{operationType,jdbcType=VARCHAR}, #{updateTime,jdbcType=TIMESTAMP},
+			#{manualOperationTime,jdbcType=TIMESTAMP},#{notes,jdbcType=VARCHAR},
+			#{operatorName,jdbcType=VARCHAR}, #{operatorCode,jdbcType=VARCHAR},
+			 #{transferType,jdbcType=VARCHAR})
+    </insert>
+    
+   
+    <!-- 外发快递轨迹操作记录查询集 -->
+    <resultMap id="queryOperationRecordsMap" type="com.deppon.foss.module.transfer.partialline.api.shared.domain.ExpressOpreateRecordEntity" >
+    <result column="id" property="id" jdbcType="VARCHAR" />
+    <result column="operationType" property="operationType" jdbcType="VARCHAR" />
+    <result column="updateTime" property="updateTime" jdbcType="TIMESTAMP" />
+    <result column="manualOperationTime" property="manualOperationTime" jdbcType="VARCHAR" />
+    <result column="notes" property="notes" jdbcType="VARCHAR" />
+    </resultMap>
+     <!-- 查询快件轨迹操作记录 -->
+     <select id="queryOperationRecords" parameterType="java.lang.String" resultMap="queryOperationRecordsMap">
+      	 select  r.id id,
+      	 	 r.operation_city operationCity,
+             r.operation_type operationType,
+             r.update_time updateTime,
+             r.manualoperation_time manualOperationTime,
+             r.notes notes
+      from tfr.t_opt_expresstrack_records r
+     	where   r.waybill_no=#{wayBillNo, jdbcType=VARCHAR}
+			 
+    </select>
+    
+    
+    <select id="queryOperationRecordsCount" parameterType="java.lang.String" resultType="long">
+      	 select  count(1)
+      from tfr.t_opt_expresstrack_records r
+     	where   r.waybill_no=#{wayBillNo, jdbcType=VARCHAR}
+			 
+    </select>
+    
+    <delete id="deleteValue" parameterType="java.lang.String" >
+	    delete from tfr.t_opt_expresstrack_records r
+	    where r.id = #{id,jdbcType=VARCHAR}
+  	</delete>
+  	
+  	<delete id="deleteLdpExternalBillTrack" parameterType="java.lang.String" >
+	    delete from tfr.t_opt_ldp_external_bill_track t
+	    where t.traceid = #{id,jdbcType=VARCHAR}
+  	</delete>
+    
+</mapper>

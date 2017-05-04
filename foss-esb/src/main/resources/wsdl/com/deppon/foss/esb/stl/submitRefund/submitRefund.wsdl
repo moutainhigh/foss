@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<wsdl:definitions name="submitRefund"
+	targetNamespace="http://www.deppon.com/foss/submitRefund"
+	xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" 
+	xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" 
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+	xmlns:ns1="http://schemas.xmlsoap.org/soap/http" 
+	xmlns:tns="http://www.deppon.com/foss/submitRefund"
+	xmlns:xsd1="http://www.deppon.com/esb/header" 
+	xmlns:xsd2="http://www.deppon.com/foss/inteface/domain/stl"
+	xmlns:xsd3="http://www.deppon.com/esb/exception">
+	
+	<wsdl:types>
+		<xsd:schema targetNamespace="http://www.deppon.com/foss/inteface/domain/stl">
+			<xsd:include schemaLocation="submitRefund.xsd" />
+		</xsd:schema>
+		<xsd:schema targetNamespace="http://www.deppon.com/esb/exception">
+			<xsd:include schemaLocation="CommonException.xsd" />
+		</xsd:schema>
+		<xsd:schema targetNamespace="http://www.deppon.com/esb/header">
+			<xsd:include schemaLocation="ESBHeader.xsd" />
+		</xsd:schema>
+    </wsdl:types>
+   	<wsdl:message name="submitRefundRequest">		<wsdl:part name="esbHeader" element="xsd1:esbHeader"></wsdl:part>
+		<wsdl:part name="submitRefundRequest" element="xsd2:submitRefundRequest"></wsdl:part>	</wsdl:message>
+	<wsdl:message name="submitRefundResponse">		<wsdl:part name="esbHeader" element="xsd1:esbHeader"></wsdl:part>
+		<wsdl:part name="submitRefundResponse" element="xsd2:submitRefundResponse"></wsdl:part>
+	</wsdl:message>
+	
+	<wsdl:message name="ESBHeader">
+		<wsdl:part element="xsd1:esbHeader" name="header" />
+	</wsdl:message>
+	
+	<wsdl:message name="CommonException">
+		<wsdl:part element="xsd3:commonExceptionInfo" name="exception" />
+	</wsdl:message>
+	
+	<wsdl:portType name="ISubmitRefundService">
+		<wsdl:operation name="submitRefund">
+			<wsdl:documentation>接受转报销处理结果接口</wsdl:documentation>
+			<wsdl:input message="tns:submitRefundRequest" name="submitRefundRequest"/>
+			<wsdl:output message="tns:submitRefundResponse" name="submitRefundResponse"/>
+            <wsdl:fault name="exception" message="tns:CommonException"></wsdl:fault>
+		</wsdl:operation>
+	</wsdl:portType>
+	
+	<wsdl:binding name="submitRefundSOAPBinding" type="tns:ISubmitRefundService">
+		<soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http" />
+		<wsdl:operation name="submitRefund">
+			<soap:operation soapAction="http://www.deppon.com/foss/submitrefund/submitRefund" style="document" />
+			<wsdl:input>
+				<soap:header use="literal" part="esbHeader" message="tns:submitRefundRequest"></soap:header>
+				<soap:body   use="literal" parts="submitRefundRequest"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:header use="literal" part="esbHeader" message="tns:submitRefundResponse"></soap:header>
+				<soap:body   use="literal" parts="submitRefundResponse"/>
+			</wsdl:output>
+		</wsdl:operation>
+	</wsdl:binding>
+	
+	<wsdl:service name="SubmitRefundService">
+		<wsdl:port name="ISubmitRefundServicePort" binding="tns:submitRefundSOAPBinding">
+			<soap:address location="http://10.224.69.106/webWsPro/webservice/SubmitRefundService" />
+		</wsdl:port>
+	</wsdl:service>
+</wsdl:definitions>

@@ -1,0 +1,157 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!-- 偏线月报mapping  -->
+<mapper namespace="foss.stv.MvrPlrEntityMapper" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.closing.api.shared.domain.MvrPlrEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="PERIOD" property="period" jdbcType="VARCHAR" />
+    <result column="PRODUCT_CODE" property="productCode" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+    <result column="ORIG_ORG_CODE" property="origOrgCode" jdbcType="VARCHAR" />
+    <result column="ORIG_ORG_NAME" property="origOrgName" jdbcType="VARCHAR" />
+    <result column="DEST_ORG_CODE" property="destOrgCode" jdbcType="VARCHAR" />
+    <result column="DEST_ORG_NAME" property="destOrgName" jdbcType="VARCHAR" />
+    <result column="STATISTICAL_TIME" property="statisticalTime" jdbcType="TIMESTAMP" />
+    <result column="PL_COST_VECH" property="plCostVech" jdbcType="DECIMAL" />
+     <result column="PL_COST_CONFIRM" property="plCostConfirm" jdbcType="DECIMAL" />
+    <result column="PL_COST_NOT_CONFIRM" property="plCostNotConfirm" jdbcType="DECIMAL" />
+    <result column="PL_COST_WO_DEST_RCV_POD" property="plCostWoDestRcvPod" jdbcType="DECIMAL" />
+    <result column="PL_COST_WO_DEST_RCV_NPOD" property="plCostWoDestRcvNpod" jdbcType="DECIMAL" />
+    <result column="PL_COST_PAY_APPLY" property="plCostPayApply" jdbcType="DECIMAL" />    
+    <result column="UR_DEST_CH_NPOD" property="urDestChNpod" jdbcType="DECIMAL" />   
+    <result column="UR_DEST_CD_NPOD" property="urDestCdNpod" jdbcType="DECIMAL" />   
+    <result column="UR_DEST_CH_POD" property="urDestChPod" jdbcType="DECIMAL" />   
+    <result column="UR_DEST_CD_POD" property="urDestCdPod" jdbcType="DECIMAL" />  
+    <result column="PL_DR_WO_DEST_RCV_POD" property="plDrWoDestRcvPod" jdbcType="DECIMAL" />  
+    <result column="PL_DR_WO_DEST_RCV_NPOD" property="plDrWoDestRcvNpod" jdbcType="DECIMAL" />  
+    <result column="PL_DR_CH" property="plDrCh" jdbcType="DECIMAL" />   
+    <result column="PL_DR_CD" property="plDrCd" jdbcType="DECIMAL" /> 
+    <result column="PL_DR_PAY_APPLY" property="plDrPayApply" jdbcType="DECIMAL" />   
+    </resultMap>
+  <sql id="Base_Column_List" >
+	ID, PERIOD, PRODUCT_CODE, CUSTOMER_CODE, CUSTOMER_NAME, ORIG_ORG_CODE, ORIG_ORG_NAME, DEST_ORG_CODE, DEST_ORG_NAME,VOUCHER_BEGIN_TIME STATISTICAL_TIME, 
+	PL_COST_VECH / 100 PL_COST_VECH,
+	PL_COST_CONFIRM / 100 PL_COST_CONFIRM,
+	PL_COST_NOT_CONFIRM / 100 PL_COST_NOT_CONFIRM,
+	PL_COST_WO_DEST_RCV_POD / 100 PL_COST_WO_DEST_RCV_POD,
+	PL_COST_WO_DEST_RCV_NPOD / 100 PL_COST_WO_DEST_RCV_NPOD,
+	PL_COST_PAY_APPLY / 100 PL_COST_PAY_APPLY,
+	UR_DEST_CH_NPOD / 100 UR_DEST_CH_NPOD,
+	UR_DEST_CD_NPOD / 100 UR_DEST_CD_NPOD,
+	UR_DEST_CH_POD / 100 UR_DEST_CH_POD,
+	UR_DEST_CD_POD / 100 UR_DEST_CD_POD,
+	PL_DR_WO_DEST_RCV_POD / 100 PL_DR_WO_DEST_RCV_POD,
+	PL_DR_WO_DEST_RCV_NPOD / 100 PL_DR_WO_DEST_RCV_NPOD,
+	PL_DR_CH / 100 PL_DR_CH,
+	PL_DR_CD / 100 PL_DR_CD,
+	PL_DR_PAY_APPLY/100 PL_DR_PAY_APPLY
+  </sql>
+  <!-- 按报表输入条件查询偏线月报  dp-095793-liqin-->
+  <select id="selectMvrPlrByParam" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.closing.api.shared.dto.MvrPlrDto" >
+    select /*结算-凭证报表-根据条件查询始发偏线月报表*/
+    <include refid="Base_Column_List" />
+    from STV.T_STL_MVR_PLR SP
+  	<where>
+  		<!-- 期间 -->
+  		
+  		SP.PERIOD=#{period,jdbcType=VARCHAR}
+  		
+  		<!-- 产品编号 -->
+  		<if test="productCode!=null and productCode!=''">
+  		 AND  SP.PRODUCT_CODE=#{productCode,jdbcType=VARCHAR}
+  		</if>
+  		
+  		<!-- 客户编码 -->
+  		<if test="customerCode!=null and customerCode!=''">
+  		AND SP.CUSTOMER_CODE=#{customerCode,jdbcType=VARCHAR}
+  		</if>
+  		
+  		<!-- 始发部门 -->
+  		<if test="origOrgCode!=null and origOrgCode!=''">
+  		AND SP.ORIG_ORG_CODE=#{origOrgCode,jdbcType=VARCHAR}
+  		</if>
+  		
+  		<!-- 到达部门 
+  		<if test="destOrgCode!=null and destOrgCode!=''">
+  		AND SP.DEST_ORG_CODE=#{destOrgCode,jdbcType=VARCHAR}
+  		</if> -->
+  		
+  		<!-- 到达部门加入数据权限  -->
+	    <if test="userCode != null and userCode != ''">
+		   and exists (select 1
+	         from bse.mv_bas_user_org_auth_view uov
+	        where uov.emp_code = #{userCode}
+	          and uov.Org_Code = SP.DEST_ORG_CODE
+		          <if test="destOrgCode != null and destOrgCode != '' ">
+		          and uov.Org_Code = #{destOrgCode,jdbcType=VARCHAR}
+		          </if> 
+	          )
+	    </if>
+  </where>
+  </select>
+  
+  
+
+  
+  <!-- 按输入条件查询偏线月报总条数 dp-095793-liqin -->
+  <select id="selectMvrPlrByParamCount" parameterType="com.deppon.foss.module.settlement.closing.api.shared.dto.MvrPlrDto" resultType="com.deppon.foss.module.settlement.closing.api.shared.dto.MvrPlrDto" >
+  select /*结算-凭证报表-根据条件查询始发偏线月报表总条数，总金额*/
+  		count(1) count,
+        SUM(PL_COST_VECH /100) plCostVech,
+        SUM(PL_COST_CONFIRM /100) plCostConfirm,
+        SUM(PL_COST_NOT_CONFIRM /100) plCostNotConfirm,
+        SUM(PL_COST_WO_DEST_RCV_POD /100) plCostWoDestRcvPod,
+        
+        SUM(PL_COST_WO_DEST_RCV_NPOD /100) plCostWoDestRcvNpod,
+        
+        SUM(PL_COST_PAY_APPLY /100) plCostPayApply,<!-- 应收到付运费 -->
+        SUM(UR_DEST_CH_NPOD /100) urDestChNpod,
+        SUM(UR_DEST_CD_NPOD /100) urDestCdNpod,
+        SUM(UR_DEST_CH_POD /100) urDestChPod,
+        SUM(UR_DEST_CD_POD /100) urDestCdPod,
+        SUM(PL_DR_WO_DEST_RCV_POD /100) plDrWoDestRcvPod,
+        SUM(PL_DR_WO_DEST_RCV_NPOD /100) plDrWoDestRcvNpod,
+        
+        SUM(PL_DR_CH /100) plDrCh,
+        SUM(PL_DR_CD /100) plDrCd,
+        SUM(PL_DR_PAY_APPLY/100) plDrPayApply
+        
+  from STV.T_STL_MVR_PLR SP
+  <where>
+  		<!-- 期间 -->
+  		SP.PERIOD=#{period}
+  		
+  		<if test="productCode!=null and productCode!=''">
+  		 AND  SP.PRODUCT_CODE=#{productCode,jdbcType=VARCHAR}
+  		</if>
+  		
+  		<!-- 客户编码 -->
+  		<if test="customerCode!=null and customerCode!=''">
+  		AND SP.CUSTOMER_CODE=#{customerCode,jdbcType=VARCHAR}
+  		</if>
+  		
+  		<!-- 始发部门 -->
+  		<if test="origOrgCode!=null and origOrgCode!=''">
+  		AND SP.ORIG_ORG_CODE=#{origOrgCode,jdbcType=VARCHAR}
+  		</if>
+  		
+  		<!-- 到达部门 
+  		<if test="destOrgCode!=null and destOrgCode!=''">
+  		AND SP.DEST_ORG_CODE=#{destOrgCode,jdbcType=VARCHAR}
+  		</if> -->
+  		
+  		<!-- 到达部门加入数据权限  -->
+	    <if test="userCode != null and userCode != ''">
+		   and exists (select 1
+	         from bse.mv_bas_user_org_auth_view uov
+	        where uov.emp_code = #{userCode}
+	          and uov.Org_Code = SP.DEST_ORG_CODE
+		          <if test="destOrgCode != null and destOrgCode != '' ">
+		          and uov.Org_Code = #{destOrgCode,jdbcType=VARCHAR}
+		          </if> 
+	          )
+	    </if>
+  </where>
+  </select>
+</mapper>

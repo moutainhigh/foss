@@ -1,0 +1,181 @@
+/**
+ *  initial comments.
+ */
+/*******************************************************************************
+ * Copyright 2013 BSE TEAM
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
+ * PROJECT NAME	: pkp-pricing
+ * 
+ * FILE PATH        	: src/main/java/com/deppon/foss/module/pickup/pricing/server/service/impl/ProductDiscount.java
+ * 
+ * FILE NAME        	: ProductDiscount.java
+ * 
+ * AUTHOR			: FOSS综合管理开发组
+ * 
+ * HOME PAGE		:  http://www.deppon.com
+ * 
+ * COPYRIGHT		: Copyright (c) 2013  Deppon All Rights Reserved.
+ ******************************************************************************/
+package com.deppon.foss.module.pickup.pricing.server.service.impl;
+
+import java.util.List;
+
+import com.deppon.foss.framework.shared.util.string.StringUtil;
+import com.deppon.foss.module.pickup.pricing.api.server.service.DiscountTypeInterface;
+import com.deppon.foss.module.pickup.pricing.api.server.service.IPriceDiscountService;
+import com.deppon.foss.module.pickup.pricing.api.server.service.IValueAddDiscountService;
+import com.deppon.foss.module.pickup.pricing.api.server.util.PriceUtil;
+import com.deppon.foss.module.pickup.pricing.api.shared.define.PricingConstants;
+import com.deppon.foss.module.pickup.pricing.api.shared.define.PricingConstants.DiscountTypeConstants;
+import com.deppon.foss.module.pickup.pricing.api.shared.define.PricingConstants.PriceEntityConstants;
+import com.deppon.foss.module.pickup.pricing.api.shared.dto.DiscountParmDto;
+import com.deppon.foss.module.pickup.pricing.api.shared.dto.DiscountResultDto;
+import com.deppon.foss.module.pickup.pricing.api.shared.dto.PriceDiscountDto;
+import com.deppon.foss.util.CollectionUtils;
+import com.google.inject.Inject;
+
+/**
+ * 
+ * @Description: 产品折扣类型
+ * ProductDiscount.java Create on 2013-3-17 下午4:36:08
+ * Company:IBM
+ * @author FOSSDP-Administrator
+ * Copyright (c) 2013 Company,Inc. All Rights Reserved
+ * @version V1.0
+ */
+public class ProductDiscount implements DiscountTypeInterface {
+	/**
+	 * 折扣服务 SERVICE 
+	 */
+	@Inject
+    private IPriceDiscountService priceDiscountService; 
+	/**
+	 * 增值优惠 SERVICE
+	 */
+	@Inject
+    private IValueAddDiscountService valueAddDiscountService; 
+
+	/**
+	 * 设置 折扣服务 SERVICE.
+	 *
+	 * @param priceDiscountService the new 折扣服务 SERVICE
+	 */
+	public void setPriceDiscountService(IPriceDiscountService priceDiscountService) {
+		this.priceDiscountService = priceDiscountService;
+	}
+	
+	/**
+	 * 设置 增值优惠 SERVICE.
+	 *
+	 * @param valueAddDiscountService the new 增值优惠 SERVICE
+	 */
+	public void setValueAddDiscountService(
+			IValueAddDiscountService valueAddDiscountService) {
+		this.valueAddDiscountService = valueAddDiscountService;
+	}
+	/**
+	 * 
+	 * @Description: 获取产品折扣操作类
+	 * 
+	 * @author FOSSDP-sz
+	 * 
+	 * @date 2013-3-17 下午4:33:57
+	 * 
+	 * @param discountParmDto
+	 * 
+	 * @return
+	 * 
+	 * @version V1.0
+	 */
+	@Override
+	public DiscountResultDto doDiscount(DiscountParmDto parm) {
+		DiscountResultDto discountResultDto = null;
+		String discountType = PriceUtil.getFirstLevelEntryCode(parm.getPricingEntryCode());
+		//增值优惠
+		if (StringUtil.equals(discountType, PriceEntityConstants.PRICING_CODE_VALUEADDED)){
+			List<PriceDiscountDto> priceDiscountDtos = valueAddDiscountService.calculateProductDiscount(parm);
+			if(priceDiscountDtos != null && priceDiscountDtos.size() > 0) {
+				discountResultDto = PriceUtil.compareValueAddDiscount(priceDiscountDtos, parm);
+			}
+			//运费
+		} else if (StringUtil.equals(discountType, PriceEntityConstants.PRICING_CODE_FRT)){
+			List<PriceDiscountDto> priceDiscountDtos = priceDiscountService.calculateProductDiscount(parm);
+			if(priceDiscountDtos != null && priceDiscountDtos.size() > 0) {
+				discountResultDto = PriceUtil.comparePriceDiscount(priceDiscountDtos, parm);
+			}
+		}
+		//封装优惠相应名称信息
+		if(discountResultDto != null && CollectionUtils.isNotEmpty(discountResultDto.getDiscountPrograms())) {
+			for (int i = 0; i < discountResultDto.getDiscountPrograms().size(); i++) {
+				PriceDiscountDto priceDiscountDto = discountResultDto.getDiscountPrograms().get(i);
+				//设置计费ID
+				priceDiscountDto.setChargeDetailId(parm.getCriteriaDetailId());
+				//设置打折ID
+				priceDiscountDto.setDiscountId(priceDiscountDto.getPriceCriteriaId());
+				//设置打折类型CODE
+				priceDiscountDto.setType(DiscountTypeConstants.DISCOUNT_TYPE__PRODUCT);
+				//设置打折类型NAME
+				priceDiscountDto.setTypeName(DiscountTypeConstants.DISCOUNT_TYPE__PRODUCT_NAME);
+				//设置打折活动名称
+				priceDiscountDto.setMarketName(parm.getPricingEntryName());
+				priceDiscountDto.setPriceEntryCode(parm.getPricingEntryCode());
+				priceDiscountDto.setPriceEntryName(parm.getPricingEntryName());
+				//设置打折渠道名称
+				priceDiscountDto.setSaleChannelName(PricingConstants.ORDER_CHANNEL_PRODUCT_NAME);
+			}
+		}
+		return discountResultDto;
+	}
+
+	@Override
+	public DiscountResultDto doExpressDiscount(DiscountParmDto parm) {
+		DiscountResultDto discountResultDto = null;
+		String discountType = PriceUtil.getFirstLevelEntryCode(parm.getPricingEntryCode());
+		//增值优惠
+		if (StringUtil.equals(discountType, PriceEntityConstants.PRICING_CODE_VALUEADDED)){
+			List<PriceDiscountDto> priceDiscountDtos = valueAddDiscountService.calculateProductDiscount(parm);
+			if(priceDiscountDtos != null && priceDiscountDtos.size() > 0) {
+				discountResultDto = PriceUtil.compareValueAddDiscount(priceDiscountDtos, parm);
+			}
+			//运费
+		} else if (StringUtil.equals(discountType, PriceEntityConstants.PRICING_CODE_FRT)){
+			List<PriceDiscountDto> priceDiscountDtos = priceDiscountService.calculateProductDiscount(parm);
+			if(priceDiscountDtos != null && priceDiscountDtos.size() > 0) {
+				discountResultDto = PriceUtil.comparePriceDiscount(priceDiscountDtos, parm);
+			}
+		}
+		//封装优惠相应名称信息
+		if(discountResultDto != null && CollectionUtils.isNotEmpty(discountResultDto.getDiscountPrograms())) {
+			for (int i = 0; i < discountResultDto.getDiscountPrograms().size(); i++) {
+				PriceDiscountDto priceDiscountDto = discountResultDto.getDiscountPrograms().get(i);
+				//设置计费ID
+				priceDiscountDto.setChargeDetailId(parm.getCriteriaDetailId());
+				//设置打折ID
+				priceDiscountDto.setDiscountId(priceDiscountDto.getPriceCriteriaId());
+				//设置打折类型CODE
+				priceDiscountDto.setType(DiscountTypeConstants.DISCOUNT_TYPE__PRODUCT);
+				//设置打折类型NAME
+				priceDiscountDto.setTypeName(DiscountTypeConstants.DISCOUNT_TYPE__PRODUCT_NAME);
+				//设置打折活动名称
+				priceDiscountDto.setMarketName(parm.getPricingEntryName());
+				priceDiscountDto.setPriceEntryCode(parm.getPricingEntryCode());
+				priceDiscountDto.setPriceEntryName(parm.getPricingEntryName());
+				//设置打折渠道名称
+				priceDiscountDto.setSaleChannelName(PricingConstants.ORDER_CHANNEL_PRODUCT_NAME);
+			}
+		}
+		return discountResultDto;
+	}
+}

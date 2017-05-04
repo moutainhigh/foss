@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="home.dao.HomeEntityMapper" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.writeoff.api.shared.domain.HomeStatementEntity" >
+    <result column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="STATEMENT_BILL_NO" property="statementBillNo" jdbcType="VARCHAR" />
+    <result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+    <result column="ORG_NAME" property="orgName" jdbcType="VARCHAR" />
+    <result column="SUB_COMPANY_CODE" property="subCompanyCode" jdbcType="VARCHAR" />
+    <result column="SUB_COMPANY_NAME" property="subCompanyName" jdbcType="VARCHAR" />
+    <result column="HOME_SUPPLY_NAME" property="homeSupplyName" jdbcType="VARCHAR" />
+    <result column="HOME_SUPPLY_CODE" property="homeSupplyCode" jdbcType="VARCHAR" />
+    <result column="BILL_TYPE" property="billType" jdbcType="VARCHAR" />
+    <!-- <result column="AMOUNT" property="amount" jdbcType="DECIMAL" /> -->
+    <result column="VERIFY_AMOUNT" property="verifyAmount" jdbcType="DECIMAL" />
+    <result column="UNVERIFY_AMOUNT" property="unverifyAmount" jdbcType="DECIMAL" />
+    <result column="CREATE_USER_NAME" property="createUserName" jdbcType="VARCHAR" />
+    <result column="CREATE_USER_CODE" property="createUserCode" jdbcType="VARCHAR" />
+    <result column="BUSINESS_DATE" property="businessDate" jdbcType="TIMESTAMP" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="MODIFY_USER_CODE" property="modifyUserCode" jdbcType="VARCHAR" />
+    <result column="MODIFY_USER_NAME" property="modifyUserName" jdbcType="VARCHAR" />
+    <result column="CONFIRM_USER_NAME" property="confirmUserName" jdbcType="VARCHAR" />
+    <result column="CONFIRM_USER_CODE" property="confirmUserCode" jdbcType="VARCHAR" />
+    <result column="CONFIRM_TIME" property="confirmTime" jdbcType="TIMESTAMP" />
+    <result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+    <result column="CONFIRM_STATUS" property="confirmStatus" jdbcType="VARCHAR" />
+    <result column="PERIODAMOUNT" property="periodAmount" jdbcType="DECIMAL" />
+    <result column="PERIODRECAMOUNT" property="periodRecAmount" jdbcType="DECIMAL" />
+    <result column="PERIODPAYAMOUNT" property="periodPayAmount" jdbcType="DECIMAL" />
+    <result column="VERSION_NO" property="versionNo" jdbcType="VARCHAR" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    STATEMENT_BILL_NO,
+    ORG_CODE,
+    ORG_NAME,
+    SUB_COMPANY_NAME,
+    SUB_COMPANY_CODE,
+    HOME_SUPPLY_NAME,
+    HOME_SUPPLY_CODE,
+    BILL_TYPE,
+    PERIODAMOUNT/100 PERIODAMOUNT,
+    VERIFY_AMOUNT/100 verify_anount,
+    UNVERIFY_AMOUNT/100 unverify_amount,
+    CREATE_USER_NAME,
+    CREATE_USER_CODE,
+    BUSINESS_DATE,
+    CREATE_TIME,
+    MODIFY_USER_NAME,
+    MODIFY_USER_CODE,
+    CONFIRM_USER_NAME,
+    CONFIRM_USER_CODE,
+    CONFIRM_TIME,
+    MODIFY_TIME,
+    CONFIRM_STATUS,
+    PERIODRECAMOUNT/100 PERIODRECAMOUNT,
+    PERIODPAYAMOUNT/100 PERIODPAYAMOUNT,
+    VERSION_NO
+  </sql>
+  <select id="queryHome" resultMap="BaseResultMap"
+                parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.HomeItemDto">
+                SELECT
+                <include refid="Base_Column_List" />
+                FROM STL.T_STL_STATEMENT_OF_HOME h
+                WHERE
+                <if test="curDate !=null">
+                        <![CDATA[ h.BUSINESS_DATE >= #{curDate,jdbcType=TIMESTAMP}]]>
+                </if>
+                <if test="preDate !=null">
+                        <![CDATA[ AND h.BUSINESS_DATE <= #{preDate,jdbcType=TIMESTAMP}]]>
+                </if>
+				<if test="homeSupplyCode !=null and homeSupplyCode !='' ">
+                        and h.HOME_SUPPLY_CODE = #{homeSupplyCode,jdbcType=VARCHAR}
+                </if>
+                <if test="subCompanyCode !=null and subCompanyCode != '' ">
+                        AND h.SUB_COMPANY_CODE = #{subCompanyCode,jdbcType=VARCHAR}
+                </if>
+                <if test="confirmStatus != null and confirmStatus != '' ">
+                        and h.CONFIRM_STATUS = #{confirmStatus,jdbcType=VARCHAR}
+                </if>
+                <if test="settled != null and settled != '' and settled==statementSettleStatus">
+                        AND h.UNVERIFY_AMOUNT = 0
+                </if>
+                <if test="settled != null and settled != '' and settled==statementUnSettleStatus">
+                        AND h.UNVERIFY_AMOUNT != 0
+                </if>
+        </select>
+        
+        <!--根据时间段查询运单基本信息总数-->
+        <select id="queryHomeTotalcount" resultType="Integer"
+                parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.HomeItemDto">
+                SELECT
+                count(1)
+                FROM STL.T_STL_STATEMENT_OF_HOME h
+                WHERE
+                <if test="curDate !=null">
+                        <![CDATA[ h.BUSINESS_DATE >= #{curDate,jdbcType=TIMESTAMP}]]>
+                </if>
+                <if test="preDate !=null">
+                        <![CDATA[ AND h.BUSINESS_DATE <= #{preDate,jdbcType=TIMESTAMP}]]>
+                </if>
+				<if test="homeSupplyCode !=null and homeSupplyCode !='' ">
+                        and h.HOME_SUPPLY_CODE = #{homeSupplyCode,jdbcType=VARCHAR}
+                </if>
+                <if test="subCompanyCode !=null and subCompanyCode != '' ">
+                        AND h.SUB_COMPANY_CODE = #{subCompanyCode,jdbcType=VARCHAR}
+                </if>
+                <if test="confirmStatus != null and confirmStatus != '' ">
+                        and h.CONFIRM_STATUS = #{confirmStatus,jdbcType=VARCHAR}
+                </if>
+                <if test="settled != null and settled != '' and settled==statementSettleStatus">
+                        AND h.UNVERIFY_AMOUNT = 0
+                </if>
+                <if test="settled != null and settled != '' and settled==statementUnSettleStatus">
+                        AND h.UNVERIFY_AMOUNT != 0
+                </if>
+        </select>
+        
+       <!--按单号查询对账单-->
+       <select id="queryHomeByNumber" resultMap="BaseResultMap"
+                parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.HomeItemDto">
+                SELECT
+                <include refid="Base_Column_List" />
+                FROM STL.T_STL_STATEMENT_OF_HOME h
+                WHERE h.STATEMENT_BILL_NO IN
+		  		<foreach collection="numbers" index="index" item="item" open="(" separator="," close=")">
+          		 	#{item}
+          		</foreach>
+        </select>
+    <!-- 更新对账单 -->
+	<update id="UpdateHomeByStatementBillNo"
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.HomeItemDto">
+	    UPDATE stl.t_stl_statement_of_home h
+		   SET h.PERIODAMOUNT     = #{periodAmount,jdbcType=DECIMAL} * 100,
+		       h.UNVERIFY_AMOUNT  = #{unpaidAmount,jdbcType=DECIMAL} * 100,
+		       h.PERIODRECAMOUNT  = #{periodRecAmount,jdbcType=DECIMAL} * 100,
+		       h.PERIODPAYAMOUNT  = #{periodPayAmount,jdbcType=DECIMAL} * 100,
+		       h.MODIFY_USER_CODE = #{empCode,jdbcType=VARCHAR},
+		       h.MODIFY_USER_NAME = #{empName,jdbcType=VARCHAR},
+		       h.MODIFY_TIME      = SYSDATE,
+		       h.BILL_TYPE        = #{billType,jdbcType=VARCHAR},
+		       h.VERSION_NO       = h.VERSION_NO + 1
+		 WHERE h.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+	</update>
+	<!-- 按对账单单号查询核销单 -->
+	<select id="queryHomeBillByStatementBillNo" parameterType="String" resultType="Integer">
+	    SELECT COUNT(W.ID) COUNT
+		  FROM STL.T_STL_BILL_WRITEOFF W
+		 WHERE W.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+		   AND W.ACTIVE = 'Y'
+	</select>
+	<!-- 确认对账单 -->
+	<update id="confirmHomeStatement" 
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.HomeItemDto">
+	    UPDATE stl.t_stl_statement_of_home W
+		   SET W.MODIFY_USER_CODE  = #{empCode,jdbcType=VARCHAR},
+		       W.MODIFY_USER_NAME  = #{empName,jdbcType=VARCHAR},
+		       W.MODIFY_TIME       = SYSDATE,
+		       W.CONFIRM_USER_CODE = #{empCode,jdbcType=VARCHAR},
+		       W.CONFIRM_USER_NAME = #{empName,jdbcType=VARCHAR},
+		       W.CONFIRM_TIME      = SYSDATE,
+		       W.CONFIRM_STATUS    = #{confirmStatus,jdbcType=VARCHAR},
+		       W.VERSION_NO        = W.VERSION_NO + 1
+		 WHERE W.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+	</update>
+	<!-- 反确认对账单 -->
+	<update id="unconfirmHomeStatement" 
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.HomeItemDto">
+	    UPDATE stl.t_stl_statement_of_home W
+		   SET W.MODIFY_USER_CODE  = #{empCode,jdbcType=VARCHAR},
+		       W.MODIFY_USER_NAME  = #{empName,jdbcType=VARCHAR},
+		       W.MODIFY_TIME       = SYSDATE,
+		       W.CONFIRM_USER_CODE = '',
+		       W.CONFIRM_USER_NAME = '',
+		       W.CONFIRM_TIME      = '',
+		       W.CONFIRM_STATUS    = #{confirmStatus,jdbcType=VARCHAR},
+		       W.VERSION_NO        = W.VERSION_NO + 1
+		 WHERE W.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+	</update>
+</mapper>

@@ -1,0 +1,349 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="com.deppon.foss.module.transfer.platform.api.server.dao.IDensityDao">
+
+	<select id="findTfrCtrs" parameterType="java.util.Map"
+		resultType="java.util.Map">
+		SELECT t.code TFR_CTR_CODE, t.name TFR_CTR_NAME
+		  FROM bse.t_bas_org t
+		 WHERE t.transfer_center = 'Y'
+		   AND (t.express_branch = 'N' OR t.express_branch IS NULL)
+		   AND t.active = 'Y'
+		   AND ora_hash(t.code, #{threadCount,jdbcType=VARCHAR}) = #{threadNo,jdbcType=VARCHAR}
+	</select>
+
+	<select id="generateDensityHour" parameterType="java.util.Map">
+		{CALL tfr.pkg_opt_goods_area_density.pro_density_hour
+		(#{hqCode,mode=IN,jdbcType=VARCHAR},
+		 #{hqName,mode=IN,jdbcType=VARCHAR},	
+		 #{tfrCtrCode,mode=IN,jdbcType=VARCHAR},
+		 #{tfrCtrName,mode=IN,jdbcType=VARCHAR},
+		 #{staDate,mode=IN,jdbcType=TIMESTAMP},
+		 #{staMonth,mode=IN,jdbcType=NUMERIC},
+		 #{staHour,mode=IN,jdbcType=NUMERIC}
+        )}
+	</select>
+
+	<select id="generateDensityDay" parameterType="java.util.Map">
+		{CALL tfr.pkg_opt_goods_area_density.pro_density_day
+		(#{hqCode,mode=IN,jdbcType=VARCHAR},
+		 #{hqName,mode=IN,jdbcType=VARCHAR},	
+		 #{tfrCtrCode,mode=IN,jdbcType=VARCHAR},
+		 #{tfrCtrName,mode=IN,jdbcType=VARCHAR},
+		 #{staDate,mode=IN,jdbcType=TIMESTAMP},
+		 #{staMonth,mode=IN,jdbcType=NUMERIC}
+        )}
+	</select>
+
+	<select id="findTfrCtrDensityPeak"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.DensityQcDto"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.TfrCtrDensityPeakEntity">
+		SELECT t.hq_name hqName,
+		       t.tfr_ctr_name tfrCtrName,
+		       t.area_volume_d areaVolumeD,
+		       t.peak_density_d peakDensityD,
+		       to_char(t.sta_date, 'yyyy-mm-dd') || ' ' || t.peak_hour_d ||':00' peakTimeD,
+		       t.peak_density_m peakDensityM,
+		       to_char(t.peak_date_m, 'yyyy-mm-dd') || ' ' || t.peak_hour_m ||':00' peakTimeM
+		  FROM tfr.t_opt_tfr_ctr_density_peak t
+		 WHERE t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		 <if test="tfrCtrCode != null and tfrCtrCode != ''">
+		   AND t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		 </if>
+	</select>
+
+	<select id="findForkAreaDensity"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.DensityQcDto"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.ForkAreaDensityEntity">
+		SELECT t.tfr_ctr_name tfrCtrName,
+		       t.area_code    areaCode,
+		       t.area_volume  areaVolume,
+		       t.goods_volume goodsVolume,
+		       t.density      density
+		  FROM tfr.t_opt_fork_area_density t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		   AND t.sta_hour = #{staHour,jdbcType=NUMERIC}
+	</select>
+
+	<select id="findDptAreaDensity"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.DensityQcDto"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.DptAreaDensityEntity">
+		SELECT t.tfr_ctr_name     tfrCtrName,
+		       t.zone_name        zoneName,
+		       t.item_area_name   itemAreaName,
+		       t.item_area_volume itemAreaVolume,
+		       t.goods_volume     goodsVolume,
+		       t.density          density
+		  FROM tfr.t_opt_dpt_area_density t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		   AND t.sta_hour = #{staHour,jdbcType=NUMERIC}
+	</select>
+
+	<select id="findTfrAreaDensity"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.DensityQcDto"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.TfrAreaDensityEntity">
+		SELECT t.tfr_ctr_name tfrCtrName,
+		       t.area_usage   areaUsage,
+		       t.area_name    areaName,
+		       t.area_volume  areaVolume,
+		       t.goods_volume goodsVolume,
+		       t.density      density
+		  FROM tfr.t_opt_tfr_area_density t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		   AND t.sta_hour = #{staHour,jdbcType=NUMERIC}
+	     <if test="goodsAreaUsage != null and goodsAreaUsage != ''">
+		   AND t.area_usage = #{goodsAreaUsage,jdbcType=VARCHAR}
+		 </if>
+		 <if test="goodsAreaCode != null and goodsAreaCode != ''">
+		   AND t.area_code = #{goodsAreaCode,jdbcType=VARCHAR}
+	     </if>
+	</select>
+	
+	<sql id="sql_trend_day_fork_area">
+		SELECT t.density  densityOfFork,
+			   null       densityOfLong,
+			   null       densityOfShort,
+			   null       densityOfDpt,
+			   null       densityOfTfr,
+		       t.sta_hour staHour
+		  FROM tfr.t_opt_fork_area_density_total t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		 <if test="hqCode != null and hqCode != ''">
+		   AND t.hq_code = #{hqCode,jdbcType=VARCHAR}
+		 </if> 
+	</sql>
+	
+	<sql id="sql_trend_day_tfr_area_long">
+		SELECT null       densityOfFork,
+			   t.density  densityOfLong,
+			   null       densityOfShort,
+			   null       densityOfDpt,
+			   null       densityOfTfr,
+		       t.sta_hour staHour
+		  FROM tfr.t_opt_tfr_area_density_total t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		   AND t.area_usage = 'L'
+		 <if test="hqCode != null and hqCode != ''">
+		   AND t.hq_code = #{hqCode,jdbcType=VARCHAR}
+		 </if> 
+	</sql>
+	
+	<sql id="sql_trend_day_tfr_area_short">
+		SELECT null       densityOfFork,
+			   null       densityOfLong,
+			   t.density  densityOfShort,
+			   null       densityOfDpt,
+			   null       densityOfTfr,
+		       t.sta_hour staHour
+		  FROM tfr.t_opt_tfr_area_density_total t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		   AND t.area_usage = 'S'
+		 <if test="hqCode != null and hqCode != ''">
+		   AND t.hq_code = #{hqCode,jdbcType=VARCHAR}
+		 </if> 
+	</sql>
+	
+	<sql id="sql_trend_day_dpt_area">
+		SELECT null       densityOfFork,
+			   null       densityOfLong,
+			   null       densityOfShort,
+			   t.density  densityOfDpt,
+			   null       densityOfTfr,
+		       t.sta_hour staHour
+		  FROM tfr.t_opt_dpt_area_density_total t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		 <if test="hqCode != null and hqCode != ''">
+		   AND t.hq_code = #{hqCode,jdbcType=VARCHAR}
+		 </if> 
+	</sql>
+
+	<sql id="sql_trend_day_tfr_ctr">
+		SELECT null       densityOfFork,
+			   null       densityOfLong,
+			   null       densityOfShort,
+			   null       densityOfDpt,
+			   t.density  densityOfTfr,
+		       t.sta_hour staHour
+		  FROM tfr.t_opt_tfr_ctr_density t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		 <if test="hqCode != null and hqCode != ''">
+		   AND t.hq_code = #{hqCode,jdbcType=VARCHAR}
+		 </if> 
+	</sql>
+	
+	<sql id="sql_trend_month_fork_area">
+		SELECT t.peak_density_m densityOfFork,
+			   null             densityOfLong,
+			   null      		densityOfShort,
+			   null       		densityOfDpt,
+			   null  			densityOfTfr,
+		       t.sta_date 		staDate
+		  FROM tfr.t_opt_fork_density_total_peak t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.sta_month = #{staMonth,jdbcType=NUMERIC}
+	     <if test="hqCode != null and hqCode != ''">
+		   AND t.hq_code = #{hqCode,jdbcType=VARCHAR}
+		 </if>
+	</sql>
+	
+	<sql id="sql_trend_month_tfr_area_long">
+		SELECT null             densityOfFork,
+			   t.peak_density_m densityOfLong,
+			   null     		densityOfShort,
+			   null       		densityOfDpt,
+			   null  			densityOfTfr,
+		       t.sta_date 		staDate
+		  FROM tfr.t_opt_tfr_density_total_peak t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		    AND t.sta_month = #{staMonth,jdbcType=NUMERIC}
+		   AND t.area_usage = 'L'
+		 <if test="hqCode != null and hqCode != ''">
+		   AND t.hq_code = #{hqCode,jdbcType=VARCHAR}
+		 </if> 
+	</sql>
+	
+	<sql id="sql_trend_month_tfr_area_short">
+		SELECT null             densityOfFork,
+			   null             densityOfLong,
+			   t.peak_density_m densityOfShort,
+			   null       		densityOfDpt,
+			   null  			densityOfTfr,
+		       t.sta_date 		staDate
+		  FROM tfr.t_opt_tfr_density_total_peak t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.sta_month = #{staMonth,jdbcType=NUMERIC}
+		   AND t.area_usage = 'S'
+		 <if test="hqCode != null and hqCode != ''">
+		   AND t.hq_code = #{hqCode,jdbcType=VARCHAR}
+		 </if> 
+	</sql>
+	
+	<sql id="sql_trend_month_dpt_area">
+		SELECT null             densityOfFork,
+			   null             densityOfLong,
+			   null       		densityOfShort,
+			   t.peak_density_m densityOfDpt,
+			   null  			densityOfTfr,
+		       t.sta_date       staDate
+		  FROM t_opt_dpt_density_total_peak t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.sta_month = #{staMonth,jdbcType=NUMERIC}
+	     <if test="hqCode != null and hqCode != ''">
+		   AND t.hq_code = #{hqCode,jdbcType=VARCHAR}
+		 </if>
+	</sql>
+	
+	<sql id="sql_trend_month_tfr_ctr">
+		SELECT null             densityOfFork,
+			   null             densityOfLong,
+			   null       		densityOfShort,
+			   null  			densityOfDpt,
+			   t.peak_density_m densityOfTfr,
+		       t.sta_date       staDate
+		  FROM tfr.t_opt_tfr_ctr_density_peak t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.sta_month = #{staMonth,jdbcType=NUMERIC}
+		 <if test="hqCode != null and hqCode != ''">
+		   AND t.hq_code = #{hqCode,jdbcType=VARCHAR}
+		 </if> 
+	</sql>
+	
+	<sql id="sql_select_caluse">
+	SELECT 
+		 <if test="flagFork != null and flagFork == 1">
+		    SUM(densityOfFork) densityOfFork,
+		 </if>
+		 <if test="flagLong != null and flagLong == 1">
+		    SUM(densityOfLong) densityOfLong,
+		 </if>
+		 <if test="flagShort != null and flagShort == 1">
+		    SUM(densityOfShort) densityOfShort,
+		 </if>
+		 <if test="flagDpt != null and flagDpt == 1">
+		    SUM(densityOfDpt) densityOfDpt,
+		 </if>
+		 <if test="flagTfr != null and flagTfr == 1">
+		    SUM(densityOfTfr) densityOfTfr,
+		 </if>
+	</sql>
+	
+	<select id="findTrendDay" 
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.DensityQcDto"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.dto.DensityTrendDto">
+		<include refid="sql_select_caluse" />
+		 staHour 
+		 	FROM 
+		 (
+		 <trim suffixOverrides="UNION ALL">
+		 <if test="flagFork != null and flagFork == 1">
+		    <include refid="sql_trend_day_fork_area" />
+		    UNION ALL
+		 </if>
+		 <if test="flagLong != null and flagLong == 1">
+		    <include refid="sql_trend_day_tfr_area_long" />
+		    UNION ALL
+		 </if>
+		 <if test="flagShort != null and flagShort == 1">
+		    <include refid="sql_trend_day_tfr_area_short" />
+		    UNION ALL
+		 </if>
+		 <if test="flagDpt != null and flagDpt == 1">
+		    <include refid="sql_trend_day_dpt_area" />
+		    UNION ALL
+		 </if>
+		 <if test="flagTfr != null and flagTfr == 1">
+		    <include refid="sql_trend_day_tfr_ctr" />
+		    UNION ALL
+		 </if>
+		 </trim>
+		 )
+		 GROUP BY staHour
+		 ORDER BY staHour
+	</select>
+	
+	<select id="findTrendMonth" 
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.DensityQcDto"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.dto.DensityTrendDto">
+		<include refid="sql_select_caluse" />
+		 staDate 
+		 	FROM 
+		 (
+		 <trim suffixOverrides="UNION ALL">
+		 <if test="flagFork != null and flagFork == 1">
+		    <include refid="sql_trend_month_fork_area" />
+		    UNION ALL
+		 </if>
+		 <if test="flagLong != null and flagLong == 1">
+		    <include refid="sql_trend_month_tfr_area_long" />
+		    UNION ALL
+		 </if>
+		 <if test="flagShort != null and flagShort == 1">
+		    <include refid="sql_trend_month_tfr_area_short" />
+		    UNION ALL
+		 </if>
+		 <if test="flagDpt != null and flagDpt == 1">
+		    <include refid="sql_trend_month_dpt_area" />
+		    UNION ALL
+		 </if>
+		 <if test="flagTfr != null and flagTfr == 1">
+		    <include refid="sql_trend_month_tfr_ctr" />
+		    UNION ALL
+		 </if>
+		 </trim>
+		 )
+		 GROUP BY staDate
+		 ORDER BY staDate
+	</select>
+
+</mapper>

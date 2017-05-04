@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.package.packCommon" >
+	
+	<resultMap id="rePackMap" type="com.deppon.foss.module.transfer.packaging.api.shared.domain.QueryWaybillPackEntity" >
+	  <result property="wayBillNumber" column="WAYBILL_NO"/>
+	  <result property="waybillCreateDept" column="CREATE_ORG_CODE"/>
+	  <result property="goodsName" column="GOODS_NAME"/>
+	  <result property="waybillNum" column="GOODS_QTY_TOTAL"/>
+	  <result property="packedNum" column="PACKAGE_NEEDNUM"/>
+	  <result property="packedVolume" column="PACKAGE_VOLUME"/>
+	  <result property="packRequire" column="PACKAGE_REQUIREMENT"/>
+	  <result property="isPacked" column="IS_PACKED"/>
+	  <result property="packOrgCode" column="PACKAGE_ORG_CODE"/>
+	</resultMap>
+	
+	<!--  根据运单号，查询代打包件数 -->
+	<select id="queryUnPackQtyByWaybillNo" parameterType="map" resultType="int">
+		SELECT COUNT(1) unPackQty
+		  FROM TFR.T_OPT_PACKAGE_REQUEST_DETAIL T
+		   JOIN tfr.t_opt_package_require r
+		    ON t.waybill_no=r.waybill_no
+		 WHERE T.WAYBILL_NO = #{waybillNo}
+		   AND T.IS_PACKED = 'N'
+		   AND t.active='Y'
+		   AND r.package_org_code=#{packageOrgCode}
+		   GROUP BY t.waybill_no
+	</select>
+	
+	<!--根据运单号，查询包装后货物总件数 -->
+	<select id="queryPackedQtyByWaybillNo" parameterType="map" resultType="int">
+	     SELECT COUNT(1) PACKEDQTY
+	     from (SELECT p.waybill_no,d.new_serial_no
+	       FROM tfr.t_opt_actual_package p
+		    JOIN tfr.t_opt_actual_package_detail d
+		     ON p.id=d.actual_package_id
+		    WHERE p.waybill_no=#{waybillNo}
+		     AND p.org_code=#{orgCode}
+		   GROUP BY p.waybill_no,D.NEW_SERIAL_NO
+		  )
+	</select>
+	
+	<!-- 根据运单号，查询打包装需求中还未打包的所有流水号 -->
+	<select id="queryUnPackSeriaByWaybillNo" parameterType="map" resultType="string">
+	     SELECT RD.SERIAL_NO
+		    FROM TFR.T_OPT_PACKAGE_REQUIRE R
+		    JOIN TFR.T_OPT_PACKAGE_REQUEST_DETAIL RD
+		      ON RD.WAYBILL_NO = R.WAYBILL_NO
+		   WHERE R.WAYBILL_NO = #{waybillNo}
+		     AND RD.IS_PACKED = 'N'
+		     AND RD.ACTIVE = 'Y'
+		     AND R.PACKAGE_ORG_CODE = #{packageOrgCode}
+	</select>
+	
+	<!-- 根据运单号，查询包装需求中已经打包装的流水号 -->
+	<select id="queryRePackedSeriaListByWaybillNo" parameterType="map" resultType="string">
+	     SELECT t.serial_no
+		  FROM TFR.T_OPT_PACKAGE_REQUEST_DETAIL T
+		   JOIN tfr.t_opt_package_require r
+		    ON t.waybill_no=r.waybill_no
+		 WHERE T.WAYBILL_NO =#{waybillNo}
+		   AND T.IS_PACKED = 'Y'
+		   AND t.active='Y'
+		   AND r.package_org_code=#{packageOrgCode}
+	</select>
+	
+	<!-- 根据运单号，查询实际包装中所有的新流水号 -->
+	<select id="queryPackedNewSeriaListByWaybillNo" parameterType="map" resultType="string">
+	      SELECT D.NEW_SERIAL_NO
+		     FROM TFR.T_OPT_ACTUAL_PACKAGE P
+		     JOIN TFR.T_OPT_ACTUAL_PACKAGE_DETAIL D
+		       ON P.ID = D.ACTUAL_PACKAGE_ID
+		    WHERE P.WAYBILL_NO = #{waybillNo}
+		      AND P.ORG_CODE = #{orgCode}
+		    GROUP BY p.waybill_no,D.NEW_SERIAL_NO
+	</select>
+	<!-- 根据运单号，查询打包装需求中获剩下未打包的流水号 -->
+	<select id="queryUnPackSeriaAfterByWaybillNo" parameterType="map" resultType="string">
+	        SELECT RD.SERIAL_NO
+			    FROM TFR.T_OPT_PACKAGE_REQUIRE R
+			    JOIN TFR.T_OPT_PACKAGE_REQUEST_DETAIL RD
+			      ON RD.WAYBILL_NO = R.WAYBILL_NO
+			   WHERE R.WAYBILL_NO =#{waybillNo}
+			     AND RD.IS_PACKED = 'N'
+			     AND RD.ACTIVE = 'Y'
+			     AND R.PACKAGE_ORG_CODE = #{packageOrgCode}
+			     AND RD.PACKAGE_TYPE=#{unPackType}
+
+	</select>
+	
+	<!-- 作废包装需求中的流水号 -->
+	<update id="cancleUnPackReSerias" parameterType="map" >
+	   UPDATE TFR.T_OPT_PACKAGE_REQUEST_DETAIL RD
+		    SET RD.ACTIVE = 'N'
+		  WHERE RD.WAYBILL_NO =#{waybillNo}
+		    and EXISTS (SELECT 1
+		           FROM TFR.T_OPT_PACKAGE_REQUIRE R
+		          WHERE R.ID = RD.PACKAGEREQUEST_ID
+		            AND R.PACKAGE_ORG_CODE =#{packageOrgCode})
+		    AND RD.SERIAL_NO IN 
+		    <foreach collection="seriaNoList" index="index" item="item" open="(" separator="," close=")">
+						  #{item}
+		    </foreach>
+	</update>
+	
+	<!-- 根据运单号，查询需求信息 -->
+	<select id="queryRePackByWaybillNo" parameterType="map" resultMap="rePackMap">
+	  SELECT R.WAYBILL_NO,
+		     R.CREATE_ORG_CODE,
+		     R.GOODS_NAME,
+		     R.GOODS_QTY_TOTAL,
+		     R.PACKAGE_NEEDNUM,
+		     R.PACKAGE_VOLUME,
+		     R.PACKAGE_REQUIREMENT,
+		     R.IS_PACKED,
+		     R.PACKAGE_ORG_CODE
+		  FROM TFR.T_OPT_PACKAGE_REQUIRE R
+		 WHERE R.WAYBILL_NO = #{waybillNo}
+		   AND R.PACKAGE_ORG_CODE = #{packageOrgCode}
+		   and R.IS_DISABLE='N'
+	</select>
+	<!-- 查询出所有合打的新流水号 -->
+	<select id="queryPackedJoinSeriasByWaybillNo" parameterType="map" resultType="string">
+		SELECT T.NEW_SERIAL_NO
+		  FROM TFR.T_OPT_ACTUAL_PACKAGE_DETAIL T
+		  JOIN TFR.T_OPT_ACTUAL_PACKAGE TP
+		    ON T.ACTUAL_PACKAGE_ID = TP.ID
+		 WHERE TP.WAYBILL_NO = #{waybillNo}
+		   and tp.org_code=#{orgCode}
+		 GROUP BY TP.WAYBILL_NO, T.NEW_SERIAL_NO
+		HAVING COUNT(1) > 1
+	</select>
+	<!-- 查询需要生成代办的流水号 -->
+	<select id="queryToDoSeriasByWaybillNo" parameterType="map" resultType="string">
+	   SELECT l.serial_no
+		  FROM PKP.T_SRV_LABELED_GOOD L
+		 WHERE L.WAYBILL_NO = #{waybillNo}
+		   AND L.ACTIVE = 'Y'
+		   AND L.SERIAL_NO NOT IN (SELECT T.NEW_SERIAL_NO
+		                             FROM TFR.T_OPT_ACTUAL_PACKAGE_DETAIL T
+		                             JOIN TFR.T_OPT_ACTUAL_PACKAGE TP
+		                               ON T.ACTUAL_PACKAGE_ID = TP.ID
+		                            WHERE TP.WAYBILL_NO =#{waybillNo}
+		                              AND TP.ORG_CODE = #{orgCode}
+		                            GROUP BY TP.WAYBILL_NO, T.NEW_SERIAL_NO
+		                           HAVING COUNT(1) > 1
+		                           )
+	</select>
+</mapper>

@@ -1,0 +1,619 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="com.deppon.foss.module.transfer.platform.api.server.dao.ICargoArrivedDao">
+
+	<!-- 查询外场集中接货重量配置 -->
+	<select id="findPickupWeightConifg" parameterType="java.lang.String"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.dto.CentralizePickupConifg">
+		SELECT t.org_code orgCode, t.conf_value value
+		  FROM bse.t_bas_sys_config t
+		 WHERE t.conf_type = 'SYSTEM_CONFIG_PARM__TFR'
+		   AND t.code = 'FORECAST_WEIGHT'
+		   AND t.active = 'Y'
+		   AND t.org_code IN ('DIP', #{orgCode,jdbcType=VARCHAR})
+	</select>
+
+	<!-- 查询外场集中接货体积配置 -->
+	<select id="findPickupVolumeConifg" parameterType="java.lang.String"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.dto.CentralizePickupConifg">
+		SELECT t.org_code orgCode, t.conf_value value
+		  FROM bse.t_bas_sys_config t
+		 WHERE t.conf_type = 'SYSTEM_CONFIG_PARM__TFR'
+		   AND t.code = 'FORECAST_VOLUME'
+		   AND t.active = 'Y'
+		   AND t.org_code IN ('DIP', #{orgCode,jdbcType=VARCHAR})
+	</select>
+	
+	<sql id="sql_select_caluse">
+	SELECT t.orig_dept_name origDeptName,
+		   #{destDeptName,jdbcType=VARCHAR} destDeptName,
+	       ROUND(SUM(t.weight),3) weightTotal,
+	       ROUND(SUM(t.volume),3) volumeTotal,
+	       SUM(t.vote) voteTotal,
+	       
+	       ROUND(SUM(decode(t.product_code, 'FLF', t.weight, 'BGFLF', t.weight,'PCP',t.weight, 0)),3) weightFlf,
+	       ROUND(SUM(decode(t.product_code, 'FLF', t.volume, 'BGFLF', t.volume,'PCP',t.volume, 0)),3) volumeFlf,
+	       SUM(decode(t.product_code, 'FLF', t.vote, 'BGFLF', t.vote, 'PCP',t.vote,0)) voteFlf,
+	       
+	       ROUND(SUM(decode(t.product_code, 'FSF', t.weight, 'BGFSF', t.weight, 0)),3) weightFsf,
+	       ROUND(SUM(decode(t.product_code, 'FSF', t.volume, 'BGFSF', t.volume, 0)),3) volumeFsf,
+	       SUM(decode(t.product_code, 'FSF', t.vote, 'BGFSF', t.vote, 0)) voteFsf,
+	       
+	       ROUND(SUM(decode(t.product_code, 'PACKAGE', t.weight, 'RCP', t.weight,'EPEP',t.weight, 0)),3) weightExp,
+	       ROUND(SUM(decode(t.product_code, 'PACKAGE', t.volume, 'RCP', t.volume,'EPEP',t.volume, 0)),3) volumeExp,
+	       SUM(decode(t.product_code, 'PACKAGE', t.vote, 'RCP', t.vote,'EPEP', t.vote, 0)) voteExp
+	</sql>
+	
+	<!-- 外场库存；货物流a->b(本外场),库存在a -->
+	<select id="findTfrCtrStock"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.CargoArrivedQcDto"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.dto.CargoArrivedDto">
+		select origDeptName, #{destDeptName,jdbcType=VARCHAR} destDeptName,sum(weightTotal) weightTotal,sum(volumeTotal) volumeTotal,
+       sum(voteTotal) voteTotal,sum(weightFlf) weightFlf,sum(volumeFlf) volumeFlf, sum(voteFlf) voteFlf,
+       sum(weightFsf) weightFsf,sum(volumeFsf) volumeFsf,sum(voteFsf) voteFsf,sum(weightExp) weightExp,
+       sum(volumeExp) volumeExp, sum(voteExp) voteExp
+  from (
+		<include refid="sql_select_caluse"/>
+		FROM (
+		SELECT c.name orig_dept_name,
+		       w.product_code product_code,
+		       SUM(s.stock_goods_qty) qty,
+		       SUM(s.stock_goods_qty / w.goods_qty_total * w.goods_weight_total) weight,
+		       SUM(s.stock_goods_qty / w.goods_qty_total * w.goods_volume_total) volume,
+		       COUNT(1) vote
+		  FROM tfr.t_opt_waybill_stock s
+		 INNER JOIN pkp.t_srv_waybill w
+		    ON w.waybill_no = s.waybill_no
+		   AND w.active = 'Y'
+		 INNER JOIN bse.t_bas_transfer_center c
+		    ON c.org_code = s.org_code
+		   AND c.active = 'Y'
+		 WHERE s.next_org_code = #{destDeptCode,jdbcType=VARCHAR}
+		 GROUP BY c.name, w.product_code
+		 ) t
+		 GROUP BY t.orig_dept_name union all
+		 <include refid="sql_select_caluse"/>
+		FROM (
+		SELECT c.name orig_dept_name,
+		       w.product_code product_code,
+		       SUM(s.stock_goods_qty) qty,
+		       SUM(s.stock_goods_qty / w.goods_qty_total * w.goods_weight_total) weight,
+		       SUM(s.stock_goods_qty / w.goods_qty_total * w.goods_volume_total) volume,
+		       COUNT(1) vote
+		  FROM ECS.V_TFR_T_OPT_WAYBILL_STOCK s
+		 INNER JOIN ECS.MV_PKP_T_SRV_WAYBILL w
+		    ON w.waybill_no = s.waybill_no
+		   AND w.active = 'Y'
+		 INNER JOIN bse.t_bas_transfer_center c
+		    ON c.org_code = s.org_code
+		   AND c.active = 'Y'
+		 WHERE s.next_org_code = #{destDeptCode,jdbcType=VARCHAR}
+		 GROUP BY c.name, w.product_code
+		 ) t
+		 GROUP BY t.orig_dept_name) aa group by aa.origDeptName
+	</select>
+	
+	<!-- 外场在途where子句，用于findTfrCtrOnTheWay,findTfrCtrOnTheWayDetails-->
+	<sql id="sql_tfrCtrOnTheWay_from_caluse">
+	   FROM tfr.t_opt_truck_task_detail td
+	 INNER JOIN tfr.t_opt_truck_task_bill tb
+	    ON tb.truck_task_detail_id = td.id
+	 INNER JOIN tfr.t_opt_vehicleassemblebill v
+	    ON v.vehicleassemble_no = tb.bill_no
+	   AND v.state != '90'
+	 INNER JOIN tfr.t_opt_vehicleassemble_detail vd
+	    ON vd.vehicleassemblebill_id = v.id
+	 INNER JOIN tfr.t_opt_handoverbill h
+	    ON h.handover_no = vd.handover_no
+	   AND h.handoverbill_state IN (21, 30)
+     INNER JOIN tfr.t_opt_handoverbill_detail hd
+	    ON hd.handover_no = h.handover_no
+	</sql>
+	<!-- 外场在途where子句，用于findTfrCtrOnTheWay,用于悟空系统到场站数据同步 -->
+	<sql id="sql_tfrCtrOnTheWay_from_caluse_wukong_to_station">
+	   FROM tfr.t_opt_truck_task_detail td
+	 INNER JOIN ecs.mv_tfr_t_opt_truck_task_bill tb
+	    ON tb.truck_task_detail_id = td.id
+	 INNER JOIN ecs.v_tfr_t_opt_vehicleassemblebi v
+	    ON v.vehicleassemble_no = tb.bill_no
+	   AND v.state != '90'
+	 INNER JOIN ecs.v_tfr_t_opt_vmble_detail vd
+	    ON vd.vehicleassemblebill_id = v.id
+	 INNER JOIN ecs.v_tfr_t_opt_handoverbill h
+	    ON h.handover_no = vd.handover_no
+	   AND h.handoverbill_state IN (21, 30)
+     INNER JOIN ecs.mv_tfr_t_opt_handoverbil_detai hd
+	    ON hd.handover_no = h.handover_no
+	</sql>
+	
+
+	<!-- 外场在途；货物流a->b(本外场),从a出发未到b -->
+	<select id="findTfrCtrOnTheWay"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.CargoArrivedQcDto"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.dto.CargoArrivedDto">
+		select origDeptName,#{destDeptName,jdbcType=VARCHAR} destDeptName,#{beginTime,jdbcType=TIMESTAMP} beginTime,#{endTime,jdbcType=TIMESTAMP} endTime,#{status,jdbcType=VARCHAR} status,origDeptCode,
+		#{destDeptCode,jdbcType=VARCHAR} destDeptCode,
+		sum(weightTotal) weightTotal,sum(volumeTotal) volumeTotal,sum(voteTotal) voteTotal,sum(weightFlf) weightFlf,
+           sum(volumeFlf) volumeFlf,sum(voteFlf) voteFlf,sum(weightFsf) weightFsf,sum(volumeFsf) volumeFsf,sum(voteFsf) voteFsf,sum(weightExp) weightExp,sum(volumeExp) volumeExp,
+            sum(voteExp) voteExp from(
+		<include refid="sql_select_caluse"/>
+		,t.orig_dept_code origDeptCode,
+		#{status,jdbcType=VARCHAR} status,
+		#{destDeptCode,jdbcType=VARCHAR} destDeptCode,
+        #{beginTime,jdbcType=TIMESTAMP} beginTime,
+        #{endTime,jdbcType=TIMESTAMP} endTime
+		FROM (
+		SELECT td.orig_org_code orig_dept_code,
+		       MAX(td.orig_org_name) orig_dept_name,
+		       hd.transport_type_code product_code,
+		       SUM(hd.handover_goods_qty) qty,
+		       SUM(hd.handover_weight) weight,
+		       SUM(hd.handover_volume) volume,
+		       COUNT(1) vote
+		  <include refid="sql_tfrCtrOnTheWay_from_caluse"/>
+		 WHERE td.dest_org_code = #{destDeptCode,jdbcType=VARCHAR}
+		   AND td.status = 'ONTHEWAY'
+		   AND td.business_type = 'LONG_DISTANCE'
+		   AND td.plan_arrive_time BETWEEN #{beginTime,jdbcType=TIMESTAMP} AND #{endTime,jdbcType=TIMESTAMP}
+		 GROUP BY td.orig_org_code,hd.transport_type_code
+		  ) t
+		 GROUP BY t.orig_dept_code,t.orig_dept_name union all
+		 <include refid="sql_select_caluse"/>
+		,t.orig_dept_code origDeptCode,
+		#{status,jdbcType=VARCHAR} status,
+		#{destDeptCode,jdbcType=VARCHAR} destDeptCode,
+        #{beginTime,jdbcType=TIMESTAMP} beginTime,
+        #{endTime,jdbcType=TIMESTAMP} endTime
+		FROM (
+		SELECT td.orig_org_code orig_dept_code,
+		       MAX(td.orig_org_name) orig_dept_name,
+		       hd.transport_type_code product_code,
+		       SUM(hd.handover_goods_qty) qty,
+		       SUM(hd.handover_weight) weight,
+		       SUM(hd.handover_volume) volume,
+		       COUNT(1) vote
+		  <include refid="sql_tfrCtrOnTheWay_from_caluse_wukong_to_station"/>
+		 WHERE td.dest_org_code = #{destDeptCode,jdbcType=VARCHAR}
+		   AND td.status = 'ONTHEWAY'
+		   AND td.business_type = 'LONG_DISTANCE'
+		   AND td.plan_arrive_time BETWEEN #{beginTime,jdbcType=TIMESTAMP} AND #{endTime,jdbcType=TIMESTAMP}
+		 GROUP BY td.orig_org_code,hd.transport_type_code
+		  ) t
+		 GROUP BY t.orig_dept_code,t.orig_dept_name) dd group by dd.origDeptName,dd.origDeptCode
+	</select>
+	
+	<!-- 外场在途明细；货物流a->b(本外场),从a出发未到b -->
+	<select id="findTfrCtrOnTheWayDetails"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.CargoArrivedQcDto"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.dto.CargoArrivedDetailDto">
+		select vehicleNo,eta,sum(weight) weight,sum(volume) volume,sum(vote) vote from(
+		SELECT td.vehicle_no            vehicleNo,
+		       max(td.plan_arrive_time) eta,
+		       SUM(hd.handover_weight) weight,
+		       SUM(hd.handover_volume) volume,
+		       COUNT(1) vote
+		  <include refid="sql_tfrCtrOnTheWay_from_caluse"/>
+		 WHERE td.orig_org_code = #{origDeptCode,jdbcType=VARCHAR}
+		   AND td.dest_org_code = #{destDeptCode,jdbcType=VARCHAR}
+		   AND td.status = 'ONTHEWAY'
+		   AND td.business_type = 'LONG_DISTANCE'
+		   AND td.plan_arrive_time BETWEEN #{beginTime,jdbcType=TIMESTAMP} AND #{endTime,jdbcType=TIMESTAMP}
+		 GROUP BY td.vehicle_no union all
+		 SELECT td.vehicle_no            vehicleNo,
+		       max(td.plan_arrive_time) eta,
+		       SUM(hd.handover_weight) weight,
+		       SUM(hd.handover_volume) volume,
+		       COUNT(1) vote
+		  <include refid="sql_tfrCtrOnTheWay_from_caluse_wukong_to_station"/>
+		 WHERE td.orig_org_code = #{origDeptCode,jdbcType=VARCHAR}
+		   AND td.dest_org_code = #{destDeptCode,jdbcType=VARCHAR}
+		   AND td.status = 'ONTHEWAY'
+		   AND td.business_type = 'LONG_DISTANCE'
+		   AND td.plan_arrive_time BETWEEN #{beginTime,jdbcType=TIMESTAMP} AND #{endTime,jdbcType=TIMESTAMP}
+		 GROUP BY td.vehicle_no) gg group by gg.vehicleNo,gg.eta
+	</select>
+
+	<!-- 营业部未到-->
+	<select id="findSalesDeptNoArrived"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.CargoArrivedQcDto"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.dto.CargoArrivedDto">
+		select origDeptName,#{destDeptName,jdbcType=VARCHAR} destDeptName,sum(weightTotal) weightTotal,sum(volumeTotal) volumeTotal,sum(voteTotal) voteTotal,sum(weightFlf) weightFlf,
+                sum(volumeFlf) volumeFlf,sum(voteFlf) voteFlf,sum(weightFsf) weightFsf,sum(volumeFsf) volumeFsf,sum(voteFsf) voteFsf,sum(weightExp) weightExp,sum(volumeExp) volumeExp,
+                sum(voteExp) voteExp from(
+		<include refid="sql_select_caluse"/>
+		FROM (
+		SELECT d.name orig_dept_name,
+		       w.product_code product_code,
+		       SUM(s.stock_goods_qty) qty,
+		       SUM(s.stock_goods_qty / w.goods_qty_total * w.goods_weight_total) weight,
+		       SUM(s.stock_goods_qty / w.goods_qty_total * w.goods_volume_total) volume,
+		       COUNT(1) vote
+		  FROM tfr.t_opt_waybill_stock s
+		 INNER JOIN pkp.t_srv_waybill w
+		    ON w.waybill_no = s.waybill_no
+		   AND w.active = 'Y'
+		 INNER JOIN bse.t_bas_sales_department d
+		    ON d.code = s.org_code
+		   AND d.active = 'Y'
+		 WHERE s.next_org_code = #{destDeptCode,jdbcType=VARCHAR}
+		 GROUP BY d.name, w.product_code
+		 UNION ALL
+		 SELECT h.orig_org_name orig_dept_name,
+		       hd.transport_type_code product_code,
+		       SUM(hd.handover_goods_qty) qty,
+		       SUM(hd.handover_weight) weight,
+		       SUM(hd.handover_volume) volume,
+		       COUNT(1) vote
+		  FROM tfr.t_opt_handoverbill h
+		 INNER JOIN tfr.t_opt_handoverbill_detail hd
+		    ON hd.handover_no = h.handover_no
+		 INNER JOIN bse.t_bas_sales_department d
+		    ON d.code = h.orig_org_code
+		   AND d.active = 'Y'
+		 WHERE h.dest_org_code = #{destDeptCode,jdbcType=VARCHAR}
+		   AND h.handoverbill_state IN (20, 30)
+		   AND h.create_time >= SYSDATE - 1 /*业务默认交接单创建一天后短途一定到达，剔除不做到达的情况*/
+		 GROUP BY h.orig_org_name, hd.transport_type_code
+		 ) t
+		 GROUP BY t.orig_dept_name union all
+		 <include refid="sql_select_caluse"/>
+		FROM (
+		SELECT d.name orig_dept_name,
+		       w.product_code product_code,
+		       SUM(s.stock_goods_qty) qty,
+		       SUM(s.stock_goods_qty / w.goods_qty_total * w.goods_weight_total) weight,
+		       SUM(s.stock_goods_qty / w.goods_qty_total * w.goods_volume_total) volume,
+		       COUNT(1) vote
+		  FROM ecs.v_tfr_t_opt_waybill_stock s
+		 INNER JOIN ecs.mv_pkp_t_srv_waybill w
+		    ON w.waybill_no = s.waybill_no
+		   AND w.active = 'Y'
+		 INNER JOIN bse.t_bas_sales_department d
+		    ON d.code = s.org_code
+		   AND d.active = 'Y'
+		 WHERE s.next_org_code = #{destDeptCode,jdbcType=VARCHAR}
+		 GROUP BY d.name, w.product_code
+		 UNION ALL
+		 SELECT h.orig_org_name orig_dept_name,
+		       hd.transport_type_code product_code,
+		       SUM(hd.handover_goods_qty) qty,
+		       SUM(hd.handover_weight) weight,
+		       SUM(hd.handover_volume) volume,
+		       COUNT(1) vote
+		  FROM ecs.v_tfr_t_opt_handoverbill h
+		 INNER JOIN ecs.mv_tfr_t_opt_handoverbil_detai hd
+		    ON hd.handover_no = h.handover_no
+		 INNER JOIN bse.t_bas_sales_department d
+		    ON d.code = h.orig_org_code
+		   AND d.active = 'Y'
+		 WHERE h.dest_org_code = #{destDeptCode,jdbcType=VARCHAR}
+		   AND h.handoverbill_state IN (20, 30)
+		   AND h.create_time >= SYSDATE - 1 /*业务默认交接单创建一天后短途一定到达，剔除不做到达的情况*/
+		 GROUP BY h.orig_org_name, hd.transport_type_code
+		 ) t
+		 GROUP BY t.orig_dept_name ) ff group by ff.origDeptName	
+		 
+	</select>
+
+	<!-- 本外场集中接货未到 -->
+	<select id="findPickupNoArrived"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.CargoArrivedQcDto"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.dto.CargoArrivedDto">
+		select origDeptName,#{destDeptName,jdbcType=VARCHAR} destDeptName,sum(weightTotal) weightTotal,sum(volumeTotal) volumeTotal,sum(voteTotal) voteTotal,sum(weightFlf) weightFlf,
+          sum(volumeFlf) volumeFlf,sum(voteFlf) voteFlf,sum(weightFsf) weightFsf,sum(volumeFsf) volumeFsf,sum(voteFsf) voteFsf,sum(weightExp) weightExp,sum(volumeExp) volumeExp,
+              sum(voteExp) voteExp from(
+		<include refid="sql_select_caluse"/>
+		FROM (
+		SELECT o.name orig_dept_name,
+		       w.product_code product_code,
+		       SUM(w.goods_qty_total) qty,
+		       SUM(CASE
+		             WHEN w.goods_weight_total > 0 THEN
+		              w.goods_weight_total
+		             ELSE
+		              #{weightConfig,jdbcType=NUMERIC}
+		           END) weight,
+		       SUM(CASE
+		             WHEN w.goods_volume_total > 0 THEN
+		              w.goods_volume_total
+		             ELSE
+		              #{volumeConfig,jdbcType=NUMERIC}
+		           END) volume,
+		       COUNT(1) vote
+		  FROM pkp.t_srv_waybill w
+		 INNER JOIN bse.t_bas_billinggroup_transfer t
+		    ON t.billinggroup_code = w.create_org_code
+		   AND t.transfer_center_code = #{destDeptCode,jdbcType=VARCHAR}
+		   AND t.active = 'Y'
+		 INNER JOIN bse.t_bas_org o
+		    ON w.receive_org_code = o.code
+		   AND o.active = 'Y'
+		 WHERE w.pickup_centralized = 'Y'
+		   AND w.active = 'Y'
+		   AND w.bill_time >= SYSDATE - 1 /*业务默认集中接货开单后一天一定卸车*/
+		   AND NOT EXISTS (SELECT 1
+		          FROM pkp.t_srv_stay_handover h
+		         INNER JOIN pkp.t_srv_stay_handoverdetail hd
+		            ON hd.t_srv_stay_handover_id = h.id
+		         WHERE hd.waybill_no = w.waybill_no
+		           AND h.handover_type = 'RECEIVE'
+		           AND h.assign_state IN ('UNLOADING','UNLOADED'))
+		 GROUP BY o.name, w.product_code
+		 ) t
+		 GROUP BY t.orig_dept_name union all 
+		 <include refid="sql_select_caluse"/>
+		FROM (
+		SELECT o.name orig_dept_name,
+		       w.product_code product_code,
+		       SUM(w.goods_qty_total) qty,
+		       SUM(CASE
+		             WHEN w.goods_weight_total > 0 THEN
+		              w.goods_weight_total
+		             ELSE
+		              #{weightConfig,jdbcType=NUMERIC}
+		           END) weight,
+		       SUM(CASE
+		             WHEN w.goods_volume_total > 0 THEN
+		              w.goods_volume_total
+		             ELSE
+		              #{volumeConfig,jdbcType=NUMERIC}
+		           END) volume,
+		       COUNT(1) vote
+		  FROM ecs.mv_pkp_t_srv_waybill w
+		 INNER JOIN bse.t_bas_billinggroup_transfer t
+		    ON t.billinggroup_code = w.create_org_code
+		   AND t.transfer_center_code = #{destDeptCode,jdbcType=VARCHAR}
+		   AND t.active = 'Y'
+		 INNER JOIN bse.t_bas_org o
+		    ON w.receive_org_code = o.code
+		   AND o.active = 'Y'
+		 WHERE w.pickup_centralized = 'Y'
+		   AND w.active = 'Y'
+		   AND w.bill_time >= SYSDATE - 1 /*业务默认集中接货开单后一天一定卸车*/
+		   AND NOT EXISTS (SELECT 1
+		          FROM pkp.t_srv_stay_handover h
+		         INNER JOIN pkp.t_srv_stay_handoverdetail hd
+		            ON hd.t_srv_stay_handover_id = h.id
+		         WHERE hd.waybill_no = w.waybill_no
+		           AND h.handover_type = 'RECEIVE'
+		           AND h.assign_state IN ('UNLOADING','UNLOADED'))
+		 GROUP BY o.name, w.product_code
+		 ) t
+		 GROUP BY t.orig_dept_name ) kk group by kk.origDeptName 
+	</select>
+
+	<!-- 1:上一外场营业部库存；货物流a(营业部)->b(外场)->c(本外场)，库存在a -->
+	<!-- 2:上一外场营业部在途；货物流a(营业部)->b(外场)->c(本外场)，a到b在途 -->
+	<select id="findPreSalesDeptNoArrived"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.CargoArrivedQcDto"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.dto.CargoArrivedDto">
+		select origDeptName,#{destDeptName,jdbcType=VARCHAR} destDeptName,sum(weightTotal) weightTotal,sum(volumeTotal) volumeTotal,sum(voteTotal) voteTotal,sum(weightFlf) weightFlf,
+           sum(volumeFlf) volumeFlf,sum(voteFlf) voteFlf,sum(weightFsf) weightFsf,sum(volumeFsf) volumeFsf,sum(voteFsf) voteFsf,sum(weightExp) weightExp,sum(volumeExp) volumeExp,
+          sum(voteExp) voteExp from(
+		<include refid="sql_select_caluse"/>
+		FROM (
+		SELECT #{preDeptName,jdbcType=VARCHAR} orig_dept_name,
+		       tmp.product_code product_code,
+		       SUM(tmp.stock_goods_qty) qty,
+		       SUM(tmp.stock_goods_qty / tmp.goods_qty_total * tmp.goods_weight_total) weight,
+		       SUM(tmp.stock_goods_qty / tmp.goods_qty_total * tmp.goods_volume_total) volume,
+		       COUNT(1) vote
+		  FROM (SELECT /*d.name orig_dept_name,*/
+		               MAX(w.product_code) product_code,
+		               MAX(w.goods_qty_total) goods_qty_total,
+		               MAX(w.goods_weight_total) goods_weight_total,
+		               MAX(w.goods_volume_total) goods_volume_total,
+		               MAX(s.stock_goods_qty) stock_goods_qty
+		          FROM tfr.t_opt_waybill_stock s
+		         INNER JOIN pkp.t_srv_waybill w
+		            ON w.waybill_no = s.waybill_no
+		           AND w.active = 'Y'
+		         INNER JOIN bse.t_bas_sales_department d
+		            ON d.code = s.org_code
+		           AND d.active = 'Y'
+		         INNER JOIN tfr.t_opt_path_detail pd
+		            ON pd.orig_org_code = s.next_org_code
+		           AND pd.objective_org_code = #{destDeptCode,jdbcType=VARCHAR}
+		           AND pd.waybill_no = s.waybill_no
+		         WHERE s.next_org_code = #{preDeptCode,jdbcType=VARCHAR}
+		         GROUP BY w.waybill_no, d.name) tmp
+		 GROUP BY /*tmp.orig_dept_name,*/ tmp.product_code
+		 UNION ALL
+		 SELECT #{preDeptName,jdbcType=VARCHAR} orig_dept_name,
+		       tmp.product_code product_code,
+		       SUM(tmp.handover_goods_qty) qty,
+		       SUM(tmp.handover_weight) weight,
+		       SUM(tmp.handover_volume) volume,
+		       COUNT(1) vote
+		  FROM (SELECT /*MAX(h.orig_org_name) orig_dept_name,*/
+		               MAX(hd.transport_type_code) product_code,
+		               MAX(hd.handover_goods_qty) handover_goods_qty,
+		               MAX(hd.handover_weight) handover_weight,
+		               MAX(hd.handover_volume) handover_volume
+		          FROM tfr.t_opt_handoverbill h
+		         INNER JOIN tfr.t_opt_handoverbill_detail hd
+		            ON hd.handover_no = h.handover_no
+		         INNER JOIN bse.t_bas_sales_department d
+		            ON d.code = h.orig_org_code
+		           AND d.active = 'Y'
+		         INNER JOIN tfr.t_opt_path_detail pd
+		            ON pd.orig_org_code = h.dest_org_code
+		           AND pd.objective_org_code = #{destDeptCode,jdbcType=VARCHAR}
+		           AND pd.waybill_no = hd.waybill_no
+		         WHERE h.dest_org_code = #{preDeptCode,jdbcType=VARCHAR}
+		           AND h.handoverbill_state IN (20, 30)
+		           AND h.create_time >= SYSDATE - 1 /*业务默认交接单创建一天后短途一定到达，剔除不做到达的情况*/
+		         GROUP BY h.handover_no, hd.waybill_no) tmp
+		 GROUP BY /*tmp.orig_dept_name,*/ tmp.product_code
+		 ) t
+		 GROUP BY t.orig_dept_name union all
+		 <include refid="sql_select_caluse"/>
+		FROM (
+		SELECT #{preDeptName,jdbcType=VARCHAR} orig_dept_name,
+		       tmp.product_code product_code,
+		       SUM(tmp.stock_goods_qty) qty,
+		       SUM(tmp.stock_goods_qty / tmp.goods_qty_total * tmp.goods_weight_total) weight,
+		       SUM(tmp.stock_goods_qty / tmp.goods_qty_total * tmp.goods_volume_total) volume,
+		       COUNT(1) vote
+		  FROM (SELECT /*d.name orig_dept_name,*/
+		               MAX(w.product_code) product_code,
+		               MAX(w.goods_qty_total) goods_qty_total,
+		               MAX(w.goods_weight_total) goods_weight_total,
+		               MAX(w.goods_volume_total) goods_volume_total,
+		               MAX(s.stock_goods_qty) stock_goods_qty
+		          FROM ecs.v_tfr_t_opt_waybill_stock s
+		         INNER JOIN ecs.mv_pkp_t_srv_waybill w
+		            ON w.waybill_no = s.waybill_no
+		           AND w.active = 'Y'
+		         INNER JOIN bse.t_bas_sales_department d
+		            ON d.code = s.org_code
+		           AND d.active = 'Y'
+		         INNER JOIN ecs.mv_tfr_t_opt_path_detail pd
+		            ON pd.orig_org_code = s.next_org_code
+		           AND pd.objective_org_code = #{destDeptCode,jdbcType=VARCHAR}
+		           AND pd.waybill_no = s.waybill_no
+		         WHERE s.next_org_code = #{preDeptCode,jdbcType=VARCHAR}
+		         GROUP BY w.waybill_no, d.name) tmp
+		 GROUP BY /*tmp.orig_dept_name,*/ tmp.product_code
+		 UNION ALL
+		 SELECT #{preDeptName,jdbcType=VARCHAR} orig_dept_name,
+		       tmp.product_code product_code,
+		       SUM(tmp.handover_goods_qty) qty,
+		       SUM(tmp.handover_weight) weight,
+		       SUM(tmp.handover_volume) volume,
+		       COUNT(1) vote
+		  FROM (SELECT /*MAX(h.orig_org_name) orig_dept_name,*/
+		               MAX(hd.transport_type_code) product_code,
+		               MAX(hd.handover_goods_qty) handover_goods_qty,
+		               MAX(hd.handover_weight) handover_weight,
+		               MAX(hd.handover_volume) handover_volume
+		          FROM ecs.v_tfr_t_opt_handoverbill h
+		         INNER JOIN ecs.mv_tfr_t_opt_handoverbil_detai hd
+		            ON hd.handover_no = h.handover_no
+		         INNER JOIN bse.t_bas_sales_department d
+		            ON d.code = h.orig_org_code
+		           AND d.active = 'Y'
+		         INNER JOIN ecs.mv_tfr_t_opt_path_detail pd
+		            ON pd.orig_org_code = h.dest_org_code
+		           AND pd.objective_org_code = #{destDeptCode,jdbcType=VARCHAR}
+		           AND pd.waybill_no = hd.waybill_no
+		         WHERE h.dest_org_code = #{preDeptCode,jdbcType=VARCHAR}
+		           AND h.handoverbill_state IN (20, 30)
+		           AND h.create_time >= SYSDATE - 1 /*业务默认交接单创建一天后短途一定到达，剔除不做到达的情况*/
+		         GROUP BY h.handover_no, hd.waybill_no) tmp
+		 GROUP BY /*tmp.orig_dept_name,*/ tmp.product_code
+		 ) t
+		 GROUP BY t.orig_dept_name ) bb group by bb.origDeptName
+	</select>
+
+	<!-- 上一外场集中接货未未到(未卸车)；货物量a(外场)->b(本外场)，a集中接货未到(未卸车) -->
+	<select id="findPrePickupNoArrived"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.CargoArrivedQcDto"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.dto.CargoArrivedDto">
+		select origDeptName,#{destDeptName,jdbcType=VARCHAR} destDeptName,sum(weightTotal) weightTotal,sum(volumeTotal) volumeTotal,sum(voteTotal) voteTotal,sum(weightFlf) weightFlf,
+             sum(volumeFlf) volumeFlf,sum(voteFlf) voteFlf,sum(weightFsf) weightFsf,sum(volumeFsf) volumeFsf,sum(voteFsf) voteFsf,sum(weightExp) weightExp,sum(volumeExp) volumeExp,
+               sum(voteExp) voteExp from(
+		<include refid="sql_select_caluse"/>
+		FROM (
+		SELECT #{preDeptName,jdbcType=VARCHAR} orig_dept_name,
+		       w.product_code product_code,
+		       SUM(w.goods_qty_total) qty,
+		       SUM(CASE
+		             WHEN w.goods_weight_total > 0 THEN
+		              w.goods_weight_total
+		             ELSE
+		              #{weightConfig,jdbcType=NUMERIC}
+		           END) weight,
+		       SUM(CASE
+		             WHEN w.goods_volume_total > 0 THEN
+		              w.goods_volume_total
+		             ELSE
+		              #{volumeConfig,jdbcType=NUMERIC}
+		           END) volume,
+		        COUNT(1) vote
+		  FROM pkp.t_srv_waybill w
+		 INNER JOIN bse.t_bas_billinggroup_transfer t /*关联开单组外场关系，获取开单组所属外场*/
+		    ON t.billinggroup_code = w.create_org_code
+		   AND t.transfer_center_code = #{preDeptCode,jdbcType=VARCHAR}
+		   AND t.active = 'Y'
+		 INNER JOIN tfr.t_opt_path_detail pd
+		    ON pd.orig_org_code = t.transfer_center_code
+		   AND pd.objective_org_code = #{destDeptCode,jdbcType=VARCHAR}
+		   AND pd.waybill_no = w.waybill_no
+		 /*INNER JOIN bse.t_bas_org o
+		    ON w.receive_org_code = o.code
+		   AND o.active = 'Y'*/
+		 WHERE w.pickup_centralized = 'Y'
+		   AND w.active = 'Y'
+		   AND w.bill_time >= SYSDATE - 1  /*业务默认集中接货开单后一天一定卸车*/
+		   AND NOT EXISTS (SELECT 1
+		          FROM pkp.t_srv_stay_handover h
+		         INNER JOIN pkp.t_srv_stay_handoverdetail hd
+		            ON hd.t_srv_stay_handover_id = h.id
+		         WHERE hd.waybill_no = w.waybill_no
+		           AND h.handover_type = 'RECEIVE'
+		           AND h.assign_state IN ('UNLOADING','UNLOADED'))
+		 GROUP BY /*o.name,*/ w.product_code
+		 ) t
+		 GROUP BY t.orig_dept_name union all
+		 <include refid="sql_select_caluse"/>
+    FROM (
+    SELECT #{preDeptName,jdbcType=VARCHAR} orig_dept_name,
+           w.product_code product_code,
+           SUM(w.goods_qty_total) qty,
+           SUM(CASE
+                 WHEN w.goods_weight_total > 0 THEN
+                  w.goods_weight_total
+                 ELSE
+                  #{weightConfig,jdbcType=NUMERIC}
+               END) weight,
+           SUM(CASE
+                 WHEN w.goods_volume_total > 0 THEN
+                  w.goods_volume_total
+                 ELSE
+                  #{volumeConfig,jdbcType=NUMERIC}
+               END) volume,
+            COUNT(1) vote
+      FROM ecs.mv_pkp_t_srv_waybill w
+     INNER JOIN bse.t_bas_billinggroup_transfer t /*关联开单组外场关系，获取开单组所属外场*/
+        ON t.billinggroup_code = w.create_org_code
+       AND t.transfer_center_code = #{preDeptCode,jdbcType=VARCHAR}
+       AND t.active = 'Y'
+     INNER JOIN ecs.mv_tfr_t_opt_path_detail pd
+        ON pd.orig_org_code = t.transfer_center_code
+       AND pd.objective_org_code = #{destDeptCode,jdbcType=VARCHAR}
+       AND pd.waybill_no = w.waybill_no
+     /*INNER JOIN bse.t_bas_org o
+        ON w.receive_org_code = o.code
+       AND o.active = 'Y'*/
+     WHERE w.pickup_centralized = 'Y'
+       AND w.active = 'Y'
+       AND w.bill_time >= SYSDATE - 1  /*业务默认集中接货开单后一天一定卸车*/
+       AND NOT EXISTS (SELECT 1
+              FROM pkp.t_srv_stay_handover h
+             INNER JOIN pkp.t_srv_stay_handoverdetail hd
+                ON hd.t_srv_stay_handover_id = h.id
+             WHERE hd.waybill_no = w.waybill_no
+               AND h.handover_type = 'RECEIVE'
+               AND h.assign_state IN ('UNLOADING','UNLOADED'))
+     GROUP BY /*o.name,*/ w.product_code
+     ) t
+     GROUP BY t.orig_dept_name ) cc group by cc.origDeptName
+	</select>
+
+	<!-- 查询本外场的相关外场 -->
+	<select id="findRelatedTfrCtr" parameterType="java.lang.String"
+		resultType="java.util.Map">
+		SELECT c.org_code CODE, c.name NAME
+		  FROM bse.t_bas_short_field_map t
+		 INNER JOIN bse.t_bas_transfer_center c
+		    ON c.org_code = t.short_field_code
+		   AND c.active = 'Y'
+		 WHERE t.active = 'Y'
+		   AND t.code = #{parameter,jdbcType=VARCHAR}
+	</select>
+
+</mapper>

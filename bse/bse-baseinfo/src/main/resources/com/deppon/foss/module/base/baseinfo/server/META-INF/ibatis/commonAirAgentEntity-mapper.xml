@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.AirAgentEntity">
+	<resultMap id="airAgentResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.AirAgentEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="AGENT_NAME" property="agentName" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="VARCHAR" />
+		<result column="AGENT_CODE" property="agentCode" jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="queryAirAgentWhere">
+		<where>
+			<if test="active != null and active != ''">
+				AND ACTIVE = #{active,jdbcType=CHAR}
+			</if> 
+			<if test="agentName != null and agentName != ''">   		
+				 AND (
+					     AGENT_NAME like CONCAT(CONCAT('%',#{agentName,jdbcType=VARCHAR}),'%') 
+					 OR
+					 	 AGENT_CODE LIKE  CONCAT(CONCAT('%',#{agentName,jdbcType=VARCHAR}),'%')
+					 )
+		</if>
+		</where>
+	</sql>
+	<sql id="queryBusinessAgentWhere">
+		<where>
+			 <if test="active != null and active != ''">
+				AND ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="agentName != null and agentName != ''">
+    		 AND (
+					     AGENT_COMPANY_NAME like CONCAT(CONCAT('%',#{agentName,jdbcType=VARCHAR}),'%') 
+					 OR
+					 	 AGENT_COMPANY_CODE LIKE  CONCAT(CONCAT('%',#{agentName,jdbcType=VARCHAR}),'%')
+					 )
+		</if>
+			AND AGENT_COMPANY_SORT = 'KY'
+			
+		</where>
+	</sql>
+	<select id="queryAllAgentListBySelectiveCondition"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AirAgentEntity" resultMap="airAgentResultMap"> 
+	  SELECT/** 综合:查询 代理人**/ 
+	       DISTINCT (AGENT_CODE) AS AGENT_CODE,		
+	       AGENT_NAME,	     
+	       ACTIVE
+  		FROM BSE.T_BAS_AIRLINES_AGENT		 	
+    	<include refid="queryAirAgentWhere" />
+	UNION ALL 
+	  SELECT  
+	  	      AGENT_COMPANY_CODE AS AGENT_CODE,
+	  		  AGENT_COMPANY_NAME AS AGENT_NAME,
+	  		  ACTIVE
+ 		FROM BSE.T_BAS_BUSINESS_PARTNER  
+   		<include refid="queryBusinessAgentWhere" />
+	</select> 
+	
+	<select id="queryAllAgentRecordCountByAgentname" resultType="java.lang.Long" 
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AirAgentEntity">
+		select count(*) from(	
+			SELECT/** 综合:查询 代理人**/ 
+			DISTINCT (AGENT_CODE) AS AGENT_CODE,	
+		        AGENT_NAME,
+	       		ACTIVE
+	  		FROM BSE.T_BAS_AIRLINES_AGENT		 	
+	    	<include refid="queryAirAgentWhere" />
+			UNION ALL 
+			  SELECT  
+                     AGENT_COMPANY_CODE AS AGENT_CODE,	
+			  		 AGENT_COMPANY_NAME AS AGENT_NAME,	  		 		 
+	  		  		 ACTIVE
+		 		FROM BSE.T_BAS_BUSINESS_PARTNER  
+		     <include refid="queryBusinessAgentWhere" />
+			)
+	</select> 
+	
+</mapper>

@@ -1,0 +1,648 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!--代收货款综合查询Query -->
+<mapper namespace="foss.stl.CODCompositeQueryDao">
+	<!-- 返回结果定义 -->
+	<resultMap id="billPaidResultMap"
+		type="com.deppon.foss.module.settlement.consumer.api.shared.dto.CODCompositeGridDto">
+		<result column="ID" property="id" jdbcType="VARCHAR" />
+		<!-- 运单单 -->
+		<result column="waybill_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<!-- 运输性质 -->
+		<result column="PRODUCT_CODE" property="productCode" jdbcType="VARCHAR" />
+		<!-- 应付组织名称 -->
+		<result column="PAYABLE_ORG_NAME" property="payableOrgName"
+			jdbcType="VARCHAR" />
+		<!-- 应付组织编码 -->
+		<result column="PAYABLE_ORG_Code" property="payableOrgCode"
+			jdbcType="VARCHAR" />
+		<!-- 开户银行 -->
+		<result column="BANK" property="bank" jdbcType="VARCHAR" />
+		<!-- 支行名称 -->
+		<result column="bankBranchName" property="bankBranchName" jdbcType="VARCHAR" />
+		<!-- 发货人编码 -->
+		<result column="CONSIGNEE" property="consignee" jdbcType="VARCHAR" />
+		<!-- 收款人编码 -->
+		<result column="PAYEE_CODE" property="payeeCode" jdbcType="VARCHAR" />
+		<!-- 收货人姓名 -->
+		<result column="PAYEE_NAME" property="payeeName" jdbcType="VARCHAR" />
+		<!-- 收款人帐号 -->
+		<result column="PAYEE_ACCOUNT" property="payeeAccount"
+			jdbcType="VARCHAR" />
+		<!-- 业务日期 -->
+		<result column="BUSINESS_DATE" property="businessDate"
+			jdbcType="TIMESTAMP" />
+		<!-- 签收日期 -->
+		<result column="sign_date" property="signDate" jdbcType="TIMESTAMP" />
+		<!-- 退款批次号 -->
+		<result column="BATCH_NUMBER" property="batchNumber" jdbcType="VARCHAR" />
+		<!-- 代收货款金额 -->
+		<result column="COD_AMOUNT" property="codAmount" jdbcType="DECIMAL" />
+		<!-- 应付金额 -->
+		<result column="PAYEE_AMOUNT" property="payeeAmount" jdbcType="DECIMAL" />
+		<!-- 已经核销金额 -->
+		<result column="VERIFY_AMOUNT" property="verifyAmount" jdbcType="DECIMAL" />
+		<!-- 代收货款类别 -->
+		<result column="COD_TYPE" property="codType" jdbcType="VARCHAR" />
+		<!-- 付款申请时间 -->
+		<result column="tusyorg_rfd_apptime" property="tusyorgRfdApptime"
+			jdbcType="TIMESTAMP" />
+			
+		<!-- 退款成功时间 -->
+		<result column="REFUND_SUCCESS_TIME" property="refundSuccessTime"
+			jdbcType="TIMESTAMP" />
+			
+		<!-- 退款成功时间 -->
+		<result column="remittance_fail_notes" property="remittanceFailNotes"
+			jdbcType="VARCHAR" />
+			
+		<!-- 退款状态 -->
+		<result column="STATUS" property="status" jdbcType="VARCHAR" />
+		
+		<!-- 汇款导出人 -->
+		<result column="COD_EXPORT_NAME" property="codExportName" jdbcType="VARCHAR" />
+			
+		<!-- 汇款导出时间  -->
+		<result column="COD_EXPORT_TIME" property="codExportTime"
+			jdbcType="TIMESTAMP" />
+
+         <!-- 代收货款记录是否有效 -->
+		<result column="ACTIVE" property="active" jdbcType="VARCHAR" />
+		
+		 <!-- 代收批次号-->
+		<result column="batch_no" property="batchNo" jdbcType="VARCHAR" />
+		
+		 <!-- 代收批次状态：已发送、银企审核通过、银企审核不通过-->
+		<result column="cod_batch_status" property="codBatchStatus" jdbcType="VARCHAR" />
+		
+		<!-- 银企退回失败原因 -->
+		<result column="fail_notes" property="failNotes" jdbcType="VARCHAR" />
+		
+		<!-- 收银确认时间 -->
+		<result column="cash_confirm_time" property="cashConfirmTime"
+			jdbcType="TIMESTAMP" />
+			
+		<!-- 合并编号 -->
+		<result column="merge_code" property="mergeCode" jdbcType="VARCHAR" />	
+		
+		<!-- 代收货款手续费 -->
+		<result column="cod_fee" property="codFee" jdbcType="DECIMAL" />
+	</resultMap>
+
+	<!-- 共用查询语句 -->
+	<sql id="billPaidCOD_Column_List">
+		cod.id,
+		cod.WAYBILL_NO,
+		payable.PRODUCT_CODE,
+		cod.PAYABLE_ORG_Code,
+		cod.PAYABLE_ORG_NAME,
+		cod.BANK_HQ_NAME AS BANK,
+		cod.bank_Branch_Name AS bankBranchName,
+		cod.PAYEE_NAME,
+		payable.customer_name as CONSIGNEE,
+		cod.ACCOUNT_NO AS PAYEE_ACCOUNT,
+		cod.BUSINESS_DATE,
+		cod.BATCH_NUMBER,
+		PAYABLE.AMOUNT/ 100 as COD_AMOUNT,<!-- 采用应付单金额  -->
+		PAYABLE.UNVERIFY_AMOUNT/100 as PAYEE_AMOUNT, <!-- 应付金额为：代收货款的未核销金额  -->
+		WRF.AMOUNT/100 VERIFY_AMOUNT,<!-- 关联核销单表，查询应收冲代收货款应付的金额之和   -->
+		(select w.cod_fee/100 from pkp.t_srv_waybill w where w.waybill_no = payable.WAYBILL_NO and w.active = 'Y') cod_fee,
+		cod.COD_TYPE,
+		cod.remittance_fail_notes,
+		cod.tusyorg_rfd_apptime,
+		cod.REFUND_SUCCESS_TIME,
+		payable.sign_date,
+		cod.STATUS,
+		COD.COD_EXPORT_NAME,
+		COD.COD_EXPORT_TIME,
+		payable.ACTIVE,
+		cod.BATCH_NUMBER as batch_no,
+		batch.STATUS as cod_batch_status,
+		batch.fail_notes,
+		COD.merge_code,
+		(case rec.unverify_amount
+		   when 0 then
+		    (case
+		      when (select count(1)
+		              from stl.t_stl_bill_repayment rpt
+		             where rpt.waybill_no = cod.waybill_no
+		               and rpt.active = 'Y'
+		               and rpt.source_bill_type = 'COD'
+		               and rpt.cash_confirm_time is null) > 0
+		      
+		      then
+		       null
+		      else
+		       (select max(rpt.cash_confirm_time)
+		          from stl.t_stl_bill_repayment rpt
+		         where rpt.waybill_no = cod.waybill_no
+		           and rpt.active = 'Y'
+		           and rpt.source_bill_type = 'COD')
+		    end)
+		   else
+		    null
+		 end) as cash_confirm_time
+	</sql>
+
+	<!-- 查询条件表达式 -->
+	<sql id="queryCondition_expression">
+		<!-- 代收货款类型 -->
+		<if test="codType != null and codType != ''">
+			and cod.cod_Type = #{codType,jdbcType=VARCHAR}
+		</if>
+		<!-- 退款状态 -->
+		<if test="status !=  null and status != ''">
+			and cod.status = #{status,jdbcType=VARCHAR}
+		</if>
+		<!-- BUG-19484 增加有效状态 -->
+		<if test="active !=  null and active != ''">
+			and payable.ACTIVE = #{active,jdbcType=VARCHAR}
+			and cod.ACTIVE = #{active,jdbcType=VARCHAR}
+		</if>
+
+		<!-- 应付部门部门  
+		<if test="payableOrgCode != null and payableOrgCode != '' ">
+			and cod.payable_org_code =
+			#{payableOrgCode,jdbcType=VARCHAR}
+		</if> -->
+		<!-- 加入数据权限  -->
+		<if test="payableOrgCode != null and payableOrgCode != '' ">
+		    <if test="userCode != null and userCode != ''">
+			   and exists (select 1
+		         from bse.mv_bas_user_org_auth_view uov
+		        where uov.emp_code = #{userCode}
+		          and uov.Org_Code = payable.payable_org_code
+		          <if test = "currentOrgCode != payableOrgCode">
+		          and uov.Org_Code = #{payableOrgCode,jdbcType=VARCHAR}
+		          </if>
+		          
+		          )
+		    </if>
+	    </if> 
+		
+		<!-- 发货客户 -->
+		<if test="consignee != null and consignee != '' ">
+		<![CDATA[
+			and payable.customer_code = #{consignee,jdbcType=VARCHAR}
+		]]>
+		</if>
+		<!-- 代收货款金额 -->
+		<if test="inceptCodAmount >= 0 and endCodAmount > 0 ">
+		<![CDATA[
+			and cod.COD_AMOUNT >= #{inceptCodAmount,jdbcType=DECIMAL} * 100
+			and
+			cod.COD_AMOUNT <= #{endCodAmount,jdbcType=DECIMAL} * 100
+			]]>
+		</if>
+		<!-- 开户银行 
+		<if test="bank != null and bank != '' ">
+			and cod.BANK_HQ_NAME = #{bank,jdbcType=VARCHAR}
+		</if> -->
+		
+		<!-- 开户银行 -->
+		<if test="bankList != null">
+	    and cod.bank_hq_name in
+		   <foreach collection="bankList" item="bank" open="(" close=")" separator=",">
+		   	#{bank,jdbcType=VARCHAR}
+		   </foreach>
+	    </if>
+			 
+		<!-- 运输性质 -->
+		<if test="productCodeList != null">
+	    and payable.PRODUCT_CODE in
+		   <foreach collection="productCodeList" item="productCode" open="(" close=")" separator=",">
+		   	#{productCode,jdbcType=VARCHAR}
+		   </foreach>
+	    </if>	   
+			   
+		<!-- 收款人 -->
+		<if test="payeeName != null and payeeName != ''">
+			and cod.payee_name = #{payeeName,jdbcType=VARCHAR}
+		</if>
+		<!-- 退款批次号 -->
+		<if test="batchNumber != null and batchNumber != '' ">
+			and cod.batch_Number = #{batchNumber,jdbcType=VARCHAR}
+		</if>
+		<!-- 退款路径 -->
+		<if test="refundPath !=  null and refundPath != '' ">
+			and cod.refund_path = #{refundPath,jdbcType=VARCHAR}
+		</if>
+		
+		<!-- 指定应付单类型为：代收货款  -->
+		and payable.BILL_TYPE = #{payableType,jdbcType=VARCHAR}
+	</sql>
+
+	<!-- 关联应收单 -->
+	<sql id="leftJoinRecv">
+	  left join stl.t_stl_bill_receivable rec
+    	 on payable.waybill_no = rec.waybill_no
+     	 and rec.bill_type in ('CR', 'AAC', 'DLC')
+   	 	 and rec.active = 'Y'
+   </sql>
+	
+	<!-- 按批次号查询 -->
+	<select id="queryCompositeByBatchNo"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CODCompositeQueryDto"
+		resultMap="billPaidResultMap">
+		select/*结算-客户管理- 按按支付日期查询总行数 分页查询  */
+		<include refid="billPaidCOD_Column_List" />
+		from STL.T_STL_BILL_PAYABLE payable
+		
+		<include refid="leftJoinRecv" />
+		
+		<!-- 连接应付单 -->
+		inner join  STL.T_STL_COD cod on payable.waybill_No =
+		cod.waybill_No
+		
+		<!-- 关联批次表查状态   -->
+		left join stl.t_stl_cod_batch batch on cod.batch_number = batch.batch_no
+		
+		<!-- 关联核销单，查询冲应收金额   -->
+		LEFT JOIN (SELECT SUM(WF.AMOUNT) AMOUNT, WF.END_NO
+							 FROM STL.T_STL_BILL_WRITEOFF WF
+							WHERE WF.WRITEOFF_TYPE = #{writeoffType}
+							GROUP BY WF.END_NO) WRF
+		ON WRF.END_NO = payable.PAYABLE_NO
+		
+		
+		where
+		PAYABLE.WAYBILL_ID=COD.WAYBILL_ID
+			 
+		<!--添加查询条件 -->
+		<include refid="queryCondition_expression" />
+	</select>
+	
+	<!-- 按运单单号进行查询（分页查询） -->
+	<select id="queryCODByWaybillNo"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CODCompositeQueryDto"
+		resultMap="billPaidResultMap">
+		select/*结算-客户管理-按运单单号进行查询（分页查询） */
+		<include refid="billPaidCOD_Column_List" />
+		from  stl.T_STL_BILL_PAYABLE payable
+		
+		<include refid="leftJoinRecv" />
+		 
+		<!-- 连接代收货款   -->
+		inner join STL.T_STL_COD  cod on payable.waybill_No =cod.waybill_No  
+		
+		<!-- 关联批次表查状态   -->
+		left join stl.t_stl_cod_batch batch on cod.batch_number = batch.batch_no
+		
+		<!-- 关联核销单，查询冲应收金额   -->
+		LEFT JOIN (SELECT SUM(WF.AMOUNT) AMOUNT, WF.END_NO
+							 FROM STL.T_STL_BILL_WRITEOFF WF
+							WHERE WF.WRITEOFF_TYPE = #{writeoffType}
+							GROUP BY WF.END_NO) WRF
+		ON WRF.END_NO = payable.PAYABLE_NO
+		where
+		<!-- 按代收货款记录的运单单号查询 -->
+		cod.WAYBILL_NO in
+		<foreach collection="waybillNos" index="index" item="item"
+			open="(" close=")" separator=",">
+			#{item,jdbcType=VARCHAR}
+		</foreach>
+		AND PAYABLE.WAYBILL_ID=COD.WAYBILL_ID
+		and payable.BILL_TYPE = #{payableType,jdbcType=VARCHAR}
+
+		
+		<!-- BUG-19484 增加有效状态 -->
+		<if test="active !=  null and active != ''">
+			and payable.ACTIVE = #{active,jdbcType=VARCHAR}
+			and cod.ACTIVE = #{active,jdbcType=VARCHAR}
+		</if>
+		
+	    <!-- 加入数据权限 -->
+	    <if test="userCode != null and userCode != ''">
+		   and exists (select 1
+	         from bse.mv_bas_user_org_auth_view uov
+	        where uov.emp_code = #{userCode}
+	          and uov.Org_Code = cod.payable_org_code)
+	    </if>
+	</select>
+	
+	<!-- 按合并编号进行查询（分页查询） -->
+	<select id="queryCODByMergeCode"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CODCompositeQueryDto"
+		resultMap="billPaidResultMap">
+		select/*结算-客户管理-按运单单号进行查询（分页查询） */
+		<include refid="billPaidCOD_Column_List" />
+		from  stl.T_STL_BILL_PAYABLE payable
+		
+		<include refid="leftJoinRecv" />
+		 
+		<!-- 连接代收货款   -->
+		inner join STL.T_STL_COD  cod on payable.waybill_No =cod.waybill_No  
+		
+		<!-- 关联批次表查状态   -->
+		left join stl.t_stl_cod_batch batch on cod.batch_number = batch.batch_no
+		
+		<!-- 关联核销单，查询冲应收金额   -->
+		LEFT JOIN (SELECT SUM(WF.AMOUNT) AMOUNT, WF.END_NO
+							 FROM STL.T_STL_BILL_WRITEOFF WF
+							WHERE WF.WRITEOFF_TYPE = #{writeoffType}
+							GROUP BY WF.END_NO) WRF
+		ON WRF.END_NO = payable.PAYABLE_NO
+		where
+		<!-- 按代收货款记录的运单单号查询 -->
+		cod.merge_code = #{mergeCode,jdbcType=VARCHAR}
+		
+		AND PAYABLE.WAYBILL_ID=COD.WAYBILL_ID
+		and payable.BILL_TYPE = #{payableType,jdbcType=VARCHAR}
+
+		
+		<!-- BUG-19484 增加有效状态 -->
+		<if test="active !=  null and active != ''">
+			and payable.ACTIVE = #{active,jdbcType=VARCHAR}
+			and cod.ACTIVE = #{active,jdbcType=VARCHAR}
+		</if>
+		
+	    <!-- 加入数据权限 -->
+	    <if test="userCode != null and userCode != ''">
+		   and exists (select 1
+	         from bse.mv_bas_user_org_auth_view uov
+	        where uov.emp_code = #{userCode}
+	          and uov.Org_Code = cod.payable_org_code)
+	    </if>
+	</select>
+
+	<!-- 按业务日期查询总行数 （获得总行数） -->
+	<select id="queryTotalRowsByBizDate"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CODCompositeQueryDto"
+		resultType="int">
+		select/*结算-客户管理-按业务日期查询总行数 （获得总行数） */
+		count (1) as counts
+		from
+		 stl.T_STL_BILL_PAYABLE payable
+		<!-- 连接代收货款记录  -->
+		inner join  STL.T_STL_COD cod on payable.waybill_No =cod.waybill_No 
+		
+		<!-- 关联核销单，查询冲应收金额   
+		LEFT JOIN (SELECT SUM(WF.AMOUNT) AMOUNT, WF.END_NO
+							 FROM STL.T_STL_BILL_WRITEOFF WF
+							WHERE WF.WRITEOFF_TYPE = #{writeoffType}
+							GROUP BY WF.END_NO) WRF
+		ON WRF.END_NO = payable.PAYABLE_NO -->
+		where
+		<!-- 业务日期 -->
+		<![CDATA[
+		cod.BUSINESS_DATE >= #{inceptBizDate,jdbcType=DATE}
+		and cod.BUSINESS_DATE < #{endBizDate,jdbcType=DATE}
+		]]>
+		AND PAYABLE.WAYBILL_ID=COD.WAYBILL_ID
+
+		<!--添加查询条件 -->
+		<include refid="queryCondition_expression" />
+	</select>
+
+	<!-- 按业务日期分页查询 -->
+	<select id="queryByBizDate"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CODCompositeQueryDto"
+		resultMap="billPaidResultMap">
+		select/*结算-客户管理-按业务日期分页查询 */
+		<include refid="billPaidCOD_Column_List" />
+		from
+		 stl.T_STL_BILL_PAYABLE payable
+		 
+		 <include refid="leftJoinRecv" />
+		 
+		<!-- 连接应付单 -->
+		inner join STL.T_STL_COD cod  on payable.waybill_No =cod.waybill_No
+		
+		<!-- 关联批次表查状态   -->
+		left join stl.t_stl_cod_batch batch on cod.batch_number = batch.batch_no
+		
+		<!-- 关联核销单，查询冲应收金额   -->
+		LEFT JOIN (SELECT SUM(WF.AMOUNT) AMOUNT, WF.END_NO
+							 FROM STL.T_STL_BILL_WRITEOFF WF
+							WHERE WF.WRITEOFF_TYPE = #{writeoffType}
+							GROUP BY WF.END_NO) WRF
+		ON WRF.END_NO = payable.PAYABLE_NO
+		where
+		<!-- 业务日期 -->
+		<![CDATA[
+		cod.BUSINESS_DATE >= #{inceptBizDate,jdbcType=DATE}
+			and cod.BUSINESS_DATE < #{endBizDate,jdbcType=DATE}
+		]]>
+		AND PAYABLE.WAYBILL_ID=COD.WAYBILL_ID
+		
+		<!--添加查询条件 -->
+		<include refid="queryCondition_expression" />
+	</select>
+
+
+	<!-- 按支付日期查询总行数 （获得总行数） -->
+	<select id="queryTotalRowsByPayDate"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CODCompositeQueryDto"
+		resultType="int">
+		select/*结算-客户管理-按支付日期查询总行数 （获得总行数）*/
+		count (1) as counts
+		from
+		STL.T_STL_BILL_PAYABLE payable
+		
+		<!-- 连接应付单 -->
+		inner join   STL.T_STL_COD cod on payable.waybill_No =cod.waybill_No
+		
+		<!-- 关联核销单，查询冲应收金额   
+		LEFT JOIN (SELECT SUM(WF.AMOUNT) AMOUNT, WF.END_NO
+							 FROM STL.T_STL_BILL_WRITEOFF WF
+							WHERE WF.WRITEOFF_TYPE = #{writeoffType}
+							GROUP BY WF.END_NO) WRF
+		ON WRF.END_NO = payable.PAYABLE_NO-->
+		where
+		<!--付款申请时间(或付款导出时间) -->
+		<![CDATA[
+		((cod.tusyorg_rfd_apptime >= #{inceptPaymentDate,jdbcType=DATE}
+			and cod.tusyorg_rfd_apptime < #{endPaymentDate,jdbcType=DATE}
+		)
+		or
+		(
+			cod.COD_EXPORT_TIME >= #{inceptPaymentDate,jdbcType=DATE}
+			and cod.COD_EXPORT_TIME < #{endPaymentDate,jdbcType=DATE}
+		))
+		]]>
+		
+		AND PAYABLE.WAYBILL_ID=COD.WAYBILL_ID
+			 
+		<!--添加查询条件 -->
+		<include refid="queryCondition_expression" />
+	</select>
+
+	<!-- 按按支付日期查询总行数 分页查询 -->
+	<select id="queryByPayDate"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CODCompositeQueryDto"
+		resultMap="billPaidResultMap">
+		select/*结算-客户管理- 按按支付日期查询总行数 分页查询  */
+		<include refid="billPaidCOD_Column_List" />
+		from STL.T_STL_BILL_PAYABLE payable
+		
+		<include refid="leftJoinRecv" />
+		
+		<!-- 连接应付单 -->
+		inner join  STL.T_STL_COD cod on payable.waybill_No =
+		cod.waybill_No
+		
+		<!-- 关联批次表查状态   -->
+		left join stl.t_stl_cod_batch batch on cod.batch_number = batch.batch_no
+		
+		<!-- 关联核销单，查询冲应收金额   -->
+		LEFT JOIN (SELECT SUM(WF.AMOUNT) AMOUNT, WF.END_NO
+							 FROM STL.T_STL_BILL_WRITEOFF WF
+							WHERE WF.WRITEOFF_TYPE = #{writeoffType}
+							GROUP BY WF.END_NO) WRF
+		ON WRF.END_NO = payable.PAYABLE_NO
+		
+		
+		where
+		<!--付款申请时间(或付款导出时间) -->
+		<![CDATA[		
+		((cod.tusyorg_rfd_apptime >= #{inceptPaymentDate,jdbcType=DATE}
+			and cod.tusyorg_rfd_apptime < #{endPaymentDate,jdbcType=DATE}
+		)
+		or
+		(
+			cod.COD_EXPORT_TIME >= #{inceptPaymentDate,jdbcType=DATE}
+			and cod.COD_EXPORT_TIME < #{endPaymentDate,jdbcType=DATE}
+		))
+		]]>
+		
+		AND PAYABLE.WAYBILL_ID=COD.WAYBILL_ID
+			 
+		<!--添加查询条件 -->
+		<include refid="queryCondition_expression" />
+	</select>
+
+
+	<!-- 按签收日期查询总行数 （获得总行数） -->
+	<select id="queryTotalRowsBySignDate"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CODCompositeQueryDto"
+		resultType="int">
+		select/*结算-客户管理-按签收日期查询总行数 （获得总行数） */
+		count (1) as counts
+		from STL.T_STL_BILL_PAYABLE payable
+		
+		<!-- 连接应付单 -->
+		inner join STL.T_STL_COD COD on payable.waybill_No =
+		cod.waybill_No
+		
+		<!-- 关联核销单，查询冲应收金额   
+		LEFT JOIN (SELECT SUM(WF.AMOUNT) AMOUNT, WF.END_NO
+							 FROM STL.T_STL_BILL_WRITEOFF WF
+							WHERE WF.WRITEOFF_TYPE = #{writeoffType}
+							GROUP BY WF.END_NO) WRF
+		ON WRF.END_NO = payable.PAYABLE_NO-->
+		where
+		<!-- 签收日期 -->
+		<![CDATA[	
+		payable.sign_date >= #{inceptSignDate,jdbcType=DATE}
+		and
+		payable.sign_date < #{endSignDate,jdbcType=DATE}
+		]]>
+		
+		AND PAYABLE.WAYBILL_ID=COD.WAYBILL_ID
+		
+		<!--添加查询条件 -->
+		<include refid="queryCondition_expression" />
+	</select>
+
+	<!-- 按按支付日期查询总行数 分页查询 -->
+	<select id="queryBySignDate"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CODCompositeQueryDto"
+		resultMap="billPaidResultMap">
+		select/*结算-客户管理-按按支付日期查询总行数 分页查询 */
+		<include refid="billPaidCOD_Column_List" />
+		FROM STL.T_STL_BILL_PAYABLE PAYABLE
+		
+		<include refid="leftJoinRecv" />
+		
+		<!-- 连接应付单 -->
+		inner join  STL.T_STL_COD cod on payable.waybill_No =
+		cod.waybill_No
+		
+		<!-- 关联批次表查状态   -->
+		left join stl.t_stl_cod_batch batch on cod.batch_number = batch.batch_no
+		
+		<!-- 关联核销单，查询冲应收金额   -->
+		LEFT JOIN (SELECT SUM(WF.AMOUNT) AMOUNT, WF.END_NO
+							 FROM STL.T_STL_BILL_WRITEOFF WF
+							WHERE WF.WRITEOFF_TYPE = #{writeoffType}
+							GROUP BY WF.END_NO) WRF
+		ON WRF.END_NO = payable.PAYABLE_NO
+		where
+		<!-- 签收日期 -->
+		<![CDATA[			
+			payable.sign_date >= #{inceptSignDate,jdbcType=DATE}
+				and
+			payable.sign_date < #{endSignDate,jdbcType=DATE}
+		]]>
+		AND PAYABLE.WAYBILL_ID=COD.WAYBILL_ID
+			 
+		<!--添加查询条件 -->
+		<include refid="queryCondition_expression" />
+	</select>
+
+
+	<!-- 按汇款成功日期查询总行数 （获得总行数） -->
+	<select id="queryTotalRowsByRefundSuccessDate"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CODCompositeQueryDto"
+		resultType="int">
+		select/*结算-客户管理-按汇款成功日期查询总行数 （获得总行数） */
+		count (1) as counts
+		from
+		 stl.T_STL_BILL_PAYABLE payable
+		<!-- 连接代收货款记录  -->
+		inner join  STL.T_STL_COD cod on payable.waybill_No =cod.waybill_No 
+		
+		<!-- 关联核销单，查询冲应收金额   
+		LEFT JOIN (SELECT SUM(WF.AMOUNT) AMOUNT, WF.END_NO
+							 FROM STL.T_STL_BILL_WRITEOFF WF
+							WHERE WF.WRITEOFF_TYPE = #{writeoffType}
+							GROUP BY WF.END_NO) WRF
+		ON WRF.END_NO = payable.PAYABLE_NO -->
+		where
+		<!-- 业务日期 -->
+		<![CDATA[
+		cod.refund_success_time >= #{inceptRefundSuccessDate,jdbcType=DATE}
+		and cod.refund_success_time < #{endRefundSuccessDate,jdbcType=DATE}
+		]]>
+		AND PAYABLE.WAYBILL_ID=COD.WAYBILL_ID
+
+		<!--添加查询条件 -->
+		<include refid="queryCondition_expression" />
+	</select>
+
+	<!-- 按汇款成功日期分页查询 -->
+	<select id="queryByRefundSuccessDate"
+		parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.CODCompositeQueryDto"
+		resultMap="billPaidResultMap">
+		select/*结算-客户管理-按汇款成功日期分页查询 */
+		<include refid="billPaidCOD_Column_List" />
+		from
+		 stl.T_STL_BILL_PAYABLE payable
+		 
+		 <include refid="leftJoinRecv" />
+		 
+		<!-- 连接应付单 -->
+		inner join STL.T_STL_COD cod  on payable.waybill_No =cod.waybill_No
+		
+		<!-- 关联批次表查状态   -->
+		left join stl.t_stl_cod_batch batch on cod.batch_number = batch.batch_no
+		
+		<!-- 关联核销单，查询冲应收金额   -->
+		LEFT JOIN (SELECT SUM(WF.AMOUNT) AMOUNT, WF.END_NO
+							 FROM STL.T_STL_BILL_WRITEOFF WF
+							WHERE WF.WRITEOFF_TYPE = #{writeoffType}
+							GROUP BY WF.END_NO) WRF
+		ON WRF.END_NO = payable.PAYABLE_NO
+		where
+		<!-- 汇款成功日期 -->
+		<![CDATA[
+		cod.refund_success_time >= #{inceptRefundSuccessDate,jdbcType=DATE}
+			and cod.refund_success_time < #{endRefundSuccessDate,jdbcType=DATE}
+		]]>
+		AND PAYABLE.WAYBILL_ID=COD.WAYBILL_ID
+		
+		<!--添加查询条件 -->
+		<include refid="queryCondition_expression" />
+	</select>
+
+</mapper>

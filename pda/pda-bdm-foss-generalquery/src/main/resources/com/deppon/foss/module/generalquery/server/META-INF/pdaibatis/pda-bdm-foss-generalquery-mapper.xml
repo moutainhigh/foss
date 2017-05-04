@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.foss.module.generalquery.server.dao.impl.KnowledgeDaoImpl" >
+	
+	<!-- 根据标题查询内容 -->
+	<select id="selectKnowledgeContent" parameterType="com.deppon.foss.module.generalquery.shared.domain.KnowledgeContentInfoEntity" resultType="com.deppon.foss.module.generalquery.shared.domain.KnowledgeContentEntity">
+		select k.content,k.opertype from  t_base_knowledgebase k 
+		<where>
+	    	 k.title = #{title} and k.opertype !='2'
+		</where>
+	</select>
+	
+	<!-- 根据员工工号查询所在的部门 -->
+	<select id="selectDeptMessage"  resultType="com.deppon.foss.module.generalquery.shared.domain.DeptMessageInfoEntity"  parameterType="string">
+		SELECT  d.deptname as deptName,
+				d.parent_org_code as parent_org_code,
+				d.division as division
+		FROM t_svr_user u
+		LEFT JOIN t_svr_dept d ON u.deptid = d.id
+		<where>
+		u.empcode = #{userCode}  AND u.operflag = '1' AND d.operflag = '1'
+		</where>
+		UNION ALL
+		SELECT	d.deptname as deptName,
+				d.parent_org_code as parent_org_code,
+				d.division as division
+		FROM t_bam_user u
+		LEFT JOIN t_svr_dept d ON u.deptid = d.id
+		<where>
+		u.empcode = #{userCode}  AND u.operflag = '1' AND d.operflag = '1' 
+		</where>
+	</select>
+
+
+    <!-- 根据部门编号查询是否是事业部 -->
+	<select id="selectIfDivision" resultType="com.deppon.foss.module.generalquery.shared.domain.DeptMessageInfoEntity" parameterType="string">
+		SELECT  d.deptname as deptName,
+				d.parent_org_code as parent_org_code,
+				d.division as division
+		FROM T_SVR_DEPT d
+		<where>
+		  d.DEPTCODE = #{deptCode}
+		AND d.OPERFLAG = '1'
+		</where>
+	</select>
+
+	<!-- 根据类型名称和版本号 查询标题列表和创建时间 -->
+	<select id="selectTitle" resultType="com.deppon.foss.module.generalquery.shared.domain.KnowledgeTitleEntity" parameterType="com.deppon.foss.module.generalquery.shared.domain.KnowledgeTypeInfoEntity">
+		select  k.title title,k.opertype operType,k.ishot isHot,k.createTime createTime from  t_base_knowledgebase k
+		<where>
+		       (k.EMPSCOPE = #{deptName} OR k.ISDIVISION ='N')
+		       and k.knowledgetype = #{typeName}
+		       <if test="versionDate != null  and versionDate != ''">
+		          AND k.opertime >= #{versionDate}
+		       </if>
+		</where>
+	</select>
+	<!-- 根据员工工号和标题查询改标题是否被访问过 -->
+	<select id="selectQueryCount"  resultType="Long" parameterType="java.util.Map">
+	   select count(*) from t_base_queryCount t 
+	   <where>
+	     t.titleName = #{title}  AND t.userCode =#{userCode}
+	   </where>
+	</select>
+	<!-- 保存访问量信息 -->
+	<insert id="insertQueryCount" parameterType="com.deppon.foss.module.generalquery.shared.domain.KqueryCountEntity">
+		insert into t_Base_Querycount(id,Titlename,Usercode,isRead,Createdate)
+		values(sys_guid(),#{title},#{userCode},#{isRead},sysdate)
+	</insert>
+	<!-- 修改访问量数据 -->
+	<update id="updateQueryCount" parameterType="com.deppon.foss.module.generalquery.shared.domain.KqueryCountEntity">
+	   update T_BASE_KNOWLEDGEBASE set sumcount =decode(sumcount,null,0,sumCount) +1 
+      where title=#{title}
+	</update>
+	<!--  查询系统时间-->
+	<select id="selectSysDate" resultType="Date">
+	   select sysdate from dual
+	</select>
+	<select id="showExportUrl" resultType="com.deppon.foss.module.generalquery.shared.domain.ExDelieryAddExportEntity">	 	
+	 	   select exporturl,createdate from (
+			     	select 
+				      rp.exporturl,
+				      rp.createdate
+				    from 
+				    T_BAM_EXPRESS_DELIVERY_EXPOR rp where rp.exportfilename='China_BaseData.zip' order by rp.createdate desc)
+		 where rownum = 1	
+	 </select>
+	<!-- 查询两天内热点知识库信息 -->
+	<select id="selectKnowledgeTime" resultType="com.deppon.foss.module.generalquery.shared.domain.KnowledgeTimeEntity">
+		select k.ID,k.TITLE,k.DESCRIPTION from T_BASE_KNOWLEDGEBASE k 
+		<where>
+		rownum<![CDATA[<]]>4 and 
+	    	 to_char(k.CREATETIME,'yyyy-mm-dd')>= to_char(sysdate-2,'yyyy-mm-dd') AND k.ISHOT='Y'
+		</where>
+	</select>
+	 
+</mapper>
+
+

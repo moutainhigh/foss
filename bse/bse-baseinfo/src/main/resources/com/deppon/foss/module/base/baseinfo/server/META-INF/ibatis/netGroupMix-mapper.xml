@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.netGroupMix" >
+
+	<resultMap id="netGroupMixResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.NetGroupMixEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="virtual_code" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="freight_route_virtual_code" property="freightRouteVirtualCode" jdbcType="VARCHAR" />
+		<result column="net_group_code" property="netGroupCode" jdbcType="VARCHAR" />
+		<result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+		<result column="ORG_TYPE" property="orgType" jdbcType="VARCHAR" />
+		<result column="active" property="active" jdbcType="CHAR" />
+		<result column="create_time" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="modify_time" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="VERSION_NO" property="version" jdbcType="NUMERIC" />
+		<result column="EXP_NETWORK_GROUP" property="expNetworkGroup" jdbcType="CHAR"/>
+	</resultMap>
+
+	<sql id="columns">
+		ID,
+		NET_GROUP_CODE,
+		ORG_CODE,
+		ORG_TYPE,
+		CREATE_TIME,
+		MODIFY_TIME,
+		ACTIVE,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE,
+		VIRTUAL_CODE,
+		FREIGHT_ROUTE_VIRTUAL_CODE,
+		VERSION_NO,
+		EXP_NETWORK_GROUP
+	</sql>
+
+	<sql id="values">
+		#{id,jdbcType=VARCHAR},
+		#{netGroupCode,jdbcType=VARCHAR}, 
+		#{orgCode,jdbcType=VARCHAR}, 
+		#{orgType,jdbcType=VARCHAR}, 
+		#{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=CHAR}, 
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR}, 
+		#{virtualCode, jdbcType=VARCHAR}, 
+		#{freightRouteVirtualCode,jdbcType=VARCHAR}, 
+		#{version, jdbcType=NUMERIC},
+		#{expNetworkGroup,jdbcType=CHAR}
+	</sql>
+
+	<insert id="addNetGroupMix" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.NetGroupMixEntity">
+		insert into BSE.T_BAS_NET_GROUP_MIX (
+		<include refid="columns"/>
+		) values ( 
+		<include refid="values"/>
+		)
+	</insert>
+
+	<update id="deleteNetGroupMix" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.NetGroupMixEntity">
+		update BSE.T_BAS_NET_GROUP_MIX 
+		set active = #{active, jdbcType=CHAR} 
+		, modify_time = #{modifyDate,jdbcType=TIMESTAMP} 
+		, VERSION_NO = #{version, jdbcType=NUMERIC}
+		, modify_user_code = #{modifyUser,jdbcType=VARCHAR} 
+		where active = 'Y'
+		and net_group_code = #{netGroupCode, jdbcType=VARCHAR}
+		and org_type = #{orgType, jdbcType=VARCHAR}
+		and org_code = #{orgCode, jdbcType=VARCHAR}
+	</update>
+
+	<select id="queryNetGroupMix" resultMap="netGroupMixResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.NetGroupMixEntity">
+		select 
+		<include refid="columns"/>
+		from BSE.T_BAS_NET_GROUP_MIX 
+		where active = 'Y'
+		and net_group_code = #{netGroupCode, jdbcType=VARCHAR}
+		and org_type = #{orgType, jdbcType=VARCHAR}
+		and org_code = #{orgCode, jdbcType=VARCHAR}
+	</select>
+	
+	<update id="deleteNetGroupMixByCode" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.NetGroupMixEntity">
+		update BSE.T_BAS_NET_GROUP_MIX 
+		set active = #{active, jdbcType=CHAR} 
+		, modify_time = #{modifyDate,jdbcType=TIMESTAMP} 
+		, VERSION_NO = #{version, jdbcType=NUMERIC}
+		, modify_user_code = #{modifyUser,jdbcType=VARCHAR} 
+		where net_group_code = #{netGroupCode,jdbcType=VARCHAR}
+		and active = 'Y'
+	</update>
+
+	<update id="deleteNetGroupMixByFreightRoute" parameterType="map">
+		update BSE.T_BAS_NET_GROUP_MIX 
+		set active = #{inactive, jdbcType=CHAR} 
+		, modify_time = #{modifyDate,jdbcType=TIMESTAMP} 
+		, VERSION_NO = #{version, jdbcType=NUMERIC}
+		, modify_user_code = #{modifyUser,jdbcType=VARCHAR} 
+		where freight_route_virtual_code = #{freightRouteVirtualCode}
+		and active = #{active, jdbcType=CHAR} 
+	</update>
+
+	<update id="deleteNetGroupMixByVirtualCode" parameterType="map">
+		update BSE.T_BAS_NET_GROUP_MIX 
+		set active = #{inactive, jdbcType=CHAR} 
+		, modify_time = #{modifyDate,jdbcType=TIMESTAMP} 
+		, VERSION_NO = #{version, jdbcType=NUMERIC}
+		, modify_user_code = #{modifyUser,jdbcType=VARCHAR} 
+		where VIRTUAL_CODE = #{virtualCode, jdbcType=VARCHAR}
+		and active = #{active, jdbcType=CHAR} 
+	</update>
+
+
+
+	<select id="queryVirtualCodeListBySourceSalesCode" resultType="java.lang.String"	parameterType="map">
+		select t.virtual_code
+		from BSE.t_Bas_Net_Group_Mix T 
+		inner join BSE.t_bas_freight_route f
+		on t.freight_route_virtual_code = f.virtual_code 
+		where t.active = #{active, jdbcType=CHAR}
+		and t.org_code = #{salesCode, jdbcType=VARCHAR}
+		and t.org_type = #{orgType, jdbcType=VARCHAR}
+		and f.active = #{active, jdbcType=CHAR}
+		and f.orig_org_code = #{transferCode, jdbcType=VARCHAR}
+		and t.EXP_NETWORK_GROUP =#{expNetworkGroup, jdbcType=VARCHAR}
+	</select>
+
+	<select id="queryVirtualCodeListByTargetSalesCode" resultType="java.lang.String"	parameterType="map">
+		select t.virtual_code
+		from BSE.t_Bas_Net_Group_Mix T 
+		inner join BSE.t_bas_freight_route f
+		on t.freight_route_virtual_code = f.virtual_code 
+		where t.active = #{active, jdbcType=CHAR}
+		and t.org_code = #{salesCode, jdbcType=VARCHAR}
+		and t.org_type = #{orgType, jdbcType=VARCHAR}
+		and f.active = #{active, jdbcType=CHAR}
+		and f.dest_org_code = #{transferCode, jdbcType=VARCHAR}
+		and t.EXP_NETWORK_GROUP =#{expNetworkGroup, jdbcType=VARCHAR}
+	</select>
+
+
+
+
+
+	<select id="queryNetGroupMixById" resultMap="netGroupMixResultMap" parameterType="java.lang.String">
+		select 
+		<include refid="columns"/>
+		 from BSE.T_BAS_NET_GROUP_MIX where id = #{id,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="queryNetGroupMixByVirtualCode" resultMap="netGroupMixResultMap" parameterType="java.lang.String">
+		select 
+		<include refid="columns"/>
+		 from BSE.T_BAS_NET_GROUP_MIX where virtual_code = #{virtualCode,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="queryNetGroupMixByCode" resultMap="netGroupMixResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.NetGroupMixEntity">
+		select 
+		<include refid="columns"/>
+		from BSE.T_BAS_NET_GROUP_MIX 
+		where active = #{active, jdbcType=CHAR} 
+		and net_group_code = #{netGroupCode,jdbcType=VARCHAR}
+	</select>
+
+	<select id="queryNetGroupMixByFreightRoute" resultMap="netGroupMixResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.NetGroupMixEntity">
+		select 
+		<include refid="columns"/>
+		from BSE.T_BAS_NET_GROUP_MIX 
+		where active = #{active, jdbcType=CHAR} 
+		and freight_route_virtual_code = #{freightRouteVirtualCode,jdbcType=VARCHAR}
+	</select>
+
+	<select id="queryNetGroupMixBySourceTarget" resultMap="netGroupMixResultMap" parameterType="map" >
+		select  
+		<include refid="columns"/>
+		from BSE.T_BAS_NET_GROUP_MIX
+		where org_code = #{targetCode, jdbcType=VARCHAR}
+		and org_type = #{targetType, jdbcType=VARCHAR}
+		and net_group_code in
+		(
+		
+		select net_group_code from BSE.t_bas_net_group_mix
+		where org_code = #{sourceCode, jdbcType=VARCHAR}
+		and org_type = #{sourceType, jdbcType=VARCHAR}
+		and active = #{active, jdbcType=CHAR} 
+		)
+		and active = #{active, jdbcType=CHAR} 
+		order by create_time desc
+	</select>
+
+	<!-- zxy 20140507 MANA-2019 新增active条件 -->
+	<select id="queryNetGroupMixListForDownload" resultMap="netGroupMixResultMap" parameterType="map">
+		select  
+		<include refid="columns"/>
+		from BSE.T_BAS_NET_GROUP_MIX
+		<where>
+			<if test="orgCode != null and orgCode != ''">
+				AND ORG_CODE = #{orgCode, jdbcType=VARCHAR}
+			</if>
+			<if test="orgType != null and orgType != ''">
+				AND ORG_TYPE = #{orgType, jdbcType=VARCHAR}
+			</if>
+			<if test="version != null">
+				<![CDATA[ AND version_no >= #{version, jdbcType=NUMERIC} ]]>
+			</if>
+			<if test="active != null">
+				<![CDATA[ AND active = #{active, jdbcType=VARCHAR} ]]>
+			</if>
+		</where>
+		order by version_no,id ASC
+	</select>
+
+	<!-- 以下为 cache 使用 -->
+
+	<select id="queryLastVersion" resultType="long">
+		<![CDATA[
+			SELECT MAX(VERSION_NO)
+			FROM BSE.T_BAS_NET_GROUP_MIX
+		]]>
+	</select>
+	
+	<select id="queryNetGroupListForCache" resultMap="netGroupMixResultMap" parameterType="string">
+		select 
+		<include refid="columns"/>
+		FROM BSE.T_BAS_NET_GROUP_MIX
+		where active = #{active,jdbcType=CHAR}
+		order by version_no ASC
+	</select>
+	
+	<!-- 根据网点组虚拟编码和产品编码数组筛选对应的网点组编码 （和产品编码对应）-->
+	<select id="queryVirtualCodeListByProductCodeIn" resultType="java.lang.String" parameterType="map">
+	    select  a.virtual_code from bse.t_bas_net_group_mix a left join bse.t_bas_freight_route b 
+        on a.freight_route_virtual_code=b.virtual_code where  a.virtual_code IN 
+        <foreach item="virtualCode" index="index" collection="virtualCodeList" open="(" separator="," close=")">
+           #{virtualCode,jdbcType=VARCHAR}
+        </foreach>
+        and b.transport_type in
+        <foreach collection="productList" item="productCode" index="index" open="(" separator="," close=")">
+           #{productCode,jdbcType=VARCHAR}
+        </foreach>
+	 </select>
+	 
+	 <!-- 根据网点组虚拟编码和产品编码数组筛选对应的网点组编码 （不包含所传入的产品编码）-->
+	<select id="queryVirtualCodeListByProductCodeNotIn" resultType="java.lang.String" parameterType="map">
+	    select  a.virtual_code from bse.t_bas_net_group_mix a left join bse.t_bas_freight_route b 
+        on a.freight_route_virtual_code=b.virtual_code where  a.virtual_code IN 
+        <foreach item="virtualCode" index="index" collection="virtualCodeList" open="(" separator="," close=")">
+           #{virtualCode,jdbcType=VARCHAR}
+        </foreach>
+        and b.transport_type  not in
+        <foreach collection="productList" item="productCode" index="index" open="(" separator="," close=")">
+           #{productCode,jdbcType=VARCHAR}
+        </foreach>
+	 </select>
+
+</mapper>

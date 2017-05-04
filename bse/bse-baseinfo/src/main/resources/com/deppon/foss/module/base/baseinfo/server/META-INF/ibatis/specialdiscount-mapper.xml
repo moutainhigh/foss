@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.specialdiscount" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.domain.SpecialdiscountEntity" >
+    
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="CODE" property="code" jdbcType="VARCHAR" />
+    <result column="PRODUCTTYPE" property="producttype" jdbcType="VARCHAR" />
+    <result column="PRODUCTCODE" property="productcode" jdbcType="VARCHAR" />
+    <result column="CREATER" property="creater" jdbcType="VARCHAR" />
+    <result column="PROPOSETIME" property="proposetime" jdbcType="TIMESTAMP" />
+    <result column="QUITTIME" property="quittime" jdbcType="TIMESTAMP" />    
+    <result column="CREATETIME" property="createtime" jdbcType="TIMESTAMP"/>
+    <result column="CRM_ID" jdbcType="DECIMAL" property="crmId" />
+    <result column="ACTIVE" jdbcType="CHAR" property="active" />
+    <result column="TYPE" jdbcType="CHAR" property="type" />
+  </resultMap>
+ 
+  <sql id="Base_Column_List" >   
+    ID, CODE, PRODUCTTYPE, PRODUCTCODE, CREATER, PROPOSETIME, QUITTIME, CREATETIME, CRM_ID, 
+    ACTIVE,TYPE
+  </sql>
+  
+  <sql id="queryWhere">
+		<where>
+			 1=1 
+			<if test="crmId != null and crmId != ''">
+				AND CRM_ID = #{crmId,jdbcType=DECIMAL}
+			</if>
+			<if test="id != null and id != ''">
+				AND ID = #{id,jdbcType=VARCHAR}
+			</if>
+		</where>
+  </sql>
+  
+  <select id="querySpecialdiscountByYX" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SpecialdiscountEntity" >
+      select 
+    <include refid="Base_Column_List" />
+    from BSE.T_BAS_SPECIALDISCOUNT   
+    <where>
+			<if test="code != null and code != ''">
+				CODE = #{code,jdbcType=VARCHAR}				
+				and active='Y' and sysdate >proposetime 					
+			</if>						
+	</where>	 
+  </select>
+  
+   <select id="querySpecialdiscountByTime" resultMap="BaseResultMap" parameterType="java.util.Map" >
+      select 
+    <include refid="Base_Column_List" />
+    from BSE.T_BAS_SPECIALDISCOUNT   
+    <where>
+			<if test="code != null and code != ''">
+				<![CDATA[
+					CODE = #{code,jdbcType=VARCHAR}				
+					and  #{createtime,jdbcType=TIMESTAMP} >proposetime 	
+					and  #{createtime,jdbcType=TIMESTAMP} <quittime 
+				]]>		
+			</if>						
+	</where>	 
+  </select>
+  <select id="querySpecialdiscount" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SpecialdiscountEntity" >
+      select 
+    <include refid="Base_Column_List" />
+    from BSE.T_BAS_SPECIALDISCOUNT
+    <!-- where ID = #{id,jdbcType=VARCHAR} -->
+    <include refid="queryWhere" />
+     order by createtime desc
+  </select>
+  
+  <!-- 	插入方法 -->
+  <insert id="insertSpecialdiscount" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SpecialdiscountEntity" >
+    
+    insert into BSE.T_BAS_SPECIALDISCOUNT
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        ID,
+      </if>
+      <if test="code != null">
+        CODE,
+      </if>
+      <if test="producttype != null">
+        PRODUCTTYPE,
+      </if>
+      <if test="productcode != null">
+        PRODUCTCODE,
+      </if>
+      <if test="creater != null">
+        CREATER,
+      </if>
+      <if test="proposetime != null">
+        PROPOSETIME,
+      </if>      
+        QUITTIME,
+      <if test="createtime != null">
+        CREATETIME,
+      </if>
+       <if test="crmId != null">
+        CRM_ID,
+      </if>
+      <if test="active != null">
+        ACTIVE,
+      </if>
+      <if test="type != null">
+        TYPE,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="code != null">
+        #{code,jdbcType=VARCHAR},
+      </if>
+      <if test="producttype != null">
+        #{producttype,jdbcType=VARCHAR},
+      </if>
+      <if test="productcode != null">
+        #{productcode,jdbcType=VARCHAR},
+      </if>
+      <if test="creater != null">
+        #{creater,jdbcType=VARCHAR},
+      </if>
+      <if test="proposetime != null">
+        #{proposetime,jdbcType=TIMESTAMP},
+      </if>
+       <![CDATA[  to_timestamp('12/31/2999 23:59:59.000', 
+                          'mm/dd/yyyy hh24:mi:ss.ff3'),
+                           ]]>
+      <if test="createtime != null">
+        #{createtime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="crmId != null">
+        #{crmId,jdbcType=DECIMAL},
+      </if>
+      <if test="active != null">
+        #{active,jdbcType=CHAR},
+      </if>
+      <if test="type != null">
+        #{type,jdbcType=CHAR},
+      </if>
+    </trim>
+  </insert>
+ 
+  <!-- 	修改方法，通过主键修改相关表中数据，用不到 -->
+  <update id="updateSpecialdiscount" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SpecialdiscountEntity" >
+   
+    update BSE.T_BAS_SPECIALDISCOUNT
+     <set>
+      <if test="code != null">
+        CODE = #{code,jdbcType=VARCHAR},
+      </if>
+      <if test="producttype != null">
+        PRODUCTTYPE = #{producttype,jdbcType=VARCHAR},
+      </if>
+      <if test="productcode != null">
+        PRODUCTCODE = #{productcode,jdbcType=VARCHAR},
+      </if>
+      <if test="creater != null">
+        CREATER = #{creater,jdbcType=VARCHAR},
+      </if>
+      <if test="proposetime != null">
+        PROPOSETIME = #{proposetime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="quittime != null">
+        QUITTIME = #{quittime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="createtime != null">
+        CREATETIME = #{createtime,jdbcType=TIMESTAMP},
+      </if>
+       <if test="crmId != null">
+        CRM_ID = #{crmId,jdbcType=DECIMAL},
+      </if>
+      <if test="active != null">
+        ACTIVE = #{active,jdbcType=CHAR},
+      </if>
+      <if test="type != null">
+        TYPE = #{type,jdbcType=CHAR},
+      </if>
+    </set>
+    <include refid="queryWhere" />
+  </update>
+  
+  <select id="querySpecialdiscountKHFQ" resultType="int" parameterType="java.util.Map" >
+      select count(1)
+    from BSE.T_BAS_SPECIALDISCOUNT t,bse.t_bas_customer tt
+    <where>
+    	t.code=tt.code and tt.active='Y' and tt.flabelleavemonth in('VIP','OMNI-ACTIVE')
+			<if test="code != null and code != ''">
+				<![CDATA[
+					and  t.CODE = #{code,jdbcType=VARCHAR}				
+					and  #{createtime,jdbcType=TIMESTAMP} >t.proposetime 	
+					and  #{createtime,jdbcType=TIMESTAMP} <t.quittime 
+				]]>		
+			</if>						
+	</where>	 
+  </select>
+  
+  
+  
+  
+</mapper>

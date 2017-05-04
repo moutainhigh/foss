@@ -1,0 +1,857 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper
+	namespace="com.deppon.foss.module.pickup.predeliver.api.shared.domain.AbandonGoodsApplicationEntity">
+
+	<resultMap id="abandonedGoodsOaDto" 
+		type="com.deppon.foss.module.pickup.predeliver.api.shared.dto.AbandonedGoodsOaDto" >
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="ORG_CODE" property="storageDept" jdbcType="VARCHAR" />
+	</resultMap>
+	<select id="searchAbandonGoodsList"
+		resultType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.AbandonGoodsResultDto"
+		parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.AbandonedGoodsSearchDto">
+	<![CDATA[
+		SELECT
+			abandonGoods.id as id,
+			waybill.GOODS_WEIGHT_TOTAL AS goodsWeightTotal ,
+			waybill.GOODS_VOLUME_TOTAL AS goodsVolumeTotal ,
+			waybill.GOODS_QTY_TOTAL AS goodsQtyTotal ,
+			abandonGoods.WAYBILL_NO AS waybillNo ,
+			abandonGoods.STATUS AS status ,
+			abandonGoods.CREATE_USER_NAME AS createUserName ,
+			abandonGoods.IMPORT_STATUS AS importStatus ,
+			abandonGoods.OPERATOR_CODE AS operatorCode ,
+			abandonGoods.OPERATE_ORG_CODE AS operateOrgCode ,
+			abandonGoods.OPERATE_TIME as operateTime,
+			waybill.RECEIVE_CUSTOMER_CONTACT AS receiveCustomerName ,
+			CASE
+				   WHEN ( nvl(waybill.RECEIVE_CUSTOMER_PHONE,'NA' )='NA'  AND nvl(waybill.RECEIVE_CUSTOMER_MOBILEPHONE,'NA' )='NA' )
+					   THEN ''  
+				   WHEN ( nvl(waybill.RECEIVE_CUSTOMER_PHONE,'NA' )='NA')
+					THEN waybill.RECEIVE_CUSTOMER_MOBILEPHONE 
+				WHEN ( nvl(waybill.RECEIVE_CUSTOMER_MOBILEPHONE,'NA' )='NA')
+					THEN waybill.RECEIVE_CUSTOMER_PHONE 
+				   ELSE   waybill.RECEIVE_CUSTOMER_PHONE ||'/'|| waybill.RECEIVE_CUSTOMER_MOBILEPHONE 
+			END AS receiveCustomerPhone, 
+			abandonGoods.ABANDONEDGOODS_TYPE as abandonedgoodsType ,
+			abandonGoods.PREABANDONEDGOODS_TIME AS preabandonedgoodsTime,
+			abandongoods.CUSTOMER_COOPERATE_STATUS as customerCooperateStatus,		
+			abandongoods.notes as notes,
+			abandonGoods.SERIAL_NO as serialNumber,
+			abandonGoods.OA_ERROR_NO as errorNumber
+		FROM
+			PKP.T_SRV_ABANDON_GOODS_APP abandonGoods LEFT JOIN PKP.T_SRV_WAYBILL waybill
+			ON abandonGoods.WAYBILL_NO = waybill.WAYBILL_NO
+	]]>
+		<include refid="select_Where" />
+	</select>
+	
+	<select id="searchNoTagAbandonGoodsList"
+		resultType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.AbandonGoodsResultDto"
+		parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.AbandonedGoodsSearchDto">
+	
+		SELECT
+			abandonGoods.id as id,
+			abandonGoods.GOODS_WEIGHT_TOTAL AS goodsWeightTotal ,
+			abandonGoods.GOODS_VOLUME_TOTAL AS goodsVolumeTotal ,
+			abandonGoods.GOODS_QTY_TOTAL AS goodsQtyTotal ,
+			abandonGoods.WAYBILL_NO AS waybillNo ,
+			abandonGoods.STATUS AS status ,
+			abandonGoods.CREATE_USER_NAME AS createUserName ,
+			abandonGoods.IMPORT_STATUS AS importStatus ,
+			abandonGoods.OPERATOR_CODE AS operatorCode ,
+			abandonGoods.OPERATE_ORG_CODE AS operateOrgCode ,
+			'' AS receiveCustomerName ,
+			'' AS receiveCustomerPhone, 
+			abandonGoods.ABANDONEDGOODS_TYPE as abandonedgoodsType ,
+			abandonGoods.PREABANDONEDGOODS_TIME AS preabandonedgoodsTime,
+			abandongoods.CUSTOMER_COOPERATE_STATUS as customerCooperateStatus,		
+			abandongoods.notes as notes,
+			abandonGoods.SERIAL_NO as serialNumber,
+			abandonGoods.OA_ERROR_NO as errorNumber,
+			abandonGoods.LAST_STORAGE_ORG_CODE as lastStorageOrgCode
+		FROM
+			PKP.T_SRV_ABANDON_GOODS_APP abandonGoods
+		WHERE
+			abandonGoods.ABANDONEDGOODS_TYPE = 'ABANDGOODS_TYPE_NOTAG'
+			<if test="preabandonedgoodsTimeBegin != null and preabandonedgoodsTimeBegin !=''">
+			<![CDATA[and abandonGoods.PREABANDONEDGOODS_TIME >= #{preabandonedgoodsTimeBegin,jdbcType=TIMESTAMP}]]>
+			</if>			
+			<if test="preabandonedgoodsTimeEnd !=null and preabandonedgoodsTimeEnd != ''">	
+			<![CDATA[and abandonGoods.PREABANDONEDGOODS_TIME <= #{preabandonedgoodsTimeEnd,jdbcType=TIMESTAMP}]]>
+			</if>			
+			<if test="waybillNo != null and waybillNo != ''">
+			<![CDATA[ AND abandonGoods.WAYBILL_NO =#{waybillNo}]]>
+			</if>
+			<if test="id != null and id != ''">
+			<![CDATA[ AND abandonGoods.id =#{id} ]]>
+			</if>
+			<if test="status != null and status != ''">
+			<![CDATA[ AND abandonGoods.STATUS =#{status}]]>
+			</if>			
+			<if test="createUserName != null and createUserName != ''">
+			<![CDATA[ AND abandonGoods.CREATE_USER_NAME =#{createUserName}]]>
+			</if>			
+			<if test="currentOrgCode != null and currentOrgCode != ''">
+			<![CDATA[ AND abandonGoods.CREATE_ORG_CODE  =#{currentOrgCode}]]>
+			</if>
+			<if test="processId != null and processId != ''">
+			<![CDATA[ AND abandonGoods.PROCESS_ID  =#{processId}]]>
+			</if>
+			<if test="serialNumber != null and serialNumber != ''">
+			<![CDATA[ AND abandonGoods.SERIAL_NO  =#{serialNumber}]]>
+			</if>
+	</select>
+	
+	<select id="searchAbandonGoodsListWithAmbuiousName"
+		resultType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.AbandonGoodsResultDto"
+		parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.AbandonedGoodsSearchDto">
+	<![CDATA[
+		SELECT
+			abandonGoods.id as id,
+			waybill.GOODS_WEIGHT_TOTAL AS goodsWeightTotal ,
+			waybill.GOODS_VOLUME_TOTAL AS goodsVolumeTotal ,
+			waybill.GOODS_QTY_TOTAL AS goodsQtyTotal ,
+			abandonGoods.WAYBILL_NO AS waybillNo ,
+			abandonGoods.SERIAL_NO AS serialNumber ,			
+			abandonGoods.STATUS AS status ,
+			abandonGoods.CREATE_USER_NAME AS createUserName ,
+			abandonGoods.IMPORT_STATUS AS importStatus ,
+			waybill.RECEIVE_CUSTOMER_CONTACT AS receiveCustomerName ,
+			CASE
+				   WHEN ( nvl(waybill.RECEIVE_CUSTOMER_PHONE,'NA' )='NA'  AND nvl(waybill.RECEIVE_CUSTOMER_MOBILEPHONE,'NA' )='NA' )
+					   THEN ''  
+				   WHEN ( nvl(waybill.RECEIVE_CUSTOMER_PHONE,'NA' )='NA')
+					THEN waybill.RECEIVE_CUSTOMER_MOBILEPHONE 
+				WHEN ( nvl(waybill.RECEIVE_CUSTOMER_MOBILEPHONE,'NA' )='NA')
+					THEN waybill.RECEIVE_CUSTOMER_PHONE 
+				   ELSE   waybill.RECEIVE_CUSTOMER_PHONE ||'/'|| waybill.RECEIVE_CUSTOMER_MOBILEPHONE 
+			END AS receiveCustomerPhone, 
+			abandonGoods.ABANDONEDGOODS_TYPE as abandonedgoodsType ,
+			abandonGoods.PREABANDONEDGOODS_TIME AS preabandonedgoodsTime,
+			abandonGoods.OPERATE_TIME as operateTime,
+			abandonGoods.PROCESS_ID AS processId
+		FROM
+			PKP.T_SRV_ABANDON_GOODS_APP abandonGoods LEFT JOIN PKP.T_SRV_WAYBILL waybill
+			ON abandonGoods.WAYBILL_NO = waybill.WAYBILL_NO 
+	]]>
+		<include refid="select_WhereNameambuious" />
+		<!-- ISSUE-4377 -->
+		UNION ALL
+		SELECT
+			abandonGoods.id as id,
+			abandonGoods.GOODS_WEIGHT_TOTAL AS goodsWeightTotal ,
+			abandonGoods.GOODS_VOLUME_TOTAL AS goodsVolumeTotal ,
+			abandonGoods.GOODS_QTY_TOTAL AS goodsQtyTotal ,
+			abandonGoods.WAYBILL_NO AS waybillNo ,
+			abandonGoods.SERIAL_NO AS serialNumber ,	
+			abandonGoods.STATUS AS status ,
+			abandonGoods.CREATE_USER_NAME AS createUserName ,
+			abandonGoods.IMPORT_STATUS AS importStatus ,
+			'' AS receiveCustomerName ,
+			'' AS receiveCustomerPhone, 
+			abandonGoods.ABANDONEDGOODS_TYPE as abandonedgoodsType ,
+			abandonGoods.PREABANDONEDGOODS_TIME AS preabandonedgoodsTime,
+			abandonGoods.OPERATE_TIME as operateTime,
+			abandonGoods.PROCESS_ID AS processId
+		FROM
+			PKP.T_SRV_ABANDON_GOODS_APP abandonGoods
+		WHERE
+			abandonGoods.ABANDONEDGOODS_TYPE = 'ABANDGOODS_TYPE_NOTAG'			
+			<if test="preabandonedgoodsTimeBegin != null and preabandonedgoodsTimeBegin !=''">	
+			<![CDATA[and abandonGoods.PREABANDONEDGOODS_TIME >= #{preabandonedgoodsTimeBegin,jdbcType=TIMESTAMP}]]>
+			</if>			
+			<if test="preabandonedgoodsTimeEnd !=null and preabandonedgoodsTimeEnd != ''">	
+			<![CDATA[and abandonGoods.PREABANDONEDGOODS_TIME <= #{preabandonedgoodsTimeEnd,jdbcType=TIMESTAMP}]]>
+			</if>			
+			<if test="waybillNo != null and waybillNo != ''">
+			<![CDATA[ AND abandonGoods.WAYBILL_NO =#{waybillNo}]]>
+			</if>			
+			<if test="status != null and status != ''">
+			<![CDATA[ AND abandonGoods.STATUS =#{status}]]>
+			</if>			
+			<if test="createUserName != null and createUserName != ''">
+			<![CDATA[ AND abandonGoods.CREATE_USER_NAME =#{createUserName}]]>
+			</if>			
+			<if test="currentOrgCode != null and currentOrgCode != ''">
+			<![CDATA[ AND abandonGoods.CREATE_ORG_CODE  =#{currentOrgCode}]]>
+			</if>
+			<if test="abandonedgoodsType != null and abandonedgoodsType != '' and abandonedgoodsType !='ABANDGOODS_TYPE_NOTAG'" >
+			<![CDATA[ AND 1=0]]>
+			</if>
+	</select>
+	
+	<sql id="select_WhereNameambuious">
+		<where>
+			<if test="preabandonedgoodsTimeBegin != null and preabandonedgoodsTimeBegin !=''">	
+			<![CDATA[and abandonGoods.PREABANDONEDGOODS_TIME >= #{preabandonedgoodsTimeBegin,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="preabandonedgoodsTimeEnd !=null and preabandonedgoodsTimeEnd != ''">	
+			<![CDATA[and abandonGoods.PREABANDONEDGOODS_TIME <= #{preabandonedgoodsTimeEnd,jdbcType=TIMESTAMP}]]>
+			</if>
+			<!-- 取消已导入内部带货限制 2013-4-11 16:13:17
+			<if test="true">
+			<![CDATA[ AND abandonGoods.IMPORT_STATUS is null ]]>
+			</if>-->
+			<if test="waybillNo != null and waybillNo != ''">
+			<![CDATA[ AND abandonGoods.WAYBILL_NO =#{waybillNo} ]]>
+			</if>
+			<if test="status != null and status != ''">
+			<![CDATA[ AND abandonGoods.STATUS =#{status} ]]>
+			</if>
+			<if test="abandonedgoodsType != null and abandonedgoodsType != ''">
+			<![CDATA[ AND abandonGoods.ABANDONEDGOODS_TYPE =#{abandonedgoodsType} ]]>
+			</if>
+			<if test="receiveOrgCode != null and receiveOrgCode != ''">
+			<![CDATA[ AND waybill.RECEIVE_ORG_CODE =#{receiveOrgCode} ]]>
+			</if>
+			<if test="deliveryCustomerName != null and deliveryCustomerName != ''">
+			<![CDATA[ AND waybill.DELIVERY_CUSTOMER_NAME = #{deliveryCustomerName}   ]]>
+			</if>
+			<if test="createUserName != null and createUserName != ''">
+			<![CDATA[ AND abandonGoods.CREATE_USER_NAME =#{createUserName} ]]>
+			</if>
+			<if test="currentOrgCode != null and currentOrgCode != ''">
+			<![CDATA[ AND (waybill.LAST_LOAD_ORG_CODE  =#{currentOrgCode} or waybill.RECEIVE_ORG_CODE =#{currentOrgCode}) ]]>
+			</if>
+			<if test="abandgoodsStatus!= null and abandgoodsStatus.size>0">
+					AND abandonGoods.STATUS in
+					<foreach collection="abandgoodsStatus" open="(" close=")" separator=","
+						item="statu">
+						<if test="statu!=null and statu != ''">
+		        	      <![CDATA[	#{statu,jdbcType=VARCHAR} ]]>
+		                </if>
+					</foreach>
+		    </if>
+		<![CDATA[ AND  waybill.ACTIVE='Y' ]]>
+			
+		</where>
+	</sql>
+	<!-- ISSUE-4377 -->
+	<select id="getAbandonGoodsTypeById" parameterType="java.lang.String" resultType="java.lang.String">
+		SELECT AGA.ABANDONEDGOODS_TYPE
+		FROM PKP.T_SRV_ABANDON_GOODS_APP AGA
+		WHERE AGA.ID = #{id,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="getNoTagAbandonGoodsDetailById"
+		parameterType="java.lang.String"
+		resultType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.AbandonedGoodsDetailDto">
+		<![CDATA[
+		SELECT
+			abandongoods.ID AS id ,
+			abandongoods.WAYBILL_NO AS waybillNo ,
+			abandongoods.GOODS_NAME AS goodsName ,
+			abandongoods.GOODS_WEIGHT_TOTAL AS goodsWeightTotal ,
+			abandongoods.GOODS_VOLUME_TOTAL AS goodsVolumeTotal ,
+			'' AS deliveryCustomerContact ,
+			'' AS deliveryCustomerPhone ,
+			'' as deliveryCustomerMobilePhone,
+			'' AS receiveOrgCode ,
+			'' AS receiveCustomerContact ,
+			'' AS receiveCustomerPhone,
+			abandongoods.CREATE_ORG_CODE AS lastLoadOrgCode ,
+			abandongoods.LAST_STORAGE_ORG_CODE as lastStorageCode,
+			0 AS codAmount ,
+			0 AS insuranceAmount ,
+			0 AS prePayAmount ,
+			0 AS toPayAmount ,
+			abandongoods.ABANDONEDGOODS_TYPE AS abandonedgoodsType ,
+			abandonGoods.IMPORT_STATUS AS importStatus ,
+			abandongoods.STATUS AS status ,
+			abandongoods.PREABANDONEDGOODS_TIME AS preabandonedgoodsTime ,
+			abandongoods.CREATE_USER_NAME AS createUserName ,
+			abandongoods.STORAGE_DAY AS storageDay ,
+			abandongoods.GOODS_QTY_TOTAL AS goodsQtyTotal ,
+			abandongoods.NOTES AS notes,
+			abandongoods.CUSTOMER_COOPERATE_STATUS as customerCooperateStatus,
+			abandongoods.SERIAL_NO as serialNumber,
+			abandongoods.OA_ERROR_NO as errorNumber,
+			abandongoods.BELONG_AREA_CODE as respectiveRegional
+		FROM
+			PKP.T_SRV_ABANDON_GOODS_APP abandongoods 
+		where abandongoods.ID = #{id,jdbcType=VARCHAR}
+		]]>
+	</select>
+	
+	<select id="getTotalCount"
+		parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.AbandonedGoodsSearchDto"
+		resultType="Long">
+		select count(abandonGoods.id) 
+		FROM
+			PKP.T_SRV_ABANDON_GOODS_APP abandonGoods INNER JOIN PKP.T_SRV_WAYBILL waybill
+			ON abandonGoods.WAYBILL_NO = waybill.WAYBILL_NO
+			AND abandonGoods.WAYBILL_NO =#{waybillNo} AND waybill.active = 'Y'
+	</select>
+	<select id="queryAbandonedsForStatus"
+		parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.AbandonedGoodsSearchDto"
+		resultType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.AbandonGoodsResultDto">
+	<![CDATA[ 
+		select abandonGoods.id as id
+		FROM
+			PKP.T_SRV_ABANDON_GOODS_APP abandonGoods LEFT JOIN PKP.T_SRV_WAYBILL waybill
+			ON abandonGoods.WAYBILL_NO = waybill.WAYBILL_NO
+	]]>
+		<include refid="select_Where_For_Count" />
+	</select>
+	<sql id="select_Where_For_Count">
+		<where>
+			<if test="preabandonedgoodsTimeBegin != null and preabandonedgoodsTimeBegin !=''">	
+			<![CDATA[and abandonGoods.PREABANDONEDGOODS_TIME >= #{preabandonedgoodsTimeBegin,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="preabandonedgoodsTimeEnd !=null and preabandonedgoodsTimeEnd != ''">	
+			<![CDATA[and abandonGoods.PREABANDONEDGOODS_TIME <= #{preabandonedgoodsTimeEnd,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="statusArr !=null and statusArr.length > 0">
+				AND abandonGoods.STATUS IN
+				<foreach collection="statusArr" index="index" item="statusTmp" open="(" separator="," close=")">
+					#{statusTmp}
+				</foreach>
+			</if>
+			<if test="waybillNo != null and waybillNo != ''">
+			<![CDATA[ AND abandonGoods.WAYBILL_NO =#{waybillNo} ]]>
+			</if>
+			<if test="abandonedgoodsType != null and abandonedgoodsType != ''">
+			<![CDATA[ AND abandonGoods.ABANDONEDGOODS_TYPE =#{abandonedgoodsType} ]]>
+			</if>
+			<if test="receiveOrgCode != null and receiveOrgCode != ''">
+			<![CDATA[ AND waybill.RECEIVE_ORG_CODE =#{receiveOrgCode} ]]>
+			</if>
+			<if test="deliveryCustomerName != null and deliveryCustomerName != ''">
+			<![CDATA[ AND waybill.DELIVERY_CUSTOMER_NAME = #{deliveryCustomerName}   ]]>
+			</if>
+			<if test="createUserName != null and createUserName != ''">
+			<![CDATA[ AND abandonGoods.CREATE_USER_NAME =#{createUserName} ]]>
+			</if>
+			<if test="currentOrgCode != null and currentOrgCode != ''">
+			<![CDATA[ AND waybill.LAST_LOAD_ORG_CODE  =#{currentOrgCode} ]]>
+			</if>
+		<![CDATA[ AND waybill.ACTIVE='Y' ]]>
+		</where>
+	</sql>
+	<sql id="select_Where">
+		<where>
+			<if test="preabandonedgoodsTimeBegin != null and preabandonedgoodsTimeBegin !=''">	
+			<![CDATA[and abandonGoods.PREABANDONEDGOODS_TIME >= #{preabandonedgoodsTimeBegin,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="preabandonedgoodsTimeEnd !=null and preabandonedgoodsTimeEnd != ''">	
+			<![CDATA[and abandonGoods.PREABANDONEDGOODS_TIME <= #{preabandonedgoodsTimeEnd,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="waybillNo != null and waybillNo != ''">
+			<![CDATA[ AND abandonGoods.WAYBILL_NO =#{waybillNo} ]]>
+			</if>
+			<if test="id != null and id != ''">
+			<![CDATA[ AND abandonGoods.id =#{id} ]]>
+			</if>
+			<if test="status != null and status != ''">
+			<![CDATA[ AND abandonGoods.STATUS =#{status} ]]>
+			</if>
+			<if test="abandonedgoodsType != null and abandonedgoodsType != ''">
+			<![CDATA[ AND abandonGoods.ABANDONEDGOODS_TYPE =#{abandonedgoodsType} ]]>
+			</if>
+			<if test="receiveOrgCode != null and receiveOrgCode != ''">
+			<![CDATA[ AND waybill.RECEIVE_ORG_CODE =#{receiveOrgCode} ]]>
+			</if>
+			<if test="deliveryCustomerName != null and deliveryCustomerName != ''">
+			<![CDATA[ AND waybill.DELIVERY_CUSTOMER_NAME = #{deliveryCustomerName}   ]]>
+			</if>
+			<if test="createUserName != null and createUserName != ''">
+			<![CDATA[ AND abandonGoods.CREATE_USER_NAME =#{createUserName} ]]>
+			</if>
+			<if test="currentOrgCode != null and currentOrgCode != ''">
+			<![CDATA[ AND waybill.LAST_LOAD_ORG_CODE  =#{currentOrgCode} ]]>
+			</if>
+		<![CDATA[ AND waybill.ACTIVE='Y' ]]>
+		</where>
+	</sql>
+
+	<select id="searchAbandonGoodsByTimeList"
+		resultType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.AbandonedGoodsDetailDto"
+		parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.AbandonedGoodsSearchDto">
+	<![CDATA[
+		SELECT  
+			waybill.WAYBILL_NO AS waybillNo ,
+			waybill.RECEIVE_ORG_CODE as receiveOrgCode, --始发部门
+			waybill.DELIVERY_CUSTOMER_CODE as deliveryCustomerCode, --发货人
+			waybill.DELIVERY_CUSTOMER_name as deliveryCustomerName, --发货人
+
+			waybill.RECEIVE_CUSTOMER_CONTACT as deliveryCustomerContact, --发货人
+			waybill.RECEIVE_CUSTOMER_MOBILEPHONE as deliveryCustomerMobilephone, --发货人手机
+			waybill.GOODS_VOLUME_TOTAL  as goodsVolumeTotal, --体积
+			a.ARRIVE_TIME  as preabandonedgoodsTime  --入库时间
+		FROM
+			PKP.T_SRV_ACTUAL_FREIGHT a LEFT JOIN PKP.T_SRV_WAYBILL waybill
+			ON a.WAYBILL_NO = waybill.WAYBILL_NO
+		where 	a.STORAGE_DAY  > #{storageDay,jdbcType=VARCHAR} AND a.STORAGE_DAY  < (#{storageDay,jdbcType=VARCHAR} + 3) AND waybill.ACTIVE='Y'
+	]]>
+		<if test="preabandonedgoodsTimeBegin != null and preabandonedgoodsTimeBegin !=''">	
+		<![CDATA[and abandonGoods.PREABANDONEDGOODS_TIME >= #{preabandonedgoodsTimeBegin,jdbcType=TIMESTAMP}]]>
+		</if>
+		<if test="preabandonedgoodsTimeEnd !=null and preabandonedgoodsTimeEnd != ''">	
+		<![CDATA[and abandonGoods.PREABANDONEDGOODS_TIME <= #{preabandonedgoodsTimeEnd,jdbcType=TIMESTAMP}]]>
+		</if>
+		<if test="waybillNo != null and waybillNo != ''">
+		<![CDATA[ AND abandonGoods.WAYBILL_NO =#{waybillNo} ]]>
+		</if>
+		<if test="status != null and status != ''">
+		<![CDATA[ AND abandonGoods.STATUS =#{status} ]]>
+		</if>
+		<if test="abandonedgoodsType != null and abandonedgoodsType != ''">
+		<![CDATA[ AND abandonGoods.ABANDONEDGOODS_TYPE =#{abandonedgoodsType} ]]>
+		</if>
+		<if test="receiveOrgCode != null and receiveOrgCode != ''">
+		<![CDATA[ AND waybill.RECEIVE_ORG_CODE =#{receiveOrgCode} ]]>
+		</if>
+		<if test="deliveryCustomerName != null and deliveryCustomerName != ''">
+		<![CDATA[ AND waybill.DELIVERY_CUSTOMER_NAME = #{deliveryCustomerName}   ]]>
+		</if>
+		<if test="createUserName != null and createUserName != ''">
+		<![CDATA[ AND abandonGoods.CREATE_USER_NAME =#{createUserName} ]]>
+		</if>
+		<if test="currentOrgCode != null and currentOrgCode != ''">
+		<![CDATA[ AND waybill.LAST_LOAD_ORG_CODE  =#{currentOrgCode} ]]>
+		</if>
+	<![CDATA[ AND waybill.ACTIVE='Y' ]]>
+	</select>
+
+	<select id="getAbandonGoodsDetailById"
+		resultType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.AbandonedGoodsDetailDto"
+		parameterType="java.lang.String">
+	<![CDATA[
+		SELECT
+			abandongoods.ID AS id ,
+			abandongoods.WAYBILL_NO AS waybillNo ,
+			waybill.GOODS_NAME AS goodsName ,
+			to_char(waybill.bill_time,'yyyy-mm-dd HH24:MI:SS') as billTime,
+			waybill.GOODS_WEIGHT_TOTAL AS goodsWeightTotal ,
+			waybill.GOODS_VOLUME_TOTAL AS goodsVolumeTotal ,
+			waybill.DELIVERY_CUSTOMER_CONTACT AS deliveryCustomerContact ,
+			waybill.DELIVERY_CUSTOMER_PHONE AS deliveryCustomerPhone ,
+			waybill.DELIVERY_CUSTOMER_MOBILEPHONE as deliveryCustomerMobilePhone,
+			waybill.RECEIVE_ORG_CODE AS receiveOrgCode ,
+			waybill.RECEIVE_CUSTOMER_CONTACT AS receiveCustomerContact ,
+			CASE
+				   WHEN ( nvl(waybill.RECEIVE_CUSTOMER_PHONE,'NA' )='NA'  AND nvl(waybill.RECEIVE_CUSTOMER_MOBILEPHONE,'NA' )='NA' )
+					   THEN ''  
+				   WHEN ( nvl(waybill.RECEIVE_CUSTOMER_PHONE,'NA' )='NA')
+					THEN waybill.RECEIVE_CUSTOMER_MOBILEPHONE 
+				WHEN ( nvl(waybill.RECEIVE_CUSTOMER_MOBILEPHONE,'NA' )='NA')
+					THEN waybill.RECEIVE_CUSTOMER_PHONE 
+				   ELSE   waybill.RECEIVE_CUSTOMER_PHONE ||'/'|| waybill.RECEIVE_CUSTOMER_MOBILEPHONE 
+			END AS receiveCustomerPhone,
+			waybill.LAST_LOAD_ORG_CODE AS lastLoadOrgCode ,
+			waybill.COD_AMOUNT/100 AS codAmount ,
+			waybill.INSURANCE_AMOUNT/100 AS insuranceAmount ,
+			waybill.PRE_PAY_AMOUNT/100 AS prePayAmount ,
+			waybill.TO_PAY_AMOUNT/100 AS toPayAmount ,
+			abandongoods.ABANDONEDGOODS_TYPE AS abandonedgoodsType ,
+			abandonGoods.IMPORT_STATUS AS importStatus ,
+			abandongoods.STATUS AS status ,
+			abandongoods.PREABANDONEDGOODS_TIME AS preabandonedgoodsTime ,
+			abandongoods.CREATE_USER_NAME AS createUserName ,
+			actualFreight.STORAGE_DAY AS storageDay ,
+			waybill.GOODS_QTY_TOTAL AS goodsQtyTotal ,
+			abandongoods.NOTES AS notes,
+			abandongoods.CUSTOMER_COOPERATE_STATUS as customerCooperateStatus,
+			abandongoods.SERIAL_NO as serialNumber,
+			abandongoods.OA_ERROR_NO as errorNumber
+		FROM
+			PKP.T_SRV_ABANDON_GOODS_APP abandongoods LEFT JOIN PKP.T_SRV_WAYBILL waybill
+			ON abandongoods.WAYBILL_NO = waybill.WAYBILL_NO LEFT JOIN PKP.T_SRV_ACTUAL_FREIGHT actualFreight
+			ON abandongoods.WAYBILL_NO = actualFreight.WAYBILL_NO
+		where abandongoods.ID = #{id,jdbcType=VARCHAR} AND waybill.ACTIVE='Y'
+	]]>
+	</select>
+	
+	
+	<select id="getAbandonGoodsDetailByWaybillNo"
+		resultType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.AbandonedGoodsDetailDto"
+		parameterType="java.lang.String">
+	<![CDATA[
+		SELECT
+			abandongoods.ID AS id ,
+			abandongoods.WAYBILL_NO AS waybillNo ,
+			waybill.GOODS_NAME AS goodsName ,
+			waybill.GOODS_WEIGHT_TOTAL AS goodsWeightTotal ,
+			waybill.GOODS_VOLUME_TOTAL AS goodsVolumeTotal ,
+			waybill.DELIVERY_CUSTOMER_CONTACT AS deliveryCustomerContact ,
+			waybill.DELIVERY_CUSTOMER_PHONE AS deliveryCustomerPhone ,
+			waybill.RECEIVE_ORG_CODE AS receiveOrgCode ,
+			waybill.RECEIVE_CUSTOMER_CONTACT AS receiveCustomerContact ,
+			CASE
+				   WHEN ( nvl(waybill.RECEIVE_CUSTOMER_PHONE,'NA' )='NA'  AND nvl(waybill.RECEIVE_CUSTOMER_MOBILEPHONE,'NA' )='NA' )
+					   THEN ''  
+				   WHEN ( nvl(waybill.RECEIVE_CUSTOMER_PHONE,'NA' )='NA')
+					THEN waybill.RECEIVE_CUSTOMER_MOBILEPHONE 
+				WHEN ( nvl(waybill.RECEIVE_CUSTOMER_MOBILEPHONE,'NA' )='NA')
+					THEN waybill.RECEIVE_CUSTOMER_PHONE 
+				   ELSE   waybill.RECEIVE_CUSTOMER_PHONE ||'/'|| waybill.RECEIVE_CUSTOMER_MOBILEPHONE 
+			END AS receiveCustomerPhone,
+			waybill.LAST_LOAD_ORG_CODE AS lastLoadOrgCode ,
+			waybill.COD_AMOUNT AS codAmount ,
+			waybill.INSURANCE_AMOUNT AS insuranceAmount ,
+			waybill.PRE_PAY_AMOUNT AS prePayAmount ,
+			waybill.TO_PAY_AMOUNT AS toPayAmount ,
+			abandongoods.ABANDONEDGOODS_TYPE AS abandonedgoodsType ,
+			abandonGoods.IMPORT_STATUS AS importStatus ,
+			abandongoods.STATUS AS status ,
+			abandongoods.PREABANDONEDGOODS_TIME AS preabandonedgoodsTime ,
+			abandongoods.CREATE_USER_NAME AS createUserName ,
+			actualFreight.STORAGE_DAY AS storageDay ,
+			waybill.GOODS_QTY_TOTAL AS goodsQtyTotal ,
+			abandongoods.NOTES AS notes,
+			abandongoods.CUSTOMER_COOPERATE_STATUS AS customerCooperateStatus,
+			abandongoods.SERIAL_NO as serialNumber,
+			abandongoods.OA_ERROR_NO as errorNumber
+		FROM
+			PKP.T_SRV_ABANDON_GOODS_APP abandongoods LEFT JOIN PKP.T_SRV_WAYBILL waybill
+			ON abandongoods.WAYBILL_NO = waybill.WAYBILL_NO LEFT JOIN PKP.T_SRV_ACTUAL_FREIGHT actualFreight
+			ON abandongoods.WAYBILL_NO = actualFreight.WAYBILL_NO
+		where abandongoods.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR} AND waybill.ACTIVE='Y'
+	]]>
+	</select>
+	
+	<select id="getInStockTimeByWaybillNoAndOrgCode" parameterType="java.util.Map" resultType="java.util.Date">
+		select IN_STOCK_TIME
+		from TFR.T_OPT_WAYBILL_STOCK
+		where WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+		 AND  ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+	</select>
+	<delete id="deleteByPrimaryKey" parameterType="java.lang.String">
+		delete from PKP.T_SRV_ABANDON_GOODS_APP
+		where ID = #{id,jdbcType=VARCHAR}
+	</delete>
+
+	<insert id="insertAbandonGoodsApplication"
+		parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.domain.AbandonGoodsApplicationEntity">
+		insert into PKP.T_SRV_ABANDON_GOODS_APP
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				ID,
+			</if>
+			<if test="tSrvExceptionId != null">
+				T_SRV_EXCEPTION_ID,
+			</if>
+			<if test="waybillNo != null">
+				WAYBILL_NO,
+			</if>
+			<if test="abandonedgoodsType != null">
+				ABANDONEDGOODS_TYPE,
+			</if>
+			<if test="createUserName != null">
+				CREATE_USER_NAME,
+			</if>
+			<if test="createUserCode != null">
+				CREATE_USER_CODE,
+			</if>
+			<if test="createOrgName != null">
+				CREATE_ORG_NAME,
+			</if>
+			<if test="createOrgCode != null">
+				CREATE_ORG_CODE,
+			</if>
+			<if test="preabandonedgoodsTime != null">
+				PREABANDONEDGOODS_TIME,
+			</if>
+			<if test="notes != null">
+				NOTES,
+			</if>
+			<if test="status != null">
+				STATUS,
+			</if>
+			<if test="importStatus != null">
+				IMPORT_STATUS,
+			</if>
+			<if test="operator != null">
+				OPERATOR,
+			</if>
+			<if test="operatorCode != null">
+				OPERATOR_CODE,
+			</if>
+			<if test="operateOrgName != null">
+				OPERATE_ORG_NAME,
+			</if>
+			<if test="operateOrgCode != null">
+				OPERATE_ORG_CODE,
+			</if>
+			<if test="operateTime != null">
+				OPERATE_TIME,
+			</if>
+			<if test="processId != null">
+				PROCESS_ID,
+			</if>
+			<if test="processReason != null">
+				PROCESS_REASON,
+			</if>
+			<if test="customerCooperateStatus != null">
+				CUSTOMER_COOPERATE_STATUS,
+			</if>
+			<if test="serialNumber != null">
+				SERIAL_NO,
+			</if>
+			<if test="errorNumber != null">
+				OA_ERROR_NO,
+			</if>
+			<if test="goodsName != null">
+				GOODS_NAME,
+			</if>
+			<if test="goodsWeightTotal != null">
+				GOODS_WEIGHT_TOTAL,
+			</if>
+			<if test="goodsVolumeTotal != null">
+				GOODS_VOLUME_TOTAL,
+			</if>
+			<if test="goodsQtyTotal != null">
+				GOODS_QTY_TOTAL,
+			</if>
+			<if test="storageDay != null">
+				STORAGE_DAY,
+			</if>
+			<if test="lastStorageOrgCode != null">
+				LAST_STORAGE_ORG_CODE,
+			</if>
+			<if test="belongAreaCode != null">
+				BELONG_AREA_CODE,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id,jdbcType=VARCHAR},
+			</if>
+			<if test="tSrvExceptionId != null">
+				#{tSrvExceptionId,jdbcType=VARCHAR},
+			</if>
+			<if test="waybillNo != null">
+				#{waybillNo,jdbcType=VARCHAR},
+			</if>
+			<if test="abandonedgoodsType != null">
+				#{abandonedgoodsType,jdbcType=VARCHAR},
+			</if>
+			<if test="createUserName != null">
+				#{createUserName,jdbcType=VARCHAR},
+			</if>
+			<if test="createUserCode != null">
+				#{createUserCode,jdbcType=VARCHAR},
+			</if>
+			<if test="createOrgName != null">
+				#{createOrgName,jdbcType=VARCHAR},
+			</if>
+			<if test="createOrgCode != null">
+				#{createOrgCode,jdbcType=VARCHAR},
+			</if>
+			<if test="preabandonedgoodsTime != null">
+				#{preabandonedgoodsTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="notes != null">
+				#{notes,jdbcType=VARCHAR},
+			</if>
+			<if test="status != null">
+				#{status,jdbcType=VARCHAR},
+			</if>			
+			<if test="importStatus != null">
+				#{importStatus,jdbcType=VARCHAR},
+			</if>
+			<if test="operator != null">
+				#{operator,jdbcType=VARCHAR},
+			</if>
+			<if test="operatorCode != null">
+				#{operatorCode,jdbcType=VARCHAR},
+			</if>
+			<if test="operateOrgName != null">
+				#{operateOrgName,jdbcType=VARCHAR},
+			</if>
+			<if test="operateOrgCode != null">
+				#{operateOrgCode,jdbcType=VARCHAR},
+			</if>
+			<if test="operateTime != null">
+				#{operateTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="processId != null">
+				#{processId,jdbcType=VARCHAR},
+			</if>
+			<if test="processReason != null">
+				#{processReason,jdbcType=VARCHAR},
+			</if>
+			<if test="customerCooperateStatus != null">
+				#{customerCooperateStatus,jdbcType=VARCHAR},
+			</if>
+			<if test="serialNumber != null">
+				#{serialNumber,jdbcType=VARCHAR},
+			</if>
+			<if test="errorNumber != null">
+				#{errorNumber,jdbcType=VARCHAR},
+			</if>
+			<if test="goodsName != null">
+				#{goodsName,jdbcType=VARCHAR},
+			</if>
+			<if test="goodsWeightTotal != null">
+				#{goodsWeightTotal,jdbcType=DECIMAL},
+			</if>
+			<if test="goodsVolumeTotal != null">
+				#{goodsVolumeTotal,jdbcType=DECIMAL},
+			</if>
+			<if test="goodsQtyTotal != null">
+				#{goodsQtyTotal,jdbcType=DECIMAL},
+			</if>
+			<if test="storageDay != null">
+				#{storageDay,jdbcType=DECIMAL},
+			</if>
+			<if test="lastStorageOrgCode != null">
+				#{lastStorageOrgCode,jdbcType=VARCHAR},
+			</if>
+			<if test="belongAreaCode != null">
+				#{belongAreaCode,jdbcType=VARCHAR},
+			</if>
+		</trim>
+	</insert>
+	
+	<update id="editAbandonGoodsApplication"
+		parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.domain.AbandonGoodsApplicationEntity">
+		update  PKP.T_SRV_ABANDON_GOODS_APP
+		<set>
+			<if test="notes!=null">
+				NOTES = #{notes,jdbcType=VARCHAR},
+			</if>
+			<if test="customerCooperateStatus != null">
+				CUSTOMER_COOPERATE_STATUS = #{customerCooperateStatus,jdbcType=VARCHAR}
+			</if>			
+		</set>
+		where WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+	</update>
+	<update id="updateByPrimaryKeySelective"
+		parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.domain.AbandonGoodsApplicationEntity">
+		update PKP.T_SRV_ABANDON_GOODS_APP
+		<set>
+			<if test="tSrvExceptionId != null">
+				T_SRV_EXCEPTION_ID = #{tSrvExceptionId,jdbcType=VARCHAR},
+			</if>
+			<if test="abandonedgoodsType != null">
+				ABANDONEDGOODS_TYPE = #{abandonedgoodsType,jdbcType=VARCHAR},
+			</if>
+			<if test="createUserName != null">
+				CREATE_USER_NAME = #{createUserName,jdbcType=VARCHAR},
+			</if>
+			<if test="createUserCode != null">
+				CREATE_USER_CODE = #{createUserCode,jdbcType=VARCHAR}	,
+			</if>
+			<if test="createOrgName != null">
+				CREATE_ORG_NAME = #{createOrgName,jdbcType=VARCHAR},
+			</if>
+			<if test="createOrgCode != null">
+				CREATE_ORG_CODE = #{createOrgCode,jdbcType=VARCHAR},
+			</if>
+			<if test="preabandonedgoodsTime != null">
+				PREABANDONEDGOODS_TIME = #{preabandonedgoodsTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="notes != null">
+				NOTES = #{notes,jdbcType=VARCHAR},
+			</if>
+			<if test="status != null">
+				STATUS = #{status,jdbcType=VARCHAR},
+			</if>
+			<if test="importStatus != null">
+				IMPORT_STATUS = #{importStatus,jdbcType=VARCHAR},
+			</if>
+			<if test="operator != null">
+				OPERATOR = #{operator,jdbcType=VARCHAR},
+			</if>
+			<if test="operatorCode != null">
+				OPERATOR_CODE = #{operatorCode,jdbcType=VARCHAR},
+			</if>
+			<if test="operateOrgName != null">
+				OPERATE_ORG_NAME = #{operateOrgName,jdbcType=VARCHAR},
+			</if>
+			<if test="operateOrgCode != null">
+				OPERATE_ORG_CODE = #{operateOrgCode,jdbcType=VARCHAR},
+			</if>
+			<if test="operateTime != null">
+				OPERATE_TIME = #{operateTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="processId != null">
+				PROCESS_ID = #{processId,jdbcType=VARCHAR},
+			</if>
+			<if test="processReason != null">
+				PROCESS_REASON = #{processReason,jdbcType=VARCHAR},
+			</if>
+			<if test="customerCooperateStatus != null">
+				CUSTOMER_COOPERATE_STATUS = #{customerCooperateStatus,jdbcType=VARCHAR},
+			</if>
+		</set>
+		where ID = #{id,jdbcType=VARCHAR}
+	</update>
+	<update id="updateByWaybillNo"
+		parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.domain.AbandonGoodsApplicationEntity">
+		update PKP.T_SRV_ABANDON_GOODS_APP
+		<set>
+			<if test="tSrvExceptionId != null">
+				T_SRV_EXCEPTION_ID = #{tSrvExceptionId,jdbcType=VARCHAR},
+			</if>
+			<if test="abandonedgoodsType != null">
+				ABANDONEDGOODS_TYPE = #{abandonedgoodsType,jdbcType=VARCHAR},
+			</if>
+			<if test="createUserName != null">
+				CREATE_USER_NAME = #{createUserName,jdbcType=VARCHAR},
+			</if>
+			<if test="createUserCode != null">
+				CREATE_USER_CODE = #{createUserCode,jdbcType=VARCHAR},
+			</if>
+			<if test="createOrgName != null">
+				CREATE_ORG_NAME = #{createOrgName,jdbcType=VARCHAR},
+			</if>
+			<if test="createOrgCode != null">
+				CREATE_ORG_CODE = #{createOrgCode,jdbcType=VARCHAR},
+			</if>
+			<if test="preabandonedgoodsTime != null">
+				PREABANDONEDGOODS_TIME = #{preabandonedgoodsTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="notes != null">
+				NOTES = #{notes,jdbcType=VARCHAR},
+			</if>
+			<if test="status != null">
+				STATUS = #{status,jdbcType=VARCHAR},
+			</if>
+			<if test="importStatus != null">
+				IMPORT_STATUS = #{importStatus,jdbcType=VARCHAR},
+			</if>
+			<if test="operator != null">
+				OPERATOR = #{operator,jdbcType=VARCHAR},
+			</if>
+			<if test="operatorCode != null">
+				OPERATOR_CODE = #{operatorCode,jdbcType=VARCHAR},
+			</if>
+			<if test="operateOrgName != null">
+				OPERATE_ORG_NAME = #{operateOrgName,jdbcType=VARCHAR},
+			</if>
+			<if test="operateOrgCode != null">
+				OPERATE_ORG_CODE = #{operateOrgCode,jdbcType=VARCHAR},
+			</if>
+			<if test="operateTime != null">
+				OPERATE_TIME = #{operateTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="processId != null">
+				PROCESS_ID = #{processId,jdbcType=VARCHAR},
+			</if>
+			<if test="processReason != null">
+				PROCESS_REASON = #{processReason,jdbcType=VARCHAR},
+			</if>
+		</set>
+		where WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+	</update>
+	
+	<select id="queryAbandonedGoodsOaDto"
+		resultType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.AbandonedGoodsOaDto"
+		parameterType="java.lang.String">
+	<![CDATA[
+		SELECT
+			a.WAYBILL_NO as waybillNo,
+			a.ORG_CODE as storageDept 
+		FROM
+			TFR.T_OPT_WAYBILL_STOCK a
+		where a.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+	]]>
+	</select>
+	
+	
+	
+</mapper>

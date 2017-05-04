@@ -1,0 +1,1 @@
+drop table T_BAS_SAMPLE;

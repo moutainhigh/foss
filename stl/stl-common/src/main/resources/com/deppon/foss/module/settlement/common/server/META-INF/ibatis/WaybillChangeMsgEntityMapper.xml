@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.WaybillChangeMsgEntityDao" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.common.api.shared.domain.WaybillChangeMsgEntity" >
+    <result column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+    <result column="MSG_DATE" property="msgDate" jdbcType="TIMESTAMP" />
+    <result column="MSG_ACTION" property="msgAction" jdbcType="VARCHAR" />
+    <result column="SOURCE_BILL_TYPE" property="sourceBillType" jdbcType="VARCHAR" />
+    <result column="SOURCE_BILL_NO" property="sourceBillNo" jdbcType="VARCHAR" />
+  </resultMap>
+  <sql id="Base_Column_List">
+  		ID,WAYBILL_NO,MSG_DATE,MSG_ACTION,
+  		SOURCE_BILL_TYPE,SOURCE_BILL_NO 
+  </sql>
+  <insert id="insert" parameterType="com.deppon.foss.module.settlement.common.api.shared.domain.WaybillChangeMsgEntity" >
+    insert into STL.T_STL_WAYBILL_CHANGE_MSG (ID, WAYBILL_NO, MSG_DATE, 
+      MSG_ACTION, SOURCE_BILL_TYPE, SOURCE_BILL_NO
+      )
+    values (#{id,jdbcType=VARCHAR}, #{waybillNo,jdbcType=VARCHAR}, #{msgDate,jdbcType=TIMESTAMP}, 
+      #{msgAction,jdbcType=VARCHAR}, #{sourceBillType,jdbcType=VARCHAR}, #{sourceBillNo,jdbcType=VARCHAR}
+      )
+  </insert>
+  <!-- 批量删除完结消息 -->
+  <delete id="deleteByBatch" parameterType="com.deppon.foss.module.settlement.common.api.shared.domain.WaybillChangeMsgEntity">
+  	DELETE FROM STL.T_STL_WAYBILL_CHANGE_MSG MSG 
+  	WHERE MSG.ID IN
+  	<foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+      (#{item.id})
+    </foreach>
+  </delete>
+  <!-- 查询待处理业务完结消息 -->
+  <select id="selectChangeMsg" resultMap="BaseResultMap" parameterType="java.util.Map" >
+    SELECT 
+    <include refid="Base_Column_List" />
+    FROM STL.T_STL_WAYBILL_CHANGE_MSG 
+    WHERE 
+    <![CDATA[
+    MSG_DATE >= #{beginTime,jdbcType=TIMESTAMP} and MSG_DATE < #{endTime,jdbcType=TIMESTAMP}
+    ]]>
+    ORDER BY MSG_DATE
+  </select>
+  
+  <select id="selectChangeMsgByWaybillNo" parameterType="java.lang.String" resultMap="BaseResultMap">
+  	select <include refid="Base_Column_List"/> FROM 
+  	 STL.T_STL_WAYBILL_CHANGE_MSG WM WHERE WM.WAYBILL_NO=#{waybillNo}
+  </select>
+  
+</mapper>

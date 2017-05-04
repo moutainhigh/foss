@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.bse.bse-baseinfo.position" >
+	<!-- 价格趋于结果集 -->
+	<resultMap id="pricingRegionResultMap" 
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.PositionEntity">
+		<id property="id" column="ID"/>
+		<result property="title" column="VALUE_NAME"/>
+		<result property="titleCode" column="VALUE_CODE"/>
+		<result property="active" column="ACTIVE"/>
+	</resultMap>
+	
+	<!-- 下面是公共选择框的查询 -->
+	<sql id="queryEmp4selectorCloumns">
+		position.ID AS ID,
+		position.VALUE_CODE AS VALUE_CODE,
+		position.VALUE_NAME AS  VALUE_NAME,
+		position.ACTIVE AS ACTIVE
+	</sql>
+	
+		<!-- 根据实体动态条件精确查询,如果属性的值为null或者空白则无效： -->
+	<select id="queryEmployeeExactByEntity4Selector" resultMap="pricingRegionResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PositionEntity">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据实体动态条件精确查询,如果属性的值为null或者空白则无效 **/
+		]]>
+		<include refid="queryEmp4selectorCloumns" />
+		<![CDATA[
+	    	FROM bse.t_bas_data_postion_degree position 
+		]]>
+		<include refid="query_queryEmployeeExactByEntity_condition_param4Selector" />
+	</select>
+		<!-- 根据实体动态条件精确查询,如果属性的值为null或者空白则无效： -->
+	<select id="countEmployeeExactByEntity4Selector" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PositionEntity">
+		<![CDATA[
+		  SELECT/** 综合:根据实体动态条件精确查询,如果属性的值为null或者空白则无效 **/  COUNT(*)
+	    		FROM bse.t_bas_data_postion_degree position 
+		]]>
+		<include refid="query_queryEmployeeExactByEntity_condition_param4Selector" />
+	</select>
+	
+	<sql id="query_queryEmployeeExactByEntity_condition_param4Selector">
+	<where>
+			position.ACTIVE =  #{active,jdbcType=CHAR}
+			<if test="queryParam !=null and queryParam != '' ">
+	        	AND (
+	        			position.VALUE_CODE like CONCAT(CONCAT('%', #{queryParam,jdbcType=VARCHAR}), '%')
+	        		 OR
+	        		 	position.VALUE_NAME like CONCAT(CONCAT('%', #{queryParam,jdbcType=VARCHAR}), '%')
+	        		) 
+	      	</if>
+	</where>
+	</sql>
+	
+</mapper>

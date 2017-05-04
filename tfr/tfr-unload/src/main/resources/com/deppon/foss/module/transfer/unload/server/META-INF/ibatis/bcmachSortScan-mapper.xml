@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tfr.unload.bCMachSortScan" >
+	<resultMap id="bCMachSortScanEntityResultMap"
+		type="com.deppon.foss.module.transfer.unload.api.shared.domain.BCMachSortScanEntity">
+		<result property="id" column="ID" />
+		<result property="waybillNo" column="WAYBILL_NO" />
+		<result property="serialNo" column="SERIAL_NO" />
+		<result property="operatorName" column="OPERATOR_NAME" />
+		<result property="operatorCode" column="OPERATOR_CODE" />
+		<result property="operationDeptCode" column="OPERATION_ORG_CODE" />
+		<result property="operationDept" column="OPERATION_ORG_NAME" />
+		<result property="createTime" column="CREATE_TIME" />
+		<result property="scanType" column="SCAN_TYPE" />
+		<result property="scanTime" column="SCAN_TIME" />
+		<result property="length" column="length" />
+		<result property="width" column="width" />
+		<result property="height" column="height" />
+		<result property="weight" column="weight" />
+		<result property="volumn" column="volumn" />
+		<result property="goodsSize" column="goodsSize"/>
+	</resultMap>
+	<resultMap type="com.deppon.foss.module.transfer.unload.api.shared.domain.BCMachWaybillSortScanEntity" id="queryMachineWaybillMap">
+		<result column="ID" property="id"/>
+		<result column="WAYBILL_NO" property="waybillNo"/>
+		<result column="CREATE_TIME" property="scanTime"/>
+		<result column="MODIFY_TIME" property="lastScanTime"/>
+		<result column="WEIGHT" property="weight"/>
+		<result column="VOLUMN" property="volumn"/>
+		<result column="PIECE" property="piece"/>
+	</resultMap>
+	<select id="queryBCMachSortScan" parameterType="com.deppon.foss.module.transfer.unload.api.shared.vo.BCMachSortScanVo" resultMap="bCMachSortScanEntityResultMap">
+		select /**FOSS-中转-卸车-计泡机称重量方查询**/
+			bss.waybill_no ,
+			bss.serial_no ,
+			bss.length||'*'|| bss.width ||'*'||bss.height goodsSize,
+			bss.length ,
+			bss.width ,
+			bss.height ,
+			bss.weight ,
+			bss.volumn ,
+			bss.operator_name ,
+			bss.operation_org_name ,
+			bss.scan_Time 
+		 from tfr.t_Opt_bcmach_SortScan_log bss
+		<where>
+		 <if test="endTime != '' and endTime !=null and begenTime != '' and begenTime !=null">
+		 	bss.scan_time <![CDATA[ >=]]> #{begenTime} 
+		 	and bss.scan_time <![CDATA[ <=]]>  #{endTime}
+		 </if>
+		 <if test="waybillNo != '' and waybillNo !=null">
+		 	and bss.waybill_no = #{waybillNo}
+		 </if>
+		 <if test="operatorName != '' and operatorName !=null">
+		 	 and bss.operator_code =#{operatorName}
+		 </if>
+		 <if test="operationDept != '' and operationDept !=null">
+		 	and bss.operation_org_code=#{operationDept}
+		 </if>
+		</where> 
+		 
+	</select>
+	<select id="queryBCMachSortScanCount" parameterType="com.deppon.foss.module.transfer.unload.api.shared.vo.BCMachSortScanVo" resultType="long">
+		select /**FOSS-中转-卸车-计泡机称重量方查询数据条数**/
+			Count(1)
+		 from tfr.t_Opt_bcmach_SortScan_log bss
+		 <where> 
+		 	<if test="endTime != '' and endTime !=null and begenTime != '' and begenTime !=null">
+			 	bss.scan_time <![CDATA[ >=]]> #{begenTime} 
+			 	and bss.scan_time <![CDATA[ <=]]>  #{endTime}
+			 </if>
+			 <if test="waybillNo != '' and waybillNo !=null">
+			 	and bss.waybill_no = #{waybillNo}
+			 </if>
+			 <if test="operatorName != '' and operatorName !=null">
+			 	and bss.operator_code =#{operatorName}
+			 </if>
+			 <if test="operationDept != '' and operationDept !=null">
+			 	and bss.operation_org_code=#{operationDept}
+			 </if>
+			 
+		 </where>
+	</select>
+	
+	<select id="queryBCMachSortScanBySeriaNo" parameterType="Map" resultMap="bCMachSortScanEntityResultMap">
+		select /**FOSS-中转-卸车-计泡机称重量方通过运单流水号查询扫描记录**/
+		    bss.id,
+			bss.waybill_no ,
+			bss.serial_no ,
+			bss.length ,
+			bss.width ,
+			bss.height ,
+			bss.weight ,
+			bss.volumn ,
+			bss.operator_name ,
+			bss.operation_org_name ,
+			bss.scan_Time 
+		 from tfr.t_Opt_bcmach_SortScan bss
+		<where>
+		
+		 <if test="waybillNo != '' and waybillNo !=null">
+		 	 bss.waybill_no = #{waybillNo}
+		 </if>
+		 <if test="serialNo != '' and serialNo !=null">
+		 	 and bss.serial_no =#{serialNo}
+		 </if>
+		
+		</where> 
+		 
+	</select>
+	<delete id="deleteScanMsg" parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.BCMachSortScanEntity" >
+		delete	from tfr.t_Opt_bcmach_SortScan bss where bss.id=#{id}
+	</delete>
+	
+	<insert id="saveScanMsg" parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.BCMachSortScanEntity" >
+		insert into tfr.t_Opt_bcmach_SortScan(
+			id ,
+			SORTSCAN_LOG_ID,
+			waybill_no ,
+			serial_no ,
+			OPERATOR_CODE,
+			OPERATOR_NAME ,
+			OPERATION_ORG_CODE ,
+			OPERATION_ORG_NAME ,
+			CREATE_TIME ,
+			SCAN_TIME ,
+			SCAN_TYPE ,
+			length ,
+			width ,
+			height ,
+			weight ,
+			volumn 
+		)values(
+			#{id},
+			#{sortScanlogId},
+			#{waybillNo},
+			#{serialNo},
+			#{operatorCode},
+			#{operatorName},
+			#{operationDeptCode},
+			#{operationDept},
+			#{createTime},
+			#{scanTime},
+			#{scanType},
+			#{length},
+			#{width},
+			#{height},
+			#{weight},
+			#{volumn}
+		)
+	</insert>
+	
+	
+	<insert id="saveScanMsgLog" parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.BCMachSortScanEntity" >
+		insert into tfr.t_Opt_bcmach_SortScan_LOG(
+			id ,
+			waybill_no ,
+			serial_no ,
+			OPERATOR_CODE,
+			OPERATOR_NAME ,
+			OPERATION_ORG_CODE ,
+			OPERATION_ORG_NAME ,
+			CREATE_TIME ,
+			SCAN_TIME ,
+			SCAN_TYPE ,
+			length ,
+			width ,
+			height ,
+			weight ,
+			volumn 
+		)values(
+			#{id},
+			#{waybillNo},
+			#{serialNo},
+			#{operatorCode},
+			#{operatorName},
+			#{operationDeptCode},
+			#{operationDept},
+			#{createTime},
+			#{scanTime},
+			#{scanType},
+			#{length},
+			#{width},
+			#{height},
+			#{weight},
+			#{volumn}
+		)
+	</insert>
+	
+	<update id="updateOrInsertWaybillMsg" parameterType="java.lang.String">
+		merge into tfr.t_Opt_Bcmach_Waybill_Sortscan bws /**FOSS-中转-卸车-更新运单性息总表**/
+		using (select waybill_no,  sum(weight) totalWeight,   sum(volumn) totalVolumn,  count(id) totalPiece
+		         from tfr.t_Opt_Bcmach_Sortscan where waybill_no = #{waybillNo}   group by waybill_no) p on  (p.waybill_no = bws.waybill_no)
+		when matched then
+		  update  set weight  = p.totalWeight, volumn  = p.totalVolumn, piece = p.totalpiece,  modify_time =sysdate
+		   where waybill_no = #{waybillNo}
+		when not matched then
+		  insert
+		    (id,  waybill_no, weight, volumn,  piece, create_time )
+		  values
+		    (sys_guid(), #{waybillNo}, p.totalWeight, p.totalVolumn, p.totalpiece, sysdate)
+	</update>
+	
+	<!-- 更具运单号在计泡机总表中查询一条数据 -->
+	<select id="queryFromBCMachineByWaybill" parameterType="java.lang.String" resultType="com.deppon.foss.module.transfer.unload.api.shared.domain.BCMachWaybillSortScanEntity" >
+		select * from tfr.t_Opt_Bcmach_Waybill_Sortscan s where s.waybill_no=#{waybillNo}
+	</select>
+</mapper>

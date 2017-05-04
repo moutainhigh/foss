@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="boot" default="apphome" basedir=".">
+    
+	<target name="apphome" depends="init,  gen-md5hex, zip-apphome-file, exefosslauncher, setup-launcherzip, clear-apphome-tmp">
+	</target>
+	
+	<target name="init">
+	    <echo message="load newly apphome files ....."/>
+	    <delete dir="${basedir}/target/apphome" failonerror="false" quiet="true" />
+	    <delete file="${basedir}/target/apphome.zip" failonerror="false" quiet="true" />
+	    <mkdir dir="${basedir}/target/apphome" />
+		<copy todir="${basedir}/target/apphome" >
+			<fileset dir="../appHome">
+      			<include name="conf/**"/>
+      			<include name="lib/**"/>
+      			<include name="database/**"/>
+      			<include name="plugins/**"/>
+      			<include name="script/**"/>
+      			<include name="static/**"/>
+      			<include name="boot.properties"/>
+      			<include name="foss.exe"/>
+      			<include name="launcher.properties"/>
+      			<include name="run.bat"/>
+    		</fileset>
+		</copy>
+	</target>
+	
+	<condition property="exe4j.path" value="C:/Program Files/exe4j/bin/ant.jar" else="/opt/exe4j/bin/ant.jar">
+		<os family="windows" />
+	</condition>
+
+    <taskdef name="exe4j"
+               classname="com.exe4j.Exe4JTask"
+               classpath="${exe4j.path}"/>
+    
+	<!-- for linux /windows 
+    <taskdef name="exe4j"
+               classname="com.exe4j.Exe4JTask"
+               classpath="C:/Program Files/exe4j/bin/ant.jar"/>
+               	
+    <taskdef name="exe4j"
+               classname="com.exe4j.Exe4JTask"
+               classpath="/opt/exe4j/bin/ant.jar"/>
+    -->
+    
+     <target name="exefosslauncher">
+        <echo message="exe fosslauncher for ${environment} ....."/>
+        <mkdir dir="${basedir}/target/gui${environment}/gui${environment}" />
+		<copy tofile="${basedir}/target/fosslauncher_${environment}.exe4j" file="${basedir}/env/${environment}/fosslauncher_ant.exe4j">
+	        <filterset>
+	          <filter token="BASE_PATH" value="${basedir}/env" />
+	          <filter token="LIB_PATH" value="${basedir}/target/lib" />
+			  <filter token="OUTPUT_PATH" value="${basedir}/target/gui${environment}/gui${environment}" />	          
+	        </filterset>
+      	</copy>
+		<exe4j projectfile="${basedir}/target/fosslauncher_${environment}.exe4j"/>
+     </target>
+
+	
+	<!--
+	<target name="hessian" >
+		<echo message="reset hessian conf by ${hessian.url} ....."/>
+	     <replace file ="${basedir}/target/apphome_${environment}/conf/hessianConfig.ini" token="server-host:192.168.10.27" value="server-host:${hessian.url}" />
+	     <replace file ="${basedir}/target/apphome_${environment}/conf/hessianConfig.ini" token="server-port:8080" value="server-port:${hessian.port}" />
+	</target>
+	-->
+	
+	<!-- generate md5hex.dat -->
+	<target name="gen-md5hex">
+	    <echo message="parse apphome for newly md5hex file ....."/>
+		<java classname="com.deppon.foss.update.ScanFilesToMd5HexDat">
+         <arg value="-h"/>
+         <arg value="${basedir}/target/apphome"/>
+         <arg value="${basedir}/target/apphome/md5hex.dat"/>
+		
+		<!--
+		 <arg value="djnativeswing.jar,bcmail-jdk14.jar,bcprov-jdk14.jar,bctsp-jdk14.jar,
+		 	castor.jar,dom4j.jar,xml-apis.jar,xml-resolver.jar,xmlbeans.jar,xmlschema-core.jar,
+		 	jna_WindowUtils.jar,jna.jar,poi-ooxml.jar,itext.jar,bse-baseinfo.jar,bse-common-api.jar,
+		 	bse-common.jar,commonservices.jar,cxf-api.jar,cxf-common-utilities.jar,cxf-rt-bindings-soap.jar,
+		 	cxf-rt-bindings-xml.jar,cxf-rt-core.jar,cxf-rt-databinding-jaxb.jar,cxf-rt-frontend-jaxws.jar,
+		 	cxf-rt-frontend-simple.jar,cxf-rt-transports-common.jar,cxf-rt-transports-http.jar,cxf-rt-ws-addr.jar,
+		 	cxf-tools-common.jar,dhbcore.jar,esb-extends-api.jar,esb-extends-config.jar,esb-extends-core.jar,
+		 	foss-esb.jar,fscontext.jar,geronimo-javamail_1.4_spec.jar,jaxb-impl.jar,jfreechart.jar,jmqi.jar,
+		 	jms.jar,jdtcore.jar,jta.jar,junit.jar,mq.jar,mqjms.jar,oracle-jdbc.jar,pcf.jar,poi-ooxml-schemas.jar,
+		 	providerutil.jar,spring-aop.jar,spring-core.jar,spring-web.jar,swt.jar,woodstox-core-asl.jar,wsdl4j.jar,ojdbc.jar,backup" />	
+			-->
+		 <classpath>
+           <pathelement path="${basedir}/target/jnlp/lib/commons-codec-1.5.jar"/>
+           <pathelement path="${basedir}/bin"/>
+         </classpath>
+       </java>
+	</target>
+	
+	<!--将目录文件打包-->
+	<target name="zip-apphome-file">
+	    <echo message="zip apphome files ....."/>
+		<zip destfile="${basedir}/target/appHome.zip">
+			<fileset dir="${basedir}/target/apphome">
+				<include name="**/*" />
+				<exclude name="lib/djnativeswing.jar" />
+				<exclude name="lib/bcmail-jdk14.jar" />
+				<exclude name="lib/bcprov-jdk14.jar" />
+				<exclude name="lib/bctsp-jdk14.jar" />
+				<exclude name="lib/castor.jar" />				
+				<exclude name="lib/xml-apis.jar" />
+				<exclude name="lib/xml-resolver.jar" />				
+				<exclude name="lib/xmlschema-core.jar" />
+				<exclude name="lib/jna_WindowUtils.jar" />
+				<exclude name="lib/jna.jar" />				
+				<exclude name="lib/itext.jar" />
+				<exclude name="lib/bse-baseinfo.jar" />
+				
+				<exclude name="lib/bse-common.jar" />
+				<exclude name="lib/commonservices.jar" />
+				
+				<exclude name="lib/cxf-common-utilities.jar" />
+				<exclude name="lib/cxf-rt-bindings-soap.jar" />
+				<exclude name="lib/cxf-rt-bindings-xml.jar" />
+				<exclude name="lib/cxf-rt-core.jar" />
+				<exclude name="lib/cxf-rt-databinding-jaxb.jar" />
+				<exclude name="lib/cxf-rt-frontend-jaxws.jar" />
+				<exclude name="lib/cxf-rt-frontend-simple.jar" />
+				<exclude name="lib/cxf-rt-transports-common.jar" />
+				<exclude name="lib/cxf-rt-transports-http.jar" />
+				<exclude name="lib/cxf-rt-ws-addr.jar" />
+				<exclude name="lib/cxf-tools-common.jar" />
+				<exclude name="lib/dhbcore.jar" />
+				<exclude name="lib/esb-extends-api.jar" />
+				<exclude name="lib/esb-extends-config.jar" />
+				<!-- exclude name="lib/esb-extends-core.jar" 添加esb核心包 /-->
+				
+				<exclude name="lib/fscontext.jar" />
+				<exclude name="lib/geronimo-javamail_1.4_spec.jar" />
+				<exclude name="lib/jaxb-impl.jar" />
+				<exclude name="lib/jfreechart.jar" />
+				<exclude name="lib/jmqi.jar" />
+				<exclude name="lib/jms.jar" />
+				<exclude name="lib/jdtcore.jar" />
+				<exclude name="lib/jta.jar" />
+				<exclude name="lib/junit.jar" />
+				<exclude name="lib/mq.jar" />
+				<exclude name="lib/mqjms.jar" />
+				<exclude name="lib/oracle-jdbc.jar" />
+				<exclude name="lib/pcf.jar" />				
+				<exclude name="lib/providerutil.jar" />
+				<exclude name="lib/spring-aop.jar" />
+				<exclude name="lib/spring-core.jar" />
+				<exclude name="lib/spring-web.jar" />
+				<exclude name="lib/swt.jar" />
+				<exclude name="lib/woodstox-core-asl.jar" />
+				<exclude name="lib/wsdl4j.jar" />
+				<exclude  name="lib/ojdbc.jar" />
+			</fileset>
+		</zip>
+	</target>
+	
+	<target name="setup-launcherzip">
+	    <echo message="setup launcher zip ....."/>
+		<copy todir="${basedir}/target/gui${environment}/gui${environment}/appHome" >
+			<fileset dir="${basedir}/target/apphome" />
+		</copy> 
+		<zip destfile="${basedir}/target/gui${environment}.zip">
+			<fileset dir="${basedir}/target/gui${environment}" />
+		</zip>
+	</target>
+	
+	<target name="clear-apphome-tmp">
+	    <delete dir="${basedir}/target/apphome" failonerror="false" quiet="true" />	    
+	</target>
+</project>

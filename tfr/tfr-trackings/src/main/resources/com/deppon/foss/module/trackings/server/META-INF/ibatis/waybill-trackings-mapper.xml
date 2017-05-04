@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.trackings.waybillTrackingsMapper" >
+  <resultMap id="OrderWaybillMap" type="com.deppon.foss.module.trackings.api.shared.dto.OrderWaybillDto" >
+  	<id column="id" property="id" jdbcType="VARCHAR"/>
+  	<result column="companyCode" property="company" jdbcType="VARCHAR"/>
+  	<result column="waybillNo" property="code" jdbcType="VARCHAR"/>
+  	<result column="orderType" property="operator" jdbcType="VARCHAR"/>
+  	<result column="callBack" property="callback" jdbcType="VARCHAR"/>
+  	<result column="orderCmpCode" property="ordercompany" jdbcType="VARCHAR"/>
+  	<result column="orderCmpName" property="orderCmpName" jdbcType="VARCHAR"/>
+  	<result column="createTime" property="createTime" jdbcType="TIMESTAMP"/>
+  	<result column="isPush" property="isPush" jdbcType="VARCHAR"/>
+  	<result column="pushResult" property="pushResult" jdbcType="VARCHAR"/>
+  	<result column="maxId" property="maxId" jdbcType="VARCHAR"/>
+  	<result column="watchStatus" property="watchStatus" jdbcType="VARCHAR"/>
+  	<result column="signTime" property="signTime" jdbcType="TIMESTAMP"/>
+  	<result column="isReturn" property="isReturn" jdbcType="VARCHAR"/>
+  	<result column="pushTime" property="pushTime" jdbcType="TIMESTAMP"/>
+  	<result column="returnTime" property="returnTime" jdbcType="TIMESTAMP"/>
+  	<result column="latestTime" property="latestTime" jdbcType="TIMESTAMP"/>
+  </resultMap>
+  
+  <resultMap id="WaybillTracksMap" type="com.deppon.foss.module.trackings.api.shared.dto.WaybillTrackingsDto">
+  	<id column="id" property="id" jdbcType="VARCHAR"/>
+  	<result column="routeId" property="routeId" jdbcType="VARCHAR"/>
+  	<result column="waybillNo" property="waybillNo" jdbcType="VARCHAR"/>
+  	<result column="operateType" property="operateType" jdbcType="VARCHAR"/>
+  	<result column="operateTime" property="operateTime" jdbcType="TIMESTAMP"/>
+  	<result column="operatorName" property="operatorName" jdbcType="VARCHAR"/>
+  	<result column="operatorPhone" property="operatorPhone" jdbcType="VARCHAR"/>
+  	<result column="operateDesc" property="operateDesc" jdbcType="VARCHAR"/>
+  	<result column="operateLocation" property="operateLocation" jdbcType="VARCHAR"/>
+  	<result column="operateDeptCode" property="operateDeptCode" jdbcType="VARCHAR"/>
+  	<result column="operateDeptName" property="operateDeptName" jdbcType="VARCHAR"/>
+  	<result column="nextDeptCode" property="nextDeptCode" jdbcType="VARCHAR"/>
+  	<result column="nextDeptName" property="nextDeptName" jdbcType="VARCHAR"/>
+  	<result column="isPush" property="isPush" jdbcType="VARCHAR"/>
+  	<result column="createTime" property="createTime" jdbcType="TIMESTAMP"/>
+  	<result column="updateTime" property="updateTime" jdbcType="TIMESTAMP"/>
+  </resultMap>
+  
+  <sql id="OrderWaybillRecord_Column_List">
+   	   ow.id id,
+   	   ow.company_code companyCode,
+       ow.waybill_no waybillNo,
+       ow.order_type orderType,
+       ow.call_back callBack,
+       ow.order_cmp_code orderCmpCode,
+       ow.order_cmp_name orderCmpName,
+       ow.create_time createTime,
+       ow.is_push	isPush,
+       ow.max_id maxId,
+       ow.push_result pushResult,
+       ow.watch_status watchStatus,
+       ow.sign_time signTime,
+       ow.is_return isReturn,
+       ow.push_time pushTime,
+       ow.return_time returnTime,
+       ow.latest_time latestTime
+   	</sql>
+  	<sql id="WaybillTrack_Column_List">
+   	   wt.id id,
+		wt.route_id routeId,
+		wt.waybill_no waybillNo,
+		wt.operate_type operateType,
+		wt.operate_time operateTime,
+		wt.operator_name operatorName,
+		wt.operator_phone operatorPhone,
+		wt.operate_desc operateDesc,
+		wt.operate_location operateLocation,
+		wt.operate_dept_code  operateDeptCode,
+		wt.operate_dept_name operateDeptName,
+		wt.next_dept_code nextDeptCode,
+		wt.next_dept_name nextDeptName,
+		wt.is_push isPush,
+		wt.create_time createTime,
+		wt.update_time updateTime
+   	</sql>
+  <insert id="addOrderWaybillNo" parameterType="com.deppon.foss.module.trackings.api.shared.dto.OrderWaybillDto">
+  	insert into tfr.t_opt_order_waybillno(
+		id ,
+		company_code,
+		waybill_no,
+		order_type,
+		call_back,
+		order_cmp_code,
+		order_cmp_name,
+		create_time 
+		)
+		values
+		(#{id,jdbcType=VARCHAR},
+		 #{company,jdbcType=VARCHAR},
+		 #{code,jdbcType=VARCHAR},
+		 #{operator,jdbcType=VARCHAR},
+		 #{callback,jdbcType=VARCHAR},
+		 #{ordercompany,jdbcType=VARCHAR},
+		 #{orderCmpName,jdbcType=VARCHAR},
+		 sysdate
+		 )
+  </insert>
+  
+  <select id="queryWaybillInfoByNo" parameterType="string" resultMap="OrderWaybillMap">
+  		select 
+  		<include refid="OrderWaybillRecord_Column_List"/>
+  		from 
+  			tfr.t_opt_order_waybillno ow
+  		where ow.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+  </select>
+  
+  <update id="updateTrackByNoAndRoute" parameterType="java.util.Map">
+		update tfr.t_opt_order_waybill_track t
+		set t.is_push = 'Y',
+			t.update_time = sysdate
+		where t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		<if test="routeList !=null and routeList.size > 0 ">
+			and t.route_id in 
+			<foreach collection="routeList" open="(" close=")" item="item" separator="," index="index"> 
+				#{item,jdbcType=VARCHAR} 
+			</foreach>
+		</if>
+	</update>
+	
+	<insert id="addWaybillTrack" parameterType="com.deppon.foss.module.trackings.api.shared.dto.WaybillTrackingsDto">
+		insert into tfr.t_opt_order_waybill_track
+			(id ,
+			 waybill_no,
+			 route_id,
+			 operate_type,
+			 operate_time,
+			 operator_name,
+			 operator_phone,
+			 operate_desc,
+			 operate_location,
+			 operate_dept_code,
+			 operate_dept_name,
+			 next_dept_code,
+			 next_dept_name,
+			 create_time,
+			 update_time
+			 )
+		 values
+			 (
+			  #{id,jdbcType=VARCHAR},
+			  #{waybillNo,jdbcType=VARCHAR},
+			  #{routeId,jdbcType=VARCHAR},
+			  #{operateType,jdbcType=VARCHAR},
+			  #{operateTime,jdbcType=TIMESTAMP},
+			  #{operatorName,jdbcType=VARCHAR},
+			  #{operatorPhone,jdbcType=VARCHAR},
+			  #{operateDesc,jdbcType=VARCHAR},
+			  #{operateLocation,jdbcType=VARCHAR},
+			  #{operateDeptCode,jdbcType=VARCHAR},
+			  #{operateDeptName,jdbcType=VARCHAR},
+			  #{nextDeptCode,jdbcType=VARCHAR},
+			  #{nextDeptName,jdbcType=VARCHAR},
+			  sysdate,
+			  sysdate
+			 )
+	</insert>
+	
+	<select id="queryPushWaybillInfo" resultMap="OrderWaybillMap">
+		select 
+			<include refid="OrderWaybillRecord_Column_List"/>
+		from tfr.t_opt_order_waybillno ow
+		where ow.is_push = #{isPush,jdbcType=VARCHAR}
+			<if test="isReturn != null and isReturn != '' " >
+	        	and ow.is_return = #{isReturn,jdbcType=VARCHAR}
+	      	</if>
+	      	<if test="watchStatus != null and watchStatus !='' " >
+	        	and ow.watch_status = #{watchStatus,jdbcType=VARCHAR}
+	      	</if>
+	      	<if test="pushResult != null and pushResult !='' " >
+	        	and ow.push_result = #{pushResult,jdbcType=VARCHAR}
+	      	</if>
+	</select>
+	
+	<select id="queryWaybillNoCount" parameterType="string" resultType="int">
+		select count(1) from pkp.t_srv_waybill w
+		where w.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+	</select>
+	
+	<update id="updateOrderWaybillByNo" parameterType="com.deppon.foss.module.trackings.api.shared.dto.OrderWaybillDto">
+		 update tfr.t_opt_order_waybillno ow
+	    <set >
+	     <if test="operator != null and operator !='' " >
+	        ow.order_type = #{operator,jdbcType=VARCHAR},
+	      </if>
+	      <if test="isPush != null and isPush !='' " >
+	        ow.is_push = #{isPush,jdbcType=VARCHAR},
+	      </if>
+	      <if test="isReturn != null and isReturn !='' " >
+	        ow.is_return = #{isReturn,jdbcType=VARCHAR},
+	      </if>
+	      <if test="watchStatus != null and watchStatus !='' " >
+	        ow.watch_status = #{watchStatus,jdbcType=VARCHAR},
+	      </if>
+	      <if test="maxId != null and maxId != '' " >
+	        ow.max_id = #{maxId,jdbcType=VARCHAR},
+	      </if>
+	      <if test="pushTime != null" >
+			ow.push_time = #{pushTime,jdbcType=VARCHAR},
+		 </if>
+		 <if test="returnTime != null" >
+			ow.return_time = #{returnTime,jdbcType=VARCHAR},
+		 </if>
+	      <if test="signTime != null">
+			ow.sign_time = #{signTime,jdbcType=TIMESTAMP},
+		</if>
+		 <if test="pushResult != null and pushResult != '' ">
+			ow.push_result = #{pushResult,jdbcType=TIMESTAMP},
+		 </if>
+		  <if test="latestTime != null ">
+			ow.latest_time = #{latestTime,jdbcType=TIMESTAMP}
+		 </if>
+	    </set>
+	    where ow.waybill_no = #{code,jdbcType=VARCHAR} 
+	</update>
+	
+	<delete id="deleteTrackByNo" parameterType="string">
+		delete from tfr.t_opt_order_waybill_track t
+		where t.waybill_no = #{code,jdbcType=VARCHAR} 
+	</delete>
+	
+	<select id="queryRouteId" parameterType="string" resultType="string">
+		select nvl(max(t.route_id),-1) + 1 from tfr.t_opt_order_waybill_track t
+		where t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+	</select>
+	
+	
+	<!-- <select id="queryTrackInfo" resultMap="WaybillTracksMap">
+		select 
+			<include refid="WaybillTrack_Column_List"/>
+		 from tfr.t_opt_order_waybill_track wt
+		where wt.is_push = 'N'
+		order by wt.operate_time
+	</select> -->
+	
+	<insert id="addTrackLog" parameterType="com.deppon.foss.module.trackings.api.shared.domain.WaybillTrackingsLogEntity">
+		insert into tfr.t_opt_order_waybill_log
+		(ID,
+		 msg_id,
+		 waybill_no,
+		 code,
+		 msg,
+		 msg_type,
+		 create_time
+		 ) 
+		 values
+		 (
+		 	#{id,jdbcType=VARCHAR},
+			 #{msgId,jdbcType=VARCHAR},
+			 #{waybillNo,jdbcType=VARCHAR},
+			 #{code,jdbcType=VARCHAR},
+			 #{msg,jdbcType=VARCHAR},
+			 #{type,jdbcType=VARCHAR},
+			 #{createTime,jdbcType=TIMESTAMP}
+		 )
+	</insert>
+	
+	<select id="queryTrackInfoByWaybillNo" parameterType="string" resultMap="WaybillTracksMap">
+		select 
+			<include refid="WaybillTrack_Column_List"/>
+		 from tfr.t_opt_order_waybill_track wt
+		where wt.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		and wt.is_push = 'N'
+		order by wt.operate_time
+	</select>
+	
+	<update id="updateOrderWaybillInfoByNo" parameterType="map">
+		update tfr.t_opt_order_waybillno ow
+		set ow.is_push = 'N',
+			ow.is_return = 'N',
+			ow.push_result = null,
+			ow.watch_status = 'normal',
+			ow.push_time = null,
+			ow.sign_time = null,
+			ow.return_time = null,
+			<if test="operator != null and operator !='' ">
+				ow.order_type = #{operator,jdbcType=VARCHAR},
+			</if>
+			ow.latest_time = null
+		where ow.waybill_no = #{code,jdbcType=VARCHAR}
+	</update>
+	
+	<update id="updateOrderWaybillByNoAndPush" parameterType="com.deppon.foss.module.trackings.api.shared.dto.OrderWaybillDto">
+		 update tfr.t_opt_order_waybillno ow
+	    <set >
+	     <if test="operator != null and operator !='' " >
+	        ow.order_type = #{operator,jdbcType=VARCHAR},
+	      </if>
+	      <if test="isReturn != null and isReturn !='' " >
+	        ow.is_return = #{isReturn,jdbcType=VARCHAR},
+	      </if>
+	      <if test="watchStatus != null and watchStatus !='' " >
+	        ow.watch_status = #{watchStatus,jdbcType=VARCHAR},
+	      </if>
+	      <if test="maxId != null and maxId != '' " >
+	        ow.max_id = #{maxId,jdbcType=VARCHAR},
+	      </if>
+	      <if test="pushTime != null" >
+			ow.push_time = #{pushTime,jdbcType=VARCHAR},
+		 </if>
+		 <if test="returnTime != null" >
+			ow.return_time = #{returnTime,jdbcType=VARCHAR},
+		 </if>
+	      <if test="signTime != null">
+			ow.sign_time = #{signTime,jdbcType=TIMESTAMP},
+		</if>
+		 <if test="pushResult != null and pushResult != '' ">
+			ow.push_result = #{pushResult,jdbcType=TIMESTAMP},
+		 </if>
+		 <if test="latestTime != null ">
+			ow.latest_time = #{latestTime,jdbcType=TIMESTAMP}
+		 </if>
+	    </set>
+	    where ow.waybill_no = #{code,jdbcType=VARCHAR} 
+	        	and ow.is_push = 'Y'
+	</update>
+	
+	<select id="queryAbortPushWaybillInfo" resultMap="OrderWaybillMap">
+		select 
+			<include refid="OrderWaybillRecord_Column_List"/>
+		from tfr.t_opt_order_waybillno ow
+		where ow.is_push = 'Y'
+			and ow.watch_status ='normal'
+		  	and (
+			  	ow.is_return = 'Y'
+				   or  
+				(ow.is_return = 'N' and ow.push_time is not null  <![CDATA[and ow.push_time <= sysdate - 30/60/24]]>)
+			   )
+          
+          and ow.latest_time is not null
+          <![CDATA[and ow.latest_time <= sysdate - 30]]>
+	</select>
+	
+	<select id="queryAppendPushWaybillInfo" resultMap="OrderWaybillMap">
+		select 
+			<include refid="OrderWaybillRecord_Column_List"/>
+		from tfr.t_opt_order_waybillno ow
+		where ow.is_push = 'Y'
+			 and ow.watch_status ='normal'
+			 and (
+			 		(ow.is_return = 'Y' and ow.push_result = '200')
+			 	  or
+			 	  (ow.is_return = 'Y' and ow.push_result in ('500','501') 
+			 	   and ow.push_time is not null <![CDATA[and ow.push_time <= sysdate - 30/60/24]]>)
+			 	  or
+			 	  (ow.is_return = 'N' and ow.push_time is not null  <![CDATA[and ow.push_time <= sysdate - 30/60/24]]>)
+			 )
+	</select>
+	
+	<select id="queryStopPushWaybillInfo" resultMap="OrderWaybillMap">
+		select 
+			<include refid="OrderWaybillRecord_Column_List"/>
+		from tfr.t_opt_order_waybillno ow
+		where ow.is_push = 'Y'
+          and ow.watch_status ='normal'
+		  and (ow.is_return = 'Y'
+		  		or
+		  		(ow.is_return = 'N' and ow.push_time is not null <![CDATA[and ow.push_time <= sysdate - 30/60/24]]>)
+		  		)
+          and ow.sign_time is not null
+          <![CDATA[and ow.sign_time <= sysdate - 3]]>
+          
+	</select>
+	
+	<select id="queryOverridePushWaybillInfo" resultMap="OrderWaybillMap">
+		select 
+			<include refid="OrderWaybillRecord_Column_List"/>
+		from tfr.t_opt_order_waybillno ow
+		where ow.is_push = 'N'
+	</select>
+	
+	<select id="selectTrack" parameterType="com.deppon.foss.module.trackings.api.shared.dto.WaybillTrackingsDto" resultType="int">
+		select count(1)
+		  from tfr.t_opt_order_waybill_track t
+		 where t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		   and t.operate_type = #{operateType,jdbcType=VARCHAR}
+		   and to_char(t.operate_time,'yyyy-mm-dd hh24:mi:ss') = to_char(#{operateTime,jdbcType=TIMESTAMP}, 'yyyy-mm-dd hh24:mi:ss')
+		   and t.operate_dept_code = #{operateDeptCode,jdbcType=VARCHAR}
+	</select>
+</mapper>

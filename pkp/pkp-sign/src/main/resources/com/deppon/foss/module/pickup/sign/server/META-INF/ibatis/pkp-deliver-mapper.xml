@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.foss.module.pickup.sign.api.shared.domain.deliver" >
+	<resultMap id="deliverbillDetailMap" type="com.deppon.foss.module.pickup.sign.api.shared.dto.DeliverbillDetailDto" >
+		<result column="T_SRV_DELIVERBILL_ID" property="tSrvDeliverbillId" jdbcType="VARCHAR" />
+		<result column="SERIAL_NO" property="serialNo" jdbcType="DECIMAL" />
+		<result column="ARRIVESHEET_NO" property="arrivesheetNo" jdbcType="VARCHAR" />
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+		<result column="status" property="deliverStatus" jdbcType="VARCHAR" />
+		<result column="CREATE_TYPE" property="createType" jdbcType="VARCHAR" />
+		<result column="situation" property="situation" jdbcType="VARCHAR" />
+		<result column="ID" property="id" jdbcType="VARCHAR" />
+	</resultMap>
+	<select id="getDeliverbillWaybillNo" resultMap="deliverbillDetailMap" parameterType="com.deppon.foss.module.pickup.sign.api.shared.dto.DeliverbillDetailDto" >
+   	 	   select /*模块：接送货-派送处理-根据派送单号查询签收信息 */
+			 detail.waybill_no,
+			 detail.ARRIVESHEET_NO,
+			 deliverbill.id,
+			 deliverbill.status,
+			 deliverbill.CREATE_TYPE,
+			 a.situation situation
+			  from pkp.T_SRV_DELIVERBILL deliverbill
+			 inner join pkp.t_srv_deliverbill_detail detail
+			    on deliverbill.id = detail.t_srv_deliverbill_id
+			 inner join pkp.t_srv_arrivesheet a
+			    on a.waybill_no = detail.waybill_no
+			    and a.arrivesheet_no = detail.arrivesheet_no
+			 inner join pkp.t_srv_waybill w on w.waybill_no =  detail.waybill_no
+			<where>
+			<choose>
+				<when test="deliverbillNo != null and deliverbillNo != ''">
+					<![CDATA[ AND deliverbill.deliverbill_no =#{deliverbillNo,jdbcType=VARCHAR} ]]>
+				</when>
+				<otherwise>
+					and deliverbill.deliverbill_no = ''
+				</otherwise>
+			</choose>
+			<if test="deliverStatusList!= null and deliverStatusList.size>0">
+					and deliverbill.status in
+					<foreach collection="deliverStatusList" open="(" close=")" separator=","
+						item="status">
+						<if test="status!=null and status != ''">
+		        	      <![CDATA[	#{status,jdbcType=VARCHAR} ]]>
+		                </if>
+					</foreach>
+		    </if>
+			<if test="active != null and active!=''">
+				and a.ACTIVE = #{active,jdbcType=VARCHAR}
+				<![CDATA[and a.DESTROYED <> #{active,jdbcType=VARCHAR}]]>
+			</if>
+			<if test="arrivesheetNo != null and arrivesheetNo!=''">
+				<![CDATA[and detail.ARRIVESHEET_NO <> #{arrivesheetNo,jdbcType=VARCHAR}]]>
+			</if>
+			<if test="subOrgCodeList!= null and subOrgCodeList.size>0">
+					and deliverbill.CREATE_ORG_CODE in
+					<foreach collection="subOrgCodeList" open="(" close=")" separator=","
+						item="orgCode">
+						<if test="orgCode!=null and orgCode != ''">
+		        	      <![CDATA[	#{orgCode,jdbcType=VARCHAR} ]]>
+		                </if>
+					</foreach>
+		    </if>
+		    <![CDATA[ and w.PRODUCT_CODE not IN('PACKAGE','RCP','EPEP','DEAP') and w.active = 'Y']]>
+		</where>
+	</select>
+	<select id="getFinancePartByWaybillNo" resultType="com.deppon.foss.module.pickup.sign.api.shared.dto.FinancialDto"
+			parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillEntity" >
+   	 	 select /*模块：接送货-派送处理-查询财务信息 */
+   	 	 	waybill.TO_PAY_AMOUNT/100 as toPayAmount,
+   	 	 		waybill.COD_AMOUNT/100 as codAmount,
+    			(nvl(waybill.TO_PAY_AMOUNT/100,0)-nvl(waybill.COD_AMOUNT/100,0)) as pocketShipping,
+   				actual.payment_type as paymentType,
+   		 		waybill.is_whole_vehicle as isWholeVehicle,
+   		 		waybill.RECEIVE_CUSTOMER_NAME receiveCustomerName,
+   		 		waybill.RECEIVE_CUSTOMER_CONTACT receiveCustomerContact,
+   		 		waybill.PRODUCT_CODE as productCode,waybill.order_no orderNo,
+   		 		waybill.RECEIVE_BIG_CUSTOMER as receiveBigCustomer
+   		 from pkp.t_srv_waybill waybill 
+   		 left join PKP.t_Srv_Actual_Freight actual 
+   			 on waybill.waybill_no=actual.waybill_no
+   		 <where>
+   			 <choose>
+				<when test="waybillNo != null and waybillNo!=''">
+					<![CDATA[ and waybill.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR} ]]>
+				</when>
+				<otherwise>
+					and waybill.WAYBILL_NO = ''
+				</otherwise>
+			</choose>
+			<if test="active != null and active!=''">
+				and waybill.ACTIVE = #{active,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</select>
+	<select id="getNotSignWaybillNo" resultMap="deliverbillDetailMap" parameterType="com.deppon.foss.module.pickup.sign.api.shared.dto.DeliverbillDetailDto" >
+   	 	select /*模块：接送货-派送处理-根据派送单号查询满足条件的运单号 */
+   	 		detail.waybill_no 
+   	 	from pkp.T_SRV_DELIVERBILL deliverbill  
+    	inner join pkp.t_srv_deliverbill_detail detail on deliverbill.id=detail.t_srv_deliverbill_id 
+ 	    inner join pkp.t_srv_arrivesheet arrive on detail.ARRIVESHEET_NO=arrive.ARRIVESHEET_NO
+		<where>
+			<choose>
+				<when test="deliverbillNo != null and deliverbillNo !=''">
+					 deliverbill.deliverbill_no =#{deliverbillNo,jdbcType=VARCHAR}
+				</when>
+				<when test="ids != null and ids.size>0">
+					and deliverbill.id in
+					<foreach collection="ids" open="(" close=")" separator=","
+						item="id">
+						<if test="id!=null and id != ''">
+		        	      <![CDATA[	#{id,jdbcType=VARCHAR} ]]>
+		                </if>
+					</foreach>
+					and deliverbill.OPERATE_TIME > TRUNC(SYSDATE-3) 
+		    	</when>
+				<otherwise>
+					AND deliverbill.deliverbill_no =''
+				</otherwise>
+			</choose>
+		    and (case
+			         when arrive.is_pda_sign != #{active,jdbcType=VARCHAR} and arrive.status 
+			         	not in 
+			         	<foreach collection="status" open="(" close=")" separator=","
+							item="statu">
+							<if test="statu!=null and statu != ''">
+			        	      <![CDATA[	#{statu} ]]>
+			                </if>
+						</foreach> then 1
+			         else 0
+	       		end) = 1
+			<if test="active !=null and active !='' ">
+				and arrive.ACTIVE=#{active,jdbcType=VARCHAR}
+			</if>
+			<if test="destroyed != null and destroyed !=''" >
+       		 	and arrive.DESTROYED = #{destroyed,jdbcType=CHAR}
+     		 </if>
+		</where>
+	</select>
+	<select id="getStayHandoverBydeliverbillNo" resultType="com.deppon.foss.module.pickup.sign.api.shared.dto.StayHandoverDto" 
+			parameterType="com.deppon.foss.module.pickup.sign.api.shared.dto.DeliverbillDetailDto">
+	select   /*模块：接送货-派送处理-查询拉回货物信息 */
+       arrive.arrive_sheet_goods_qty arriveSheetGoodsQty,
+       arrive.sign_goods_qty signGoodsQty,
+       detail.waybill_no waybillNo,
+       deliverbill.vehicle_no vehicleNo,
+       waybill.GOODS_QTY_TOTAL goodsQtyTotal,
+       waybill.GOODS_WEIGHT_TOTAL goodsWeightTotal,
+       waybill.GOODS_VOLUME_TOTAL goodsVolumeTotal,
+       PRO.PRIORITY priority,
+       waybill.PRODUCT_CODE productCode
+  from pkp.T_SRV_DELIVERBILL deliverbill
+  inner join pkp.t_srv_deliverbill_detail detail
+      on deliverbill.id = detail.t_srv_deliverbill_id
+  inner join pkp.t_srv_arrivesheet arrive
+     on detail.ARRIVESHEET_NO = arrive.ARRIVESHEET_NO
+  inner join pkp.t_srv_waybill waybill
+    on waybill.waybill_no = detail.waybill_no
+  inner join pkp.t_srv_product pro on pro.code = waybill.product_code
+  	 <where>
+  	 	<![CDATA[  arrive.arrive_sheet_goods_qty <> arrive.sign_goods_qty ]]>
+		<choose>
+			<when test="deliverbillNo != null and deliverbillNo !=''">
+				and deliverbill.deliverbill_no=#{deliverbillNo,jdbcType=VARCHAR}
+			</when>
+			<when test="ids != null and ids.size>0">
+				and deliverbill.id in
+				<foreach collection="ids" open="(" close=")" separator=","
+					item="id">
+					<if test="id!=null and id != ''">
+	        	      <![CDATA[	#{id,jdbcType=VARCHAR} ]]>
+	                </if>
+				</foreach>
+				and deliverbill.OPERATE_TIME > TRUNC(SYSDATE-3)
+		    </when>
+			<otherwise>
+				and deliverbill.deliverbill_no = ''
+			</otherwise>
+		</choose>
+		<if test="active !=null and active !='' ">
+			<![CDATA[and arrive.ACTIVE=#{active,jdbcType=VARCHAR}]]>
+			<![CDATA[and waybill.ACTIVE=#{active,jdbcType=VARCHAR}]]>
+			<![CDATA[and pro.ACTIVE=#{active,jdbcType=VARCHAR}]]>
+		</if>
+		<if test="destroyed != null and destroyed !=''" >
+       		 	and arrive.DESTROYED = #{destroyed,jdbcType=CHAR}
+     		 </if>
+		<if test="lastLoadOrgCode != null and lastLoadOrgCode!=''">
+			and waybill.last_Load_Org_Code = #{lastLoadOrgCode,jdbcType=VARCHAR}
+		</if>
+	</where>
+	</select>
+	<update id="updateDeliverbillStatusById"
+		parameterType="com.deppon.foss.module.pickup.sign.api.shared.dto.DeliverbillDetailDto">
+		update PKP.T_SRV_DELIVERBILL
+		<set>
+			<if test="deliverStatus != null">
+				STATUS = #{deliverStatus,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyTime != null">
+				 MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP},
+			</if>
+		</set>
+		where ID = #{id,jdbcType=VARCHAR}
+			<if test="deliverStatus != null">
+			<![CDATA[and STATUS <> #{deliverStatus,jdbcType=VARCHAR}]]>
+			</if>
+	</update>
+	<select id="serachPartDeliverBillByWaybillNo" resultType="com.deppon.foss.module.pickup.sign.api.shared.dto.DeliverbillDetailDto" parameterType="com.deppon.foss.module.pickup.sign.api.shared.dto.DeliverbillDetailDto" >
+   	 	select /*模块：接送货-派送处理-根据派送单号查询满足条件的运单号 */
+   	 		arrive.arrive_sheet_goods_qty arriveSheetGoodsQty,
+   	 		deliverbill.deliverbill_no deliverbillNo,
+   	 		deliverbill.CREATE_ORG_name createOrgName
+   	 	from pkp.T_SRV_DELIVERBILL deliverbill  
+    	inner join pkp.t_srv_deliverbill_detail detail on deliverbill.id=detail.t_srv_deliverbill_id 
+ 	    inner join pkp.t_srv_arrivesheet arrive on detail.ARRIVESHEET_NO=arrive.ARRIVESHEET_NO
+		<where>
+			<choose>
+				<when test="waybillNo != null and waybillNo !=''">
+					 arrive.waybill_NO =#{waybillNo,jdbcType=VARCHAR}
+				</when>
+				
+				<otherwise>
+					AND arrive.waybill_No =''
+				</otherwise>
+			</choose>
+			<if test="active !=null and active !='' ">
+				and arrive.ACTIVE=#{active,jdbcType=VARCHAR}
+			</if>
+			<if test="destroyed != null and destroyed !=''" >
+       		 	and arrive.DESTROYED = #{destroyed,jdbcType=CHAR}
+     		</if>
+     		<if test="arriveSheetStatus != null and arriveSheetStatus !=''" >
+       		 	and arrive.status = #{arriveSheetStatus,jdbcType=CHAR}
+     		</if>
+		</where>
+	</select>
+	<!--快递派送相关  只能查询快递派送单-->
+	<select id="getDeliverbillWaybillNoExp" resultMap="deliverbillDetailMap" parameterType="com.deppon.foss.module.pickup.sign.api.shared.dto.DeliverbillDetailDto" >
+   	 	   select /*模块：接送货-快递派送处理-根据派送单号查询签收信息 */
+			 detail.waybill_no,
+			 detail.ARRIVESHEET_NO,
+			 deliverbill.id,
+			 deliverbill.status,
+			 a.situation situation
+			  from pkp.T_SRV_DELIVERBILL deliverbill
+			 inner join pkp.t_srv_deliverbill_detail detail
+			    on deliverbill.id = detail.t_srv_deliverbill_id
+			 inner join pkp.t_srv_arrivesheet a
+			    on a.waybill_no = detail.waybill_no
+			    and a.arrivesheet_no = detail.arrivesheet_no
+			 inner join pkp.t_srv_waybill w on w.waybill_no =  detail.waybill_no
+			<where>
+			<choose>
+				<when test="deliverbillNo != null and deliverbillNo != ''">
+					<![CDATA[ AND deliverbill.deliverbill_no =#{deliverbillNo,jdbcType=VARCHAR} ]]>
+				</when>
+				<otherwise>
+					and deliverbill.deliverbill_no = ''
+				</otherwise>
+			</choose>
+			<if test="deliverStatusList!= null and deliverStatusList.size>0">
+					and deliverbill.status in
+					<foreach collection="deliverStatusList" open="(" close=")" separator=","
+						item="status">
+						<if test="status!=null and status != ''">
+		        	      <![CDATA[	#{status,jdbcType=VARCHAR} ]]>
+		                </if>
+					</foreach>
+		    </if>
+			<if test="active != null and active!=''">
+				and a.ACTIVE = #{active,jdbcType=VARCHAR}
+				<![CDATA[and a.DESTROYED <> #{active,jdbcType=VARCHAR}]]>
+			</if>
+			<if test="arrivesheetNo != null and arrivesheetNo!=''">
+				<![CDATA[and detail.ARRIVESHEET_NO <> #{arrivesheetNo,jdbcType=VARCHAR}]]>
+			</if>
+			<if test="subOrgCodeList!= null and subOrgCodeList.size>0">
+					and deliverbill.CREATE_ORG_CODE in
+					<foreach collection="subOrgCodeList" open="(" close=")" separator=","
+						item="orgCode">
+						<if test="orgCode!=null and orgCode != ''">
+		        	      <![CDATA[	#{orgCode,jdbcType=VARCHAR} ]]>
+		                </if>
+					</foreach>
+		    </if>
+		    <!-- 合伙人零担签收.410数据初始化开关 -->
+    		<if test="conBillTime != null">
+    			and w.bill_time > #{conBillTime,jdbcType=TIMESTAMP}
+    		</if>
+		  AND  w.PRODUCT_CODE IN('PACKAGE','RCP','EPEP','DEAP') AND w.active='Y'
+		</where>
+	</select>
+	 </mapper>

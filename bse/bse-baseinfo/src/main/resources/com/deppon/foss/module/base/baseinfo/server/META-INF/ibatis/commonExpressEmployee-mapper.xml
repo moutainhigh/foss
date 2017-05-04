@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="foss.bse.bse-baseinfo.commonExpressEmployee">
+	<!-- 员工表和组织表返回的结果集，除了员工表，还有一个组织表的NAME -->
+	<resultMap id="employeeSimpleResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.EmployeeEntity">
+		<id property="id" column="ID" />
+		<result property="empName" column="EMP_NAME" />
+		<result property="pinyin" column="PINYIN" />
+		<result property="empCode" column="EMP_CODE" />
+		<result property="gender" column="GENDER" />
+		
+		<result property="unifieldCode" column="UNIFIELD_CODE"  jdbcType="VARCHAR" />
+		<result property="orgCode" column="ORG_CODE"  jdbcType="VARCHAR" />
+		
+		<result property="title" column="TITLE" />
+		<result property="degree" column="DEGREE" />
+		<result property="birthdate" column="BIRTHDATE" />
+		<result property="status" column="STATUS" />
+		<result property="entryDate" column="ENTRY_DATE" />
+		<result property="leaveDate" column="LEAVE_DATE" />
+		<result property="phone" column="PHONE" />
+		<result property="identityCard" column="IDENTITY_CARD" />
+		<result property="mobilePhone" column="MOBILE_PHONE" />
+		<result property="email" column="EMAIL" />
+		<result property="active" column="ACTIVE" />
+		<result property="createUser" column="CREATE_USER_CODE"
+			javaType="String" jdbcType="VARCHAR" />
+		<result property="createDate" column="CREATE_TIME"
+			javaType="Date" jdbcType="TIMESTAMP" />
+		<result property="modifyUser" column="MODIFY_USER_CODE"
+			javaType="String" jdbcType="VARCHAR" />
+		<result property="modifyDate" column="MODIFY_TIME"
+			javaType="Date" jdbcType="TIMESTAMP" />
+		<result property="yingYeName" column="NAME"
+			javaType="String" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 单表查，操作的字段 -->
+	<sql id="base_param">
+		E.ID,
+		E.EMP_NAME, 
+		E.PINYIN,
+		E.EMP_CODE,
+		E.GENDER,
+		E.UNIFIELD_CODE,
+		E.ORG_CODE,
+		E.TITLE,
+		E.DEGREE,
+		E.BIRTHDATE,
+		E.STATUS,
+		E.ENTRY_DATE,
+		E.LEAVE_DATE,
+		E.PHONE,
+		E.IDENTITY_CARD,
+		E.MOBILE_PHONE,
+		E.EMAIL,
+		E.ACTIVE,
+		E.CREATE_USER_CODE,
+		E.CREATE_TIME,
+		E.MODIFY_USER_CODE,
+		E.MODIFY_TIME,
+		G.NAME
+	</sql>
+
+	
+	<!-- 根据实体动态条件精确查询,如果属性的值为null或者空白则无效： -->
+	<select id="queryExpressEmployeeByCondition" resultMap="employeeSimpleResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.EmployeeEntity">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据实体动态条件精确查询,如果属性的值为null或者空白则无效 **/
+		]]>
+		<include refid="base_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_EMPLOYEE E LEFT JOIN BSE.T_BAS_ORG G ON E.UNIFIELD_CODE=G.UNIFIED_CODE AND G.ACTIVE=E.ACTIVE
+              
+		]]>
+		<include refid="queryConditionContainPrincipal" />
+	</select>
+	
+		<!-- 根据实体动态条件精确查询,如果属性的值为null或者空白则无效： -->
+	<select id="recordQueryCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.EmployeeEntity">
+		<![CDATA[
+		  SELECT/** 综合:根据实体动态条件精确查询,如果属性的值为null或者空白则无效 **/  COUNT(*)
+	    	FROM BSE.T_BAS_EMPLOYEE  E
+		]]>
+		<include refid="queryConditionContainPrincipal" />
+	</select>
+	
+	<!--查询条件-->
+	<sql id="queryCondition">
+	    <where>
+			  E.ACTIVE =  #{active,jdbcType=CHAR}
+			<if test="queryParam !=null and queryParam != '' ">
+	        	AND (
+	        			E.EMP_NAME like CONCAT(CONCAT('%', #{queryParam,jdbcType=VARCHAR}), '%')
+	        		 OR
+	        		 	E.PINYIN like CONCAT(CONCAT('%', #{queryParam,jdbcType=VARCHAR}), '%')
+	        		 OR
+	        		 	E.EMP_CODE like CONCAT(CONCAT('%', #{queryParam,jdbcType=VARCHAR}), '%')	
+	        		) 
+	      	</if>
+	      	<if test="orgCode !=null and orgCode != ''">
+	        	AND E.ORG_CODE  = #{orgCode,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="empCode!=null and empCode != ''">
+	        	AND E.EMP_CODE like CONCAT(CONCAT('%', #{empCode,jdbcType=VARCHAR}), '%') 
+	      	</if>
+	      	AND  EXISTS (SELECT 1
+                            FROM BSE.T_BAS_ORG O
+                           WHERE E.UNIFIELD_CODE = O.UNIFIED_CODE
+                 			AND O.ACTIVE = #{active,jdbcType=CHAR}
+           					AND O.EXPRESS_PART = #{active,jdbcType=CHAR}
+           					AND E.EMP_CODE <![CDATA[<>]]> O.PRINCIPAL_NO)
+	   </where>
+	</sql>
+	<!--查询条件:去掉剔除部门责任人的条件-->
+	<sql id="queryConditionContainPrincipal">
+	    <where>
+			  E.ACTIVE =  #{active,jdbcType=CHAR}
+			<if test="queryParam !=null and queryParam != '' ">
+	        	AND (
+	        			E.EMP_NAME = #{queryParam,jdbcType=VARCHAR}
+	        		 OR
+	        		 	E.PINYIN = #{queryParam,jdbcType=VARCHAR}
+	        		 OR
+	        		 	E.EMP_CODE = #{queryParam,jdbcType=VARCHAR}
+	        		) 
+	      	</if>
+	      	<if test="orgCode !=null and orgCode != ''">
+	        	AND E.ORG_CODE  = #{orgCode,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="empCode!=null and empCode != ''">
+	        	<!-- AND E.EMP_CODE like CONCAT(CONCAT('%', #{empCode,jdbcType=VARCHAR}), '%') --> 
+	        	AND E.EMP_CODE = #{empCode,jdbcType=VARCHAR}
+	      	</if>
+	      	AND  EXISTS (SELECT 1
+                            FROM BSE.T_BAS_ORG O
+                           WHERE E.UNIFIELD_CODE = O.UNIFIED_CODE
+                 			AND O.ACTIVE = #{active,jdbcType=CHAR}
+           					AND O.EXPRESS_PART = #{active,jdbcType=CHAR}
+           					<!-- AND E.EMP_CODE <![CDATA[<>]]> nvl(O.PRINCIPAL_NO,0))  -->
+           					AND E.EMP_CODE <![CDATA[<>]]> O.PRINCIPAL_NO)
+           					
+	   </where>
+	</sql>
+</mapper>

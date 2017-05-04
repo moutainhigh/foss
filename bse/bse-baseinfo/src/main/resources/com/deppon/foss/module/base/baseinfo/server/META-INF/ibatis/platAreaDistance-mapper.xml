@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.platAreaDistance" >
+
+	<resultMap id="paltAreaDistanceMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.PlatAreaDistanceEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="GOODS_AREA_VIRTUAL_CODE" property="goodsAreaVirtualCode" jdbcType="VARCHAR" />
+		<result column="PLATFORM_VIRTUAL_CODE" property="platformVirtualCode" jdbcType="VARCHAR" />
+		<result column="PLAT_AREA_DISTANCE" property="distance" jdbcType="NUMERIC" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<sql id="columns">
+		ID,
+		PLATFORM_VIRTUAL_CODE,
+		GOODS_AREA_VIRTUAL_CODE,
+		PLAT_AREA_DISTANCE,
+		CREATE_TIME,
+		MODIFY_TIME,
+		ACTIVE,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE
+	</sql>
+	
+	<sql id="values">
+		#{id,jdbcType=VARCHAR},
+		#{platformVirtualCode,jdbcType=VARCHAR}, 
+		#{goodsAreaVirtualCode,jdbcType=VARCHAR}, 
+		#{distance, jdbcType=NUMERIC},
+		#{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=CHAR},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR} 
+	</sql>
+
+	<insert id="addDistance" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PlatAreaDistanceEntity">
+		insert into BSE.T_BAS_DIS_PLAT_AREA (
+		<include refid="columns"/>
+		) values ( 
+		<include refid="values"/>
+		)
+	</insert>
+
+	<delete id="deleteDistance" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PlatAreaDistanceEntity">
+		delete from BSE.T_BAS_DIS_PLAT_AREA 
+		where GOODS_AREA_VIRTUAL_CODE = #{goodsAreaVirtualCode, jdbcType=VARCHAR} 
+		and platform_virtual_code = #{platformVirtualCode, jdbcType=VARCHAR}
+	</delete>
+
+	<delete id="deleteDistanceByGoodsArea" parameterType="java.lang.String">
+		delete from BSE.T_BAS_DIS_PLAT_AREA 
+		where GOODS_AREA_VIRTUAL_CODE = #{goodsAreaVirtualCode, jdbcType=VARCHAR} 
+	</delete>
+
+	<delete id="deleteDistanceByPlatform" parameterType="java.lang.String">
+		delete from BSE.T_BAS_DIS_PLAT_AREA 
+		where platform_virtual_code = #{platformVirtualCode, jdbcType=VARCHAR} 
+	</delete>
+
+	<update id="updateDistance" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PlatAreaDistanceEntity">
+		update BSE.T_BAS_DIS_PLAT_AREA set 
+		modify_time = #{modifyDate,jdbcType=TIMESTAMP}, 
+		modify_user_code = #{modifyUser,jdbcType=VARCHAR}, 
+		PLAT_AREA_DISTANCE = #{distance, jdbcType=NUMERIC},
+		active = #{active,jdbcType=CHAR} 
+		where GOODS_AREA_VIRTUAL_CODE = #{goodsAreaVirtualCode, jdbcType=VARCHAR}
+		and platform_virtual_code = #{platformVirtualCode, jdbcType=VARCHAR}
+	</update>
+
+	<select id="queryDistanceByGoodsArea" resultMap="paltAreaDistanceMap" parameterType="java.lang.String">
+		select 
+		<include refid="columns"/>
+		 from BSE.T_BAS_DIS_PLAT_AREA where GOODS_AREA_VIRTUAL_CODE = #{goodsAreaVirtualCode, jdbcType=VARCHAR}
+	</select>
+
+	<select id="queryDistanceByPlatform" resultMap="paltAreaDistanceMap" parameterType="java.lang.String">
+		select 
+		<include refid="columns"/>
+		from BSE.T_BAS_DIS_PLAT_AREA where platform_virtual_code = #{platformVirtualCode, jdbcType=VARCHAR}
+	</select>
+
+	<select id="queryDistanceListByOrganizationCode" resultMap="paltAreaDistanceMap" parameterType="java.lang.String">
+		SELECT 
+		<include refid="columns"/>
+		FROM BSE.T_BAS_DIS_PLAT_AREA 
+		WHERE PLATFORM_VIRTUAL_CODE IN 
+			( SELECT DISTINCT VIRTUAL_CODE 
+			FROM BSE.T_BAS_PLATFORM
+			WHERE ORG_CODE = #{organizationCode, jdbcType=VARCHAR} 
+			AND ACTIVE = 'Y' )
+		AND GOODS_AREA_VIRTUAL_CODE IN
+			( SELECT DISTINCT VIRTUAL_CODE 
+			FROM BSE.T_BAS_GOODS_AREA
+			WHERE ORG_CODE = #{organizationCode, jdbcType=VARCHAR} 
+			AND ACTIVE = 'Y' )
+		AND ACTIVE = 'Y'
+	</select>
+	
+	<select id="queryDistance" resultMap="paltAreaDistanceMap" parameterType="map">
+		SELECT 
+		<include refid="columns"/>
+		FROM BSE.T_BAS_DIS_PLAT_AREA 
+		WHERE PLATFORM_VIRTUAL_CODE = #{platformVirtualCode, jdbcType=VARCHAR}
+			AND GOODS_AREA_VIRTUAL_CODE = #{goodsAreaVirtualCode, jdbcType=VARCHAR} AND ACTIVE = 'Y'
+	</select>
+
+
+</mapper>

@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.workFlowSearch" >
+
+	<resultMap id="workFlowBaseMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.dto.DeptTempArrearsWorkFlowDto">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="workFlowNo" property="procInstId" jdbcType="VARCHAR" />
+		<result column="workFlowName" property="workFlowName" jdbcType="VARCHAR" />
+		<result column="applyMan" property="applyMan" jdbcType="VARCHAR" />
+		<result column="applyTime" property="applyTime" jdbcType="TIMESTAMP" />
+		<result column="active" property="active" jdbcType="CHAR" />
+		<result column="workFlowStatus" property="workFlowStatus" jdbcType="VARCHAR" />
+		<result column="currentApprover" property="currentApprover" jdbcType="VARCHAR" />
+		<result column="approvalTime" property="approvalTime" jdbcType="TIMESTAMP" />
+		<result column="note" property="note" jdbcType="VARCHAR" />
+		<result column="approvalViews" property="approvalViews" jdbcType="VARCHAR" />
+		<result column="approvalResult" property="approvalResult" jdbcType="CHAR" />
+		<result column="processDefName" property="processDefName" jdbcType="VARCHAR" />
+		<result column="workFlowType" property="workFlowType" jdbcType="VARCHAR" />
+		<result column="bizCode" property="bizCode" jdbcType="VARCHAR" />
+		<result column="create_time" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="modify_time" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		
+		<result column="applyManName" property="applyManName" jdbcType="VARCHAR" />
+		<result column="applyManDept" property="applyManDept" jdbcType="VARCHAR" />
+		<result column="applyManDeptName" property="applyManDeptName" jdbcType="VARCHAR" />
+		<result column="currentApproverName" property="currentApproverName" jdbcType="VARCHAR" />
+		<result column="currentApproverDept" property="currentApproverDept" jdbcType="VARCHAR" />
+		<result column="currentApproverDeptName" property="currentApproverDeptName" jdbcType="VARCHAR" />
+		<result column="currentTempArrears" property="currentTempArrears" jdbcType="NUMERIC" />
+		<result column="addNewTempArrears" property="addNewTempArrears" jdbcType="NUMERIC" />
+		<result column="totalTempArrears" property="totalTempArrears" jdbcType="NUMERIC" />
+		<result column="title" property="title" jdbcType="VARCHAR" />
+		<result column="applyType" property="applyType" jdbcType="VARCHAR" />
+		<result column="APPLY_TEMP_DEPT" property="applyTempDept" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<sql id="workFlowBaseColumns">
+	   t.id,
+       t.workFlowNo,
+       t.workFlowName,
+       t.applyMan,
+       t.applyTime,
+       t.active,
+       t.workFlowStatus,
+       t.currentApprover,
+       t.approvalTime,
+       t.note,
+       t.approvalViews,
+       t.approvalResult,
+       t.processDefName,
+       t.workFlowType,
+       t.bizCode,
+       t.create_time,
+       t.modify_time,
+       t.create_user_code,
+       t.modify_user_code
+	</sql>
+	
+	<sql id="extColumns">
+	   e.emp_name as applyManName,
+       e.org_code as applyManDept,
+       o.name     as applyManDeptName,
+       a.emp_name as currentApproverName,
+       a.org_code as currentApproverDept,
+       m.name     as currentApproverDeptName,
+       dept.max_temp_arrears as currentTempArrears,
+       u.title    as  title,
+	</sql>
+
+    <sql id="businessRelatedColumns">
+<!--        bus.currentTempArrears, -->
+       bus.addNewTempArrears,
+       bus.totalTempArrears,
+       bus.applyType,
+       bus.APPLY_TEMP_DEPT,
+    </sql>
+    
+    <sql id="businessRelatedBaseColumns">
+    	  id,
+          workFlowNo,
+          currentTempArrears,
+          addNewTempArrears,
+          totalTempArrears,
+          applyType,
+          create_time,
+          modify_time,
+          active,
+          create_user_code,
+          modify_user_code,
+          APPLY_TEMP_DEPT
+    </sql>
+    
+    <sql id="extTables">
+		 from bse.t_bas_workflowinfo t
+ 		 left join bse.t_bas_user u
+ 		 on t.applyman = u.emp_code
+ 		 and u.active = 'Y'
+ 		 left join bse.t_bas_employee e
+ 		 on t.applyman = e.emp_code
+ 		 and e.active = 'Y'
+ 		 left join bse.t_bas_org o
+ 		 on e.org_code = o.code
+ 		 and o.active = 'Y'
+ 		 left join bse.t_bas_employee a
+ 		 on t.currentApprover = a.emp_code
+ 		 and a.active = 'Y'
+ 		 left join bse.t_bas_org m
+ 		 on a.org_code = m.code
+ 		 and m.active = 'Y'
+ 		 left join bse.t_bas_sales_department dept
+ 		 on e.org_code = dept.code
+ 		 and dept.active = 'Y'
+ 		 left join bse.t_bas_workflow_businessrelated bus
+ 		 on t.workflowno = bus.workflowno
+ 		 and bus.active = 'Y'
+	</sql>
+    
+	<sql id="workFlowValues">
+		#{id,jdbcType=VARCHAR},
+		#{procInstId,jdbcType=VARCHAR}, 
+		#{workFlowName,jdbcType=VARCHAR}, 
+		#{applyMan,jdbcType=VARCHAR}, 
+		#{applyTime,jdbcType=TIMESTAMP},  
+		#{active,jdbcType=CHAR}, 
+		#{workFlowStatus, jdbcType=VARCHAR}, 
+		#{currentApprover, jdbcType=VARCHAR}, 
+		#{approvalTime,jdbcType=TIMESTAMP},
+		#{note,jdbcType=VARCHAR},
+		#{approvalViews, jdbcType=VARCHAR}, 
+		#{approvalResult,jdbcType=CHAR}, 
+		#{processDefName,jdbcType=VARCHAR},  
+		#{workFlowType,jdbcType=VARCHAR}, 
+		#{bizCode, jdbcType=VARCHAR}, 
+	    #{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR}
+	</sql>
+	
+	<sql id="businessRelatedValues">
+		#{id,jdbcType=VARCHAR},
+		#{procInstId,jdbcType=VARCHAR}, 
+		#{currentTempArrears,jdbcType=NUMERIC}, 
+		#{addNewTempArrears,jdbcType=NUMERIC}, 
+		#{totalTempArrears,jdbcType=NUMERIC},  
+		#{applyType,jdbcType=VARCHAR},
+		#{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=CHAR}, 
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR},
+		#{applyTempDept,jdbcType=VARCHAR}
+	</sql>
+
+	<!--根据工作流号查询工作流相关信息-->
+    <select id="queryWorkFlowInfos" resultMap="workFlowBaseMap" 
+    		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.DeptTempArrearsWorkFlowDto">
+		select 
+		<include refid="extColumns"/>
+		<include refid="businessRelatedColumns"/>
+		<include refid="workFlowBaseColumns"/>
+		<include refid="extTables"/>
+		<where>
+			   t.active = 'Y'
+			<if test="procInstId != null and procInstId != ''">
+			  and t.workFlowNo = #{procInstId,jdbcType=VARCHAR}
+			</if>
+			<if test="bizCode != null and bizCode != ''">
+			  and t.bizCode = #{bizCode,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</select>
+
+	<!--插入工作流的基本信息-->
+	<insert id="saveWorkFlowBusinessRelated" 
+			parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.DeptTempArrearsWorkFlowDto">
+		insert into bse.t_bas_workFlow_businessRelated (
+		<include refid="businessRelatedBaseColumns"/>
+		) values (
+		<include refid="businessRelatedValues"/>
+		)
+	</insert>
+	
+	<!--插入工作流和业务相关的信息-->
+	<insert id="saveWorkFlowDraftInfos" 
+			parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.DeptTempArrearsWorkFlowDto">
+		insert into bse.t_bas_workFlowInfo t(
+		<include refid="workFlowBaseColumns"/>
+		) values (
+		<include refid="workFlowValues"/>
+		)
+	</insert>
+
+	<!--保存工作流审批信息-->
+	<update id="saveWorkFlowExamineInfos" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.DeptTempArrearsWorkFlowDto">
+		update bse.t_bas_workflowinfo T
+		set t.currentApprover = #{currentApprover, jdbcType=VARCHAR},
+       		t.approvalTime = #{approvalTime,jdbcType=TIMESTAMP},
+       		t.approvalViews = #{approvalViews, jdbcType=VARCHAR},
+       		t.approvalResult = #{approvalResult,jdbcType=CHAR},
+       		t.workFlowStatus = #{workFlowStatus, jdbcType=VARCHAR}
+		<where> 
+		      t.active = 'Y'
+		    <if test="procInstId != null and procInstId != ''">
+			  and t.workFlowNo = #{procInstId,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</update>
+	
+		<!--根据当天到目前为止的工作流个数-->
+    <select id="recordCurrentDayWorkNums" resultType="string">
+		select <![CDATA[lpad(count(1)+1,6,'0')]]>
+  			from bse.t_bas_workflowinfo b
+ 		where b.active = 'Y'
+  			  and b.create_time <![CDATA[>=]]> trunc(sysdate)
+   			  and b.create_time <![CDATA[<=]]> sysdate
+	</select>
+</mapper>

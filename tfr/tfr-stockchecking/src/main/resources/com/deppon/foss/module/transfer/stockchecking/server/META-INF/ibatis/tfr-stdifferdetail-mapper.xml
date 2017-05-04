@@ -1,0 +1,517 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.tfr.StDifferDetailDao" >
+  <resultMap id="stDifferDetailResultMap" type="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StDifferDetailEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="ST_DIFFER_REPORT_ID" property="stDifferReportId" jdbcType="VARCHAR" />
+    <result column="OA_ERROR_NO" property="oaErrorNo" jdbcType="VARCHAR" />
+    <result column="DIFFERENCE_TYPE" property="differenceType" jdbcType="VARCHAR" />
+    <result column="DIFFERENCE_REASON" property="differenceReason" jdbcType="VARCHAR" />
+    <result column="HANDLE_TIME" property="handleTime" jdbcType="TIMESTAMP" />
+    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+    <result column="SERIAL_NO" property="serialNo" jdbcType="VARCHAR" />
+    <result column="USER_CODE" property="userCode" jdbcType="VARCHAR" />
+    <result column="HANDLE_STATUS" property="handleStatus" jdbcType="VARCHAR" />
+    <result column="REMARK" property="remark" jdbcType="VARCHAR" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    ID, ST_DIFFER_REPORT_ID, OA_ERROR_NO, DIFFERENCE_TYPE, HANDLE_TIME, WAYBILL_NO, SERIAL_NO, 
+    USER_CODE, HANDLE_STATUS, REMARK
+  </sql>
+  <select id="queryStDifferDetailEntityById" resultMap="stDifferDetailResultMap" parameterType="java.lang.String">
+    select 
+    <include refid="Base_Column_List" />
+    from TFR.T_OPT_ST_DIFFER_DETAIL
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+  <select id="queryStDifferDetailEntityList" resultMap="stDifferDetailResultMap" parameterType="map">
+    select a.ID, a.ST_DIFFER_REPORT_ID, a.OA_ERROR_NO, a.DIFFERENCE_TYPE, a.HANDLE_TIME, a.WAYBILL_NO, a.SERIAL_NO, 
+    	   a.USER_CODE, a.HANDLE_STATUS, REMARK
+    from TFR.T_OPT_ST_DIFFER_DETAIL a
+        ,TFR.T_OPT_ST_DIFFER_REPORT b
+    where a.ST_DIFFER_REPORT_ID = b.ID
+      and a.WAYBILL_NO = #{waybillNo}
+      and a.SERIAL_NO = #{serialNo}
+      and b.DEPTCODE = #{deptCode}
+  </select>
+  <select id="queryStReportDetailDtoListById" resultType="com.deppon.foss.module.transfer.stockchecking.api.shared.dto.StReportDetailDto" parameterType="java.lang.String">
+	select a.ID as id
+	      ,a.HANDLE_STATUS as handleStatus
+	      ,b.ID as stDifferReportId
+	      ,b.REPORT_CODE as reportCode
+	      ,a.PACKAGE_NO as packageNo
+	      ,a.WAYBILL_NO as waybillNo
+	      ,a.SERIAL_NO as serialNo
+	      ,b.GOODS_AREA_NAME as goodsAreaName
+	      ,a.OA_ERROR_NO as oaErrorNo
+	      ,a.DIFFERENCE_TYPE as differenceType
+	      ,a.DIFFERENCE_TYPE as differenceTypeDesc
+	      ,a.difference_reason as differenceReason
+	      ,c.CREATOR_NAME as operator
+	      ,b.CREATE_TIME as reportCreateTime
+	      ,a.HANDLE_TIME as handleTime
+	      ,a.REMARK as remark
+	      ,d.target_org_code as billTargetOrgName
+	      ,c.STARTQTY as startQty
+	      ,c.ENDQTY as endQty
+	      ,c.RECEIVE_METHOD as receiveMethod
+	      ,c.DISTRICT_NAME as districtName
+    from tfr.T_OPT_ST_DIFFER_DETAIL a
+        ,tfr.T_OPT_ST_DIFFER_REPORT b
+        ,tfr.T_OPT_ST_TASK c
+        ,pkp.T_SRV_WAYBILL d
+      where a.ST_DIFFER_REPORT_ID = b.ID
+        and b.ST_TASK_ID = c.ID
+        and a.WAYBILL_NO = d.WAYBILL_NO
+        and d.ACTIVE = 'Y'
+		and b.ID = #{stReportId}
+  </select>
+  
+    <select id="queryStReportDetailDtoListsById" resultType="com.deppon.foss.module.transfer.stockchecking.api.shared.dto.StReportDetailDto" parameterType="java.lang.String">
+ 		select distinct b.ID as stDifferReportId,
+                b.REPORT_CODE as reportCode,
+                a.PACKAGE_NO as packageNo,
+                a.WAYBILL_NO as waybillNo,
+                b.GOODS_AREA_NAME as goodsAreaName,
+                '' as operator,
+                b.CREATE_TIME as reportCreateTime,
+                a.HANDLE_STATUS as handleStatus,
+                c.STARTQTY as startQty,
+	      		c.ENDQTY as endQty,
+	     		c.RECEIVE_METHOD as receiveMethod,
+	      		c.DISTRICT_NAME as districtName
+      from tfr.T_OPT_ST_DIFFER_DETAIL a, tfr.T_OPT_ST_DIFFER_REPORT b, tfr.T_OPT_ST_TASK c 
+     where a.ST_DIFFER_REPORT_ID = b.ID
+       and b.ST_TASK_ID = c.ID
+       and b.ID = #{stReportId}
+       and a.handle_status = 'DOING'
+       
+     union all
+     
+     select distinct b.ID as stDifferReportId,
+                b.REPORT_CODE as reportCode,
+                a.PACKAGE_NO as packageNo,
+                a.WAYBILL_NO as waybillNo,
+                b.GOODS_AREA_NAME as goodsAreaName,
+                '' as operator,
+                b.CREATE_TIME as reportCreateTime,
+                a.HANDLE_STATUS as handleStatus,
+                c.STARTQTY as startQty,
+	      		c.ENDQTY as endQty,
+	     		c.RECEIVE_METHOD as receiveMethod,
+	      		c.DISTRICT_NAME as districtName
+      from tfr.T_OPT_ST_DIFFER_DETAIL a, tfr.T_OPT_ST_DIFFER_REPORT b, tfr.T_OPT_ST_TASK c 
+     where a.ST_DIFFER_REPORT_ID = b.ID
+       and b.ST_TASK_ID = c.ID
+       and b.ID = #{stReportId}
+       and a.handle_status = 'DONE'
+       and  not exists (
+           select dd.waybill_no from tfr.T_OPT_ST_DIFFER_DETAIL dd
+           where dd.st_differ_report_id = #{stReportId}
+           and dd.handle_status = 'DOING'
+           and dd.waybill_no = a.waybill_no)
+       order by handleStatus, waybillNo
+  </select>
+  <select id="queryStReportRelativeDetailDtoList" resultType="com.deppon.foss.module.transfer.stockchecking.api.shared.dto.StReportDetailDto" parameterType="map">
+    select a.ID as id
+          ,a.HANDLE_STATUS as handleStatus
+          ,b.ID as stDifferReportId
+          ,b.REPORT_CODE as reportCode
+          ,a.WAYBILL_NO as waybillNo
+          ,a.SERIAL_NO as serialNo
+          ,b.GOODS_AREA_NAME as goodsAreaName
+          ,a.OA_ERROR_NO as oaErrorNo
+          ,a.DIFFERENCE_TYPE as differenceType
+          ,a.DIFFERENCE_TYPE as differenceTypeDesc
+          ,d.EMP_NAME as operator
+          ,b.CREATE_TIME as reportCreateTime
+	      ,a.HANDLE_TIME as handleTime
+	      ,a.REMARK as remark
+	  from (select bb.ID, bb.ST_DIFFER_REPORT_ID, bb.HANDLE_STATUS, bb.WAYBILL_NO, bb.SERIAL_NO, bb.OA_ERROR_NO, bb.DIFFERENCE_TYPE, bb.HANDLE_TIME, bb.REMARK
+          from (select aaa.ID, aaa.ST_DIFFER_REPORT_ID, aaa.HANDLE_STATUS, aaa.WAYBILL_NO, aaa.SERIAL_NO, aaa.OA_ERROR_NO, aaa.DIFFERENCE_TYPE, aaa.HANDLE_TIME, aaa.REMARK from tfr.T_OPT_ST_DIFFER_DETAIL aaa where aaa.ST_DIFFER_REPORT_ID = #{stReportId,jdbcType=VARCHAR}) aa
+              ,(select bbb.ID, bbb.ST_DIFFER_REPORT_ID, bbb.HANDLE_STATUS, bbb.WAYBILL_NO, bbb.SERIAL_NO, bbb.OA_ERROR_NO, bbb.DIFFERENCE_TYPE, bbb.HANDLE_TIME, bbb.REMARK from tfr.T_OPT_ST_DIFFER_DETAIL bbb where bbb.ST_DIFFER_REPORT_ID != #{stReportId,jdbcType=VARCHAR}) bb
+            where aa.WAYBILL_NO = bb.WAYBILL_NO
+              and aa.SERIAL_NO = bb.SERIAL_NO
+    <![CDATA[ and bb.HANDLE_TIME >= #{limitedDay,jdbcType=TIMESTAMP} ]]>
+              and ((aa.DIFFERENCE_TYPE = #{scanResultLack,jdbcType=VARCHAR} and bb.DIFFERENCE_TYPE = #{scanResultSurplusErrorGoodsarea,jdbcType=VARCHAR}) or
+                   (aa.DIFFERENCE_TYPE = #{scanResultSurplusErrorGoodsarea,jdbcType=VARCHAR} and bb.DIFFERENCE_TYPE = #{scanResultLack,jdbcType=VARCHAR}))) a
+	      ,tfr.T_OPT_ST_DIFFER_REPORT b
+	      ,tfr.T_OPT_ST_TASK c
+	      ,tfr.T_OPT_ST_OPERATOR d
+	    where a.ST_DIFFER_REPORT_ID = b.ID 
+	      and b.ST_TASK_ID = c.ID
+	      and c.ID = d.ST_TASK_ID(+)
+	      and exists(select 1 from TFR.t_opt_st_operator dd where rownum = 1)
+  </select>
+  <select id="queryStReportDetailCountByReportId" resultType="long" parameterType="map">
+  	select count(*) 
+  	  from tfr.T_OPT_ST_DIFFER_DETAIL
+  	    where ID != #{id} 
+  	      and ST_DIFFER_REPORT_ID = #{stDifferReportId} 
+  	      and HANDLE_STATUS = #{stockCheckingReportDoing}
+  </select>
+  <select id="queryStDifferDetailListByWaybillNo" resultMap="stDifferDetailResultMap" parameterType="map">
+  	select <include refid="Base_Column_List" />
+  	  from tfr.T_OPT_ST_DIFFER_DETAIL
+  	    where WAYBILL_NO = #{waybillNo} 
+  	      and DIFFERENCE_TYPE = #{differenceType}
+  	      and HANDLE_STATUS = #{handleStatus}
+  </select>
+  <select id="queryStReportDetail" resultMap="stDifferDetailResultMap" parameterType="map">
+  	select <include refid="Base_Column_List" />
+  	  from tfr.T_OPT_ST_DIFFER_DETAIL
+  	    where ST_DIFFER_REPORT_ID = #{stReportId} 
+  	      and DIFFERENCE_TYPE = #{differenceType}
+  	      and HANDLE_STATUS = #{handleStatus}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String" >
+    delete from TFR.T_OPT_ST_DIFFER_DETAIL
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  <insert id="addStDifferEntity" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StDifferDetailEntity" >
+    insert into TFR.T_OPT_ST_DIFFER_DETAIL (ID, ST_DIFFER_REPORT_ID, OA_ERROR_NO, 
+      DIFFERENCE_TYPE, HANDLE_TIME, PACKAGE_NO, WAYBILL_NO, 
+      SERIAL_NO, USER_CODE, HANDLE_STATUS, REMARK)
+    values (#{id,jdbcType=VARCHAR}, #{stDifferReportId,jdbcType=VARCHAR}, #{oaErrorNo,jdbcType=VARCHAR}, 
+      #{differenceType,jdbcType=VARCHAR}, #{handleTime,jdbcType=TIMESTAMP}, #{packageNo,jdbcType=VARCHAR},
+      #{waybillNo,jdbcType=VARCHAR}, #{serialNo,jdbcType=VARCHAR}, #{userCode,jdbcType=VARCHAR}, 
+      #{handleStatus,jdbcType=VARCHAR},#{remark,jdbcType=VARCHAR})
+  </insert>
+  <insert id="addBatchStDifferReportDetail" parameterType="java.util.List" >
+    begin
+	<foreach collection="list" item="item" separator=";">
+    insert into TFR.T_OPT_ST_DIFFER_DETAIL (ID, ST_DIFFER_REPORT_ID, OA_ERROR_NO, 
+      DIFFERENCE_TYPE, HANDLE_TIME, WAYBILL_NO, 
+      SERIAL_NO, USER_CODE, HANDLE_STATUS, REMARK)
+    values (#{item.id,jdbcType=VARCHAR}, #{item.stDifferReportId,jdbcType=VARCHAR}, #{item.oaErrorNo,jdbcType=VARCHAR}, 
+      #{item.differenceType,jdbcType=VARCHAR}, #{item.handleTime,jdbcType=TIMESTAMP}, #{item.waybillNo,jdbcType=VARCHAR}, 
+      #{item.serialNo,jdbcType=VARCHAR}, #{item.userCode,jdbcType=VARCHAR}, 
+      #{item.handleStatus,jdbcType=VARCHAR},#{item.remark,jdbcType=VARCHAR})
+    </foreach>
+	;end;
+  </insert>
+  <insert id="insertSelective" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StDifferDetailEntity" >
+    insert into TFR.T_OPT_ST_DIFFER_DETAIL
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="stDifferReportId != null" >
+        ST_DIFFER_REPORT_ID,
+      </if>
+      <if test="oaErrorNo != null" >
+        OA_ERROR_NO,
+      </if>
+      <if test="differenceType != null" >
+        DIFFERENCE_TYPE,
+      </if>
+      <if test="handleTime != null" >
+        HANDLE_TIME,
+      </if>
+      <if test="waybillNo != null" >
+        WAYBILL_NO,
+      </if>
+      <if test="serialNo != null" >
+        SERIAL_NO,
+      </if>
+      <if test="userCode != null" >
+        USER_CODE,
+      </if>
+      <if test="handleStatus != null" >
+        HANDLE_STATUS,
+      </if>
+      <if test="remark != null" >
+        REMARK,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="stDifferReportId != null" >
+        #{stDifferReportId,jdbcType=VARCHAR},
+      </if>
+      <if test="oaErrorNo != null" >
+        #{oaErrorNo,jdbcType=VARCHAR},
+      </if>
+      <if test="differenceType != null" >
+        #{differenceType,jdbcType=VARCHAR},
+      </if>
+      <if test="handleTime != null" >
+        #{handleTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="waybillNo != null" >
+        #{waybillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="serialNo != null" >
+        #{serialNo,jdbcType=VARCHAR},
+      </if>
+      <if test="userCode != null" >
+        #{userCode,jdbcType=VARCHAR},
+      </if>
+      <if test="handleStatus != null" >
+        #{handleStatus,jdbcType=VARCHAR},
+      </if>
+      <if test="remark != null" >
+        #{remark,jdbcType=VARCHAR}
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StDifferDetailEntity" >
+    update TFR.T_OPT_ST_DIFFER_DETAIL
+    <set >
+      <if test="stDifferReportId != null" >
+        ST_DIFFER_REPORT_ID = #{stDifferReportId,jdbcType=VARCHAR},
+      </if>
+      <if test="oaErrorNo != null" >
+        OA_ERROR_NO = #{oaErrorNo,jdbcType=VARCHAR},
+      </if>
+      <if test="differenceType != null" >
+        DIFFERENCE_TYPE = #{differenceType,jdbcType=VARCHAR},
+      </if>
+      <if test="handleTime != null" >
+        HANDLE_TIME = #{handleTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="waybillNo != null" >
+        WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="serialNo != null" >
+        SERIAL_NO = #{serialNo,jdbcType=VARCHAR},
+      </if>
+      <if test="userCode != null" >
+        USER_CODE = #{userCode,jdbcType=VARCHAR},
+      </if>
+      <if test="handleStatus != null" >
+        HANDLE_STATUS = #{handleStatus,jdbcType=VARCHAR},
+      </if>
+      <if test="differenceReason != null" >
+        difference_reason = #{differenceReason,jdbcType=VARCHAR},
+      </if>
+      <if test="remark != null" >
+        REMARK = #{remark,jdbcType=VARCHAR}
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  <update id="updateBatchByPrimaryKeySelective" parameterType="java.util.List">
+    begin
+	<foreach collection="list" item="item" separator=";">
+    update TFR.T_OPT_ST_DIFFER_DETAIL
+    <set>
+      <if test="item.stDifferReportId != null" >
+        ST_DIFFER_REPORT_ID = #{item.stDifferReportId,jdbcType=VARCHAR},
+      </if>
+      <if test="item.oaErrorNo != null" >
+        OA_ERROR_NO = #{item.oaErrorNo,jdbcType=VARCHAR},
+      </if>
+      <if test="item.differenceType != null" >
+        DIFFERENCE_TYPE = #{item.differenceType,jdbcType=VARCHAR},
+      </if>
+      <if test="item.handleTime != null" >
+        HANDLE_TIME = #{item.handleTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="item.waybillNo != null" >
+        WAYBILL_NO = #{item.waybillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="item.serialNo != null" >
+        SERIAL_NO = #{item.serialNo,jdbcType=VARCHAR},
+      </if>
+      <if test="item.userCode != null" >
+        USER_CODE = #{item.userCode,jdbcType=VARCHAR},
+      </if>
+      <if test="item.handleStatus != null" >
+        HANDLE_STATUS = #{item.handleStatus,jdbcType=VARCHAR},
+      </if>
+      <if test="item.remark != null" >
+        REMARK = #{item.remark,jdbcType=VARCHAR}
+      </if>
+    </set>
+    where ID = #{item.id,jdbcType=VARCHAR}
+    </foreach>
+	;end;
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StDifferDetailEntity" >
+    update TFR.T_OPT_ST_DIFFER_DETAIL
+    set ST_DIFFER_REPORT_ID = #{stDifferReportId,jdbcType=VARCHAR},
+      OA_ERROR_NO = #{oaErrorNo,jdbcType=VARCHAR},
+      DIFFERENCE_TYPE = #{differenceType,jdbcType=VARCHAR},
+      HANDLE_TIME = #{handleTime,jdbcType=TIMESTAMP},
+      WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR},
+      SERIAL_NO = #{serialNo,jdbcType=VARCHAR},
+      USER_CODE = #{userCode,jdbcType=VARCHAR},
+      HANDLE_STATUS = #{handleStatus,jdbcType=VARCHAR},
+      REMARK = #{remark,jdbcType=VARCHAR}
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  <select id="queryStOAErrorByBatch" resultType="com.deppon.foss.module.transfer.stockchecking.api.shared.dto.StDifferDetailDto" parameterType="map">
+	  select aa.ID as id, aa.WAYBILL_NO as waybillNo, aa.SERIAL_NO as serialNo, aa.DIFFERENCE_TYPE as differenceType, aa.DEPTCODE as deptcode
+		 from (
+		  select a.ID, a.WAYBILL_NO, a.SERIAL_NO, a.DIFFERENCE_TYPE, c.DEPTCODE
+		    from tfr.T_OPT_ST_DIFFER_DETAIL a
+		        ,tfr.T_OPT_ST_DIFFER_REPORT b
+		        ,tfr.T_OPT_ST_TASK c
+		      where a.ST_DIFFER_REPORT_ID = b.ID
+			    and b.ST_TASK_ID = c.ID
+			    and a.ST_DIFFER_REPORT_ID = #{stReportId}
+			    and a.OA_ERROR_NO = #{oaNullValue}
+		        and a.DIFFERENCE_TYPE = #{goodsStatusLack}
+		        and a.handle_status = 'DOING'
+		  UNION ALL
+		  select a.ID, a.WAYBILL_NO, a.SERIAL_NO, a.DIFFERENCE_TYPE, b.DEPTCODE
+		    from tfr.T_OPT_ST_DIFFER_DETAIL a
+		        ,tfr.T_OPT_ST_DIFFER_REPORT b
+		      where a.ST_DIFFER_REPORT_ID = b.ID
+		        and a.ST_DIFFER_REPORT_ID = #{stReportId}
+		        and a.OA_ERROR_NO = #{oaNullValue}
+		        and (a.DIFFERENCE_TYPE = #{goodsStatusSurplusCarry} or a.DIFFERENCE_TYPE = #{goodsStatusSurplusCarryOthers})
+		)aa order by aa.WAYBILL_NO, aa.SERIAL_NO
+  </select>
+
+  <select id="queryReportRelativeDetail" resultType="com.deppon.foss.module.transfer.stockchecking.api.shared.dto.StReportDetailDto" parameterType="map">
+    select a.ID as id
+          ,a.HANDLE_STATUS as handleStatus
+          ,b.ID as stDifferReportId
+          ,b.REPORT_CODE as reportCode
+          ,a.PACKAGE_NO as packageNo
+          ,a.WAYBILL_NO as waybillNo
+          ,a.SERIAL_NO as serialNo
+          ,b.GOODS_AREA_NAME as goodsAreaName
+          ,a.OA_ERROR_NO as oaErrorNo
+          ,a.DIFFERENCE_TYPE as differenceType
+          ,a.DIFFERENCE_TYPE as differenceTypeDesc
+          ,d.EMP_NAME as operator
+          ,b.CREATE_TIME as reportCreateTime
+	      ,a.HANDLE_TIME as handleTime
+	      ,a.REMARK as remark
+	      ,c.STARTQTY as startQty
+	      ,c.ENDQTY as endQty
+	      ,c.RECEIVE_METHOD as receiveMethod
+	      ,c.DISTRICT_NAME as districtName
+	  from (select bb.ID, bb.ST_DIFFER_REPORT_ID, bb.HANDLE_STATUS, bb.PACKAGE_NO, bb.WAYBILL_NO, bb.SERIAL_NO, bb.OA_ERROR_NO, bb.DIFFERENCE_TYPE, bb.HANDLE_TIME, bb.REMARK
+          from (select aaa.ID, aaa.ST_DIFFER_REPORT_ID, aaa.HANDLE_STATUS, aaa.PACKAGE_NO, aaa.WAYBILL_NO, aaa.SERIAL_NO, aaa.OA_ERROR_NO, aaa.DIFFERENCE_TYPE, aaa.HANDLE_TIME, aaa.REMARK from tfr.T_OPT_ST_DIFFER_DETAIL aaa where aaa.ST_DIFFER_REPORT_ID = #{stReportId,jdbcType=VARCHAR}) aa
+              ,(select bbb.ID, bbb.ST_DIFFER_REPORT_ID, bbb.HANDLE_STATUS, bbb.PACKAGE_NO, bbb.WAYBILL_NO, bbb.SERIAL_NO, bbb.OA_ERROR_NO, bbb.DIFFERENCE_TYPE, bbb.HANDLE_TIME, bbb.REMARK from tfr.T_OPT_ST_DIFFER_DETAIL bbb where bbb.ST_DIFFER_REPORT_ID != #{stReportId,jdbcType=VARCHAR}) bb
+            where aa.WAYBILL_NO = bb.WAYBILL_NO
+              and aa.SERIAL_NO = bb.SERIAL_NO
+    <![CDATA[ and bb.HANDLE_TIME >= #{limitedDay,jdbcType=TIMESTAMP} ]]>
+              and ((aa.DIFFERENCE_TYPE = #{scanResultLack,jdbcType=VARCHAR} and bb.DIFFERENCE_TYPE = #{scanResultSurplusErrorGoodsarea,jdbcType=VARCHAR}) or
+                   (aa.DIFFERENCE_TYPE = #{scanResultSurplusErrorGoodsarea,jdbcType=VARCHAR} and bb.DIFFERENCE_TYPE = #{scanResultLack,jdbcType=VARCHAR}))
+                   and aa.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+            	   and aa.serial_no in <!-- (select dd.serial_no
+                  from tfr.t_opt_st_differ_detail dd
+                 where dd.st_differ_report_id = #{stReportId,jdbcType=VARCHAR}
+                   and dd.waybill_no = #{waybillNo,jdbcType=VARCHAR}) -->
+                   <foreach collection="serialNosList"  index="index" item="serailNo"  open="(" separator="," close=")">  
+	       				#{serailNo}
+	  			  </foreach>) a
+	      ,tfr.T_OPT_ST_DIFFER_REPORT b
+	      ,tfr.T_OPT_ST_TASK c
+	      ,tfr.T_OPT_ST_OPERATOR d
+	    where a.ST_DIFFER_REPORT_ID = b.ID 
+	      and b.ST_TASK_ID = c.ID
+	      and c.ID = d.ST_TASK_ID(+)
+	      and exists(select 1 from TFR.t_opt_st_operator dd where rownum = 1)
+	      order by a.WAYBILL_NO,a.SERIAL_NO
+  </select>
+  
+  <select id="queryCountLastLackOfWaybill" parameterType="map" resultType="int">
+  	select count(1)
+ 	 from tfr.t_opt_st_differ_detail dd
+    where dd.st_differ_report_id = #{differReportId,jdbcType=VARCHAR}
+    and dd.waybill_no = #{waybillNo, jdbcType=VARCHAR}
+    and dd.difference_type = 'LACK'
+    and dd.handle_status = 'DOING'
+  </select>
+  <select id="queryDetailForGapRepairList" resultMap="stDifferDetailResultMap" parameterType="map">
+  	select <include refid="Base_Column_List" /> from tfr.T_OPT_ST_DIFFER_DETAIL a
+	  where a.DIFFERENCE_TYPE = #{diffType}
+	    and a.HANDLE_STATUS = #{handleStatus}
+	    and a.OA_ERROR_NO = #{oaErrorNo}
+	    and ORA_HASH(a.WAYBILL_NO, #{threadCount}) = #{threadNo}
+	  order by a.HANDLE_TIME
+  </select>
+  <select id="queryInStockList" resultType="com.deppon.foss.module.transfer.stock.api.shared.domain.InOutStockEntity" parameterType="map">
+  	select a.GOODS_AREA_NAME as goodsAreaName
+	     , a.GOODS_AREA_CODE as goodsAreaCode
+	     , a.ORG_CODE as orgCode
+	     , a.IN_STOCK_TIME as inOutStockTime
+	     , a.OPERATOR_NAME as operatorName
+	     , a.OPERATOR_CODE as operatorCode
+	  from tfr.T_OPT_IN_STOCK a
+	  where a.WAYBILL_NO = #{waybillNo}
+	    and a.SERIAL_NO = #{serialNo}
+	    and a.IN_STOCK_TIME > #{handleTime,jdbcType=TIMESTAMP}
+	    and a.IS_VALID = 'Y'
+  </select>
+  <select id="queryDifferDetailListForGapRepair" resultMap="stDifferDetailResultMap" parameterType="com.deppon.foss.module.transfer.stockchecking.api.shared.domain.StDifferDetailEntity">
+  	select <include refid="Base_Column_List" /> from tfr.T_OPT_ST_DIFFER_DETAIL a
+	  where a.WAYBILL_NO = #{waybillNo}
+	    and a.SERIAL_NO = #{serialNo} 
+	    and a.HANDLE_STATUS = #{handleStatus}
+	    and a.OA_ERROR_NO = #{oaErrorNo}
+  </select>
+  <select id="queryStDifferDetailsByStIdAndWaybillNo" resultMap="stDifferDetailResultMap" parameterType="map">
+  	 select d.id as id,
+  	   d.st_differ_report_id as stDifferReportId,
+  	   d.waybill_no  as waybillNo,
+       d.serial_no as serialNo,
+       d.oa_error_no as oaErrorNo,
+       (case d.difference_type when 'LACK' then '少货'
+                              when 'ERROR_GOODSAREA' then '放错货区'
+                              when 'CARRY' then '多货-夹带'
+                              when 'CARRY_OTHERS' then '多货-异地夹带'
+                              when 'SIGN' then '已签收'
+                              when 'OBSOLETE' then '已作废'
+                              when 'ABORTED' then '中止作废'
+                              when 'RFC_DEST' then '更改目的站'
+                              else '' end) as differenceType,
+       d.difference_reason as   differenceReason,                   
+       d.handle_time as handleTime,
+       d.remark as remark,
+       d.handle_status as handleStatus
+        from tfr.t_opt_st_differ_detail d
+	where d.st_differ_report_id = #{stDifferReportId,jdbcType=VARCHAR}
+      and d.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+      order by d.serial_no
+  </select>
+  <select id="queryReportDetailByWaybillNo" resultType="com.deppon.foss.module.transfer.stockchecking.api.shared.dto.StReportDetailDto" parameterType="map">
+  	select distinct b.ID as stDifferReportId,
+                b.REPORT_CODE as reportCode,
+                a.WAYBILL_NO as waybillNo,
+                b.GOODS_AREA_NAME as goodsAreaName,
+                '' as operator,
+                b.CREATE_TIME as reportCreateTime,
+                a.HANDLE_STATUS as handleStatus
+      from tfr.T_OPT_ST_DIFFER_DETAIL a, tfr.T_OPT_ST_DIFFER_REPORT b
+     where a.ST_DIFFER_REPORT_ID = b.ID
+       and b.ID = #{stReportId}
+       and a.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+       and a.handle_status = 'DOING'
+       
+     union all
+     
+     select distinct b.ID as stDifferReportId,
+                b.REPORT_CODE as reportCode,
+                a.WAYBILL_NO as waybillNo,
+                b.GOODS_AREA_NAME as goodsAreaName,
+                '' as operator,
+                b.CREATE_TIME as reportCreateTime,
+                a.HANDLE_STATUS as handleStatus
+      from tfr.T_OPT_ST_DIFFER_DETAIL a, tfr.T_OPT_ST_DIFFER_REPORT b
+     where a.ST_DIFFER_REPORT_ID = b.ID
+       and b.ID = #{stReportId}
+       and a.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+       and a.handle_status = 'DONE'
+       and  not exists (
+           select dd.waybill_no from tfr.T_OPT_ST_DIFFER_DETAIL dd
+           where dd.st_differ_report_id = #{stReportId}
+           and dd.handle_status = 'DOING'
+           and dd.waybill_no = a.waybill_no)
+  </select>
+  <select id="queryLackCountByWaybillNo" parameterType="string" resultType="long">
+  	select count(1)
+	  from tfr.t_opt_st_differ_detail d
+	 where d.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+	   and d.difference_type = 'LACK'
+	<![CDATA[   and d.oa_error_no <> 'N/A' ]]>
+  </select>
+</mapper>

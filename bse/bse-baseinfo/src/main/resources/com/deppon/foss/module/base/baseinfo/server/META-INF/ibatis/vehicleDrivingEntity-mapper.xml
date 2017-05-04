@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="foss.bse.bse-baseinfo.vehicledrivingentity">
+	<resultMap id="vehicleDrivingEntityResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.domain.VehicleDrivingEntity">
+	<id column="ID" property="id" jdbcType="VARCHAR"/>
+	<!--长途车队编码  -->
+	<result column="LONGHAUL_FLEET_CODE" property="longHaulFleetCode" jdbcType="VARCHAR" />
+	<!--长途车队名称  -->
+	<result column="LONGHAUL_FLEET_NAME" property="longHaulFleetName" jdbcType="VARCHAR"/>
+	<!--下辖部门编码 -->
+	<result column="DEPARTMENT_CODE" property="departmentCode" jdbcType="VARCHAR"/>
+	<!--下辖部门名称  -->
+	<result column="DEPARTMENT_NAME" property="departmentName" jdbcType="VARCHAR" />
+	<!--行车编码简称  -->
+	<result column="TRAFFIC_CODE" property="trafficCode" jdbcType="VARCHAR" />
+	<!-- 是否有效 -->
+	<result column="ACTIVE" property="active" jdbcType="VARCHAR" />
+	</resultMap> 
+	
+	<sql id="vehicledrivingentity_ResultMap_Param">
+		ID,
+		LONGHAUL_FLEET_CODE,
+		DEPARTMENT_CODE,
+		TRAFFIC_CODE,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE,
+		CREATE_TIME,
+		MODIFY_TIME,
+		ACTIVE
+	</sql>
+	
+	<!-- 插入长途车队信息 -->
+	<insert id="addVehicleDriving" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.VehicleDrivingEntity">
+		<![CDATA[
+			INSERT/** 综合:长途车队信息 **/ INTO BSE.T_BAS_VEHICLE_DRIVING 	(
+		]]>
+		<include refid="vehicledrivingentity_ResultMap_Param" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR},
+		#{longHaulFleetCode,jdbcType=VARCHAR},
+		#{departmentCode,jdbcType=VARCHAR},
+		#{trafficCode,jdbcType=VARCHAR},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR},
+		#{createTime,jdbcType=TIMESTAMP},
+		#{modifyTime,jdbcType=TIMESTAMP},
+		#{active,jdbcType=VARCHAR}
+	)
+	</insert>
+	
+	<!--修改(删除)长途车队信息-->
+	<update id="updateOrDeleteVehicleDriving" parameterType="map">
+		UPDATE /** 综合:长途车队信息 **/ T_BAS_VEHICLE_DRIVING vd
+		SET vd.ACTIVE= #{active,jdbcType=CHAR},
+			vd.MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP},
+	    	vd.MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR}
+	    	WHERE vd.ID IN
+		<foreach collection="ids"  index="index" item="item"  open="(" separator="," close=")">  
+				        #{item} 
+		</foreach>
+	</update>
+	
+	<!--表单回显长途车队总条数为分页准备total  -->
+	<select id="queryTotalByCondition" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.VehicleDrivingQueryDto"
+			resultType="Long">
+			select count(*) from BSE.T_BAS_VEHICLE_DRIVING vd
+			right join bse.t_bas_org org on vd.longhaul_fleet_code = org.code
+                             and org.active = 'Y'
+            right join bse.t_bas_org dep on vd.department_code = dep.code
+                             and dep.active = 'Y'
+            where vd.active='Y'
+			<if test="longHaulFleetCode!=null and longHaulFleetCode!=''">
+				AND vd.LONGHAUL_FLEET_CODE = #{longHaulFleetCode,jdbcType=VARCHAR}
+			</if>
+	</select>
+	
+	<!-- 表单回显长途车队信息 -->
+	<select id="queryVehicleDrivingByCondition" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.VehicleDrivingQueryDto"
+			resultMap="vehicleDrivingEntityResultMap">
+		select     vd.id                    ID,
+		  		   vd.longhaul_fleet_code   LONGHAUL_FLEET_CODE,
+		  		   o.name					LONGHAUL_FLEET_NAME,
+		  		   vd.department_code		DEPARTMENT_CODE,
+           		   dep.name					DEPARTMENT_NAME,
+           		   vd.traffic_code			TRAFFIC_CODE,
+           		   vd.active        		ACTIVE
+  		from    BSE.T_BAS_VEHICLE_DRIVING vd
+        right join bse.t_bas_org o on vd.longhaul_fleet_code = o.code and o.active ='Y'
+        right join bse.t_bas_org dep on vd.department_code = dep.code and dep.active = 'Y'
+        where vd.active = 'Y'    
+          <if test="longHaulFleetCode!=null and longHaulFleetCode!=''">
+          		AND vd.LONGHAUL_FLEET_CODE = #{longHaulFleetCode,jdbcType=VARCHAR}
+          </if>
+	</select>
+	
+	<!-- 根据长途车编码和下辖编码查询 -->
+	<!-- 新增长途车信息时做校验 -->
+	<select id="queryVehicleDrivingByFleetDep" parameterType="map" resultMap="vehicleDrivingEntityResultMap">
+		 SELECT 
+	       vd.ID                           ID,
+	       vd.LONGHAUL_FLEET_CODE          LONGHAUL_FLEET_CODE,
+	       o.name					       LONGHAUL_FLEET_NAME,        
+	       vd.DEPARTMENT_CODE              DEPARTMENT_CODE,
+	       dep.name					       DEPARTMENT_NAME,
+	       vd.TRAFFIC_CODE                 TRAFFIC_CODE,
+	       vd.ACTIVE                       ACTIVE
+	      FROM BSE.T_BAS_VEHICLE_DRIVING vd
+	      right join bse.t_bas_org o  on vd.longhaul_fleet_code = o.code and o.active ='Y'
+          right join bse.t_bas_org dep on vd.department_code = dep.code and dep.active = 'Y'
+	       where vd.active = 'Y'   
+	      	<if test="longHaulFleetCode != null and longHaulFleetCode != ''">
+	      		  AND vd.LONGHAUL_FLEET_CODE = #{longHaulFleetCode,jdbcType=VARCHAR}
+	      	</if>
+	      	<if test="departmentCode != null and departmentCode != ''">
+	      		  AND vd.DEPARTMENT_CODE = #{departmentCode,jdbcType=VARCHAR}
+	      	</if>
+	      
+	</select>
+	
+	<!--根据长途车编码和行车编码查询  -->
+	<!--校验行车编码的唯一性  -->
+	<select id="queryVehicleDrivingByFleetTra" parameterType="map" resultMap="vehicleDrivingEntityResultMap">
+		
+		<![CDATA[ SELECT 
+	       vd.ID                           ID,
+	       vd.LONGHAUL_FLEET_CODE          LONGHAUL_FLEET_CODE,
+	       vd.DEPARTMENT_CODE              DEPARTMENT_CODE,
+	       vd.TRAFFIC_CODE                 TRAFFIC_CODE,
+	       vd.ACTIVE                       ACTIVE
+	    	    FROM BSE.T_BAS_VEHICLE_DRIVING vd
+	    	    right join bse.t_bas_org o on vd.longhaul_fleet_code = o.code and o.active = 'Y'
+				right join bse.t_bas_org dep on vd.department_code = dep.code  and dep.active='Y' 
+	    	    where  vd.ACTIVE ='Y'
+	    	    AND    vd.LONGHAUL_FLEET_CODE <> #{longHaulFleetCode,jdbcType=VARCHAR}
+      			AND    vd.TRAFFIC_CODE=#{trafficCode,jdbcType=VARCHAR}   
+				]]>
+	
+	</select>
+
+</mapper>
+

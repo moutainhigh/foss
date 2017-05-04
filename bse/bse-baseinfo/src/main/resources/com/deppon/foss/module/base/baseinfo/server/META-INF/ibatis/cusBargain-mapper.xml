@@ -1,0 +1,798 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.cusBargain">
+	<!-- 客户合同信息 -->
+	<resultMap id="cusBargainResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusBargainEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="CHARGE_TYPE" property="chargeType" jdbcType="VARCHAR" />
+		<result column="ARREARS_AMOUNT" property="arrearsAmount"
+			jdbcType="DECIMAL" />
+		<result column="NAME" property="name" jdbcType="VARCHAR" />
+		<result column="CONTACT_PHONE" property="contactPhone"
+			jdbcType="VARCHAR" />
+		<result column="MOBILE_PHONE" property="mobilePhone" jdbcType="VARCHAR" />
+		<result column="ADDRESS" property="address" jdbcType="VARCHAR" />
+		<result column="STATEMENT_DATE" property="statementDate"
+			jdbcType="DECIMAL" />
+		<result column="INVOICING_DATE" property="invoicingDate"
+			jdbcType="DECIMAL" />
+		<result column="CHECKOUT_DATE" property="checkoutDate"
+			jdbcType="DECIMAL" />
+		<result column="APPLY_REASON" property="applyReason" jdbcType="VARCHAR" />
+		<result column="UNIFIED_CODE" property="unifiedCode" jdbcType="VARCHAR" />
+		<result column="APPLICATE_ORG_ID" property="applicateOrgId"
+			jdbcType="VARCHAR" />
+		<result column="DISCOUNT" property="discount" jdbcType="CHAR" />
+		<result column="STATUS" property="status" jdbcType="VARCHAR" />
+		<result column="BARGAIN_SUBJECT" property="bargainSubject"
+			jdbcType="VARCHAR" />
+		<result column="REGISTER_FUNDS" property="registerFunds"
+			jdbcType="VARCHAR" />
+		<result column="LAST_BARGAIN" property="lastBargain" jdbcType="VARCHAR" />
+		<result column="BARGAIN_CODE" property="bargainCode" jdbcType="VARCHAR" />
+		<result column="TRANS_NAME" property="transName" jdbcType="VARCHAR" />
+		<result column="CUSTOMER_NAME" property="customerName"
+			jdbcType="VARCHAR" />
+		<result column="LINKMAN_ID" property="linkmanId" jdbcType="VARCHAR" />
+		<result column="CHARGE_MODE" property="chargeMode" jdbcType="VARCHAR" />
+		<result column="PREFERENTIAL_TYPE" property="preferentialType"
+			jdbcType="VARCHAR" />
+		<result column="USED_AMOUNT" property="usedAmount" jdbcType="DECIMAL" />
+		<result column="OVERDUE" property="overdue" jdbcType="CHAR" />
+		<result column="BIZ_DATE" property="bizDate" jdbcType="TIMESTAMP" />
+		<result column="BEGIN_TIME" property="beginTime" jdbcType="TIMESTAMP" />
+		<result column="END_TIME" property="endTime" jdbcType="TIMESTAMP" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+		<!-- CUSTOMER_CODE 字段重命名为：CRM_CUS_ID 实体属性 customerCode 未作更改-->
+		<result column="CRM_CUS_ID" property="customerCode"
+			jdbcType="DECIMAL" />
+		<result column="VIRTUAL_CODE" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="CRM_ID" property="crmId" jdbcType="DECIMAL" />
+		<result column="DEBTDAYS" property="debtDays" jdbcType="DECIMAL" />
+		<result column="ASYNTAKEGOODSCODE" property="asyntakegoodsCode" jdbcType="CHAR" />
+		<result column="HASTENFUNDDEPTCODE" property="hastenfunddeptCode" jdbcType="VARCHAR" />
+		<!-- PRICE_VERSION_DATE  新增价格版本时间 字段-->
+		<result column="PRICE_VERSION_DATE" property="priceVersionDate" jdbcType="TIMESTAMP" />
+
+		<!-- 新增快递属性：2013-09-22 -->	
+		<result column="EXPAY_WAY" property="exPayWay" jdbcType="VARCHAR" />	
+		<result column="EXPREFERENTIAL_TYPE" property="exPreferentialType" jdbcType="VARCHAR" />	
+		<result column="EXPRICE_VERSION_DATE" property="exPriceVersionDate" jdbcType="TIMESTAMP" />
+		<!-- 新增是否单独报价属性：2015-01-20 -->
+		<result column="IS_ALONE_QUOTATION" property="isAloneQuotation" jdbcType="CHAR" />			
+		<!-- 新增发票标记和签署合同公司属性：2013-11-13 -->	
+		<result column="INVOICES_MARK" property="invoicesMark" jdbcType="VARCHAR" />	
+		<result column="SIGNED_CONTRACT_COMPANY" property="signedContractCompany" jdbcType="VARCHAR" />	
+		<!--是否电商尊享-->
+		<result column="IF_ELEC_ENJOY" property="ifElecEnjoy" jdbcType="CHAR" />
+		<!-- 一对多配置 客户合同信息对应一个或多个 合同适用部门信息 -->
+		<collection property="appOrgList" column="CRM_ID"
+			select="queryBargainAppOrgByCrmId" ofType="java.util.ArrayList" />
+	</resultMap>
+    
+    <!-- 客户合同信息,但是不包含客户合同使用部门信息，151211，杨套红，修复大客户绑定N多客户合同开单慢问题 ，20150320-->
+	<resultMap id="cusBargainResultMapNew"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusBargainEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="CHARGE_TYPE" property="chargeType" jdbcType="VARCHAR" />
+		<result column="ARREARS_AMOUNT" property="arrearsAmount"
+			jdbcType="DECIMAL" />
+		<result column="NAME" property="name" jdbcType="VARCHAR" />
+		<result column="CONTACT_PHONE" property="contactPhone"
+			jdbcType="VARCHAR" />
+		<result column="MOBILE_PHONE" property="mobilePhone" jdbcType="VARCHAR" />
+		<result column="ADDRESS" property="address" jdbcType="VARCHAR" />
+		<result column="STATEMENT_DATE" property="statementDate"
+			jdbcType="DECIMAL" />
+		<result column="INVOICING_DATE" property="invoicingDate"
+			jdbcType="DECIMAL" />
+		<result column="CHECKOUT_DATE" property="checkoutDate"
+			jdbcType="DECIMAL" />
+		<result column="APPLY_REASON" property="applyReason" jdbcType="VARCHAR" />
+		<result column="UNIFIED_CODE" property="unifiedCode" jdbcType="VARCHAR" />
+		<result column="APPLICATE_ORG_ID" property="applicateOrgId"
+			jdbcType="VARCHAR" />
+		<result column="DISCOUNT" property="discount" jdbcType="CHAR" />
+		<result column="STATUS" property="status" jdbcType="VARCHAR" />
+		<result column="BARGAIN_SUBJECT" property="bargainSubject"
+			jdbcType="VARCHAR" />
+		<result column="REGISTER_FUNDS" property="registerFunds"
+			jdbcType="VARCHAR" />
+		<result column="LAST_BARGAIN" property="lastBargain" jdbcType="VARCHAR" />
+		<result column="BARGAIN_CODE" property="bargainCode" jdbcType="VARCHAR" />
+		<result column="TRANS_NAME" property="transName" jdbcType="VARCHAR" />
+		<result column="CUSTOMER_NAME" property="customerName"
+			jdbcType="VARCHAR" />
+		<result column="LINKMAN_ID" property="linkmanId" jdbcType="VARCHAR" />
+		<result column="CHARGE_MODE" property="chargeMode" jdbcType="VARCHAR" />
+		<result column="PREFERENTIAL_TYPE" property="preferentialType"
+			jdbcType="VARCHAR" />
+		<result column="USED_AMOUNT" property="usedAmount" jdbcType="DECIMAL" />
+		<result column="OVERDUE" property="overdue" jdbcType="CHAR" />
+		<result column="BIZ_DATE" property="bizDate" jdbcType="TIMESTAMP" />
+		<result column="BEGIN_TIME" property="beginTime" jdbcType="TIMESTAMP" />
+		<result column="END_TIME" property="endTime" jdbcType="TIMESTAMP" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+		<!-- CUSTOMER_CODE 字段重命名为：CRM_CUS_ID 实体属性 customerCode 未作更改-->
+		<result column="CRM_CUS_ID" property="customerCode"
+			jdbcType="DECIMAL" />
+		<result column="VIRTUAL_CODE" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="CRM_ID" property="crmId" jdbcType="DECIMAL" />
+		<result column="DEBTDAYS" property="debtDays" jdbcType="DECIMAL" />
+		<result column="ASYNTAKEGOODSCODE" property="asyntakegoodsCode" jdbcType="CHAR" />
+		<result column="HASTENFUNDDEPTCODE" property="hastenfunddeptCode" jdbcType="VARCHAR" />
+		<!-- PRICE_VERSION_DATE  新增价格版本时间 字段-->
+		<result column="PRICE_VERSION_DATE" property="priceVersionDate" jdbcType="TIMESTAMP" />
+
+		<!-- 新增快递属性：2013-09-22 -->	
+		<result column="EXPAY_WAY" property="exPayWay" jdbcType="VARCHAR" />	
+		<result column="EXPREFERENTIAL_TYPE" property="exPreferentialType" jdbcType="VARCHAR" />	
+		<result column="EXPRICE_VERSION_DATE" property="exPriceVersionDate" jdbcType="TIMESTAMP" />
+		<!-- 新增是否单独报价属性：2015-01-20 -->
+		<result column="IS_ALONE_QUOTATION" property="isAloneQuotation" jdbcType="CHAR" />			
+		<!-- 新增发票标记和签署合同公司属性：2013-11-13 -->	
+		<result column="INVOICES_MARK" property="invoicesMark" jdbcType="VARCHAR" />	
+		<result column="SIGNED_CONTRACT_COMPANY" property="signedContractCompany" jdbcType="VARCHAR" />	
+		<!--是否电商尊享-->
+		<result column="IF_ELEC_ENJOY" property="ifElecEnjoy" jdbcType="CHAR" />	
+	</resultMap>
+    
+	<!-- 客户合同-优惠信息 -->
+	<resultMap id="bargainPreferResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.dto.BargainPreferDto">
+		<result column="CRM_ID" property="crmId"
+			jdbcType="DECIMAL" />
+		<result column="ARREARS_AMOUNT" property="arrearsAmount"
+			jdbcType="DECIMAL" />
+		<result column="NAME" property="name" jdbcType="VARCHAR" />
+		<result column="BARGAIN_CODE" property="bargainCode" jdbcType="VARCHAR" />
+		<result column="CHARGE_TYPE" property="chargeType" jdbcType="VARCHAR" />
+		<result column="PREFERENTIAL_TYPE" property="preferentialType"
+			jdbcType="VARCHAR" />
+		<result column="BEGIN_TIME" property="beginTime" jdbcType="TIMESTAMP" />
+		<result column="END_TIME" property="endTime" jdbcType="TIMESTAMP" />
+		<result column="CHARGE_REBATE" property="chargeRebate"
+			jdbcType="DECIMAL" />
+		<result column="AGENT_GATH_RATE" property="agentGathRate"
+			jdbcType="DECIMAL" />
+		<result column="INSURE_DPRICE_RATE" property="insureDpriceRate"
+			jdbcType="DECIMAL" />
+		<result column="RECEIVE_PRICE" property="receivePriceRate"
+			jdbcType="DECIMAL" />
+		<result column="DELIVERY_FEE_RATE" property="deliveryFeeRate"
+			jdbcType="DECIMAL" />
+		<result column="EFFECTIVEDATE" property="effectiveDate" jdbcType="TIMESTAMP" />
+		<result column="EXPIRATIONDATE" property="expirationDate" jdbcType="TIMESTAMP" />
+		
+		<!-- 新增快递属性：2013-09-22 -->	
+		<result column="EXPAY_WAY" property="exPayWay" jdbcType="VARCHAR" />	
+		<result column="EXPREFERENTIAL_TYPE" property="exPreferentialType" jdbcType="VARCHAR" />	
+		<result column="EXPRICE_VERSION_DATE" property="exPriceVersionDate" jdbcType="TIMESTAMP" />		
+		<result column="FTYPE" property="ftype" jdbcType="VARCHAR" />	
+	</resultMap>
+
+	<!-- 客户信息合同信息  308861 -->
+	<resultMap id="cusBargainNewResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusBargainNewEntity">
+		<result column="CODE" property="cusCode" jdbcType="VARCHAR" />
+		<result column="UNIFIED_CODE" property="unifiedCode" jdbcType="VARCHAR" />
+		<result column="CHARGE_TYPE" property="chargeType" jdbcType="VARCHAR" />
+		<result column="APPLICATE_ORG_ID" property="applicateOrgId" jdbcType="VARCHAR" />
+		<result column="BARGAIN_CODE" property="bargainCode" jdbcType="VARCHAR" />
+		<result column="PREFERENTIAL_TYPE" property="preferentialType" jdbcType="VARCHAR" />
+		<result column="USED_AMOUNT" property="usedAmount" jdbcType="DECIMAL" />
+		<!-- CUSTOMER_CODE 字段重命名为：CRM_CUS_ID 实体属性 customerCode 未作更改-->
+		<result column="CRM_CUS_ID" property="customerCode" jdbcType="DECIMAL" />
+		<result column="ASYNTAKEGOODSCODE" property="asyntakegoodsCode" jdbcType="VARCHAR" />
+		<result column="HASTENFUNDDEPTCODE" property="hastenfunddeptCode" jdbcType="VARCHAR" />
+		<result column="BEGIN_TIME" property="beginTime" jdbcType="TIMESTAMP" />
+		<result column="END_TIME" property="endTime" jdbcType="TIMESTAMP" />
+		<result column="CRM_ID" property="crmId" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<!-- 客户信息合同信息  308861 -->
+	<resultMap id="cusBargainOrgResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.OrgAdministrativeInfoEntity">
+		<result column="CODE" property="code" jdbcType="VARCHAR" />
+		<result column="NAME" property="name" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<!-- 客户合同信息数据字段 -->
+	<sql id="cusBargain_Column_List">
+		ID, CHARGE_TYPE, ARREARS_AMOUNT/100 ARREARS_AMOUNT,
+		NAME, CONTACT_PHONE,
+		MOBILE_PHONE,
+		ADDRESS, STATEMENT_DATE, INVOICING_DATE,
+		CHECKOUT_DATE,
+		APPLY_REASON, UNIFIED_CODE,
+		APPLICATE_ORG_ID, DISCOUNT, STATUS,
+		BARGAIN_SUBJECT, REGISTER_FUNDS, LAST_BARGAIN,
+		BARGAIN_CODE,
+		TRANS_NAME, CUSTOMER_NAME,
+		LINKMAN_ID, CHARGE_MODE, PREFERENTIAL_TYPE,
+		USED_AMOUNT, OVERDUE, BIZ_DATE,
+		BEGIN_TIME, END_TIME, CREATE_TIME,
+		MODIFY_TIME, ACTIVE, CREATE_USER_CODE,
+		MODIFY_USER_CODE, VIRTUAL_CODE,
+		CRM_ID,
+		CRM_CUS_ID, DEBTDAYS,ASYNTAKEGOODSCODE,HASTENFUNDDEPTCODE,PRICE_VERSION_DATE,
+		EXPAY_WAY,EXPREFERENTIAL_TYPE,EXPRICE_VERSION_DATE,IS_ALONE_QUOTATION,IF_ELEC_ENJOY
+	</sql>
+	
+	<!-- 客户合同信息数据字段 -->
+	<sql id="cusBargain_Select_List">
+		B.ID, B.CHARGE_TYPE, B.ARREARS_AMOUNT/100 ARREARS_AMOUNT,
+		B.NAME, B.CONTACT_PHONE,
+		B.MOBILE_PHONE,
+		B.ADDRESS, B.STATEMENT_DATE, B.INVOICING_DATE,
+		B.CHECKOUT_DATE,
+		B.APPLY_REASON, B.UNIFIED_CODE,
+		B.APPLICATE_ORG_ID, B.DISCOUNT, B.STATUS,
+		B.BARGAIN_SUBJECT, B.REGISTER_FUNDS, B.LAST_BARGAIN,
+		B.BARGAIN_CODE,
+		B.TRANS_NAME, B.CUSTOMER_NAME,
+		B.LINKMAN_ID, B.CHARGE_MODE, B.PREFERENTIAL_TYPE,
+		B.USED_AMOUNT, B.OVERDUE, B.BIZ_DATE,
+		B.BEGIN_TIME, B.END_TIME, B.CREATE_TIME,
+		B.MODIFY_TIME, B.ACTIVE, B.CREATE_USER_CODE,
+		B.MODIFY_USER_CODE, B.VIRTUAL_CODE,
+		B.CRM_ID,
+		B.CRM_CUS_ID, B.DEBTDAYS,B.ASYNTAKEGOODSCODE,B.HASTENFUNDDEPTCODE,B.PRICE_VERSION_DATE,
+		B.EXPAY_WAY,B.EXPREFERENTIAL_TYPE,B.EXPRICE_VERSION_DATE,B.IS_ALONE_QUOTATION,B.IF_ELEC_ENJOY
+	</sql>
+	
+		
+	<!-- 客户信息合同信息数据字段 308861-->
+	<sql id="cusBargainNew_Select">
+		C.CODE,
+		CB.UNIFIED_CODE,
+		CB.CHARGE_TYPE, 
+		CB.APPLICATE_ORG_ID,
+		CB.BARGAIN_CODE,
+		CB.PREFERENTIAL_TYPE,
+		CB.USED_AMOUNT,
+		CB.CRM_CUS_ID,
+		CB.ASYNTAKEGOODSCODE,
+		CB.HASTENFUNDDEPTCODE,
+		CB.BEGIN_TIME,
+		CB.END_TIME,
+		CB.CRM_ID
+	</sql>
+	
+	<!-- 插入客户合同信息数据字段 -->
+	<sql id="cusBargain_Insert_List">
+		ID, CHARGE_TYPE, ARREARS_AMOUNT,
+		NAME, CONTACT_PHONE,
+		MOBILE_PHONE,
+		ADDRESS, STATEMENT_DATE, INVOICING_DATE,
+		CHECKOUT_DATE,
+		APPLY_REASON, UNIFIED_CODE,
+		APPLICATE_ORG_ID, DISCOUNT, STATUS,
+		BARGAIN_SUBJECT, REGISTER_FUNDS, LAST_BARGAIN,
+		BARGAIN_CODE,
+		TRANS_NAME, CUSTOMER_NAME,
+		LINKMAN_ID, CHARGE_MODE, PREFERENTIAL_TYPE,
+		USED_AMOUNT, OVERDUE, BIZ_DATE,
+		BEGIN_TIME, END_TIME, CREATE_TIME,
+		MODIFY_TIME, ACTIVE, CREATE_USER_CODE,
+		MODIFY_USER_CODE, VIRTUAL_CODE,
+		CRM_ID,
+		CRM_CUS_ID, DEBTDAYS,ASYNTAKEGOODSCODE,HASTENFUNDDEPTCODE,PRICE_VERSION_DATE,
+		EXPAY_WAY,EXPREFERENTIAL_TYPE,EXPRICE_VERSION_DATE,IS_ALONE_QUOTATION,IF_ELEC_ENJOY
+	</sql>
+
+	<!-- 客户合同优惠信息数据字段 -->
+	<sql id="bargainPrefer_Column_List">
+		T.CRM_ID AS CRM_ID,
+		T.BARGAIN_CODE AS BARGAIN_CODE,
+		decode(d.FTYPE,'EXPRESS',T.EXPAY_WAY,T.CHARGE_TYPE) AS CHARGE_TYPE,
+		<!--T.CHARGE_TYPE AS CHARGE_TYPE,-->
+		T.PREFERENTIAL_TYPE AS PREFERENTIAL_TYPE,
+		T.BEGIN_TIME AS
+		BEGIN_TIME,
+		T.END_TIME AS END_TIME,
+		T.ARREARS_AMOUNT/100 AS
+		ARREARS_AMOUNT,
+		T.NAME AS NAME,
+		D.CHARGE_REBATE AS CHARGE_REBATE,
+		D.AGENT_GATH_RATE AS
+		AGENT_GATH_RATE,
+		D.INSURE_DPRICE_RATE AS
+		INSURE_DPRICE_RATE,
+		D.DELIVERY_FEE_RATE AS DELIVERY_FEE_RATE,
+		D.RECEIVE_PRICE AS RECEIVE_PRICE,
+		D.EFFECTIVEDATE AS EFFECTIVEDATE,
+		D.EXPIRATIONDATE AS EXPIRATIONDATE,
+		T.EXPAY_WAY AS EXPAY_WAY,
+		T.EXPREFERENTIAL_TYPE AS EXPREFERENTIAL_TYPE,
+		T.EXPRICE_VERSION_DATE AS EXPRICE_VERSION_DATE,
+		D.FTYPE AS FTYPE
+	</sql>
+
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<if test="active != null and active != ''">
+				and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</sql>
+
+	<!-- 查询所有客户合同信息 -->
+	<select id="queryAllInfos"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusBargainEntity"
+		resultMap="cusBargainResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有客户合同信息**/
+		]]>
+		<include refid="cusBargain_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUS_BARGAIN T
+		]]>
+		<include refid="queryWhere" />
+	</select>
+
+	<!-- 根据客户合同ID查询合同适用部门信息 -->
+	<select id="queryBargainAppOrgByCrmId" parameterType="java.lang.String"
+		resultMap="foss.bse.bse-baseinfo.bargainAppOrg.bargainAppOrgResultMap">
+        <![CDATA[
+			SELECT 
+			/** 综合:根据客户合同ID查询合同适用部门信息**/
+		]]>
+		<include
+			refid="foss.bse.bse-baseinfo.bargainAppOrg.bargainAppOrg_Column_List" />
+		<![CDATA[
+		    FROM BSE.T_BAS_CUS_BARGAIN_APP_ORG 
+		]]>
+		<where>
+			BARGAIN_CRM_ID = #{crmId,jdbcType=VARCHAR}
+			AND ACTIVE = 'Y'
+		</where>
+	</select>
+
+	<!-- 根据客户ID查询合同优惠信息 -->
+	<select id="querybargainPreferByCrmId" parameterType="java.lang.String"
+		resultMap="bargainPreferResultMap">
+        <![CDATA[
+			SELECT 
+			/** 综合:根据客户ID查询合同优惠信息**/
+		]]>
+		<include refid="bargainPrefer_Column_List" />
+		<![CDATA[
+		    FROM BSE.T_BAS_CUS_BARGAIN T, BSE.T_BAS_CUS_PREFERENTIAL D 
+		]]>
+		<where>
+			T.CRM_ID = D.BARGAIN_CRM_ID(+)
+			<!-- AND T.ACTIVE = D.ACTIVE(+) -->
+			AND
+			T.ACTIVE = 'Y'
+			AND T.CRM_CUS_ID = #{crmCusId,jdbcType=VARCHAR}
+			AND T.BEGIN_TIME <![CDATA[  <=  ]]> SYSDATE
+		    AND T.END_TIME <![CDATA[  >  ]]> SYSDATE
+		</where>
+	</select>
+	
+	<!-- 根据客户编码查询客户合同中月结客户的最大欠款天数 -->
+	<select id="queryCusBargainByCustCode" parameterType="map"
+		resultMap="cusBargainResultMap">
+        <![CDATA[
+			SELECT 
+			/** 综合:根据客户编码查询客户合同中月结客户的最大欠款天数**/
+		]]>
+		<include refid="cusBargain_Select_List" />
+		<![CDATA[
+		    FROM BSE.T_BAS_CUSTOMER T, BSE.T_BAS_CUS_BARGAIN B 
+		]]>
+		<where>
+				T.CRM_CUS_ID = B.CRM_CUS_ID(+)
+				AND T.ACTIVE = B.ACTIVE
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="custCode != null and custCode != ''">
+				AND T.CODE = #{custCode,jdbcType=VARCHAR}
+			</if>
+			<if test="validDate != null">
+				AND B.BEGIN_TIME <![CDATA[  <=  ]]> #{validDate ,jdbcType=TIMESTAMP}
+		    	AND B.END_TIME <![CDATA[  >  ]]> #{validDate,jdbcType=TIMESTAMP}
+			</if>
+		</where>
+	</select>
+	
+		<!-- 根据客户编码查询客户信息合同信息  308861-->
+	<select id="queryCusBargainNewByCustCode" parameterType="map"
+		resultMap="cusBargainNewResultMap">
+        <![CDATA[
+			SELECT 
+			/** 综合:根据客户编码查询客户合同信息**/
+		]]>
+		<include refid="cusBargainNew_Select" />
+		<![CDATA[
+		    FROM BSE.T_BAS_CUSTOMER C,BSE.T_BAS_CUS_BARGAIN CB 
+		]]>
+		<where>
+				C.CRM_CUS_ID=CB.CRM_CUS_ID(+)
+			<if test="active != null and active != ''">
+				AND C.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="custCode != null and custCode != ''">
+				AND C.CODE = #{custCode,jdbcType=VARCHAR}
+			</if>
+			<if test="validDate != null">
+				AND CB.BEGIN_TIME <![CDATA[  <=  ]]> #{validDate ,jdbcType=TIMESTAMP}
+		    	AND CB.END_TIME <![CDATA[  >=  ]]> #{validDate,jdbcType=TIMESTAMP}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 根据合同crm_id查询优惠信息 308861-->
+	<!-- 客户优惠信息表是否启用没有用，因为CRM系统那边客户优惠信息没有状态-->
+	<select id="iscpackBybargainByCrmId" parameterType="java.util.Map"
+		resultType ="java.lang.String">
+		<![CDATA[
+			SELECT AL.IS_ACCURSATE_PACKAGE FROM BSE.T_BAS_CUS_PREFERENTIAL AL
+        ]]>
+        <where>
+			<if test="crmId != null and crmId != ''">
+				AND AL.BARGAIN_CRM_ID = #{crmId,jdbcType=VARCHAR}
+				AND AL.FTYPE='LTT'
+			</if>
+			<if test="validDate != null">
+				AND AL.EFFECTIVEDATE <![CDATA[  <=  ]]> #{validDate ,jdbcType=TIMESTAMP}
+		    	AND AL.EXPIRATIONDATE <![CDATA[  >=  ]]> #{validDate,jdbcType=TIMESTAMP}
+			</if>
+        </where>
+	</select>
+	
+	<!-- 根据标杆编码查询所对应的部门名称  308861-->
+	<select id="applicateOrgNameByCrmId" parameterType="java.util.Map"
+		resultMap ="cusBargainOrgResultMap">
+		<![CDATA[
+			SELECT O.CODE AS code,O.NAME AS name FROM BSE.T_BAS_ORG O 
+		]]>
+		<where>
+			<if test="unifiedCode != null and unifiedCode != ''">
+				AND O.UNIFIED_CODE = #{unifiedCode,jdbcType=VARCHAR}
+				AND O.ACTIVE='Y'
+			</if>
+		</where>
+	</select>
+	
+	<!-- 根据合同编码和部门编码查询合同信息 -->
+	<select id="queryCusBargainByParams" parameterType="map"
+		resultMap="cusBargainResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据合同编码和部门编码查询合同信息**/
+		]]>
+		<include refid="cusBargain_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUS_BARGAIN 
+		]]>
+		<where>
+			<if test="bargainCode != null and bargainCode != ''">
+				BARGAIN_CODE = #{bargainCode,jdbcType=VARCHAR}
+			</if>
+			<if test="deptCode != null and deptCode != ''">
+				AND UNIFIED_CODE = #{deptCode,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND active = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 验证客户合同信息是否存在 -->
+	<select id="queryCusBargainByCrmId" parameterType="map"
+		resultMap="cusBargainResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:验证客户合同信息是否存在**/
+		]]>
+		<include refid="cusBargain_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUS_BARGAIN 
+		]]>
+		<where>
+			<if test="crmId != null and crmId != ''">
+				CRM_ID = #{crmId,jdbcType=DECIMAL}
+			</if>
+			<if test="modifyDate != null and modifyDate != ''">
+				AND MODIFY_TIME <![CDATA[  >=  ]]> #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="active != null and active != ''">
+				AND active = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+
+	<!-- 统计总记录数 -->
+	<select id="queryCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusBargainEntity">
+	    <![CDATA[
+	       	select/** 综合:统计总记录数**/ count(*) from BSE.T_BAS_CUS_BARGAIN T
+	    ]]>
+		<include refid="queryWhere" />
+
+	</select>
+
+	<!-- 新增信息 -->
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusBargainEntity">
+		
+		<![CDATA[
+			INSERT/** 综合:新增信息**/ INTO BSE.T_BAS_CUS_BARGAIN T	(
+		]]>
+		<include refid="cusBargain_Insert_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, #{chargeType,jdbcType=VARCHAR},
+		#{arrearsAmount,jdbcType=DECIMAL}*100,
+		#{name,jdbcType=VARCHAR}, #{contactPhone,jdbcType=VARCHAR}, #{mobilePhone,jdbcType=VARCHAR},
+		#{address,jdbcType=VARCHAR}, #{statementDate,jdbcType=DECIMAL},
+		#{invoicingDate,jdbcType=DECIMAL},
+		#{checkoutDate,jdbcType=DECIMAL}, #{applyReason,jdbcType=VARCHAR}, #{unifiedCode,jdbcType=VARCHAR},
+		#{applicateOrgId,jdbcType=VARCHAR}, #{discount,jdbcType=CHAR},
+		#{status,jdbcType=VARCHAR},
+		#{bargainSubject,jdbcType=VARCHAR}, #{registerFunds,jdbcType=VARCHAR}, #{lastBargain,jdbcType=VARCHAR},
+		#{bargainCode,jdbcType=VARCHAR}, #{transName,jdbcType=VARCHAR},
+		#{customerName,jdbcType=VARCHAR},
+		#{linkmanId,jdbcType=VARCHAR}, #{chargeMode,jdbcType=VARCHAR}, #{preferentialType,jdbcType=VARCHAR},
+		#{usedAmount,jdbcType=DECIMAL}, #{overdue,jdbcType=CHAR},
+		#{bizDate,jdbcType=TIMESTAMP},
+		#{beginTime,jdbcType=TIMESTAMP}, #{endTime,jdbcType=TIMESTAMP}, #{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP}, #{active,jdbcType=CHAR},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR}, #{virtualCode,jdbcType=VARCHAR},
+		#{crmId,jdbcType=DECIMAL},
+		#{customerCode,jdbcType=DECIMAL}, #{debtDays,jdbcType=DECIMAL},
+		#{asyntakegoodsCode,jdbcType=CHAR}, #{hastenfunddeptCode,jdbcType=VARCHAR},
+		#{priceVersionDate,jdbcType=TIMESTAMP},
+		#{exPayWay,jdbcType=VARCHAR},
+		#{exPreferentialType,jdbcType=VARCHAR},
+		#{exPriceVersionDate,jdbcType=TIMESTAMP},
+		#{isAloneQuotation,jdbcType=CHAR},
+		#{ifElecEnjoy,jdbcType=CHAR}	
+		<![CDATA[
+		)
+		]]>
+	</insert>
+
+	<!-- 修改信息 -->
+	<update id="update"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusBargainEntity">
+		update/** 综合:修改信息**/ BSE.T_BAS_CUS_BARGAIN
+		<set>
+				CHARGE_TYPE = #{chargeType,jdbcType=VARCHAR},
+				ARREARS_AMOUNT = #{arrearsAmount,jdbcType=DECIMAL}*100,
+				NAME = #{name,jdbcType=VARCHAR},
+				CONTACT_PHONE = #{contactPhone,jdbcType=VARCHAR},
+				MOBILE_PHONE = #{mobilePhone,jdbcType=VARCHAR},
+				ADDRESS = #{address,jdbcType=VARCHAR},
+				STATEMENT_DATE = #{statementDate,jdbcType=DECIMAL},
+				INVOICING_DATE = #{invoicingDate,jdbcType=DECIMAL},
+				CHECKOUT_DATE = #{checkoutDate,jdbcType=DECIMAL},
+				APPLY_REASON = #{applyReason,jdbcType=VARCHAR},
+				UNIFIED_CODE = #{unifiedCode,jdbcType=VARCHAR},
+				APPLICATE_ORG_ID = #{applicateOrgId,jdbcType=VARCHAR},
+				DISCOUNT = #{discount,jdbcType=CHAR},
+				STATUS = #{status,jdbcType=VARCHAR},
+				BARGAIN_SUBJECT = #{bargainSubject,jdbcType=VARCHAR},
+				REGISTER_FUNDS = #{registerFunds,jdbcType=VARCHAR},
+				LAST_BARGAIN = #{lastBargain,jdbcType=VARCHAR},
+				BARGAIN_CODE = #{bargainCode,jdbcType=VARCHAR},
+				TRANS_NAME = #{transName,jdbcType=VARCHAR},
+				CUSTOMER_NAME = #{customerName,jdbcType=VARCHAR},
+				LINKMAN_ID = #{linkmanId,jdbcType=VARCHAR},
+				CHARGE_MODE = #{chargeMode,jdbcType=VARCHAR},
+				PREFERENTIAL_TYPE = #{preferentialType,jdbcType=VARCHAR},
+				USED_AMOUNT = #{usedAmount,jdbcType=DECIMAL},
+				OVERDUE = #{overdue,jdbcType=CHAR},
+				BIZ_DATE = #{bizDate,jdbcType=TIMESTAMP},
+				BEGIN_TIME = #{beginTime,jdbcType=TIMESTAMP},
+				END_TIME = #{endTime,jdbcType=TIMESTAMP},
+			<!-- <if test="createDate != null"> CREATE_TIME = #{createDate,jdbcType=TIMESTAMP}, 
+				</if> -->
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+				 ACTIVE = #{active,jdbcType=CHAR}, 
+			<!-- <if test="createUser != null">
+				 CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR}, 
+			</if> -->
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+				CRM_CUS_ID = #{customerCode,jdbcType=DECIMAL},
+				VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR},
+			<!-- <if test="crmId != null" > CRM_ID = #{crmId,jdbcType=DECIMAL}, </if> -->
+				DEBTDAYS = #{debtDays,jdbcType=DECIMAL},
+				ASYNTAKEGOODSCODE = #{asyntakegoodsCode,jdbcType=CHAR},
+				HASTENFUNDDEPTCODE = #{hastenfunddeptCode,jdbcType=VARCHAR},
+				PRICE_VERSION_DATE = #{priceVersionDate,jdbcType=TIMESTAMP},
+				EXPAY_WAY = #{exPayWay,jdbcType=VARCHAR},
+		        EXPREFERENTIAL_TYPE = #{exPreferentialType,jdbcType=VARCHAR},
+				EXPRICE_VERSION_DATE = #{exPriceVersionDate,jdbcType=TIMESTAMP},
+				IS_ALONE_QUOTATION= #{isAloneQuotation,jdbcType=CHAR},
+				IF_ELEC_ENJOY=#{ifElecEnjoy,jdbcType=CHAR}		
+		</set>
+
+		<where>
+			<if test="crmId != null and crmId != ''">
+				CRM_ID = #{crmId,jdbcType=DECIMAL}
+			</if>
+		</where>
+
+	</update>
+
+	<!-- 作废信息 -->
+	<update id="deleteByCode" parameterType="map">
+		update/** 综合:作废信息**/ BSE.T_BAS_CUS_BARGAIN
+
+		<set>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				MODIFY_USER_CODE = #{modifyUser, jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+
+		</set>
+
+		<where>
+			<if test="code !=null and code != ''">
+				CRM_ID = #{code,jdbcType=DECIMAL}
+			</if>
+			<if test="active0 != null and active0 != ''">
+				AND ACTIVE = #{active0,jdbcType=CHAR}
+			</if>
+		</where>
+	</update>
+	
+	<!-- 根据Vo获取客户信息 -->
+	<select id="queryCusBargainByVo" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.vo.CusBargainVo" resultMap="cusBargainResultMap">		
+		<![CDATA[
+			SELECT
+			/** 综合:根据Vo获取客户信息**/
+		]]>
+		<include refid="cusBargain_Select_List" />
+		<![CDATA[	
+	   		FROM BSE.T_BAS_CUS_BARGAIN B 
+       		LEFT JOIN BSE.T_BAS_CUSTOMER CUS ON B.CRM_CUS_ID=CUS.CRM_CUS_ID       		
+       		LEFT JOIN BSE.T_BAS_CUS_BARGAIN_APP_ORG APP ON B.CRM_ID=APP.BARGAIN_CRM_ID
+ 			LEFT JOIN BSE.T_BAS_ORG ORG ON APP.UNIFIED_CODE=ORG.UNIFIED_CODE        		   
+		]]>
+		<where>       		
+       		B.ACTIVE='Y' AND CUS.ACTIVE='Y' AND ORG.ACTIVE='Y' AND APP.ACTIVE='Y'
+			<if test="chargeType != null">
+				and B.CHARGE_TYPE = #{chargeType,jdbcType=VARCHAR}				
+			</if>
+			<if test="customerCode != null">
+				and CUS.CODE = #{customerCode,jdbcType=VARCHAR}				
+			</if>
+			<if test="billDate != null">
+				and B.BEGIN_TIME <![CDATA[  <=  ]]> #{billDate,jdbcType=TIMESTAMP}
+				and B.END_TIME <![CDATA[  >=  ]]> #{billDate,jdbcType=TIMESTAMP}
+				and APP.BEGIN_TIME <![CDATA[  <=  ]]> #{billDate,jdbcType=TIMESTAMP}
+				and APP.END_TIME <![CDATA[  >=  ]]> #{billDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="billOrgCode != null">
+				and ORG.CODE = #{billOrgCode,jdbcType=VARCHAR}				
+			</if>		
+		</where>
+	</select>
+	
+	<!-- 根据Vo获取客户信息 用于更改单-->
+	<select id="queryCusBargainByVoForRfc" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.vo.CusBargainVo" resultMap="cusBargainResultMap">		
+		<![CDATA[
+			SELECT
+			/** 综合:根据Vo获取客户信息 用于更改单**/
+		]]>
+		<include refid="cusBargain_Select_List" />
+		<![CDATA[	
+	   		FROM BSE.T_BAS_CUS_BARGAIN B 
+       		LEFT JOIN BSE.T_BAS_CUSTOMER CUS ON B.CRM_CUS_ID=CUS.CRM_CUS_ID       		
+       		LEFT JOIN BSE.T_BAS_CUS_BARGAIN_APP_ORG APP ON B.CRM_ID=APP.BARGAIN_CRM_ID
+ 			LEFT JOIN BSE.T_BAS_ORG ORG ON APP.UNIFIED_CODE=ORG.UNIFIED_CODE        		   
+		]]>
+		<where>       		
+       		rownum <![CDATA[  <  ]]> 2
+			<if test="chargeType != null">
+				and B.CHARGE_TYPE = #{chargeType,jdbcType=VARCHAR}				
+			</if>
+			<if test="customerCode != null">
+				and CUS.CODE = #{customerCode,jdbcType=VARCHAR}				
+			</if>
+			<if test="billDate != null">
+				and B.BEGIN_TIME <![CDATA[  <=  ]]> #{billDate,jdbcType=TIMESTAMP}
+				and B.END_TIME <![CDATA[  >=  ]]> #{billDate,jdbcType=TIMESTAMP}
+				and APP.BEGIN_TIME <![CDATA[  <=  ]]> #{billDate,jdbcType=TIMESTAMP}
+				and APP.END_TIME <![CDATA[  >=  ]]> #{billDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="billOrgCode != null">
+				and ORG.CODE = #{billOrgCode,jdbcType=VARCHAR}				
+			</if>		
+		</where>
+	</select>
+	
+	<!-- 根据Vo获取客户信息 -->
+	<select id="queryCusBargainByVoExp" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.vo.CusBargainVo" resultMap="cusBargainResultMap">		
+		<![CDATA[
+			SELECT
+			/** 综合:根据Vo获取客户信息**/
+		]]>
+		<include refid="cusBargain_Select_List" />
+		<![CDATA[	
+	   		FROM BSE.T_BAS_CUS_BARGAIN B 
+       		LEFT JOIN BSE.T_BAS_CUSTOMER CUS ON B.CRM_CUS_ID=CUS.CRM_CUS_ID       		
+       		LEFT JOIN BSE.T_BAS_CUS_BARGAIN_APP_ORG APP ON B.CRM_ID=APP.BARGAIN_CRM_ID
+ 			LEFT JOIN BSE.T_BAS_ORG ORG ON APP.UNIFIED_CODE=ORG.UNIFIED_CODE        		   
+		]]>
+		<where>       		
+       		B.ACTIVE='Y' AND CUS.ACTIVE='Y' AND ORG.ACTIVE='Y' AND APP.ACTIVE='Y'
+			<if test="expayway != null">
+				and B.EXPAY_WAY = #{expayway,jdbcType=VARCHAR}				
+			</if>
+			<if test="customerCode != null">
+				and CUS.CODE = #{customerCode,jdbcType=VARCHAR}				
+			</if>
+			<if test="billDate != null">
+				and B.BEGIN_TIME <![CDATA[  <=  ]]> #{billDate,jdbcType=TIMESTAMP}
+				and B.END_TIME <![CDATA[  >=  ]]> #{billDate,jdbcType=TIMESTAMP}
+				and APP.BEGIN_TIME <![CDATA[  <=  ]]> #{billDate,jdbcType=TIMESTAMP}
+				and APP.END_TIME <![CDATA[  >=  ]]> #{billDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="billOrgCode != null">
+				and ORG.CODE = #{billOrgCode,jdbcType=VARCHAR}				
+			</if>		
+		</where>
+	</select>
+	
+	<!-- 根据Vo获取客户信息 用于更改单-->
+	<select id="queryCusBargainByVoForRfcExp" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.vo.CusBargainVo" resultMap="cusBargainResultMap">		
+		<![CDATA[
+			SELECT
+			/** 综合:根据Vo获取客户信息 用于更改单**/
+		]]>
+		<include refid="cusBargain_Select_List" />
+		<![CDATA[	
+	   		FROM BSE.T_BAS_CUS_BARGAIN B 
+       		LEFT JOIN BSE.T_BAS_CUSTOMER CUS ON B.CRM_CUS_ID=CUS.CRM_CUS_ID       		
+       		LEFT JOIN BSE.T_BAS_CUS_BARGAIN_APP_ORG APP ON B.CRM_ID=APP.BARGAIN_CRM_ID
+ 			LEFT JOIN BSE.T_BAS_ORG ORG ON APP.UNIFIED_CODE=ORG.UNIFIED_CODE        		   
+		]]>
+		<where>       		
+       		rownum <![CDATA[  <  ]]> 2
+			<if test="expayway != null">
+				and B.EXPAY_WAY = #{expayway,jdbcType=VARCHAR}				
+			</if>
+			<if test="customerCode != null">
+				and CUS.CODE = #{customerCode,jdbcType=VARCHAR}				
+			</if>
+			<if test="billDate != null">
+				and B.BEGIN_TIME <![CDATA[  <=  ]]> #{billDate,jdbcType=TIMESTAMP}
+				and B.END_TIME <![CDATA[  >=  ]]> #{billDate,jdbcType=TIMESTAMP}
+				and APP.BEGIN_TIME <![CDATA[  <=  ]]> #{billDate,jdbcType=TIMESTAMP}
+				and APP.END_TIME <![CDATA[  >=  ]]> #{billDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="billOrgCode != null">
+				and ORG.CODE = #{billOrgCode,jdbcType=VARCHAR}				
+			</if>		
+		</where>
+	</select>
+
+</mapper>

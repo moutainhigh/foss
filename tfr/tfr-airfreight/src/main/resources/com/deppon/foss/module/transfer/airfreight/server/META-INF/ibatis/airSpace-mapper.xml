@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.airfreight.airspace" >
+  <resultMap id="AirSpaceResultMap" type="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirSpaceDto" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="ASSEMBLE_ORG_CODE" property="assembleOrgCode" jdbcType="VARCHAR" />
+    <result column="ASSEMBLE_ORG_NAME" property="assembleOrgName" jdbcType="VARCHAR" />
+    <result column="ARRV_REGION_CODE" property="arrvRegionCode" jdbcType="VARCHAR" />
+    <result column="ARRV_REGION_NAME" property="arrvRegionName" jdbcType="VARCHAR" />
+    <result column="TAKE_OFF_DATE" property="takeOffDate" jdbcType="TIMESTAMP" />
+    
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="CREATE_USER_CODE" property="createUserCode" jdbcType="VARCHAR" />
+    <result column="CREATE_USER_NAME" property="createUserName" jdbcType="VARCHAR" />
+    <result column="UPDATE_TIME" property="updateTime" jdbcType="TIMESTAMP" />
+    <result column="UPDATE_USER_CODE" property="updateUserCode" jdbcType="VARCHAR" />
+    <result column="UPDATE_USER_NAME" property="updateUserName" jdbcType="VARCHAR" />
+    
+    <result column="FLIGHT_TYPE" property="flightType" jdbcType="VARCHAR" />
+    <result column="SPACE_TOTAL" property="spaceTotal" jdbcType="DECIMAL" />
+    <result column="BOOKINGSPACETOTAL" property="bookingSpaceTotal" jdbcType="DECIMAL" />
+    <result column="ACCEPTEDSPACETOTAL" property="acceptedSpaceTotal" jdbcType="DECIMAL" />
+    <result column="AIRWAYBILLTOTAL" property="airWaybillTotal" jdbcType="DECIMAL" />
+    <!-- column表示把上述查出来的哪个字段值当作参数传给子查询，ofType也是表示返回类型，这里的返回类型是集合内部的类型 -->
+    <collection property="detailEntityList" column="ID" javaType="ArrayList"
+    	ofType="com.deppon.foss.module.transfer.airfreight.api.shared.domain.AirSpaceDetailEntity" 
+    	select="selectDetailForAirSpace" >
+    </collection>
+  </resultMap>
+  
+  <!-- map2 -->
+  <resultMap id="AirSpaceTotalResultMap" type="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirSpaceDto" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="ASSEMBLE_ORG_CODE" property="assembleOrgCode" jdbcType="VARCHAR" />
+    <result column="ASSEMBLE_ORG_NAME" property="assembleOrgName" jdbcType="VARCHAR" />
+    <result column="ARRV_REGION_CODE" property="arrvRegionCode" jdbcType="VARCHAR" />
+    <result column="ARRV_REGION_NAME" property="arrvRegionName" jdbcType="VARCHAR" />
+    <result column="TAKE_OFF_DATE" property="takeOffDate" jdbcType="TIMESTAMP" />
+    
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="CREATE_USER_CODE" property="createUserCode" jdbcType="VARCHAR" />
+    <result column="CREATE_USER_NAME" property="createUserName" jdbcType="VARCHAR" />
+    <result column="UPDATE_TIME" property="updateTime" jdbcType="TIMESTAMP" />
+    <result column="UPDATE_USER_CODE" property="updateUserCode" jdbcType="VARCHAR" />
+    <result column="UPDATE_USER_NAME" property="updateUserName" jdbcType="VARCHAR" />
+    
+    <result column="FLIGHT_TYPE" property="flightType" jdbcType="VARCHAR" />
+    <result column="SPACE_TOTAL" property="spaceTotal" jdbcType="DECIMAL" />
+    <result column="BOOKINGSPACETOTAL" property="bookingSpaceTotal" jdbcType="DECIMAL" />
+    <result column="ACCEPTEDSPACETOTAL" property="acceptedSpaceTotal" jdbcType="DECIMAL" />
+    <result column="AIRWAYBILLTOTAL" property="airWaybillTotal" jdbcType="DECIMAL" />
+  </resultMap>
+  
+  <!-- 舱位查询列表字段 -->
+  <sql id="AirSpace_Column_List" >
+  	T1.ID,
+    T1.ASSEMBLE_ORG_CODE,
+    T1.ASSEMBLE_ORG_NAME,
+    T1.ARRV_REGION_CODE,
+    T1.ARRV_REGION_NAME,
+    T1.TAKE_OFF_DATE,
+    T1.FLIGHT_TYPE,
+    T1.SPACE_TOTAL,
+    NVL(T1.BOOKINGTOTAL,0) BOOKINGSPACETOTAL,
+    NVL(T1.ACCEPTTOTAL,0) ACCEPTEDSPACETOTAL,
+    NVL(T2.GOODS_WEIGHT_TOTAL,0) AIRWAYBILLTOTAL
+  </sql>
+  
+  <!-- 舱位表单字段 -->
+  <sql id="AirSpaceForm_Column_List" >
+    SPACE.ID, 
+    SPACE.ARRV_REGION_NAME, 
+    SPACE.TAKE_OFF_DATE, 
+    DETAIL.AIRSPACE_ID,
+    DETAIL.FLIGHT_TYPE, 
+    DETAIL.SPACE_TOTAL
+  </sql>
+
+   <!-- 要所舱位ID查询舱位信息-->
+  <select id="selectAirSpaceById" resultMap="AirSpaceResultMap" parameterType="java.lang.String" >
+  	SELECT 
+	 	ID, 
+	    ARRV_REGION_CODE, 
+	    ARRV_REGION_NAME, 
+	    TAKE_OFF_DATE
+  	FROM 
+  		TFR.T_OPT_AIR_SPACE 
+  	<where>
+		ID = #{id}
+  	</where>
+  </select>
+  
+  <!-- 关联子查询 -->
+  <select id="selectDetailForAirSpace" parameterType="java.lang.String" resultMap="foss.airfreight.airspace.AirSpaceDetailResultMap">
+  	SELECT 
+  		AIRSPACE_ID, 
+  		FLIGHT_TYPE, 
+  		SPACE_TOTAL 
+  	FROM 
+  		TFR.T_OPT_AIR_SPACE_DETAIL
+	<where>
+		AIRSPACE_ID = #{id}
+	</where>
+  </select>
+  
+  <!-- 根据日期与目的站判断是否存在舱位信息 -->
+  <select id="selectIsExistSpace" resultMap="AirSpaceResultMap" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirSpaceDto" >
+    SELECT 
+    	SPACE.ID
+    FROM 
+    	TFR.T_OPT_AIR_SPACE SPACE
+    WHERE
+		SPACE.TAKE_OFF_DATE = #{takeOffDate,jdbcType=VARCHAR} AND 
+		SPACE.ARRV_REGION_CODE = #{arrvRegionCode,jdbcType=VARCHAR} AND
+		SPACE.ASSEMBLE_ORG_CODE = #{assembleOrgCode,jdbcType=VARCHAR}
+  </select>
+  
+  <!-- 
+  	根据查询条件查询舱位列表信息:
+  	1.通过舱位与舱位明细表统计出：舱位总量、已订舱总量、已受理订舱总量
+  	2.关联运单表统计出：已开单空运货量
+  	
+   -->
+  <select id="selectAirSpace" resultMap="AirSpaceTotalResultMap" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirSpaceDto" >
+	  SELECT
+	  /*
+  		module:tfr2
+  		author:038300-foss-pengzhen
+   		class-name: AirSpaceDao
+   		function-name: queryAirSpace
+  	  */
+	  <include refid="AirSpace_Column_List" />
+	 <![CDATA[ FROM (SELECT 
+	 			  SPACE.ID,
+	 			   SPACE.ASSEMBLE_ORG_CODE,
+	               SPACE.ARRV_REGION_CODE,
+                   SPACE.ARRV_REGION_NAME,
+                   SPACE.ASSEMBLE_ORG_NAME,
+	               SPACE.TAKE_OFF_DATE,
+	               DETAIL.FLIGHT_TYPE,
+	               DETAIL.SPACE_TOTAL,
+	               SUM(BOOK.WEIGHT) AS BOOKINGTOTAL, 
+	               SUM(DECODE(BOOK.ACCEPT_STATE, #{acceptStatus}, BOOK.WEIGHT)) ACCEPTTOTAL  
+	          from tfr.t_opt_air_space SPACE
+	          LEFT JOIN tfr.t_opt_air_space_detail DETAIL
+	            ON DETAIL.AIRSPACE_ID = SPACE.ID  
+	          LEFT JOIN tfr.t_opt_air_sale_bookingspace BOOK
+	            ON BOOK.ACCEPT_ORG_CD = SPACE.ASSEMBLE_ORG_CODE    
+	           AND BOOK.TAKE_OFF_DATE = SPACE.TAKE_OFF_DATE		  
+	           AND BOOK.ARRV_REGION_CODE = SPACE.ARRV_REGION_CODE  
+	           AND BOOK.FLIGHT_TYPE = DETAIL.FLIGHT_TYPE ]]> 
+	           <where>
+	           		<if test="assembleOrgCode!=null and assembleOrgCode!=''">
+						SPACE.ASSEMBLE_ORG_CODE = #{assembleOrgCode,jdbcType=VARCHAR} 
+					</if>
+					<if test="takeOffDateFrom!=null and takeOffDateFrom!=''">
+						<![CDATA[ AND SPACE.TAKE_OFF_DATE >= #{takeOffDateFrom}]]> 
+					</if>
+					<if test="takeOffDateTo!=null and takeOffDateTo!=''">
+						<![CDATA[ AND SPACE.TAKE_OFF_DATE <= #{takeOffDateTo}]]> 
+					</if>
+					<if test="arrvRegionCode!=null and arrvRegionCode!=''">
+						AND SPACE.ARRV_REGION_CODE = #{arrvRegionCode, jdbcType=VARCHAR}
+					</if>
+					<if test="flightType!=null and flightType!=''">
+						AND DETAIL.FLIGHT_TYPE = #{flightType, jdbcType=VARCHAR}
+					</if>
+	           </where>
+	        <![CDATA[ GROUP BY 
+	        		  SPACE.ID,
+	        		  SPACE.ASSEMBLE_ORG_CODE,
+                      SPACE.ASSEMBLE_ORG_NAME,
+	                  SPACE.ARRV_REGION_CODE,
+                      SPACE.ARRV_REGION_NAME,
+	                  SPACE.TAKE_OFF_DATE,
+	                  DETAIL.FLIGHT_TYPE,
+	                  DETAIL.SPACE_TOTAL
+	  ) T1 ]]> 
+	   <![CDATA[ left JOIN (SELECT WAYBILL.LOAD_ORG_CODE,
+	                    WAYBILL.FLIGHT_NUMBER_TYPE,
+	                    TRUNC(WAYBILL.PRE_DEPARTURE_TIME) TAKE_OFF_DATE,
+	                    SUM(WAYBILL.GOODS_WEIGHT_TOTAL) GOODS_WEIGHT_TOTAL,
+	                    OUTERBRANCH.CITY_CODE CITY_CODE
+	               FROM pkp.t_srv_waybill WAYBILL
+	               join BSE.T_BAS_OUTER_BRANCH OUTERBRANCH on WAYBILL.CUSTOMER_PICKUP_ORG_CODE = OUTERBRANCH.AGENT_DEPT_CODE ]]> 
+	              <where>
+	           		<if test="assembleOrgCode!=null and assembleOrgCode!=''">
+						WAYBILL.LOAD_ORG_CODE = #{assembleOrgCode,jdbcType=VARCHAR} 
+					</if>
+					<if test="takeOffDateFrom!=null and takeOffDateFrom!=''">
+						<![CDATA[ AND WAYBILL.Pre_Departure_Time >= #{takeOffDateFrom}]]> 
+					</if>
+					<if test="takeOffDateTo!=null and takeOffDateTo!=''">
+						<![CDATA[ AND WAYBILL.Pre_Departure_Time < #{takeOffDateTo}]]> 
+					</if>
+					<if test="arrvRegionCode!=null and arrvRegionCode!=''">
+						AND OUTERBRANCH.CITY_CODE = #{arrvRegionCode, jdbcType=VARCHAR}
+					</if>
+					<if test="flightType!=null and flightType!=''">
+						AND WAYBILL.FLIGHT_NUMBER_TYPE = #{flightType, jdbcType=VARCHAR}
+					</if> 
+					and OUTERBRANCH.ACTIVE = #{active, jdbcType=VARCHAR}
+					and WAYBILL.PRODUCT_CODE = 'AF'
+	          	 </where>
+	    <![CDATA[
+	    GROUP BY
+            LOAD_ORG_CODE,
+            FLIGHT_NUMBER_TYPE,
+            TRUNC(WAYBILL.PRE_DEPARTURE_TIME),
+            OUTERBRANCH.CITY_CODE) T2
+	    ON T1.ASSEMBLE_ORG_CODE = T2.LOAD_ORG_CODE
+	   AND T1.FLIGHT_TYPE = T2.FLIGHT_NUMBER_TYPE
+	   AND T1.TAKE_OFF_DATE = T2.TAKE_OFF_DATE
+	   AND T1.ARRV_REGION_CODE = T2.CITY_CODE ]]>
+	   ORDER BY T1.TAKE_OFF_DATE DESC
+  </select>
+  
+  
+  <!-- 根据查询条件统计结果数目 -->
+  <select id="selectAirSpaceCount" resultType="Long" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirSpaceDto" >
+  	 SELECT COUNT(*) FROM
+  	 <![CDATA[(SELECT 
+	 			   SPACE.ID,
+	 			   SPACE.ASSEMBLE_ORG_CODE,
+	               SPACE.ARRV_REGION_CODE,
+                   SPACE.ARRV_REGION_NAME,
+                   SPACE.ASSEMBLE_ORG_NAME,
+	               SPACE.TAKE_OFF_DATE,
+	               DETAIL.FLIGHT_TYPE,
+	               DETAIL.SPACE_TOTAL,
+	               SUM(BOOK.WEIGHT) AS BOOKINGTOTAL,
+	               SUM(DECODE(ACCEPT_STATE, #{acceptStatus}, BOOK.WEIGHT)) ACCEPTTOTAL
+	          from tfr.t_opt_air_space SPACE
+	          LEFT JOIN tfr.t_opt_air_space_detail DETAIL
+	            ON DETAIL.AIRSPACE_ID = SPACE.ID
+	          LEFT JOIN tfr.t_opt_air_sale_bookingspace BOOK
+	            ON BOOK.ACCEPT_ORG_CD = SPACE.ASSEMBLE_ORG_CODE
+	           AND BOOK.TAKE_OFF_DATE = SPACE.TAKE_OFF_DATE
+	           AND BOOK.ARRV_REGION_CODE = SPACE.ARRV_REGION_CODE
+	           AND BOOK.FLIGHT_TYPE = DETAIL.FLIGHT_TYPE ]]> 
+	           <where>
+	           		<if test="assembleOrgCode!=null and assembleOrgCode!=''">
+						SPACE.ASSEMBLE_ORG_CODE = #{assembleOrgCode,jdbcType=VARCHAR} 
+					</if>
+					<if test="takeOffDateFrom!=null and takeOffDateFrom!=''">
+						<![CDATA[ AND SPACE.TAKE_OFF_DATE >= #{takeOffDateFrom}]]> 
+					</if>
+					<if test="takeOffDateTo!=null and takeOffDateTo!=''">
+						<![CDATA[ AND SPACE.TAKE_OFF_DATE <= #{takeOffDateTo}]]> 
+					</if>
+					<if test="arrvRegionCode!=null and arrvRegionCode!=''">
+						AND SPACE.ARRV_REGION_CODE = #{arrvRegionCode, jdbcType=VARCHAR}
+					</if>
+					<if test="flightType!=null and flightType!=''">
+						AND DETAIL.FLIGHT_TYPE = #{flightType, jdbcType=VARCHAR}
+					</if>
+	           </where>
+	        <![CDATA[ GROUP BY 
+	        		  SPACE.ID,
+	        		  SPACE.ASSEMBLE_ORG_CODE,
+	                  SPACE.ARRV_REGION_CODE,
+                      SPACE.ARRV_REGION_NAME,
+                      SPACE.ASSEMBLE_ORG_NAME,
+	                  SPACE.TAKE_OFF_DATE,
+	                  DETAIL.FLIGHT_TYPE,
+	                  DETAIL.SPACE_TOTAL
+	   		)]]> 
+  </select>
+  
+  <!-- 新增航空舱位信息 -->
+  <insert id="insertAirSpace" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirSpaceDto"  >
+    insert into TFR.T_OPT_AIR_SPACE (
+    ID, 
+    ASSEMBLE_ORG_CODE, 
+    ASSEMBLE_ORG_NAME, 
+    ARRV_REGION_CODE, 
+    ARRV_REGION_NAME,
+    TAKE_OFF_DATE, 
+    CREATE_USER_CODE, 
+    CREATE_USER_NAME, 
+    CREATE_TIME, 
+    UPDATE_USER_CODE, 
+    UPDATE_USER_NAME, 
+    UPDATE_TIME
+    )
+    values 
+    (
+    #{id,jdbcType=VARCHAR}, 
+    #{assembleOrgCode,jdbcType=VARCHAR}, 
+    #{assembleOrgName,jdbcType=VARCHAR}, 
+    #{arrvRegionCode,jdbcType=VARCHAR}, 
+    #{arrvRegionName,jdbcType=VARCHAR}, 
+    #{takeOffDate,jdbcType=TIMESTAMP}, 
+    #{createUserCode,jdbcType=VARCHAR}, 
+    #{createUserName,jdbcType=VARCHAR},
+	#{createTime,jdbcType=TIMESTAMP}, 
+    #{updateUserCode,jdbcType=VARCHAR}, 
+    #{updateUserName,jdbcType=VARCHAR}, 
+    #{updateTime,jdbcType=TIMESTAMP}
+    )
+  </insert>
+  
+  <!-- 更新航空舱位信息 -->
+  <update id="updateAirSpace" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirSpaceDto" >
+    update TFR.T_OPT_AIR_SPACE
+    <set >
+      <if test="arrvRegionCode != null" >
+        ARRV_REGION_CODE = #{arrvRegionCode,jdbcType=VARCHAR},
+      </if>
+      <if test="arrvRegionName != null" >
+        ARRV_REGION_NAME = #{arrvRegionName,jdbcType=VARCHAR},
+      </if>
+      <if test="takeOffDate != null" >
+        TAKE_OFF_DATE = #{takeOffDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updateUserCode != null" >
+        UPDATE_USER_CODE = #{updateUserCode,jdbcType=VARCHAR},
+      </if>
+      <if test="updateUserName != null" >
+        UPDATE_USER_NAME = #{updateUserName,jdbcType=VARCHAR},
+      </if>
+      <if test="updateTime != null" >
+        UPDATE_TIME = #{updateTime,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  
+  <!-- 删除航空舱位信息  -->
+  <delete id="deleteAirSpace" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirSpaceDto" >
+    delete from TFR.T_OPT_AIR_SPACE
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  
+</mapper>

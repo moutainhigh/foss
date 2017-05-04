@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.customerCircleRelation">
+	<!-- 客户圈信息 -->
+	<resultMap id="custCircleResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.CustomerCircleEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="CRM_ID" property="crmId" jdbcType="VARCHAR" />
+		<result column="CUST_CIRCLE_CODE" property="custCircleCode" jdbcType="VARCHAR" />
+		<result column="CUST_CIRCLE_NAME" property="custCircleName" jdbcType="VARCHAR" />
+		<result column="CUST_CODE" property="custCode" jdbcType="VARCHAR" />
+		<result column="CUST_NAME" property="custName" jdbcType="VARCHAR" />
+		<result column="IS_MAIN_CUST" property="isMainCust" jdbcType="CHAR" />
+		<result column="IS_FOCUS_PAY" property="isFocusPay" jdbcType="CHAR" />
+		<result column="HASTENFUNDDEPTCODE" property="hastenfunddeptCode" jdbcType="VARCHAR" />
+		<result column="BEGIN_TIME" property="beginTime" jdbcType="TIMESTAMP" />
+		<result column="END_TIME" property="endTime" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER" property="createUser" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_USER" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+	</resultMap>
+	
+	<!-- 插入数据 ： -->
+	<insert id="addCustomerCircle"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CustomerCircleEntity">
+		INSERT/** 综合:插入数据  **/ INTO BSE.T_BAS_CUSTOMER_CIRCLE(
+		ID, /** ID     **/ 
+		CRM_ID,/** crmID 唯一标识 客户圈关系FID    **/ 
+		CUST_CIRCLE_CODE,/** 客户圈编码    **/ 
+		CUST_CIRCLE_NAME,/** 客户圈名称     **/ 
+		CUST_CODE,/** 客户编码    **/ 
+		CUST_NAME,/** 客户名称   **/ 
+		IS_MAIN_CUST,/** 是否主客户（N：从客户、Y：主客户）  **/ 
+		IS_FOCUS_PAY,/** 是否统一结算     **/ 
+		HASTENFUNDDEPTCODE,/** 催款部门编码     **/ 
+		BEGIN_TIME,/** 开始时间  **/ 
+		END_TIME,/** 结束时间   **/ 
+		ACTIVE,/** 是否启用（N：未启用、Y：启用）     **/ 
+		CREATE_USER,/** 创建人   **/ 
+		CREATE_TIME,/** 创建时间    **/ 
+		MODIFY_USER,/** 修改人    **/ 
+		MODIFY_TIME/** 修改时间   **/
+		) VALUES	
+	(
+		#{id, jdbcType=VARCHAR},
+		#{crmId, jdbcType=VARCHAR},
+		#{custCircleCode, jdbcType=VARCHAR},
+		#{custCircleName, jdbcType=VARCHAR},
+		#{custCode, jdbcType=VARCHAR},
+		#{custName, jdbcType=VARCHAR},
+		#{isMainCust, jdbcType=CHAR},
+		#{isFocusPay, jdbcType=CHAR},
+		#{hastenfunddeptCode, jdbcType=VARCHAR},
+		#{beginTime, jdbcType=TIMESTAMP},
+		#{endTime, jdbcType=TIMESTAMP},
+		#{active, jdbcType=CHAR},
+		#{createUser, jdbcType=VARCHAR},
+		#{createDate, jdbcType=TIMESTAMP},
+		#{modifyUser, jdbcType=VARCHAR},
+		#{modifyDate, jdbcType=TIMESTAMP}
+	)
+	</insert> 
+	
+	
+	<!-- 根据crmId 作废客户圈信息数据： -->
+	<update id="delCustomerCircle" 
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CustomerCircleEntity">
+		UPDATE/** 综合:根据crmId 作废数据  **/ BSE.T_BAS_CUSTOMER_CIRCLE A 
+		SET A.ACTIVE='N',
+			A.MODIFY_USER=#{modifyUser,jdbcType=VARCHAR}, 
+			A.MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+		<where>
+			A.CRM_ID=#{crmId,jdbcType=VARCHAR}
+			AND A.ACTIVE='Y'
+		</where>
+	</update>
+	
+	<!-- 数据字段 -->
+	<sql id="query_customer_param">
+		a.ID, /** ID     **/ 
+		a.CRM_ID,/** crmID 唯一标识 客户圈关系FID    **/ 
+		a.CUST_CIRCLE_CODE,/** 客户圈编码    **/ 
+		a.CUST_CIRCLE_NAME,/** 客户圈名称     **/ 
+		a.CUST_CODE,/** 客户编码    **/ 
+		a.CUST_NAME,/** 客户名称   **/ 
+		a.IS_MAIN_CUST,/** 是否主客户（N：从客户、Y：主客户）  **/ 
+		a.IS_FOCUS_PAY,/** 是否统一结算     **/ 
+		a.HASTENFUNDDEPTCODE,/** 催款部门编码     **/ 
+		a.BEGIN_TIME,/** 开始时间  **/ 
+		a.END_TIME,/** 结束时间   **/ 
+		a.ACTIVE,/** 是否启用（N：未启用、Y：启用）     **/ 
+		a.CREATE_USER,/** 创建人   **/ 
+		a.CREATE_TIME,/** 创建时间    **/ 
+		a.MODIFY_USER,/** 修改人    **/ 
+		a.MODIFY_TIME/** 修改时间   **/
+	</sql>
+	
+	<!-- 根据 crmId和active 精确查询客户圈信息数据 -->
+	<select id="getCustomerCircleById" resultMap="custCircleResultMap"
+		parameterType="String">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据条件精确查询,如果属性的值为null或者空白则无效   **/
+		]]>
+		<include refid="query_customer_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_CUSTOMER_CIRCLE A 
+		]]>
+		<where>
+			A.CRM_ID=#{crmId, jdbcType=VARCHAR} 
+			AND A.ACTIVE='Y'
+		</where>
+	</select>
+	
+	<!-- 根据 custCode和active 精确查询客户圈信息数据 -->
+	<select id="getByCustCode" resultMap="custCircleResultMap"
+		parameterType="map">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据条件精确查询,如果属性的值为null或者空白则无效   **/
+		]]>
+		<include refid="query_customer_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_CUSTOMER_CIRCLE A 
+		]]>
+		<where>
+			<if test="custCode != null and custCode != ''">
+				AND A.CUST_CODE=#{custCode, jdbcType=VARCHAR} 
+			</if>
+			<if test="validDate != null">
+				AND A.BEGIN_TIME <![CDATA[  <=  ]]> #{validDate ,jdbcType=TIMESTAMP}
+		    	AND A.END_TIME <![CDATA[  >=  ]]> #{validDate,jdbcType=TIMESTAMP}
+			</if>
+			AND A.ACTIVE='Y'
+		</where>
+	</select>
+	
+	<!-- 根据从客户圈编码查询主客户的有效客户圈信息 -->
+	<select id="selectMainCust" resultMap="custCircleResultMap"
+		parameterType="map">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据条件精确查询,如果属性的值为null或者空白则无效   **/
+		]]>
+		<include refid="query_customer_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_CUSTOMER_CIRCLE A 
+		]]>
+		<where>
+	      <if test="custCircleCode != null and custCircleCode != ''">
+	        AND A.CUST_CIRCLE_CODE=#{custCircleCode, jdbcType=VARCHAR} 
+	      </if>
+	      <if test="validDate != null">
+	        AND A.BEGIN_TIME <![CDATA[  <=  ]]> #{validDate ,jdbcType=TIMESTAMP}
+	        AND A.END_TIME <![CDATA[  >=  ]]> #{validDate,jdbcType=TIMESTAMP}
+		  </if>
+			AND A.ACTIVE='Y'
+			AND A.IS_MAIN_CUST='Y'
+		</where>
+	</select>
+</mapper>

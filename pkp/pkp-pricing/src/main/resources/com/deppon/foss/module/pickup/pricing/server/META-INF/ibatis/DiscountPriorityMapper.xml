@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.deppon.foss.module.pickup.pricing.api.server.dao.DiscountPriorityMapper" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.pickup.pricing.api.shared.domain.DiscountPriorityEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="CODE" property="code" jdbcType="VARCHAR" />
+    <result column="NAME" property="name" jdbcType="VARCHAR" />
+    <result column="LEVELS" property="level" jdbcType="NUMERIC" />
+    <result column="BEGIN_TIME" property="beginTime" jdbcType="TIMESTAMP" />
+    <result column="END_TIME" property="endTime" jdbcType="TIMESTAMP" />
+    <result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+    <result column="CREATE_DATE" property="createDate" jdbcType="TIMESTAMP" />
+    <result column="CREATE_ORG_CODE" property="createOrgCode" jdbcType="VARCHAR" />
+    <result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+    <result column="MODIFY_DATE" property="modifyDate" jdbcType="TIMESTAMP" />
+    <result column="MODIFY_ORG_CODE" property="modifyOrgCode" jdbcType="VARCHAR" />
+    <result column="VERSION_NO" property="versionNo" jdbcType="NUMERIC" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    ID, CODE, NAME, LEVELS, BEGIN_TIME, END_TIME, CREATE_USER_CODE, CREATE_DATE, CREATE_ORG_CODE, MODIFY_USER_CODE, MODIFY_DATE, MODIFY_ORG_CODE, VERSION_NO
+  </sql>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.String" >
+    select  /*综合-价格-根据主键查询优先级*/ 
+    <include refid="Base_Column_List" />
+    from PKP.T_SRV_DISCOUNT_PRIORITY
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+  
+  <select id="selectByCode" resultMap="BaseResultMap" parameterType="java.lang.String" >
+    select /*综合-价格-根据CODE查询优先级*/
+    <include refid="Base_Column_List" />
+    from PKP.T_SRV_DISCOUNT_PRIORITY
+    where CODE = #{code,jdbcType=VARCHAR}
+  </select>
+  	<select id="selectByCondition" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.DiscountPriorityEntity">
+		SELECT /*综合-价格-根据综合条件查询优先级*/ 
+		<include refid="Base_Column_List" />
+		FROM PKP.T_SRV_DISCOUNT_PRIORITY
+		<where>
+			<if test="code != null and code != '' ">
+				CODE = #{code,jdbcType=VARCHAR}
+			</if>
+			<if test="level != null and level != '' ">
+				LEVELS = #{level,jdbcType=NUMERIC}
+			</if>
+			<if test="versionNo != null and versionNo != '' ">
+				VERSION_NO >= #{versionNo,jdbcType=NUMERIC}
+			</if>
+			<if test="beginTime != null and beginTime != '' ">
+				BEGIN_TIME <![CDATA[ <= ]]> #{beginTime,jdbcType=TIMESTAMP}
+			    AND END_TIME <![CDATA[ > ]]> #{beginTime,jdbcType=TIMESTAMP}
+			</if>
+		</where>
+		ORDER BY VERSION_NO,LEVELS ASC
+	</select>
+	<select id="selectMaxLevel" resultType="Integer">
+		SELECT /*综合-价格-查询优先级最低级别*/  MAX(levels)
+		FROM PKP.T_SRV_DISCOUNT_PRIORITY
+	</select>
+	<select id="countByCondition" resultType="Integer"	parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.DiscountPriorityEntity">
+		SELECT /*综合-价格-查询优先级总数*/ COUNT(1)
+		FROM PKP.T_SRV_DISCOUNT_PRIORITY
+	</select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String" >
+    delete /*综合-价格-删除优先级*/ 
+    from PKP.T_SRV_DISCOUNT_PRIORITY
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  <insert id="insertSelective" parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.DiscountPriorityEntity" >
+    insert /*综合-价格-插入优先级*/ 
+    into PKP.T_SRV_DISCOUNT_PRIORITY
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null and id != '' " >
+        ID,
+      </if>
+      <if test="code != null and code != '' " >
+        CODE,
+      </if>
+      <if test="name != null and name != '' " >
+        NAME,
+      </if>
+      <if test="level != null and level != '' " >
+        LEVELS,
+      </if>
+      <if test="beginTime != null and beginTime != '' " >
+        BEGIN_TIME,
+      </if>
+      <if test="endTime != null and endTime != '' " >
+        END_TIME,
+      </if>
+      <if test="createUser != null and createUser != '' " >
+        CREATE_USER_CODE,
+      </if>
+      <if test="createDate != null and createDate != '' " >
+        CREATE_DATE,
+      </if>
+      <if test="createOrgCode != null and createOrgCode != '' " >
+        CREATE_ORG_CODE,
+      </if>
+      <if test="modifyUser != null and modifyUser != '' " >
+        MODIFY_USER_CODE,
+      </if>
+      <if test="modifyDate != null and modifyDate !='' " >
+        MODIFY_DATE,
+      </if>
+      <if test="modifyOrgCode != null and modifyOrgCode !='' " >
+        MODIFY_ORG_CODE,
+      </if>
+      <if test="versionNo != null and versionNo !='' " >
+        VERSION_NO,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null and id != '' " >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="code != null and code != '' " >
+        #{code,jdbcType=VARCHAR},
+      </if>
+      <if test="name != null and name != '' " >
+        #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="level != null and level != '' " >
+        #{level,jdbcType=NUMERIC},
+      </if>
+      <if test="beginTime != null and beginTime != '' " >
+        #{beginTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="endTime != null and endTime != '' " >
+        #{endTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="createUser != null and createUser != '' " >
+        #{createUser,jdbcType=VARCHAR},
+      </if>
+      <if test="createDate != null and createDate != '' " >
+        #{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="createOrgCode != null and createOrgCode != '' " >
+        #{createOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyUser != null and modifyUser != '' " >
+        #{modifyUser,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyDate != null and modifyDate !='' " >
+        #{modifyDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifyOrgCode != null and modifyOrgCode !='' " >
+        #{modifyOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="versionNo != null and versionNo !='' " >
+        #{versionNo,jdbcType=NUMERIC},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.deppon.foss.module.pickup.pricing.api.shared.domain.DiscountPriorityEntity" >
+    update /*综合-价格-修改优先级*/ 
+    PKP.T_SRV_DISCOUNT_PRIORITY
+    <set >
+      <if test="code != null and code != '' " >
+        CODE = #{code,jdbcType=VARCHAR},
+      </if>
+      <if test="name != null and name != '' " >
+        NAME = #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="level != null and level != '' " >
+        LEVELS = #{level,jdbcType=NUMERIC},
+      </if>
+       <if test="beginTime != null and beginTime != '' " >
+        BEGIN_TIME = #{beginTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="endTime != null and endTime != '' " >
+        END_TIME = #{endTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="createUser != null and createUser != '' " >
+        CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+      </if>
+      <if test="createDate != null and createDate != '' " >
+        CREATE_DATE = #{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="createOrgCode != null and createOrgCode != '' " >
+        CREATE_ORG_CODE = #{createOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyUser != null and modifyUser != '' " >
+        MOFIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyDate != null and modifyDate !='' " >
+        MODIFY_DATE = #{modifyDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifyOrgCode != null and modifyOrgCode !='' " >
+        MODIFY_ORG_CODE = #{modifyOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="versionNo != null and versionNo !='' " >
+        VERSION_NO = #{versionNo,jdbcType=NUMERIC},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+</mapper>

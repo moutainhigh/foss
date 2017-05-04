@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.bse.bse-baseinfo.markLineDept">
+    <!--市场活动线路对象-->
+	<resultMap id="markLineDeptResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.domain.MarkLineDeptEntity" >
+	<result column="ID" property="id" jdbcType="VARCHAR" />
+	<result column="CRM_ID" property="crmId" jdbcType="DECIMAL" />
+	<result column="ACTIVITE_CRM_ID" property="activiteCrmId" jdbcType="DECIMAL" />
+	<result column="ACTIVITEID" property="activiteId" jdbcType="VARCHAR" />
+	<result column="LINETYPE" property="lineType" jdbcType="VARCHAR" />
+	<result column="ORIG_ORG_CODE" property="origOrgCode" jdbcType="VARCHAR" />
+	<result column="ORIG_ORG_NAME" property="origOrgName" jdbcType="VARCHAR" />
+	<result column="DEST_ORG_CODE" property="destOrgCode" jdbcType="VARCHAR" />
+	<result column="DEST_ORG_NAME" property="destOrgName" jdbcType="VARCHAR" />
+	<result column="LEAVE_AREA_CODE" property="leaveAreaCode" jdbcType="VARCHAR" />
+	<result column="ARRIVE_AREA_CODE" property="arriveAreaCode" jdbcType="VARCHAR" />
+	<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+	<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+	<result column="ACTIVE" property="active" jdbcType="CHAR" />
+	<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+	<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<!--线路列-->
+	<sql id="markLineDept_column">
+	ID,
+    CRM_ID,
+   	ACTIVITE_CRM_ID,
+   	ACTIVITEID,
+   	LINETYPE,
+   	ORIG_ORG_CODE,
+   	ORIG_ORG_NAME,
+   	DEST_ORG_CODE,
+   	DEST_ORG_NAME,
+    LEAVE_AREA_CODE,
+   	ARRIVE_AREA_CODE,
+   	CREATE_TIME,
+   	MODIFY_TIME,
+   	ACTIVE,
+   	CREATE_USER_CODE,
+  	MODIFY_USER_CODE
+	</sql>
+	
+	<!--新增一条市场活动线路信息 -->
+	<insert id="addMarkActivitiesLineDept" parameterType = "map">
+	 BEGIN 
+	<foreach  collection="lineList" item="item"  separator=";">
+    <![CDATA[
+      insert into BSE.T_BAS_MARK_LINE_DEPT (
+    ]]>
+    <include refid="markLineDept_column"/>
+    <![CDATA[
+    )values(
+    ]]>
+    #{item.id,jdbcType=VARCHAR}, 
+    #{item.crmId,jdbcType=DECIMAL},
+    #{item.activiteCrmId,jdbcType=DECIMAL},
+	#{item.activiteId,jdbcType=VARCHAR},
+	#{item.lineType,jdbcType=VARCHAR},
+	#{item.origOrgCode,jdbcType=VARCHAR},
+	#{item.origOrgName,jdbcType=VARCHAR},
+	#{item.destOrgCode,jdbcType=VARCHAR},
+	#{item.destOrgName,jdbcType=VARCHAR},
+	#{item.leaveAreaCode,jdbcType=VARCHAR},
+	#{item.arriveAreaCode,jdbcType=VARCHAR},
+	#{item.createDate,jdbcType=TIMESTAMP},
+	#{item.modifyDate,jdbcType=TIMESTAMP},
+	#{item.active,jdbcType=VARCHAR},
+	#{item.createUser,jdbcType=VARCHAR},
+	#{item.modifyUser,jdbcType=VARCHAR}
+    <![CDATA[
+    )
+    ]]>
+     </foreach>
+	;END; 
+	</insert>
+	
+	<!--作废一条市场活动线路信息 -->
+	<update id="updateMarkActivitiesLineDept" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.MarkLineDeptEntity">
+	<![CDATA[
+	  UPDATE BSE.T_BAS_MARK_LINE_DEPT 
+	]]>
+	  SET 	MODIFY_TIME = SYSDATE,
+   	        ACTIVE = 'N',
+  	        MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR}
+  	<where>
+  	            ACTIVE = 'Y'
+  	  <if test="crmId !=null"> 
+		       AND CRM_ID = #{crmId,jdbcType=DECIMAL}
+	  </if>
+	  <if test="activiteCrmId !=null"> 
+		       AND ACTIVITE_CRM_ID = #{activiteCrmId,jdbcType=DECIMAL}
+	  </if>
+  	</where>
+	</update>
+	
+	<!--根据市场活动CrmId查询一条市场活动线路信息是否存在 -->
+	<select id="queryMarkActivitiesLineDeptByCrmId" parameterType="map" 
+	                        resultMap="markLineDeptResultMap">
+	<![CDATA[
+	   SELECT 
+	]]>
+	<include refid="markLineDept_column"/>
+	<![CDATA[
+	  FROM BSE.T_BAS_MARK_LINE_DEPT
+	]]>
+	<where>
+	      	   ACTIVE = 'Y'
+	   <if test="crmId !=null"> 
+		       AND CRM_ID = #{crmId,jdbcType=DECIMAL}
+	  </if>
+	</where>
+	</select>
+	
+	<!--查询活动的线路部门信息（目前根据活动crmId和外场编码查询 -->
+	<select id="queryMarkActivityLineDept" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.MarkLineDeptEntity" 
+	                        resultMap="markLineDeptResultMap">
+	<![CDATA[
+	   SELECT 
+	]]>
+	<include refid="markLineDept_column"/>
+	<![CDATA[
+	  FROM BSE.T_BAS_MARK_LINE_DEPT
+	]]>
+	<where>
+	      	ACTIVE = 'Y'	      	   
+	      	<if test="origOrgCode !=null and origOrgCode != ''"> 
+			    <![CDATA[  
+			       AND ORIG_ORG_CODE = #{origOrgCode,jdbcType=VARCHAR}
+			    ]]> 
+		  	</if>
+		  	<if test="destOrgCode != null and destOrgCode != ''"> 
+			    <![CDATA[  
+			       AND DEST_ORG_CODE = #{destOrgCode,jdbcType=VARCHAR}
+			    ]]> 
+		  	</if>
+		  	<if test="activiteCrmId != null">
+		    	AND ACTIVITE_CRM_ID = #{activiteCrmId,jdbcType=DECIMAL}
+		  	</if>
+	</where>
+	</select>
+</mapper>

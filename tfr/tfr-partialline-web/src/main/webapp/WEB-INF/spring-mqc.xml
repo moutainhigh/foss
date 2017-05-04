@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://www.springframework.org/schema/jee 
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+			http://www.springframework.org/schema/util 
+			http://www.springframework.org/schema/util/spring-util-3.0.xsd" >
+	
+	<!--初始化组件 -->
+	<bean class="com.deppon.dpap.esb.mqc.core.service.configuration.ApplicationUtil" />
+	<!-- MQC 开始 -->
+	
+	<!--MQ连接 -->
+	<bean id="esbJmsConnectionFactory3" class="org.springframework.jndi.JndiObjectFactoryBean">
+		<property name="jndiName">
+			<value>jms/DesbDataMQ1</value>
+		</property>
+		<property name="resourceRef" value="true" />
+	</bean>
+	<bean id="esbJmsConnectionFactory4" class="org.springframework.jndi.JndiObjectFactoryBean">
+		<property name="jndiName">
+			<value>jms/DesbDataMQ2</value>
+		</property>
+		<property name="resourceRef" value="true" />
+	</bean>
+	<!--配置jmsTemplate -->
+	<!-- JmsTemplate新的集群平台,不需要写bean的id,class需改：com.deppon.dpap.esb.mqc.core.service.access.send.JmsTemplateNameAware -->
+	<bean
+		class="com.deppon.dpap.esb.mqc.core.service.access.send.JmsTemplateNameAware">
+		<property name="connectionFactory" ref="esbJmsConnectionFactory3" />
+		<property name="retryInterval" value="600" />
+	</bean>
+	<bean
+		class="com.deppon.dpap.esb.mqc.core.service.access.send.JmsTemplateNameAware">
+		<property name="connectionFactory" ref="esbJmsConnectionFactory4" />
+		<property name="retryInterval" value="600" />
+	</bean>
+	<!-- retryInterval ：这个是定时器的配置时长，假如连接有断掉的，或者是出现了问题，设置时间去尝试连接，单位为秒,默认为10分钟。 -->
+	<!--监听类 -->
+	<bean id="clientListener3"
+		class="com.deppon.dpap.esb.mqc.core.service.access.receive.ClientListener" />
+	<bean id="clientListener2"
+		class="com.deppon.dpap.esb.mqc.core.service.access.receive.ClientListener" />
+		
+	<!-- 生产和测试环境 -->
+	<!-- jta事务管理器  -->
+ 	<bean id="jtaManager" class="org.springframework.transaction.jta.JtaTransactionManager" lazy-init="true" />
+	
+	<bean id="esbJms1"
+	    class="org.springframework.jms.connection.JmsTransactionManager" lazy-init="true">
+	    <property name="connectionFactory" ref="esbJmsConnectionFactory3" />
+	</bean>
+	<bean id="esbJms2"
+	    class="org.springframework.jms.connection.JmsTransactionManager" lazy-init="true">
+	    <property name="connectionFactory" ref="esbJmsConnectionFactory4" />
+	</bean>
+	
+	<!-- pkp 自定义的事务适配器   JtaTransactionManager 的id="jtaManager" 不要改动 -->
+	<bean id="esbJmsTransactionManager1" class="com.deppon.foss.module.tfr.partialline.server.callback.DepponTransactionManager">
+		<property name="jmsName"  value="esbJms1"></property>
+	</bean>
+	<bean id="esbJmsTransactionManager2" class="com.deppon.foss.module.tfr.partialline.server.callback.DepponTransactionManager" >
+		<property name="jmsName"  value="esbJms2"></property>
+	</bean>
+
+	<!-- 生产和测试环境 -->
+		
+	
+	<!-- jms事务管理器 -->
+	<!-- 开发环境 -->
+<!-- 	<bean id="esbJmsTransactionManager1"
+		class="org.springframework.jms.connection.JmsTransactionManager">
+		<property name="connectionFactory" ref="esbJmsConnectionFactory3" />
+	</bean>
+	<bean id="esbJmsTransactionManager2"
+		class="org.springframework.jms.connection.JmsTransactionManager">
+		<property name="connectionFactory" ref="esbJmsConnectionFactory4" />
+	</bean> -->
+	<!-- 开发环境 -->
+	<!-- 客户端监听容器 -->
+	<bean id="clientContainer1"
+		class="org.springframework.jms.listener.DefaultMessageListenerContainer"
+		lazy-init="true">
+		<!-- JMS连接工厂 -->
+		<property name="connectionFactory" ref="esbJmsConnectionFactory3" />
+		<!-- MQ最大消费者数 -->
+		<property name="maxConcurrentConsumers" value="${clientMaxConcurrentConsumers}" />
+		<!-- MQ正常消费者数 -->
+		<property name="concurrentConsumers" value="${clientConcurrentConsumers}" />
+		<!-- 消息监听器 -->
+		<property name="messageListener" ref="clientListener3" />
+		<!-- 事务管理 -->
+		<property name="transactionManager" ref="esbJmsTransactionManager1" />
+		<!-- 监听目标队列 -->
+		<property name="destinationName" value="default" />
+		<!-- 自动启动:固定为false -->
+		<property name="autoStartup" value="false" />
+		<!-- 消息过滤 -->
+		<property name="messageSelector" value="esbServiceCode in ('ESB_FOSS2ESB_FOSS_CUBC_ADDAIRWAYBILL','ESB_FOSS2ESB_FOSS_CUBC_ADDAIRPICKBILL','ESB_FOSS2ESB_FOSS_CUBC_ADDAIRPICKUP','ESB_FOSS2ESB_FOSS_CUBC_ADDPARTIALLINE')" />
+	</bean>
+
+	<bean id="clientContainer2"
+		class="org.springframework.jms.listener.DefaultMessageListenerContainer"
+		lazy-init="true">
+		<!-- JMS连接工厂 -->
+		<property name="connectionFactory" ref="esbJmsConnectionFactory4" />
+		<!-- MQ最大消费者数 -->
+		<property name="maxConcurrentConsumers" value="${clientMaxConcurrentConsumers}" />
+		<!-- MQ正常消费者数 -->
+		<property name="concurrentConsumers" value="${clientConcurrentConsumers}" />
+		<!-- 消息监听器 -->
+		<property name="messageListener" ref="clientListener2" />
+		<!-- 事务管理 -->
+		<property name="transactionManager" ref="esbJmsTransactionManager2" />
+		<!-- 监听目标队列 -->
+		<property name="destinationName" value="default" />
+		<!-- 自动启动:固定为false -->
+		<property name="autoStartup" value="false" />
+		<!-- 消息过滤 -->
+		<property name="messageSelector" value="esbServiceCode in ('ESB_FOSS2ESB_FOSS_CUBC_ADDAIRWAYBILL','ESB_FOSS2ESB_FOSS_CUBC_ADDAIRPICKBILL','ESB_FOSS2ESB_FOSS_CUBC_ADDAIRPICKUP','ESB_FOSS2ESB_FOSS_CUBC_ADDPARTIALLINE')" />
+	</bean>
+
+	<!--回调处理类-->
+ 	<bean id="pushAddExternalBillCallBackProcessor"
+	    class="com.deppon.foss.module.tfr.partialline.server.callback.PushAddExternalBillCallBackProcessor">
+	</bean>
+
+	<!-- MQC 开始 -->
+	 <!-- 组件初始化 -->
+	<bean class="com.deppon.dpap.esb.mqc.tool.util.ESBInitUtil" init-method="process" lazy-init="false">
+		<!-- 客户端回调处理类注册 -->
+		<property name="callBackProcessMap">
+			<map>
+				<entry key="ESB_FOSS2ESB_FOSS_CUBC_ADDPARTIALLINE" value-ref="pushAddExternalBillCallBackProcessor" />
+			</map>
+		</property>
+	</bean> 
+	
+	
+	<!--同步航空正单信息至CUBC-->
+	<!--  组件初始化 -->
+	<bean class="com.deppon.dpap.esb.mqc.tool.util.ESBInitUtil" init-method="process" lazy-init="false">
+		<!-- 客户端回调处理类注册 -->
+		<property name="callBackProcessMap">
+			<map>
+				<entry key="ESB_FOSS2ESB_FOSS_CUBC_ADDAIRWAYBILL" value-ref="pushAddExternalBillCallBackProcessor" />
+			</map>
+		</property>
+	</bean> 
+	
+	
+	<!--同步合大票信息至CUBC-->
+	<!--  组件初始化 -->
+	<bean class="com.deppon.dpap.esb.mqc.tool.util.ESBInitUtil" init-method="process" lazy-init="false">
+		<!-- 客户端回调处理类注册 -->
+		<property name="callBackProcessMap">
+			<map>
+				<entry key="ESB_FOSS2ESB_FOSS_CUBC_ADDAIRPICKBILL" value-ref="pushAddExternalBillCallBackProcessor" />
+			</map>
+		</property>
+	</bean> 
+	
+	
+	<!--同步中转提货清单信息至CUBC-->
+	<!--  组件初始化 -->
+	<bean class="com.deppon.dpap.esb.mqc.tool.util.ESBInitUtil" init-method="process" lazy-init="false">
+		<!-- 客户端回调处理类注册 -->
+		<property name="callBackProcessMap">
+			<map>
+				<entry key="ESB_FOSS2ESB_FOSS_CUBC_ADDAIRPICKUP" value-ref="pushAddExternalBillCallBackProcessor" />
+			</map>
+		</property>
+	</bean> 
+	<!--  MQC  结束 -->
+	
+</beans>
+

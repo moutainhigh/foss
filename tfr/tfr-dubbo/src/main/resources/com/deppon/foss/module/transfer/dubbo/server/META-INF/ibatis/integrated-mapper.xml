@@ -1,0 +1,923 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.pkp.WaybillEntityMapper">
+	<select id="queryWaybillInfoByWaybillNo4dubbo" parameterType="java.util.Map"
+		resultType="com.deppon.foss.module.transfer.dubbo.api.define.WaybillInfoByWaybillNoReultEntity">
+		select
+		/*模块：接送货-运单-根据运单号查询运单信息*/
+		distinct waybill.receive_org_name
+		receiveOrgName,
+		recOrg.Dep_Telephone
+		receiveOrgPhone,
+		recOrg.CITY_CODE
+		receiveOrgCity,
+		waybill.PRODUCT_CODE
+		productCode,
+		waybill.FREIGHT_METHOD
+		freightMethod,
+		pro.name productName,
+		waybill.load_method loadMethod,
+		waybill.LOAD_ORG_CODE loadOrgCode,
+		PKP.F_EMP_ORG_NAME(2,PKP.F_FOSS_CONSTANTS('NO'),waybill.LOAD_ORG_CODE)
+		loadOrgName,
+		waybill.load_line_code loadLineCode,
+		PKP.F_DATA_DICTIONARY(PKP.F_FOSS_CONSTANTS('PICKUP_GOODS'),waybill.receive_method,PKP.F_FOSS_CONSTANTS('YES'))
+		receiveMethod,
+		waybill.RECEIVE_ORG_CODE receiveOrgCode,
+		waybill.CREATE_USER_CODE createUserCode,
+		PKP.F_EMP_ORG_NAME(1,null,waybill.CREATE_USER_CODE) createUserName,
+		waybill.target_org_code targetOrgCode,
+		waybill.customer_pickup_org_code customerPickupOrgCode,
+		decode(pickup.name,null,outer.agent_dept_name,pickup.name)
+		customerPickupOrgName,
+		decode(pickup.name,null,outer.address,pickup.name,pickup.address)
+		customerPickupOrgAddress,
+		decode(pickup.name,null,outer.contact_phone,pickup.name,pickup.dep_telephone)
+		customerPickupOrgPhone,
+		waybill.delivery_customer_name
+		deliveryCustomerName,
+		waybill.delivery_customer_code
+		deliveryCustomerCode,
+		waybill.delivery_customer_mobilephone
+		deliveryCustomerMobilephone,
+		waybill.delivery_customer_phone
+		deliveryCustomerPhone,
+		waybill.delivery_customer_contact
+		deliveryCustomerContact,
+		delivery_prov.name || delivery_city.name ||
+		delivery_dist.name ||
+		waybill.delivery_customer_address
+		deliveryCustomerAddress,
+		fre.DELIVERY_CUSTOMER_ADDRESS_NOTE
+		deliveryCustomerAddressNote,
+		waybill.receive_customer_name
+		receiveCustomerName,
+		waybill.receive_customer_code receiveCustomerCode,
+		waybill.receive_customer_mobilephone receiveCustomerMobilephone,
+		waybill.receive_customer_phone receiveCustomerPhone,
+		waybill.receive_customer_contact receiveCustomerContact,
+		receive_prov.name || receive_city.name || receive_dist.name ||
+		receive_village.name ||
+		waybill.receive_customer_address
+		receiveCustomerAddress,
+		fre.RECEIVE_CUSTOMER_ADDRESS_NOTE
+		receiveCustomerAddressNote,
+		waybill.goods_name goodsName,
+		waybill.goods_type_code goodsTypeCode,
+		waybill.goods_package
+		goodsPackage,
+		waybill.goods_qty_total goodsQtyTotal,
+		waybill.goods_weight_total goodsWeightTotal,
+		waybill.goods_volume_total goodsVolumeTotal,
+		waybill.order_channel
+		orderChannel,
+		to_char(waybill.goods_size) goodsSize,
+		to_char(waybill.inner_notes) innerNotes,
+		to_char(waybill.outer_notes)
+		outerNotes,
+		to_char(waybill.transportation_remark)
+		transportationRemark,
+		PKP.F_DATA_DICTIONARY(PKP.F_FOSS_CONSTANTS('BILLING_WAY'),waybill.billing_type,PKP.F_FOSS_CONSTANTS('NO'))
+		billingType,
+		waybill.unit_price/100 transportFee,
+		waybill.transport_fee/100 totalFee,
+		PKP.F_DATA_DICTIONARY(PKP.F_FOSS_CONSTANTS('SETTLEMENT__PAYMENT_TYPE'),waybill.paid_method,PKP.F_FOSS_CONSTANTS('NO'))
+		paidMethod,
+		waybill.pre_pay_amount/100 prePayAmount,
+		waybill.to_pay_amount/100 toPayAmount,
+		PKP.F_DATA_DICTIONARY(PKP.F_FOSS_CONSTANTS('RETURN_BILL_TYPE'),waybill.return_bill_type,PKP.F_FOSS_CONSTANTS('NO'))
+		returnBillType,
+		waybill.insurance_amount/100 insuranceAmount,
+		waybill.insurance_fee/100 insuranceFee,
+		waybill.cod_amount/100
+		codAmount,
+		waybill.cod_fee/100 codFee,
+		waybill.cod_rate codRate,
+		PKP.F_DATA_DICTIONARY(PKP.F_FOSS_CONSTANTS('REFUND_TYPE'),waybill.refund_type,PKP.F_FOSS_CONSTANTS('NO'))
+		refundType,
+		waybill.pickup_fee/100 pickUpFee,
+		waybill.delivery_goods_fee/100 deliveryGoodsFee,
+		waybill.package_fee/100 packageFee,
+		waybill.service_fee/100 serviceFee,
+		waybill.other_fee/100 otherFee,
+		waybill.pre_departure_time flightShift,
+		waybill.flight_number_type flightNumberType,
+		waybill.pre_customer_pickup_time preCustomerPickupTime,
+		decode(waybill.pickup_centralized,'Y','是','N','否','')
+		pickupCentralized,
+		/*是否展会货*/
+		decode(fre.is_exhibit_cargo,'Y','是','N','否','') isExhibitCargo,
+		decode(waybill.car_direct_delivery,'Y','是','N','否','')
+		carDirectDelivery,
+		decode(waybill.IS_WHOLE_VEHICLE,'Y','是','N','否','')
+		isWholeVehicle,
+		/*是否整车到达客户处*/
+		decode(waybill.is_pass_own_department,'Y','是','N','否','')
+		isPassOwnDepartment,
+		decode(waybill.precious_goods,'Y','是','N','否','')
+		preciousGoods,
+		decode(waybill.special_shaped_goods,'Y','是','N','否','')
+		specialShapedGoods,
+		waybill.order_vehicle_num  orderVehicleNum,
+		waybill.bill_time billTime,
+		fre.status waybillStatus,
+		waybill.delivery_big_customer deliveryBigCustomer,
+		waybill.receive_big_customer receiveBigCustomer,
+		waybill.secret_prepaid secretPrepaid,
+		fre.waybill_Type waybillType,
+		fre.INDUSTRY_SOURCE_CATEGORY category,
+		fre.TO_PAY_AMOUNT_DISCOUNT/100 toPayAmountDiscount,
+		fre.PRE_PAY_AMOUNT_DISCOUN/100 prePayAmountDiscount,
+		emp.emp_name || signResult.SEND_EXPRESS_EMP_CODE as signcourier, 
+		ep.emp_name || bescode.EXPRESS_EMP_CODE as billingcourier,
+        fre.FLABELLEAVEMONTH 
+  
+		from pkp.t_srv_waybill waybill
+		left join
+		pkp.t_srv_product pro
+		on pro.code = waybill.product_code
+		and pro.active
+		= #{active,jdbcType=CHAR} and waybill.bill_time between
+		pro.BEGIN_TIME
+		and pro.END_TIME
+		left join bse.t_bas_org recOrg
+		on recOrg.code =
+		waybill.receive_org_code and recOrg.active = #{active,jdbcType=CHAR}
+		<!-- waybill.bill_time between recOrg.create_time and recOrg.modify_time -->
+		left join bse.t_bas_org pickup
+		on pickup.code =
+		waybill.customer_pickup_org_code and pickup.active =
+		#{active,jdbcType=CHAR}
+		<!-- waybill.bill_time between pickup.create_time and pickup.modify_time -->
+		left join bse.t_bas_outer_branch outer on outer.agent_dept_code =
+		waybill.customer_pickup_org_code and outer.active =
+		#{active,jdbcType=CHAR}
+		<!--waybill.bill_time between outer.create_time and outer.modify_time -->
+		left join bse.t_bas_district delivery_prov
+		on delivery_prov.code =
+		waybill.DELIVERY_CUSTOMER_PROV_CODE
+		and delivery_prov.active =
+		#{active,jdbcType=CHAR}
+		left join bse.t_bas_district delivery_city
+		on
+		delivery_city.code = waybill.DELIVERY_CUSTOMER_CITY_CODE
+		and
+		delivery_city.active = #{active,jdbcType=CHAR}
+		left join
+		bse.t_bas_district delivery_dist
+		on delivery_dist.code =
+		waybill.DELIVERY_CUSTOMER_DIST_CODE
+		and delivery_dist.active =
+		#{active,jdbcType=CHAR}
+		left join bse.t_bas_district receive_prov
+		on
+		receive_prov.code = waybill.RECEIVE_CUSTOMER_PROV_CODE
+		and
+		receive_prov.active = #{active,jdbcType=CHAR}
+		left join
+		bse.t_bas_district receive_city
+		on receive_city.code =
+		waybill.RECEIVE_CUSTOMER_CITY_CODE
+		and receive_city.active =
+		#{active,jdbcType=CHAR}
+		left join bse.t_bas_district receive_dist
+		on
+		receive_dist.code = waybill.RECEIVE_CUSTOMER_DIST_CODE
+		and
+		receive_dist.active = #{active,jdbcType=CHAR}
+		inner join
+		pkp.t_srv_actual_freight fre
+		on fre.waybill_no = waybill.waybill_no
+		left join bse.t_bas_district receive_village
+		on receive_village.code=fre.RECEIVE_CUSTOMER_VILLAGE_CODE
+		and receive_village.active = 'Y'
+		left join pkp.t_srv_waybill_express bescode
+        on bescode.waybill_no = waybill.waybill_no
+        and bescode.EXPRESS_EMP_CODE is not null 
+        left join pkp.t_srv_waybill_sign_result signResult
+        on signResult.waybill_no = waybill.waybill_no
+        and signResult.active = 'Y'
+        and signResult.SEND_EXPRESS_EMP_CODE is not null
+        left join bse.t_bas_employee emp
+        on signResult.SEND_EXPRESS_EMP_CODE= emp.emp_code
+        and emp.active = 'Y'
+        left join bse.t_bas_employee ep
+        on bescode.EXPRESS_EMP_CODE= ep.emp_code
+        and ep.active = 'Y'
+		where waybill.waybill_no = #{waybillNO,jdbcType=VARCHAR}
+		and waybill.active = #{active,jdbcType=CHAR}
+	</select>
+	<select id="queryBranchCustomerPickupOrgNameByWayno4dubbo" parameterType="java.util.Map" resultType="String">
+		select *
+			from (select b.agent_dept_name from bse.t_bas_outer_branch b
+			where b.agent_dept_code = #{orgcode,jdbcType=VARCHAR}
+	       order by b.create_time desc)
+		where rownum
+		= 1
+	</select>
+	<select id="queryBranchCustomerPickupOrgNameByWaynoActive4dubbo" parameterType="java.util.Map" resultType="String">
+		select *
+			from (select b.agent_dept_name from bse.t_bas_outer_branch b
+			where b.agent_dept_code = #{orgcode,jdbcType=VARCHAR}
+        and b.active=#{active,jdbcType=VARCHAR})
+  		where rownum = 1
+	</select>
+	<select id="queryOrgCustomerPickupOrgNameByWayno4dubbo" parameterType="java.util.Map" resultType="String">
+		select * from (select b.name from bse.t_Bas_Org b
+		where
+		b.code = #{orgcode,jdbcType=VARCHAR}
+        order by b.create_time desc)
+		where rownum = 1
+	</select>
+	<select id="queryOrgCustomerPickupOrgNameByWaynoActive4dubbo" parameterType="java.util.Map" resultType="String">
+		select * from (select b.name from bse.t_Bas_Org b
+          	  where b.code = #{orgcode,jdbcType=VARCHAR}
+		and	b.active=#{active,jdbcType=VARCHAR})
+  		where rownum = 1
+	</select>
+	<select id="queryReceiveOrgNameByWayno4dubbo" parameterType="java.util.Map" resultType="String">
+		select * from (select b.name from bse.t_Bas_Org b
+			where
+			b.code = #{orgcode,jdbcType=VARCHAR}
+	        order by b.create_time desc)
+		where rownum = 1
+	</select>
+	<resultMap id="selectByWaybillNoAndOrderNoResultMap"
+		type="com.deppon.foss.module.transfer.dubbo.api.define.WaybillEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="ORDER_NO" property="orderNo" jdbcType="VARCHAR" />
+		<result column="ORDER_CHANNEL" property="orderChannel"
+			jdbcType="VARCHAR" />
+		<result column="order_paid_method" property="orderPaidMethod"
+			jdbcType="VARCHAR" />
+		<result column="DELIVERY_CUSTOMER_ID" property="deliveryCustomerId"
+			jdbcType="VARCHAR" />
+		<result column="DELIVERY_CUSTOMER_CODE" property="deliveryCustomerCode"
+			jdbcType="VARCHAR" />
+		<result column="DELIVERY_CUSTOMER_NAME" property="deliveryCustomerName"
+			jdbcType="VARCHAR" />
+		<result column="DELIVERY_CUSTOMER_MOBILEPHONE" property="deliveryCustomerMobilephone"
+			jdbcType="VARCHAR" />
+		<result column="DELIVERY_CUSTOMER_PHONE" property="deliveryCustomerPhone"
+			jdbcType="VARCHAR" />
+		<result column="DELIVERY_CUSTOMER_CONTACT" property="deliveryCustomerContact"
+			jdbcType="VARCHAR" />
+		<result column="DELIVERY_CUSTOMER_NATION_CODE" property="deliveryCustomerNationCode"
+			jdbcType="VARCHAR" />
+		<result column="DELIVERY_CUSTOMER_PROV_CODE" property="deliveryCustomerProvCode"
+			jdbcType="VARCHAR" />
+		<result column="DELIVERY_CUSTOMER_CITY_CODE" property="deliveryCustomerCityCode"
+			jdbcType="VARCHAR" />
+		<result column="DELIVERY_CUSTOMER_DIST_CODE" property="deliveryCustomerDistCode"
+			jdbcType="VARCHAR" />
+		<result column="DELIVERY_CUSTOMER_ADDRESS" property="deliveryCustomerAddress"
+			jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_ID" property="receiveCustomerId"
+			jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_CODE" property="receiveCustomerCode"
+			jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_NAME" property="receiveCustomerName"
+			jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_MOBILEPHONE" property="receiveCustomerMobilephone"
+			jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_PHONE" property="receiveCustomerPhone"
+			jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_CONTACT" property="receiveCustomerContact"
+			jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_NATION_CODE" property="receiveCustomerNationCode"
+			jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_PROV_CODE" property="receiveCustomerProvCode"
+			jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_CITY_CODE" property="receiveCustomerCityCode"
+			jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_DIST_CODE" property="receiveCustomerDistCode"
+			jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_ADDRESS" property="receiveCustomerAddress"
+			jdbcType="VARCHAR" />
+		<result column="RECEIVE_ORG_CODE" property="receiveOrgCode"
+			jdbcType="VARCHAR" />
+		<result column="PRODUCT_ID" property="productId" jdbcType="VARCHAR" />
+		<result column="PRODUCT_CODE" property="productCode" jdbcType="VARCHAR" />
+		<result column="RECEIVE_METHOD" property="receiveMethod"
+			jdbcType="VARCHAR" />
+		<result column="CUSTOMER_PICKUP_ORG_CODE" property="customerPickupOrgCode"
+			jdbcType="VARCHAR" />
+		<result column="LOAD_METHOD" property="loadMethod" jdbcType="VARCHAR" />
+		<result column="TARGET_ORG_CODE" property="targetOrgCode"
+			jdbcType="VARCHAR" />
+		<result column="PICKUP_TO_DOOR" property="pickupToDoor"
+			jdbcType="CHAR" />
+		<result column="DRIVER_CODE" property="driverCode" jdbcType="VARCHAR" />
+		<result column="PICKUP_CENTRALIZED" property="pickupCentralized"
+			jdbcType="CHAR" />
+		<result column="LOAD_LINE_CODE" property="loadLineCode"
+			jdbcType="VARCHAR" />
+		<result column="LOAD_ORG_CODE" property="loadOrgCode" jdbcType="VARCHAR" />
+		<result column="LAST_LOAD_ORG_CODE" property="lastLoadOrgCode"
+			jdbcType="VARCHAR" />
+		<result column="PRE_DEPARTURE_TIME" property="preDepartureTime"
+			jdbcType="TIMESTAMP" />
+		<result column="PRE_CUSTOMER_PICKUP_TIME" property="preCustomerPickupTime"
+			jdbcType="TIMESTAMP" />
+		<result column="CAR_DIRECT_DELIVERY" property="carDirectDelivery"
+			jdbcType="CHAR" />
+		<result column="GOODS_NAME" property="goodsName" jdbcType="VARCHAR" />
+		<result column="GOODS_QTY_TOTAL" property="goodsQtyTotal"
+			jdbcType="DECIMAL" />
+		<result column="GOODS_WEIGHT_TOTAL" property="goodsWeightTotal"
+			jdbcType="DECIMAL" />
+		<result column="GOODS_VOLUME_TOTAL" property="goodsVolumeTotal"
+			jdbcType="DECIMAL" />
+		<result column="GOODS_SIZE" property="goodsSize" jdbcType="VARCHAR"
+			typeHandler="org.apache.ibatis.type.ClobTypeHandler" />
+		<result column="GOODS_TYPE_CODE" property="goodsTypeCode"
+			jdbcType="VARCHAR" />
+		<result column="PRECIOUS_GOODS" property="preciousGoods"
+			jdbcType="CHAR" />
+		<result column="SPECIAL_SHAPED_GOODS" property="specialShapedGoods"
+			jdbcType="CHAR" />
+		<result column="OUTER_NOTES" property="outerNotes" jdbcType="VARCHAR"
+			typeHandler="org.apache.ibatis.type.ClobTypeHandler" />
+		<result column="INNER_NOTES" property="innerNotes" jdbcType="VARCHAR"
+			typeHandler="org.apache.ibatis.type.ClobTypeHandler" />
+		<result column="GOODS_PACKAGE" property="goodsPackage"
+			jdbcType="VARCHAR" />
+		<result column="INSURANCE_AMOUNT" property="insuranceAmount"
+			jdbcType="DECIMAL" />
+		<result column="COD_AMOUNT" property="codAmount" jdbcType="DECIMAL" />
+		<result column="COD_RATE" property="codRate" jdbcType="DECIMAL" />
+		<result column="COD_FEE" property="codFee" jdbcType="DECIMAL" />
+		<result column="REFUND_TYPE" property="refundType" jdbcType="VARCHAR" />
+		<result column="RETURN_BILL_TYPE" property="returnBillType"
+			jdbcType="VARCHAR" />
+		<result column="SECRET_PREPAID" property="secretPrepaid"
+			jdbcType="CHAR" />
+		<result column="TO_PAY_AMOUNT" property="toPayAmount" jdbcType="DECIMAL" />
+		<result column="PRE_PAY_AMOUNT" property="prePayAmount"
+			jdbcType="DECIMAL" />
+		<result column="DELIVERY_GOODS_FEE" property="deliveryGoodsFee"
+			jdbcType="DECIMAL" />
+		<result column="OTHER_FEE" property="otherFee" jdbcType="DECIMAL" />
+		<result column="PACKAGE_FEE" property="packageFee" jdbcType="DECIMAL" />
+		<result column="PROMOTIONS_FEE" property="promotionsFee"
+			jdbcType="DECIMAL" />
+		<result column="BILLING_TYPE" property="billingType" jdbcType="VARCHAR" />
+		<result column="TRANSPORT_FEE" property="transportFee"
+			jdbcType="DECIMAL" />
+		<result column="VALUE_ADD_FEE" property="valueAddFee" jdbcType="DECIMAL" />
+		<result column="PAID_METHOD" property="paidMethod" jdbcType="VARCHAR" />
+		<result column="ARRIVE_TYPE" property="arriveType" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="FORBIDDEN_LINE" property="forbiddenLine"
+			jdbcType="CHAR" />
+		<result column="FREIGHT_METHOD" property="freightMethod"
+			jdbcType="VARCHAR" />
+		<result column="FLIGHT_SHIFT" property="flightShift" jdbcType="VARCHAR" />
+		<result column="TOTAL_FEE" property="totalFee" jdbcType="DECIMAL" />
+		<result column="PROMOTIONS_CODE" property="promotionsCode"
+			jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+		<result column="BILL_TIME" property="billTime" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER_CODE" property="createUserCode"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUserCode"
+			jdbcType="VARCHAR" />
+		<result column="CREATE_ORG_CODE" property="createOrgCode"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_ORG_CODE" property="modifyOrgCode"
+			jdbcType="VARCHAR" />
+		<result column="REF_ID" property="refId" jdbcType="VARCHAR" />
+		<result column="REF_CODE" property="refCode" jdbcType="VARCHAR" />
+		<result column="CURRENCY_CODE" property="currencyCode"
+			jdbcType="VARCHAR" />
+		<result column="IS_WHOLE_VEHICLE" property="isWholeVehicle"
+			jdbcType="CHAR" />
+		<result column="WHOLE_VEHICLE_APPFEE" property="wholeVehicleAppfee"
+			jdbcType="DECIMAL" />
+		<result column="WHOLE_VEHICLE_ACTUALFEE" property="wholeVehicleActualfee"
+			jdbcType="DECIMAL" />
+		<result column="ACCOUNT_NAME" property="accountName" jdbcType="VARCHAR" />
+		<result column="ACCOUNT_CODE" property="accountCode" jdbcType="VARCHAR" />
+		<result column="ACCOUNT_BANK" property="accountBank" jdbcType="VARCHAR" />
+		<result column="BILL_WEIGHT" property="billWeight" jdbcType="DECIMAL" />
+		<result column="PICKUP_FEE" property="pickupFee" jdbcType="DECIMAL" />
+		<result column="SERVICE_FEE" property="serviceFee" jdbcType="DECIMAL" />
+		<result column="PRE_ARRIVE_TIME" property="preArriveTime"
+			jdbcType="TIMESTAMP" />
+		<result column="TRANSPORT_TYPE" property="transportType"
+			jdbcType="VARCHAR" />
+		<result column="ADD_TIME" property="addTime" jdbcType="TIMESTAMP" />
+		<result column="INSURANCE_RATE" property="insuranceRate"
+			jdbcType="DECIMAL" />
+		<result column="INSURANCE_FEE" property="insuranceFee"
+			jdbcType="DECIMAL" />
+		<result column="UNIT_PRICE" property="unitPrice" jdbcType="DECIMAL" />
+		<result column="CONTACT_ADDRESS_ID" property="contactAddressId"
+			jdbcType="VARCHAR" />
+		<result column="FLIGHT_NUMBER_TYPE" property="flightNumberType"
+			jdbcType="VARCHAR" />
+		<result column="COLLECTION_DEPARTMENT" property="collectionDepartment"
+			jdbcType="VARCHAR" />
+		<result column="TRANSPORTATION_REMARK" property="transportationRemark"
+			jdbcType="VARCHAR" typeHandler="org.apache.ibatis.type.ClobTypeHandler" />
+		<result column="IS_PASS_OWN_DEPARTMENT" property="isPassOwnDepartment"
+			jdbcType="CHAR" />
+		<result column="PAPER_NUM" property="paperNum" jdbcType="NUMERIC" />
+		<result column="WOOD_NUM" property="woodNum" jdbcType="NUMERIC" />
+		<result column="FIBRE_NUM" property="fibreNum" jdbcType="NUMERIC" />
+		<result column="SALVER_NUM" property="salverNum" jdbcType="NUMERIC" />
+		<result column="MEMBRANE_NUM" property="membraneNum" jdbcType="NUMERIC" />
+		<result column="OTHER_PACKAGE" property="otherPackage"
+			jdbcType="VARCHAR" />
+		<result column="DELIVERY_CUSTOMER_CONTACT_ID" property="deliverCustContactId"
+			jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_CONTACT_ID" property="receiverCustContactId"
+			jdbcType="VARCHAR" />
+		<result column="PENDING_TYPE" property="pendingType" jdbcType="VARCHAR" />
+		<result column="LICENSE_PLATE_NUM" property="licensePlateNum"
+			jdbcType="VARCHAR" />
+		<result column="ORDER_VEHICLE_NUM" property="orderVehicleNum"
+			jdbcType="VARCHAR" />
+		<result column="CREATE_USER_NAME" property="createUserName"
+			jdbcType="VARCHAR" />
+		<result column="CREATE_USER_DEPT_NAME" property="createUserDeptName"
+			jdbcType="VARCHAR" />
+		<result column="RECEIVE_ORG_NAME" property="receiveOrgName"
+			jdbcType="VARCHAR" />
+		<result column="CUSTOMER_PICKUP_ORG_NAME" property="customerPickupOrgName"
+			jdbcType="VARCHAR" />
+		<result column="LOAD_ORG_NAME" property="loadOrgName" jdbcType="VARCHAR" />
+		<result column="LAST_LOAD_ORG_NAME" property="lastLoadOrgName"
+			jdbcType="VARCHAR" />
+		<result column="TRANSFER_START_ORG_CODE" property="transferStartOrgCode"
+			jdbcType="VARCHAR" />
+		<result column="TRANSFER_START_ORG_NAME" property="transferStartOrgName"
+			jdbcType="VARCHAR" />
+		<result column="KILOMETER" property="kilometer" jdbcType="DECIMAL" />
+		<result column="IS_INIT" property="isInit" jdbcType="CHAR" />
+		<result column="IS_ECONOMY_GOODS" property="isEconomyGoods"
+			jdbcType="CHAR" />
+		<result column="ECONOMY_GOODS_TYPE" property="economyGoodsType"
+			jdbcType="VARCHAR" />
+		<result column="DELIVERY_BIG_CUSTOMER" property="deliveryBigCustomer"
+			jdbcType="CHAR" />
+		<result column="RECEIVE_BIG_CUSTOMER" property="receiveBigCustomer"
+			jdbcType="CHAR" />
+		<result column="WAYBILL_TYPE" property="waybillType" jdbcType="VARCHAR" />
+		<result column="IS_EXPRESS" property="isExpress" jdbcType="CHAR" />
+		<result column="FREE_PICKUP_GOODS" property="freePickupGoods" jdbcType="CHAR" />
+		<result column="IS_ECS" property="isecs" jdbcType="CHAR" />
+	</resultMap>
+	<select id="selectByWaybillNoAndOrderNo4dubbo" resultMap="selectByWaybillNoAndOrderNoResultMap" parameterType="com.deppon.foss.module.transfer.dubbo.api.define.WaybillQueryArgsDto">
+		select * from (
+			select	/*模块：接送货-运单查询-根据运单号和订单号查询运单基本信息*/
+			
+				ID, WAYBILL_NO, ORDER_NO, ORDER_CHANNEL,ORDER_PAID_METHOD,
+				DELIVERY_CUSTOMER_ID,
+				DELIVERY_CUSTOMER_CODE,
+				DELIVERY_CUSTOMER_NAME,
+				DELIVERY_CUSTOMER_MOBILEPHONE, DELIVERY_CUSTOMER_PHONE,
+				DELIVERY_CUSTOMER_CONTACT,
+				DELIVERY_CUSTOMER_NATION_CODE,
+				DELIVERY_CUSTOMER_PROV_CODE,
+				DELIVERY_CUSTOMER_CITY_CODE,
+				DELIVERY_CUSTOMER_DIST_CODE, DELIVERY_CUSTOMER_ADDRESS,
+				RECEIVE_CUSTOMER_ID,
+				RECEIVE_CUSTOMER_CODE,
+				RECEIVE_CUSTOMER_NAME,
+				RECEIVE_CUSTOMER_MOBILEPHONE, RECEIVE_CUSTOMER_PHONE,
+				RECEIVE_CUSTOMER_CONTACT,
+				RECEIVE_CUSTOMER_NATION_CODE,
+				RECEIVE_CUSTOMER_PROV_CODE, RECEIVE_CUSTOMER_CITY_CODE,
+				RECEIVE_CUSTOMER_DIST_CODE, RECEIVE_CUSTOMER_ADDRESS,
+				RECEIVE_ORG_CODE, PRODUCT_ID,
+				PRODUCT_CODE, RECEIVE_METHOD,
+				CUSTOMER_PICKUP_ORG_CODE, LOAD_METHOD,
+				TARGET_ORG_CODE,
+				PICKUP_TO_DOOR,
+				DRIVER_CODE, PICKUP_CENTRALIZED, LOAD_LINE_CODE, LOAD_ORG_CODE,
+				LAST_LOAD_ORG_CODE,
+				PRE_DEPARTURE_TIME, PRE_CUSTOMER_PICKUP_TIME,
+				CAR_DIRECT_DELIVERY, GOODS_NAME,
+				GOODS_QTY_TOTAL,
+				GOODS_WEIGHT_TOTAL,
+				GOODS_VOLUME_TOTAL, GOODS_SIZE, GOODS_TYPE_CODE, PRECIOUS_GOODS,
+				SPECIAL_SHAPED_GOODS, OUTER_NOTES, INNER_NOTES, GOODS_PACKAGE,
+				INSURANCE_AMOUNT/100 as INSURANCE_AMOUNT,
+				COD_AMOUNT/100 as COD_AMOUNT,
+				COD_RATE, COD_FEE/100 as COD_FEE, REFUND_TYPE,
+				RETURN_BILL_TYPE,
+				SECRET_PREPAID, TO_PAY_AMOUNT/100 as TO_PAY_AMOUNT,
+				PRE_PAY_AMOUNT/100
+				as PRE_PAY_AMOUNT, DELIVERY_GOODS_FEE/100 as
+				DELIVERY_GOODS_FEE,
+				OTHER_FEE/100 as OTHER_FEE, PACKAGE_FEE/100 as
+				PACKAGE_FEE,
+				PROMOTIONS_FEE/100 as PROMOTIONS_FEE, BILLING_TYPE,
+				TRANSPORT_FEE/100
+				as TRANSPORT_FEE, VALUE_ADD_FEE/100 as VALUE_ADD_FEE, PAID_METHOD,
+				ARRIVE_TYPE, ACTIVE, FORBIDDEN_LINE, FREIGHT_METHOD,
+				FLIGHT_SHIFT,
+				TOTAL_FEE/100 as TOTAL_FEE, PROMOTIONS_CODE, CREATE_TIME,
+				MODIFY_TIME,
+				BILL_TIME, CREATE_USER_CODE,
+				MODIFY_USER_CODE, CREATE_ORG_CODE,
+				MODIFY_ORG_CODE, REF_ID, REF_CODE, CURRENCY_CODE,
+				IS_WHOLE_VEHICLE,
+				WHOLE_VEHICLE_APPFEE/100 as WHOLE_VEHICLE_APPFEE,
+				WHOLE_VEHICLE_ACTUALFEE/100 as WHOLE_VEHICLE_ACTUALFEE, ACCOUNT_NAME,
+				ACCOUNT_CODE,
+				ACCOUNT_BANK, BILL_WEIGHT, PICKUP_FEE/100 as PICKUP_FEE,
+				SERVICE_FEE/100 as
+				SERVICE_FEE, PRE_ARRIVE_TIME, TRANSPORT_TYPE,
+				ADD_TIME, INSURANCE_RATE, INSURANCE_FEE/100 as
+				INSURANCE_FEE,UNIT_PRICE/100 AS UNIT_PRICE,CONTACT_ADDRESS_ID,
+				FLIGHT_NUMBER_TYPE,
+				COLLECTION_DEPARTMENT,
+				TRANSPORTATION_REMARK,IS_PASS_OWN_DEPARTMENT,
+				PAPER_NUM,WOOD_NUM,FIBRE_NUM,SALVER_NUM,MEMBRANE_NUM,OTHER_PACKAGE,DELIVERY_CUSTOMER_CONTACT_ID,RECEIVE_CUSTOMER_CONTACT_ID,
+				PENDING_TYPE,LICENSE_PLATE_NUM,ORDER_VEHICLE_NUM,
+				CREATE_USER_NAME,CREATE_USER_DEPT_NAME
+				,RECEIVE_ORG_NAME,CUSTOMER_PICKUP_ORG_NAME,LOAD_ORG_NAME,LAST_LOAD_ORG_NAME,
+				TRANSFER_START_ORG_CODE,
+				TRANSFER_START_ORG_NAME,KILOMETER,IS_INIT,IS_ECONOMY_GOODS,ECONOMY_GOODS_TYPE,DELIVERY_BIG_CUSTOMER,RECEIVE_BIG_CUSTOMER,IS_EXPRESS,FREE_PICKUP_GOODS,IS_ECS
+
+			from PKP.T_SRV_WAYBILL
+			where 1 = 1
+			<if test="active != null and  active != '' ">
+				and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<!-- 防止出现一个运单号对应多个运单号时报错的情况出现 -->
+
+			<if test="waybillNo != null and  waybillNo != '' ">
+				and WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+			</if>
+			<if test="orderNo != null and  orderNo != '' ">
+				and ORDER_NO = #{orderNo,jdbcType=VARCHAR}
+			</if>
+		) where  ROWNUM = 1
+	</select>
+	<resultMap id="stockQueryByWaybillNoResultMap" type="com.deppon.foss.module.transfer.dubbo.api.define.StockEntity" >
+		<id property="id" column="id"/>
+		<result property="waybillNO" column="WAYBILL_NO"/>
+		<result property="serialNO" column="SERIAL_NO"/>
+		<result property="operatorCode" column="OPERATOR_CODE"/>
+		<result property="operatorName" column="OPERATOR_NAME"/>
+		<result property="orgCode" column="ORG_CODE"/>
+		<result property="goodsAreaCode" column="GOODS_AREA_CODE"/>
+		<result property="goodsAreaName" column="GOODS_AREA_NAME"/>
+		<result property="deviceType" column="DEVICE_TYPE"/>
+		<result property="inStockTime" column="IN_STOCK_TIME"/>
+		<result property="scanTime" column="SCAN_TIME"/>
+		<result property="preHandOverState" column="PRE_HANDOVER_STATUS"/>
+		<result property="nextOrgCode" column="NEXT_ORG_CODE"/>
+		<result property="position" column="position" />
+		<result property="stockPositionNumber" column="STOCK_POSITION_NUMBER"/>
+		<result property="createTime" column="create_time" />
+	</resultMap>
+	<select id="stockQueryByWaybillNo4dubbo"  parameterType="com.deppon.foss.module.transfer.dubbo.api.define.WaybillStockEntity" resultMap="stockQueryByWaybillNoResultMap">
+		SELECT 
+			ID,
+			WAYBILL_NO,
+			SERIAL_NO,
+			ORG_CODE,
+			NEXT_ORG_CODE,
+			GOODS_AREA_CODE,
+			OPERATOR_NAME,
+			OPERATOR_CODE,
+			IN_STOCK_TIME,
+			DEVICE_TYPE,
+			position,
+			PRE_HANDOVER_STATUS 
+		FROM tfr.t_opt_stock 
+		where waybill_no = #{waybillNO}
+		<if test="goodsAreaCode != null and goodsAreaCode != ''">
+				and GOODS_AREA_CODE = #{goodsAreaCode}
+		</if>
+	</select>
+	  <resultMap id="selectlastSerialNoBywaybillNoResultMap" type="com.deppon.foss.module.transfer.dubbo.api.define.LabeledGoodEntity" >
+	    <id column="ID" property="id" jdbcType="VARCHAR" />
+	    <result column="SERIAL_NO" property="serialNo" jdbcType="VARCHAR" />
+	    <result column="ACTIVE" property="active" jdbcType="VARCHAR" />
+	    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+	    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+	    <result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+	    <result column="BILL_TIME" property="billTime" jdbcType="TIMESTAMP" />
+	    <result column="OLD_SERIAL_NO" property="oldSerialNo" jdbcType="VARCHAR" />
+	    <result column="NUMBER_CHANG_ITEMS" property="numberChangItems" jdbcType="VARCHAR" />
+	    <result column="INITIAL_VALUE" property="initalVale" jdbcType="CHAR" />
+	    <result column="IS_NEED_WOODEN" property="isNeedWooden" jdbcType="CHAR" />
+	    <result column="PACKAGE_TYPE" property="packageType" jdbcType="VARCHAR" />
+	  </resultMap>
+	  <select id="selectlastSerialNoBywaybillNo4dubbo" resultMap="selectlastSerialNoBywaybillNoResultMap" parameterType="java.util.Map">
+		select
+		
+		  ID, SERIAL_NO, ACTIVE, WAYBILL_NO, CREATE_TIME, MODIFY_TIME, BILL_TIME, 
+  		  OLD_SERIAL_NO, NUMBER_CHANG_ITEMS, INITIAL_VALUE, IS_NEED_WOODEN,PACKAGE_TYPE
+
+		from PKP.T_SRV_LABELED_GOOD
+		where WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+		<if test="active != null and active !='' ">
+			AND ACTIVE = #{active,jdbcType=VARCHAR}
+		</if>
+		order by serial_no asc
+	</select>
+	<resultMap  id="queryAirWayBillListByWayBillResultMap" type="com.deppon.foss.module.transfer.dubbo.api.define.AirWaybillEntity">
+		<result property="id" column="ID"/>
+		<result property="airLineTwoletter" column="AIR_LINE_TWOLETTER"/>
+		<result property="airWaybillNo" column="AIR_WAYBILL_NO"/>
+		<result property="deptRegionCode" column="DEPT_REGION_CODE"/>
+		<result property="deptRegionName" column="DEPT_REGION_NAME"/>
+		<result property="arrvRegionCode" column="ARRV_REGION_CODE"/>
+		<result property="arrvRegionName" column="ARRV_REGION_NAME"/>
+		<result property="airAssembleType" column="AIR_ASSEMBLE_TYPE"/>
+		<result property="destOrgCode" column="DEST_ORG_CODE"/>
+		<result property="dedtOrgName" column="DEDT_ORG_NAME"/>
+		<result property="receiverCode" column="RECEIVER_CODE"/>
+		<result property="receiverName" column="RECEIVER_NAME"/>
+		<result property="receiverContactPhone" column="RECEIVER_CONTACT_PHONE"/>
+		<result property="accountItem" column="ACCOUNT_ITEM"/>
+		<result property="billingAgency" column="BILLING_AGENCY"/>
+		<result property="receiverAddress" column="RECEIVER_ADDRESS"/>
+		<result property="storageItem" column="STORAGE_ITEM"/>
+		<result property="flightNo" column="FLIGHT_NO"/>
+		<result property="flightDate" column="FLIGHT_DATE"/>
+		<result property="takeOffTime" column="TAKE_OFF_TIME"/>
+		<result property="arriveTime" column="ARRIVE_TIME"/>
+		<result property="rateClass" column="RATE_CLASS"/>
+		<result property="paymentType" column="PAYMENT_TYPE"/>
+		<result property="grossWeight" column="GROSS_WEIGHT"/>
+		<result property="billingWeight" column="BILLING_WEIGHT"/>
+		<result property="fee" column="FEE"/>
+		<result property="agenctCode" column="AGENCT_CODE"/>
+		<result property="agencyName" column="AGENCY_NAME"/>
+		<result property="declareValue" column="DECLARE_VALUE"/>
+		<result property="itemCode" column="ITEM_CODE"/>
+		<result property="goodsQty" column="GOODS_QTY"/>
+		<result property="volume" column="VOLUME"/>
+		<result property="airFee" column="AIR_FEE"/>
+		<result property="extraFee" column="EXTRA_FEE"/>
+		<result property="goodsName" column="GOODS_NAME"/>
+		<result property="packageStruction" column="PACKAGE_STRUCTION"/>
+		<result property="groundFee" column="GROUND_FEE"/>
+		<result property="fuelSurcharge" column="FUEL_SURCHARGE"/>
+		<result property="transportInsurance" column="TRANSPORT_INSURANCE"/>
+		<result property="inseranceFee" column="INSERANCE_FEE"/>
+		<result property="feeTotal" column="FEE_TOTAL"/>
+		<result property="feePlain" column="FEE_PLAIN"/>
+		<result property="billingFee" column="BILLING_FEE"/>
+		<result property="shipperCode" column="SHIPPER_CODE"/>
+		<result property="shipperName" column="SHIPPER_NAME"/>
+		<result property="shipperAddress" column="SHIPPER_ADDRESS"/>
+		<result property="shipperContactPhone" column="SHIPPER_CONTACT_PHONE"/>
+		<result property="pickupType" column="PICKUP_TYPE"/>
+		<result property="createOrgCode" column="CREATE_ORG_CODE"/>
+		<result property="createOrgName" column="CREATE_ORG_NAME"/>
+		<result property="createUserCode" column="CREATE_USER_CODE"/>
+		<result property="createUserName" column="CREATE_USER_NAME"/>
+		<result property="createTime" column="CREATE_TIME"/>
+		<result property="modifyUserCode" column="MODIFY_USER_CODE"/>
+		<result property="modifyUserName" column="MODIFY_USER_NAME"/>
+		<result property="modifyTime" column="MODIFY_TIME"/>
+		<result property="handoverState" column="HANDOVER_STATE"/>
+		<result property="currencyCode" column="CURRENCY_CODE"/>
+		<result property="isNotPayment" column="IS_NOT_PAYMENT"/>
+		<result property="jointTicketNo" column="JOINT_TICKET_NO"/>
+		<result property="actualTakeOffTime" column="ACTUAL_TAKE_OFF_TIME"/>
+		<result property="actualArriveTime" column="ACTUAL_ARRIVE_TIME"/>
+		<result property="trackState" column="TRACK_STATE"/>
+		<result property="airportCode" column="AIR_PORT_CODE"/>
+        <result property = "transportType" column = "TRANSPORTTYPE"/>
+	</resultMap>
+	<select id="queryAirWayBillListByWayBill4dubbo" parameterType="com.deppon.foss.module.transfer.dubbo.api.define.AirWaybillDetailDto" 
+		resultMap="queryAirWayBillListByWayBillResultMap">
+		SELECT
+		 aw.air_waybill_no,
+	     aw.CREATE_ORG_CODE
+		FROM tfr.t_opt_air_waybill aw
+		LEFT JOIN tfr.t_opt_air_waybill_detail awd
+		on aw.id = awd.air_waybill_id
+		where aw.air_assemble_type in ('HDPWF', 'DDWFD')
+		and awd.waybill_no = #{waybillNo}
+		ORDER BY aw.CREATE_TIME DESC
+	</select>
+	<resultMap id="selectExternalByWayBillNoResultMap" type="com.deppon.foss.module.transfer.dubbo.api.define.ExternalBillDto" >
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="EXTERNAL_BILL_NO" property="externalBillNo" jdbcType="VARCHAR" />
+		<result column="EXTERNAL_USER_CODE" property="externalUserCode" jdbcType="VARCHAR" />
+		<result column="EXTERNAL_USER_NAME" property="externalUserName" jdbcType="VARCHAR" />
+		<result column="EXTERNAL_AGENCY_FEE" property="externalAgencyFee" jdbcType="DECIMAL" />
+		<result column="DELIVERY_FEE" property="deliveryFee" jdbcType="DECIMAL" />
+		<result column="COST_AMOUNT" property="costAmount" jdbcType="DECIMAL" />
+		<result column="RECEIVE_AGENCY_FEE" property="receiveAgencyFee" jdbcType="DECIMAL" />
+		<result column="PAY_AGENCY_FEE" property="payAgencyFee" jdbcType="DECIMAL" />
+		<result column="IS_WRITE_OFF" property="isWriteOff" jdbcType="CHAR" />
+		<result column="REGISTER_TIME" property="registerTime" jdbcType="TIMESTAMP" />
+		<result column="REGISTER_USER_CODE" property="registerUserCode" jdbcType="VARCHAR" />
+		<result column="EXTERNAL_ORG_CODE" property="externalOrgCode" jdbcType="VARCHAR" />
+		<result column="EXTERNAL_ORG_NAME" property="externalOrgName" jdbcType="VARCHAR" />
+		<result column="AUDIT_STATUS" property="auditStatus" jdbcType="VARCHAR" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="HANDOVER_NO" property="handoverNo" jdbcType="VARCHAR" />
+		<result column="AGENT_COMPANY_CODE" property="agentCompanyCode" jdbcType="VARCHAR" />
+		<result column="AGENT_COMPANY_NAME" property="agentCompanyName" jdbcType="VARCHAR" />  
+		<result column="IS_TRANSFER_EXTERNAL" property="transferExternal" jdbcType="VARCHAR" />  
+		<result column="RECEIVE_METHOD" property="beAutoDelivery" jdbcType="VARCHAR" />
+		<result column="TO_PAY_AMOUNT" property="toPayAmount" jdbcType="VARCHAR" />
+		<result column="CURRENCY_CODE" property="currencyCode" jdbcType="VARCHAR" />	  	    
+		<result column="MODIFY_DATE" property="modifyDate" jdbcType="TIMESTAMP" />	  	    
+		<result column="IS_INIT" property="isInit" jdbcType="VARCHAR" />	  	    
+		<result column="OTHERFEE" property="otherFee" jdbcType="DECIMAL" />	  
+	</resultMap>
+	<select id="selectExternalByWayBillNo4dubbo" resultMap="selectExternalByWayBillNoResultMap" parameterType="com.deppon.foss.module.transfer.dubbo.api.define.ExternalBillDto" >
+	     select
+	    	 EBILL.ID                  ,/**ID     **/  
+			 EBILL.EXTERNAL_BILL_NO   , /**外发单号 **/
+			 EBILL.EXTERNAL_USER_CODE  ,/**外发员工号 **/
+			 EBILL.EXTERNAL_USER_NAME , /**外发员姓名 **/
+			 EBILL.EXTERNAL_AGENCY_FEE/100 EXTERNAL_AGENCY_FEE, /**外发代理费 **/
+			 EBILL.DELIVERY_FEE/100  DELIVERY_FEE  ,    /**代理送货费 **/
+			 EBILL.COST_AMOUNT/100  COST_AMOUNT,       /**外发成本总额 **/
+			 EBILL.RECEIVE_AGENCY_FEE/100 RECEIVE_AGENCY_FEE,  /**实收代理费 **/
+			 EBILL.PAY_AGENCY_FEE/100 PAY_AGENCY_FEE,     /**实付代理费 **/
+			 EBILL.IS_WRITE_OFF ,       /**自动核销申请 **/
+			 EBILL.REGISTER_TIME,       /**录入日期 **/
+			 EBILL.REGISTER_USER_CODE,  /**录入人工号 **/
+			 EBILL.EXTERNAL_ORG_CODE,   /**外发部门编号 **/
+			 EBILL.EXTERNAL_ORG_NAME ,  /**外发部门名称 **/
+			 EBILL.AUDIT_STATUS,       /**审核状态 **/
+			 EBILL.NOTES  ,            /**备注 **/    
+			 EBILL.WAYBILL_NO   ,       /**运单号   **/
+			 EBILL.HANDOVER_NO   ,       /**交接单号   **/
+			 EBILL.AGENT_COMPANY_CODE , /**偏线代理编号 **/
+			 EBILL.AGENT_COMPANY_NAME , /**偏线代理名称 **/	
+			 EBILL.IS_TRANSFER_EXTERNAL,  /**中转外发 **/
+			 EBILL.CURRENCY_CODE,	/**币种**/
+			 EBILL.MODIFY_DATE,      /**修改时间**/
+			 EBILL.IS_INIT,      /**是否初始化**/
+			 DECODE(EBILL.OTHERFEE / 100,null,0, OTHERFEE / 100) OTHERFEE /**其他金额**/
+	    from TFR.T_OPT_EXTERNAL_BILL EBILL
+           join PKP.T_SRV_WAYBILL WAYBILL
+        on WAYBILL.WAYBILL_NO = EBILL.WAYBILL_NO and WAYBILL.ACTIVE=#{active}
+	    <where >
+	      <if test="waybillNo!=null and waybillNo!=''">
+	        EBILL.WAYBILL_NO = #{waybillNo}
+	      </if>
+	      <if test="externalBillNo!=null and externalBillNo!=''">
+	        and EBILL.EXTERNAL_BILL_NO =#{externalBillNo}
+	      </if>
+	      <if test="externalUserName!=null and externalUserName!=''">
+	        and EBILL.EXTERNAL_USER_NAME =#{externalUserName}
+	      </if>
+	      <if test="externalUserCode!=null and externalUserCode!=''">
+	        and EBILL.EXTERNAL_USER_CODE = #{externalUserCode,jdbcType=VARCHAR} 
+	      </if>
+	      <if test="registerUserCode!=null and registerUserCode!=''">
+	        and EBILL.REGISTER_USER_CODE = #{registerUserCode,jdbcType=VARCHAR} 
+	      </if>
+	      <if test="agentCompanyCode!=null and agentCompanyCode!=''">
+	        and EBILL.AGENT_COMPANY_CODE = #{agentCompanyCode}  
+	      </if>
+	      <if test="registerTimeFrom!=null and registerTimeFrom!=''">
+	      <![CDATA[ and EBILL.REGISTER_TIME > to_date(#{registerTimeFrom,jdbcType=VARCHAR}, 'YYYY-MM-DD HH24:MI:SS')]]>  
+	      </if>
+	      <if test="registerTimeTo!=null and registerTimeTo!=''">
+	      <![CDATA[ and EBILL.REGISTER_TIME < to_date(#{registerTimeTo,jdbcType=VARCHAR}, 'YYYY-MM-DD HH24:MI:SS') ]]>  
+	        
+	      </if>
+	      <if test="auditStatus!=null and auditStatus!=''">
+	        and EBILL.AUDIT_STATUS = #{auditStatus,jdbcType=VARCHAR}
+	      </if>    
+	      <if test="transCenterCode!=null and transCenterCode!=''">
+	        and EBILL.TRANS_CENTER_CODE = #{transCenterCode,jdbcType=VARCHAR}
+	      </if>  
+	      <if test="list!=null and list!=''">
+	        and EBILL.AUDIT_STATUS in
+	         <foreach collection="list" item="item" index="index" open=" ("  separator="," close=")">                  
+	            #{item,jdbcType=VARCHAR} 
+	         </foreach>  
+	      </if>      
+	    </where>
+	     order by EBILL.REGISTER_TIME DESC
+	  </select>
+	<resultMap id="queryExternalBillListByWaybillNoResultMap" type="com.deppon.foss.module.transfer.dubbo.api.define.LdpExternalBillDto" >
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="HANDOVER_NO" property="handoverNo" jdbcType="VARCHAR" />
+		<result column="EXTERNAL_BILL_NO" property="externalBillNo" jdbcType="VARCHAR" />
+		<result column="EXTERNAL_USER_CODE" property="externalUserCode" jdbcType="VARCHAR" />
+		<result column="EXTERNAL_USER_NAME" property="externalUserName" jdbcType="VARCHAR" />
+		<result column="EXTERNAL_ORG_CODE" property="externalOrgCode" jdbcType="VARCHAR" />
+		<result column="EXTERNAL_ORG_NAME" property="externalOrgName" jdbcType="VARCHAR" />
+		<result column="AGENT_COMPANY_CODE" property="agentCompanyCode" jdbcType="VARCHAR" />
+		<result column="AGENT_COMPANY_NAME" property="agentCompanyName" jdbcType="VARCHAR" /> 
+		<result column="AGENT_ORG_CODE" property="agentOrgCode" jdbcType="VARCHAR" />
+		<result column="AGENT_ORG_NAME" property="agentOrgName" jdbcType="VARCHAR" /> 
+		<result column="RETURN_TYPE" property="returnType" jdbcType="VARCHAR" /> 
+		<result column="FREIGHT_FEE" property="freightFee" jdbcType="DECIMAL" />
+		<result column="COD_AGENCY_FEE" property="codAgencyFee" jdbcType="DECIMAL" />
+		<result column="AGENCY_RETURN_FEE" property="agencyReturnFee" jdbcType="DECIMAL" />
+		<result column="PAY_DP_FEE" property="payDpFee" jdbcType="DECIMAL" />
+		<result column="EXTERNAL_INSURANCE_FEE" property="externalInsuranceFee" jdbcType="DECIMAL" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+		<result column="AUDIT_STATUS" property="auditStatus" jdbcType="VARCHAR" />
+		<result column="REGISTER_TIME" property="registerTime" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_USER_CODE" property="modifyUserCode" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_NAME" property="modifyUserName" jdbcType="VARCHAR" />
+		<result column="IS_TRANSFER_EXTERNAL" property="transferExternal" jdbcType="VARCHAR" /> 
+		<result column="SEND_STATUS" property="sendStatus" jdbcType="VARCHAR" />
+		<result column="CURRENCY_CODE" property="currencyCode" jdbcType="VARCHAR" /> 
+		<result column="COD_AMOUNT" property="codAmount" jdbcType="DECIMAL" />
+		<result column="BILL_RECEIVABLE" property="billReceiveable" jdbcType="DECIMAL" />
+		<result column="TO_PAY_FEE" property="toPayFee" jdbcType="DECIMAL" />
+		<result column="BILL_PAYABLE" property="billPayable" jdbcType="DECIMAL" />
+		<result column="TO_PAY_AMOUNT" property="toPayAmount" jdbcType="VARCHAR" /> 
+		<result column="RECEIVE_METHOD" property="beAutoDelivery" jdbcType="VARCHAR" /> 
+		<result column="AGENT_WAYBILL_NO" property="agencyWaybillNo" jdbcType="VARCHAR" />
+		<result column="SERIAL_NO" property="serialNo" jdbcType="VARCHAR" />
+	</resultMap>
+    <select id="queryExternalBillListByWaybillNo4dubbo" resultMap="queryExternalBillListByWaybillNoResultMap" parameterType="com.deppon.foss.module.transfer.dubbo.api.define.LdpExternalBillDto" >
+     select * from TFR.T_OPT_LDP_EXTERNAL_BILL EBILL
+   	   where EBILL.WAYBILL_NO = #{waybillNo}
+	</select>
+	<select id="selectSerialNoByWaybillNo4dubbo" resultType="java.lang.String" parameterType="com.deppon.foss.module.transfer.dubbo.api.define.StockDto" >
+		   select s.serial_no value
+		   from pkp.t_srv_arrivesheet t
+		   inner join PKP.T_SRV_SIGN_DETAIL s
+		   on t.arrivesheet_no = s.arrivesheet_no
+    	<where>
+    		<if test="waybillNo!=null and waybillNo!='' ">	
+			and t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+			</if>
+			<if test="destroyed != null and destroyed !=''" >
+       		 	AND T.DESTROYED = #{destroyed,jdbcType=CHAR}
+     		 </if>
+     		 <if test="status!=null and status!='' ">
+				AND T.STATUS=#{status,jdbcType=VARCHAR}
+			</if> 
+			<if test="active !=null and active !='' ">
+				and t.active=#{active,jdbcType=VARCHAR}
+			</if>
+			<if test="serialNo != null" >
+				and s.serial_no = #{serialNo,jdbcType=VARCHAR}
+			</if>
+    	</where>
+    	order by s.serial_no asc
+	</select>
+	<resultMap id="queryInStockInfoSmallMap" type="com.deppon.foss.module.transfer.dubbo.api.define.InOutStockEntity" >
+		<result property="id" column="id"/>
+		<result property="waybillNO" column="WAYBILL_NO"/>
+		<result property="serialNO" column="SERIAL_NO"/>
+		<result property="orgCode" column="ORG_CODE"/>
+		<result property="goodsAreaCode" column="GOODS_AREA_CODE"/>
+		<result property="inOutStockTime" column="IN_STOCK_TIME"/>
+		<result property="inOutStockType" column="IN_STOCK_TYPE"/>
+		<result property="operatorCode" column="OPERATOR_CODE"/>
+		<result property="operatorName" column="OPERATOR_NAME"/>
+	</resultMap>
+	<select id="queryInStockInfoSmall4dubbo" parameterType="map" resultMap="queryInStockInfoSmallMap">
+		SELECT
+			   ID,                  
+			   WAYBILL_NO,       
+			   SERIAL_NO,        
+			   IN_STOCK_TYPE,
+			   IN_STOCK_TIME, 
+			   ORG_CODE,
+			   GOODS_AREA_CODE,
+			   OPERATOR_CODE,
+			   OPERATOR_NAME
+		  FROM TFR.T_OPT_IN_STOCK 
+		  WHERE WAYBILL_NO = #{waybillNo} AND
+		 	   <if test="serialNo != null and serialNo != '' ">
+		      		SERIAL_NO = #{serialNo} AND
+		       </if>
+		       <if test="orgCode != null and orgCode != '' ">
+		      		ORG_CODE = #{orgCode} AND
+		       </if>
+		 	   IS_VALID = #{isValid} AND
+		 	   <![CDATA[ IN_STOCK_TIME < #{createBillTime} ]]>
+	  ORDER BY IN_STOCK_TIME
+	</select>
+	<select id="queryStockByWaybillNoInStockTime4dubbo"  parameterType="com.deppon.foss.module.transfer.dubbo.api.define.WaybillStockEntity" resultMap="stockQueryByWaybillNoResultMap">
+		SELECT 
+		st.ID,
+		st.WAYBILL_NO,
+		st.SERIAL_NO,
+		st.ORG_CODE,
+		st.NEXT_ORG_CODE,
+		st.GOODS_AREA_CODE,
+		st.OPERATOR_NAME,
+		st.OPERATOR_CODE,
+		st.IN_STOCK_TIME,
+		st.DEVICE_TYPE,
+		st.position,
+		st.PRE_HANDOVER_STATUS 
+		FROM tfr.t_opt_stock st
+		where st.waybill_no = #{waybillNO}
+	    order by st.in_stock_time
+	</select>
+</mapper>

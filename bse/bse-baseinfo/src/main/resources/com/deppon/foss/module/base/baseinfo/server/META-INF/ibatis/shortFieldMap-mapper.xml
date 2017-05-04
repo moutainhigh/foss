@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.shortFieldMap" >
+	<!-- 返回结果映射表，将表字段映射成实体中的属性，从而返回实体 -->
+	<resultMap id="shortFieldMapResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.ShortFieldMapEntity">
+		<result column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="code" property="code" jdbcType="VARCHAR" />
+		<result column="name" property="name" jdbcType="VARCHAR" />
+		<result column="short_field_code" property="shortFieldCode" jdbcType="VARCHAR" />
+		<result column="short_field_name" property="shortFieldName" jdbcType="VARCHAR" />
+ 		<result column="active" property="active" jdbcType="CHAR" />
+		<result column="create_time" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="modify_time" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+	</resultMap>
+	<!-- 根据所有条件分页查询 -->
+	<select id="queryShortFieldMapListByCondition" resultMap="shortFieldMapResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ShortFieldMapEntity">
+		select
+		S.id as id,
+		S.code as code,
+		O1.name as name,
+		S.short_field_code as short_field_code,
+		O2.name as short_field_name,
+		S.active as active,
+		S.create_time as create_time,
+		S.modify_time as modify_time,
+		S.CREATE_USER_CODE as CREATE_USER_CODE,
+		S.MODIFY_USER_CODE as MODIFY_USER_CODE
+		from bse.t_bas_short_field_map S
+		left join bse.t_bas_org O1 on S.code=O1.code and O1.active='Y'
+		left join bse.t_bas_org O2 on S.short_field_code=O2.code and O2.active='Y'
+		<where>
+			<if test="code != null and code != ''">
+				AND S.code = #{code, jdbcType=VARCHAR} 
+			</if>
+			<if test="shortFieldCode != null and shortFieldCode != ''">
+				AND S.short_field_code = #{shortFieldCode, jdbcType=VARCHAR}
+			</if>
+			AND S.active='Y'
+		</where>
+		order by S.code
+	</select>
+	<!-- 根据所有条件分页查询的查询总数 -->
+	<select id="queryShortFieldMapListByConditionCount"  resultType="Long"  parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ShortFieldMapEntity">
+		select
+		count(*)
+		from bse.t_bas_short_field_map S
+		<where>
+			<if test="code != null and code != ''">
+				AND S.code = #{code, jdbcType=VARCHAR} 
+			</if>
+			<if test="shortFieldCode != null and shortFieldCode != ''">
+				AND S.short_field_code = #{shortFieldCode, jdbcType=VARCHAR}
+			</if>
+			AND S.active='Y'
+		</where>
+	</select>
+	<!-- 批量删除（非物理删除） -->
+	<update id="deleteShortFieldMap" parameterType="map">
+		update bse.t_bas_short_field_map
+		<set>
+			active='N',
+			modify_time = #{modifyDate,jdbcType=TIMESTAMP} ,
+			modify_user_code = #{modifyUser,jdbcType=VARCHAR}
+		</set>
+		where id in
+		<foreach collection="ids" open="(" close=")" separator="," item="id">
+			#{id, jdbcType=VARCHAR} 
+		</foreach>
+	</update>
+	<!-- 新增映射关系 -->
+	<insert id="addShortFieldMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ShortFieldMapEntity">
+		insert into bse.t_bas_short_field_map (
+		id,
+		code,
+		short_field_code,
+		active,
+		create_time,
+		modify_time,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE
+		)
+		values (
+		#{id, jdbcType=VARCHAR},
+		#{code, jdbcType=VARCHAR},
+		#{shortFieldCode, jdbcType=VARCHAR},
+		'Y',
+		#{createDate, jdbcType=TIMESTAMP},
+		#{modifyDate, jdbcType=TIMESTAMP},
+		#{createUser, jdbcType=VARCHAR},
+		#{modifyUser, jdbcType=VARCHAR}
+		)
+	</insert>
+	
+</mapper>

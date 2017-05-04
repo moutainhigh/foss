@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:http-conf="http://cxf.apache.org/transports/http/configuration"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://www.springframework.org/schema/jee 
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+			http://www.springframework.org/schema/aop 
+			http://www.springframework.org/schema/aop/spring-aop-3.0.xsd 
+			http://cxf.apache.org/transports/http/configuration
+           http://cxf.apache.org/schemas/configuration/http-conf.xsd">
+	<context:property-placeholder location="classpath*:foss.properties" />
+	
+	<!-- 财务自助占领和释放、查询超时时间设置为2分钟  改方法只能配置一个，如果再要指定，可通过拦截器方式实现-->
+	<http-conf:conduit name="{http://www.deppon.com/fin/module/claimpay/service}IFinClaimNumServicePort.http-conduit">
+		<http-conf:client ConnectionTimeout="30000" ReceiveTimeout="120000" />
+	</http-conf:conduit>
+
+	<!-- 数据源 jndi方式 -->
+	<bean id="dataSourceSpied" class="org.springframework.jndi.JndiObjectFactoryBean">
+		<property name="jndiName">
+			<value>jdbc/fossds</value>
+		</property>
+		<property name="resourceRef" value="true" />
+	</bean>
+	<bean id="dataSource" class="net.sf.log4jdbc.Log4jdbcProxyDataSource">
+		<constructor-arg ref="dataSourceSpied" />
+	</bean>
+
+	<!-- 数据连接管理 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<!-- 事务注解支持 -->
+	<tx:annotation-driven transaction-manager="transactionManager" />
+
+	<!-- myBatis文件 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="configLocation" value="/WEB-INF/ibatis.xml" />
+		<property name="mapperLocations"
+			value="classpath*:com/deppon/**/META-INF/ibatis/*.xml" />
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<bean id="mongo" class="com.deppon.foss.framework.server.components.dataaccess.mongodb.MongoFactoryBean">
+		<property name="host" value="${mongodb.host}" />
+		<property name="port" value="${mongodb.port}" />
+<!-- 		<property name="mongoOptions" ref="mongoOptions" /> -->
+	</bean>
+	
+	<bean id="mongodbFactory" class="com.deppon.foss.framework.server.components.dataaccess.mongodb.MongoDbFactoryBean">
+		<constructor-arg ref="mongo" />
+		<constructor-arg value="${mongodb.database}" />
+	</bean>
+	<!-- 日志队列配置开始 -->
+	<!-- 性能日志 -->
+	<bean id="performanceLog"
+		class="com.deppon.foss.framework.server.components.logger.LogBuffer">
+		<property name="enable" value="${log.enable}" /><!-- 默认启用 -->
+		<property name="queueSize" value="${log.queueSize}" />
+		<property name="listSize" value="${log.listSize}" />
+		<property name="interval" value="${log.interval}" />
+		<property name="logSender" ref="mongoLogSender" />
+	</bean>
+
+	<bean id="mongoLogSender" class="com.deppon.foss.framework.server.components.logger.MongoLogSender">
+	</bean>
+	<!-- 日志队列配置结束 -->
+
+	<context:annotation-config />
+	<context:component-scan base-package="com.deppon" />
+
+	<bean id="poolConfig" class="redis.clients.jedis.JedisPoolConfig">
+		<property name="maxActive" value="${redis.pool.maxActive}"></property>
+		<property name="maxIdle" value="${redis.pool.maxIdle}"></property>
+		<property name="maxWait" value="${redis.pool.maxWait}"></property>
+		<property name="testOnBorrow" value="${redis.pool.testOnBorrow}"></property>
+		<property name="testOnReturn" value="${redis.pool.testOnReturn}"></property>
+	</bean>
+	<bean id="client" class="com.deppon.foss.framework.cache.redis.RedisClient">
+		<property name="host1" value="${redis.host1}"></property>
+		<property name="port1" value="${redis.port1}"></property>
+		<property name="host2" value="${redis.host2}"></property>
+		<property name="port2" value="${redis.port2}"></property>
+		<property name="poolConfig" ref="poolConfig"></property>
+	</bean>
+	<bean id="storage"
+		class="com.deppon.foss.framework.cache.storage.RedisCacheStorage">
+		<property name="client" ref="client"></property>
+	</bean> 
+	<bean id="client1" class="com.deppon.foss.framework.cache.redis.RedisClient">
+		<property name="host1" value="${redis.host3}"></property>
+		<property name="port1" value="${redis.port3}"></property>
+		<property name="host2" value="${redis.host4}"></property>
+		<property name="port2" value="${redis.port4}"></property>
+		<property name="poolConfig" ref="poolConfig"></property>
+	</bean>
+	<bean id="storage1"
+		class="com.deppon.foss.framework.cache.storage.RedisCacheStorage">
+		<property name="client" ref="client1"></property>
+	</bean> 
+	<bean id="client2" class="com.deppon.foss.framework.cache.redis.RedisClient">
+		<property name="host1" value="${redis.host5}"></property>
+		<property name="port1" value="${redis.port5}"></property>
+		<property name="host2" value="${redis.host6}"></property>
+		<property name="port2" value="${redis.port6}"></property>
+		<property name="poolConfig" ref="poolConfig"></property>
+	</bean>
+	<bean id="storage2"
+		class="com.deppon.foss.framework.cache.storage.RedisCacheStorage">
+		<property name="client" ref="client2"></property>
+	</bean> 
+	<bean id="client3" class="com.deppon.foss.framework.cache.redis.RedisClient">
+		<property name="host1" value="${redis.host7}"></property>
+		<property name="port1" value="${redis.port7}"></property>
+		<property name="host2" value="${redis.host8}"></property>
+		<property name="port2" value="${redis.port8}"></property>
+		<property name="poolConfig" ref="poolConfig"></property>
+	</bean>
+	<bean id="storage3"
+		class="com.deppon.foss.framework.cache.storage.RedisCacheStorage">
+		<property name="client" ref="client3"></property>
+	</bean> 
+
+	<!-- FTP配置 -->
+   	<bean id="ftpConfig" class="com.deppon.foss.framework.server.components.ftp.FTPConfig">
+		<property name="host" value="${ftp.host}"></property>
+	    <property name="port" value="${ftp.port}"></property>
+	    <property name="userName" value="${ftp.write.user}"></property>
+	    <property name="password" value="${ftp.write.pass}"></property>
+	    <property name="path" value="stl"></property>
+	</bean>
+	
+	<bean id="downloadFtpConfig" class="com.deppon.foss.framework.server.components.ftp.FTPConfig">
+		<property name="host" value="${ftp.host}"></property>
+	    <property name="port" value="${ftp.port}"></property>
+	    <property name="userName" value="${ftp.read.user}"></property>
+	    <property name="password" value="${ftp.read.pass}"></property>
+	    <property name="path" value="stl"></property>
+	</bean>
+	
+	<bean id="ftpClient" class="com.deppon.foss.framework.server.components.ftp.FTPClient">
+		<property name="ftpConfig" ref="ftpConfig"></property>
+	</bean>
+	
+	<bean name="logSwitch" class="com.deppon.ar.bamp.common.dispatch.switchs.LogSwitch"
+		init-method="initLogSwitch">
+		<property name="localReqLogSwitch" value="1"></property>
+	</bean> 
+	<bean name="appProfile" class="com.deppon.ar.bamp.common.config.AppProfile" init-method="initAppProfile"> 
+		<property name="appCode" value="FOSS"></property>
+		<property name="actionExtension">
+			<list>
+		        <value>action</value>
+		        <value>do</value>
+    	    </list>
+		</property>
+	</bean>
+	
+</beans>

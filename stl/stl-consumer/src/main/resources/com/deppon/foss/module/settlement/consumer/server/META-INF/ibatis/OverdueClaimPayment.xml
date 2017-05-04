@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.OverdueClaimPaymentDao">
+
+    <select id="queryOverdueClaimPaymentData"
+            resultType="com.deppon.foss.module.settlement.consumer.api.shared.dto.OverdueClaimPaymentDto"
+            parameterType="map">
+        SELECT /* 结算模块：BillPaymentEntityDao.queryOverdueClaimPaymentData 查询理赔付款超时的信息 */
+        P.AMOUNT                AS AMOUNT,
+        P.WAYBILL_NO            AS WAYBILLNO,
+        P.CREATE_USER_CODE      AS RESPONSIBLEPEOPLECODE,
+        P.CREATE_USER_NAME      AS RESPONSIBLEPEOPLENAME,
+        P.PAYABLE_ORG_CODE      AS RESPONSIBLEDEPTCODE,
+        P.PAYABLE_ORG_NAME      AS RESPONSIBLEDEPTNAME,
+        C.PAYMENT_TIME_LIMIT    AS CLAIMCONFIRMTIME,
+        P.PRODUCT_CODE          AS PRODUCTCODE,
+        OO.UNIFIED_CODE         AS RESPONSIBLEDEPTUNFIEDCODE,
+        W.CREATE_USER_DEPT_NAME AS BILLINGDEPTNAME,
+        CO.UNIFIED_CODE         AS BILLINGDEPTCODE
+        FROM STL.T_STL_BILL_PAYABLE P
+        JOIN STL.T_STL_BILL_CLAIM C ON P.WAYBILL_NO = C.WAYBILL_NO
+        JOIN (SELECT DISTINCT O.CODE, O.UNIFIED_CODE FROM BSE.T_BAS_ORG O) OO
+        ON OO.CODE = P.PAYABLE_ORG_CODE
+        JOIN PKP.T_SRV_WAYBILL W ON W.WAYBILL_NO = P.WAYBILL_NO
+        JOIN (SELECT DISTINCT CODE, UNIFIED_CODE FROM BSE.T_BAS_ORG) CO
+        ON W.CREATE_ORG_CODE = CO.CODE
+        Left join (select min( pm.account_date) min_date,pm.payment_no,pm.remit_status,pm.active 
+        from STL.T_STL_BILL_PAYMENT PM group by pm.payment_no,pm.remit_status,pm.active) ac 
+        on ac.payment_no = p.payment_no
+        where p.active = #{active}
+        	  AND w.active = #{active}
+        	  AND ac.active= #{active}
+       		  AND c.active = #{active}
+        	  and p.bill_type = #{claimTypeC}
+       		  AND ac.Remit_Status = (#{paymentStatusNotPaid},#{paymentStatusInPayingProcess})
+        <if test="beginTime != null and beginTime != '' ">
+            <![CDATA[
+              AND p.account_date >= #{beginTime,jdbcType=DATE}
+            ]]>
+        </if>
+        <if test="endTime !=null and endTime != '' ">
+            <![CDATA[
+              AND p.account_date < #{endTime,jdbcType=DATE}
+            ]]>
+        </if>
+        <![CDATA[
+        	  AND (ac.payment_no is null or ac.min_date>#{currentTime,jdbcType=DATE} )
+        ]]>
+        <if test="productCodeList != null and productCodeList.size() > 0">
+	        AND p.product_code IN
+	        <foreach collection="productCodeList" item="item" open="(" close=")" separator="," index="index">
+	            #{item}
+	        </foreach>
+        </if>
+    </select>
+
+    <select id="queryEmployeeAndUserByEntity" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.EmployeeEntity"
+            resultType="com.deppon.foss.module.base.baseinfo.api.shared.domain.EmployeeEntity">
+        SELECT /* 查询营业部收银员 */
+            T.ID  as id,
+            T.EMP_NAME  as empName,
+            T.PINYIN  as pinyin,
+            T.EMP_CODE  as empCode,
+            T.GENDER  as gender,
+            T.UNIFIELD_CODE  as unifieldCode,
+            T.ORG_CODE  as orgCode,
+            D.VALUE_NAME  as TITLE,
+            T.DEGREE  as degree,
+            T.BIRTHDATE  as birthdate,
+            T.STATUS  as status,
+            T.ENTRY_DATE  as entryDate,
+            T.LEAVE_DATE  as leaveDate,
+            T.PHONE  as phone,
+            T.IDENTITY_CARD  as identityCard,
+            T.MOBILE_PHONE  as mobilePhone,
+            T.EMAIL  as email,
+            T.ACTIVE  as active,
+            T.CREATE_USER_CODE  as createUserCode,
+            T.CREATE_TIME  as createTime,
+            T.MODIFY_USER_CODE  as modifyUserCode,
+            T.MODIFY_TIME  as modifyTime
+          FROM BSE.T_BAS_EMPLOYEE T
+          JOIN BSE.T_BAS_DATA_POSTION_DEGREE D
+            ON T.TITLE = D.VALUE_CODE
+           AND D.TYPE = 'UUMS_POSITION'
+         WHERE T.ACTIVE = 'Y'
+           AND D.ACTIVE = 'Y'
+           AND D.VALUE_NAME = #{title}
+           AND T.UNIFIELD_CODE = #{unifieldCode}
+    </select>
+</mapper>

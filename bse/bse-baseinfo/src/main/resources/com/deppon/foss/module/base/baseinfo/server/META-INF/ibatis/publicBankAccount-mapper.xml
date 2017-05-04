@@ -1,0 +1,402 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- publicBankAccount publicBankAccount-mapper.xml 对公银行账号 -->
+<mapper namespace="foss.bse.bse-baseinfo.publicBankAccount" >
+
+	<resultMap id="publicBankAccountQueryResultMap"
+   			type="com.deppon.foss.module.base.baseinfo.api.shared.domain.PublicBankAccountEntity">
+		<result property="id" column="ID"  jdbcType="VARCHAR" />
+		<result property="bankAcc" column="BANK_ACC"  jdbcType="VARCHAR" />
+		<result property="bankAccName" column="BANK_ACC_NAME"  jdbcType="VARCHAR" />
+		<result property="deptCd" column="DEPT_CD"  jdbcType="VARCHAR" />
+		<result property="bankCd" column="BANK_CD"  jdbcType="VARCHAR" />
+		<result property="bankName" column="BANK_NAME"  jdbcType="VARCHAR" />
+		<result property="subbranchCd" column="SUBBRANCH_CD"  jdbcType="VARCHAR" />
+		<result property="subbranchName" column="SUBBRANCH_NAME"  jdbcType="VARCHAR" />
+		<result property="provCd" column="PROV_CD"  jdbcType="VARCHAR" />
+		<result property="provName" column="PROV_NAME"  jdbcType="VARCHAR" />
+		<result property="cityCd" column="CITY_CD"  jdbcType="VARCHAR" />
+		<result property="cityName" column="CITY_NAME"  jdbcType="VARCHAR" />
+		
+		<result property="accountStatus" column="ACCOUNT_STATUS"  jdbcType="VARCHAR" />
+		<result property="fid" column="FID"  jdbcType="VARCHAR" />
+		
+		<result property="active" column="ACTIVE"  jdbcType="CHAR" />
+		<result property="createDate" column="CREATE_TIME"  jdbcType="TIMESTAMP" />
+		<result property="modifyDate" column="MODIFY_TIME"  jdbcType="TIMESTAMP" />
+		<result property="createUser" column="CREATE_USER_CODE"  jdbcType="VARCHAR" />
+		<result property="modifyUser" column="MODIFY_USER_CODE"  jdbcType="VARCHAR" />
+		<result property="accSort" column="ACC_SORT"  jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 插入数据 ： -->
+	<insert id="addPublicBankAccount"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PublicBankAccountEntity">
+		INSERT/** 综合:插入数据  **/ INTO BSE.T_BAS_PUBLIC_BANK_ACCOUNT(
+		ID,
+		BANK_ACC,
+		BANK_ACC_NAME,
+		DEPT_CD,
+		BANK_CD,
+		BANK_NAME,
+		SUBBRANCH_CD,
+		SUBBRANCH_NAME,
+		PROV_CD,
+		PROV_NAME,
+		CITY_CD,
+		CITY_NAME,
+		ACCOUNT_STATUS,
+		FID,
+		ACTIVE,
+		CREATE_TIME,
+		MODIFY_TIME,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE,
+		ACC_SORT) VALUES	
+	(
+		#{id, jdbcType=VARCHAR},
+		#{bankAcc, jdbcType=VARCHAR},
+		#{bankAccName, jdbcType=VARCHAR},
+		#{deptCd, jdbcType=VARCHAR},
+		#{bankCd, jdbcType=VARCHAR},
+		#{bankName, jdbcType=VARCHAR},
+		#{subbranchCd, jdbcType=VARCHAR},
+		#{subbranchName, jdbcType=VARCHAR},
+		#{provCd, jdbcType=VARCHAR},
+		#{provName, jdbcType=VARCHAR},
+		#{cityCd, jdbcType=VARCHAR},
+		#{cityName, jdbcType=VARCHAR},
+		#{accountStatus, jdbcType=VARCHAR},
+		#{fid, jdbcType=VARCHAR},
+		#{active, jdbcType=CHAR},
+		#{createDate, jdbcType=TIMESTAMP},
+		#{modifyDate, jdbcType=TIMESTAMP},
+		#{createUser, jdbcType=VARCHAR},
+		#{modifyUser, jdbcType=VARCHAR},
+		#{accSort, jdbcType=VARCHAR}
+	)
+	</insert> 
+
+	<!-- 根据 FID 作废数据： -->
+	<update id="deletePublicBankAccount" 
+		parameterType="map">
+		UPDATE/** 综合:根据 FID 作废数据  **/ BSE.T_BAS_PUBLIC_BANK_ACCOUNT A 
+		SET A.ACTIVE=#{entity.active,jdbcType=CHAR},
+			A.MODIFY_USER_CODE=#{entity.modifyUser,jdbcType=VARCHAR}, 
+			A.MODIFY_TIME = #{entity.modifyDate,jdbcType=TIMESTAMP} 
+		<where>
+			A.FID=#{entity.fid,jdbcType=VARCHAR} 
+			AND  A.ACTIVE=#{conditionActive,jdbcType=CHAR}
+		</where>
+	</update>
+
+	<!-- 根据FID批量作废 -->
+	<update id="deletePublicBankAccountMore"
+		parameterType="map">
+		UPDATE/** 综合:根据FID批量作废  **/ BSE.T_BAS_PUBLIC_BANK_ACCOUNT A 
+		SET A.ACTIVE=#{entity.active,jdbcType=CHAR},
+			A.MODIFY_USER_CODE=#{entity.modifyUser,jdbcType=VARCHAR}, 
+			A.MODIFY_TIME = #{entity.modifyDate,jdbcType=TIMESTAMP} 
+        <where>
+            <if test="codes!=null and codes.length > 0">
+                A.FID in
+                <foreach collection="codes"  index="index" item="code"  open="(" separator="," close=")">  
+	            #{code} 
+	            </foreach>
+            </if>
+            AND  A.ACTIVE=#{conditionActive,jdbcType=CHAR}
+        </where>       
+	</update>
+
+	<!-- 根据 FID 更新数据：由于更新是先作废再插入，所以这个映射用不上： -->
+	<update id="updatePublicBankAccount" 
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PublicBankAccountEntity">
+		UPDATE/** 综合:根据 FID 更新数据：由于更新是先作废再插入，所以这个映射用不上  **/ BSE.T_BAS_PUBLIC_BANK_ACCOUNT A SET 
+		A.ID = #{id, jdbcType=VARCHAR},
+		A.BANK_ACC = #{bankAcc, jdbcType=VARCHAR},
+		A.BANK_ACC_NAME = #{bankAccName, jdbcType=VARCHAR},
+		A.DEPT_CD = #{deptCd, jdbcType=VARCHAR},
+		A.BANK_CD = #{bankCd, jdbcType=VARCHAR},
+		A.BANK_NAME = #{bankName, jdbcType=VARCHAR},
+		A.SUBBRANCH_CD = #{subbranchCd, jdbcType=VARCHAR},
+		A.SUBBRANCH_NAME = #{subbranchName, jdbcType=VARCHAR},
+		A.PROV_CD = #{provCd, jdbcType=VARCHAR},
+		A.PROV_NAME = #{provName, jdbcType=VARCHAR},
+		A.CITY_CD = #{cityCd, jdbcType=VARCHAR},
+		A.CITY_NAME = #{cityName, jdbcType=VARCHAR},
+		A.ACCOUNT_STATUS = #{accountStatus, jdbcType=VARCHAR},
+		A.FID = #{fid, jdbcType=VARCHAR},
+		A.ACTIVE = #{active, jdbcType=CHAR},
+		A.CREATE_TIME = #{createDate, jdbcType=TIMESTAMP},
+		A.MODIFY_TIME = #{modifyDate, jdbcType=TIMESTAMP},
+		A.CREATE_USER_CODE = #{createUser, jdbcType=VARCHAR},
+		A.MODIFY_USER_CODE = #{modifyUser, jdbcType=VARCHAR},
+		A.ACC_SORT = #{accSort, jdbcType=VARCHAR}
+		<where>
+			A.FID = #{fid,jdbcType=VARCHAR}	
+		</where>
+	</update>
+
+
+	<!-- 以下全为查询 -->
+
+	<sql id="query_publicBankAccount_param">
+		A.ID AS ID,		/** ID     **/ 
+		A.BANK_ACC AS BANK_ACC,		/** 银行账号     **/ 
+		A.BANK_ACC_NAME AS BANK_ACC_NAME,		/** 银行开户名     **/ 
+		A.DEPT_CD AS DEPT_CD,		/** 部门标杆编码     **/ 
+		A.BANK_CD AS BANK_CD,		/** 银行编码     **/ 
+		A.BANK_NAME AS BANK_NAME,		/** 银行名称     **/ 
+		A.SUBBRANCH_CD AS SUBBRANCH_CD,		/** 支行编码     **/ 
+		A.SUBBRANCH_NAME AS SUBBRANCH_NAME,		/** 支行名称     **/ 
+		A.PROV_CD AS PROV_CD,		/** 省份编码     **/ 
+		A.PROV_NAME AS PROV_NAME,		/** 省份名称     **/ 
+		A.CITY_CD AS CITY_CD,		/** 城市编码     **/ 
+		A.CITY_NAME AS CITY_NAME,		/** 城市名称     **/ 
+		A.ACCOUNT_STATUS AS ACCOUNT_STATUS,		/** 账号状态     **/ 
+		A.FID AS FID,		/** 财务自助ID     **/ 
+		A.ACTIVE AS ACTIVE,		/** 是否启用     **/ 
+		A.CREATE_TIME AS CREATE_TIME,		/** 创建时间     **/ 
+		A.MODIFY_TIME AS MODIFY_TIME,		/** 更新时间     **/ 
+		A.CREATE_USER_CODE AS CREATE_USER_CODE,		/** 创建人     **/ 
+		A.MODIFY_USER_CODE AS MODIFY_USER_CODE,		/** 更新人     **/
+		A.ACC_SORT AS ACC_SORT /** 账号类别    **/
+	</sql>
+
+	<!-- 根据 FID 精确查询数据 -->
+	<select id="queryPublicBankAccountByFid" resultMap="publicBankAccountQueryResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PublicBankAccountEntity">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据 FID 精确查询数据  **/
+		]]>
+		<include refid="query_publicBankAccount_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_PUBLIC_BANK_ACCOUNT A 
+		]]>
+		<where>
+			A.FID=#{fid} 
+			AND A.ACTIVE= #{active,jdbcType=CHAR} 
+			AND A.ACCOUNT_STATUS=#{accountStatus,jdbcType=VARCHAR}
+		</where>
+	</select>
+
+	<!-- 根据 FID 批量精确查询数据 -->
+	<select id="queryPublicBankAccountBatchByFid" 
+			resultMap="publicBankAccountQueryResultMap"
+			parameterType="map">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据 FID 批量精确查询数据  **/
+		]]>
+		<include refid="query_publicBankAccount_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_PUBLIC_BANK_ACCOUNT A 
+		]]>
+		<where>
+			<if test="codes!=null and codes.length > 0">
+                A.FID in
+                <foreach collection="codes"  index="index" item="code"  open="(" separator="," close=")">  
+	            #{code,jdbcType=VARCHAR} 
+	            </foreach>
+            </if> 
+			AND A.ACTIVE= #{active,jdbcType=CHAR} 
+			AND A.ACCOUNT_STATUS=#{accountStatus,jdbcType=VARCHAR}
+		</where>
+	</select>
+
+	<!-- 根据entity精确查询的查询条件 ，如果属性为空，则此属性不作为条件-->
+	<sql id="query_queryPublicBankAccountExactByEntity_condition">		
+		<where>
+	      	<if test="id!=null and id != ''">
+	        	AND A.ID = #{id,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="bankAcc!=null and bankAcc != ''">
+	        	AND A.BANK_ACC = #{bankAcc,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="bankAccName!=null and bankAccName != ''">
+	        	AND A.BANK_ACC_NAME = #{bankAccName,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="deptCd!=null and deptCd != ''">
+	        	AND A.DEPT_CD = #{deptCd,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="bankCd!=null and bankCd != ''">
+	        	AND A.BANK_CD = #{bankCd,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="bankName!=null and bankName != ''">
+	        	AND A.BANK_NAME = #{bankName,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="subbranchCd!=null and subbranchCd != ''">
+	        	AND A.SUBBRANCH_CD = #{subbranchCd,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="subbranchName!=null and subbranchName != ''">
+	        	AND A.SUBBRANCH_NAME = #{subbranchName,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="provCd!=null and provCd != ''">
+	        	AND A.PROV_CD = #{provCd,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="provName!=null and provName != ''">
+	        	AND A.PROV_NAME = #{provName,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="cityCd!=null and cityCd != ''">
+	        	AND A.CITY_CD = #{cityCd,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="cityName!=null and cityName != ''">
+	        	AND A.CITY_NAME = #{cityName,jdbcType=VARCHAR} 
+	      	</if>	      	
+	      	<if test="accSort!=null and accSort != ''">
+	        	AND A.ACC_SORT = #{accSort,jdbcType=VARCHAR} 
+	      	</if>
+	      	<!--
+	      	<if test="accountStatus!=null and accountStatus != ''">
+	        	AND A.ACCOUNT_STATUS = #{accountStatus,jdbcType=VARCHAR} 
+	      	</if>-->
+	      	<if test="fid!=null and fid != ''">
+	        	AND A.FID = #{fid,jdbcType=VARCHAR} 
+	      	</if>
+	      	AND A.ACTIVE =  #{active,jdbcType=CHAR} AND A.ACCOUNT_STATUS=#{accountStatus,jdbcType=VARCHAR} 
+		</where>
+	</sql>
+	<!-- 根据实体动态条件精确查询,如果属性的值为null或者空白则无效： -->
+	<select id="queryPublicBankAccountExactByEntity" resultMap="publicBankAccountQueryResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PublicBankAccountEntity">
+		<![CDATA[
+		  SELECT
+		  /** 综合:根据实体动态条件精确查询,如果属性的值为null或者空白则无效  **/ 
+		]]>
+		<include refid="query_publicBankAccount_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_PUBLIC_BANK_ACCOUNT A 
+		]]>
+		<include refid="query_queryPublicBankAccountExactByEntity_condition" />
+	</select>
+	<!-- 根据实体动态条件精确查询总数,如果属性的值为null或者空白则无效： -->
+	<select id="queryPublicBankAccountExactByEntityCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PublicBankAccountEntity">
+		<![CDATA[
+			 SELECT/** 综合:根据实体动态条件精确查询总数,如果属性的值为null或者空白则无效  **/ count(*) 
+			 FROM BSE.T_BAS_PUBLIC_BANK_ACCOUNT A 
+		]]>
+		<include refid="query_queryPublicBankAccountExactByEntity_condition" />
+	</select>
+
+	<!-- 根据entity模糊查询,如果属性的值为null或者空白则无效： -->
+	<sql id="query_queryPublicBankAccountByEntity_condition">		
+		<where>
+	      	<if test="id!=null and id != ''">
+	        	AND A.ID like CONCAT(CONCAT('%', #{id,jdbcType=VARCHAR}), '%') 
+	      	</if>
+	      	<if test="bankAcc!=null and bankAcc != ''">
+	        	AND A.BANK_ACC like CONCAT(CONCAT('%', #{bankAcc,jdbcType=VARCHAR}), '%') 
+	      	</if>
+	      	<if test="bankAccName!=null and bankAccName != ''">
+	        	AND A.BANK_ACC_NAME like CONCAT(CONCAT('%', #{bankAccName,jdbcType=VARCHAR}), '%') 
+	      	</if>
+	      	<if test="deptCd!=null and deptCd != ''">
+	        	AND A.DEPT_CD like CONCAT(CONCAT('%', #{deptCd,jdbcType=VARCHAR}), '%') 
+	      	</if>
+	      	<if test="bankCd!=null and bankCd != ''">
+	        	AND A.BANK_CD like CONCAT(CONCAT('%', #{bankCd,jdbcType=VARCHAR}), '%') 
+	      	</if>
+	      	<if test="bankName!=null and bankName != ''">
+	        	AND A.BANK_NAME like CONCAT(CONCAT('%', #{bankName,jdbcType=VARCHAR}), '%') 
+	      	</if>
+	      	<if test="subbranchCd!=null and subbranchCd != ''">
+	        	AND A.SUBBRANCH_CD like CONCAT(CONCAT('%', #{subbranchCd,jdbcType=VARCHAR}), '%') 
+	      	</if>
+	      	<if test="subbranchName!=null and subbranchName != ''">
+	        	AND A.SUBBRANCH_NAME like CONCAT(CONCAT('%', #{subbranchName,jdbcType=VARCHAR}), '%') 
+	      	</if>
+	      	<if test="provCd!=null and provCd != ''">
+	        	AND A.PROV_CD like CONCAT(CONCAT('%', #{provCd,jdbcType=VARCHAR}), '%') 
+	      	</if>
+	      	<if test="provName!=null and provName != ''">
+	        	AND A.PROV_NAME like CONCAT(CONCAT('%', #{provName,jdbcType=VARCHAR}), '%') 
+	      	</if>
+	      	<if test="cityCd!=null and cityCd != ''">
+	        	AND A.CITY_CD like CONCAT(CONCAT('%', #{cityCd,jdbcType=VARCHAR}), '%') 
+	      	</if>
+	      	<if test="cityName!=null and cityName != ''">
+	        	AND A.CITY_NAME like CONCAT(CONCAT('%', #{cityName,jdbcType=VARCHAR}), '%') 
+	      	</if>
+	      	<!--
+	      	<if test="accountStatus!=null and accountStatus != ''">
+	        	AND A.ACCOUNT_STATUS like CONCAT(CONCAT('%', #{accountStatus,jdbcType=VARCHAR}), '%') 
+	      	</if>-->
+	      	<if test="fid!=null and fid != ''">
+	        	AND A.FID like CONCAT(CONCAT('%', #{fid,jdbcType=VARCHAR}), '%') 
+	      	</if>
+			AND A.ACTIVE= #{active,jdbcType=CHAR} 
+			AND A.ACCOUNT_STATUS=#{accountStatus,jdbcType=VARCHAR}
+		</where>
+	</sql>
+	<!-- 根据实体动态条件模糊查询,如果属性的值为null或者空白则无效： -->
+	<select id="queryPublicBankAccountByEntity" resultMap="publicBankAccountQueryResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PublicBankAccountEntity">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据实体动态条件模糊查询,如果属性的值为null或者空白则无效  **/
+		]]>
+		<include refid="query_publicBankAccount_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_PUBLIC_BANK_ACCOUNT A 
+		]]>
+		<include refid="query_queryPublicBankAccountByEntity_condition" />
+	</select>
+	<!-- 根据实体动态条件模糊查询总数,如果属性的值为null或者空白则无效： -->
+	<select id="queryPublicBankAccountByEntityCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PublicBankAccountEntity">
+		<![CDATA[
+			 SELECT/** 综合:根据实体动态条件模糊查询总数,如果属性的值为null或者空白则无效  **/ count(*) 
+			 FROM BSE.T_BAS_PUBLIC_BANK_ACCOUNT A 
+		]]>
+		<include refid="query_queryPublicBankAccountByEntity_condition" />
+	</select>
+
+	<!-- 查询所有 对公银行账号 信息 以供下载 -->
+	<select id="queryPublicBankAccountForDownload"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PublicBankAccountEntity"
+		resultMap="publicBankAccountQueryResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有 对公银行账号 信息 以供下载  **/
+		]]>
+		<include refid="query_publicBankAccount_param" />
+		<![CDATA[
+			FROM BSE.T_BAS_PUBLIC_BANK_ACCOUNT A
+		]]>
+		<where>
+			<if test="modifyDate != null ">
+				AND A.MODIFY_TIME > #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="active != null and active != ''">
+				AND A.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+	
+	
+	
+	<!-- 下面是特殊查询 -->
+	
+	<!-- 根据 FID 精确查询ACTIVE为Y的数据 -->
+	<select id="queryPublicBankAccountOfActiveByFid" 
+			resultMap="publicBankAccountQueryResultMap"
+			parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PublicBankAccountEntity">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据 FID 精确查询ACTIVE为Y的数据  **/
+		]]>
+		<include refid="query_publicBankAccount_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_PUBLIC_BANK_ACCOUNT A 
+		]]>
+		<where>
+			A.FID=#{fid} 
+			AND A.ACTIVE= #{active,jdbcType=CHAR} 
+		</where>
+	</select>
+
+</mapper>

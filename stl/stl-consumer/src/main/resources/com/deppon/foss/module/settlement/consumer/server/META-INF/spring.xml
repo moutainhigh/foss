@@ -1,0 +1,649 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:jaxws="http://cxf.apache.org/jaxws"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://www.springframework.org/schema/jee 
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+			http://www.springframework.org/schema/aop 
+			http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+			http://cxf.apache.org/jaxws
+        	http://cxf.apache.org/schemas/jaxws.xsd"
+	default-autowire="byName" default-lazy-init="true">
+
+	<!--发票新增合并运单需求 322906 start-->
+	<!--返回给发票系统合并运单信息服务-->
+	<bean id="waybill4FIMSDao" class="com.deppon.foss.module.settlement.consumer.server.dao.impl.Waybill4FIMSDao"/>
+	<bean id="waybill4FIMSService"
+		  class="com.deppon.foss.module.settlement.consumer.server.service.impl.Waybill4FIMSService" />
+
+	<!--合并运单服务-->
+	<bean id="mergeWaybillDao"
+		  class="com.deppon.foss.module.settlement.consumer.server.dao.impl.MergeWaybillDao" />
+	<bean id="mergeWaybillService"
+		  class="com.deppon.foss.module.settlement.consumer.server.service.impl.MergeWaybillService" />
+
+	<!--运单或者合并运单申请状态服务-->
+	<bean id="waybillApplyStatusService"
+		  class="com.deppon.foss.module.settlement.consumer.server.service.impl.WaybillApplyStatusService" />
+	<!--合并运单服务-->
+	<bean id="mergeWaybillAction"
+		  class="com.deppon.foss.module.settlement.consumer.server.action.MergeWaybillAction"
+		  scope="prototype" />
+
+	<bean id="waybillAction"
+		  class="com.deppon.foss.module.settlement.consumer.server.action.WaybillAction"
+		  scope="prototype" />
+
+
+	<!--发票系统同步发票申请状态到foss-->
+	<bean id="waybillApplyStatusDao"
+		  class="com.deppon.foss.module.settlement.consumer.server.dao.impl.WaybillApplyStatusDao" />
+
+	<!--从crm获取纳税人信息-->
+	<bean id="taxPayerService"
+		  class="com.deppon.foss.module.settlement.consumer.server.service.impl.TaxPayerService"></bean>
+
+	<!--合并过的运单详细信息-->
+	<bean id="waybillDetailDao" class="com.deppon.foss.module.settlement.consumer.server.dao.impl.WaybillDetailDao"/>
+	<bean id="waybillDetailService" class="com.deppon.foss.module.settlement.consumer.server.service.impl.WaybillDetailService"></bean>
+	<!--发票新增合并运单需求 322906 2016.10.31 end -->
+	<!-- 代收货款日志操作Dao -->
+	<bean id="codLogEntityDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.CODLogEntityDao" />
+
+	<!-- 代收货款实体DAO -->
+	<bean id="codEntityDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.CODEntityDao" />
+		
+	<!-- 代收货款实体合并DAO -->
+	<bean id="codMergeEntityDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.CODMergeEntityDao" />	
+
+	<!-- 代收货款服务 通用服务 -->
+	<bean id="codCommonService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.CodCommonService" />
+
+	<!-- 代收货款服务 日志服务 -->
+	<bean id="codLogService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.CodLogService" />
+
+	<!-- 代收货款服务 -->
+	<bean id="billPayCODService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.BillPayCODService">
+	</bean>
+
+	<!-- 线下汇代收货款给客户服务 -->
+	<bean id="billPayCODOfflineService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.BillPayCODOfflineService" />
+
+	<!-- 线上汇代收货款给客户服务 -->
+	<bean id="billPayCODOnlineService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.BillPayCODOnlineService" />
+
+	<!-- 线上汇代收货款给客户结果服务 -->
+	<bean id="billPayCODOnlineResultService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.BillPayCODOnlineResultService" />
+
+	<!-- 线上汇代收货款审核通过优化 DDW大伟2015 -->
+	<bean id="billPayCODOnlineDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.BillPayCODOnlineDao" />
+
+	<!-- 代收货款出发申请服务 --><!-- add by 353654 -->
+	<bean id="salesPayCODService" class="com.deppon.foss.module.settlement.consumer.server.service.impl.SalesPayCODService">
+		<property name="grayByWaybillNoUrl">
+			<value>${cubc.gray.vestSourceBillNo}</value>
+		</property>
+		<property name="queryCodAuditListUrl">
+			<value>${cubc.queryCodAuditList.address}</value>
+		</property>
+	</bean>
+
+	<!-- 代收货款汇款失败服务 -->
+	<bean id="billPayCODFailService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.BillPayCODFailService" />
+
+	<!-- 冻结代收货款服务 -->
+	<bean id="billCODStateService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.BillCODStateService" />
+
+
+
+	<!-- 代收货款汇款确认服务 -->
+	<bean id="billPayCODConfirmService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.BillPayCODConfirmService" />
+
+	<!-- 代收货款汇款失败 -->
+	<bean id="codPayFailedAction"
+		class="com.deppon.foss.module.settlement.consumer.server.action.CODPayFailedAction"
+		scope="prototype" />
+
+	<!-- 代收货款汇款确认 -->
+	<bean id="codPayConfirmAction"
+		class="com.deppon.foss.module.settlement.consumer.server.action.CODPayConfirmAction"
+		scope="prototype" />
+
+	<!-- 代收货款资金部付款管理Action -->
+	<bean id="fundBillCODPaidAction"
+		class="com.deppon.foss.module.settlement.consumer.server.action.FundBillCODPaidAction"
+		scope="prototype" />
+
+	<!-- 出纳帐号修改Action -->
+	<bean id="salesPayCODAction"
+		class="com.deppon.foss.module.settlement.consumer.server.action.SalesPayCODAction"
+		scope="prototype" />
+	<!-- 小票单据 Action -->
+	<bean id="noteAction"
+		class="com.deppon.foss.module.settlement.consumer.server.action.NoteAction"
+		scope="prototype" />
+
+	<!-- 小票 Action -->
+	<bean id="otherRevenueAction"
+		class="com.deppon.foss.module.settlement.consumer.server.action.OtherRevenueAction"
+		scope="prototype" />
+
+	<!-- 小票单据明细 Service -->
+	<bean id="noteDetailsService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.NoteDetailsService" />
+
+	<!-- 小票单据申请 Service -->
+	<bean id="noteApplyService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.NoteApplyService" />
+
+	<!-- 小票单据申请 Service -->
+	<bean id="noteService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.NoteService" />
+		
+	<!-- 小票Service  modify by 353654-->
+	<bean id="otherRevenueService" class="com.deppon.foss.module.settlement.consumer.server.service.impl.OtherRevenueService">
+		<property name="esbAddress">
+			<value>${cubc.addOtherRevenue.address}</value>
+		</property>
+		<property name="grayByWaybillNoUrl">
+			<value>${cubc.gray.vestSourceBillNo}</value>
+		</property>
+	</bean>
+	<!-- 小票单据明细Dao -->
+	<bean id="noteDetailsDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.NoteDetailsDao" />
+
+	<!-- 小票下发Dao -->
+	<bean id="noteStockInDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.NoteStockInDao" />
+
+	<!-- 小票单据申请Dao -->
+	<bean id="noteApplyDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.NoteApplyDao" />
+
+	<!-- 小票单据查询Dao -->
+	<bean id="noteQueryDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.NoteQueryDao" />
+
+	<!-- 小票Dao -->
+	<bean id="otherRevenueDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.OtherRevenueDao" />
+
+	<!-- 应收单 Action -->
+	<bean id="billReceivableQueryAction"
+		class="com.deppon.foss.module.settlement.consumer.server.action.BillReceivableQueryAction"
+		scope="prototype" />
+
+	<!-- 应收单Service -->
+	<bean id="billReceivableQueryService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.BillReceivableQueryService" />
+
+	<!-- 应收单Dao -->
+	<bean id="billReceivableQueryDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.BillReceivableQueryDao" />
+
+	<!-- 应收应付单据查询 Action -->
+	<bean id="billReceivablePaymentQueryAction"
+		class="com.deppon.foss.module.settlement.consumer.server.action.BillReceivablePaymentQueryAction"
+		scope="prototype" />
+
+	<!-- 应收应付单查询Service -->
+	<bean id="billReceivablePaymentQueryService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.BillReceivablePaymentQueryService" />
+
+	<!-- 应收应付单查询Dao -->
+	<bean id="billReceivablePaymentQueryDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.BillReceivablePaymentQueryDao" />
+
+	<!-- 到付运费转临欠月结 ，实收货款接口 -->
+	<bean id="paymentSettlementService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.PaymentSettlementService" />
+
+	<!-- 客户信用额度还原Dao -->
+	<bean id="customerCreditQueryDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.CustomerCreditQueryDao" />
+
+	<!-- 客户信用额度更新 -->
+	<bean id="customerCreditRestoreService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.CustomerCreditRestoreService" />
+
+	<!-- 开单服务，供接送货调用 -->
+	<bean id="waybillPickupService" class="com.deppon.foss.module.settlement.consumer.server.service.impl.WaybillPickupService">
+		<property name="grayByWaybillNoUrl">
+			<value>${cubc.gray.vestSourceBillNo}</value>
+		</property>
+		<property name="queryCodAuditListUrl">
+			<value>${cubc.queryCodAuditList.address}</value>
+		</property>
+	</bean>
+
+	<!-- 签收反签收使用Service -->
+	<bean id="takingService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.TakingService" />
+
+	<!-- 专线签收service --><!-- add by 353654 -->
+	<bean id="lineSignService" class="com.deppon.foss.module.settlement.consumer.server.service.impl.LineSignService">
+		<property name="grayByWaybillNoUrl">
+			<value>${cubc.gray.vestSourceBillNo}</value>
+		</property>
+		<property name="queryCodAuditListUrl">
+			<value>${cubc.queryCodAuditList.address}</value>
+		</property>
+	</bean>
+
+	<!-- 空运的代收货款审核DAO -->
+	<bean id="airBillPaidCodQueryDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.AirBillPaidCODQueryDao" />
+
+	<!-- 空运代收货款审核service -->
+	<bean id="airBillPaidCodService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.AirBillPaidCODService" />
+
+	<!-- 空运代收货款审核Action -->
+	<bean id="airBillPaidCodAction"
+		class="com.deppon.foss.module.settlement.consumer.server.action.AirBillPaidCODAction"
+		scope="prototype" />
+
+	<!-- 快递代理的代收货款审核DAO ISSUE-3389 小件业务 -->
+	<bean id="landBillPaidCodQueryDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.LandBillPaidCODQueryDao" />
+
+	<!-- 快递代理代收货款审核service ISSUE-3389 小件业务 -->
+	<bean id="landBillPaidCodService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.LandBillPaidCODService" />
+
+	<!-- 快递代理代收货款审核Action ISSUE-3389 小件业务 -->
+	<bean id="landBillPaidCodAction"
+		class="com.deppon.foss.module.settlement.consumer.server.action.LandBillPaidCODAction"
+		scope="prototype" />
+
+
+	<!-- 代收货款综合查询DAO -->
+	<bean id="codCompositeQueryDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.CODCompositeQueryDao" />
+	<!-- 代收货款综合查询service -->
+	<bean id="codCompositeQueryService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.CODCompositeQueryService" />
+	<!-- 代收货款综合查询Action -->
+	<bean id="codCompositeQueryAction"
+		class="com.deppon.foss.module.settlement.consumer.server.action.CODCompositeQueryAction"
+		scope="prototype" />
+
+	<!-- 到付清查 Action -->
+	<bean id="billFreightToCollectQueryAction"
+		class="com.deppon.foss.module.settlement.consumer.server.action.BillFreightToCollectQueryAction"
+		scope="prototype" />
+
+	<!-- 到付清查Service -->
+	<bean id="billFreightToCollectQueryService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.BillFreightToCollectQueryService" />
+
+	<!-- 到付清查Dao -->
+	<bean id="billFreightToCollectQueryDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.BillFreightToCollectQueryDao" />
+
+	<!-- 现金收款单 Action -->
+	<bean id="billCashCollectionQueryAction"
+		class="com.deppon.foss.module.settlement.consumer.server.action.BillCashCollectionQueryAction"
+		scope="prototype" />
+
+	<!-- 现金收款单Service -->
+	<bean id="billCashCollectionQueryService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.BillCashCollectionQueryService" />
+
+	<!-- 现金收款单Dao -->
+	<bean id="billCashCollectionQueryDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.BillCashCollectionQueryDao" />
+
+
+	<!-- 现金收入报表明细Dao -->
+	<bean id="cashIncomeStatementsEntityDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.CashIncomeStatementsEntityDao" />
+
+	<bean id="cashIncomeStatementsService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.CashIncomeStatementsService" />
+
+
+	<!-- 现金收入报表明细Action -->
+	<bean id="cashIncomeStatementsQueryAction"
+		class="com.deppon.foss.module.settlement.consumer.server.action.CashIncomeStatementsQueryAction"
+		scope="prototype">
+	</bean>
+
+	<!-- 导出现金收入明细报表Action -->
+	<bean id="cashIncomeStatementsExportExeclAction"
+		class="com.deppon.foss.module.settlement.consumer.server.action.CashIncomeStatementsExportExeclAction"
+		scope="prototype" />
+
+	<!-- 开发票Dao -->
+	<bean id="invoiceDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.InvoiceDao" />
+
+	<!-- 开发发票服务Service -->
+	<bean id="invoiceService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.InvoiceService" />
+
+	<!-- 代收货款批次号DAO -->
+	<bean id="codBatchEntityDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.CODBatchEntityDao" />
+	<!-- 代收货款批次号服务 -->
+	<bean id="codBatchService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.CODBatchService" />
+
+	<!-- 将代收货款数据发送给银企服务 -->
+	<bean id="billPayCODOnlineSendService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.BillPayCODOnlineSendService" />
+
+	<!-- 生效装卸费Service -->
+	<bean id="laborfeeTakeEffectService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.LaborfeeTakeEffectService" />
+		
+	<!-- @author 218392 zyx 长期未退款代收货款冻结需求Service -->
+	<bean id="nonRefundCodLockService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.NonRefundCodLockService" />
+
+	<!-- 生效装卸费Dao -->
+	<bean id="billPayableTakeEffectDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.BillPayableTakeEffectDao" />
+
+	<!-- 异常出库service -->
+	<bean id="outWarehouseExceptionService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.OutWarehouseExceptionService">
+	</bean>
+	<bean id="outWarehouseExceptionDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.OutWarehouseExceptionDao" />
+
+	<!-- 现金支出报表 Action -->
+	<bean id="cashPaymentReportQueryAction"
+		class="com.deppon.foss.module.settlement.consumer.server.action.CashPaymentReportQueryAction"
+		scope="prototype" />
+
+	<!-- 现金支出报表Service -->
+	<bean id="cashPaymentReportQueryService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.CashPaymentReportQueryService" />
+
+	<!-- 现金支出报表Dao -->
+	<bean id="cashPaymentReportQueryDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.CashPaymentReportQueryDao" />
+
+	<!-- CRM接口Service -->
+	<jaxws:client id="fossToCrmService" address="${esb.ws}/foss2crm/fossToCrmService"
+		serviceClass="com.deppon.crm._interface.crmservice.FossToCrmService">
+		<!--jaxws:inInterceptors> <bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingInInterceptor"/> 
+			</jaxws:inInterceptors -->
+		<jaxws:outInterceptors>
+			<bean
+				class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingOutInterceptor" />
+		</jaxws:outInterceptors>
+	</jaxws:client>
+
+	<bean id="settlementInfoQueryDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.SettlementInfoQueryDao" />
+
+	<bean id="settlementInfoQueryService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.SettlementInfoQueryService" />
+
+	<!-- 查询最早欠款客户已用额度信息Service -->
+	<bean id="debtCreditLimitInfoQueryService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.DebtCreditLimitInfoQueryService" />
+
+	<!-- 查询最早欠款客户已用额度信息Dao -->
+	<bean id="debtCreditLimitInfoQueryDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.DebtCreditLimitInfoQueryDao" />
+
+	<!-- 理赔 Action -->
+	<bean id="billClaimQueryAction"
+		class="com.deppon.foss.module.settlement.consumer.server.action.BillClaimQueryAction"
+		scope="prototype" />
+	<!-- 理赔Service -->
+	<bean id="billClaimService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.BillClaimService" />
+	<!-- 理赔Dao -->
+	<bean id="billClaimDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.BillClaimDao" />
+
+	<!-- 未完全核销查询单据Service -->
+	<bean id="billUnverifyCompletedService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.BillUnverifyCompletedService" />
+	<!-- 未完全核销单据查询Dao -->
+	<bean id="billUnverifyCompletedDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.BillUnverifyCompletedDao" />
+
+	<!-- 部门信用额度、账期预警 -->
+	<bean id="queryOrgAlarmAction"
+		class="com.deppon.foss.module.settlement.consumer.server.action.QueryOrgAlarmAction"
+		scope="prototype" />
+
+	<!-- 发票标记查询Service -->
+	<bean id="custInvoiceMarkQueryService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.CustInvoiceMarkQueryService" />
+	<!-- 发票标记查询action -->
+	<bean id="custInvoiceMarkAction"
+		class="com.deppon.foss.module.settlement.consumer.server.action.CustInvoiceMarkAction"
+		scope="prototype" />
+	<!-- 更新客户信用额度 service -->
+	<bean id="customerCreditRefreshService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.CustomerCreditRefreshService" />
+	<!-- 更新客户信用额度 dao -->
+	<bean id="customerCreditRefreshDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.CustomerCreditRefreshDao" />
+
+	<!-- 查询运单小票信息提供发票系统Dao -->
+	<bean id="invoiceRegisterDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.InvoiceRegisterDao" />
+
+	<!-- 查询运单小票信息提供发票系统Service -->
+	<bean id="invoiceRegisterService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.InvoiceRegisterService" />
+
+	<!-- 定额发票登记action -->
+	<bean id="invoiceRegisterAction"
+		class="com.deppon.foss.module.settlement.consumer.server.action.InvoiceRegisterAction"
+		scope="prototype" />
+		
+	<!-- 定额发票登记ws -->
+	<jaxws:client id="fossToFimsService" address="${esb.ws}/foss2fims/fossToFimsService"
+	serviceClass="com.deppon.fims.inter.foss.service.FossToFimsService">
+		<jaxws:features>
+		<bean class="org.apache.cxf.feature.LoggingFeature"></bean>
+		</jaxws:features>
+		<jaxws:outInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingOutInterceptor"/>
+		</jaxws:outInterceptors>
+	</jaxws:client>
+	
+	<!-- 电子发票数据发送给发票系统Service -->
+	<bean id="electronicInvoiceSendService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.ElectronicInvoiceSendService" />
+	
+	<!-- 超时装卸费 action -->
+	<bean id="overdueSFPaymentApplyAction"
+		class="com.deppon.foss.module.settlement.consumer.server.action.OverdueSFPaymentApplyAction"
+		scope="prototype" />
+	<!-- 超时装卸费 service -->
+	<bean id="overdueSFPaymentApplyService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.OverdueSFPaymentApplyService" />
+	<!-- 超时装卸费 dao -->
+	<bean id="overdueSFPaymentApplyDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.OverdueSFPaymentApplyDao" />		
+	
+	<!--签收记录查询-->
+	<!--签收记录action-->
+	<bean id="queryPodInfoAction" 
+		  class="com.deppon.foss.module.settlement.consumer.server.action.QueryPodInfoAction"
+		  scope="prototype"/>
+	<!--签收记录service-->
+	<bean id="queryPodInfoService" 
+		  class="com.deppon.foss.module.settlement.consumer.server.service.impl.QueryPodInfoService"/>
+    <!--签收记录dao-->
+    <bean id="queryPodInfoDao" 
+		  class="com.deppon.foss.module.settlement.consumer.server.dao.impl.QueryPodInfoDao"/>
+
+    <!--理赔超时付款差错上报-->
+    <bean id="overdueClaimPaymentService"
+          class="com.deppon.foss.module.settlement.consumer.server.service.impl.OverdueClaimPaymentService">
+        <property name="esbRsAddr">
+            <value>${esb.rs}</value>
+        </property>
+    </bean>
+    <bean id="overdueClaimPaymentDao"
+          class="com.deppon.foss.module.settlement.consumer.server.dao.impl.OverdueClaimPaymentDao"/>
+
+	<!--***********代收货款审核**************-->
+	<bean id="codAuditService" class="com.deppon.foss.module.settlement.consumer.server.service.impl.CodAuditService"/>
+	<bean id="codAuditDao" class="com.deppon.foss.module.settlement.consumer.server.dao.impl.CodAuditDao"/>
+	<bean id="codAuditAction" class="com.deppon.foss.module.settlement.consumer.server.action.CodAuditAction" scope="prototype"/>
+	<bean id="codAuditLogDao" class="com.deppon.foss.module.settlement.consumer.server.dao.impl.CodAuditLogDao"/>
+	<bean id="codAuditLogService" class="com.deppon.foss.module.settlement.consumer.server.service.impl.CodAuditLogService"/>
+	
+	<!-- start -->
+	<!-- add by 269044-zhurongrong -->
+	<!-- 更新灰名单service -->
+	<bean id="grayCustomerService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.GrayCustomerService" />
+	<!-- 更新灰名单dao -->
+	<bean id="grayCustomerDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.GrayCustomerDao" />
+	<!-- end -->
+
+	<!--***********应收单月结**************-->
+	<bean id="billReceivableMonthlyQueryDao" class="com.deppon.foss.module.settlement.consumer.server.dao.impl.BillReceivableMonthlyQueryDao"/>
+	<bean id="billReceivableMonthlyQueryService" class="com.deppon.foss.module.settlement.consumer.server.service.impl.BillReceivableMonthlyQueryService"/>
+	<bean id="billReceivableMonthlyQueryAction" class="com.deppon.foss.module.settlement.consumer.server.action.BillReceivableMonthlyQueryAction" scope="prototype"/>
+	
+	<!-- 对接合伙人应收单service -->
+	<bean id="billReceivablePtpService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.BillReceivablePtpService" />
+	
+	<!-- 应收单明细查询 -->
+	<bean id="queryReceivableDetailAction" 
+		  class="com.deppon.foss.module.settlement.consumer.server.action.ReceivableDetailAction"  scope="prototype"/>
+
+	<!-- 对接合伙人应收单service -->
+	<bean id="billReceivablePtpChangeService"
+		  class="com.deppon.foss.module.settlement.consumer.server.service.impl.BillReceivablePtpChangeService" />
+		  
+	<!--
+		@项目：合伙人项目
+		@功能：定义 “发票对账单新增”的bean
+		@author:218371-foss-zhaoyanjun
+		@date:2016-01-27上午09:03
+	-->
+	<bean id="invoiceStatementManagerAction"
+		  class="com.deppon.foss.module.settlement.consumer.server.action.InvoiceStatementManagerAction" />
+		 
+	<!-- 对账单dao层 -->
+	<bean id="statementCreatDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.StatementCreatDao">
+	</bean>
+	
+	<bean id="statementCreatService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.StatementCreatService">
+	</bean>
+	
+	<bean id="synHhInvoiceService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.SynHhInvoiceService">
+	</bean>
+	
+	<!-- 应收单 Action -->
+	<bean id="billReceivablePartnerQueryAction"
+		class="com.deppon.foss.module.settlement.consumer.server.action.BillReceivablePartnerQueryAction"
+		scope="prototype" />
+	
+	<bean id="paymentSettlementDao"
+		class="com.deppon.foss.module.settlement.consumer.server.dao.impl.PaymentSettlementDao">
+	</bean>
+	
+	<!-- foss对接vts参数校验，结清货款service、dao -->	<!-- add by 353654 -->
+	<bean id="vtsValidateAndSettlementService" class="com.deppon.foss.module.settlement.consumer.server.service.impl.VtsValidateAndSettlementService">
+		<property name="grayByWaybillNoUrl">
+			<value>${cubc.gray.vestSourceBillNo}</value>
+		</property>
+		<property name="queryTradeListUrl">
+			<value>${cubc.queryTradeList.address}</value>
+		</property>
+	</bean>
+	
+	<bean id="vtsValidateAndSettlementDao"
+		  class="com.deppon.foss.module.settlement.consumer.server.dao.impl.VtsValidateAndSettlementDao" />
+
+	<!-- @218392 zhangyongxue  2016-05-24 20:32:20 VTS开单生成FOSS结算财务单据 Service层 -->
+	<bean id="vtsWaybillFinanceBillService"
+		  class="com.deppon.foss.module.settlement.consumer.server.service.impl.VtsWaybillFinanceBillService">
+	</bean>
+	
+	<!-- @326181  2016-09-20 快递对接FOSS,JOB定时执行该表异常日志Dao -->
+	<bean id="ecsFossErrorLogJobDao"
+		  class="com.deppon.foss.module.settlement.consumer.server.dao.impl.EcsFossErrorLogJobDao" />
+
+	<!-- @326181  2016-09-20 快递对接FOSS,JOB定时执行该表异常日志 Service层 -->
+	<bean id="ecsFossErrorLogJobService"
+		  class="com.deppon.foss.module.settlement.consumer.server.service.impl.EcsFossErrorLogJobService">
+	</bean>
+	
+	<!-- cubc签收 反签收 反签收申请  add by 353654 strat -->
+	<bean id="cUBCSignService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.CUBCSignService">
+		<property name="esbAddress">
+			<value>${cubc.sign.address}</value>
+		</property>
+	</bean>
+	<bean id="cUBCReverseSignService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.CUBCReverseSignService">
+		<property name="esbAddress">
+			<value>${cubc.reverseSign.address}</value>
+		</property>
+	</bean>
+	<!-- cubc签收 反签收 反签收申请  add by 353654 end -->
+	
+	<!-- 结清  反结清  add by 378375 开始  -->
+	<bean id="cubcSettlementService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.CubcSettlementService">
+		<property name="cubcAdd">
+			<value>${cubc.settlement.address}</value>
+		</property>
+	</bean>
+	<bean id="cubcReverseSettlementService"
+		class="com.deppon.foss.module.settlement.consumer.server.service.impl.CubcReverseSettlementService">
+		<property name="cubcRevAdd">
+			<value>${cubc.reversesettle.address}</value>
+		</property>
+	</bean>
+	<!-- 反签收(反结清)变更明细dao层 -->
+	<!-- <bean id ="reverseSignDetailDao" class="com.deppon.foss.module.pickup.sign.server.dao.impl.ReverseSignDetailDao" /> -->
+	<!-- 付款明细dao层 -->
+	<!-- <bean id ="repaymentDao" class="com.deppon.foss.module.pickup.sign.server.dao.impl.RepaymentDao" /> -->
+	<!-- 结清 反结清  add by 378375  结束 -->
+	
+	<!-- 231434 悟空开单、更改接口 --><!-- add by 353654 -->
+	<bean id="waybillPickupEcsService" class="com.deppon.foss.module.settlement.consumer.server.service.impl.WaybillPickupEcsService">
+		<property name="grayByWaybillNoUrl">
+			<value>${cubc.gray.vestSourceBillNo}</value>
+		</property>
+		<property name="queryCodAuditListUrl">
+			<value>${cubc.queryCodAuditList.address}</value>
+		</property>
+	</bean>
+</beans>

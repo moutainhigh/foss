@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!-- “车辆车型” -->
+<mapper namespace="foss.bse.bse-baseinfo.vehicletype">
+	<resultMap id="vehicleTypeResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.VehicleTypeEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="SEQ" property="seq" jdbcType="DECIMAL" />
+		<result column="VEHICLE_TYPE" property="vehicleType" jdbcType="VARCHAR" />
+		<result column="VEHICLE_LENGTH" property="vehicleLength" jdbcType="DECIMAL" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="VEHICLE_LENGTH_CODE" property="vehicleLengthCode" jdbcType="VARCHAR" />
+		<result column="VEHICLE_SORT" property="vehicleSort" jdbcType="VARCHAR" />
+		<result column="EACH_KILOMETERS_FEES" property="eachKilometersFees" jdbcType="DECIMAL" />
+		<result column="VEHICLE_LENGTH_NAME" property="vehicleLengthName" jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="vehicleType_ResultMap_Param">
+		<![CDATA[
+			ID, SEQ, VEHICLE_TYPE, 
+			VEHICLE_LENGTH, 
+			CREATE_TIME,
+			MODIFY_TIME, ACTIVE,
+			CREATE_USER_CODE,
+			MODIFY_USER_CODE,
+			VEHICLE_LENGTH_CODE,
+			VEHICLE_SORT,
+			EACH_KILOMETERS_FEES,
+			VEHICLE_LENGTH_NAME
+		]]>
+	</sql>
+	<!-- 根据entity精确查询的查询条件 ，如果属性为空，则此属性不作为条件 -->
+	<sql id="vehicleType_Pagination_Where_Base_Param">
+		<if test="id != null and id != ''">
+			ID = #{id,jdbcType=VARCHAR}
+		</if>
+		<if test="seq != null and seq != ''">
+			AND SEQ = #{seq,jdbcType=DECIMAL}
+		</if>
+		<if test="vehicleType != null and vehicleType != ''">
+			AND VEHICLE_TYPE = #{vehicleType,jdbcType=VARCHAR}
+		</if>
+		<if test="vehicleLength != null and vehicleLength != ''">
+			AND VEHICLE_LENGTH = #{vehicleLength,jdbcType=DECIMAL}
+		</if>
+		<if test="createDate != null and createDate != ''">
+			AND CREATE_TIME = #{createDate,jdbcType=TIMESTAMP}
+		</if>
+		<if test="modifyDate != null and modifyDate != ''">
+			AND MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+		</if>
+		<if test="active != null and active != ''">
+			AND ACTIVE = #{active,jdbcType=CHAR}
+		</if>
+		<if test="createUser != null and createUser != ''">
+			AND CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR}
+		</if>
+		<if test="modifyUser != null and modifyUser != ''">
+			AND MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR}
+		</if>
+		<if test="vehicleSort != null and vehicleSort != ''">
+			AND VEHICLE_SORT = #{vehicleSort,jdbcType=VARCHAR}
+		</if>
+		<if test="eachKilometersFees != null and eachKilometersFees != ''">
+			AND EACH_KILOMETERS_FEES = #{eachKilometersFees,jdbcType=DECIMAL}
+		</if>
+	</sql>
+	<sql id="vehicleType_Pagination_Where_Like_Param">
+		<trim prefix="WHERE" prefixOverrides="AND | OR">
+			<include refid="vehicleType_Pagination_Where_Base_Param"/>
+			<if test="vehicleLengthCode != null and vehicleLengthCode != ''">
+				AND VEHICLE_LENGTH_CODE like CONCAT(CONCAT('%', #{vehicleLengthCode,jdbcType=VARCHAR}), '%')
+			</if>
+			<if test="vehicleLengthName != null and vehicleLengthName != ''">
+				AND VEHICLE_LENGTH_NAME like CONCAT(CONCAT('%', #{vehicleLengthName,jdbcType=VARCHAR}), '%')
+			</if>
+		</trim>
+	</sql>
+	<sql id="vehicleType_Pagination_Where_Equals_Param">
+		<trim prefix="WHERE" prefixOverrides="AND | OR">
+			<include refid="vehicleType_Pagination_Where_Base_Param"/>
+			<if test="vehicleLengthCode != null and vehicleLengthCode != ''">
+				AND VEHICLE_LENGTH_CODE = #{vehicleLengthCode,jdbcType=VARCHAR}
+			</if>
+			<if test="vehicleLengthName != null and vehicleLengthName != ''">
+				AND VEHICLE_LENGTH_NAME = #{vehicleLengthName,jdbcType=VARCHAR}
+			</if>
+		</trim>
+	</sql>
+	<!-- 查询车辆车型信息 -->
+	<select id="queryLeasedVehicleTypeListBySelective" resultMap="vehicleTypeResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.VehicleTypeEntity">
+		select
+		/** 综合:查询车辆车型信息 **/
+		<include refid="vehicleType_ResultMap_Param" />
+		from BSE.T_BAS_VEHICLE_TYPE_LENGTH
+		<include refid="vehicleType_Pagination_Where_Equals_Param"/>
+	</select>
+	<select id="queryLeasedVehicleTypeListBySelectiveCondition" resultMap="vehicleTypeResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.VehicleTypeEntity">
+		select
+		<include refid="vehicleType_ResultMap_Param" />
+		from BSE.T_BAS_VEHICLE_TYPE_LENGTH
+		<include refid="vehicleType_Pagination_Where_Like_Param"/>
+		ORDER BY SEQ,VEHICLE_LENGTH DESC
+	</select>
+	<select id="queryLeasedVehicleTypeRecordCountBySelectiveCondition" resultType="java.lang.Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.VehicleTypeEntity">
+		<![CDATA[ select count(*) from BSE.T_BAS_VEHICLE_TYPE_LENGTH ]]>
+		<include refid="vehicleType_Pagination_Where_Like_Param"/>
+	</select>
+	<select id="queryLeasedVehicleSeqBySeq" resultType="java.lang.Long" parameterType="java.util.Map">
+		SELECT COUNT(*) FROM BSE.T_BAS_VEHICLE_TYPE_LENGTH T WHERE T.SEQ = #{seq,jdbcType=DECIMAL} AND T.ACTIVE=#{active,jdbcType=CHAR}
+	</select>
+	<select id="queryLeasedVehicleTypeMaxSeq" resultType="java.math.BigDecimal"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.VehicleTypeEntity">
+		<![CDATA[ select MAX(SEQ) from BSE.T_BAS_VEHICLE_TYPE_LENGTH ]]>
+		<include refid="vehicleType_Pagination_Where_Equals_Param"/>
+	</select>
+	<!-- 删除车辆车型信息 -->
+	<delete id="deleteLeasedVehicleType" parameterType="java.lang.String">
+		delete/** 综合:删除车辆车型信息 **/ from
+		BSE.T_BAS_VEHICLE_TYPE_LENGTH
+		where ID = #{id,jdbcType=VARCHAR}
+	</delete>
+	<!-- 新增车辆车型信息 -->
+	<insert id="addLeasedVehicleType"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.VehicleTypeEntity">
+		insert/** 综合:新增车辆车型信息 **/ into BSE.T_BAS_VEHICLE_TYPE_LENGTH (ID, SEQ,
+		VEHICLE_TYPE,
+		VEHICLE_LENGTH, CREATE_TIME, MODIFY_TIME,
+		ACTIVE,
+		CREATE_USER_CODE, MODIFY_USER_CODE,
+		VEHICLE_LENGTH_CODE,VEHICLE_SORT,
+		EACH_KILOMETERS_FEES,
+		VEHICLE_LENGTH_NAME
+		)
+		values (#{id,jdbcType=VARCHAR},
+		#{seq,jdbcType=DECIMAL},
+		#{vehicleType,jdbcType=VARCHAR},
+		#{vehicleLength,jdbcType=DECIMAL}, #{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=CHAR},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR},
+		#{vehicleLengthCode,jdbcType=VARCHAR},
+		#{vehicleSort,jdbcType=VARCHAR},
+		#{eachKilometersFees,jdbcType=DECIMAL},
+		#{vehicleLengthName,jdbcType=VARCHAR}
+		)
+	</insert>
+	<insert id="addLeasedVehicleTypeBySelective"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.VehicleTypeEntity">
+		insert into BSE.T_BAS_VEHICLE_TYPE_LENGTH
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null and id != ''">
+				ID,
+			</if>
+			<if test="seq != null and seq != ''">
+				SEQ,
+			</if>
+			<if test="vehicleType != null and vehicleType != ''">
+				VEHICLE_TYPE,
+			</if>
+			<if test="vehicleLength != null and vehicleLength != ''">
+				VEHICLE_LENGTH,
+			</if>
+			<if test="createDate != null and createDate != ''">
+				CREATE_TIME,
+			</if>
+			<if test="modifyDate != null and modifyDate != ''">
+				MODIFY_TIME,
+			</if>
+			<if test="active != null and active != ''">
+				ACTIVE,
+			</if>
+			<if test="createUser != null and createUser != ''">
+				CREATE_USER_CODE,
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				MODIFY_USER_CODE,
+			</if>
+			<if test="vehicleLengthCode != null and vehicleLengthCode != ''">
+				VEHICLE_LENGTH_CODE,
+			</if>
+			<if test="vehicleSort != null and vehicleSort != ''">
+				VEHICLE_SORT,
+			</if>
+			<if test="eachKilometersFees != null and eachKilometersFees != ''">
+				EACH_KILOMETERS_FEES,
+			</if>
+			<if test="vehicleLengthName != null and vehicleLengthName != ''">
+				VEHICLE_LENGTH_NAME,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null and id != ''">
+				#{id,jdbcType=VARCHAR},
+			</if>
+			<if test="seq != null and seq != ''">
+				#{seq,jdbcType=DECIMAL},
+			</if>
+			<if test="vehicleType != null and vehicleType != ''">
+				#{vehicleType,jdbcType=VARCHAR},
+			</if>
+			<if test="vehicleLength != null and vehicleLength != ''">
+				#{vehicleLength,jdbcType=DECIMAL},
+			</if>
+			<if test="createDate != null and createDate != ''">
+				#{createDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyDate != null and modifyDate != ''">
+				#{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="active != null and active != ''">
+				#{active,jdbcType=CHAR},
+			</if>
+			<if test="createUser != null and createUser != ''">
+				#{createUser,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				#{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="vehicleLengthCode != null and vehicleLengthCode != ''">
+				#{vehicleLengthCode,jdbcType=VARCHAR},
+			</if>
+			<if test="vehicleSort != null and vehicleSort != ''">
+				#{vehicleSort,jdbcType=VARCHAR},
+			</if>
+			<if test="eachKilometersFees != null and eachKilometersFees != ''">
+				#{eachKilometersFees,jdbcType=DECIMAL},
+			</if>
+			<if test="vehicleLengthName != null and vehicleLengthName != ''">
+				#{vehicleLengthName,jdbcType=VARCHAR},
+			</if>
+		</trim>
+	</insert>
+	<!-- 修改车辆车型信息 -->
+	<update id="updateLeasedVehicleTypeBySelective"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.VehicleTypeEntity">
+		update/** 综合:修改车辆车型信息 **/ BSE.T_BAS_VEHICLE_TYPE_LENGTH
+		<set>
+			<if test="seq != null and seq != ''">
+				SEQ = #{seq,jdbcType=DECIMAL},
+			</if>
+			<if test="vehicleType != null and vehicleType != ''">
+				VEHICLE_TYPE = #{vehicleType,jdbcType=VARCHAR},
+			</if>
+			<if test="vehicleLength != null and vehicleLength != ''">
+				VEHICLE_LENGTH = #{vehicleLength,jdbcType=DECIMAL},
+			</if>
+			<if test="createDate != null and createDate != ''">
+				CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyDate != null and modifyDate != ''">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="createUser != null and createUser != ''">
+				CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="vehicleLengthCode != null and vehicleLengthCode != ''">
+				VEHICLE_LENGTH_CODE = #{vehicleLengthCode,jdbcType=VARCHAR},
+			</if>
+			<if test="vehicleSort != null and vehicleSort != ''">
+				VEHICLE_SORT = #{vehicleSort,jdbcType=VARCHAR},
+			</if>
+			<if test="eachKilometersFees != null and eachKilometersFees != ''">
+				EACH_KILOMETERS_FEES = #{eachKilometersFees,jdbcType=DECIMAL},
+			</if>
+			<if test="vehicleLengthName != null and vehicleLengthName != ''">
+				VEHICLE_LENGTH_NAME = #{vehicleLengthName,jdbcType=VARCHAR},
+			</if>
+		</set>
+		where ID = #{id,jdbcType=VARCHAR}
+	</update>
+	<update id="updateLeasedVehicleTypeActiveStatusByBatchIds" parameterType="java.util.Map">
+		<![CDATA[ update BSE.T_BAS_VEHICLE_TYPE_LENGTH ]]>
+		<set>
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="active != null">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+		</set>
+		<trim prefix="WHERE" prefixOverrides="AND | OR">
+			<foreach collection="ids" item="id">
+				<if test="id != null and id != ''">
+					OR ID = #{id,jdbcType=VARCHAR}
+				</if>
+			</foreach>
+		</trim>
+	</update>
+	<update id="updateLeasedVehicleType"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.VehicleTypeEntity">
+		update BSE.T_BAS_VEHICLE_TYPE_LENGTH
+		set SEQ =
+		#{seq,jdbcType=DECIMAL},
+		VEHICLE_TYPE =
+		#{vehicleType,jdbcType=VARCHAR},
+		VEHICLE_LENGTH =
+		#{vehicleLength,jdbcType=DECIMAL},
+		CREATE_TIME =
+		#{createDate,jdbcType=TIMESTAMP},
+		MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+		ACTIVE = #{active,jdbcType=CHAR},
+		CREATE_USER_CODE =
+		#{createUser,jdbcType=VARCHAR},
+		MODIFY_USER_CODE =
+		#{modifyUser,jdbcType=VARCHAR},
+		VEHICLE_LENGTH_CODE = 
+		#{vehicleLengthCode,jdbcType=VARCHAR},
+		VEHICLE_SORT = 
+		#{vehicleSort,jdbcType=VARCHAR},
+		EACH_KILOMETERS_FEES = 
+		#{eachKilometersFees,jdbcType=DECIMAL},
+		VEHICLE_LENGTH_NAME = 
+		#{vehicleLengthName,jdbcType=VARCHAR}
+		where ID = #{id,jdbcType=VARCHAR}
+	</update>
+</mapper>

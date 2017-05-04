@@ -1,0 +1,866 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.deppon.foss.module.pickup.predeliver.api.server.dao.IVisibleOrderDao" >
+	
+	<!-- 基础映射 -->
+	<resultMap id="BaseResultMap" type="com.deppon.foss.module.pickup.predeliver.api.shared.domain.VisualBillEntity" >
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="GOODS_QTY_TOTAL" property="goodsQtyTotal" jdbcType="DECIMAL" />
+		<result column="GOODS_WEIGHT" property="goodsWeight" jdbcType="DECIMAL" />
+		<result column="GOODS_VOLUME" property="goodsVolume" jdbcType="DECIMAL" />
+		<result column="GOODS_SIZE" property="goodsSize" jdbcType="VARCHAR"  typeHandler="org.apache.ibatis.type.ClobTypeHandler"/>
+		<result column="GOODS_PACKAGE" property="goodsPackage" jdbcType="VARCHAR" />
+		<result column="LONGITUDE" property="longitude" jdbcType="VARCHAR" />
+		<result column="LATITUDE" property="latitude" jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_PROV_CODE" property="receiveCustomerProvCode" jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_CITY_CODE" property="receiveCustomerCityCode" jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_DIST_CODE" property="receiveCustomerDistCode" jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_ADDRESS" property="receiveCustomerAddress" jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_ADDRESS_NOTE" property="receiveCustomerAddressNote" jdbcType="VARCHAR" />
+		<result column="PRE_DELIVER_DATE" property="preDeliverDate" jdbcType="VARCHAR" />
+		<result column="DELIVERY_TIME_INTERVAL" property="deliveryTimeInterval" jdbcType="VARCHAR" />
+		<result column="DELIVERY_TIME_START" property="deliveryTimeStart" jdbcType="VARCHAR" />
+		<result column="DELIVERY_TIME_OVER" property="deliveryTimeOver" jdbcType="VARCHAR" />		
+		<result column="SPECIAL_ADDRESS_TYPE" property="specialAddressType" jdbcType="VARCHAR" />
+		<result column="TALLYMAN_RETURN_REASON" property="tallymanReturnReason" jdbcType="VARCHAR" />
+		<result column="LATE_NO" property="lateNo" jdbcType="CHAR" />
+		<result column="ACTUAL_SMALLZONE_CODE" property="actualSmallzoneCode" jdbcType="VARCHAR" />	
+		<result column="PRODUCT_CODE" property="productCode" jdbcType="VARCHAR" />	
+		<result column="TO_PAY_AMOUNT" property="toPayAmount" jdbcType="DECIMAL" />	
+		<result column="IS_EXHIBITION" property="isExhibition" jdbcType="VARCHAR" />
+		<result column="IS_EMPTY_CAR" property="isEmptyCar" jdbcType="CHAR" />	
+		<result column="UITRA_LONG_DELIVERY" property="uitraLongDelivery" jdbcType="VARCHAR" />	
+		<result column="RECEIVE_METHOD" property="receiveMethod" jdbcType="VARCHAR" />	
+	</resultMap>
+	
+	<!-- Dto扩展映射 -->
+	<resultMap id="BillDtoResultMap" type="com.deppon.foss.module.pickup.predeliver.api.shared.dto.VisualBillDto" extends="BaseResultMap">
+		<result column="ARRANGETOQTY" property="arrangeToQty" jdbcType="DECIMAL" />   <!--省名称 -->
+		<result column="ACTUAL_PROVN" property="actualProvN" jdbcType="VARCHAR" />   <!--省名称 -->
+		<result column="ACTUAL_CITYN" property="actualCityN" jdbcType="VARCHAR" />	<!--市名称 -->
+		<result column="ACTUAL_DISTRICTN" property="actualDistrictN" jdbcType="VARCHAR" /> 	<!-- 区名称-->
+		<result column="GOOD_STATUS" property="goodStatus" jdbcType="VARCHAR" />	<!-- 货物状态 -->
+		<result column="PROVCITYN" property="provCityN" jdbcType="VARCHAR" />   <!-- 聚合-省市 -->
+		<result column="TOTALCOUNT" property="totalCount" jdbcType="DECIMAL" /> <!-- 聚合-条数 -->
+		<result column="ACTUAL_SMALLZONE_CODE" property="actualSmallzoneCode" jdbcType="VARCHAR" /> <!-- 区级下的小区图层id -->
+		<result column="ACTUAL_VEHICLE_NO" property="actualVehicleNo" jdbcType="VARCHAR" /> <!-- 区级下的小区对应车牌号 -->
+	</resultMap>
+		
+	<!-- 待排运单明细映射 -->	
+	<resultMap id="WaybillToArrangeResultMap" type="com.deppon.foss.module.pickup.predeliver.api.shared.dto.WaybillToArrangeDto">
+		<result column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="GOODS_NAME" property="goodsName" jdbcType="VARCHAR" />
+		<result column="GOODS_WEIGHT_TOTAL" property="weight" jdbcType="DECIMAL" />
+		<result column="GOODS_SIZE" property="dimension" jdbcType="VARCHAR" typeHandler="org.apache.ibatis.type.ClobTypeHandler" />
+		<result column="GOODS_VOLUME_TOTAL" property="goodsVolumeTotal" jdbcType="VARCHAR" />
+		<result column="GOODS_PACKAGE" property="goodsPackage" jdbcType="VARCHAR" />
+		<result column="GOODS_QTY_TOTAL" property="waybillGoodsQty" jdbcType="DECIMAL" />
+		<result column="ARRANGABLE_GOODS_QTY" property="arrangableGoodsQty" jdbcType="DECIMAL" />
+		<result column="ARRANGABLE_GOODS_QTY" property="preArrangeGoodsQty" jdbcType="DECIMAL" />
+		<result column="ARRANGABLE_GOODS_QTY" property="arrangeGoodsQty" jdbcType="DECIMAL" />
+		<result column="BILL_QTY" property="billQty" jdbcType="DECIMAL" />
+		<result column="PRODUCT_CODE" property="transportType" jdbcType="VARCHAR" />
+		<result column="ARRIVE_TIME" property="arriveTime" jdbcType="TIMESTAMP" />
+		<result column="DELIVER_DATE" property="deliverDate" jdbcType="TIMESTAMP" />
+		<result column="RECEIVE_CUSTOMER_CONTACT" property="consignee" jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_MOBILEPHONE" property="consigneeContact" jdbcType="VARCHAR" />
+			
+		<result column="RECEIVE_CUSTOMER_PROV_CODE" property="receiveCustomerProvCode" jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_CITY_CODE" property="receiveCustomerCityCode" jdbcType="VARCHAR" />	
+		<result column="RECEIVE_CUSTOMER_DIST_CODE" property="receiveCustomerDistCode" jdbcType="VARCHAR" />
+				
+		<result column="RECEIVE_CUSTOMER_ADDRESS" property="consigneeAddress" jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_ADDRESS_NOTE" property="consigneeAddressNote" jdbcType="VARCHAR" />
+		<result column="PRE_CUSTOMER_PICKUP_TIME" property="estimatedDeliverTime" jdbcType="TIMESTAMP" />
+		<result column="PAYMENT_TYPE" property="paymentType" jdbcType="VARCHAR" />
+		<result column="REGION_NAME" property="deliverRegionName" jdbcType="VARCHAR" />
+		<result column="INNER_NOTES" property="notes" jdbcType="VARCHAR" typeHandler="org.apache.ibatis.type.ClobTypeHandler"/>
+		<result column="RECEIVE_METHOD" property="deliverType" jdbcType="VARCHAR" />
+		<result column="IS_ALREADY_CONTACT" property="isAlreadyContact" jdbcType="VARCHAR" />
+		<result column="IS_NEED_INVOICE" property="isNeedInvoice" jdbcType="VARCHAR" />
+		<result column="IS_SENT_REQUIRED" property="isSentRequired" jdbcType="VARCHAR" />
+		<result column="DELIVER_REQUIRE" property="deliverRequire" jdbcType="VARCHAR" />
+		<result column="GOODS_VOLUME_TOTAL" property="goodsVolumeTotal" jdbcType="DECIMAL" />
+		<result column="TO_PAY_AMOUNT" property="payAmount" jdbcType="DECIMAL" />
+		<result column="FAST_WAYBILL_FLAG" property="fastWaybillFlag" jdbcType="DECIMAL" />
+		<result column="RETURN_BILL_TYPE" property="returnBillType" jdbcType="VARCHAR" />
+		<result column="CURRENCY_CODE" property="currencyCode" jdbcType="VARCHAR" />
+		<result column="GOODS_PACKAGE" property="goodsPackage" jdbcType="VARCHAR" />
+		<result column="STOCK_GOODS_QTY" property="stockGoodQty" jdbcType="DECIMAL" />
+		<result column="DELIVERSUGGEST" property="deliverSuggest" jdbcType="VARCHAR" />
+		<result column="together_Send_Code" property="togetherSendCode" jdbcType="VARCHAR" />
+		<result column="TSRVDELIVERHANDOVERBILLID" property="srvDeliverHandoverbillId" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	
+	<resultMap id="DeliverbillNewResultMap" type="com.deppon.foss.module.pickup.predeliver.api.shared.dto.DeliverbillNewDto">
+		<result column="id" property="id" jdbcType="VARCHAR" />
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="DELIVERBILL_NO" property="deliverbillNo" jdbcType="VARCHAR" />
+		<result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+		<result column="DRIVER_NAME" property="driverName" jdbcType="VARCHAR" />
+		<result column="CAR_TASKINFO" property="carTaskInfo" jdbcType="VARCHAR" />
+		<result column="FREQUENCYNO" property="frequencyNo" jdbcType="VARCHAR" />
+		<result column="PRE_CARTASK_TIME" property="preCarTaskTime" jdbcType="VARCHAR" />
+		<result column="TAKE_GOODS_DEPTCODE" property="takeGoodsDeptCode" jdbcType="VARCHAR" />
+		<result column="TAKE_GOODS_DEPTNAME" property="takeGoodsDeptName" jdbcType="VARCHAR" />
+		<result column="EXPECTEDBRINGVOLUME" property="expectedbringVolume" jdbcType="DECIMAL" />
+		<result column="TRANSFER_DEPTCODE" property="transferDeptCode" jdbcType="VARCHAR" />
+		<result column="TRANSFER_DEPTNAME" property="transferDeptName" jdbcType="VARCHAR" />
+		<result column="TOTAL_DISTANCE" property="totalDistance" jdbcType="DECIMAL" />
+		<result column="AUTO_SORT_CALCULATE_TYPE" property="calculateType" jdbcType="VARCHAR" />
+		
+	</resultMap>
+	<!-- 待排运单明细映射 -->	
+	<resultMap id="VisibleAutoSortResultMap" type="com.deppon.foss.module.pickup.predeliver.api.shared.dto.VisibleAutoSortDto">
+		<result column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="waybill_no" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="serial_no" property="serialNo" jdbcType="INTEGER" />
+		<result column="receive_customer_address" property="receiveCustomerAddress" jdbcType="VARCHAR" />
+		<result column="recommended_delivery_time" property="recommendedDeliveryTime" jdbcType="VARCHAR" />
+		<result column="delivery_time_interval" property="deliveryTimeInterval" jdbcType="VARCHAR" />
+		<result column="delivery_time_start" property="deliveryTimeStart" jdbcType="VARCHAR" />
+		<result column="delivery_time_over" property="deliveryTimeOver" jdbcType="VARCHAR" />
+		<result column="special_address_type" property="specialAddressType" jdbcType="VARCHAR" />
+		<result column="WEIGHT" property="goodsWeight" jdbcType="DECIMAL" />
+		<result column="GOODS_VOLUME_TOTAL" property="goodsVolume" jdbcType="DECIMAL" />
+		<result column="is_exhibition" property="isExhibition" jdbcType="VARCHAR" />
+		<result column="UITRA_LONG_DELIVERY" property="uitraLongDelivery" jdbcType="VARCHAR" />
+		<result column="TO_PAY_AMOUNT" property="toPayAmount" jdbcType="DECIMAL" />
+		<result column="receive_method" property="receiveMethod" jdbcType="VARCHAR" />
+		<result column="GOODS_SIZE" property="goodsSize" jdbcType="VARCHAR"  typeHandler="org.apache.ibatis.type.ClobTypeHandler"/>
+		<result column="goods_package" property="goodsPackage" jdbcType="VARCHAR" />
+		<result column="longitude" property="longitude" jdbcType="VARCHAR" />
+		<result column="latitude" property="latitude" jdbcType="VARCHAR" />
+		<result column="DELIVER_DATE" property="deliverDate" jdbcType="TIMESTAMP" />
+		<result column="ACTUAL_SMALLZONE_CODE" property="actualSmallzoneCode" jdbcType="VARCHAR" />
+		<result column="ACTUAL_SMALLZONE_NAME" property="actualSmallzoneName" jdbcType="VARCHAR" />
+		<result column="GOODS_QTY_TOTAL" property="goodsQtyTotal" jdbcType="VARCHAR" />
+		<result column="PRODUCT_CODE" property="productCode" jdbcType="VARCHAR" />
+		<result column="IS_EMPTY_CAR" property="isEmptyCar" jdbcType="VARCHAR" />
+		<result column="arrange_goods_qty" property="arrangeGoodsQty" jdbcType="DECIMAL" />
+		<result column="cash_time" property="cashTime" jdbcType="TIMESTAMP" />
+	</resultMap>
+	
+	<!-- 基础字段 -->
+	<sql id="Base_Column_List" >
+		HAND.WAYBILL_NO,
+		HAND.GOODS_QTY_TOTAL,
+		round((HAND.GOODS_WEIGHT * (HAND.BILL_QTY - AF.Arrange_Goods_Qty)/ HAND.GOODS_QTY_TOTAL),1) AS GOODS_WEIGHT,
+		round((HAND.GOODS_VOLUME * (HAND.BILL_QTY - AF.Arrange_Goods_Qty)/HAND.GOODS_QTY_TOTAL),2) AS GOODS_VOLUME,
+		HAND.GOODS_SIZE,
+		HAND.GOODS_PACKAGE,
+		HAND.RECEIVE_CUSTOMER_PROV_CODE,
+		HAND.RECEIVE_CUSTOMER_CITY_CODE,
+		HAND.RECEIVE_CUSTOMER_DIST_CODE,
+		HAND.RECEIVE_CUSTOMER_ADDRESS,
+		HAND.RECEIVE_CUSTOMER_ADDRESS_NOTE,
+		TO_CHAR(HAND.PRE_DELIVER_DATE,'YYYY-MM-DD') AS PRE_DELIVER_DATE,
+		HAND.DELIVERY_TIME_INTERVAL,
+		HAND.DELIVERY_TIME_START,
+		HAND.DELIVERY_TIME_OVER,
+		HAND.SPECIAL_ADDRESS_TYPE,
+		HAND.TALLYMAN_RETURN_REASON,
+		HAND.LATE_NO,	
+		HAND.LONGITUDE,
+		HAND.LATITUDE,
+		HAND.IS_EXHIBITION,
+		HAND.UITRA_LONG_DELIVERY,
+		HAND.TO_PAY_AMOUNT / 100 AS TO_PAY_AMOUNT,
+		HAND.RECEIVE_METHOD,
+		HAND.ACTUAL_SMALLZONE_CODE,
+		HAND.IS_EMPTY_CAR,
+	</sql>	
+	
+	<!-- Dto扩展字段-->
+	<sql id="BillDto_Column_list">
+		(HAND.BILL_QTY - AF.ARRANGE_GOODS_QTY) AS ARRANGETOQTY,
+		(SELECT NAME FROM BSE.T_BAS_DISTRICT B WHERE B.CODE=HAND.RECEIVE_CUSTOMER_PROV_CODE AND B.ACTIVE='Y' AND ROWNUM = 1) ACTUAL_PROVN,
+		(SELECT NAME FROM BSE.T_BAS_DISTRICT B WHERE B.CODE=HAND.RECEIVE_CUSTOMER_CITY_CODE AND B.ACTIVE='Y' AND ROWNUM = 1) ACTUAL_CITYN,
+		(SELECT NAME FROM BSE.T_BAS_DISTRICT B WHERE B.CODE=HAND.RECEIVE_CUSTOMER_DIST_CODE AND B.ACTIVE='Y' AND ROWNUM = 1) ACTUAL_DISTRICTN,
+	</sql>
+	
+	<!-- 可视化排单查询.界面查询条件 -->
+	<sql id="select_ByParam_Where">
+		<!-- 运单号 -->
+		<if test=" waybillNos != null  and waybillNos.length > 0">
+			AND HAND.WAYBILL_NO IN
+			<foreach collection="waybillNos" index="index" item="wayBillNo" open="(" separator="," close=")">
+				#{wayBillNo}
+			</foreach>
+		</if>
+		<!-- 送货日期 -->
+		<if test="deliverDate != null and deliverDate !='' " >  
+			AND <![CDATA[ TO_CHAR(HAND.PRE_DELIVER_DATE , 'YYYY-MM-DD') ]]> = #{deliverDate, jdbcType=VARCHAR}
+		</if> 
+		<!-- 运输性质 -->
+		<if test="productCodes != null and productCodes.length > 0 " >
+			AND HAND.PRODUCT_CODE IN
+			<foreach collection="productCodes" index="index" item="productCode" open="(" separator="," close=")">
+				 #{productCode}
+			</foreach>
+		</if>
+		<!-- 所属车队组 -->
+		<if test="vehicleType != null and vehicleType !='' " >
+			AND EXISTS (
+						select 1
+							from BSE.T_BAS_SERVICE_BIGZONE tsb
+						 inner join BSE.T_BAS_SERVICE_SMALLZONE sz
+								on tsb.VIRTUAL_CODE = sz.BIGZONECODE
+								where sz.REGION_TYPE= 'DE' 
+						and hand.ACTUAL_SMALLZONE_CODE = sz.REGION_CODE
+						and sz.ACTIVE='Y'
+						and tsb.ACTIVE='Y'
+						and tsb.TRANS_DEPARTMENT_CODE = #{vehicleType, jdbcType=VARCHAR}						
+			)
+		</if>
+		<!-- 送货大区 -->
+		<if test=" deliverGrandAreas != null  and deliverGrandAreas.length > 0">
+			AND EXISTS (
+					select 1 from BSE.T_BAS_SERVICE_BIGZONE  bsb
+						inner join bse.T_BAS_SERVICE_SMALLZONE sz
+							on bsb.VIRTUAL_CODE = sz.bigzonecode
+						where sz.REGION_TYPE= 'DE' 
+						and hand.ACTUAL_SMALLZONE_CODE = sz.REGION_CODE
+						and sz.ACTIVE='Y'
+						and bsb.ACTIVE='Y'
+						and bsb.REGION_CODE in  
+						<foreach collection="deliverGrandAreas" index="index" item="bAreaCode" open="(" separator="," close=")">
+								#{bAreaCode}
+						</foreach>
+			)
+		</if>	
+		<!-- 送货小区 -->
+		<if test=" deliverSmallAreas != null  and deliverSmallAreas.length > 0">
+			AND HAND.ACTUAL_SMALLZONE_CODE IN
+			<foreach collection="deliverSmallAreas" index="index" item="sAreaCode" open="(" separator="," close=")">
+				#{sAreaCode}
+			</foreach>
+		</if>		 
+		
+		<!-- 特殊运单.特殊货物类型 -->
+		<if test="specialNoType == 'Y'.toString() ">
+				AND (
+				<![CDATA[ HAND.GOODS_WEIGHT > 500 
+					OR HAND.GOODS_VOLUME > 2.5
+					OR HAND.IS_EXHIBITION = 'Y'
+					OR HAND.UITRA_LONG_DELIVERY = 'Y'
+					OR HAND.TO_PAY_AMOUNT >= 1000000 
+					OR HAND.RECEIVE_METHOD IN ('LARGE_DELIVER_UP','DELIVER_INGA') 
+				]]> 
+			<!-- 特殊运单.特殊地址类型 -->
+			<if test="specialAddressType != null and specialAddressType.length > 0">
+					OR HAND.SPECIAL_ADDRESS_TYPE IN
+					<foreach collection="specialAddressType" index="index" item="addressType" open="(" separator="," close=")">
+						#{addressType}
+					</foreach>
+			</if>
+			)
+		</if>
+
+		<!-- 理货员退回 -->
+		<if test=" tallymanReturnReason == 'Y'.toString() ">
+			AND (HAND.TALLYMAN_RETURN_REASON IS NOT NULL OR HAND.TALLYMAN_RETURN_REASON <![CDATA[ <> ]]> '')
+		</if>
+		<!-- 晚交运单 -->
+		<if test=" lateNo == 'Y'.toString() ">
+			AND HAND.LATE_NO = #{lateNo,jdbcType=VARCHAR}
+		</if> 
+	 <!-- 进仓货 -->
+		<if test=" deliverInga == 'Y'.toString() ">
+			<![CDATA[ AND ( HAND.RECEIVE_METHOD = 'DELIVER_INGA' 
+				OR HAND.SPECIAL_ADDRESS_TYPE IN ('PKP_GODOWNENTRY_NULLCAR', 'PKP_GODOWNENTRY_NOTNULLCAR'))
+			]]> 
+		</if> 
+	 <!-- 非仓货 -->
+		<if test=" noDeliverInga == 'Y'.toString() ">
+			<![CDATA[ AND (NVL(HAND.RECEIVE_METHOD, 'N/A') <> 'DELIVER_INGA' 
+				AND NVL(HAND.SPECIAL_ADDRESS_TYPE, 'N/A') NOT IN ('PKP_GODOWNENTRY_NULLCAR', 'PKP_GODOWNENTRY_NOTNULLCAR'))
+			]]> 
+		</if> 
+	 <!-- 超远派送 -->
+		<if test=" uitraLongDelivery == 'Y'.toString() ">
+			<![CDATA[ AND HAND.UITRA_LONG_DELIVERY = 'Y'	]]> 
+		</if> 
+	 <!-- 会展货 -->
+		<if test=" isExhibition == 'Y'.toString() ">
+			<![CDATA[ AND HAND.IS_EXHIBITION = 'Y'	]]> 
+		</if> 
+	 <!-- 逐件验货 -->
+		<if test=" pieceInspection == 'Y'.toString() ">
+			<![CDATA[ AND HAND.SPECIAL_ADDRESS_TYPE = 'PKP_DELIVERYADDRESS_UNPACKINGINSPECTION'	]]> 
+		</if> 
+		
+		<!-- 聚合用到的 -->
+		<if test=" provCode != null  and provCode !='' ">
+			AND HAND.RECEIVE_CUSTOMER_PROV_CODE = #{provCode,jdbcType=VARCHAR}
+		</if>
+		<if test=" cityCode != null  and cityCode !='' ">
+			AND HAND.RECEIVE_CUSTOMER_CITY_CODE = #{cityCode,jdbcType=VARCHAR}
+		</if>
+		<if test=" distCode != null  and distCode !='' ">
+			AND HAND.RECEIVE_CUSTOMER_DIST_CODE = #{distCode,jdbcType=VARCHAR}
+		</if>
+		
+		<!-- 可视化无坐标的不查询,没有省无法聚合不查询 -->
+		AND HAND.LONGITUDE is not null 
+		AND HAND.LATITUDE is not null
+		AND RECEIVE_CUSTOMER_PROV_CODE is not null
+		
+		AND (AF.STATUS IS NULL OR AF.STATUS NOT IN ('OBSOLETE', 'ABORTED'))
+		<!-- 可排(交单-已排) -->
+		<![CDATA[
+			AND HAND.BILL_QTY - AF.ARRANGE_GOODS_QTY > 0
+			AND HAND.BILL_QTY <= HAND.GOODS_QTY_TOTAL
+			AND NOT EXISTS (SELECT 1
+          FROM PKP.T_SRV_WAYBILL_SIGN_RESULT WSR
+         WHERE WSR.WAYBILL_NO = HAND.WAYBILL_NO
+           AND WSR.SIGN_STATUS = 'SIGN_STATUS_ALL' 
+           AND WSR.ACTIVE = 'Y') 
+		]]>
+
+		<!-- 交单表状态 -->
+		<if test=" active != null and active !='' ">
+				AND HAND.ACTIVE = #{active,jdbcType=VARCHAR}
+		</if>
+	</sql>
+	
+	<!-- 可视化排单查询.预计到达(已到达) -->
+	<select id="selectByParam" resultMap="BillDtoResultMap" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.VisualBillConditionDto" >
+		select /*模块：接送货-可视化排单-根据查询条件查询运单相关列表(预计到达、已到达) */
+			<include refid="Base_Column_List" />
+			<include refid="BillDto_Column_list" />
+			CASE H.HANDOVERBILL_STATE WHEN 30 THEN '预计到达'  WHEN 40 THEN '已到达' ELSE '' END  GOOD_STATUS
+	    FROM PKP.T_SRV_DELIVER_HANDOVERBILL HAND 
+			LEFT JOIN PKP.T_SRV_ACTUAL_FREIGHT AF ON HAND.WAYBILL_NO = AF.WAYBILL_NO
+	    LEFT JOIN PKP.T_SRV_NOTIFICATION NCO ON HAND.WAYBILL_NO = NCO.WAYBILL_NO
+	    LEFT JOIN TFR.T_OPT_HANDOVERBILL_DETAIL HD  ON HAND.WAYBILL_NO = HD.WAYBILL_NO
+			LEFT JOIN TFR.T_OPT_HANDOVERBILL H  ON HD.HANDOVER_NO = H.HANDOVER_NO   AND H.HANDOVERBILL_STATE != 90
+		<where>
+			1=1
+			<include refid="select_ByParam_Where" />
+			<if test="goodsStatus !=null and goodsStatus !='' ">
+				AND H.HANDOVERBILL_STATE = #{goodsStatus,jdbcType=VARCHAR}
+			</if>
+			<if test="lastLoadOrgCode != null and lastLoadOrgCode !=''">
+					<![CDATA[ and HAND.LAST_LOAD_ORG_CODE  = #{lastLoadOrgCode, jdbcType=VARCHAR}]]>
+			</if>
+			<!-- 库存部门 -->
+			<if test="endStockOrgCode != null and endStockOrgCode !=''">	
+					<![CDATA[ and H.dest_org_code  = #{endStockOrgCode, jdbcType=VARCHAR}]]>
+			</if>
+		</where>
+	</select>
+	
+	<!-- 可视化排单查询.库存中 -->
+	<select id="selectInStockByWaybillNos" resultMap="BillDtoResultMap" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.VisualBillConditionDto" >
+		select /*模块：接送货-可视化排单-根据查询条件查询运单相关列表(库存中) */
+			<include refid="Base_Column_List" />
+			<include refid="BillDto_Column_list" />
+			'库存中' AS GOOD_STATUS
+		from PKP.T_SRV_DELIVER_HANDOVERBILL HAND
+			inner join PKP.T_SRV_ACTUAL_FREIGHT AF
+				on HAND.WAYBILL_NO = AF.WAYBILL_NO
+			inner join TFR.T_OPT_WAYBILL_STOCK WS
+				on HAND.WAYBILL_NO = WS.WAYBILL_NO
+		<where>
+			1=1
+			<include refid="select_ByParam_Where" />
+			<if test="lastLoadOrgCode != null and lastLoadOrgCode !=''">
+        <![CDATA[ and HAND.LAST_LOAD_ORG_CODE  = #{lastLoadOrgCode, jdbcType=VARCHAR}]]>
+      </if>
+			<!-- 库存部门 -->
+			<if test="endStockOrgCode != null and endStockOrgCode !=''">	
+				<![CDATA[ and ws.org_code  = #{endStockOrgCode, jdbcType=VARCHAR}]]>
+			</if>
+			<if test="goodsAreaCode !=null and goodsAreaCode != ''">	
+				<![CDATA[ and ws.GOODS_AREA_CODE  =   #{goodsAreaCode, jdbcType=VARCHAR}]]>
+			</if>
+		</where>
+	</select>
+	
+
+	<!-- 查询运单聚合信息 -->
+	<select id="selectTogetherByWaybills" resultMap="BillDtoResultMap"  parameterType="java.util.Map" >
+			SELECT  /*模块：接送货-可视化排单-根据运单号查询聚合信息 */
+				SUM(HAND.GOODS_WEIGHT) AS GOODS_WEIGHT, 
+				SUM(HAND.GOODS_VOLUME) AS GOODS_VOLUME,
+				<if test="leval != null and leval !='' ">
+						<if test="leval == 3">
+							HAND.RECEIVE_CUSTOMER_PROV_CODE,
+							HAND.RECEIVE_CUSTOMER_CITY_CODE,
+							HAND.RECEIVE_CUSTOMER_DIST_CODE,
+							((SELECT NAME FROM BSE.T_BAS_DISTRICT B WHERE B.CODE=HAND.RECEIVE_CUSTOMER_CITY_CODE AND B.ACTIVE='Y' AND ROWNUM = 1)||
+							(SELECT NAME FROM BSE.T_BAS_DISTRICT B WHERE B.CODE=HAND.RECEIVE_CUSTOMER_DIST_CODE AND B.ACTIVE='Y' AND ROWNUM = 1)) AS PROVCITYN,
+						</if> 
+						<if test="leval == 2">
+							HAND.RECEIVE_CUSTOMER_PROV_CODE,
+							HAND.RECEIVE_CUSTOMER_CITY_CODE,
+							((SELECT NAME FROM BSE.T_BAS_DISTRICT B WHERE B.CODE=HAND.RECEIVE_CUSTOMER_PROV_CODE AND B.ACTIVE='Y' AND ROWNUM = 1)||
+							(SELECT NAME FROM BSE.T_BAS_DISTRICT B WHERE B.CODE=HAND.RECEIVE_CUSTOMER_CITY_CODE AND B.ACTIVE='Y' AND ROWNUM = 1)) AS PROVCITYN,
+						</if> 
+				</if>
+				COUNT(1) AS TOTALCOUNT
+			FROM PKP.T_SRV_DELIVER_HANDOVERBILL HAND
+			<where>
+				 <if test=" wayBills != null  and wayBills.length > 0">
+						HAND.WAYBILL_NO IN
+						<foreach collection="wayBills" index="index" item="wayBillNo" open="(" separator="," close=")">
+							#{wayBillNo}
+						</foreach>
+				 </if>
+				 <if test=" active != null and active !='' ">
+						AND HAND.ACTIVE = #{active,jdbcType=VARCHAR}
+				 </if>
+			</where>
+			<if test="leval != null and leval !='' ">
+					GROUP BY 1
+					<if test="leval == 3">
+						,HAND.RECEIVE_CUSTOMER_PROV_CODE,
+						HAND.RECEIVE_CUSTOMER_CITY_CODE,
+						HAND.RECEIVE_CUSTOMER_DIST_CODE
+					</if> 
+					<if test="leval == 2">
+						,HAND.RECEIVE_CUSTOMER_PROV_CODE,
+						HAND.RECEIVE_CUSTOMER_CITY_CODE
+					</if> 
+			</if>
+	</select>
+
+	<!--根据省市区及运单号查询区下的小区范围和车牌号 -->
+	<select id="selectSmallVehicleNoByParam" resultMap="BillDtoResultMap" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.VisualBillConditionDto" >
+		select  
+			distinct HAND.ACTUAL_SMALLZONE_CODE,
+			HAND.ACTUAL_VEHICLE_NO  
+		from PKP.T_SRV_DELIVER_HANDOVERBILL HAND 
+			where 1=1 
+		<!-- 运单号 -->
+		<if test=" waybillNos != null and waybillNos.length > 0">
+			AND HAND.WAYBILL_NO IN
+			<foreach collection="waybillNos" index="index" item="wayBillNo" open="(" separator="," close=")">
+				#{wayBillNo}
+			</foreach>
+		</if>
+		<!-- 区级下的小区范围 -->
+		<if test=" provCode != null  and provCode !='' ">
+			AND HAND.RECEIVE_CUSTOMER_PROV_CODE = #{provCode,jdbcType=VARCHAR}
+		</if>
+		<if test=" cityCode != null  and cityCode !='' ">
+			AND HAND.RECEIVE_CUSTOMER_CITY_CODE = #{cityCode,jdbcType=VARCHAR}
+		</if>
+		<if test=" distCode != null  and distCode !='' ">
+			AND HAND.RECEIVE_CUSTOMER_DIST_CODE = #{distCode,jdbcType=VARCHAR}
+		</if>
+		<if test=" active != null and active !='' ">
+				AND HAND.ACTIVE = #{active,jdbcType=VARCHAR}
+		</if>
+	</select>
+	
+	<!-- 根据运单号查询待排运单列表信息 -->
+	<select id="selectWaybillToArrangeByCondition" resultMap="WaybillToArrangeResultMap" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.WaybillToArrangeDto">
+		<![CDATA[
+			   select 
+			   /*模块：接送货-可视化排单-根据运单号查询待排运单*/
+			   waybill.id,
+			   waybill.waybill_no,
+			   waybill.goods_name,
+			   waybill.goods_weight_total,
+			   waybill.goods_size,
+			   waybill.goods_qty_total,
+				 hand.bill_qty,
+			   hand.bill_qty - actual_freight.arrange_goods_qty as arrangable_goods_qty,
+			   waybill.product_code,
+			   actual_freight.arrive_time,
+			   hand.PRE_DELIVER_DATE AS DELIVER_DATE,
+			   waybill.receive_customer_contact,
+			   waybill.receive_customer_mobilephone,
+			   hand.receive_customer_prov_code,
+		     hand.receive_customer_city_code,
+		     hand.receive_customer_dist_code,
+			   hand.receive_customer_address,
+			   hand.receive_customer_address_note,
+			   waybill.pre_customer_pickup_time,
+			   actual_freight.payment_type,
+			   v.region_name,
+			   waybill.inner_notes,
+			   waybill.receive_method,
+			   decode(actual_freight.notification_result, #{notifySuccessFlag,jdbcType=VARCHAR}, 'Y', 'N') as IS_ALREADY_CONTACT,
+			   arrivesheet.is_need_invoice,
+			   nvl(arrivesheet.is_sent_required, 'N') as is_sent_required,
+			   arrivesheet.deliver_require,
+			   waybill.goods_volume_total,
+			   waybill.to_pay_amount/100 as to_pay_amount,
+			   decode(waybill.product_code, #{fastWaybillCode,jdbcType=VARCHAR}, 1, 0) as FAST_WAYBILL_FLAG,
+			   waybill.return_bill_type,
+			   waybill.currency_code,
+			   waybill.goods_package,
+				 CASE
+				   WHEN WAYBILL.TO_PAY_AMOUNT > 1000000 THEN
+				    '是'
+				   WHEN WAYBILL.GOODS_WEIGHT_TOTAL > 1000 THEN
+				    '是'
+				   WHEN WAYBILL.RECEIVE_METHOD = 'DELIVER_UP' AND
+				        WAYBILL.GOODS_WEIGHT_TOTAL > 300 THEN
+				    '是'
+				   WHEN WAYBILL.RECEIVE_METHOD = 'DELIVER_UP' AND
+				        (WAYBILL.GOODS_WEIGHT_TOTAL / WAYBILL.GOODS_QTY_TOTAL) > 30 THEN
+				    '是'
+				   ELSE
+				    '否'
+				 END AS deliverSuggest,
+				 actual_freight.together_Send_Code,
+				 actual_freight.together_Send_mark,
+				 waybill.receive_big_customer as receiveBigCustomer,
+				 hand.id AS TSRVDELIVERHANDOVERBILLID
+      from pkp.t_srv_waybill waybill
+      inner join pkp.t_srv_actual_freight actual_freight
+            on waybill.waybill_no = actual_freight.waybill_no
+      inner join pkp.t_srv_deliver_handoverbill hand
+            on waybill.waybill_no = hand.waybill_no
+			left join bse.t_bas_region_vehicle v
+						on actual_freight.deliver_region_code = v.region_code
+            and v.active = 'Y' 
+      left join pkp.t_srv_arrivesheet arrivesheet
+            on waybill.waybill_no = arrivesheet.waybill_no
+            and arrivesheet.active = #{arrivesheetActive,jdbcType=VARCHAR}
+            and arrivesheet.status = #{arrivesheetStatus,jdbcType=VARCHAR}
+            and arrivesheet.destroyed = #{arrivesheetDestroyed,jdbcType=VARCHAR}
+		]]>
+		<where> 
+			<choose>
+				<when test="arrayWaybillNos !=null and arrayWaybillNos.length > 0">
+					 waybill.waybill_no in
+					<foreach collection="arrayWaybillNos" index="index" item="waybillNo" open="(" separator="," close=")">
+						#{waybillNo}
+					</foreach>
+					AND hand.ACTIVE = 'Y'
+				</when>
+				<otherwise>
+					<![CDATA[ 1 <> 1]]>
+				</otherwise>
+			</choose>
+       and waybill.active = 'Y'
+			 and hand.bill_qty - actual_freight.arrange_goods_qty > 0
+			 and (actual_freight.STATUS IS NULL OR actual_freight.STATUS NOT IN ('OBSOLETE', 'ABORTED'))
+		</where>
+	</select>
+	
+	
+	
+	<!-- 根据派送单ID查询派送单明细信息.Base_ResultMap -->
+	<resultMap id="BaseResultDeliverbillMap" type="com.deppon.foss.module.pickup.predeliver.api.shared.domain.DeliverbillDetailEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="T_SRV_DELIVERBILL_ID" property="tSrvDeliverbillId" jdbcType="VARCHAR" />
+		<result column="SERIAL_NO" property="serialNo" jdbcType="DECIMAL" />
+		<result column="ARRIVESHEET_NO" property="arrivesheetNo" jdbcType="VARCHAR" />
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="ARRANGE_STATUS" property="arrangeStatus" jdbcType="VARCHAR" />
+		<result column="PRE_ARRANGE_GOODS_QTY" property="preArrangeGoodsQty" jdbcType="DECIMAL" />
+		<result column="ARRANGE_GOODS_QTY" property="arrangeGoodsQty" jdbcType="DECIMAL" />
+		<result column="WEIGHT" property="weight" jdbcType="DECIMAL" />
+		<result column="DIMENSION" property="dimension" jdbcType="VARCHAR" />
+		<result column="GOODS_NAME" property="goodsName" jdbcType="VARCHAR" />
+		<result column="WAYBILL_GOODS_QTY" property="waybillGoodsQty" jdbcType="DECIMAL" />
+		<result column="TRANSPORT_TYPE" property="transportType" jdbcType="VARCHAR" />
+		<result column="ARRIVE_TIME" property="arriveTime" jdbcType="TIMESTAMP" />
+		<result column="CONSIGNEE" property="consignee" jdbcType="VARCHAR" />
+		<result column="CONSIGNEE_CONTACT" property="consigneeContact" jdbcType="VARCHAR" />
+		<result column="CONSIGNEE_ADDRESS" property="consigneeAddress" jdbcType="VARCHAR" />
+		<result column="DELIVER_REQUIRE" property="deliverRequire" jdbcType="VARCHAR" />
+		<result column="GOODS_STATUS" property="goodsStatus" jdbcType="VARCHAR" />
+		<result column="IS_EXCEPTION" property="isException" jdbcType="CHAR" />
+		<result column="IS_ALREADY_CONTACT" property="isAlreadyContact" jdbcType="CHAR" />
+		<result column="ESTIMATED_DELIVER_TIME" property="estimatedDeliverTime" jdbcType="TIMESTAMP" />
+		<result column="IS_NEED_INVOICE" property="isNeedInvoice" jdbcType="CHAR" />
+		<result column="PAYMENT_TYPE" property="paymentType" jdbcType="VARCHAR" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+		<result column="DELIVER_TYPE" property="deliverType" jdbcType="VARCHAR" />
+		<result column="GOODS_VOLUME_TOTAL" property="goodsVolumeTotal" jdbcType="DECIMAL" />
+		<result column="PAY_AMOUNT" property="payAmount" jdbcType="DECIMAL" />
+		<result column="FAST_WAYBILL_FLAG" property="fastWaybillFlag" jdbcType="DECIMAL" />
+		<result column="CURRENCY_CODE" property="currencyCode" jdbcType="VARCHAR" />
+		<result column="GOODS_PACKAGE" property="goodsPackage" 	jdbcType="VARCHAR" />
+		<result column="RETURN_BILL_TYPE" property="returnBillType" jdbcType="VARCHAR" />
+		<result column="DESTROYED" property="destroyed" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP"/>
+    <result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP"/>
+		<result column="DELIVER_DATE" property="deliverDate" jdbcType="TIMESTAMP"/>
+		<result column="T_SRV_DELIVER_HANDOVERBILL_ID" property="srvDeliverHandoverbillId" jdbcType="VARCHAR" />
+		<result column="CASH_TIME" property="cashTime" jdbcType="TIMESTAMP"/>
+	</resultMap>
+	
+	<!-- 根据派送单ID查询派送单明细信息.Base_Column -->
+	<sql id="Base_Column_Deliverbill_List">
+			dbd.ID, 
+			dbd.T_SRV_DELIVERBILL_ID, 
+			dbd.SERIAL_NO,
+			dbd.WAYBILL_NO, 
+			replace(dbd.CONSIGNEE_ADDRESS, '-','') AS CONSIGNEE_ADDRESS,
+			dbd.PRE_ARRANGE_GOODS_QTY, 
+			dbd.WEIGHT,
+			dbd.GOODS_VOLUME_TOTAL,
+			dbd.DIMENSION, 
+			dbd.GOODS_PACKAGE,
+			dbd.TRANSPORT_TYPE,
+			dbd.ESTIMATED_DELIVER_TIME,
+			dbd.DELIVER_DATE,
+			dbd.T_SRV_DELIVER_HANDOVERBILL_ID,
+			dbd.PAY_AMOUNT/100 as PAY_AMOUNT, 
+	</sql>
+	
+	<!-- 根据派送单ID查询派送单明细信息.ResultMap -->
+	<resultMap id="ResultDeliverbillMap" type="com.deppon.foss.module.pickup.predeliver.api.shared.dto.VisualBillArrageDto" extends="BaseResultDeliverbillMap">
+			<result column="SMALLZONE_NAME" property="regionName" jdbcType="VARCHAR" />
+			<result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+      <result column="DELIVERY_TIME_INTERVAL" property="deliveryTimeInterval" jdbcType="VARCHAR" />
+      <result column="DELIVERY_TIME_START" property="deliveryTimeStart" jdbcType="VARCHAR" />
+			<result column="DELIVERY_TIME_OVER" property="deliveryTimeOver" jdbcType="VARCHAR" />
+      <result column="LONGITUDE" property="longitude" jdbcType="VARCHAR" />
+      <result column="LATITUDE" property="latitude" jdbcType="VARCHAR" />
+      <result column="IS_VEHICLE_SCHEDULING" property="isVehicleScheduling" jdbcType="VARCHAR" />
+      <result column="TOGETHER_SEND_CODE" property="togetherSendCode" jdbcType="VARCHAR" />
+			<result column="LAST_LOAD_ORG_CODE" property="lastLoadOrgCode" jdbcType="VARCHAR" />
+			<result column="ACTUAL_SMALLZONE_CODE" property="actualSmallzoneCode" jdbcType="VARCHAR" />
+			<result column="ACTUAL_SMALLZONE_NAME" property="actualSmallzoneName" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<!-- 根据派送单ID查询派送单明细信息 -->
+	<select id="selectByDeliverbillId" resultMap="ResultDeliverbillMap" parameterType="java.lang.String">
+		select /*模块：结算-可视化排单-查询已排单明细*/
+			<include refid="Base_Column_Deliverbill_List" />
+      hand.VEHICLE_NO,
+      hand.DELIVERY_TIME_INTERVAL,
+      hand.DELIVERY_TIME_START,
+      hand.DELIVERY_TIME_OVER,
+      hand.LONGITUDE,
+      hand.LATITUDE,
+      hand.IS_VEHICLE_SCHEDULING,
+			hand.LAST_LOAD_ORG_CODE,
+			hand.ACTUAL_SMALLZONE_CODE,
+			hand.ACTUAL_SMALLZONE_NAME,
+      actual_freight.TOGETHER_SEND_CODE,
+      actual_freight.cash_time
+		FROM PKP.T_SRV_DELIVERBILL_DETAIL dbd
+			INNER JOIN pkp.t_srv_actual_freight actual_freight
+				 on dbd.waybill_no = actual_freight.waybill_no
+			LEFT JOIN PKP.t_Srv_Deliver_Handoverbill hand
+				 on dbd.T_SRV_DELIVER_HANDOVERBILL_ID = hand.ID
+			LEFT JOIN BSE.T_BAS_SERVICE_SMALLZONE szone
+				 on hand.ACTUAL_SMALLZONE_CODE = szone.region_code 
+				 and szone.active='Y'
+		WHERE dbd.T_SRV_DELIVERBILL_ID = #{deliverbillId,jdbcType=VARCHAR}
+		  ORDER BY SERIAL_NO
+	</select>
+	
+	<!-- 根据派送单ID查询派送单汇总信息 -->
+	<select id="selectCountByDeliverbillId" resultType="java.util.HashMap" parameterType="java.lang.String">
+		select /*模块：结算-可视化排单-查询已排单汇总信息*/
+			 count(1) as TOTALTICKET,
+       sum(nvl(dbd.pre_arrange_goods_qty, 0)) as TOTALCOUNT,
+       sum(nvl(dbd.weight, 0)) as TOTALWEIGHT,
+       sum(nvl(dbd.goods_volume_total, 0)) as TOTALVOLUMN,
+       sum(nvl(dbd.pay_amount, 0)/100) as TOTALPAYAMOUNT
+		FROM PKP.T_SRV_DELIVERBILL_DETAIL dbd
+			INNER JOIN pkp.t_srv_actual_freight actual_freight
+				 on dbd.waybill_no = actual_freight.waybill_no
+			LEFT JOIN PKP.t_Srv_Deliver_Handoverbill hand
+				 on dbd.T_SRV_DELIVER_HANDOVERBILL_ID = hand.ID
+				 and hand.ACTIVE = 'Y'
+			LEFT JOIN BSE.T_BAS_SERVICE_SMALLZONE szone
+				 on hand.ACTUAL_SMALLZONE_CODE = szone.region_code 
+				 and szone.active='Y'
+		WHERE dbd.T_SRV_DELIVERBILL_ID = #{deliverbillId,jdbcType=VARCHAR}
+		  ORDER BY SERIAL_NO
+	</select>
+	
+	<!-- 根据运单号、派送单id、运单顺序跟新运单排序 -->
+	<update id="upDetailWaybillSortById" parameterType="java.util.Map">
+		update PKP.T_SRV_DELIVERBILL_DETAIL
+		<set>
+			<if test="serialNo != null">
+					SERIAL_NO = #{serialNo,jdbcType=DECIMAL}
+			</if>
+		</set>
+		where 1=1 
+			<if test="waybillNo !=null">
+				 AND WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+			</if>
+			<if test="deliverbillId !=null">
+				 AND T_SRV_DELIVERBILL_ID = #{deliverbillId,jdbcType=VARCHAR}
+			</if>
+	</update>
+	
+	<!-- 是否已经排单(actual_freight中排单件数大于0,则已进入排单) -->
+	<select id="selectAlreadyArrangeByWaybillNo" resultType="java.util.HashMap" parameterType="java.util.Map">
+		select /*模块：接送货-可视化排单-查询是否已经排单*/
+			 af.ARRANGE_GOODS_QTY
+		from pkp.t_srv_actual_freight af
+		WHERE af.waybill_no = #{waybillNo,jdbcType=VARCHAR} 
+	</select>
+	
+	<!-- PDA退回.查询派送单id、运单号对应的派送单明细id -->
+	<select id="selectDeliverIdAndDeliverDetailID" resultType="java.util.HashMap" parameterType="java.util.Map">
+		select  /*模块：接送货-可视化排单-查询派送单、派送单明细ID*/
+			d.ID as DELIVERID, de.ID as DELIVERDEAILID
+		from PKP.T_SRV_DELIVERBILL d
+			left join PKP.T_SRV_DELIVERBILL_DETAIL de 
+					 on d.ID = de.T_SRV_DELIVERBILL_ID
+		 where d.DELIVERBILL_NO =  #{deliverNo,jdbcType=VARCHAR}
+					 and de.WAYBILL_NO =  #{wayBillNo,jdbcType=VARCHAR}
+	</select>
+	
+ 
+	<!-- 运单查询坐标.ResultMap -->
+	<resultMap id="coordMarkResultMap" type="com.deppon.foss.module.pickup.predeliver.api.shared.dto.VisualAddressMarkDto">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="ACTUAL_SMALLZONE_CODE" property="actualSmallzoneCode" jdbcType="VARCHAR" />
+		<result column="ACTUAL_SMALLZONE_NAME" property="actualSmallzoneName" jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_PROV_CODE" property="receiveCustomerProvCode" jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_CITY_CODE" property="receiveCustomerCityCode" jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_DIST_CODE" property="receiveCustomerDistCode" jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_ADDRESS" property="receiveCustomerAddress" jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_ADDRESS_NOTE" property="receiveCustomerAddressNote" jdbcType="VARCHAR" />
+		<result column="LONGITUDE" property="longitude" jdbcType="VARCHAR" />
+		<result column="LATITUDE" property="latitude" jdbcType="VARCHAR" />
+		<result column="MATCH_TYPE" property="matchType" jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_MOBILEPHONE" property="tel" jdbcType="VARCHAR" />
+		<result column="RECEIVE_CUSTOMER_PHONE" property="phone" jdbcType="VARCHAR" />
+	</resultMap>
+ 
+	<!-- 运单查询坐标 -->
+	<select id="selectCoordMarkByWayBillNos" resultMap="coordMarkResultMap" parameterType="java.util.Map">
+			SELECT  /**模块：接送货-可视化排单-地址坐标标记查询 */ 
+				hand.ID,
+				hand.WAYBILL_NO,
+				hand.ACTUAL_SMALLZONE_CODE,
+				hand.ACTUAL_SMALLZONE_NAME,
+				hand.RECEIVE_CUSTOMER_PROV_CODE,
+				hand.RECEIVE_CUSTOMER_CITY_CODE,
+				hand.RECEIVE_CUSTOMER_DIST_CODE,
+				hand.RECEIVE_CUSTOMER_ADDRESS,
+				hand.RECEIVE_CUSTOMER_ADDRESS_NOTE,
+				hand.LONGITUDE,
+				hand.LATITUDE,
+				hand.MATCH_TYPE,
+				waybill.RECEIVE_CUSTOMER_MOBILEPHONE,
+				waybill.RECEIVE_CUSTOMER_PHONE
+			FROM PKP.T_SRV_DELIVER_handOVERBILL hand
+				LEFT JOIN PKP.T_SRV_WAYBILL waybill 
+					 ON hand.waybill_NO = waybill.waybill_NO
+			WHERE hand.ACTIVE = 'Y'
+			 AND waybill.ACTIVE = 'Y'
+			<choose>
+					<when test="wayBillNos !=null and wayBillNos.length > 0">
+						 AND hand.waybill_no in
+						<foreach collection="wayBillNos" index="index" item="waybillNo" open="(" separator="," close=")">
+							#{waybillNo}
+						</foreach>
+					</when>
+					<otherwise>
+						<![CDATA[ 1 <> 1]]>
+					</otherwise>
+			</choose>
+	</select>
+	
+	
+	<!-- 根据送货日期、车牌号、派送单id查询该车辆是否已经存在预排状态(SVAED) -->
+	<select id="selectVehilceNoIsExistSaved" resultType="java.util.HashMap" parameterType="java.util.Map" >
+		select 
+        count(*) AS totalCount  
+		from PKP.T_SRV_DELIVERBILL d
+			left join PKP.T_SRV_DELIVERBILL_DETAIL de on d.id = de.t_srv_deliverbill_id
+    where d.STATUS = #{status,jdbcType=VARCHAR}
+			<!-- 如果当前已创建派送单,则忽略 -->
+			<if test="deliverId !=null and deliverId !='' ">
+				<![CDATA[ AND d.ID <> #{deliverId,jdbcType=VARCHAR} ]]>
+			</if>		 
+			<if test="vehilceNo !=null and vehilceNo !='' ">
+				AND d.VEHICLE_NO = #{vehilceNo,jdbcType=VARCHAR}
+			</if>	
+			<if test="deliverDate !=null and deliverDate !='' ">
+				<![CDATA[ AND de.DELIVER_DATE = to_date(#{deliverDate,jdbcType=VARCHAR}, 'YYYY-MM-DD') ]]>
+			</if>	
+		 <if test="carTaskType != null and carTaskType.length > 0">
+				AND d.CAR_TASKINFO in
+				<foreach collection="carTaskType" index="index" item="ctype" open="(" separator="," close=")">
+					#{ctype}
+				</foreach>
+			</if>
+	</select>
+	
+	<!-- 运单详情查询 -->
+	<select id="queryVisiblebillInfoList" resultMap="VisibleAutoSortResultMap" parameterType="java.lang.String">
+			select 
+			dh.delivery_time_interval,
+			dh.delivery_time_start,dh.delivery_time_over,dh.waybill_no,
+			dh.special_address_type,dh.IS_EXHIBITION,dh.UITRA_LONG_DELIVERY,dh.TO_PAY_AMOUNT,
+			dh.RECEIVE_METHOD,dh.SPECIAL_ADDRESS_TYPE,dh.GOODS_SIZE,
+			dh.goods_package,dh.LONGITUDE,dh.LATITUDE,
+			dh.ACTUAL_SMALLZONE_CODE,dh.ACTUAL_SMALLZONE_NAME,
+			dh.GOODS_QTY_TOTAL,dh.PRODUCT_CODE,dh.IS_EMPTY_CAR,
+			dd.id,dd.serial_no,dd.recommended_delivery_time,
+			dd.DELIVER_DATE,dd.arrange_goods_qty,
+			dd.cash_time,
+			dd.WEIGHT,dd.GOODS_VOLUME_TOTAL,dd.CONSIGNEE_ADDRESS as receive_customer_address    
+			from pkp.t_srv_deliverbill_detail  dd
+			left join pkp.t_srv_deliver_handoverbill  dh on dh.id = dd.t_srv_deliver_handoverbill_id 
+			left join pkp.t_srv_deliverbill d on dd.t_srv_deliverbill_id = d.id 
+			where d.id = #{id,jdbcType=VARCHAR} 
+			order by dd.serial_no asc
+	</select>
+	
+	<!-- 派送单信息查询 -->
+	<select id="visibleOrderService" resultMap="DeliverbillNewResultMap" parameterType="java.lang.String">
+			select id, t.deliverbill_no,t.vehicle_no,t.driver_name,t.CAR_TASKINFO,
+			t.FREQUENCYNO,t.PRE_CARTASK_TIME,t.TAKE_GOODS_DEPTCODE,t.TAKE_GOODS_DEPTNAME,t.EXPECTEDBRINGVOLUME,
+			t.TRANSFER_DEPTCODE,t.TRANSFER_DEPTNAME,t.TOTAL_DISTANCE,t.AUTO_SORT_CALCULATE_TYPE   
+			 from pkp.t_srv_deliverbill t 
+			where t.id = #{id,jdbcType=VARCHAR}
+	</select>
+	
+	<!-- 根据送货日期、车牌号、派送单id查询该查询该车辆相关提示此车牌号XX.ResultMap -->
+	<resultMap id="deliverTipsResultMap" type="com.deppon.foss.module.pickup.predeliver.api.shared.domain.DeliverbillEntity">
+		<result column="DELIVERBILL_NO" property="deliverbillNo" jdbcType="VARCHAR" />
+		<result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+		<result column="STATUS" property="status" jdbcType="VARCHAR" />
+		<result column="OPERATETIME" property="operateTime" jdbcType="TIMESTAMP" />
+	</resultMap>
+	
+	<!-- 根据送货日期、车牌号、派送单id查询该查询该车辆相关提示此车牌号XX，送货日期XX，有派送单X，为XX状态 -->
+	<select id="selectVehilceNoTipsByParam" resultMap="deliverTipsResultMap"  parameterType="java.util.Map" >
+			select  t.DELIVERBILL_NO, t.VEHICLE_NO, t.STATUS, t.DELIVER_DATE AS OPERATETIME  from (
+				select 
+							distinct d.DELIVERBILL_NO,
+							d.VEHICLE_NO,
+							de.DELIVER_DATE,
+							d.status,
+							to_char(d.SUBMIT_TIME, 'YYYY-DD-MM HH24:MM:SS') AS SUBMIT_TIME
+					from PKP.T_SRV_DELIVERBILL d
+						left join PKP.T_SRV_DELIVERBILL_DETAIL de on d.ID = de.T_SRV_DELIVERBILL_ID
+						where 
+							d.status in
+							<foreach collection="deliverStatus" index="index" item="statusValue" open="(" separator="," close=")">
+								#{statusValue}
+							</foreach>
+							<if test="vehilceNo !=null and vehilceNo !='' ">
+								AND d.VEHICLE_NO = #{vehilceNo,jdbcType=VARCHAR}
+							</if>
+							<if test="deliverDate !=null and deliverDate !='' ">
+								<![CDATA[ AND de.DELIVER_DATE = to_date(#{deliverDate,jdbcType=VARCHAR}, 'YYYY-MM-DD') ]]>
+							</if>
+			) t order by t.SUBMIT_TIME
+	</select>
+	
+	
+	<!-- 判断该派送单是否存在无坐标-->
+	<select id="selectExistsNoCoordForDeliverBill" resultMap="deliverTipsResultMap"  parameterType="java.util.Map" >
+			select /**模块：接送货-可视化排单-判断该派送单是否存在无坐标查询 */  1 from pkp.t_srv_deliverbill_detail de
+					inner join pkp.t_srv_deliver_handoverbill h on de.t_srv_deliver_handoverbill_id = h.id
+					where (trim(h.longitude) is null or trim(h.latitude) is null) 
+					and de.t_srv_deliverbill_id = #{deliverId,jdbcType=VARCHAR}
+	</select>
+	
+</mapper>

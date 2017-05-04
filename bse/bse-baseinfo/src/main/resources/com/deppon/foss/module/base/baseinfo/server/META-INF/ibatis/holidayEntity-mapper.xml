@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.holiday" >
+
+	<resultMap id="holidayResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.HolidayEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="HOLIDAY_NAME" property="holidayName" jdbcType="VARCHAR" />
+		<result column="BEGIN_TIME" property="beginTime" jdbcType="TIMESTAMP" />
+		<result column="END_TIME" property="endTime" jdbcType="TIMESTAMP" />
+		<result column="REMARK" property="remark" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_USER" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="VERSION_NO" property="versionNo" jdbcType="DECIMAL" />
+	</resultMap>
+	
+	<sql id="columns">
+		ID,
+		HOLIDAY_NAME,
+		BEGIN_TIME,
+		END_TIME,
+		REMARK,
+		CREATE_TIME,
+		CREATE_USER,
+		MODIFY_TIME,
+		MODIFY_USER,
+		ACTIVE,
+		VERSION_NO
+	</sql>
+	
+	<sql id="values">
+		#{id,jdbcType=VARCHAR},
+		#{holidayName,jdbcType=VARCHAR}, 
+		#{beginTime,jdbcType=TIMESTAMP}, 
+		#{endTime,jdbcType=TIMESTAMP}, 
+		#{remark,jdbcType=VARCHAR}, 
+		#{createDate,jdbcType=TIMESTAMP},
+		#{createUser,jdbcType=VARCHAR}, 
+		#{modifyDate,jdbcType=TIMESTAMP}, 
+		#{modifyUser,jdbcType=VARCHAR}, 
+		#{active,jdbcType=CHAR},
+		#{versionNo,jdbcType=DECIMAL}
+	</sql>
+
+	<insert id="addHoliday" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.HolidayEntity">
+		insert into BSE.T_BAS_HOLIDAY (
+		<include refid="columns"/>
+		) values ( 
+		<include refid="values"/>
+		)
+	</insert>
+
+<!-- 	<update id="deleteHoliday" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.HolidayEntity"> -->
+<!-- 		UPDATE BSE.T_BAS_HOLIDAY  -->
+<!-- 		SET ACTIVE = #{inActive, jdbcType=CHAR}  -->
+<!-- 		, MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}  -->
+<!-- 		, VERSION_NO = #{versionNo,jdbcType=DECIMAL} -->
+<!-- 		, MODIFY_USER = #{modifyUser,jdbcType=VARCHAR}  -->
+<!-- 		WHERE ACTIVE = #{active, jdbcType=CHAR} -->
+<!-- 		 AND HOLIDAY_NAME = #{holidayName,jdbcType=VARCHAR} -->
+<!-- 	</update> -->
+	
+	<update id="deleteHolidays" parameterType="map">
+		UPDATE BSE.T_BAS_HOLIDAY 
+		SET ACTIVE = #{inActive, jdbcType=CHAR} 
+		, MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP} 
+		, MODIFY_USER = #{modifyUser,jdbcType=VARCHAR}
+		, VERSION_NO = #{versionNo, jdbcType=DECIMAL} 
+		WHERE ACTIVE = #{active, jdbcType=CHAR}
+		<if test="ids.length>0 and ids!=null">
+			AND ID IN 
+			<foreach collection="ids" open="(" close=")" separator="," item="id">
+				#{id,jdbcType=VARCHAR} 
+			</foreach>
+		</if>
+	</update>
+
+<!-- 	<select id="queryHolidayByName" resultMap="holidayResultMap" parameterType="java.lang.String"> -->
+<!-- 		SELECT  -->
+<!-- 		<include refid="columns"/> -->
+<!-- 		FROM BSE.T_BAS_HOLIDAY WHERE  -->
+<!-- 		ACTIVE= #{active,jdbcType=CHAR}  -->
+<!-- 		AND HOLIDAY_NAME= #{holidayName,jdbcType=VARCHAR} -->
+<!-- 	</select> -->
+
+	<sql id="whereHolidayListByCondition">
+		FROM BSE.T_BAS_HOLIDAY WHERE ACTIVE = #{active,jdbcType=CHAR} 
+		<if test="beginTime != null and endTime != null">
+			AND BEGIN_TIME 
+			<![CDATA[
+			>= #{beginTime,jdbcType=TIMESTAMP} 
+			]]>
+			AND END_TIME
+			<![CDATA[
+			<= #{endTime,jdbcType=TIMESTAMP}
+			]]>
+		</if>
+		<if test="holidayName != null and holidayName != ''">
+			AND HOLIDAY_NAME = #{holidayName,jdbcType=VARCHAR}
+		</if>
+	</sql>
+
+	<select id="queryHolidayListByCondition" resultMap="holidayResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.HolidayEntity">
+		SELECT   
+		<include refid="columns"/>
+		<include refid="whereHolidayListByCondition"/>
+		ORDER BY HOLIDAY_NAME
+	</select>
+	
+	<select id="countHolidayListByCondition" resultType="long" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.HolidayEntity">
+		SELECT COUNT(1) 
+		<include refid="whereHolidayListByCondition"/>
+	</select>
+	
+	<select id='queryCountInterCrossDate' resultMap="holidayResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.HolidayEntity">
+		SELECT /**返回LIST为空则两个时间段不交叉**/
+		<include refid="columns"/>		
+ 			FROM BSE.T_BAS_HOLIDAY 
+			WHERE ACTIVE = #{active,jdbcType=CHAR} 
+			<if test="beginTime!=null and endTime!=null"></if>
+			AND ( (BEGIN_TIME
+			<![CDATA[
+			>= #{beginTime,jdbcType=TIMESTAMP} AND 
+			BEGIN_TIME <= #{endTime,jdbcType=TIMESTAMP})
+			]]>
+			OR (END_TIME
+			<![CDATA[
+			>= #{beginTime,jdbcType=TIMESTAMP} AND
+			END_TIME <= #{endTime,jdbcType=TIMESTAMP}))
+			]]>
+	</select>
+
+</mapper>

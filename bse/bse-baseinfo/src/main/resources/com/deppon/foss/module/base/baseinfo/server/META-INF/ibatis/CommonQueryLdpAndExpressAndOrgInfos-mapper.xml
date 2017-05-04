@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.commonQueryLdpAndExpressAndOrgInfos">
+	<resultMap id="ldpAndExpressAndOrgResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.LdpOuterBranchsAndOrginfoEntity">
+		<result column="NAME" property="deptName" jdbcType="VARCHAR" />
+		<result column="CODE" property="deptCode" jdbcType="VARCHAR" />
+		<result column="SALES_TYPE" property="typeName" jdbcType="VARCHAR" />
+	</resultMap>
+	<select id="queryLdpAndExpressAndOrgInfoList"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.LdpOuterBranchsAndOrginfoEntity"
+		resultMap="ldpAndExpressAndOrgResultMap">
+		SELECT/** 综合:查询 自有网点+快递代理网点+虚拟网点**/
+		NAME,CODE,SALES_TYPE FROM 
+		(
+		SELECT
+		O.NAME, 
+		O.CODE, 
+		'自有网点' SALES_TYPE
+		FROM BSE.T_BAS_ORG O
+		WHERE O.ACTIVE = 'Y'
+		AND O.SALES_DEPARTMENT = 'Y'
+		UNION ALL
+		SELECT B.AGENT_DEPT_NAME NAME,
+		B.AGENT_DEPT_CODE CODE,
+		'快递代理网点' SALES_TYPE
+		FROM BSE.T_BAS_OUTER_BRANCH B
+		WHERE B.ACTIVE = 'Y'
+		AND B.BRANCHTYPE = 'LD'
+		UNION ALL
+		SELECT O.NAME, 
+		O.CODE,
+		'虚拟网点' SALES_TYPE
+		FROM BSE.T_BAS_ORG O
+		WHERE O.ACTIVE = 'Y'
+		AND O.EXPRESS_SALES_DEPARTMENT = 'Y'
+		)
+		<where>
+		    <if test="deptCode != null and deptCode != ''">
+	        	AND CODE = #{deptCode,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="deptName!=null and deptName != ''">
+	        	AND ( NAME like CONCAT(CONCAT('%', #{deptName,jdbcType=VARCHAR}), '%') 
+	        	  OR 
+	        	      CODE like CONCAT(CONCAT('%', #{deptName,jdbcType=VARCHAR}), '%')
+	        	)
+	      	</if>
+		</where>
+	</select>
+
+	<select id="recordRowCount" resultType="java.lang.Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.LdpOuterBranchsAndOrginfoEntity">
+		SELECT COUNT(*) from(
+		SELECT/** 综合:查询 自有网点+快递代理网点+虚拟网点**/
+	    O.NAME, 
+	    O.CODE, 
+	    '自有网点' SALES_TYPE
+		FROM BSE.T_BAS_ORG O
+		WHERE O.ACTIVE = 'Y'
+		AND O.SALES_DEPARTMENT = 'Y'
+		UNION ALL
+		SELECT B.AGENT_DEPT_NAME NAME,
+		B.AGENT_DEPT_CODE CODE,
+		'快递代理网点' SALES_TYPE
+		FROM BSE.T_BAS_OUTER_BRANCH B
+		WHERE B.ACTIVE = 'Y'
+		AND B.BRANCHTYPE = 'LD'
+		UNION ALL
+		SELECT O.NAME, 
+		O.CODE, 
+		'虚拟网点' SALES_TYPE
+		FROM BSE.T_BAS_ORG O
+		WHERE O.ACTIVE = 'Y'
+		AND O.EXPRESS_SALES_DEPARTMENT = 'Y'
+		)
+		<where>
+		    <if test="deptCode != null and deptCode != ''">
+	        	AND CODE = #{deptCode,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="deptName!=null and deptName != ''">
+	        	AND ( NAME like CONCAT(CONCAT('%', #{deptName,jdbcType=VARCHAR}), '%') 
+	        	  OR 
+	        	      CODE like CONCAT(CONCAT('%', #{deptName,jdbcType=VARCHAR}), '%')
+	        	)
+	      	</if>
+		</where>
+	</select>
+</mapper>

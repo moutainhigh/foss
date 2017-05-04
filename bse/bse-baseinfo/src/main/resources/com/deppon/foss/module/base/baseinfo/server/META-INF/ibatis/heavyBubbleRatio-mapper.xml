@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.heavyBubbleRatio">
+	<resultMap id="heavyBubbleRatioResultMap" 
+			   type="com.deppon.foss.module.base.baseinfo.api.shared.domain.HeavyBubbleRatioEntity" >
+		<id 	column="ID" property="id" jdbcType="VARCHAR"/>
+		<result column="HEAVY_BUBBLE_PARAM" property="heavyBubbleParam" jdbcType="VARCHAR"/>
+		<result column="OUT_FIELD_CODE" property="outfield" jdbcType="VARCHAR"/>
+		<result column="REMARK" property="remark" jdbcType="VARCHAR"/>
+		<result column="ACTIVE" property="active" jdbcType="CHAR"/>
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP"/>
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR"/>
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP"/>
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR"/>
+		<result column="NAME" property="outfieldName" jdbcType="VARCHAR"/>
+	</resultMap>
+	<!-- 数据字段 -->
+	<sql id="heavyBubbleRatio_Column_List">
+		T.ID,HEAVY_BUBBLE_PARAM,OUT_FIELD_CODE,REMARK,T.ACTIVE,T.CREATE_TIME,T.CREATE_USER_CODE,T.MODIFY_TIME,T.MODIFY_USER_CODE,M.NAME
+	</sql>
+	<sql id="heavyBubbleRatio_Column_List1">
+		T.ID,HEAVY_BUBBLE_PARAM,OUT_FIELD_CODE,REMARK,T.ACTIVE,T.CREATE_TIME,T.CREATE_USER_CODE,T.MODIFY_TIME,T.MODIFY_USER_CODE
+	</sql>
+	
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<if test="outfield != null and outfield != ''">
+				T.OUT_FIELD_CODE = #{outfield,jdbcType=VARCHAR}
+			</if>
+			<if test="heavyBubbleParam != null and heavyBubbleParam != ''" >
+				AND T.HEAVY_BUBBLE_PARAM = #{heavyBubbleParam,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</sql>
+	
+	<!-- 验证重泡比外场是否存在 -->
+	<select id="queryOutfieldNameByHeavyBubbleRatio" parameterType="map" resultMap="heavyBubbleRatioResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:验证重泡比外场是否存在 **/
+		]]>
+		<include refid="heavyBubbleRatio_Column_List1" />
+		<![CDATA[
+			FROM bse.t_bas_heavy_Bubble_Ratio T
+		]]>
+		<where>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="outfield != null and outfield != ''">
+				AND OUT_FIELD_CODE = #{outfield,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 根据外场code查询重泡比参数，对接中转单独需要 -->
+	<select id="queryHeavyBubbleParamByOutfield" parameterType="map" resultType="String">
+		<![CDATA[
+			SELECT HEAVY_BUBBLE_PARAM
+			/** 综合:根据外场Code查询重泡比参数**/
+			FROM bse.t_bas_heavy_Bubble_Ratio T 
+		]]>
+		<where>
+			<if test="outfield != null and outfield != ''">
+				T.OUT_FIELD_CODE = #{outfield,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+	
+	
+	<!-- 根据条件 查询所有heavyBubbleRatio的信息 -->
+	<select id="queryAllHeavyBubbleRatio"
+			parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.HeavyBubbleRatioEntity"
+			resultMap="heavyBubbleRatioResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有heavyBubbleRatio信息**/
+		]]>
+		<include refid="heavyBubbleRatio_Column_List" />
+		<![CDATA[
+			FROM bse.t_bas_heavy_Bubble_Ratio T left join t_bas_org M on T.OUT_FIELD_CODE = M.CODE and M.active='Y'
+		]]>
+		<include refid="queryWhere"/>
+	</select>
+	
+	
+	<!-- 统计总记录数 -->
+	<select id="queryCount" 
+			parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.HeavyBubbleRatioEntity"
+			resultType="Long">
+		<![CDATA[
+			select/** 综合:统计总记录数**/ count(*) FROM bse.t_bas_heavy_Bubble_Ratio T
+		]]>
+		<include refid="queryWhere"/>
+	</select>
+
+	<!-- 新增信息 -->
+	<insert id="insert" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.HeavyBubbleRatioEntity">
+		<![CDATA[
+			INSERT/** 综合:新增信息**/ INTO bse.t_bas_heavy_Bubble_Ratio T	(
+		]]>
+		<include refid="heavyBubbleRatio_Column_List1"/>
+		<![CDATA[
+		)VALUES(
+		]]>
+			#{id,jdbcType=VARCHAR},
+			#{heavyBubbleParam,jdbcType=VARCHAR},
+			#{outfield,jdbcType=VARCHAR},
+			#{remark,jdbcType=VARCHAR},
+			#{active,jdbcType=VARCHAR},
+			#{createDate,jdbcType=TIMESTAMP},
+			#{createUser,jdbcType=VARCHAR},
+			#{modifyDate,jdbcType=TIMESTAMP},
+			#{modifyUser,jdbcType=VARCHAR}
+		<![CDATA[
+			)
+		]]>
+	</insert>
+	
+	
+	<!-- 修改信息 -->
+	<update id="update" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.HeavyBubbleRatioEntity">
+		update /** 修改信息 **/ bse.t_bas_heavy_Bubble_Ratio 
+		<set>
+			<if test="outfield != null">
+				OUT_FIELD_CODE = #{outfield,jdbcType=VARCHAR}
+			</if>
+			<if test="heavyBubbleParam !=null">
+				HEAVY_BUBBLE_PARAM = #{heavyBubbleParam,jdbcType=VARCHAR}
+			</if>
+			<if test="remark != null">
+				REMARK = #{remark,jdbcType=VARCHAR}
+			</if>
+			<if test="createDate != null">
+				CREATE_TIME = #{createDate,jdbcType=VARCHAR}
+			</if>
+			<if test="createUser != null">
+				CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR}
+			</if>
+			<if test="modifyDate != null">
+				CREATE_TIME = #{modifyDate,jdbcType=VARCHAR}
+			</if>
+			<if test="modifyUser != null">
+				CREATE_USER_CODE = #{modifyUser,jdbcType=VARCHAR}
+			</if>
+		</set>
+		
+		<where>
+			<if test="id != null">
+				ID = #{id,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</update>
+	
+	
+	<!-- 作废信息 -->
+	<update id="deleteById" parameterType="map">
+		update/** 综合:作废信息**/ bse.t_bas_heavy_Bubble_Ratio
+		
+		<set>
+			<if test="inactive != null and inactive != ''">
+				ACTIVE = #{inactive,jdbcType=CHAR}
+			</if>
+		</set>
+		
+		<where>
+			<if test="idList!=null and idList.size > 0">
+				ID in
+				<foreach collection="idList" index="index" item="code" open="("
+					separator="," close=")">
+					#{code}
+				</foreach>
+			</if>
+			<if test="active != null and active != ''">
+				and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</update>
+	
+	
+	
+	
+	
+</mapper>

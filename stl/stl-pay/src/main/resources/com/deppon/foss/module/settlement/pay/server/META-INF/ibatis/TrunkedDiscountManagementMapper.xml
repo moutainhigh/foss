@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.pay.trunkedDiscountManagementDao">
+	<resultMap type="com.deppon.foss.module.settlement.pay.api.shared.domain.TrunkDiscountManEntity"
+		id="TrunkDiscountResultMap">
+		<result property="waybillNo" column="waybill_no" jdbcType="VARCHAR" />
+		<result property="payableNo" column="payable_no" jdbcType="VARCHAR" />
+		<result property="invoiceMark" column="INVOICE_MARK" jdbcType="VARCHAR" />
+		<result property="unifiedSettlement" column="unified_settlement"	jdbcType="VARCHAR" />
+		<result property="contractOrgName" column="contract_org_name" jdbcType="VARCHAR" />
+		<result property="contractOrgCode" column="contract_org_code"	jdbcType="VARCHAR" />
+		<result property="customerName" column="customer_name" jdbcType="VARCHAR" />
+		<result property="customerNo" column="customer_code" jdbcType="VARCHAR" />
+		<result property="verifyDiscountFee" column="verify_amount"	jdbcType="NUMERIC" />
+		<result property="pureFee" column="transport_fee" jdbcType="NUMERIC" />
+		<result property="generatingOrgName" column="generating_org_name"	jdbcType="VARCHAR" />
+		<result property="discountFee" column="discount_fee" jdbcType="NUMERIC" />
+		<result property="productCode" column="product_code" jdbcType="VARCHAR" />
+		<result property="totalMoney" column="totalMoney" jdbcType="NUMERIC" />
+		<result property="deliveryGoodsFee" column="delivery_goods_fee" jdbcType="NUMERIC" />
+		<result property="pickupFee" column="pickup_fee" jdbcType="NUMERIC" />
+		<result property="insuranceFee" column="insurance_fee" jdbcType="NUMERIC" />
+		<result property="otherFee" column="other_fee" jdbcType="NUMERIC" />
+		<result property="discountMoney" column="discountMoney"	jdbcType="NUMERIC" />
+		<result property="pureDiscountFee" column="pureDiscount_fee"	jdbcType="NUMERIC" />
+		<result property="codAgencyFee" column="cod_fee" jdbcType="NUMERIC" />
+		<result property="transportRate" column="transport_rate"	jdbcType="NUMERIC" />
+	</resultMap>
+
+	<!-- 按客户查询折扣单 -->
+	<select id="getTrunkDiscountManagementByCust"
+		parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.TrunkedDiscountManagementDto"
+		resultMap="TrunkDiscountResultMap">
+		select 
+			p.waybill_no,
+			p.payable_no,
+			r.INVOICE_MARK,
+			r.unified_settlement,
+			r.contract_org_name,
+			r.contract_org_code,
+			p.customer_name,
+			p.customer_code,
+			p.verify_amount/100 verify_amount,
+			w.transport_fee/100 transport_fee,
+			r.generating_org_name generating_org_name,
+			w.product_code,	
+			(w.pre_pay_amount + w.to_pay_amount - w.cod_amount)/100 totalMoney,
+			w.delivery_goods_fee/100 delivery_goods_fee,
+			w.pickup_fee/100 pickup_fee,
+			w.insurance_fee/100 insurance_fee,
+			w.other_fee/100 other_fee,
+			p.amount/100 discount_fee,
+	    	(w.pre_pay_amount + w.to_pay_amount - w.cod_amount - p.amount)/100 discountMoney ,
+			(w.transport_fee - p.amount)/100 pureDiscount_fee,
+	    	w.cod_fee/100 cod_fee,
+			d.transport_rate transport_rate
+		from stl.t_stl_bill_payable p
+		join stl.t_stl_bill_receivable r
+		on p.waybill_no = r.waybill_no
+		join pkp.t_srv_waybill w
+		on w.waybill_no = p.waybill_no
+		join STL.T_STL_DISCOUNT_RATE_FREIGHT d
+		on d.customer_code = p.customer_code
+		where
+		p.active = 'Y'
+		and r.active = 'Y'
+		and w.active = 'Y'
+		and d.active = 'Y'
+		and r.bill_type = 'OR'
+		and p.bill_type = 'FDC'
+       	 	<![CDATA[ 
+       	 		AND p.BUSINESS_DATE >= #{periodBeginDate,jdbcType=TIMESTAMP} 
+       	 		AND p.BUSINESS_DATE <#{periodEndDate,jdbcType=TIMESTAMP}
+       	 	]]>
+		<if test="customerNo != null and customerNo != ''">
+			AND p.customer_code = #{customerNo,jdbcType=VARCHAR}
+		</if>
+	</select>
+
+	<!-- 根据客户单号查询总行数 -->
+	<select id="getCountByCust"
+		parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.TrunkedDiscountManagementDto"
+		resultType="int">
+		select count(1)
+		from stl.t_stl_bill_payable p
+		join stl.t_stl_bill_receivable r
+		on p.waybill_no = r.waybill_no
+		join pkp.t_srv_waybill w
+		on w.waybill_no = p.waybill_no
+		join STL.T_STL_DISCOUNT_RATE_FREIGHT d
+		on d.customer_code = p.customer_code
+		where
+		p.active = 'Y'
+		and r.active = 'Y'
+		and w.active = 'Y'
+		and d.active = 'Y'
+		and r.bill_type = 'OR'
+		and p.bill_type = 'FDC'
+       	 	<![CDATA[ 
+       	 		AND p.BUSINESS_DATE >= #{periodBeginDate,jdbcType=TIMESTAMP} 
+       	 		AND p.BUSINESS_DATE <#{periodEndDate,jdbcType=TIMESTAMP}
+       	 	]]>
+		<if test="customerNo != null and customerNo != ''">
+			AND p.customer_code = #{customerNo,jdbcType=VARCHAR}
+		</if>
+	</select>
+
+
+	<!-- 按运单号去查询 -->
+	<select id="getTrunkDiscountManagementByNumber"
+		parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.TrunkedDiscountManagementDto"
+		resultMap="TrunkDiscountResultMap">
+		select p.waybill_no,
+			p.payable_no,
+			r.INVOICE_MARK,
+			r.unified_settlement,
+			r.contract_org_name,
+			r.contract_org_code,
+			p.customer_name,
+			p.customer_code,
+			p.verify_amount/100 verify_amount,
+			w.transport_fee/100 transport_fee,
+			r.generating_org_name generating_org_name,
+			w.product_code,	
+			(w.pre_pay_amount + w.to_pay_amount - w.cod_amount)/100 totalMoney,
+			w.delivery_goods_fee/100 delivery_goods_fee,
+			w.pickup_fee/100 pickup_fee,
+			w.insurance_fee/100 insurance_fee,
+			w.other_fee/100 other_fee,
+			p.amount/100 discount_fee,
+	    	(w.pre_pay_amount + w.to_pay_amount - w.cod_amount - p.amount)/100 discountMoney ,
+			(w.transport_fee - p.amount)/100 pureDiscount_fee,
+	    	w.cod_fee/100 cod_fee,
+			d.transport_rate transport_rate
+		from stl.t_stl_bill_payable p
+		join stl.t_stl_bill_receivable r
+		on p.waybill_no = r.waybill_no	
+		join pkp.t_srv_waybill w
+		on w.waybill_no = p.waybill_no
+		join STL.T_STL_DISCOUNT_RATE_FREIGHT d
+		on d.customer_code = p.customer_code
+		where
+		p.active = 'Y'
+		and r.active = 'Y'
+		and w.active = 'Y'
+		and d.active = 'Y'
+		and r.bill_type = 'OR'
+		and p.bill_type = 'FDC'
+		and
+		p.waybill_no in
+		<foreach collection="numbers" index="index" item="item" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+	</select>
+
+	<!-- 按运单号去查询 总行数 -->
+	<select id="getCountByNumber"
+		parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.TrunkedDiscountManagementDto"
+		resultType="int">
+		select count(1)
+		from stl.t_stl_bill_payable p 
+		join stl.t_stl_bill_receivable r
+		on p.waybill_no = r.waybill_no
+		join pkp.t_srv_waybill w
+		on w.waybill_no = p.waybill_no
+		join STL.T_STL_DISCOUNT_RATE_FREIGHT d
+		on d.customer_code = p.customer_code
+		where
+		p.active = 'Y'
+		and r.active = 'Y'
+		and w.active = 'Y'
+		and d.active = 'Y'
+		and r.bill_type = 'OR'
+		and p.bill_type = 'FDC'
+		and
+		p.waybill_no in
+		<foreach collection="numbers" index="index" item="item" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+	</select>
+</mapper>	

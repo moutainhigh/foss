@@ -1,0 +1,471 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- sendDistrictMapEntity-mapper.xml  -->
+<mapper namespace="foss.bse.bse-baseinfo.sendDistrictMap" >
+
+    <resultMap id="sendDistrictMapResult"
+   			type="com.deppon.foss.module.base.baseinfo.api.shared.domain.SendDistrictMapEntity">
+		<result property="id" column="ID"  jdbcType="VARCHAR" />
+		<result property="transferCenterCode" column="TRANSFER_CENTER_CODE"  jdbcType="VARCHAR" />
+		<result property="goodsAreaCode" column="GOODS_AREA_CODE"  jdbcType="VARCHAR" />
+		<result property="districtCode" column="DISTRICT_CODE"  jdbcType="VARCHAR" />
+		<result property="zoneName" column="ZONE_NAME"  jdbcType="VARCHAR" />
+		<result property="zoneCode" column="ZONE_CODE"  jdbcType="VARCHAR" />
+		<result property="createDate" column="CREATE_TIME"  jdbcType="TIMESTAMP" />
+		<result property="createUser" column="CREATE_USER_CODE"  jdbcType="VARCHAR" />
+		<result property="modifyDate" column="MODIFY_TIME"  jdbcType="TIMESTAMP" />
+		<result property="modifyUser" column="MODIFY_USER_CODE"  jdbcType="VARCHAR" />
+		<result property="active" column="ACTIVE"  jdbcType="CHAR" />
+		<result property="goodsType" column="GOODS_TYPE"  jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<!-- 数据字段 -->
+	<sql id="sendDistrictMap_Column_List">
+		ID, TRANSFER_CENTER_CODE,GOODS_AREA_CODE,DISTRICT_CODE,ZONE_NAME,ZONE_CODE,CREATE_TIME,CREATE_USER_CODE,
+		MODIFY_TIME,MODIFY_USER_CODE,ACTIVE,GOODS_TYPE
+	</sql>
+ 	
+	<!-- 数据字段 -->
+	<sql id="sendDistrictMap_Column_DistinctList">
+		ZONE_NAME,ZONE_CODE
+	</sql>
+	<!-- 新增-->
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SendDistrictMapEntity">	
+		<![CDATA[
+			INSERT/** 新增派送货区行政区域映射信息 **/ INTO BSE.T_BAS_SEND_DISTRICT_MAP T	(
+		]]>
+		<include refid="sendDistrictMap_Column_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR},
+		#{transferCenterCode,jdbcType=VARCHAR},
+		#{goodsAreaCode,jdbcType=VARCHAR},
+		#{districtCode,jdbcType=VARCHAR},
+		#{zoneName,jdbcType=VARCHAR},
+		#{zoneCode,jdbcType=VARCHAR},
+		#{createDate,jdbcType=TIMESTAMP},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{modifyUser,jdbcType=VARCHAR},
+		#{active,jdbcType=CHAR},
+		#{goodsType,jdbcType=VARCHAR}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+	
+	<!-- 修改派送货区行政区域映射信息 -->
+	<update id="update"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SendDistrictMapEntity">
+		UPDATE/** 修改包装供应商信息 **/ BSE.T_BAS_SEND_DISTRICT_MAP T
+		<set>
+			<if test="transferCenterCode != null">
+				TRANSFER_CENTER_CODE = #{transferCenterCode,jdbcType=VARCHAR},
+			</if>
+			<if test="goodsAreaCode != null">
+				GOODS_AREA_CODE = #{goodsAreaCode,jdbcType=VARCHAR},
+			</if>
+			<if test="districtCode != null">
+				DISTRICT_CODE = #{districtCode,jdbcType=VARCHAR},
+			</if>
+			<if test="zoneName != null">
+				ZONE_NAME = #{zoneName,jdbcType=VARCHAR},
+			</if>
+			<if test="zoneCode != null">
+				ZONE_CODE = #{zoneCode,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>				
+			<if test="modifyUser != null">
+				MODIFY_USER = #{modifyUser,jdbcType=VARCHAR},
+			</if>	
+			<if test="active != null">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="goodsType != null">
+				GOODS_TYPE = #{goodsType,jdbcType=VARCHAR},
+			</if>
+		</set>
+		<where>
+			<if test="id != null">
+				id = #{id,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</update>
+	
+	
+	
+	<!-- 根据分区名称查询行政区域代码 -->
+	<sql id="queryDistrictCodeWhere">
+		<where>
+			<if test="zoneName != null and zoneName != ''">
+				ZONE_NAME = #{zoneName,jdbcType=VARCHAR}
+			</if>
+			<if test="zoneCode != null and zoneCode != ''">
+				and ZONE_CODE = #{zoneCode,jdbcType=VARCHAR}
+			</if>
+			<if test="districtCode != null and districtCode != ''">
+			 and DISTRICT_CODE = #{districtCode,jdbcType=VARCHAR}
+			</if>
+			<if test="transferCenterCode != null and transferCenterCode != ''">
+				and TRANSFER_CENTER_CODE = #{transferCenterCode,jdbcType=VARCHAR}
+			</if>		
+			<if test="active != null and active != ''">
+			    and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="goodsType != null">
+				and GOODS_TYPE = #{goodsType,jdbcType=VARCHAR}
+			</if>
+			group by  zone_name,zone_code
+		</where>
+	</sql>
+	<!-- 根据 外场code 分区code 状态 查询 分区（唯一）信息 -->
+	<select id="selectUnique"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SendDistrictMapEntity"
+		resultMap="sendDistrictMapResult">
+		<![CDATA[
+			SELECT
+			/** 根据 外场code 分区code 状态 查询 分区（唯一）信息 **/
+		]]>
+		<!-- <include refid="sendDistrictMap_Column_List" /> -->
+		<include refid="sendDistrictMap_Column_DistinctList" />
+		<![CDATA[
+			FROM BSE.T_BAS_SEND_DISTRICT_MAP T
+		]]>
+		<include refid="queryDistrictCodeWhere" />
+	</select>
+	
+		<!-- 根据 外场code 分区code 状态 查询 分区（唯一）信息  统计总记录数 -->
+	<select id="queryCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SendDistrictMapEntity">
+	    <![CDATA[
+	       select count(*) from (	SELECT/** 根据 外场code 分区code 状态 查询 分区（唯一）信息 统计总记录数**/ count(*) FROM BSE.T_BAS_SEND_DISTRICT_MAP T 
+	    ]]>
+		<include refid="queryDistrictCodeWhere" />
+		)
+	</select>
+	
+	
+	<!-- 查询条件-->
+	<sql id="query_sendDistrictMap_condition">
+		<where>
+			<if test="id !=null and id !=''">
+				A.ID =#{id,jdbcType=VARCHAR}
+			</if>
+			<if test="transferCenterCode !=null and transferCenterCode !=''">
+				AND A.TRANSFER_CENTER_CODE =#{transferCenterCode,jdbcType=VARCHAR}
+			</if>
+			<if test="goodsAreaCode !=null and goodsAreaCode !=''">
+				AND A.GOODS_AREA_CODE =#{goodsAreaCode,jdbcType=VARCHAR}
+			</if>
+			<if test="districtCode !=null and districtCode !=''">
+				AND A.DISTRICT_CODE =#{districtCode,jdbcType=VARCHAR}
+			</if>
+			<if test="zoneName !=null and zoneName !=''">
+				AND A.ZONE_NAME =#{zoneName,jdbcType=VARCHAR}
+			</if>
+			<if test="zoneCode !=null and zoneCode !=''">
+				AND A.ZONE_CODE =#{zoneCode,jdbcType=VARCHAR}
+			</if>
+			<if test="createDate != null and createDate != ''" >
+				AND A.CREATE_TIME =#{createDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="modifyDate != null and modifyDate != ''" >
+				AND A.MODIFY_TIME =#{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="createUser != null and createUser != ''" >
+				AND A.CREATE_USER_CODE =#{createUser,jdbcType=VARCHAR}
+			</if>
+			<if test="modifyUser != null and modifyUser != ''" >
+				AND A.MODIFY_USER_CODE =#{modifyUser,jdbcType=VARCHAR}
+			</if>
+			<if test="goodsType != null">
+				AND A.GOODS_TYPE = #{goodsType,jdbcType=VARCHAR},
+			</if>
+			AND A.ACTIVE =#{active,jdbcType=CHAR}
+		</where>
+	</sql>
+	<!-- 根据条件动态查询 -->
+	<select id="querySendDistrictMapList" resultMap="sendDistrictMapResult" 
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SendDistrictMapEntity">
+			<![CDATA[
+				SELECT /** 综合查询 派送货区行政区域映射关系信息**/
+			]]>
+			<include refid="sendDistrictMap_Column_List"/>
+			<![CDATA[
+				FROM BSE.T_BAS_SEND_DISTRICT_MAP A
+			]]>
+			<include refid="query_sendDistrictMap_condition"/>
+	</select>
+	
+	<!-- 查询总数 -->
+	<select id="querySendDistrictMapCount" resultType="Long" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SendDistrictMapEntity">
+			<![CDATA[
+				SELECT /** 综合查询 派送货区行政区域映射关系信息**/ count(*)
+			]]>
+			<![CDATA[
+				FROM BSE.T_BAS_SEND_DISTRICT_MAP A
+			]]>
+			<include refid="query_sendDistrictMap_condition"/>
+	</select>
+	
+	<!-- 数据字段 -->
+	<sql id="sendDistrictMap_Column_GroupList">
+		A.TRANSFER_CENTER_CODE,
+		A.GOODS_AREA_CODE,
+		A.ZONE_CODE,
+		A.GOODS_TYPE
+	</sql>
+	<sql id="query_sendDistrictMap_Groupcondition">
+		<where>
+			<if test="active !=null and active !=''">
+				A.ACTIVE =#{active,jdbcType=VARCHAR}
+			</if>
+			<if test="transferCenterCode !=null and transferCenterCode !=''">
+				AND A.TRANSFER_CENTER_CODE =#{transferCenterCode,jdbcType=VARCHAR}
+			</if>
+			<if test="districtCode !=null and districtCode !=''">
+				AND A.DISTRICT_CODE =#{districtCode,jdbcType=VARCHAR}
+			</if>
+			GROUP BY A.TRANSFER_CENTER_CODE,A.GOODS_AREA_CODE,A.ZONE_CODE,A.GOODS_TYPE
+			</where>
+	</sql>
+	<!-- 根据条件动态查询 分组查询Group By -->
+	<select id="querySendDistrictMapGroupList" resultMap="sendDistrictMapResult" 
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SendDistrictMapEntity">
+			<![CDATA[
+				SELECT /** 综合查询 派送货区行政区域映射关系信息**/
+			]]>
+			<include refid="sendDistrictMap_Column_GroupList"/>
+			<![CDATA[
+				FROM BSE.T_BAS_SEND_DISTRICT_MAP A
+			]]>
+			<include refid="query_sendDistrictMap_Groupcondition"/>
+	</select>
+	<!-- 查询总数 -->
+	<select id="querySendDistrictMapGroupCount" resultType="Long" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SendDistrictMapEntity">
+			<![CDATA[
+				select count(*) from (SELECT /** 综合查询 派送货区行政区域映射关系信息**/ count(*)
+			]]>
+			<![CDATA[
+				FROM BSE.T_BAS_SEND_DISTRICT_MAP A
+			]]>
+			<include refid="query_sendDistrictMap_Groupcondition"/>
+			)
+	</select>
+	
+	
+	<!-- 根据ID批量作废 -->
+	<update id="deleteSendDistrictMapByIds"
+		parameterType="map">
+		UPDATE BSE.T_BAS_SEND_DISTRICT_MAP A 
+		/** 综合:根据ID批量作废  **/
+		SET A.ACTIVE=#{entity.active,jdbcType=CHAR},
+		       A.MODIFY_USER_CODE=#{entity.modifyUser,jdbcType=VARCHAR}, 
+			   A.MODIFY_TIME = #{entity.modifyDate,jdbcType=TIMESTAMP} 
+        <where>
+            <if test="deleteids!=null and deleteids.size() > 0">
+                ID in
+                <foreach collection="deleteids"  index="index" item="id"  open="(" separator="," close=")">  
+	            #{id} 
+	            </foreach>
+            </if>
+            AND  A.ACTIVE=#{conditionActive,jdbcType=CHAR}
+        </where>       
+	</update>
+	
+	<insert id="addSendDistrictMapALL"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SendDistrictMapEntity">
+		INSERT INTO BSE.T_BAS_SEND_DISTRICT_MAP (
+		/**增加派送货区行政区域映射基础资料 插入数据**/
+		ID,
+		TRANSFER_CENTER_CODE,
+		TRANSFER_CENTER_NAME,
+		GOODS_AREA_CODE,
+		GOODS_AREA_NAME,
+		DISTRICT_CODE,
+		DISTRICT_NAME,
+		ZONE_NAME,
+		ZONE_CODE,
+		CREATE_TIME,
+		MODIFY_TIME,
+		ACTIVE,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE,
+		GOODS_TYPE
+		)VALUES(
+		<!--主键Id -->
+		#{id,jdbcType="VARCHAR" }
+		<!--外场编码 CODE -->
+		#{transferCenterCode,jdbcType=VARCHAR }
+		<!--外场名称 -->
+		#{transferCenterName,jdbcType=VARCHAR }
+		<!--库区编码 CODE ： -->
+		#{goodsAreaCode,jdbcType=VARCHAR }
+		<!--库区名称 ： -->
+		#{goodsAreaName,jdbcType=VARCHAR }
+		<!--行政区域编码 -->
+		#{districtCode, jdbcType=VARCHAR }
+		<!--行政区域名称 -->
+		#{districtName,jdbcType=VARCHAR }
+		<!--分区名称 -->
+		#{zoneName,jdbcType=VARCHAR }
+		<!--分区编码CODE -->
+		#{zoneCode,jdbcType=VARCHAR }
+		<!--创建时间 -->
+		#{createDate,jdbcType=TIMESTAMP }
+		<!--修改时间 -->
+		#{modifyDate,jdbcType=TIMESTAMP }
+		<!--是否启用 -->
+		#{active, jdbcType=CHAR }
+		<!--创建人工号 -->
+		#{createUser,jdbcType=VARCHAR }
+		<!--更新人工号 -->
+		#{modifyUser,jdbcType=VARCHAR }
+        #{goodsType,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	<insert id="addSendDistrictMap" parameterType="map">
+
+		INSERT INTO BSE.T_BAS_SEND_DISTRICT_MAP (
+		/**批量 增加派送货区行政区域映射基础资料 插入数据**/
+		ID,
+		TRANSFER_CENTER_CODE,
+		GOODS_AREA_CODE,
+		DISTRICT_CODE,
+		ZONE_NAME,
+		ZONE_CODE,
+		CREATE_TIME,
+		MODIFY_TIME,
+		ACTIVE,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE,
+		GOODS_TYPE
+		)  (
+		<foreach collection="sendDistrictMapList" index="index" item="sendDistrictMapEntity"  separator="union ">
+			 select <!--主键Id -->
+			#{sendDistrictMapEntity.id,jdbcType=VARCHAR },
+			<!--外场编码 CODE -->
+			#{sendDistrictMap.transferCenterCode,jdbcType=VARCHAR },
+			<!--库区编码 CODE ： -->
+			#{sendDistrictMap.goodsAreaCode,jdbcType=VARCHAR },
+			<!--行政区域编码 -->
+			#{sendDistrictMapEntity.districtCode, jdbcType=VARCHAR},
+			<!--分区名称 -->
+			#{sendDistrictMap.zoneName,jdbcType=VARCHAR },
+			<!--分区编码CODE -->
+			#{sendDistrictMap.zoneCode,jdbcType=VARCHAR },
+			<!--创建时间 -->
+			#{sendDistrictMap.createDate,jdbcType=TIMESTAMP },
+			<!--修改时间 -->
+			#{sendDistrictMap.modifyDate,jdbcType=TIMESTAMP },
+			<!--是否启用 -->
+			#{sendDistrictMap.active, jdbcType=CHAR },
+			<!--创建人工号 -->
+			#{sendDistrictMap.createUser,jdbcType=VARCHAR },
+			<!--更新人工号 -->
+			#{sendDistrictMap.modifyUser,jdbcType=VARCHAR },
+			#{sendDistrictMap.goodsType,jdbcType=VARCHAR}
+			from dual
+		</foreach>
+		)
+	</insert>
+	
+	<select id="querySendDistrictMapByAreaCodeOrZoneName"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SendDistrictMapEntity"
+		resultMap="sendDistrictMapResult">
+		select
+		/**根据分区名称 或者行政区域Code查询 派送货区行政区域映射基础资料 信息**/
+		ID,
+		TRANSFER_CENTER_CODE,
+		GOODS_AREA_CODE,
+		DISTRICT_CODE,
+		ZONE_NAME,
+		ZONE_CODE,
+		CREATE_TIME,
+		MODIFY_TIME,
+		ACTIVE,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE,
+		GOODS_TYPE
+		from BSE.T_BAS_SEND_DISTRICT_MAP
+		<where>
+			/**分区名称*/
+			(<if test="zoneCode == null or zoneCode == '' ">
+				ZONE_NAME=#{zoneName,jdbcType=VARCHAR} 
+			</if>
+			<if test="zoneCode == null or zoneCode == '' and goodsType == 'send'.toString() " >
+			  or 
+			</if>
+			<if test="districtCode != null and districtCode != '' ">
+				/**行政区域编码 */
+				DISTRICT_CODE= #{districtCode, jdbcType=VARCHAR}
+			</if>
+			
+			)
+			and ACTIVE='Y'
+			<if test="transferCenterCode != null and transferCenterCode != '' ">
+				/**顶级外场编码 */
+				and TRANSFER_CENTER_CODE= #{transferCenterCode, jdbcType=VARCHAR}
+			</if>
+			<if test="transferCenterCode != null and transferCenterCode != '' ">
+				/**驻地库区编码 */
+				and GOODS_AREA_CODE= #{goodsAreaCode, jdbcType=VARCHAR}
+			</if>
+			<if test="goodsType != null and goodsType != '' ">
+				/**货物类型 */
+				and GOODS_TYPE= #{goodsType, jdbcType=VARCHAR}
+			</if>
+		  </where>
+	</select>
+	<update id="updateSendDistrictMapByID"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SendDistrictMapEntity">
+		UPDATE BSE.T_BAS_SEND_DISTRICT_MAP SET
+		/**根据 ID修改 增加派送货区行政区域映射基础资料 **/
+		ID=#{id,jdbcType=VARCHAR},
+		<!--外场编码 CODE -->
+		TRANSFER_CENTER_CODE=#{transferCenterCode,jdbcType=VARCHAR},
+		<!--外场名称 -->
+		TRANSFER_CENTER_NAME=#{transferCenterName,jdbcType=VARCHAR},
+		<!--库区编码 CODE ： -->
+		GOODS_AREA_CODE=#{goodsAreaCode,jdbcType=VARCHAR},
+		<!--库区名称 ： -->
+		GOODS_AREA_NAME=#{goodsAreaName,jdbcType=VARCHAR},
+		<!--行政区域编码 -->
+		DISTRICT_CODE= #{districtCode, jdbcType=VARCHAR},
+		<!--行政区域名称 -->
+		DISTRICT_NAME=#{districtName,jdbcType=VARCHAR},
+		<!--分区名称 -->
+		ZONE_NAME=#{zoneName,jdbcType=VARCHAR},
+		<!--分区编码CODE -->
+		ZONE_CODE=#{zoneCode,jdbcType=VARCHAR},
+		<!--创建时间 -->
+		CREATE_TIME=#{createDate,jdbcType=TIMESTAMP},
+		<!--修改时间 -->
+		MODIFY_TIME=#{modifyDate,jdbcType=TIMESTAMP},
+		<!--是否启用 -->
+		ACTIVE=#{active, jdbcType=CHAR},
+		<!--创建人工号 -->
+		CREATE_USER_CODE=#{createUser,jdbcType=VARCHAR},
+		<!--更新人工号 -->
+		MODIFY_USER_CODE=#{modifyUser,jdbcType=VARCHAR},
+		GOODS_TYPE=#{goodsType,jdbcType=VARCHAR}
+		
+		<where>
+			ID=#{id,jdbcType=VARCHAR},
+		</where>
+	</update>
+	<update id="deleteZoneName" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SendDistrictMapEntity">
+	 UPDATE BSE.T_BAS_SEND_DISTRICT_MAP SET ACTIVE='N' WHERE  ZONE_CODE=#{zoneCode,jdbcType=VARCHAR}
+	</update>
+	
+	
+</mapper>
+	
+	

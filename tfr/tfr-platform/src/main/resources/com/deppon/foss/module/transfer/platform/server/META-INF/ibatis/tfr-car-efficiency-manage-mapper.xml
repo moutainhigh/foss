@@ -1,0 +1,648 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.platform.carEfficiencyManage">
+	<!--车辆装卸车效率 -->
+	<resultMap id="carEfficiencyManageResultMap"
+		type="com.deppon.foss.module.transfer.platform.api.shared.domain.CarEfficiencyEntity">
+		<result column="ACTUAL_DEPART_TIME" property="actualDepartTime" jdbcType="VARCHAR" />
+	    <result column="BILL_NO" property="billNo" jdbcType="VARCHAR" />
+	    <result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+	    <result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+	    <result column="ORG_NAME" property="orgName" jdbcType="VARCHAR" />
+	    <result column="WEIGHT_TOTAL" property="weightTotal" jdbcType="DECIMAL" />
+	    <result column="START_TIME" property="startTime" jdbcType="TIMESTAMP" />
+	    <result column="END_TIME" property="endTime" jdbcType="TIMESTAMP" />
+	    <result column="TASK_IDS" property="taskIds" jdbcType="VARCHAR" />
+	    <result column="TYPE_LOAD" property="typeLoad" jdbcType="CHAR" />
+	    <result column="TIME_SECTION" property="timeSection" jdbcType="DECIMAL" />
+	    <result column="EFFICIENCY" property="efficiency" jdbcType="DECIMAL" />
+	    <result column="FLAG_PASSING" property="flagPassing" jdbcType="CHAR" />
+	    <result column="loader_code" property="loaderCode" jdbcType="VARCHAR" />
+	    <result column="loader_name" property="loaderName" jdbcType="VARCHAR" />
+	</resultMap>
+		
+	<!-- 长途装卸车效率查询 -->
+	<select id="queryCarEfficiencyWayLong" resultMap="carEfficiencyManageResultMap" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.CarEfficiencyEntity">
+		select *
+  from (select tb4.actual_depart_time,
+               tb4.bill_no,
+               tb4.vehicle_no,
+               tb4.org_name,
+               ROUND(tb4.weight_total / 1000, 2) weight_total,
+               tb4.start_time,
+               tb4.end_time,
+               tb4.task_ids,
+               tb4.type_load,
+               to_char(ROUND(TO_NUMBER(tb4.end_time - tb4.start_time), 2) * 24,'99999990.00') time_section,
+               to_char(ROUND((tb4.weight_total / 1000) /
+                     (TO_NUMBER(tb4.end_time - tb4.start_time) * 24),
+                     2),'99999990.00') efficiency,
+               case
+                 when (tb4.weight_total / 1000) /
+                      (TO_NUMBER(tb4.end_time - tb4.start_time) * 24) >= 5 then
+                  '1'
+                 else
+                  '0'
+               end flag_passing
+          from (
+      <if test="typeLoad==0 or typeLoad==1  ">
+          select tb2.actual_depart_time,
+                       tb2.bill_no,
+                       tb2.vehicle_no,
+                       tb2.org_name,
+                       sum(tb2.weight_total) weight_total,
+                       to_date(to_char(min(tb2.start_time),
+                                       'yyyy-mm-dd hh24:mi:ss'),
+                               'yyyy-mm-dd hh24:mi:ss') start_time,
+                       to_date(to_char(max(tb2.end_time),
+                                       'yyyy-mm-dd hh24:mi:ss'),
+                               'yyyy-mm-dd hh24:mi:ss') end_time,
+                       listagg(tb2.id, ',') within group(order by tb2.id) task_ids,
+                       '1' type_load
+                  from (select tt.id Truck_Task_Id,
+                               ttb.bill_no,
+                               ttb2.vehicle_no,
+                               ttb2.orig_org_name org_name,
+                               ttb2.id,
+                               to_char(ttd.actual_depart_time, 'yyyy-mm-dd') actual_depart_time,
+                               sum(wd.load_weight_total) weight_total,
+                               min(ttb2.load_start_time) start_time,
+                               max(ttb2.load_end_time) end_time
+                          from tfr.t_Opt_Truck_Task tt
+                          left join tfr.t_Opt_Truck_Task_Detail ttd
+                            on ttd.truck_task_id = tt.id and ttd.orig_org_code=#{orgCode}
+                          left join (select nttb.truck_task_detail_id,
+                                           nlt.id,
+                                           nlt.vehicle_no,
+                                           nlt.orig_org_name,
+                                           nlt.load_start_time,
+                                           nlt.load_end_time
+                                      from tfr.t_opt_truck_task_bill nttb
+                                      left join tfr.t_Opt_Handoverbill nhb
+                                        on nhb.handover_no = nttb.bill_no
+                                      left join tfr.t_opt_load_task nlt
+                                        on nlt.task_no = nhb.load_task_no
+                                     where nlt.task_type ='LONG_DISTANCE_LOAD'
+                                       and nlt.task_state = 'FINISHED'
+                                       <if test="vehicleNo!=null and vehicleNo !='' ">
+							           			and nlt.vehicle_no = #{vehicleNo}
+							           </if> 
+                                      and nlt.orig_org_code=#{orgCode}
+                                    ) ttb2
+                            on ttb2.truck_task_detail_id = ttd.id
+                          left join tfr.t_opt_truck_task_bill ttb
+                            on ttb.truck_task_detail_id =
+                               ttb2.truck_task_detail_id
+                          left join tfr.t_opt_load_waybill_detail wd
+                            on wd.load_task_id = ttb2.id
+                         where ttd.actual_depart_time   between to_date(#{actualDepartTime} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{actualDepartTime} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+			            <![CDATA[
+                           and tt.status <> 'CANCLED'
+                             ]]>
+                             and ttd.orig_org_code=#{orgCode}
+                             and ttd.truck_task_id = tt.id
+                           and ttb.bill_level = 1 
+                           and ttb.bill_type = 'VEHICLEASSEMBLE'
+                         
+                           <if test="billNo!=null and billNo !='' ">
+			           			and ttb.bill_no=#{billNo}
+			            </if> 
+                         group by ttb2.vehicle_no,
+                                  ttb2.orig_org_name,
+                                  ttb2.id,
+                                  tt.id,
+                                  ttb.bill_no,
+                                  actual_depart_time) tb2
+                 group by tb2.vehicle_no,
+                          tb2.org_name,
+                          tb2.Truck_Task_Id,
+                          tb2.bill_no,
+                          tb2.actual_depart_time
+                          </if>
+                  <if test="typeLoad==0 ">
+			           			union
+			     </if> 
+			     <if test="typeLoad==0 or typeLoad==2 ">
+                select tb3.actual_depart_time,
+                       tb3.bill_no,
+                       tb3.vehicle_no,
+                       tb3.org_name,
+                       sum(tb3.weight_total) weight_total,
+                       to_date(to_char(min(tb3.start_time),
+                                       'yyyy-mm-dd hh24:mi:ss'),
+                               'yyyy-mm-dd hh24:mi:ss') start_time,
+                       to_date(to_char(max(tb3.end_time),
+                                       'yyyy-mm-dd hh24:mi:ss'),
+                               'yyyy-mm-dd hh24:mi:ss') end_time,
+                       listagg(tb3.id, ',') within group(order by tb3.id) task_ids,
+                       '2' type_load
+                  from (select tt.id Truck_Task_Id,
+                               ttb.bill_no,
+                               ult.vehicle_no,
+                               ult.unload_org_name org_name,
+                               ult.id,
+                               to_char(ttd.actual_depart_time, 'yyyy-mm-dd') actual_depart_time,
+                               sum(uwd.unload_weight_total) weight_total,
+                               min(ult.unload_start_time) start_time,
+                               max(ult.unload_end_time) end_time
+                          from tfr.t_Opt_Truck_Task tt
+                          left join tfr.t_Opt_Truck_Task_Detail ttd
+                            on ttd.truck_task_id = tt.id and ttd.dest_org_code=#{orgCode}
+                          left join tfr.t_opt_truck_task_bill utb
+                            on utb.truck_task_detail_id = ttd.id
+                          left join tfr.t_opt_unload_bill_detail ubd
+                            on ubd.bill_no = utb.bill_no
+                          left join tfr.t_opt_unload_waybill_detail uwd
+                            on ubd.unload_task_id = uwd.unload_task_id
+                          left join tfr.t_opt_unload_task ult
+                            on ult.id = uwd.unload_task_id
+                          left join tfr.t_Opt_Truck_Task_Bill ttb
+                            on ttb.truck_task_detail_id = ttd.id
+                         where ttd.actual_depart_time   between to_date(#{actualDepartTime} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{actualDepartTime} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss') 
+                         	and ult.unload_org_code=#{orgCode}
+                           <![CDATA[
+                           and tt.status <> 'CANCLED'
+                           ]]>
+                            and ttb.bill_level = 1
+                            and ttd.truck_task_id = tt.id
+                            and ttd.dest_org_code=#{orgCode}
+                           and ttb.bill_type = 'VEHICLEASSEMBLE'
+                           and ult.unload_type = 'LONG_DISTANCE'
+                           and ult.task_state = 'FINISHED'
+                           <if test="vehicleNo!=null and vehicleNo !='' ">
+							           			and ult.vehicle_no = #{vehicleNo}
+						   </if> 
+						    <if test="billNo!=null and billNo !='' ">
+			           			and ttb.bill_no=#{billNo}
+			            </if> 
+                         group by ult.vehicle_no,
+                                  ult.unload_org_name,
+                                  ult.id,
+                                  tt.id,
+                                  ttb.bill_no,
+                                  actual_depart_time) tb3
+                 group by tb3.vehicle_no,
+                          tb3.org_name,
+                          tb3.Truck_Task_Id,
+                          tb3.bill_no,
+                          tb3.actual_depart_time
+                   </if>
+                          ) tb4) tb5
+                          <if test="flagPassing==0 ">
+                          		where tb5.flag_passing = '0'
+                          </if>
+ 						<if test="flagPassing==1 ">
+                          		where tb5.flag_passing = '1'
+                          </if>
+	</select>
+	
+	<!-- 长途装卸车效率查询  总记录-->
+	<select id="queryCarEfficiencyWayLongCount" resultType="int" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.CarEfficiencyEntity">
+		select count(0)
+  from (select case
+                 when (tb4.weight_total / 1000) /
+                      (TO_NUMBER(tb4.end_time - tb4.start_time) * 24) >= 5 then
+                  '1'
+                 else
+                  '0'
+               end flag_passing
+          from (
+          <if test="typeLoad==0 or typeLoad==1  ">
+          select tb2.actual_depart_time,
+                       tb2.bill_no,
+                       tb2.vehicle_no,
+                       tb2.org_name,
+                       sum(tb2.weight_total) weight_total,
+                       to_date(to_char(min(tb2.start_time),
+                                       'yyyy-mm-dd hh24:mi:ss'),
+                               'yyyy-mm-dd hh24:mi:ss') start_time,
+                       to_date(to_char(max(tb2.end_time),
+                                       'yyyy-mm-dd hh24:mi:ss'),
+                               'yyyy-mm-dd hh24:mi:ss') end_time,
+                       '1' type_load
+                  from (select tt.id Truck_Task_Id,
+                               ttb.bill_no,
+                               ttb2.vehicle_no,
+                               ttb2.orig_org_name org_name,
+                               ttb2.id,
+                               to_char(ttd.actual_depart_time, 'yyyy-mm-dd') actual_depart_time,
+                               sum(wd.load_weight_total) weight_total,
+                               min(ttb2.load_start_time) start_time,
+                               max(ttb2.load_end_time) end_time
+                          from tfr.t_Opt_Truck_Task tt
+                          left join tfr.t_Opt_Truck_Task_Detail ttd
+                            on ttd.truck_task_id = tt.id and ttd.orig_org_code=#{orgCode}
+                          left join (select nttb.truck_task_detail_id,
+                                           nlt.id,
+                                           nlt.vehicle_no,
+                                           nlt.orig_org_name,
+                                           nlt.load_start_time,
+                                           nlt.load_end_time
+                                      from tfr.t_opt_truck_task_bill nttb
+                                      left join tfr.t_Opt_Handoverbill nhb
+                                        on nhb.handover_no = nttb.bill_no
+                                      left join tfr.t_opt_load_task nlt
+                                        on nlt.task_no = nhb.load_task_no
+                                     where nlt.task_type ='LONG_DISTANCE_LOAD'
+                                       and nlt.task_state = 'FINISHED'
+                                       <if test="vehicleNo!=null and vehicleNo !='' ">
+							           			and nlt.vehicle_no = #{vehicleNo}
+							           </if> 
+                                      and nlt.orig_org_code=#{orgCode}
+                                    ) ttb2
+                            on ttb2.truck_task_detail_id = ttd.id
+                          left join tfr.t_opt_truck_task_bill ttb
+                            on ttb.truck_task_detail_id =
+                               ttb2.truck_task_detail_id
+                          left join tfr.t_opt_load_waybill_detail wd
+                            on wd.load_task_id = ttb2.id
+                         where ttd.actual_depart_time   between to_date(#{actualDepartTime} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{actualDepartTime} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss') 
+			            <![CDATA[
+                           and tt.status <> 'CANCLED'
+                           ]]>
+                           and ttd.orig_org_code=#{orgCode}
+                           and ttb.bill_level = 1 
+                           and ttd.truck_task_id = tt.id
+                           and ttb.bill_type = 'VEHICLEASSEMBLE'
+                           <if test="billNo!=null and billNo !='' ">
+			           			and ttb.bill_no=#{billNo}
+			            </if> 
+                         group by ttb2.vehicle_no,
+                                  ttb2.orig_org_name,
+                                  ttb2.id,
+                                  tt.id,
+                                  ttb.bill_no,
+                                  actual_depart_time) tb2
+                 group by tb2.vehicle_no,
+                          tb2.org_name,
+                          tb2.Truck_Task_Id,
+                          tb2.bill_no,
+                          tb2.actual_depart_time
+                           </if> 
+                 <if test="typeLoad==0 ">
+			           			union
+			     </if> 
+			     <if test="typeLoad==0 or typeLoad==2 ">
+                select tb3.actual_depart_time,
+                       tb3.bill_no,
+                       tb3.vehicle_no,
+                       tb3.org_name,
+                       sum(tb3.weight_total) weight_total,
+                       to_date(to_char(min(tb3.start_time),
+                                       'yyyy-mm-dd hh24:mi:ss'),
+                               'yyyy-mm-dd hh24:mi:ss') start_time,
+                       to_date(to_char(max(tb3.end_time),
+                                       'yyyy-mm-dd hh24:mi:ss'),
+                               'yyyy-mm-dd hh24:mi:ss') end_time,
+                       '2' type_load
+                  from (select tt.id Truck_Task_Id,
+                               ttb.bill_no,
+                               ult.vehicle_no,
+                               ult.unload_org_name org_name,
+                               ult.id,
+                               to_char(ttd.actual_depart_time, 'yyyy-mm-dd') actual_depart_time,
+                               sum(uwd.unload_weight_total) weight_total,
+                               min(ult.unload_start_time) start_time,
+                               max(ult.unload_end_time) end_time
+                          from tfr.t_Opt_Truck_Task tt
+                          left join tfr.t_Opt_Truck_Task_Detail ttd
+                            on ttd.truck_task_id = tt.id and ttd.dest_org_code=#{orgCode}
+                          left join tfr.t_opt_truck_task_bill utb
+                            on utb.truck_task_detail_id = ttd.id
+                          left join tfr.t_opt_unload_bill_detail ubd
+                            on ubd.bill_no = utb.bill_no
+                          left join tfr.t_opt_unload_waybill_detail uwd
+                            on ubd.unload_task_id = uwd.unload_task_id
+                          left join tfr.t_opt_unload_task ult
+                            on ult.id = uwd.unload_task_id
+                          left join tfr.t_Opt_Truck_Task_Bill ttb
+                            on ttb.truck_task_detail_id = ttd.id
+                         where ttd.actual_depart_time   between to_date(#{actualDepartTime} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{actualDepartTime} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss') 
+                         	and ult.unload_org_code=#{orgCode}
+                           <![CDATA[
+                           and tt.status <> 'CANCLED'
+                           ]]>
+                            and ttb.bill_level = 1
+                            and ttd.truck_task_id = tt.id
+                            and ttd.dest_org_code=#{orgCode}
+                           and ttb.bill_type = 'VEHICLEASSEMBLE'
+                           and ult.unload_type = 'LONG_DISTANCE'
+                           and ult.task_state = 'FINISHED'
+                           <if test="vehicleNo!=null and vehicleNo !='' ">
+							           			and ult.vehicle_no = #{vehicleNo}
+						   </if> 
+						    <if test="billNo!=null and billNo !='' ">
+			           			and ttb.bill_no=#{billNo}
+			            </if> 
+                         group by ult.vehicle_no,
+                                  ult.unload_org_name,
+                                  ult.id,
+                                  tt.id,
+                                  ttb.bill_no,
+                                  actual_depart_time) tb3
+                 group by tb3.vehicle_no,
+                          tb3.org_name,
+                          tb3.Truck_Task_Id,
+                          tb3.bill_no,
+                          tb3.actual_depart_time
+                      </if>      
+                          ) tb4) tb5
+                          <if test="flagPassing==0 ">
+                          		where tb5.flag_passing = '0'
+                          </if>
+ 						<if test="flagPassing==1 ">
+                          		where tb5.flag_passing = '1'
+                          </if>
+	</select>
+	
+	
+	<!-- 短途装卸车效率查询 -->
+	<select id="queryCarEfficiencyWayShort" resultMap="carEfficiencyManageResultMap" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.CarEfficiencyEntity">
+		select *
+  from (select tb4.actual_depart_time,
+               tb4.vehicle_no,
+               tb4.org_name,
+               ROUND(tb4.weight_total / 1000, 2) weight_total,
+               tb4.start_time,
+               tb4.end_time,
+               tb4.task_ids,
+               tb4.type_load,
+               to_char(ROUND(TO_NUMBER(tb4.end_time - tb4.start_time), 2) * 24,'99999990.00') time_section,
+               to_char(ROUND((tb4.weight_total / 1000) /
+                     (TO_NUMBER(tb4.end_time - tb4.start_time) * 24),
+                     2),'99999990.00') efficiency,
+               case
+                 when (tb4.weight_total / 1000) /
+                      (TO_NUMBER(tb4.end_time - tb4.start_time) * 24) >= 5 then
+                  '1'
+                 else
+                  '0'
+               end flag_passing
+          from (
+           <if test="typeLoad==0 or typeLoad==1 ">
+          select tb2.actual_depart_time,
+                       tb2.vehicle_no,
+                       tb2.org_name,
+                       sum(tb2.weight_total) weight_total,
+                       to_date(to_char(min(tb2.start_time),
+                                       'yyyy-mm-dd hh24:mi:ss'),
+                               'yyyy-mm-dd hh24:mi:ss') start_time,
+                       to_date(to_char(max(tb2.end_time),
+                                       'yyyy-mm-dd hh24:mi:ss'),
+                               'yyyy-mm-dd hh24:mi:ss') end_time,
+                       listagg(tb2.id, ',') within group(order by tb2.id) task_ids,
+                       '1' type_load
+                  from (select tt.id Truck_Task_Id,
+                               lt.vehicle_no,
+                               lt.orig_org_name org_name,
+                               lt.id,
+                               to_char(ttd.actual_depart_time, 'yyyy-mm-dd') actual_depart_time,
+                               sum(wd.load_weight_total) weight_total,
+                               min(lt.load_start_time) start_time,
+                               max(lt.load_end_time) end_time
+                          from tfr.t_Opt_Truck_Task tt
+                          left join tfr.t_Opt_Truck_Task_Detail ttd
+                            on ttd.truck_task_id = tt.id and ttd.orig_org_code=#{orgCode}
+                          left join tfr.t_opt_truck_task_bill ttb
+                            on ttb.truck_task_detail_id = ttd.id
+                          left join tfr.t_Opt_Handoverbill hb
+                            on hb.handover_no = ttb.bill_no
+                          left join tfr.t_opt_load_task lt
+                            on lt.task_no = hb.load_task_no
+                          left join tfr.t_opt_load_waybill_detail wd
+                            on wd.load_task_id = lt.id
+                         where ttd.actual_depart_time   between to_date(#{actualDepartTime} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{actualDepartTime} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+                         	and lt.orig_org_code=#{orgCode}
+                            <![CDATA[
+                           and tt.status <> 'CANCLED'
+                           ]]>
+                           and ttd.orig_org_code=#{orgCode}
+                           and ttd.truck_task_id = tt.id
+                           and lt.task_type = 'SHORT_DISTANCE_LOAD'
+                           and lt.task_state = 'FINISHED'
+                           <if test="vehicleNo!=null and vehicleNo !='' ">
+							           			and lt.vehicle_no = #{vehicleNo}
+						   </if> 
+                         group by lt.vehicle_no,
+                                  lt.orig_org_name,
+                                  lt.id,
+                                  tt.id,
+                                  actual_depart_time) tb2
+                 group by tb2.vehicle_no,
+                          tb2.org_name,
+                          tb2.Truck_Task_Id,
+                          tb2.actual_depart_time
+                </if> 
+                 <if test="typeLoad==0 ">
+			           			union
+			     </if> 
+			     <if test="typeLoad==0 or typeLoad==2 ">
+                select tb3.actual_depart_time,
+                       tb3.vehicle_no,
+                       tb3.org_name,
+                       sum(tb3.weight_total) weight_total,
+                       to_date(to_char(min(tb3.start_time),
+                                       'yyyy-mm-dd hh24:mi:ss'),
+                               'yyyy-mm-dd hh24:mi:ss') start_time,
+                       to_date(to_char(max(tb3.end_time),
+                                       'yyyy-mm-dd hh24:mi:ss'),
+                               'yyyy-mm-dd hh24:mi:ss') end_time,
+                       listagg(tb3.id, ',') within group(order by tb3.id) task_ids,
+                       '2' type_load
+                  from (select tt.id Truck_Task_Id,
+                               ult.vehicle_no,
+                               ult.unload_org_name org_name,
+                               ult.id,
+                               to_char(ttd.actual_depart_time, 'yyyy-mm-dd') actual_depart_time,
+                               sum(uwd.unload_weight_total) weight_total,
+                               min(ult.unload_start_time) start_time,
+                               max(ult.unload_end_time) end_time
+                          from tfr.t_Opt_Truck_Task tt
+                          left join tfr.t_Opt_Truck_Task_Detail ttd
+                            on ttd.truck_task_id = tt.id and ttd.dest_org_code=#{orgCode}
+                          left join tfr.t_opt_truck_task_bill utb
+                            on utb.truck_task_detail_id = ttd.id
+                          left join tfr.t_opt_unload_bill_detail ubd
+                            on ubd.bill_no = utb.bill_no
+                          left join tfr.t_opt_unload_waybill_detail uwd
+                            on ubd.unload_task_id = uwd.unload_task_id
+                          left join tfr.t_opt_unload_task ult
+                            on ult.id = uwd.unload_task_id
+                         where ttd.actual_depart_time   between to_date(#{actualDepartTime} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{actualDepartTime} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+                         	and ult.unload_org_code=#{orgCode}
+                          <![CDATA[
+                           and tt.status <> 'CANCLED'
+                           ]]>
+                           and ttd.dest_org_code=#{orgCode}
+                           and ttd.truck_task_id = tt.id
+                           and ult.unload_type = 'SHORT_DISTANCE'
+                           and ult.task_state = 'FINISHED'
+                            <if test="vehicleNo!=null and vehicleNo !='' ">
+							       and ult.vehicle_no = #{vehicleNo}
+						   </if> 
+                         group by ult.vehicle_no,
+                                  ult.unload_org_name,
+                                  ult.id,
+                                  tt.id,
+                                  actual_depart_time) tb3
+                 group by tb3.vehicle_no,
+                          tb3.org_name,
+                          tb3.Truck_Task_Id,
+                          tb3.actual_depart_time
+                          </if>
+                          ) tb4) tb5
+						<if test="flagPassing==0 ">
+                          		where tb5.flag_passing = '0'
+                          </if>
+ 						<if test="flagPassing==1 ">
+                          		where tb5.flag_passing = '1'
+                          </if>
+	</select>
+	
+	<!-- 短途装卸车效率查询 总记录数-->
+	<select id="queryCarEfficiencyWayShortCount" resultType="int" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.CarEfficiencyEntity">
+		select count(0)
+  from (select case
+                 when (tb4.weight_total / 1000) /
+                      (TO_NUMBER(tb4.end_time - tb4.start_time) * 24) >= 5 then
+                  '1'
+                 else
+                  '0'
+               end flag_passing
+          from (
+           <if test="typeLoad==0 or typeLoad==1 ">
+          select tb2.actual_depart_time,
+                       tb2.vehicle_no,
+                       tb2.org_name,
+                       sum(tb2.weight_total) weight_total,
+                       to_date(to_char(min(tb2.start_time),
+                                       'yyyy-mm-dd hh24:mi:ss'),
+                               'yyyy-mm-dd hh24:mi:ss') start_time,
+                       to_date(to_char(max(tb2.end_time),
+                                       'yyyy-mm-dd hh24:mi:ss'),
+                               'yyyy-mm-dd hh24:mi:ss') end_time,
+                       '1' type_load
+                  from (select tt.id Truck_Task_Id,
+                               lt.vehicle_no,
+                               lt.orig_org_name org_name,
+                               lt.id,
+                               to_char(ttd.actual_depart_time, 'yyyy-mm-dd') actual_depart_time,
+                               sum(wd.load_weight_total) weight_total,
+                               min(lt.load_start_time) start_time,
+                               max(lt.load_end_time) end_time
+                          from tfr.t_Opt_Truck_Task tt
+                          left join tfr.t_Opt_Truck_Task_Detail ttd
+                            on ttd.truck_task_id = tt.id and ttd.orig_org_code=#{orgCode}
+                          left join tfr.t_opt_truck_task_bill ttb
+                            on ttb.truck_task_detail_id = ttd.id
+                          left join tfr.t_Opt_Handoverbill hb
+                            on hb.handover_no = ttb.bill_no
+                          left join tfr.t_opt_load_task lt
+                            on lt.task_no = hb.load_task_no
+                          left join tfr.t_opt_load_waybill_detail wd
+                            on wd.load_task_id = lt.id
+                         where ttd.actual_depart_time   between to_date(#{actualDepartTime} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{actualDepartTime} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+                         	and lt.orig_org_code=#{orgCode}
+                          <![CDATA[
+                           and tt.status <> 'CANCLED'
+                           ]]>
+                           and ttd.orig_org_code=#{orgCode}
+                           and ttd.truck_task_id = tt.id
+                           and lt.task_type = 'SHORT_DISTANCE_LOAD'
+                           and lt.task_state = 'FINISHED'
+                           <if test="vehicleNo!=null and vehicleNo !='' ">
+							           			and lt.vehicle_no = #{vehicleNo}
+						   </if> 
+                         group by lt.vehicle_no,
+                                  lt.orig_org_name,
+                                  lt.id,
+                                  tt.id,
+                                  actual_depart_time) tb2
+                 group by tb2.vehicle_no,
+                          tb2.org_name,
+                          tb2.Truck_Task_Id,
+                          tb2.actual_depart_time
+                </if> 
+                 <if test="typeLoad==0 ">
+			           			union
+			     </if> 
+			     <if test="typeLoad==0 or typeLoad==2 ">
+                select tb3.actual_depart_time,
+                       tb3.vehicle_no,
+                       tb3.org_name,
+                       sum(tb3.weight_total) weight_total,
+                       to_date(to_char(min(tb3.start_time),
+                                       'yyyy-mm-dd hh24:mi:ss'),
+                               'yyyy-mm-dd hh24:mi:ss') start_time,
+                       to_date(to_char(max(tb3.end_time),
+                                       'yyyy-mm-dd hh24:mi:ss'),
+                               'yyyy-mm-dd hh24:mi:ss') end_time,
+                       '2' type_load
+                  from (select tt.id Truck_Task_Id,
+                               ult.vehicle_no,
+                               ult.unload_org_name org_name,
+                               ult.id,
+                               to_char(ttd.actual_depart_time, 'yyyy-mm-dd') actual_depart_time,
+                               sum(uwd.unload_weight_total) weight_total,
+                               min(ult.unload_start_time) start_time,
+                               max(ult.unload_end_time) end_time
+                          from tfr.t_Opt_Truck_Task tt
+                          left join tfr.t_Opt_Truck_Task_Detail ttd
+                            on ttd.truck_task_id = tt.id and ttd.dest_org_code=#{orgCode}
+                          left join tfr.t_opt_truck_task_bill utb
+                            on utb.truck_task_detail_id = ttd.id
+                          left join tfr.t_opt_unload_bill_detail ubd
+                            on ubd.bill_no = utb.bill_no
+                          left join tfr.t_opt_unload_waybill_detail uwd
+                            on ubd.unload_task_id = uwd.unload_task_id
+                          left join tfr.t_opt_unload_task ult
+                            on ult.id = uwd.unload_task_id
+                         where ttd.actual_depart_time   between to_date(#{actualDepartTime} || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{actualDepartTime} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+                         	and ult.unload_org_code=#{orgCode}
+                          <![CDATA[
+                           and tt.status <> 'CANCLED'
+                           ]]>
+                           and ttd.dest_org_code=#{orgCode}
+                           and ttd.truck_task_id = tt.id
+                           and ult.unload_type = 'SHORT_DISTANCE'
+                           and ult.task_state = 'FINISHED'
+                            <if test="vehicleNo!=null and vehicleNo !='' ">
+							       and ult.vehicle_no = #{vehicleNo}
+						   </if> 
+                         group by ult.vehicle_no,
+                                  ult.unload_org_name,
+                                  ult.id,
+                                  tt.id,
+                                  actual_depart_time) tb3
+                 group by tb3.vehicle_no,
+                          tb3.org_name,
+                          tb3.Truck_Task_Id,
+                          tb3.actual_depart_time
+                          </if>
+                          ) tb4) tb5
+						<if test="flagPassing==0 ">
+                          		where tb5.flag_passing = '0'
+                          </if>
+ 						<if test="flagPassing==1 ">
+                          		where tb5.flag_passing = '1'
+                          </if>
+	</select>
+	
+	<select id="queryLoaderListByTaskId" resultMap="carEfficiencyManageResultMap" parameterType="list">
+		select b.loader_code,b.loader_name from tfr.t_opt_loader_participation b where b.task_id in  
+		<foreach collection="list" open="(" close=")" separator="," index="index" item="item">
+			#{item}
+		</foreach>
+		group by b.loader_code,b.loader_name
+	</select>
+</mapper>

@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tfr.unload.batchloading" >
+	<resultMap id="BatchLoadingReportDataEntityResultMap"
+		type="com.deppon.foss.module.transfer.unload.api.shared.domain.BatchLoadingReportDataEntity">
+		<result property="id" column="ID" />
+		<result property="unloadTaskId" column="UNLOAD_TASK_ID" jdbcType="VARCHAR"/>
+		<result property="unloadTaskNo" column="UNLOAD_TASK_NO" jdbcType="VARCHAR"/>
+		<result property="unloadDetailId" column="UNLOAD_DETAIL_ID" jdbcType="VARCHAR"/>
+		<result property="wayBillNo" column="WAYBILL_NO" jdbcType="VARCHAR"/>
+		<result property="unloadGoodsQty" column="UNLOAD_GOODS_QTY" jdbcType="VARCHAR"/>	
+		<result property="goodsQtyTotal" column="GOODS_QTY_TOTAL" jdbcType="VARCHAR"/>
+		<result property="productCode" column="PRODUCT_CODE" jdbcType="VARCHAR"/>
+		<result property="goodsVolume" column="GOODS_VOLUME" />
+		<result property="goodsWeight" column="GOODS_WEIGHT" />
+		<result property="taskSubmitTime" column="TASK_SUBMIT_TIME" jdbcType="TIMESTAMP"/>
+		<result property="createTime" column="CREATE_TIME" jdbcType="TIMESTAMP"/>
+		<result property="errorNo" column="ERROR_NO" jdbcType="VARCHAR"/>
+		<result property="isNeedReport" column="IS_NEED_REPORT" jdbcType="CHAR"/>
+		<result property="noReportReasonNo" column="NO_REPORT_REASON_NO" jdbcType="VARCHAR"/>
+		<result property="noReportReason" column="NO_REPORT_REASON" jdbcType="VARCHAR"/>
+		<result property="updateTime" column="UPDATE_TIME" jdbcType="TIMESTAMP"/>	
+		<result property="notes" column="NOTES" jdbcType="VARCHAR"/>	
+	</resultMap>
+	
+	<!--条件查询所有扫描数据-->
+	<select id="queryUnresolvedBatchLoading" parameterType="HashMap" resultMap="BatchLoadingReportDataEntityResultMap">
+		select 
+		ut.unload_task_no,
+	    max(ut.id) as unload_task_id,
+	    max(wd.id) as unload_detail_id,
+	    max(ut.UNLOAD_END_TIME) as TASK_SUBMIT_TIME,
+	    w.waybill_no,
+	    max(w.PRODUCT_CODE) as PRODUCT_CODE,
+	    max(w.goods_weight_total) as GOODS_WEIGHT,
+	    max(w.goods_volume_total) as GOODS_VOLUME,
+	   	sum(wd.handover_goods_qty) as UNLOAD_GOODS_QTY,
+	    max(w.GOODS_QTY_TOTAL) as GOODS_QTY_TOTAL 
+		from 
+		tfr.t_opt_unload_task ut,tfr.t_opt_unload_waybill_detail wd,pkp.t_srv_waybill w
+		<where>
+				ut.id = wd.unload_task_id and wd.waybill_no = w.waybill_no
+				and ut.be_created_bl = 'N'
+				and ut.unload_type in('LONG_DISTANCE','SHORT_DISTANCE')
+				and ut.task_state = #{taskState,jdbcType=VARCHAR} and w.active='Y' 
+	        	<if test="productCodeList != null and list != ''">
+	        		and w.product_code in
+	       			<foreach collection="productCodeList" open="(" close=")" separator="," item="productCode">
+						#{productCode,jdbcType=VARCHAR}
+					</foreach>
+	        	</if>
+	        	<![CDATA[
+					and ut.unload_end_time >= #{lowerLimit,jdbcType=TIMESTAMP}
+					and ut.unload_end_time < #{upperLimit,jdbcType=TIMESTAMP}
+	            	and w.goods_volume_total<#{goodsVolumnTotal,jdbcType=VARCHAR}
+	            	and w.goods_weight_total<#{goodsWeightTotal,jdbcType=VARCHAR}*1000
+	        	]]>
+	        	group by ut.unload_task_no,w.waybill_no 
+	        	<![CDATA[
+				having sum(wd.HANDOVER_GOODS_QTY) < max(w.GOODS_QTY_TOTAL)
+				]]>
+		</where>			
+	</select>
+	<update id="updateBatchLoadingReportData" parameterType = "com.deppon.foss.module.transfer.unload.api.shared.domain.BatchLoadingReportDataEntity">
+		update tfr.t_opt_batch_loading_report blrd 
+		<set> 
+			blrd.update_time=sysdate,
+			<if test="isNeedReport != null">
+				blrd.IS_NEED_REPORT = #{isNeedReport},
+			</if>
+			<if test="noReportReasonNo != null">
+				blrd.NO_REPORT_REASON_NO = #{noReportReasonNo},
+			</if>
+			<if test="errorNo != null">
+				blrd.ERROR_NO = #{errorNo},
+			</if>
+			<if test="noReportReason != null">
+				blrd.NO_REPORT_REASON = #{noReportReason},
+			</if>
+			<if test="notes != null">
+				blrd.NOTES = #{notes},
+			</if>
+		</set>
+		<where>
+			blrd.ID = #{id}
+		</where>
+	</update>
+	<insert id="insertBatchLoadingReport" parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.BatchLoadingReportDataEntity">
+		insert into  tfr.t_opt_batch_loading_report
+		(ID,UNLOAD_TASK_ID,UNLOAD_TASK_NO,WAYBILL_NO,UNLOAD_GOODS_QTY,GOODS_QTY_TOTAL,
+		PRODUCT_CODE,GOODS_VOLUME,GOODS_WEIGHT,TASK_SUBMIT_TIME,CREATE_TIME,
+		ERROR_NO,IS_NEED_REPORT,NO_REPORT_REASON_NO,NO_REPORT_REASON,UPDATE_TIME,NOTES)
+		values (#{id,jdbcType=VARCHAR},
+				#{unloadTaskId,jdbcType=VARCHAR},
+				#{unloadTaskNo,jdbcType=VARCHAR},
+				#{wayBillNo,jdbcType=VARCHAR},
+				#{unloadGoodsQty,jdbcType=VARCHAR},
+				#{goodsQtyTotal,jdbcType=VARCHAR},
+				#{productCode,jdbcType=VARCHAR},
+				#{goodsVolume,jdbcType=VARCHAR},
+				#{goodsWeight,jdbcType=VARCHAR},
+				#{taskSubmitTime,jdbcType=TIMESTAMP},
+				#{createTime,jdbcType=TIMESTAMP},
+				#{errorNo,jdbcType=VARCHAR},
+				#{isNeedReport,jdbcType=VARCHAR},
+				#{noReportReasonNo,jdbcType=VARCHAR},
+				#{noReportReason,jdbcType=VARCHAR},
+				#{updateTime,jdbcType=TIMESTAMP},
+				#{notes,jdbcType=VARCHAR}
+		)
+	</insert>
+	<!--插入上报日志-->
+	<insert id="insertBatchLoadingReportLog" parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.BatchLoadingReportDataEntity">
+		insert into tfr.t_opt_batch_loading_report_log
+ 			(id, report_data_id, report_time,report_status,exception, return_result, return_message)
+		values (#{id,jdbcType=VARCHAR},
+				#{reportDataId,jdbcType=VARCHAR},
+				#{reportTime,jdbcType=TIMESTAMP},
+				#{reportStatus,jdbcType=VARCHAR},
+				#{exception,jdbcType=VARCHAR},
+				#{returnResult,jdbcType=VARCHAR},
+				#{returnMessage,jdbcType=VARCHAR})
+	</insert>
+	<!--条件查询需要上报的数据-->
+	<select id="queryUnreportedBatchLoadingData" parameterType="HashMap" resultMap="BatchLoadingReportDataEntityResultMap">
+		select blrd.id,
+		blrd.unload_task_id,
+		blrd.WAYBILL_NO,
+		blrd.UNLOAD_GOODS_QTY,
+		blrd.GOODS_QTY_TOTAL,
+		blrd.PRODUCT_CODE,
+		blrd.GOODS_VOLUME,
+		blrd.GOODS_WEIGHT,
+		blrd.TASK_SUBMIT_TIME,
+		blrd.CREATE_TIME,
+		blrd.ERROR_NO,
+		blrd.IS_NEED_REPORT,
+		blrd.NO_REPORT_REASON_NO,
+		blrd.NO_REPORT_REASON,
+		blrd.UPDATE_TIME,
+		blrd.NOTES
+		from 
+		tfr.t_opt_batch_loading_report blrd
+		<where>
+			blrd.IS_NEED_REPORT='Y'
+			and sysdate>(blrd.TASK_SUBMIT_TIME+#{hours,jdbcType=DECIMAL}/24)
+			<![CDATA[
+			  and rownum <= 3000
+			]]>
+		</where>			
+	</select>
+	
+	<!--根据运单号获取首次分批配载的卸车任务编号-->
+	<select id ="getFirstBatchLoadingTaskId" parameterType="String" resultType="String">
+		select r.unload_task_id from 
+		tfr.t_opt_batch_loading_report r 
+		<where>
+			 waybill_no = #{waybillNo,jdbcType=VARCHAR} order by r.task_submit_time
+		</where>
+	</select>
+	<!-- 根据卸车任务编号和运单号获取装车 -->
+	<select id="getLoaderByUnloadTaskIdWaybillNo" parameterType = "HashMap" resultType="java.util.HashMap">
+		 select h.create_user_code as loaderCode,h.create_user_name as loaderName
+		 from tfr.t_opt_unload_bill_detail bd
+		 inner join tfr.t_opt_handoverbill h
+		 on bd.bill_no = h.handover_no
+		 inner join tfr.t_opt_handoverbill_detail hd
+		 on h.handover_no = hd.handover_no 
+		 where bd.unload_task_id = #{unloadTaskId,jdbcType=VARCHAR}
+		 and hd.waybill_no = #{waybillNo,jdbcType=VARCHAR} and bd.bill_type = 'HANDOVER'
+	</select>
+	<!--根据卸车任务编号和运单号获取卸车流水号 -->
+	<select id="getUnloadSerialsByUnloadTaskIDWaybillNo" parameterType = "HashMap" resultType="String">
+		select us.serial_no from 
+		tfr.t_opt_unload_waybill_detail wd join tfr.t_opt_unload_serialno us 
+		on wd.id = us.unload_waybill_detail_id
+		<where>
+			 wd.unload_task_id = #{unloadTaskId,jdbcType=VARCHAR} 
+			 and wd.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+			 and us.goods_state != 'CANCELED'
+		</where>			 
+	</select>
+</mapper>	

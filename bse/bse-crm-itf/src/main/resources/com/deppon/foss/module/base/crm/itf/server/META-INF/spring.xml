@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://www.springframework.org/schema/jee 
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+			http://www.springframework.org/schema/aop 
+			http://www.springframework.org/schema/aop/spring-aop-3.0.xsd"
+	default-autowire="byName" default-lazy-init="true">
+
+	<!-- 同步临欠散客信息接口处理器 -->
+	<bean id="nonfixedCustomerResultProcessor"
+		class="com.deppon.foss.module.base.crm.itf.server.service.impl.NonfixedCustomerResultProcessor">
+		<!-- <property name="nonfixedCustomerService" ref="nonfixedCustomerService"></property>
+		<property name="nonfixedCusAccountService" ref="nonfixedCusAccountService"></property> -->
+	</bean>
+
+	<!-- 同步市场活动信息接口处理器 -->
+	<bean id="markActivitiesResultProcessor"
+		class="com.deppon.foss.module.base.crm.itf.server.service.impl.MarkActivitiesResultProcessor">
+	</bean>
+	
+	<bean id="asynReturnGoods"
+		class="com.deppon.foss.module.base.crm.itf.server.service.impl.AsynReturnGoods">
+	</bean>
+	<!-- 同步事后折信息接口处理器 -->
+	<bean id="discountBackInfoResultProcessor"
+		class="com.deppon.foss.module.base.crm.itf.server.service.impl.DiscountBackInfoResultProcessor">
+	</bean>
+	<!-- 同步CRM行业、客户等级、订单来源信息接口处理器 -->
+	<bean id="cusOrderSourceProcessor"
+		class="com.deppon.foss.module.base.crm.itf.server.service.impl.CusOrderSourceProcessor">
+	</bean>
+	<!-- 同步CRM是否一票多件信息接口处理器 -->
+	<bean id="oneticketornotProcessor"
+		class="com.deppon.foss.module.base.crm.itf.server.service.impl.OneticketornotProcessor">
+	</bean>
+	
+	<!-- 同步CRM一般纳税人信息接口 -->
+	<bean id="generalTaxPayerInfoProcessor"
+		class="com.deppon.foss.module.base.crm.itf.server.service.impl.GeneralTaxPayerInfoProcessor">
+	</bean>
+	
+	<!-- 同步PTP合同基础信息接口 -->
+	<bean id="contractBasisInfoProcessor"
+		class="com.deppon.foss.module.base.crm.itf.server.service.impl.ContractBasisInfoProcessor">
+	</bean>
+	
+	<!-- 同步CRM客户圈基础信息接口 -->
+	<bean id="customerCircleRelationProcessor" 
+		class="com.deppon.foss.module.base.crm.itf.server.service.impl.CustomerCircleRelationProcessor">
+	</bean>
+	
+	<!-- 启动MQ监听 -->
+	<bean id="esbInitUtil" class="com.deppon.esb.api.util.ESBInitUtil"
+		init-method="process" lazy-init="false">
+		<property name="processMap">
+			<map>
+				<!--<entry key="FOSS_ESB2FOSS_RECIEVE_NONFIXEDCUSTOMER" value-ref="nonfixedCustomerResultProcessor" />-->
+				<entry key="FOSS_ESB2FOSS_SEND_MARKETPROMOTION" value-ref="markActivitiesResultProcessor" />
+				<entry key="FOSS_ESB2FOSS_INDUSTRY_CUSTOMERS_ORDERS" value-ref="cusOrderSourceProcessor" />
+				<entry key="FOSS_ESB2FOSS_AFTER_DISCOUNT_INFO" value-ref="discountBackInfoResultProcessor" />		
+				<entry key="FOSS_ESB2FOSS_IF_MORE_ONE_VOTE" value-ref="oneticketornotProcessor" />
+				
+				<entry key="FOSS_ESB2FOSS_RECEIVE_REGULAR_TAXER" value-ref="generalTaxPayerInfoProcessor" /> 
+				<entry key="FOSS_ESB2FOSS_CRM_RETURNGOODS_FOSS" value-ref="asynReturnGoods" />
+				<!-- 同步合同基础资料 -->
+				<entry key="FOSS_ESB2FOSS_PARTNER_SALEDEPARTMENT" value-ref="contractBasisInfoProcessor" /> 
+ 			</map>
+		</property>
+	</bean>
+</beans>

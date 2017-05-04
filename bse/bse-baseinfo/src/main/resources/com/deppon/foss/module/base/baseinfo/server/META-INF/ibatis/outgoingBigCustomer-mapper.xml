@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.bse.bse-baseinfo.outgoingBigCustomers">
+	<resultMap
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.OutgoingBigCustomersEntity"
+		id="outgoingBigCustomersMap">
+		<result property="outgoingBigCustomersCode" column="CODE" />
+		<result property="outgoingBigCustomersName" column="NAME" />
+		<result property="outgoingBigCustomersRemark" column="REMARK" />
+		<result property="active" column="ACTIVE" />
+		<result property="createDate" column="CREATE_TIME" />
+		<result property="modifyDate" column="MODIFY_TIME" />
+		<result property="createUser" column="CREATE_USER_CODE" />
+		<result property="modifyUser" column="MODIFY_USER_CODE" />
+	</resultMap>
+	<sql id="bigCusColumns">
+		ID,CODE,NAME,REMARK,
+		ACTIVE
+	</sql>
+	<sql id="insertBigCusColumns">
+		ID,CODE,NAME,REMARK,
+		ACTIVE,
+		CREATE_USER_CODE,MODIFY_USER_CODE
+	</sql>
+	<sql id="query_param">
+		<where>
+			<if test="id != null and id != ''">
+				AND ID = #{id,jdbcType=VARCHAR}
+			</if>
+			<if
+				test="outgoingBigCustomersCode !=null and outgoingBigCustomersCode != ''">
+				AND CODE = #{outgoingBigCustomersCode,jdbcType=VARCHAR}
+			</if>
+			<if
+				test="outgoingBigCustomersName !=null and outgoingBigCustomersName != ''">
+				AND NAME LIKE
+				CONCAT('%',CONCAT(#{outgoingBigCustomersName,jdbcType=VARCHAR},'%'))
+			</if>
+
+		</where>
+	</sql>
+
+	<insert id="insertOutgoingBigCustomersEntity"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.OutgoingBigCustomersEntity">
+
+		insert into BSE.T_BAS_OUTGOING_BIG_CUSTOMERS T(
+		<include refid="insertBigCusColumns" />
+		) values (
+		#{id,jdbcType=VARCHAR},
+		#{outgoingBigCustomersCode,jdbcType=VARCHAR},
+		#{outgoingBigCustomersName,jdbcType=VARCHAR},
+		#{outgoingBigCustomersRemark,jdbcType=VARCHAR},
+		#{active,jdbcType=CHAR},
+		#{createUserCode,jdbcType=VARCHAR},
+		#{modifyUserCode,jdbcType=VARCHAR}
+		)
+	</insert>
+
+	<update id="updateOutgoingBigCustomersEntity"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.OutgoingBigCustomersEntity">
+
+		update BSE.T_BAS_OUTGOING_BIG_CUSTOMERS
+		set
+		<if test="outgoingBigCustomersRemark != null and outgoingBigCustomersRemark != ''">
+			REMARK = #{outgoingBigCustomersRemark,jdbcType=VARCHAR},
+		</if>
+		<if test="active != null and active != ''">
+			ACTIVE = #{active,jdbcType=CHAR},
+		</if>
+		<if test="modifyUserCode != null and modifyUserCode != ''">
+			MODIFY_USER_CODE = #{modifyUserCode,jdbcType=VARCHAR}
+		</if>
+		<where>
+			1 = 1
+			<if
+				test="outgoingBigCustomersCode != null and outgoingBigCustomersCode != ''">
+				AND CODE = #{outgoingBigCustomersCode,jdbcType=VARCHAR}
+			</if>
+			<if
+				test="outgoingBigCustomersName != null and outgoingBigCustomersName != ''">
+				AND NAME = #{outgoingBigCustomersName,jdbcType=VARCHAR}
+			</if>
+		</where>
+		
+	</update>
+
+	<!--外发大客户接口 -->
+	<select id="queryOutgoingBigCustomersEntitys"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.OutgoingBigCustomersEntity"
+		resultMap="outgoingBigCustomersMap">
+		<![CDATA[
+			SELECT
+			 /** 综合:外发大客户分页**/
+		]]>
+		<include refid="bigCusColumns" />
+		<![CDATA[
+			FROM BSE.T_BAS_OUTGOING_BIG_CUSTOMERS T
+		]]>
+		<include refid="queryBigWhere" />
+	</select>
+
+	<select id="queryOutgoingBigCustomersEntityByCode"
+		parameterType="String" resultMap="outgoingBigCustomersMap">
+		<![CDATA[
+			SELECT
+		]]>
+		<include refid="bigCusColumns" />
+		<![CDATA[
+			FROM BSE.T_BAS_OUTGOING_BIG_CUSTOMERS T
+		]]>
+		<where>
+			CODE = #{code}
+			AND ACTIVE = 'Y'
+		</where>
+	</select>
+
+	<select id="getCountByCondition" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.OutgoingBigCustomersEntity">
+	
+		<![CDATA[
+		   select/** 综合:统计总记录数 **/ count(*) from BSE.T_BAS_OUTGOING_BIG_CUSTOMERS T
+		]]>
+		<include refid="queryBigWhere" />
+
+	</select>
+
+	<!-- 分页查询条件 -->
+	<sql id="queryBigWhere">
+		<where>
+			1 = 1
+			<if
+				test="outgoingBigCustomersCode != null and outgoingBigCustomersCode != ''">
+				AND CODE = #{outgoingBigCustomersCode,jdbcType=VARCHAR}
+			</if>
+			<if
+				test="outgoingBigCustomersName != null and outgoingBigCustomersName != ''">
+				AND NAME = #{outgoingBigCustomersName,jdbcType=VARCHAR}
+			</if>
+			ORDER BY CREATE_TIME DESC
+		</where>
+	</sql>
+</mapper>

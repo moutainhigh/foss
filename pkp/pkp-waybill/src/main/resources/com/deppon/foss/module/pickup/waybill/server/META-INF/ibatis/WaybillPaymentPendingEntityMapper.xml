@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.pkp.WaybillPaymentPendingEntityMapper" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillPaymentPendingEntity" >
+    <result column="TYPE" property="type" jdbcType="VARCHAR" />
+    <result column="AMOUNT" property="amount" jdbcType="DECIMAL" />
+    <result column="PAYMENT_TIME" property="paymentTime" jdbcType="TIMESTAMP" />
+    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+    <result column="ACTIVE" property="active" jdbcType="VARCHAR" />
+    <result column="BILL_TIME" property="billTime" jdbcType="TIMESTAMP" />
+    <result column="CURRENCY_CODE" property="currencyCode" jdbcType="VARCHAR" />
+    <result column="ID" property="id" jdbcType="VARCHAR" />
+  </resultMap>
+  <delete id="deleteByWaybillNo" parameterType="java.lang.String" >
+    delete from PKP.T_SRV_PAYMENT_PG
+    where waybill_no = #{waybillNo,jdbcType=VARCHAR}
+  </delete>
+  <insert id="insert" parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillPaymentPendingEntity" >
+    insert into PKP.T_SRV_PAYMENT_PG (TYPE, AMOUNT, PAYMENT_TIME, 
+      WAYBILL_NO, CREATE_TIME, MODIFY_TIME, 
+      ACTIVE, BILL_TIME,CURRENCY_CODE,
+      ID)
+    values (#{type,jdbcType=VARCHAR}, #{amount,jdbcType=DECIMAL}*100, #{paymentTime,jdbcType=TIMESTAMP}, 
+      #{waybillNo,jdbcType=VARCHAR}, #{createTime,jdbcType=TIMESTAMP}, #{modifyTime,jdbcType=TIMESTAMP}, 
+      #{active,jdbcType=VARCHAR}, #{billTime,jdbcType=TIMESTAMP}, #{currencyCode,jdbcType=VARCHAR},
+      #{id,jdbcType=VARCHAR})
+  </insert>
+  <insert id="insertSelective" parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillPaymentPendingEntity" >
+    insert into PKP.T_SRV_PAYMENT_PG
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="type != null" >
+        TYPE,
+      </if>
+      <if test="amount != null" >
+        AMOUNT,
+      </if>
+      <if test="paymentTime != null" >
+        PAYMENT_TIME,
+      </if>
+      <if test="waybillNo != null" >
+        WAYBILL_NO,
+      </if>
+      <if test="createTime != null" >
+        CREATE_TIME,
+      </if>
+      <if test="modifyTime != null" >
+        MODIFY_TIME,
+      </if>
+      <if test="active != null" >
+        ACTIVE,
+      </if>
+      <if test="billTime != null" >
+        BILL_TIME,
+      </if>
+      <if test="currencyCode  != null" >
+        CURRENCY_CODE ,
+      </if>
+      <if test="id != null" >
+        ID,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="type != null" >
+        #{type,jdbcType=VARCHAR},
+      </if>
+      <if test="amount != null" >
+        #{amount,jdbcType=DECIMAL}*100,
+      </if>
+      <if test="paymentTime != null" >
+        #{paymentTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="waybillNo != null" >
+        #{waybillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null" >
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifyTime != null" >
+        #{modifyTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="active != null" >
+        #{active,jdbcType=VARCHAR},
+      </if>
+      <if test="billTime != null" >
+        #{billTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="currencyCode != null" >
+        #{currencyCode,jdbcType=TIMESTAMP},
+      </if>
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+
+	<!-- 批量插入WaybillPaymentPendingEntity数据 -->
+	<insert id="insertBatch" parameterType="java.util.List">
+		begin
+		<choose>
+			<when test="list.size() == 0">
+				null
+			</when>
+			<otherwise>
+				<foreach collection="list" item="item" index="index"
+					separator=";">
+					insert into PKP.T_SRV_PAYMENT_PG (ID, TYPE, AMOUNT,
+					PAYMENT_TIME,WAYBILL_NO, CREATE_TIME, MODIFY_TIME,
+					ACTIVE, BILL_TIME,CURRENCY_CODE )
+					values
+					(#{item.id,jdbcType=VARCHAR}, #{item.type,jdbcType=VARCHAR},
+					#{item.amount,jdbcType=DECIMAL}*100,
+					#{item.paymentTime,jdbcType=TIMESTAMP},#{item.waybillNo,jdbcType=TIMESTAMP},
+					#{item.createTime,jdbcType=TIMESTAMP},
+					#{item.modifyTime,jdbcType=TIMESTAMP},
+					#{item.active,jdbcType=VARCHAR},
+					#{item.billTime,jdbcType=TIMESTAMP},#{item.currencyCode,jdbcType=TIMESTAMP})
+				</foreach>
+			</otherwise>
+		</choose>
+		;end;
+	</insert>
+
+	<!-- 待处理运单付款信息 -->
+	<select id="queryPaymentPendingByNo" resultMap="BaseResultMap" parameterType="java.util.Map">
+		SELECT /*模块：接送货-运单-查询待处理运单付款信息*/
+		ID,TYPE, AMOUNT,
+		PAYMENT_TIME,WAYBILL_NO ,CREATE_TIME, MODIFY_TIME,
+		ACTIVE, BILL_TIME,CURRENCY_CODE
+		FROM PKP.T_SRV_PAYMENT_PG P
+		<where>
+    	<![CDATA[
+    		P.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+    		AND P.ACTIVE = #{active,jdbcType=VARCHAR}
+    	]]>
+		</where>
+	</select>
+</mapper>

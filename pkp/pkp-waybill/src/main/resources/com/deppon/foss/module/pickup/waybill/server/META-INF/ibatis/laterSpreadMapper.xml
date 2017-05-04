@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.pkp.laterSpreadMapper">
+	
+	<resultMap id="LaterSpreadMap" type="com.deppon.foss.module.pickup.waybill.shared.domain.LaterSpreadEntity">
+		<id column="id" property="id"/>
+		<result property="waybillNo" column="WAYBILL_NO"/>
+		<result property="phone" column="PHONE"/>
+		<result property="productCode" column="PRODUCT_CODE"/>
+		<result property="jobId" column="JOB_ID"/>
+		<result property="failReason" column="FAIL_REASON"/>
+		<result property="billAmount" column="BILL_AMOUNT"/>
+		<result property="smsContent" column="SMS_CONTENT"/>
+		<result property="customerCode" column="CUSTOMER_CODE"/>
+		<result property="spread" column="SPREAD"/>
+		<result property="billTime" column="BILL_TIME"/>
+		<result property="cartageFee" column="CARTAGE_FEE"/>
+		<result property="ordinaryFee" column="ORDINARY_FEE"/>
+		<result property="isSend" column="IS_SEND"/>
+		<result property="notSendReason" column="NOT_SEND_REASON"/>
+		<result property="createDate" column="CREATE_TIME"/>
+		<result property="modifyDate" column="UPDATE_TIME"/>
+		<result property="activeDateNum" column="ACTIVE_DATE_NUM"/>
+		<result property="couponAmount" column="COUPON_AMOUNT"/>
+		
+	</resultMap>
+   <insert id="save"
+		parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.LaterSpreadEntity">
+		insert into PKP.T_SRV_LATER_SPREAD (
+		id,
+		WAYBILL_NO,
+		PHONE,
+		PRODUCT_CODE,
+		BILL_AMOUNT,
+		SMS_CONTENT,
+		CUSTOMER_CODE,
+		SPREAD,
+		BILL_TIME,
+		CARTAGE_FEE,
+		ORDINARY_FEE,
+		IS_SEND,
+		CREATE_TIME,
+		job_id,
+		ACTIVE_DATE_NUM,
+		COUPON_AMOUNT,
+		NOT_SEND_REASON
+		)
+		values (#{id,jdbcType=VARCHAR},
+		#{waybillNo,jdbcType=VARCHAR},
+		#{phone,jdbcType=VARCHAR},
+		#{productCode,jdbcType=VARCHAR},
+		#{billAmount,jdbcType=VARCHAR},
+		#{smsContent,jdbcType=VARCHAR},
+		#{customerCode,jdbcType=VARCHAR},
+		#{spread,jdbcType=DECIMAL},
+		#{billTime,jdbcType=TIMESTAMP},
+		#{cartageFee,jdbcType=DECIMAL},
+		#{ordinaryFee,jdbcType=DECIMAL},
+		#{isSend,jdbcType=VARCHAR},
+		#{createDate,jdbcType=TIMESTAMP},
+		#{jobId,jdbcType=VARCHAR},
+		#{activeDateNum,jdbcType=VARCHAR},
+		#{couponAmount,jdbcType=VARCHAR},
+		#{notSendReason,jdbcType=VARCHAR}
+		)
+	</insert> 
+
+	<update id="updateLaterSpreadForJobTopNum" parameterType="map">
+		update pkp.t_srv_later_spread
+		<set>
+			job_id=#{queryJobId,jdbcType=VARCHAR}
+		</set>
+		<where>
+			<![CDATA[ and rownum <= #{queryNum} ]]>		
+			and IS_SEND = #{isSend} 
+			and job_id='N/A'
+		</where>
+	</update>
+	
+	<select id="queryLaterSpreadByJobID" parameterType="map" resultMap="LaterSpreadMap">
+		select * from pkp.t_srv_later_spread
+		<where>
+			and job_id=#{queryJobId,jdbcType=VARCHAR}
+			and IS_SEND = #{isSend}
+		</where>
+	</select>
+
+	<update id="executeSendSMSFail" parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.LaterSpreadEntity">
+		update pkp.t_srv_later_spread
+		<set>
+			job_id=#{jobId,jdbcType=VARCHAR},
+			IS_SEND = #{isSend,jdbcType=VARCHAR},
+			FAIL_REASON = #{failReason,jdbcType=VARCHAR},
+			UPDATE_TIME= #{modifyDate,jdbcType=TIMESTAMP}
+		</set>
+		<where>
+			and id=#{id,jdbcType=VARCHAR}
+		</where>
+	</update>
+	<select id="queryLaterSpreadList" parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.LaterSpreadEntity" resultMap="LaterSpreadMap">
+		select * from pkp.t_srv_later_spread
+		<where>
+			<if test="jobId != null and jobId !=''">
+				and job_id=#{jobId,jdbcType=VARCHAR}
+			</if>
+			<if test="isSend != null and isSend !=''">
+				and IS_SEND = #{isSend}
+			</if>
+			<if test="waybillNo != null and waybillNo !=''">
+				and WAYBILL_NO = #{waybillNo}
+			</if>
+			<if test="phone != null and phone !=''">
+				and phone = #{phone}
+			</if>
+			<if test="customerCode != null and customerCode !=''">
+				and CUSTOMER_CODE = #{customerCode}
+			</if>
+			<if test="productCode != null and productCode !=''">
+				and PRODUCT_CODE = #{productCode}
+			</if>
+			
+		</where>
+	</select>
+	<select id="queryWaybillChangeDestination" parameterType="map" resultType="Long">
+		select count(wc.waybill_no) 
+			from pkp.t_srv_waybillrfc wc 
+			where  wc.status='ACCECPT' 
+			and wc.is_change_destination ='Y' 
+			and wc.rfc_source='CUSTOMER_REQUIRE'
+			and wc.waybill_no= #{waybillNo} 
+	</select>
+	<select id="queryWaybillChangeReceiveMethod" parameterType="map" resultType="Long">
+		select count(w.waybill_no)
+	      from pkp.t_srv_waybill w,pkp.t_srv_waybill wc, pkp.t_srv_waybillrfc wr 
+	      where  w.active='Y'
+	      and wc.active='N'
+	      and w.RECEIVE_METHOD != wc.RECEIVE_METHOD 
+	      and w.waybill_no = wc.waybill_no 
+	      and w.waybill_no = wr.waybill_no 
+	      and wr.rfc_source='CUSTOMER_REQUIRE'
+		  and w.waybill_no= #{waybillNo} 
+	</select>
+</mapper>

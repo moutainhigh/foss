@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.pda.bdm.module.foss.upgrade.server.dao.impl.ProhibitedGoodsDataVerGenDao">
+
+	<select id="queryLocalDatas" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.ProhibitedGoodsEntity">
+		<![CDATA[
+			SELECT 
+				ID AS id,
+				DAN_TYPE AS danType,
+				DAN_NAME AS danName,
+				DAN_LEVEL AS danLevel,
+				REMARK AS remark,
+				(case STATE
+				  when '1' then 
+				  '3'
+				  else 
+				  '1' end) as operFlag,
+				CREATEDATE AS createDate,
+				UPDDATE AS updDate,
+				VERSION AS version
+			FROM T_SVR_DANPROJECT
+		]]>
+		WHERE STATE = '0'
+			<if test="startTime != null and startTime != ''  ">
+				<![CDATA[AND UPDDATE > #{startTime,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="endTime != null and endTime != '' ">
+				<![CDATA[ AND UPDDATE <= #{endTime,jdbcType=TIMESTAMP}]]>
+			</if>
+	</select>
+	<select id="queryLocalDatasByDel"
+		parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.ProhibitedGoodsEntity">
+		<![CDATA[
+			SELECT 
+				ID
+			FROM T_SVR_DANPROJECT
+			WHERE STATE = '1'
+			AND UPDDATE > #{startTime,jdbcType=TIMESTAMP}
+			AND UPDDATE <= #{endTime,jdbcType=TIMESTAMP}
+		]]>
+	</select>
+	<select id="queryLocalIncDataList" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="int">
+		<![CDATA[
+			SELECT COUNT(*) FROM T_SVR_DANPROJECT 
+		]]>
+		<where>
+			<if test="startTime != null and startTime != ''  ">
+				<![CDATA[ UPDDATE >= #{startTime,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="endTime != null and endTime != '' ">
+				<![CDATA[ AND UPDDATE < #{endTime,jdbcType=TIMESTAMP}]]>
+			</if>
+		</where>
+	</select>
+</mapper>

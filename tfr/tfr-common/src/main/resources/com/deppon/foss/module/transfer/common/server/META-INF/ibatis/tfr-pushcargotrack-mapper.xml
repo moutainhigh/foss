@@ -1,0 +1,874 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.tfr.pushcargotrack" >
+
+  <!--把派件扫描货物轨迹数据存数到轨迹表 -->
+  <insert id="pushSentScanTrack" parameterType="map">
+  	INSERT INTO tfr.t_opt_expresstrack_external
+  	/*中转-通用模块-将派件扫描时间货物轨迹数据插入到轨迹表*/
+		  (ID,
+		   WAYBILL_NO,/**运单号**/
+		   CHANNEL_ORDER,/**物流订单号(渠道订单号)**/
+		   OPERATIME,/**发生时间**/
+		   TRACK_INFO,/**物流跟踪信息描述**/
+		   OPERATE_CITY,/**发生城市**/
+		   ORG_TYPE,/**站点类型**/
+		   ORG_CODE,/**部门编号**/
+		   ORG_NAME,/**部门名称**/
+		   EVENT_TYPE,/**事件**/
+		   CONTACT,/**联系人**/
+		   CONTACT_PHONE,/**联系方式**/
+		   CREATE_TIME,/**创建时间**/
+		   MODIFY_TIME,/**更新时间**/
+		   RECEIVE_METHOD,/**提货方式**/
+	   serial_no,/**流水号**/
+	   goods_qty_total,/**开单件数**/
+	   order_channel,/**订单来源**/
+	   ARRIVE_ORG_CODE,/**到达部门code**/
+	   ARRIVE_ORG_NAME,/**到达部门名称**/
+	   ARRIVE_CITY,/**到达城市**/
+	   PRODUCT_CODE,/**产品类型**/
+	   IS_EXPRESS/**是否快递**/
+		   )
+		   
+	  select sys_guid(),
+       td.waybill_no as 运单号,
+       pw.order_no as 物流订单号,
+       t.load_end_time as 发生时间,
+       '派送装车' as 跟踪信息描述,
+       bd.name as 发生城市,
+       case
+         when o.transfer_center = 'Y' then
+          '2'
+         else
+          '1'
+       end 站点类型,
+       t.orig_org_code as 编号,
+       t.orig_org_name as 名称,
+       'SENT_SCAN' as 事件,
+       e.emp_name as 联系人,
+       v.mobile_phone as 联系方式,
+       sysDate as 创建时间,
+       sysDate as 修改时间,
+       pw.RECEIVE_METHOD as 提货方式,
+       s.serial_no AS 流水号,
+       pw.goods_qty_total AS 开单件数,
+       pw.order_channel AS 订单来源,
+       '' AS 到达部门编码,
+       '' AS 到达部门名称,
+       '' AS 到达城市,
+       pw.PRODUCT_CODE as 产品类型,
+       pw.IS_EXPRESS as 是否快递
+  from tfr.t_opt_load_task t  
+      inner join  tfr.t_opt_load_waybill_detail td on t.id = td.load_task_id
+      inner join  tfr.t_opt_load_serialno s on  td.id = s.load_waybill_detail_id
+      left join bse.t_bas_org o on t.orig_org_code = o.code and o.active='Y'
+      left join  bse.t_bas_district bd on o.city_code = bd.code  and bd.active = 'Y'
+      left join bse.t_bas_express_vehicle v on  t.vehicle_no = v.vehicle_no and v.active = 'Y'
+      left join bse.t_bas_employee e on  v.emp_code = e.emp_code  and e.active = 'Y'
+      left join pkp.t_srv_waybill pw on pw.waybill_no = td.waybill_no and  pw.active = 'Y'
+	where t.task_no = #{taskNo,jdbcType=VARCHAR}  and pw.order_channel  = #{orderChannel,jdbcType=VARCHAR}
+  	</insert>
+  
+   
+  <!--将货物到达轨迹数据存数到轨迹表 -->
+  <insert id="pushArrivalTrack" parameterType="map" >
+     INSERT INTO tfr.t_opt_expresstrack_external
+     /*中转-通用模块-将货物到达轨迹数据插入到轨迹表*/
+	  (ID,
+	   WAYBILL_NO,/**运单号**/
+	   CHANNEL_ORDER,/**物流订单号(渠道订单号)**/
+	   OPERATIME,/**发生时间**/
+	   TRACK_INFO,/**物流跟踪信息描述**/
+	   OPERATE_CITY,/**发生城市**/
+	   ORG_TYPE,/**站点类型**/
+	   ORG_CODE,/**部门编号**/
+	   ORG_NAME,/**部门名称**/
+	   EVENT_TYPE,/**事件**/
+	   CREATE_TIME,/**创建时间**/
+	   MODIFY_TIME,/**更新时间**/
+	   RECEIVE_METHOD,/**提货方式**/
+	   serial_no,/**流水号**/
+	   goods_qty_total,/**开单件数**/
+	   order_channel,/**订单来源**/
+	   ARRIVE_ORG_CODE,/**到达部门code**/
+	   ARRIVE_ORG_NAME,/**到达部门名称**/
+	   ARRIVE_CITY,/**到达城市**/
+	   PRODUCT_CODE,/**产品类型**/
+	   IS_EXPRESS/**是否快递**/
+	   )
+	 
+select sys_guid(),
+         hd.waybill_no as 运单号,
+         pw.order_no as 物流订单号,
+         td.actual_arrive_time as 发生时间,
+         case
+           when h.handover_type = 'LDP_HANDOVER' then
+            '运输中，已到达【' || td.dest_org_name || '】分站点'
+           else
+            '到达【' || td.dest_org_name || '】'
+         end 跟踪信息描述,
+         bd.name as 发生城市,
+         case
+           when o.transfer_center = 'Y' then
+            '2'
+           else
+            '1'
+         end 站点类型,
+         td.dest_org_code as 编码,
+         td.dest_org_name as 名称,
+         'CANCEL_TRUCK_ARRIVAL' as 事件, /*干线结束*/
+         sysDate as 创建时间,
+         sysDate as 修改时间,
+         pw.RECEIVE_METHOD as 提货方式,
+         s.serial_no as 流水号,
+         pw.GOODS_QTY_TOTAL as 开单件数,
+         pw.order_channel as 订单来源,
+         td.dest_org_code as 到达部门code,
+         td.dest_org_name as 到达部门名称,
+         bd2.name as 到达城市,
+         pw.PRODUCT_CODE as 产品类型,
+         pw.IS_EXPRESS as 是否快递
+    from tfr.t_opt_truck_task_detail td,
+         tfr.t_opt_truck_task_bill tb,
+         tfr.t_opt_handoverbill h,
+         tfr.t_opt_handoverbill_detail hd,
+         tfr.t_opt_handoverbill_serialno s,
+         pkp.t_srv_waybill pw,
+         bse.t_bas_org o,
+         bse.t_bas_district bd,
+         bse.t_bas_org o2,
+         bse.t_bas_district bd2,
+         ( /**用于查询运输性质为快递的，3级和1级的对应关系**/
+          select d1.code code1, d3.code code3
+            from (select pd.code
+                     from pkp.t_srv_product pd
+                    where pd.active = 'Y'
+                      and pd.levels = '1') d1,
+                  (select pd.code code, pd.parent_code parentCode
+                     from pkp.t_srv_product pd
+                    where pd.active = 'Y'
+                      and pd.levels = '2') d2,
+                  (select pd.code code, pd.parent_code parentCode
+                     from pkp.t_srv_product pd
+                    where pd.active = 'Y'
+                      and pd.levels = '3') d3
+           where d2.parentCode = d1.code
+             and d3.parentCode = d2.code) dt,
+       bse.t_bas_line tl                                         
+   where td.id = tb.truck_task_detail_id
+     and tb.bill_no = h.handover_no
+     and h.handoverbill_state != 90
+     and hd.handover_no = h.handover_no
+     and hd.waybill_no = pw.waybill_no
+     and pw.active = 'Y'
+     and hd.handover_no = s.handoverbill_no
+     and pw.waybill_no = s.waybill_no
+     and td.ORIG_ORG_CODE = o.code
+     and o.active = 'Y'
+     and o.city_code = bd.code
+     and bd.active = 'Y'
+     and td.dest_org_code = o2.code
+     and o2.active = 'Y'
+     and o2.city_code = bd2.code
+     and bd2.active = 'Y'
+     and dt.code3 = pw.product_code
+     and pw.order_channel =#{orderChannel,jdbcType=VARCHAR} 
+     and td.id = #{taskNo,jdbcType=VARCHAR}
+    and tl.line_sort = 'BSE_LINE_SORT_TARGET'
+   and tl.dest_org_code = pw.customer_pickup_org_code 
+   and tl.active = 'Y' 
+   and tl.orig_org_code = td.dest_org_code
+	  </insert>
+
+  <!--将货物出发轨迹数据存数到轨迹表 -->
+  <insert id="pushDepartureTrack" parameterType="map">
+  	    INSERT INTO tfr.t_opt_expresstrack_external
+     /*中转-通用模块-将货物出发轨迹数据插入到轨迹表*/
+	  (ID,
+	   WAYBILL_NO,/**运单号**/
+	   CHANNEL_ORDER,/**物流订单号(渠道订单号)**/
+	   OPERATIME,/**发生时间**/
+	   TRACK_INFO,/**物流跟踪信息描述**/
+	   OPERATE_CITY,/**发生城市**/
+	   ORG_TYPE,/**站点类型**/
+	   ORG_CODE,/**部门编号**/
+	   ORG_NAME,/**部门名称**/
+	   EVENT_TYPE,/**事件**/
+	   CREATE_TIME,/**创建时间**/
+	   MODIFY_TIME,/**更新时间**/
+	   RECEIVE_METHOD,/**提货方式**/
+	    serial_no,/**流水号**/
+	   goods_qty_total,/**开单件数**/
+	   order_channel,/**订单来源**/
+	   ARRIVE_ORG_CODE,/**到达部门code**/
+	   ARRIVE_ORG_NAME,/**到达部门名称**/
+	   ARRIVE_CITY,/**到达城市**/
+	   PRODUCT_CODE,/**产品类型**/
+	   IS_EXPRESS/**是否快递**/
+	   )
+	
+select sys_guid(),
+         hd.waybill_no as 运单号,
+         pw.order_no as 物流订单号,
+         td.actual_depart_time as 发生时间,
+         case
+           when h.handover_type = 'LDP_HANDOVER' then
+            '运输中，从【' || td.ORIG_ORG_NAME || '】出发'
+           else
+            '已从【' || td.ORIG_ORG_NAME || '】出发'
+         end 跟踪信息描述,
+         bd2.name as 发生城市,
+         case
+           when o.transfer_center = 'Y' then
+            '2'
+           else
+            '1'
+         end 站点类型,
+         td.ORIG_ORG_CODE as 编码,
+         td.ORIG_ORG_NAME as 名称,
+         'TRUCK_DEPARTURE' as 事件,
+         sysDate as 创建时间,
+         sysDate as 修改时间,
+         pw.RECEIVE_METHOD as 提货方式,
+         s.serial_no as 流水号,
+         pw.GOODS_QTY_TOTAL as 开单件数,
+         pw.order_channel as 订单来源,
+         td.dest_org_code as 到达部门code,
+         td.dest_org_name as 到达部门名称,
+         bd.name as 到达城市,
+         pw.PRODUCT_CODE as 产品类型,
+         pw.IS_EXPRESS as 是否快递
+         
+    from tfr.t_opt_truck_task_detail td,
+         tfr.t_opt_truck_task_bill tb,
+         tfr.t_opt_handoverbill h,
+         tfr.t_opt_handoverbill_detail hd,
+         tfr.t_opt_handoverbill_serialno s,
+         pkp.t_srv_waybill pw,
+         bse.t_bas_org o,
+         bse.t_bas_district bd,
+         bse.t_bas_org o2,
+         bse.t_bas_district bd2,
+         bse.t_bas_sales_department sdp,
+         ( /**用于查询运输性质为快递的，3级和1级的对应关系**/
+          select d1.code code1, d3.code code3
+            from (select pd.code
+                     from pkp.t_srv_product pd
+                    where pd.active = 'Y'
+                      and pd.levels = '1') d1,
+                  (select pd.code code, pd.parent_code parentCode
+                     from pkp.t_srv_product pd
+                    where pd.active = 'Y'
+                      and pd.levels = '2') d2,
+                  (select pd.code code, pd.parent_code parentCode
+                     from pkp.t_srv_product pd
+                    where pd.active = 'Y'
+                      and pd.levels = '3') d3
+           where d2.parentCode = d1.code
+             and d3.parentCode = d2.code) dt
+   where td.id = tb.truck_task_detail_id
+     and tb.bill_no = h.handover_no
+     and h.handoverbill_state != 90
+     and hd.handover_no = h.handover_no
+     and hd.waybill_no = pw.waybill_no
+     and pw.active = 'Y'
+     and pw.waybill_no = s.waybill_no
+     and hd.handover_no = s.handoverbill_no
+     and td.dest_org_code = o.code
+     and o.active = 'Y'
+     and o.city_code = bd.code
+     and bd.active = 'Y'
+     and td.ORIG_ORG_CODE = o2.code
+     and o2.active = 'Y'
+     and o2.city_code = bd2.code
+     and bd2.active = 'Y'
+     and dt.code3 = pw.product_code
+     and pw.order_channel =#{orderChannel,jdbcType=VARCHAR}
+     and  sdp.code=pw.receive_org_code
+           and sdp.active='Y' 
+     and td.id =#{taskNo,jdbcType=VARCHAR}
+     and (
+     (td.orig_org_code = pw.receive_org_code and exists
+          (select *
+              from bse.t_bas_sales_department dp
+             where dp.code = pw.receive_org_code
+               and dp.active = 'Y'
+               and dp.station = 'N'))
+    or
+         (exists (select *
+                     from bse.t_bas_sales_department dp
+                    where dp.code = pw.receive_org_code
+                      and dp.active = 'Y'
+                      and dp.station = 'Y') and
+          td.orig_org_code = sdp.transfer_center)
+          )
+  	
+  	</insert>
+
+<!-- 重置jobtodo表中的jobid -->
+<update id="resetMsgbyJobId" parameterType="HashMap">
+	update  
+	tfr.t_opt_job_todo et 
+		set et.job_id = #{jobId,jdbcType=VARCHAR}
+		where et.job_id !='N/A'
+ </update>
+ 
+ <!--将货物到达轨迹数据存数到轨迹表 -->
+  <insert id="pushArrivalTrackNew" parameterType="HashMap" >
+     INSERT INTO TFR.T_OPT_TRACK_TODOSYN
+     /*中转-通用模块-将货物到达轨迹数据插入到轨迹表*/
+	  (ID,
+	   WAYBILL_NO,/**运单号**/
+	   ORDER_NO,/**物流订单号(渠道订单号)**/
+	   OPERATE_TIME,/**发生时间**/
+	   TRACK_INFO,/**物流跟踪信息描述**/
+	   OPERATE_CITY,/**发生城市**/
+	   ORG_TYPE,/**站点类型**/
+	   ORG_CODE,/**部门编号**/
+	   ORG_NAME,/**部门名称**/
+	   EVENT_TYPE,/**事件**/
+	   CREATE_TIME,/**创建时间**/
+	   MODIFY_TIME,/**更新时间**/
+	   
+	   order_channel,/**订单来源**/
+	   NEXT_ORG_CODE,/**到达部门code**/
+	   NEXT_ORG_NAME,/**到达部门名称**/
+	   NEXT_CITY,/**到达城市**/
+	   PRODUCT_CODE,/**产品类型**/
+	   PLAN_ARRIVE_TIME,/**预计到达下一部门时间**/
+	   DESTINATION_DEPT_NAME,/**目的部门名称**/
+	   DESTINATION_CITY_NAME /**目的部门所在城市名称**/
+	   )
+		 select 
+	       sys_guid() as ID,
+	       hd.waybill_no as WAYBILL_NO,
+	        <!-- modify by wwb 311396 2017年3月24日14:15:21
+		   		 大件仓配轨迹FOSS回传订单号给WQS-->
+	       case
+       	    	when pw.order_channel = 'CNJZ' then
+	        	  	pw.order_no
+	         	else
+	          		pdo.CHANNEL_NUMBER
+	       end as ORDER_NO,
+	       todo.business_time as OPERATE_TIME,
+	      case
+	         when h.handover_type = 'LDP_HANDOVER' then
+	          '运输中，已到达【' || td.dest_org_name || '】分站点'
+	         else
+	          '到达【' || td.dest_org_name ||  '】'
+	       end TRACK_INFO,
+	       bd2.name as OPERATE_CITY,
+	       case
+	         when o2.transfer_center = 'Y' then
+	          '2'
+	         else
+	          '1'
+	       end as ORG_TYPE,
+	       td.dest_org_code as ORG_CODE,
+	       td.dest_org_name as ORG_NAME,
+	       'ARRIVAL' as EVENT_TYPE,
+	       sysDate as CREATE_TIME,
+	       sysDate as MODIFY_TIME,
+	       pw.order_channel as order_channel,
+		   td.dest_org_code as NEXT_ORG_CODE,
+		   td.dest_org_name as NEXT_ORG_NAME,
+		   bd2.name as NEXT_CITY,
+		   pw.PRODUCT_CODE as PRODUCT_CODE,
+		   td.PLAN_ARRIVE_TIME as PLAN_ARRIVE_TIME,
+		   <!-- 2016-8-11 15:27:10 wwb 目的部门名称更改为提货网点 -->
+		    pw.customer_pickup_org_name  as DESTINATION_DEPT_NAME,
+  		   nvl(bd3.name,bd4.name) as DESTINATION_CITY_NAME
+	
+	    from tfr.t_opt_truck_task_detail td,
+	       tfr.t_opt_truck_task_bill tb,
+	       tfr.t_opt_handoverbill h,
+	       tfr.t_opt_handoverbill_detail hd,
+	       <!-- 2016年8月24日17:52:05 311396 DEFECT-15971 -->
+	   <!--     tfr.t_opt_handoverbill_serialno s, -->
+	       pkp.t_srv_waybill pw,
+	       pkp.t_srv_dispatch_order pdo,
+	       bse.t_bas_org o,
+	       bse.t_bas_district bd,
+	        bse.t_bas_org o2,
+	       bse.t_bas_district bd2,
+	       bse.t_bas_org o3,
+	       bse.t_bas_district bd3,
+	       bse.t_bas_outer_branch ob,
+	       bse.t_bas_district bd4,
+           tfr.t_opt_job_todo todo
+		 where td.id = tb.truck_task_detail_id
+		   and tb.bill_no = h.handover_no
+		   and h.handoverbill_state != 90
+		   and hd.handover_no = h.handover_no
+		   and hd.waybill_no = pw.waybill_no
+		   and pw.active = 'Y'
+		<!--    and hd.handover_no= s.handoverbill_no
+		   and pw.waybill_no = s.waybill_no -->
+		   and pw.order_no=pdo.order_no(+)
+		   <!-- and s.serial_no='0001' -->
+		   <!-- 2016-8-1 08:50:21 wwb 更改流水号获取方式 -->
+		<!--    and s.serial_no=(Select se.serial_no 
+		   			From tfr.t_opt_handoverbill_serialno se 
+		   			Where se.waybill_no = hd.waybill_no And Rownum = 1) -->
+		   and td.ORIG_ORG_CODE = o.code
+		   and o.active = 'Y'
+		   and o.city_code = bd.code
+		   and bd.active = 'Y'
+		   and td.dest_org_code = o2.code
+		   and o2.active = 'Y'
+		   and o2.city_code = bd2.code
+		   and bd2.active = 'Y'
+		   and o3.code(+)=pw.CUSTOMER_PICKUP_ORG_CODE 
+		   and o3.active(+)='Y'
+		   and o3.city_code=bd3.code(+)
+		   and bd3.active（+）='Y'
+		   and ob.agent_dept_code(+)=pw.CUSTOMER_PICKUP_ORG_CODE
+		   and ob.active(+)='Y'
+		   and ob.city_code=bd4.code(+)
+		   and bd4.active(+)='Y'
+		   And todo.business_id = td.id
+		   and todo.business_scene ='TRUCK_ARRIVAL'
+   		   and todo.business_goal = #{orderChannel,jdbcType=VARCHAR}
+		   and td.id =#{taskNo,jdbcType=VARCHAR}
+	</insert>
+  	
+  	 <!--把快递到达城市货物轨迹数据存数到轨迹表 -->
+  <insert id="pushSentCityTrackNew" parameterType="HashMap">
+	insert into TFR.T_OPT_TRACK_TODOSYN
+  	/*中转-通用模块-将到达城市货物轨迹数据插入到轨迹表*/
+	  (ID,
+	   WAYBILL_NO,/**运单号**/
+	   ORDER_NO,/**物流订单号(渠道订单号)**/
+	   OPERATE_TIME,/**发生时间**/
+	   TRACK_INFO,/**物流跟踪信息描述**/
+	   OPERATE_CITY,/**发生城市**/
+	   ORG_TYPE,/**站点类型**/
+	   ORG_CODE,/**部门编号**/
+	   ORG_NAME,/**部门名称**/
+	   EVENT_TYPE,/**事件**/
+	   CREATE_TIME,/**创建时间**/
+	   MODIFY_TIME,/**更新时间**/
+	   
+	   order_channel,/**订单来源**/
+	   NEXT_ORG_CODE,/**到达部门code**/
+	   NEXT_ORG_NAME,/**到达部门名称**/
+	   NEXT_CITY,/**到达城市**/
+	   PRODUCT_CODE,/**产品类型**/
+	   PLAN_ARRIVE_TIME,/**预计到达下一部门时间**/
+	   DESTINATION_DEPT_NAME,/**目的部门名称**/
+	   DESTINATION_CITY_NAME/**目的部门所在城市名称**/
+	   )
+		select 
+		   sys_guid() as ID,
+		   hd.waybill_no as WAYBILL_NO,
+		   <!-- modify by wwb 311396 2017年3月24日14:15:21
+		   		 大件仓配轨迹FOSS回传订单号给WQS-->
+	       case
+       	    	when pw.order_channel = 'CNJZ' then
+	        	  	pw.order_no
+	         	else
+	          		pdo.CHANNEL_NUMBER
+	       end as ORDER_NO,
+		   todo.business_time as OPERATE_TIME,
+		   '已到达' || bd.name   as TRACK_INFO,
+		    bd.name as OPERATE_CITY,
+		    case 
+		      when o.transfer_center='Y' 
+		         then '2'
+		       else '1'
+		     end as ORG_TYPE,
+		    td.dest_org_code as ORG_CODE,
+		    td.dest_org_name as ORG_NAME,
+		    'SENT_CITY' as EVENT_TYPE,
+		    sysDate as CREATE_TIME,
+		    sysDate as MODIFY_TIME,
+		    pw.order_channel as order_channel,
+		   td.dest_org_code as NEXT_ORG_CODE,
+		   td.dest_org_name as NEXT_ORG_NAME,
+		   bd.name as NEXT_CITY,
+		   pw.PRODUCT_CODE as PRODUCT_CODE,
+		   td.PLAN_ARRIVE_TIME as PLAN_ARRIVE_TIME,
+		   o3.name  as DESTINATION_DEPT_NAME,
+		   bd3.name as DESTINATION_CITY_NAME
+		    
+		from tfr.t_opt_truck_task_detail td,
+		tfr.t_opt_truck_task_bill tb,
+		tfr.t_opt_handoverbill h,
+		tfr.t_opt_handoverbill_detail hd,
+		tfr.t_opt_handoverbill_serialno s,
+		pkp.t_srv_waybill pw,
+		pkp.t_srv_dispatch_order pdo,
+		bse.t_bas_org o,
+		bse.t_bas_district bd,
+		bse.t_bas_org o3,
+	    bse.t_bas_district bd3,
+	    bse.t_bas_sales_department sdp,
+        tfr.t_opt_job_todo todo
+		where td.id=tb.truck_task_detail_id
+		    /*author:106162 date:2017-04-17*/
+			/*and tb.bill_level='1'*/
+			and tb.bill_no=h.handover_no 
+			and h.handoverbill_state !=90
+			and hd.handover_no=h.handover_no
+			and hd.waybill_no=pw.waybill_no
+			and pw.active='Y'
+			and pw.waybill_no=s.waybill_no
+			and pw.order_no=pdo.order_no(+)
+			and s.serial_no='0001'
+			and s.handoverbill_no=h.handover_no
+			and td.dest_org_code=o.code
+			and o.active='Y'
+			and o.city_code=bd.code
+			and bd.active='Y'
+		   and o3.code=pw.CUSTOMER_PICKUP_ORG_CODE 
+		   and o3.active='Y'
+		   and o3.city_code=bd3.code
+		   and bd3.active='Y'
+		   and  sdp.code=pw.customer_pickup_org_code
+           and sdp.active='Y' 
+           And todo.business_id = td.id
+           and todo.business_scene ='TRUCK_ARRIVAL'
+   		   and todo.business_goal = #{orderChannel,jdbcType=VARCHAR}
+		   and (
+      (  pw.customer_pickup_org_code=td.dest_org_code
+            and  exists (select * from bse.t_bas_sales_department  dp 
+            where dp.code=pw.customer_pickup_org_code and dp.active='Y' and dp.station='N')
+       )  
+       or(
+              exists (select * from bse.t_bas_sales_department  dp 
+               where dp.code=pw.customer_pickup_org_code and dp.active='Y' and dp.station='Y')
+            and sdp.transfer_center= td.dest_org_code  
+          )
+      )
+			and td.id=#{truckDetailId,jdbcType=VARCHAR}
+			
+		
+  </insert>
+  
+  <!--将货物出发轨迹数据存数到轨迹表 -->
+  <insert id="pushDepartureTrackNew" parameterType="HashMap">
+  	    INSERT INTO TFR.T_OPT_TRACK_TODOSYN
+     /*中转-通用模块-将货物出发轨迹数据插入到轨迹表*/
+	  (ID,
+	   WAYBILL_NO,/**运单号**/
+	   ORDER_NO,/**物流订单号(渠道订单号)**/
+	   OPERATE_TIME,/**发生时间**/
+	   TRACK_INFO,/**物流跟踪信息描述**/
+	   OPERATE_CITY,/**发生城市**/
+	   ORG_TYPE,/**站点类型**/
+	   ORG_CODE,/**部门编号**/
+	   ORG_NAME,/**部门名称**/
+	   EVENT_TYPE,/**事件**/
+	   CREATE_TIME,/**创建时间**/
+	   MODIFY_TIME,/**更新时间**/
+	   order_channel,/**订单来源**/
+	   NEXT_ORG_CODE,/**到达部门code**/
+	   NEXT_ORG_NAME,/**到达部门名称**/
+	   NEXT_CITY,/**到达城市**/
+	   PRODUCT_CODE,/**产品类型**/
+	   PLAN_ARRIVE_TIME,/**预计到达下一部门时间**/
+	   DESTINATION_DEPT_NAME,/**目的部门名称**/
+	   DESTINATION_CITY_NAME /**目的部门所在城市名称**/
+	   )
+	
+select 
+sys_guid() as ID,
+       hd.waybill_no  as WAYBILL_NO,
+        <!-- modify by wwb 311396 2017年3月24日14:15:21
+		   		 大件仓配轨迹FOSS回传订单号给WQS-->
+	       case
+       	    	when pw.order_channel = 'CNJZ' then
+	        	  	pw.order_no
+	         	else
+	          		pdo.CHANNEL_NUMBER
+	       end as ORDER_NO,
+       todo.business_time as OPERATE_TIME,
+       case
+         when h.handover_type = 'LDP_HANDOVER' then
+          '运输中，从【' || td.ORIG_ORG_NAME || '】出发'
+         else
+          '已从【' || td.ORIG_ORG_NAME || '】出发'
+       end as TRACK_INFO,
+       bd2.name as OPERATE_CITY,
+       case
+         when o2.transfer_center = 'Y' then
+          '2'
+         else
+          '1'
+       end as ORG_TYPE,
+       td.ORIG_ORG_CODE as ORG_CODE,
+       td.ORIG_ORG_NAME as ORG_NAME,
+       'DEPARTURE' as EVENT_TYPE,
+       sysDate as CREATE_TIME,
+       sysDate as MODIFY_TIME,
+       pw.order_channel as order_channel,
+	   td.dest_org_code as NEXT_ORG_CODE,
+	   td.dest_org_name as NEXT_ORG_NAME,
+	   bd.name as NEXT_CITY,
+	   pw.PRODUCT_CODE as PRODUCT_CODE,
+       td.PLAN_ARRIVE_TIME as PLAN_ARRIVE_TIME,
+       <!-- 2016-8-11 15:27:10 wwb 目的部门名称更改为提货网点 -->
+       pw.customer_pickup_org_name  as DESTINATION_DEPT_NAME,
+  	   nvl(bd3.name,bd4.name) as DESTINATION_CITY_NAME 	
+
+  from tfr.t_opt_truck_task_detail td,
+       tfr.t_opt_truck_task_bill tb,
+       tfr.t_opt_handoverbill h,
+       tfr.t_opt_handoverbill_detail hd,
+       <!-- 2016年8月24日17:52:05 311396 DEFECT-15971 -->
+      <!--  tfr.t_opt_handoverbill_serialno s, -->
+       pkp.t_srv_waybill pw,
+       pkp.t_srv_dispatch_order pdo,
+       bse.t_bas_org o,
+       bse.t_bas_district bd,
+       bse.t_bas_org o2,
+       bse.t_bas_district bd2,
+       bse.t_bas_org o3,
+	   bse.t_bas_district bd3,
+	    bse.t_bas_outer_branch ob,
+	   bse.t_bas_district bd4,
+     tfr.t_opt_job_todo todo
+ where td.id = tb.truck_task_detail_id
+   and tb.bill_no = h.handover_no
+   and h.handoverbill_state != 90
+   and hd.handover_no = h.handover_no
+   and hd.waybill_no = pw.waybill_no
+   and pw.active = 'Y'
+<!--    and pw.waybill_no = s.waybill_no -->
+   and pw.order_no=pdo.order_no(+)
+<!--    and hd.handover_no= s.handoverbill_no -->
+   <!-- and s.serial_no='0001' -->
+   <!-- 2016-8-1 08:50:21 wwb 更改流水号获取方式 -->
+<!--    and s.serial_no=(Select se.serial_no 
+   			From tfr.t_opt_handoverbill_serialno se 
+   			Where se.waybill_no = hd.waybill_no And Rownum = 1) -->
+   and td.dest_org_code = o.code
+   and o.active = 'Y'
+   and o.city_code = bd.code
+   and bd.active = 'Y'
+    and td.ORIG_ORG_CODE = o2.code
+   and o2.active = 'Y'
+   and o2.city_code = bd2.code
+   and bd2.active = 'Y'
+    and o3.code(+)=pw.CUSTOMER_PICKUP_ORG_CODE 
+   and o3.active(+)='Y'
+   and o3.city_code=bd3.code(+)
+   and bd3.active（+）='Y'
+   and ob.agent_dept_code(+)=pw.CUSTOMER_PICKUP_ORG_CODE
+   and ob.active(+)='Y'
+   and ob.city_code=bd4.code(+)
+   and bd4.active(+)='Y'
+   And todo.business_id = td.id
+   and todo.business_scene ='TRUCK_DEPARTURE'
+   and todo.business_goal = #{orderChannel,jdbcType=VARCHAR}
+   and td.id =#{taskNo,jdbcType=VARCHAR}	
+  	</insert>
+ 
+ <!--把派件扫描货物轨迹数据存数到轨迹表 -->
+  <insert id="pushSentScanTrackNew" parameterType="HashMap">
+  <!-- 派送转移到揽派收表里 311396 2016年9月30日16:34:28 -->
+  	INSERT INTO TFR.T_OPT_TRACK_LPS_TODOSYN
+  	/*中转-通用模块-将派件扫描货物轨迹数据插入到轨迹表*/
+	  (ID,
+	   WAYBILL_NO,/**运单号**/
+	   ORDER_NO,/**物流订单号(渠道订单号)**/
+	   OPERATE_TIME,/**发生时间**/
+	   TRACK_INFO,/**物流跟踪信息描述**/
+	   OPERATE_CITY,/**发生城市**/
+	   ORG_TYPE,/**站点类型**/
+	   ORG_CODE,/**部门编号**/
+	   ORG_NAME,/**部门名称**/
+	   EVENT_TYPE,/**事件**/
+	   OPERATOR_NAME,/**联系人**/
+	   OPERATOR_PHONE,/**联系方式**/
+	   CREATE_TIME,/**创建时间**/
+	   MODIFY_TIME,/**更新时间**/
+	   order_channel,/**订单来源**/
+	   PRODUCT_CODE,/**产品类型**/
+	   DESTINATION_DEPT_NAME,/**目的部门名称**/
+	   DESTINATION_CITY_NAME /**目的部门所在城市名称**/
+	   ) 
+	   <!-- 2016-8-11 15:27:10 wwb 目的部门名称更改为提货网点 at line 690-->
+	   <![CDATA[
+	 select sys_guid() as ID,
+       td.waybill_no as WAYBILL_NO,
+       case
+       	    	when pw.order_channel = 'CNJZ' then
+	        	  	pw.order_no
+	         	else
+	          		pdo.CHANNEL_NUMBER
+	       end as ORDER_NO,
+       t.load_end_time as OPERATE_TIME,
+       '派送中' as TRACK_INFO,
+       bd.name as OPERATE_CITY,
+       case
+         when o.transfer_center = 'Y' then
+          '2'
+         else
+          '1'
+       end as ORG_TYPE,
+       t.orig_org_code as ORG_CODE,
+       t.orig_org_name as ORG_NAME,
+       'SENT_SCAN' as EVENT_TYPE,
+       db.driver_name as OPERATOR_NAME,
+       nvl(el.mobile_phone,ld.driver_phone) as OPERATOR_PHONE,
+       sysDate as CREATE_TIME,
+       sysDate as MODIFY_TIME,
+       pw.order_channel as order_channel,
+       pw.PRODUCT_CODE as PRODUCT_CODE,
+        pw.customer_pickup_org_name as DESTINATION_DEPT_NAME,
+       bd.name as DESTINATION_CITY_NAME
+  	 from tfr.t_opt_load_task t
+  	 left join tfr.t_opt_load_waybill_detail td on t.id = td.load_task_id
+  	 left join bse.t_bas_org o on t.orig_org_code = o.code
+                           and o.active = 'Y'
+  	 left join bse.t_bas_district bd on o.city_code = bd.code
+                                 and bd.active = 'Y'
+  	 left join pkp.t_srv_waybill pw on pw.waybill_no = td.waybill_no
+                                and pw.active = 'Y'
+  	 left join pkp.t_srv_dispatch_order pdo on pw.order_no = pdo.order_no
+  	 left join pkp.t_srv_deliverbill db on db.deliverbill_no = t.deliverbill_no
+  	 left join bse.t_bas_employee el on el.emp_code = db.driver_code and el.active = 'Y'
+  	 left join bse.t_bas_leased_truck lt on lt.vehicle_no = t.vehicle_no and lt.active = 'Y'
+  	 left join bse.t_bas_leased_driver ld on ld.id_card = lt.leased_driver_id_card and ld.active = 'Y'
+	where t.task_no = #{taskNo,jdbcType=VARCHAR}
+	  AND td.load_qty>0  ]]>   
+  	</insert>
+  	
+  	<!-- 直发中转场提交任务时生成出站轨迹 duhao-276198-20151023 -->
+  	<insert id="pushStraightDepartureTrack" parameterType="HashMap">
+	  	INSERT INTO TFR.T_OPT_TRACK_TODOSYN
+	     /*中转-通用模块-将货物出发轨迹数据插入到轨迹表*/
+	    (ID,
+	     WAYBILL_NO,/**运单号**/
+	     ORDER_NO,/**物流订单号(渠道订单号)**/
+	     OPERATE_TIME,/**发生时间**/
+	     TRACK_INFO,/**物流跟踪信息描述**/
+	     OPERATE_CITY,/**发生城市**/
+	     ORG_TYPE,/**站点类型**/
+	     ORG_CODE,/**部门编号**/
+	     ORG_NAME,/**部门名称**/
+	     EVENT_TYPE,/**事件**/
+	     CREATE_TIME,/**创建时间**/
+	     MODIFY_TIME,/**更新时间**/
+	     
+	     order_channel,/**订单来源**/
+	     NEXT_ORG_CODE,/**到达部门code**/
+	     NEXT_ORG_NAME,/**到达部门名称**/
+	     NEXT_CITY,/**到达城市**/
+	     PRODUCT_CODE,/**产品类型**/
+	     DESTINATION_DEPT_NAME,/**目的部门名称**/
+	     DESTINATION_CITY_NAME /**目的部门所在城市名称**/
+	     )  Select
+	     sys_guid() Id, 
+	     ld.waybill_no WAYBILL_NO,
+	     pdo.channel_number ORDER_NO,
+	     todo.business_time OPERATE_TIME,
+	     '运输中，离开【'||l.orig_org_name||'】，下一站【'||bd.name||'】' TRACK_INFO,
+	     bd1.name OPERATE_CITY,
+	     case
+	          when o1.transfer_center = 'Y' then
+	            '2'
+	          else
+	            '1'
+	     end as ORG_TYPE,
+	     l.orig_org_code ORG_CODE,
+	     l.orig_org_name ORG_NAME,
+	     'DEPARTURE' EVENT_TYPE,
+	     Sysdate CREATE_TIME,
+	     Sysdate MODIFY_TIME,
+	     wb.order_channel order_channel,
+	     ldo.dest_org_code NEXT_ORG_CODE,
+	     o.name NEXT_ORG_NAME,
+	     bd.name NEXT_CITY,
+	     wb.product_code PRODUCT_CODE,
+	     <!-- 2016-8-11 15:27:10 wwb 目的部门名称更改为提货网点 -->
+	     wb.customer_pickup_org_name As DESTINATION_DEPT_NAME,
+	     Nvl(bd2.name,bd3.name) As DESTINATION_CITY_NAME
+	     From tfr.t_opt_load_task l
+	     Left Join tfr.t_opt_load_waybill_detail ld On ld.load_task_id=l.id
+	     Left Join tfr.t_opt_load_serialno ls On ls.load_waybill_detail_id=ld.id
+	     Left Join pkp.t_srv_waybill wb On wb.waybill_no=ld.waybill_no And wb.active='Y'
+	     Left Join pkp.t_srv_dispatch_order pdo On pdo.order_no=wb.order_no
+	     Left Join tfr.t_opt_job_todo todo On todo.business_id=l.task_no
+	     Left Join tfr.t_opt_load_dest_org ldo On ldo.load_task_id=l.id
+	     Left Join bse.t_bas_org o On o.code=ldo.dest_org_code And o.active='Y'
+	     Left Join bse.t_bas_district bd On bd.code=o.city_code And bd.active='Y'
+	     Left Join bse.t_bas_org o1 On o1.code=l.orig_org_code And o1.active='Y'
+	     Left Join bse.t_bas_district bd1 On bd1.code=o1.city_code And bd1.active='Y'
+	     Left Join bse.t_bas_org o2 On o2.code=wb.customer_pickup_org_code And o2.active='Y'
+	     Left Join bse.t_bas_outer_branch ob On ob.agent_dept_code=wb.customer_pickup_org_code And ob.active='Y'
+	     Left Join bse.t_bas_district bd2 On bd2.code=o2.city_code And bd2.active='Y'
+	     Left Join bse.t_bas_district bd3 On bd3.code=ob.city_code And bd3.active='Y'
+	     Where ls.serial_no='0001'
+	     and todo.business_scene ='TRUCK_STRAIGHT_DEPARTURE'
+	     and todo.business_goal = #{orderChannel,jdbcType=VARCHAR}
+	     and l.task_no =#{taskNo,jdbcType=VARCHAR}
+  	
+  	</insert>
+  	
+  	<!-- 外场分配快递集中接货卸车任务时候生成 duhao-276198-20151023-->
+  	<insert id="pushStraightArrivalTrack" parameterType="HashMap">
+	  	INSERT INTO TFR.T_OPT_TRACK_TODOSYN
+	     /*中转-通用模块-将货物到达轨迹数据插入到轨迹表*/
+	    (ID,
+	     WAYBILL_NO,/**运单号**/
+	     ORDER_NO,/**物流订单号(渠道订单号)**/
+	     OPERATE_TIME,/**发生时间**/
+	     TRACK_INFO,/**物流跟踪信息描述**/
+	     OPERATE_CITY,/**发生城市**/
+	     ORG_TYPE,/**站点类型**/
+	     ORG_CODE,/**部门编号**/
+	     ORG_NAME,/**部门名称**/
+	     EVENT_TYPE,/**事件**/
+	     CREATE_TIME,/**创建时间**/
+	     MODIFY_TIME,/**更新时间**/
+	     
+	     order_channel,/**订单来源**/
+	     PRODUCT_CODE,/**产品类型**/
+	     DESTINATION_DEPT_NAME,/**目的部门名称**/
+	     DESTINATION_CITY_NAME /**目的部门所在城市名称**/
+	     ) Select 
+	       sys_guid() Id,
+	       phd.waybill_no WAYBILL_NO,
+	       pdo.channel_number ORDER_NO,
+	       todo.business_time OPERATE_TIME,
+	       '运输中，到达【'||o.name||'】' TRACK_INFO,
+	       bd.name OPERATE_CITY,
+	       case
+	           when o.transfer_center = 'Y' then
+	              '2'
+	           else
+	              '1'
+	       end as ORG_TYPE,
+	       ph.dest_org_code ORG_CODE,
+	       o.name ORG_NAME,
+	       'ARRIVAL' EVENT_TYPE,
+	       Sysdate CREATE_TIME,
+	       Sysdate MODIFY_TIME,
+	       wb.order_channel order_channel,
+	       wb.product_code PRODUCT_CODE,
+	       <!-- 2016-8-11 15:27:10 wwb 目的部门名称更改为提货网点 -->
+	       wb.customer_pickup_org_name As DESTINATION_DEPT_NAME,
+	       Nvl(bd2.name,bd3.name) As DESTINATION_CITY_NAME
+	       From tfr.t_opt_pick_handover ph
+	       Left Join tfr.t_opt_pick_handover_detail phd On phd.handover_no=ph.handover_no
+	       Left Join tfr.t_opt_pick_handover_serialno phs On phs.handover_no=ph.handover_no And phs.waybill_no=phd.waybill_no
+	       Left Join pkp.t_srv_waybill wb On wb.waybill_no=phd.waybill_no And wb.active='Y'
+	       Left Join pkp.t_srv_dispatch_order pdo On pdo.order_no=wb.order_no
+	       Left Join tfr.t_opt_job_todo todo On todo.business_id=phd.handover_no
+	       Inner Join bse.t_bas_org o On o.code=ph.dest_org_code And o.transfer_center='Y' And o.active='Y' 
+	       Left Join bse.t_bas_district bd On bd.code=o.city_code And bd.active='Y'
+	       Left Join bse.t_bas_org o2 On o2.code=wb.customer_pickup_org_code And o2.active='Y'
+	       Left Join bse.t_bas_outer_branch ob On ob.agent_dept_code=wb.customer_pickup_org_code And ob.active='Y'
+	       Left Join bse.t_bas_district bd2 On bd2.code=o2.city_code And bd2.active='Y'
+	       Left Join bse.t_bas_district bd3 On bd3.code=ob.city_code And bd3.active='Y'
+	       Where phs.serail_no='0001'
+	       and todo.business_scene ='TRUCK_STRAIGHT_ARRIVAL'
+	       and todo.business_goal = #{orderChannel,jdbcType=VARCHAR}
+	       and ph.handover_no=#{taskNo,jdbcType=VARCHAR}
+  	</insert>
+  	
+  	
+</mapper>

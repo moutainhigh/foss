@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.pda.bdm.module.foss.upgrade.server.dao.impl.DeptDataVerGenDao">
+	<!-- 部门信息 -->
+	<select id="queryLocalDatas" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.DeptEntity">
+		<![CDATA[
+			SELECT 
+				D.ID                  as id,
+	            D.DEPTCODE            as deptCode,
+	            D.DEPTNO              as deptNo,
+	            D.DEPTNAME            as deptName,
+	            D.DEPTATTRIBUTE       as deptAttribute,
+	            D.DEPTPROVINCE        as deptProvince,
+	            D.DEPTCITY 	          as deptCity,
+	            D.DEPTCOUNTY          as deptCounty,
+	            D.ISAIRASSEMBLY       as isAirAssembly,
+	            D.ISCARASSEMBLY       as isCarAssembly,
+	            D.ISOUTASSEMBLY       as isOutAssembly,
+	            D.ISOUTSTORAGE        as isOutStorage,
+	            D.ISTRANSFER          as isTransfer,
+	            D.ISARRIVED           as isArrived,
+	            D.SORTMACHINE         as sortMachine,
+	            D.OPERFLAG      	  as operFlag,
+	            D.PHONEANDFAX   	  as phoneAndFax,
+	            D.DEPTADDRESS   	  as deptAddress,
+	            D.ISCASEDELIVERY      as isCaseDelivery,
+	            D.ISCANAGENTCOLLECTED as isCanAgentCollected,
+	            U.USERNAME            as principalName,
+	            D.SALESDEPARTMENT     as salesDepartment, 
+	            D.BIGREGION			  as bigRegion,
+	            D.PART				  as part,
+	            D.OUTASSEMBLE		  as outAssemble,
+	            d.isstation			  as isstation
+			FROM T_BASE_DEPT D LEFT JOIN T_SVR_USER U
+				ON D.PRINCIPALNAME = U.EMPCODE
+				AND D.OPERFLAG  = '1'
+				AND U.OPERFLAG = '1'
+			WHERE 1=1
+			
+		]]>
+		<if test="startTime != null and startTime != ''  ">
+			<![CDATA[ AND D.UPDTIME > #{startTime,jdbcType=TIMESTAMP}]]>
+		</if>
+		<if test="endTime != null and endTime != '' ">
+			<![CDATA[ AND D.UPDTIME <= #{endTime,jdbcType=TIMESTAMP}]]>
+		</if>
+		<![CDATA[ union all
+			SELECT 
+	        	ID             		as id,
+	            DEPTCODE      		as deptCode,
+	            DEPTNO        		as deptNo,
+	            DEPTNAME      		as deptName,
+	            DEPTATTRIBUTE 		as deptAttribute,
+	            DEPTPROVINCE  		as deptProvince,
+	            DEPTCITY 	  		as deptCity,
+	            DEPTCOUNTY    		as deptCounty,
+	            ISAIRASSEMBLY 		as isAirAssembly,
+	            ISCARASSEMBLY 		as isCarAssembly,
+	            ISOUTASSEMBLY 		as isOutAssembly,
+	            ISOUTSTORAGE  		as isOutStorage,
+	            ISTRANSFER    		as isTransfer,
+	            ISARRIVED     		as isArrived,
+	            SORTMACHINE   		as sortMachine,
+	            OPERFLAG      		as operFlag,
+	            PHONEANDFAX   		as phoneAndFax,
+	            DEPTADDRESS   		as deptAddress,
+	            ISCASEDELIVERY      as isCaseDelivery,
+	            ISCANAGENTCOLLECTED as isCanAgentCollected,
+	            PRINCIPALNAME       as principalName,
+	            SALESDEPARTMENT   as salesDepartment, 
+	            BIGREGION			as bigRegion,
+	            PART				as part,
+	            OUTASSEMBLE		as outAssemble,
+	            ' '				as isstation
+      		FROM T_BASE_BUSINESS_PARTNER
+      		WHERE OPERFLAG = '1'
+			]]>
+			<if test="startTime != null and startTime != ''  ">
+				<![CDATA[ AND UPDTIME > #{startTime,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="endTime != null and endTime != '' ">
+				<![CDATA[ AND UPDTIME <= #{endTime,jdbcType=TIMESTAMP}]]>
+			</if>
+	</select>
+	
+	
+	<select id="queryLocalDatasByDel" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.DeptEntity">
+		<![CDATA[
+			SELECT 
+				ID
+			FROM T_BASE_DEPT 
+			WHERE OPERFLAG = '3'
+			AND UPDTIME > #{startTime,jdbcType=TIMESTAMP}
+			AND UPDTIME <= #{endTime,jdbcType=TIMESTAMP}
+		union all
+			SELECT 
+				ID
+			FROM T_BASE_BUSINESS_PARTNER
+			WHERE OPERFLAG = '3'
+			AND UPDTIME > #{startTime,jdbcType=TIMESTAMP}
+			AND UPDTIME <= #{endTime,jdbcType=TIMESTAMP}
+		]]>
+	</select>
+	
+	<select id="queryLocalIncDataList" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="int">
+		<![CDATA[
+			SELECT COUNT(*) FROM T_BASE_DEPT 
+		]]>
+		<if test="startTime != null and startTime != ''  ">
+			<![CDATA[ WHERE UPDTIME >= #{startTime,jdbcType=TIMESTAMP}]]>
+		</if>
+		<if test="endTime != null and endTime != '' ">
+			<![CDATA[ AND UPDTIME < #{endTime,jdbcType=TIMESTAMP}]]>
+		</if>
+	</select>
+</mapper>

@@ -1,0 +1,71 @@
+CREATE OR REPLACE VIEW V_STL_DVD_LDD AS
+SELECT
+   BUSINESS_CASE,
+   CUSTOMER_CODE,
+   CUSTOMER_NAME,
+   CUSTOMER_TYPE,
+   ORIG_ORG_CODE,
+   ORIG_ORG_NAME,
+   DEST_ORG_CODE,
+   DEST_ORG_NAME,
+   WAYBILL_NO,
+   BILL_NO,
+   ACCOUNT_DATE,
+   BUSINESS_DATE,
+   BILL_PARENT_TYPE,
+   BILL_TYPE,
+   AMOUNT,
+   AMOUNT_FRT,
+   AMOUNT_PUP,
+   AMOUNT_DEL,
+   AMOUNT_PKG,
+   AMOUNT_DV,
+   AMOUNT_COD,
+   AMOUNT_OT,
+   PRODUCT_CODE,
+   ID,
+   PERIOD
+    FROM STV.T_STL_DVD T
+   WHERE T.BUSINESS_CASE IN
+         ('LAND_COST_AGENCY_GEN'
+          ,'LAND_COST_AGENCY_CFM'
+          ,'LAND_COST_AGENCY_NCFM'
+          ,'LAND_COST_OTHER_CONFIRM'
+          ,'LAND_COST_PAY_APPLY'
+          ,'LAND_OTH_ENTRY'
+          ,'LAND_OTH_RCV_CH'
+          ,'LAND_OTH_RCV_CD'
+          ,'LAND_COD_CH_POD'
+          ,'LAND_COD_CD_POD'
+          ,'LAND_COD_CH_NPOD'
+          ,'LAND_COD_POD_WO_COD'
+       ,'LAND_COD_NPOD_WO_COD'
+          ,'LAND_COD_CD_NPOD'
+          ,'LAND_COD_WO_AGENCY_PAY_POD'
+          ,'LAND_COD_WO_OTH_PAY_COD'
+          ,'LAND_COD_WO_AGENCY_PAY_NPOD'
+          ,'LAND_COD_WO_OTH_NPOD'
+          ,'LAND_BDR_WO_OTH_RCV'
+          ,'LAND_UR_DEST_CH_NPOD'
+          ,'LAND_UR_DEST_CD_NPOD'
+          ,'LAND_UR_DEST_CH_POD'
+          ,'LAND_UR_DEST_CD_POD'
+          ,'LAND_PR_AGENCY_WO_DEST_RCV_POD'
+          ,'LAND_PR_AGENCY_WO_DEST_RCV_NP'
+          ,'LAND_PR_OT_WO_DEST_RCV_POD'
+          ,'LAND_PR_OTH_WO_DEST_RCV_NPOD'
+          ,'LAND_PR_OTH_WO_OTH_RCV'
+          ,'LAND_DR_CH'
+      ,'LAND_DR_CD'
+          ,'LAND_DR_DEST_RCV_POD'
+          ,'LAND_DR_DEST_RCV_NPOD'
+          ,'LAND_DR_WO_OTHER_RCV'
+          ,'LAND_DR_WO_COD_RCV_POD'
+          ,'LAND_DR_WO_COD_RCV_NPOD'
+          ,'LAND_DR_PAY_APPLY'
+          ,'LAND_APT_COM'
+          ,'LAND_APT_WO_COM_PAY'
+          ,'LAND_APT_WO_OTH_PAY'
+          )
+AND T.Product_Code ='PACKAGE' --°ü¹ü
+WITH READ ONLY;

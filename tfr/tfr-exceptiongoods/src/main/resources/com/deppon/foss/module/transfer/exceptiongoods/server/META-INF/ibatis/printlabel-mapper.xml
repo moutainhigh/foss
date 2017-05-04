@@ -1,0 +1,440 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.exceptiongoods.printLabel" >
+	<resultMap id="printLabelEntityResultMap" type="com.deppon.foss.module.transfer.exceptiongoods.api.shared.dto.SortingAndPringLabelDto" >
+		<result property="id" column="ID"/>  
+		<result property="isPrint" column="is_Print"/>           
+		<result property="waybillNo" column="WAYBILL_NO"/>                                                      
+		<result property="serialNo" column="SERIAL_NO"/>                                        
+		<result property="operateTime" column="PRINT_TIME"/>                                              
+		<result property="operateCode" column="PRINT_USER_CODE"/>                                            
+		<result property="operateName" column="PRINT_USER_NAME"/>  
+		<result property="orgCode" column="ORG_CODE"/>  
+		<result property="orgName" column="ORG_NAME"/>  
+	</resultMap>
+	
+	
+	<resultMap id="printLabelDtoResultMap" type="com.deppon.foss.module.transfer.exceptiongoods.api.shared.dto.PrintLabelDto" >
+		<result property="waybillNo" column="WAYBILL_NO"/>                                                      
+		<result property="serialNo" column="SERIAL_NO"/>                                        
+		<result property="originalSerialNo" column="OLD_SERIAL_NO"/>                                      
+		<result property="labelGoodsQty" column="LABEL_GOODS_QTY"/>                                             
+		<result property="goodsQtyChanged" column="NUMBER_CHANG_ITEMS"/>                                              
+		<result property="printCount" column="PRINT_COUNT"/>
+	</resultMap>
+	
+	
+	
+	<resultMap id="goodsLabelPrintDtoResultMap" type="com.deppon.foss.module.transfer.exceptiongoods.api.shared.dto.GoodsLabelPrintDto" >
+		<result property="serialNo" column="SERIAL_NO"/>                                        
+		<result property="originalSerialNo" column="OLD_SERIAL_NO"/>                                      
+		<result property="printTime" column="print_time"/>                                             
+		<result property="printUserName" column="print_user_name"/>                                              
+		<result property="printUserOrgName" column="org_name"/>
+		<result property="printOrder" column="print_Order"/>
+		<result property="lableType" column="lable_Type"/>
+	</resultMap>
+	
+	<resultMap id="printLabelDtoForExpressMap" type="com.deppon.foss.module.transfer.exceptiongoods.api.shared.dto.PrintLabelDto" >
+		<result property="waybillNo" column="WAYBILL_NO"/>                                                      
+		<result property="printType" column="print_type"/>                                            
+	</resultMap>
+	
+	<!-- 无标签货物参数配置信息 -->
+	<sql id="printLabel_param">
+	  ID,
+	  WAYBILL_NO,
+	  SERIAL_NO,
+	  PRINT_TIME,
+	  PRINT_USER_CODE,
+	  PRINT_USER_NAME,
+	  ORG_CODE,
+	  PRINT_TYPE,
+	  ORG_NAME
+	</sql>
+	
+	<!-- 保存无标签货物 -->
+	<insert id="insertPrintLabel"
+		parameterType="com.deppon.foss.module.transfer.exceptiongoods.api.shared.domain.PrintLabelEntity">
+			insert into tfr.T_OPT_PRINT_GOODS_LABEL(
+			  ID,
+			  WAYBILL_NO,
+			  SERIAL_NO,
+			  PRINT_TIME,
+			  PRINT_USER_CODE,
+			  PRINT_USER_NAME,
+			  ORG_CODE,
+			  PRINT_TYPE,
+			  LABLE_TYPE,
+			  ORG_NAME
+			) values (
+		      #{id},
+		      #{waybillNo,jdbcType=VARCHAR},
+			  #{serialNo,jdbcType=VARCHAR},
+			  #{printTime,jdbcType=TIMESTAMP},
+			  #{printUserCode,jdbcType=VARCHAR},
+			  #{printUserName,jdbcType=VARCHAR},
+			  #{orgCode,jdbcType=VARCHAR},
+			  #{printType,jdbcType=DECIMAL},
+			  #{lableType,jdbcType=DECIMAL},
+			  #{orgName,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	<!-- 查询货件打印标签信息-->
+	<select id="queryPrintLabelInfo"  parameterType="com.deppon.foss.module.transfer.exceptiongoods.api.shared.dto.PrintLabelDto" resultMap="printLabelDtoResultMap">
+		<![CDATA[
+		SELECT g.WAYBILL_NO,
+			   g.SERIAL_NO,
+			   g.OLD_SERIAL_NO,
+			   g.NUMBER_CHANG_ITEMS,  
+		       (select count(*) from tfr.t_opt_print_goods_label 
+		        	where WAYBILL_NO=g.waybill_no and SERIAL_NO=g.serial_no) as PRINT_COUNT,
+			   (to_number(g.SERIAL_NO) || '/' || w.goods_qty_total) as LABEL_GOODS_QTY ,
+			   o.waybill_status
+		FROM PKP.T_SRV_LABELED_GOOD g 
+		left join PKP.T_SRV_WAYBILL w on g.waybill_no = w.waybill_no and w.active = 'Y'
+		left join PKP.T_SRV_OMS_ORDER o on g.waybill_no = o.waybill_no
+		]]>
+		<where>
+			g.WAYBILL_NO = #{waybillNo} AND g.ACTIVE='Y'
+			<if test="serialNo != null and serialNo != ''">
+				AND g.SERIAL_NO = #{serialNo}
+			</if>
+		</where>
+		order by g.SERIAL_NO
+	</select>
+	<!-- 查询货件打印标签信息(巴枪扫描打印的运单)-->
+	<select id="queryPrintLabelInfoForExpress"  parameterType="com.deppon.foss.module.transfer.exceptiongoods.api.shared.dto.PrintLabelDto" resultMap="printLabelDtoForExpressMap">
+		select a.waybill_no,a.print_time,a.print_type from tfr.T_OPT_PRINT_GOODS_LABEL a 
+		<where>
+			a.print_type=#{printType} 
+			<if test="waybillNo != null and waybillNo != ''">
+				AND a.waybill_no = #{waybillNo}
+			</if>
+			<if test="queryTimeBegin != null and queryTimeBegin != ''">
+				<if test="queryTimeEnd != null and queryTimeEnd != ''">
+					AND a.print_time <![CDATA[ >= ]]> #{queryTimeBegin}
+					and a.print_time <![CDATA[<= ]]> #{queryTimeEnd}
+				</if>
+			</if>
+		</where>
+		 order by a.print_time desc
+	</select>
+	
+	<select id="queryPrintLabelInfoForExpressCount"  parameterType="com.deppon.foss.module.transfer.exceptiongoods.api.shared.dto.PrintLabelDto" resultType="Long">
+	select count(0) from tfr.T_OPT_PRINT_GOODS_LABEL a 
+	<where>
+		a.print_type=#{printType} 
+		<if test="waybillNo != null and waybillNo != ''">
+			AND a.waybill_no = #{waybillNo}
+		</if>
+		<if test="queryTimeBegin != null and queryTimeBegin != ''">
+			<if test="queryTimeEnd != null and queryTimeEnd != ''">
+				AND a.print_time <![CDATA[ >= ]]> #{queryTimeBegin}
+				and a.print_time <![CDATA[<= ]]> #{queryTimeEnd}
+			</if>
+		</if>
+	</where>
+	</select>
+	
+	<!-- 提供给综合查询：根据运单号查询货件标签打印信息 -->
+	<select id="queryLabelPrintByWaybillNo" parameterType="map" resultMap="goodsLabelPrintDtoResultMap">
+		<![CDATA[
+			select serial_no,
+			       waybill_no,
+			       max(OLD_SERIAL_NO) as OLD_SERIAL_NO,
+			       max(print_time) as print_time,
+			       max(print_user_name) as print_user_name,
+			       max(name) as org_name,
+			       count(*) as print_Order,
+			       lable_type
+			from
+			(
+			select g.serial_no,
+			       g.OLD_SERIAL_NO,
+			       g.waybill_no,
+			       p.print_time,
+			       p.print_user_name,
+			       o.NAME,
+                   p.lable_type lable_type
+			from PKP.T_SRV_LABELED_GOOD g,tfr.t_opt_print_goods_label p,bse.t_bas_employee e,bse.t_bas_org o
+			where g.waybill_no=p.waybill_no(+) 
+			and   g.serial_no=p.serial_no(+)
+			and   p.print_user_code = e.EMP_CODE(+)
+			and   e.UNIFIELD_CODE = o.UNIFIED_CODE(+)
+			and   g.active= #{isActive} 
+			and   o.active= #{isActive}
+			and   e.active= #{isActive}
+			and   g.waybill_no= #{waybillNo}
+			and   p.print_time is not null
+			)
+			group by waybill_no,serial_no
+		]]>
+	</select>
+	
+	<!-- 提供给综合查询：根据运单号查询货件标签打印信息  ===明细 -->
+	<select id="queryLabelPrintByWaybillNoDetail" parameterType="map" resultMap="goodsLabelPrintDtoResultMap">
+		<![CDATA[
+		      select serial_no,
+		             waybill_no,
+		             OLD_SERIAL_NO,
+		             print_time,
+		             print_user_name || '/' || PRINT_USER_CODE print_user_name,
+		             name  org_name,
+			       	 lable_type
+		      from
+		      (
+		      select g.serial_no,
+		             g.OLD_SERIAL_NO,
+		             g.waybill_no,
+		             p.print_time,
+		             p.PRINT_USER_CODE,
+		             p.print_user_name,
+		             p.org_name name,
+                 	 p.lable_type lable_type
+		      from PKP.T_SRV_LABELED_GOOD g,tfr.t_opt_print_goods_label p
+		      where g.waybill_no=p.waybill_no(+) 
+		      and   g.serial_no=p.serial_no(+)
+		      and   g.active= 'Y'
+			  and   g.waybill_no= #{waybillNo}
+			  and   p.print_time is not null
+				)
+			  order  by serial_no,print_time
+		]]>
+	</select>
+	<!--查询运单的打印记录-->
+	<select id="queryLabelPrintByNo" parameterType="string" resultType="com.deppon.foss.module.transfer.exceptiongoods.api.shared.domain.PrintLabelEntity">
+		select p.waybill_no waybillNo,
+		       p.serial_no serialNo,
+		       p.print_time printTime,
+		       p.print_user_code printUserCode,
+		       p.print_user_name printUserName,
+		       p.org_code orgCode,
+		       p.org_name orgName,
+		       p.print_type printType
+		  from tfr.t_opt_print_goods_label p
+		 where p.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		 order by p.print_time desc
+	</select>
+	
+	<!-- 根据部门code查询货件打印标签信息(巴枪扫描打印的运单)-->
+	<select id="queryPrintLabelForExpressByOrgCode"  parameterType="com.deppon.foss.module.transfer.exceptiongoods.api.shared.dto.PrintLabelDto" 
+				resultMap="printLabelEntityResultMap">
+		select * from tfr.T_OPT_PRINT_GOODS_LABEL a 
+		<where>
+			a.print_type= 1  
+			<if test="waybillNo != null and waybillNo != ''">
+				AND a.waybill_no = #{waybillNo}
+			</if>
+			<if test="serialNo != null and serialNo != ''">
+				AND a.serial_no = #{serialNo}
+			</if>
+			<if test="operateCode != null and operateCode != ''">
+				AND a.PRINT_USER_CODE = #{operateCode}
+			</if>
+			<if test="orgCode != null and orgCode != ''">
+				AND a.ORG_CODE = #{orgCode}
+			</if>
+			<if test="queryTimeBegin != null and queryTimeBegin != ''">
+				<if test="queryTimeEnd != null and queryTimeEnd != ''">
+					AND a.print_time <![CDATA[ >= ]]> #{queryTimeBegin}
+					and a.print_time <![CDATA[<= ]]> #{queryTimeEnd}
+				</if>
+			</if>
+		</where>
+		 order by a.print_time desc
+	</select>
+
+	<!-- 根据部门code查询货件打印标签count-->
+	<select id="queryPrintLabelInfoExpressByOrgCodeCount"  parameterType="com.deppon.foss.module.transfer.exceptiongoods.api.shared.dto.PrintLabelDto" 
+				resultType="Long">
+		select count(1) from  tfr.T_OPT_PRINT_GOODS_LABEL a 
+		<where>
+			a.print_type= 1  
+			<if test="waybillNo != null and waybillNo != ''">
+				AND a.waybill_no = #{waybillNo}
+			</if>
+			<if test="serialNo != null and serialNo != ''">
+				AND a.serial_no = #{serialNo}
+			</if>
+			<if test="operateCode != null and operateCode != ''">
+				AND a.PRINT_USER_CODE = #{operateCode}
+			</if>
+			<if test="orgCode != null and orgCode != ''">
+				AND a.ORG_CODE = #{orgCode}
+			</if>
+			<if test="queryTimeBegin != null and queryTimeBegin != ''">
+				<if test="queryTimeEnd != null and queryTimeEnd != ''">
+					AND a.print_time <![CDATA[ >= ]]> #{queryTimeBegin}
+					and a.print_time <![CDATA[<= ]]> #{queryTimeEnd}
+				</if>
+			</if>
+		</where>
+	</select>
+	<!-- 根据部门code查询上分拣-->
+	<select id="querySortingInfoByOrgCode"  parameterType="com.deppon.foss.module.transfer.exceptiongoods.api.shared.dto.PrintLabelDto" 
+				resultMap="printLabelEntityResultMap">
+		select a.id,
+		       a.waybill_no,
+		       a.serial_no,
+		       a.scan_time PRINT_TIME,
+		       a.operator_code PRINT_USER_CODE,
+		       a.operator_name PRINT_USER_NAME,
+		       a.operation_org_code ORG_CODE,
+		       a.operation_org_name ORG_NAME
+		        from tfr.T_OPT_SORTING_SCANNING  a 
+		<where>
+			a.SCAN_TYPE= 'UP'
+			<if test="waybillNo != null and waybillNo != ''">
+				AND a.waybill_no = #{waybillNo}
+			</if>
+			<if test="serialNo != null and serialNo != ''">
+				AND a.serial_no = #{serialNo}
+			</if>
+			<if test="operateCode != null and operateCode != ''">
+				AND a.OPERATOR_CODE = #{operateCode}
+			</if>
+			<if test="orgCode != null and orgCode != ''">
+				AND a.OPERATION_ORG_CODE = #{orgCode}
+			</if>
+			<if test="queryTimeBegin != null and queryTimeBegin != ''">
+				<if test="queryTimeEnd != null and queryTimeEnd != ''">
+					AND a.SCAN_TIME <![CDATA[ >= ]]> #{queryTimeBegin}
+					and a.SCAN_TIME <![CDATA[<= ]]> #{queryTimeEnd}
+				</if>
+			</if>
+		</where>
+		 order by a.SCAN_TIME desc
+	</select>
+	
+	<!-- 根据部门code查询上分拣count-->
+	<select id="querySortingInfoByOrgCodeCount"  parameterType="com.deppon.foss.module.transfer.exceptiongoods.api.shared.dto.PrintLabelDto" 
+				resultType="Long">
+		select count(1) from tfr.T_OPT_SORTING_SCANNING  a 
+		<where>
+			a.SCAN_TYPE= 'UP'
+			<if test="waybillNo != null and waybillNo != ''">
+				AND a.waybill_no = #{waybillNo}
+			</if>
+			<if test="serialNo != null and serialNo != ''">
+				AND a.serial_no = #{serialNo}
+			</if>
+			<if test="operateCode != null and operateCode != ''">
+				AND a.OPERATOR_CODE = #{operateCode}
+			</if>
+			<if test="orgCode != null and orgCode != ''">
+				AND a.OPERATION_ORG_CODE = #{orgCode}
+			</if>
+			<if test="queryTimeBegin != null and queryTimeBegin != ''">
+				<if test="queryTimeEnd != null and queryTimeEnd != ''">
+					AND a.SCAN_TIME <![CDATA[ >= ]]> #{queryTimeBegin}
+					and a.SCAN_TIME <![CDATA[<= ]]> #{queryTimeEnd}
+				</if>
+			</if>
+		</where>
+	</select>
+	
+	<!-- 查询界面勾选的标签打印信息-->
+	<select id="queryExportPringLabel"  parameterType="list" resultMap="printLabelEntityResultMap">
+		select  a.waybill_no,
+		       a.serial_no,
+		       a.print_user_name,
+		       a.org_name,
+		       a.print_time 
+			from tfr.T_OPT_PRINT_GOODS_LABEL a 
+			where a.id in
+		<foreach collection="list" open="(" close=")" separator="," index="index" item="item">
+			#{item}
+		</foreach>
+		ORDER BY a.print_time
+	</select>
+	
+	<!-- 查询界面勾选的上分拣信息-->
+	<select id="queryExportSorting"  parameterType="list" resultMap="printLabelEntityResultMap">
+		select  a.waybill_no,
+	           a.serial_no,
+	           a.operator_name  print_user_name,
+	           a.operation_org_name org_name,
+	           a.SCAN_TIME print_time
+     	 from tfr.t_opt_sorting_scanning a 
+			where a.id in
+		<foreach collection="list" open="(" close=")" separator="," index="index" item="item">
+			#{item}
+		</foreach>
+		ORDER BY a.SCAN_TIME
+	</select>
+	
+	
+	<!-- 查询标签打印信息-->
+	<select id="queryExportPringLabelAll"  parameterType="com.deppon.foss.module.transfer.exceptiongoods.api.shared.dto.SortingAndPringLabelDto" 
+				resultMap="printLabelEntityResultMap">
+		select  a.waybill_no,
+		       a.serial_no,
+		       a.print_user_name,
+		       a.org_name,
+		       a.print_time 
+			from tfr.T_OPT_PRINT_GOODS_LABEL a 
+			<where>
+			a.print_type= 1  
+			<if test="waybillNo != null and waybillNo != ''">
+				AND a.waybill_no = #{waybillNo}
+			</if>
+			<if test="serialNo != null and serialNo != ''">
+				AND a.serial_no = #{serialNo}
+			</if>
+			<if test="operateCode != null and operateCode != ''">
+				AND a.PRINT_USER_CODE = #{operateCode}
+			</if>
+			<if test="orgCode != null and orgCode != ''">
+				AND a.ORG_CODE = #{orgCode}
+			</if>
+			<if test="beginTime != null and beginTime != ''">
+				<if test="endTime != null and endTime != ''">
+					AND a.print_time <![CDATA[ >= ]]> #{beginTime}
+					and a.print_time <![CDATA[<= ]]> #{endTime}
+				</if>
+			</if>
+		</where>
+		
+		ORDER BY a.print_time  desc
+	</select>
+	
+	
+	<!-- 查询界上分拣信息-->
+	<select id="queryExportSortingAll"  parameterType="com.deppon.foss.module.transfer.exceptiongoods.api.shared.dto.SortingAndPringLabelDto" 
+				resultMap="printLabelEntityResultMap">
+		select  a.waybill_no,
+	           a.serial_no,
+	           a.operator_name  print_user_name,
+	           a.operation_org_name org_name,
+	           a.SCAN_TIME print_time
+     	 from tfr.t_opt_sorting_scanning a 
+		<where>
+			a.SCAN_TYPE= 'UP'
+			<if test="waybillNo != null and waybillNo != ''">
+				AND a.waybill_no = #{waybillNo}
+			</if>
+			<if test="serialNo != null and serialNo != ''">
+				AND a.serial_no = #{serialNo}
+			</if>
+			<if test="operateCode != null and operateCode != ''">
+				AND a.OPERATOR_CODE = #{operateCode}
+			</if>
+			<if test="orgCode != null and orgCode != ''">
+				AND a.OPERATION_ORG_CODE = #{orgCode}
+			</if>
+			<if test="beginTime != null and beginTime != ''">
+				<if test="endTime != null and endTime != ''">
+					AND a.SCAN_TIME <![CDATA[ >= ]]> #{beginTime}
+					and a.SCAN_TIME <![CDATA[<= ]]> #{endTime}
+				</if>
+			</if>
+		</where>
+		ORDER BY a.SCAN_TIME  desc
+	</select>
+	
+	
+</mapper>

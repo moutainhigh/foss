@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.airlines">
+
+	<!-- 航空公司 -->
+	<resultMap id="airlineResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.AirlinesEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="NAME" property="name" jdbcType="VARCHAR" />
+		<result column="CODE" property="code" jdbcType="VARCHAR" />
+		<result column="SIMPLE_NAME" property="simpleName" jdbcType="VARCHAR" />
+		<result column="PRIFIX_NAME" property="prifixName" jdbcType="VARCHAR" />
+		<result column="LOGO" property="logo" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 数据字段 -->
+	<sql id="airline_Column_List">
+		ID, NAME, CODE, SIMPLE_NAME, PRIFIX_NAME, LOGO,
+		CREATE_TIME, MODIFY_TIME,
+		ACTIVE,
+		CREATE_USER_CODE, MODIFY_USER_CODE,
+		NOTES
+	</sql>
+
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+
+			<if test="name != null and name != ''">
+				AND NAME like CONCAT(CONCAT('%', #{name,jdbcType=VARCHAR}), '%')
+			</if>
+			<if test="code != null and code != ''">
+				AND CODE like CONCAT(CONCAT('%', #{code,jdbcType=VARCHAR}), '%')
+			</if>
+			<if test="active != null and active != ''">
+				and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+
+	</sql>
+
+	<!-- 分页查询所有航空公司信息 -->
+	<select id="getAllInfos"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AirlinesEntity"
+		resultMap="airlineResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:分页查询所有航空公司信息**/
+		]]>
+		<include refid="airline_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_AIRLINES T
+		]]>
+		<include refid="queryWhere" />
+	</select>
+
+	<!-- 统计总记录数 -->
+	<select id="getCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AirlinesEntity">
+	    <![CDATA[
+	       	select/** 综合:统计总记录数**/ count(*) from BSE.T_BAS_AIRLINES T
+	    ]]>
+		<include refid="queryWhere" />
+
+	</select>
+
+	<!-- 查询所有航空公司信息 -->
+	<select id="queryAllAirlines" parameterType="map" resultMap="airlineResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有航空公司信息**/
+		]]>
+		<include refid="airline_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_AIRLINES T
+		]]>
+		<where>
+		   <if test="active != null and active != ''">
+				and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+
+	<!-- 根据传入的参数验证航空公司是否存在 -->
+	<select id="queryAirline" parameterType="map" resultMap="airlineResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据传入的参数验证航空公司是否存在**/
+		]]>
+		<include refid="airline_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_AIRLINES T
+		]]>
+		<where>
+			<if test="airlineCode != null and airlineCode != ''">
+				CODE = #{airlineCode,jdbcType=VARCHAR}
+			</if>
+			<if test="airlineName != null and airlineName != ''">
+				and NAME = #{airlineName,jdbcType=VARCHAR}
+			</if>
+			<if test="simpleName != null and simpleName != ''">
+				and SIMPLE_NAME = #{simpleName,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				and active = #{active,jdbcType=CHAR}
+			</if>
+
+		</where>
+	</select>
+
+	<!-- 新增信息 -->
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AirlinesEntity">
+		
+		<![CDATA[
+			INSERT/** 综合:新增信息**/ INTO BSE.T_BAS_AIRLINES T	(
+		]]>
+		<include refid="airline_Column_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, #{name,jdbcType=VARCHAR},
+		#{code,jdbcType=VARCHAR},
+		#{simpleName,jdbcType=VARCHAR},
+		#{prifixName,jdbcType=VARCHAR}, #{logo,jdbcType=VARCHAR},
+		#{createDate,jdbcType=TIMESTAMP}, #{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=CHAR},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR}, #{notes,jdbcType=VARCHAR}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+
+	<!-- 修改信息 -->
+	<update id="update"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AirlinesEntity">
+		update/** 综合:修改信息**/ BSE.T_BAS_AIRLINES
+		<set>
+			<if test="name != null">
+				NAME = #{name,jdbcType=VARCHAR},
+			</if>
+			<if test="code != null">
+				CODE = #{code,jdbcType=VARCHAR},
+			</if>
+			<if test="simpleName != null">
+				SIMPLE_NAME = #{simpleName,jdbcType=VARCHAR},
+			</if>
+			<if test="prifixName != null">
+				PRIFIX_NAME = #{prifixName,jdbcType=VARCHAR},
+			</if>
+			<if test="logo != null">
+				LOGO = #{logo,jdbcType=VARCHAR},
+			</if>
+			<!-- <if test="createDate != null"> CREATE_TIME = #{createDate,jdbcType=TIMESTAMP}, 
+				</if> -->
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="active != null">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<!-- <if test="createUser != null"> CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR}, 
+				</if> -->
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="notes != null">
+				NOTES = #{notes,jdbcType=VARCHAR},
+			</if>
+		</set>
+
+		<where>
+			<if test="id != null">
+				ID = #{id,jdbcType=VARCHAR}
+			</if>
+		</where>
+
+	</update>
+
+	<!-- 作废信息 -->
+	<update id="deleteByCode" parameterType="map">
+		update/** 综合:作废信息**/ BSE.T_BAS_AIRLINES
+
+		<set>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				MODIFY_USER_CODE = #{modifyUser, jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+
+		</set>
+
+		<where>
+			<if test="codes!=null and codes.length > 0">
+				ID in
+				<foreach collection="codes" index="index" item="code" open="("
+					separator="," close=")">
+					#{code}
+				</foreach>
+			</if>
+		</where>
+	</update>
+	<!-- 查询作废信息 -->
+   <select id="queryAirlinesById"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AirlinesEntity"
+		resultMap="airlineResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询删除的航空公司信息**/
+		]]>
+		<include refid="airline_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_AIRLINES T
+		]]>
+		<where>
+			<if test="codes!=null and codes.length > 0">
+				ID in
+				<foreach collection="codes" index="index" item="code" open="("
+					separator="," close=")">
+					#{code}
+				</foreach>
+			</if>
+		</where>
+		
+	</select>
+</mapper>

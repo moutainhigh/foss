@@ -1,0 +1,680 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.platform.stock.saturation">
+	<!--仓库饱和度查询返回结果 -->
+	<resultMap id="stockSaturationResultMap"
+		type="com.deppon.foss.module.transfer.platform.api.shared.domain.StockSaturationEntity">
+		<result column="SATURATION_ID" property="saturationId"
+			jdbcType="VARCHAR" />
+		<result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+		<result column="ORG_NAME" property="orgName" jdbcType="VARCHAR" />
+		<result column="LOAD_MEASURE" property="loadMeasure" jdbcType="DECIMAL" />
+		<result column="UNLOAD_MEASURE" property="unloadMeasure"
+			jdbcType="DECIMAL" />
+		<result column="SELF_SIGN" property="selfSign" jdbcType="DECIMAL" />
+		<result column="STATION_MEASURE" property="stationMeasure"
+			jdbcType="DECIMAL" />
+		<result column="RECEIVE_MEASURE" property="receiveMeasure"
+			jdbcType="DECIMAL" />
+		<result column="STATISTICS_TIME_THEORY" property="statisticsTimeTheory"
+			jdbcType="TIMESTAMP" />
+		<result column="DELIVER_SIGN" property="deliverSign" jdbcType="DECIMAL" />
+		<result column="DELIVER_BACK" property="deliverBack" jdbcType="DECIMAL" />
+		<result column="dangerrange" property="dangerrange" jdbcType="DECIMAL" />
+		<result column="warnrange" property="warnrange" jdbcType="DECIMAL" />
+		<result column="smssendflag" property="smssendflag" jdbcType="VARCHAR" />
+		<result column="time_static" property="timeStatisticsGroup" jdbcType="VARCHAR" />
+		<result column="sustain_month_measure" property="sustainMonthMeasure" jdbcType="DECIMAL" />
+		<result column="operate_measure_day" property="operateMeasureDay" jdbcType="DECIMAL" />
+		<result column="operate_measure_month" property="operateMeasureMonth" jdbcType="DECIMAL" />
+		<result column="saturation_day" property="saturationDay" jdbcType="DECIMAL" />
+		<result column="saturation_month" property="saturationMonth" jdbcType="DECIMAL" />
+		<result column="SUSTAIN_DAY_MEASURE" property="sustainDayMeasure" jdbcType="DECIMAL" />
+	</resultMap>
+	<!-- 仓库饱和度返回结果(带月统计数据) -->
+	<resultMap id="stockSaturationResultAllMap"
+		type="com.deppon.foss.module.transfer.platform.api.shared.domain.StockSaturationEntity">
+		<result column="SATURATION_ID" property="saturationId"
+			jdbcType="VARCHAR" />
+		<result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+		<result column="ORG_NAME" property="orgName" jdbcType="VARCHAR" />
+		<result column="LOAD_MEASURE" property="loadMeasure" jdbcType="DECIMAL" />
+		<result column="UNLOAD_MEASURE" property="unloadMeasure" jdbcType="DECIMAL" />
+		<result column="SELF_SIGN" property="selfSign" jdbcType="DECIMAL" />
+		<result column="STATION_MEASURE" property="stationMeasure" jdbcType="DECIMAL" />
+		<result column="RECEIVE_MEASURE" property="receiveMeasure" jdbcType="DECIMAL" />
+		<result column="STATISTICS_TIME_THEORY" property="statisticsTimeTheory" jdbcType="TIMESTAMP" />
+		<result column="DELIVER_SIGN" property="deliverSign" jdbcType="DECIMAL" />
+		<result column="DELIVER_BACK" property="deliverBack" jdbcType="DECIMAL" />
+		<result column="dangerrange" property="dangerrange" jdbcType="DECIMAL" />
+		<result column="warnrange" property="warnrange" jdbcType="DECIMAL" />
+		<result column="smssendflag" property="smssendflag" jdbcType="VARCHAR" />
+		<result column="DELIVER_SIGN_ALL" property="deliverSignAll" jdbcType="DECIMAL" />
+		<result column="DELIVER_BACK_All" property="deliverBackAll" jdbcType="DECIMAL" />
+		<result column="LOAD_MEASURE_All" property="loadMeasureAll" jdbcType="DECIMAL" />
+		<result column="UNLOAD_MEASURE_All" property="unloadMeasureAll" jdbcType="DECIMAL" />
+		<result column="SELF_SIGN_All" property="selfSignAll" jdbcType="DECIMAL" />
+		<result column="STATION_MEASURE_All" property="stationMeasureAll" jdbcType="DECIMAL" />
+		<result column="RECEIVE_MEASURE_All" property="receiveMeasureAll" jdbcType="DECIMAL" />
+		<result column="SUSTAIN_DAY_MEASURE_All" property="sustainDayMeasureAll" jdbcType="DECIMAL" />
+		<result column="sustain_month_measure" property="sustainMonthMeasure" jdbcType="DECIMAL" />
+		<result column="operate_measure_day" property="operateMeasureDay" jdbcType="DECIMAL" />
+		<result column="operate_measure_month" property="operateMeasureMonth" jdbcType="DECIMAL" />
+		<result column="saturation_day" property="saturationDay" jdbcType="DECIMAL" />
+		<result column="saturation_month" property="saturationMonth" jdbcType="DECIMAL" />
+		<result column="SUSTAIN_DAY_MEASURE" property="sustainDayMeasure" jdbcType="DECIMAL" />
+		<result column="WARNINGDAYS" property="warningMothDayCount" jdbcType="DECIMAL" />
+		<result column="DANGERDAYS" property="dangerMothDayCount" jdbcType="DECIMAL" />
+	</resultMap>
+	
+	<!-- 外场对应的负责人 -->
+	<resultMap id="personForTranferResultMap"
+		type="com.deppon.foss.module.transfer.platform.api.shared.domain.PersonForTransferEntity">
+		<result column="mobile_phone" property="mobilePhone"
+			jdbcType="VARCHAR" />
+		<result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+		<result column="ORG_NAME" property="orgName" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<!-- 查询对应外场的负责人 -->
+	<select id="queryPersonForTranferCenter" resultMap="personForTranferResultMap">
+		select tt.mobile_phone,tt3.org_code,tt3.name ORG_NAME from bse.t_bas_employee tt left join bse.t_bas_org tt2 on tt2.principal_no=tt.emp_code and tt2.active='Y'
+		left join bse.t_bas_transfer_center tt3 on tt3.org_code=tt2.code and tt3.active='Y'
+		where tt.active='Y' and tt2.active='Y' and tt3.active='Y'
+	</select>
+	<!-- 仓库饱和度查询 --><!-- duhao-276198-20151029-剔除快递分部 -->
+	<select id="queryStockSaturationList" parameterType="map"
+		resultMap="stockSaturationResultAllMap">
+	select tb1.org_code,
+			tb1.org_name,
+			tb2.load_measure,
+			tb2.unload_measure,
+			tb2.self_sign,
+			tb2.deliver_sign,
+			tb2.deliver_back,
+			tb2.station_measure,
+			tb2.receive_measure,
+			tb2.sustain_day_measure,
+			<![CDATA[
+			tb2.dangerrange,
+			tb2.warnrange,
+			]]>
+	      tb2.sustain_month_measure,
+	      tb2.operate_measure_day,
+	      tb2.operate_measure_month,
+	      tb2.saturation_day,
+	      tb2.saturation_month
+		    from (
+			Select t.Org_Code, t.Name As Org_Name
+          From Bse.T_Bas_Transfer_Center t
+          Left Join bse.t_bas_org o On o.code = t.org_code And o.active = 'Y'
+          Where t.Active = 'Y'
+          And o.express_branch = 'N'
+			    <if test="orgCode!=null and orgCode !='' ">
+					and t.org_code=#{orgCode}
+				</if>
+			    ) tb1
+			     <![CDATA[
+			 left join (
+			select a.*
+			  from tfr.t_opt_stock_saturation a
+			  where a.statistics_time_theory >=
+			       to_date(#{queryDateB} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+			       and a.statistics_time_theory <
+			       to_date(#{queryDateB} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss')
+			) tb2 on tb2.org_code=tb1.org_code
+			]]>
+	</select>
+	
+	<!-- 仓库饱和度总记录数 --><!-- duhao-276198-20151029-剔除快递分部 -->
+	<select id="queryStockSaturationListCount" resultType="int" parameterType="map">
+		select count(0)
+		from bse.t_bas_transfer_center t
+		left join bse.t_bas_org o on o.code = t.org_code and o.active = 'Y'
+		where t.active = 'Y' and o.express_branch = 'N'
+		<if test="orgCode!=null and orgCode !='' ">
+			and t.org_code=#{orgCode}
+		</if>
+	</select>
+	
+	<!-- 仓库饱和度 （日） 曲线 -->
+	<select id="queryStockSaturationDayList" parameterType="map" resultMap="stockSaturationResultMap">
+			<![CDATA[
+	select tt.dayDate as time_static,
+            tt1.org_code,
+			tt1.org_name,
+			tt1.load_measure,
+			tt1.unload_measure,
+			tt1.self_sign,
+			tt1.deliver_sign,
+			tt1.deliver_back,
+			tt1.station_measure,
+			tt1.receive_measure,
+			tt1.sustain_day_measure,
+			tt1.dangerrange,
+			tt1.warnrange,
+	      tt1.sustain_month_measure,
+	      tt1.operate_measure_day,
+	      tt1.operate_measure_month,
+	      tt1.saturation_day,
+	      tt1.saturation_month from (
+			select #{queryDateA} dayDate from dual
+  union
+    select to_char(TO_DATE(#{queryDateA}, 'yyyy-mm-dd') +
+               NUMTODSINTERVAL(level, 'day'),'yyyy-mm-dd') dayDate
+  from dual
+connect by level <=
+           (select to_date(#{queryDateB},'yyyy-mm-dd')-to_date(#{queryDateA},'yyyy-mm-dd')
+              from dual)
+    ) tt  left join (
+    select to_char(tb2.statistics_time_theory,'yyyy-mm-dd') as dayTime,tb1.org_code,
+			tb1.org_name,
+			tb2.load_measure,
+			tb2.unload_measure,
+			tb2.self_sign,
+			tb2.deliver_sign,
+			tb2.deliver_back,
+			tb2.station_measure,
+			tb2.receive_measure,
+			tb2.sustain_day_measure,
+			tb2.dangerrange,
+			tb2.warnrange,
+	      tb2.sustain_month_measure,
+	      tb2.operate_measure_day,
+	      tb2.operate_measure_month,
+	      tb2.saturation_day,
+	      tb2.saturation_month from (
+			select org_code, name as org_name
+			    from bse.t_bas_transfer_center
+			    where active = 'Y'
+			    ]]>
+			     <if test="orgCode!=null and orgCode !='' ">
+					and org_code=#{orgCode}
+				</if>
+			    ) tb1
+			    <![CDATA[
+			    left  join (
+			select a.*
+			  from tfr.t_opt_stock_saturation a
+			  where a.statistics_time_theory >=
+			       to_date(#{queryDateA} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+			       and a.statistics_time_theory <
+			       to_date(#{queryDateB} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss')
+			) tb2 on tb2.org_code=tb1.org_code
+      )tt1 on tt.dayDate=tt1.dayTime
+    order by tt.daydate
+			]]>
+	</select>
+	<!-- 仓库饱和度 （月） 曲线 -->
+	<select id="queryStockSaturationMonthList" parameterType="map" resultMap="stockSaturationResultMap">
+	<![CDATA[
+ select tt.monthDate as time_static,
+	      tb1.org_code,
+	      tb1.org_name,
+	      tb1.operate_measure_month,
+	      tb1.sustain_month_measure,
+	      tb1.saturation_month
+	 from
+	 (
+	 select #{queryDateA} monthDate from dual
+  union
+	select to_char(TO_DATE(#{queryDateA}, 'YYYY-MM') +
+	               numtoyminterval(level, 'month'),
+	               'yyyy-mm') monthDate
+	  from dual
+	connect by level <=
+	           (select months_between(to_date(replace(#{queryDateB}, '-', ''),
+	                                          'yyyymm'),
+	                                  to_date(replace(#{queryDateA}, '-', ''),
+	                                          'yyyymm'))
+	              from dual)
+	 ) tt left join (
+	      select distinct a.org_code,
+                 a.org_name,
+                 to_char(a.statistics_time_theory, 'yyyy-mm') monthTime,
+                 first_value(a.operate_measure_month) over(partition by a.org_code, to_char(a.statistics_time_theory, 'yyyy-mm'), a.org_name order by a.statistics_time_theory desc) as operate_measure_month,
+                 first_value(a.sustain_month_measure) over(partition by a.org_code, to_char(a.statistics_time_theory, 'yyyy-mm'), a.org_name order by a.statistics_time_theory desc ) as sustain_month_measure,
+                 first_value(a.saturation_month) over(partition by a.org_code, to_char(a.statistics_time_theory, 'yyyy-mm'), a.org_name order by a.statistics_time_theory desc ) as saturation_month
+   from tfr.t_opt_stock_saturation a
+  where a.org_code = #{orgCode}
+	 ) tb1 on tt.monthDate=tb1.monthTime
+	 order by tt.monthDate
+	 ]]>
+	</select>
+
+	<!-- 定时任务 --><!-- duhao-276198-20151029-统计时间改为06:00原为12:00 -->
+	<select id="stockSaturationJobQuery" parameterType="map"
+		resultMap="stockSaturationResultMap">
+		select tt.org_code,
+		tt.name as ORG_NAME,
+		tt1.LOAD_MEASURE,
+		tt2.UNLOAD_MEASURE,
+		tt3.STATION_MEASURE,
+		tt4.RECEIVE_MEASURE,
+		tt5.SELF_SIGN,
+		tt6.DELIVER_SIGN,
+		tt7.DELIVER_BACK
+		From (select org_code, name
+		from bse.t_bas_transfer_center
+		where active = 'Y'
+		<if test="orgCode!=null and orgCode !='' ">
+			and org_code=#{orgCode}
+		</if>
+		) tt
+		left join (
+		<!--装车量 -->
+		  SELECT sum(t.load_weight_total) as LOAD_MEASURE, t.orig_org_code
+		    FROM  (SELECT t.orig_org_code,b.load_weight_total FROM  tfr.t_Opt_Load_Task t
+		    left join tfr.t_Opt_Load_Waybill_Detail b
+		    on b.load_task_id = t.id
+		    WHERE t.task_state != 'CANCELED'
+		      <![CDATA[
+                and t.load_start_time >=
+                    to_date(#{queryDateA} || ' 06:00:00',
+                            'yyyy-mm-dd hh24:mi:ss')
+                and t.load_start_time <
+                    to_date(#{queryDateB} || ' 06:00:00',
+                            'yyyy-mm-dd hh24:mi:ss')
+                            ]]>
+		UNION ALL
+		  SELECT t.orig_org_code,b.load_weight_total FROM tfr.t_Opt_Load_Task t
+		    left join ecs.MV_TFR_T_OPT_LOAD_WB_DETAIL b
+		    on b.load_task_id = t.id
+		    WHERE t.task_state != 'CANCELED'
+		      <![CDATA[
+                and t.load_start_time >=
+                    to_date(#{queryDateA} || ' 06:00:00',
+                            'yyyy-mm-dd hh24:mi:ss')
+                and t.load_start_time <
+                    to_date(#{queryDateB} || ' 06:00:00',
+                            'yyyy-mm-dd hh24:mi:ss')
+                            ]]>
+		    ) t
+		    group by t.orig_org_code
+		) tt1
+		on tt.org_code = tt1.orig_org_code
+		left join (
+		<!--卸车量 -->
+		 <![CDATA[
+		    SELECT sum(t.unload_weight_total) as UNLOAD_MEASURE,
+			    t.unload_org_code
+			    FROM (SELECT t.unload_org_code,b.unload_weight_total FROM  tfr.t_opt_unload_task t
+			    left join tfr.t_Opt_Unload_Waybill_Detail b
+			    on b.unload_task_id = t.id
+			              where t.task_state <> 'CANCELED'
+			               and t.unload_start_time >=
+                    to_date(#{queryDateA} || ' 06:00:00',
+                            'yyyy-mm-dd hh24:mi:ss')
+                and t.unload_start_time <
+                    to_date(#{queryDateB} || ' 06:00:00',
+                            'yyyy-mm-dd hh24:mi:ss')
+			          UNION ALL
+			          SELECT t.unload_org_code,b.unload_weight_total FROM  tfr.t_opt_unload_task t
+			    left join ecs.MV_TFR_T_OPT_UNWAYBILL_DETAIL b
+			    on b.unload_task_id = t.id
+			              where t.task_state <> 'CANCELED'
+			               and t.unload_start_time >=
+                    to_date(#{queryDateA} || ' 06:00:00',
+                            'yyyy-mm-dd hh24:mi:ss')
+                and t.unload_start_time <
+                    to_date(#{queryDateB} || ' 06:00:00',
+                            'yyyy-mm-dd hh24:mi:ss')
+			          ) t    
+		group by t.unload_org_code
+		   ]]>
+		) tt2
+		on tt.org_code = tt2.unload_org_code
+		left join (
+		<!--驻地营业部(非集中开单) -->
+		select a.transfer_center,
+		sum(p.goods_weight_total) AS STATION_MEASURE
+		from pkp.t_srv_waybill p
+		LEFT JOIN (select b.code, b.transfer_center
+		from BSE.T_BAS_SALES_DEPARTMENT b
+		left join bse.t_bas_transfer_center c
+		on c.org_code = b.transfer_center
+		and c.active = 'Y'
+		where b.transfer_center is not null
+		and b.active = 'Y'
+		and c.active = 'Y') a
+		ON a.code = p.receive_org_code
+		WHERE p.active = 'Y'
+               <![CDATA[
+                and p.create_time >=
+                    to_date(#{queryDateA} || ' 06:00:00',
+                            'yyyy-mm-dd hh24:mi:ss')
+                and p.create_time <
+                    to_date(#{queryDateB} || ' 06:00:00',
+                            'yyyy-mm-dd hh24:mi:ss')
+                            ]]>
+		AND p.receive_org_code = a.code
+		and p.pickup_centralized = 'N'
+		GROUP BY a.transfer_center) tt3
+		on tt.org_code = tt3.transfer_center
+		left join (
+		<!--集中开单 -->
+		select sum(p.goods_weight_total) as RECEIVE_MEASURE,
+		k.transfer_center_code
+		from pkp.t_srv_waybill p
+		left join (select a.billinggroup_code,
+		a.billinggroup_name,
+		a.transfer_center_code,
+		a.transfer_center_name
+		from bse.t_bas_billinggroup_transfer a
+		where a.active = 'Y') k
+		on p.create_org_code = k.billinggroup_code
+		where p.pickup_centralized = 'Y'
+		and p.active = 'Y'
+                 <![CDATA[
+                and p.create_time >=
+                    to_date(#{queryDateA} || ' 06:00:00',
+                            'yyyy-mm-dd hh24:mi:ss')
+                and p.create_time <
+                    to_date(#{queryDateB} || ' 06:00:00',
+                            'yyyy-mm-dd hh24:mi:ss')
+                            ]]>
+		group by k.transfer_center_code) tt4
+		on tt.org_code = tt4.transfer_center_code
+		left join (
+		<!--自提签收 -->
+		select sum(a.sign_goods_qty *
+		trunc((b.goods_weight_total / b.goods_qty_total), 4)) as SELF_SIGN,
+		transfer_center
+		from pkp.t_srv_waybill_sign_result a
+		left join pkp.t_srv_waybill b
+		on b.waybill_no = a.waybill_no
+		and b.active = 'Y'
+		and b.receive_method like '%PICKUP%'
+		LEFT JOIN (select b.*
+		from BSE.T_BAS_SALES_DEPARTMENT b
+		left join bse.t_bas_transfer_center c
+		on c.org_code = b.transfer_center
+		and c.active = 'Y'
+		where b.transfer_center is not null
+		and b.active = 'Y'
+		and c.active = 'Y'
+		AND b.station = 'Y') k
+		ON a.create_org_code = k.code
+                  <![CDATA[
+              WHERE a.sign_time >=
+                    to_date(#{queryDateA} || ' 06:00:00',
+                            'yyyy-mm-dd hh24:mi:ss')
+                and a.sign_time <
+                    to_date(#{queryDateB} || ' 06:00:00',
+                            'yyyy-mm-dd hh24:mi:ss')
+                and b.active = 'Y'
+                and b.receive_method like '%PICKUP%'
+                ]]>
+		AND a.create_org_code = k.code
+		GROUP BY transfer_center) tt5
+		on tt.org_code = tt5.transfer_center
+		left join (
+		<!-- 派送 -->
+		SELECT w.orig_org_code,
+		sum(s1.load_weight_total) as DELIVER_SIGN
+		FROM TFR.T_OPT_LOAD_WAYBILL_DETAIL S1
+		LEFT JOIN TFR.T_OPT_LOAD_TASK W
+		ON s1.load_task_id = w.id
+                  <![CDATA[
+                AND w.task_type = 'DELIVER_LOAD'
+                and w.task_state <> 'CANCELED'
+                and w.load_start_time >=
+                    to_date(#{queryDateA} || ' 06:00:00',
+                            'yyyy-mm-dd hh24:mi:ss')
+                and w.load_start_time <
+                    to_date(#{queryDateB} || ' 06:00:00',
+                            'yyyy-mm-dd hh24:mi:ss')
+              WHERE s1.load_task_id = w.id
+                AND w.task_type = 'DELIVER_LOAD'
+                and w.task_state <> 'CANCELED'
+                
+                and w.load_start_time >=
+                    to_date(#{queryDateA} || ' 06:00:00',
+                            'yyyy-mm-dd hh24:mi:ss')
+                and w.load_start_time <
+                    to_date(#{queryDateB} || ' 06:00:00',
+                            'yyyy-mm-dd hh24:mi:ss')
+                            ]]>
+		group by w.orig_org_code) tt6
+		on tt.org_code = tt6.orig_org_code
+		left join (
+		<!-- 派送拉回 -->
+		select tb2.unload_org_code,
+		sum(tb2.unload_weight_total) as DELIVER_BACK
+		from (SELECT w.unload_org_code,
+		w.unload_org_name,
+		s1.waybill_no,
+		s1.unload_weight_total,
+		w.unload_start_time,
+		w.task_state
+		FROM TFR.T_OPT_unLOAD_WAYBILL_DETAIL S1
+		LEFT JOIN TFR.T_OPT_unLOAD_TASK W
+		ON s1.unload_task_id = w.id
+		AND w.unload_type = 'DELIVER'
+                          <![CDATA[
+                         and w.task_state <> 'CANCELED'
+                         ]]>
+		WHERE s1.unload_task_id = w.id
+		AND w.unload_type = 'DELIVER'
+                          <![CDATA[
+                         and w.task_state <> 'CANCELED') tb2
+                         ]]>
+		INNER join (SELECT D.Waybill_No, d.goods_qty, s.create_time
+		FROM PKP.T_SRV_STAY_HANDOVER S
+		INNER JOIN PKP.T_SRV_STAY_HANDOVERDETAIL D
+		ON S.ID = D.T_SRV_STAY_HANDOVER_ID
+		WHERE S.HANDOVER_TYPE = 'GOODS_BACK') tb3
+		on tb2.waybill_no = tb3.waybill_no
+                 <![CDATA[
+              where tb2.unload_start_time >=
+                    to_date(#{queryDateA} || ' 06:00:00',
+                            'yyyy-mm-dd hh24:mi:ss')
+                and tb2.unload_start_time <=
+                    to_date(#{queryDateB} || ' 06:00:00',
+                            'yyyy-mm-dd hh24:mi:ss')
+                            ]]>
+		group by tb2.unload_org_code) tt7
+		on tt.org_code = tt7.unload_org_code
+		where ORA_HASH(tt.org_code, #{threadCount}) = #{threadNo}
+	</select>
+	
+	<select id="queryStockSaturationByOrgCodeAndTime" parameterType="map" resultMap="stockSaturationResultMap">
+	   select SATURATION_ID, ORG_CODE, ORG_NAME, LOAD_MEASURE, UNLOAD_MEASURE, SELF_SIGN,
+      STATION_MEASURE, RECEIVE_MEASURE, SUSTAIN_DAY_MEASURE, STATISTICS_TIME_THEORY, DELIVER_SIGN,
+      DELIVER_BACK from tfr.t_opt_stock_saturation  where org_code=#{orgCode} 
+      <![CDATA[
+	    and statistics_time_theory>= to_date(#{queryDate} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+	    and statistics_time_theory< to_date(#{queryDate} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss')
+	    ]]>
+	</select>
+	
+	<insert id="insertStockSaturation" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.StockSaturationEntity">
+		insert into
+			tfr.T_OPT_STOCK_SATURATION (SATURATION_ID, ORG_CODE,
+			ORG_NAME,
+			LOAD_MEASURE,
+			UNLOAD_MEASURE, SELF_SIGN, STATION_MEASURE,
+			RECEIVE_MEASURE, SUSTAIN_DAY_MEASURE,
+			STATISTICS_TIME_THEORY,
+			DELIVER_SIGN, DELIVER_BACK,dangerrange,warnrange,
+			sustain_month_measure,
+			operate_measure_day,
+			operate_measure_month,
+			saturation_day,
+			saturation_month
+			)
+			values
+			(#{saturationId,jdbcType=VARCHAR},
+			#{orgCode,jdbcType=VARCHAR},#{orgName,jdbcType=VARCHAR},
+			#{loadMeasure,jdbcType=DECIMAL},
+			#{unloadMeasure,jdbcType=DECIMAL},#{selfSign,jdbcType=DECIMAL},
+			#{stationMeasure,jdbcType=DECIMAL},
+			#{receiveMeasure,jdbcType=DECIMAL},
+			#{sustainDayMeasure,jdbcType=DECIMAL},
+			#{statisticsTimeTheory,jdbcType=TIMESTAMP},
+			#{deliverSign,jdbcType=DECIMAL},#{deliverBack,jdbcType=DECIMAL},
+			#{dangerrange,jdbcType=DECIMAL},
+			#{warnrange,jdbcType=DECIMAL},
+			#{sustainMonthMeasure,jdbcType=DECIMAL},
+			#{operateMeasureDay,jdbcType=DECIMAL},
+			#{operateMeasureMonth,jdbcType=DECIMAL},
+			#{saturationDay,jdbcType=DECIMAL},
+			#{saturationMonth,jdbcType=DECIMAL}
+			)
+	</insert>
+
+	<insert id="batchInsertStockSaturation" parameterType="java.util.List">
+		begin
+		<foreach collection="list" item="item" separator=";">
+			insert into
+			tfr.T_OPT_STOCK_SATURATION (SATURATION_ID, ORG_CODE,
+			ORG_NAME,
+			LOAD_MEASURE,
+			UNLOAD_MEASURE, SELF_SIGN, STATION_MEASURE,
+			RECEIVE_MEASURE, SUSTAIN_DAY_MEASURE,
+			STATISTICS_TIME_THEORY,
+			DELIVER_SIGN, DELIVER_BACK,dangerrange,warnrange,
+			sustain_month_measure,
+			operate_measure_day,
+			operate_measure_month,
+			saturation_day,
+			saturation_month)
+			values
+			(#{item.saturationId,jdbcType=VARCHAR},
+			#{item.orgCode,jdbcType=VARCHAR},#{item.orgName,jdbcType=VARCHAR},
+			#{item.loadMeasure,jdbcType=DECIMAL},
+			#{item.unloadMeasure,jdbcType=DECIMAL},#{item.selfSign,jdbcType=DECIMAL},
+			#{item.stationMeasure,jdbcType=DECIMAL},
+			#{item.receiveMeasure,jdbcType=DECIMAL},
+			#{item.sustainDayMeasure,jdbcType=DECIMAL},
+			#{item.statisticsTimeTheory,jdbcType=TIMESTAMP},
+			#{item.deliverSign,jdbcType=DECIMAL},#{item.deliverBack,jdbcType=DECIMAL},
+			#{item.dangerrange,jdbcType=DECIMAL},
+			#{item.warnrange,jdbcType=DECIMAL},
+			#{sustainMonthMeasure,jdbcType=DECIMAL},
+			#{operateMeasureDay,jdbcType=DECIMAL},
+			#{operateMeasureMonth,jdbcType=DECIMAL},
+			#{saturationDay,jdbcType=DECIMAL},
+			#{saturationMonth,jdbcType=DECIMAL}
+			)
+		</foreach>
+		;end;
+	</insert>
+
+	<update id="updateByPrimaryKey"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.StockSaturationEntity">
+		update tfr.T_OPT_STOCK_SATURATION
+		<set>
+			<if test="orgCode!=null">
+				ORG_CODE = #{orgCode,jdbcType=VARCHAR},
+			</if>
+			<if test="orgName!=null">
+				ORG_NAME = #{orgName,jdbcType=VARCHAR},
+			</if>
+			<if test="loadMeasure!=null">
+				LOAD_MEASURE = #{loadMeasure,jdbcType=DECIMAL},
+			</if>
+			<if test="unloadMeasure!=null">
+				UNLOAD_MEASURE = #{unloadMeasure,jdbcType=DECIMAL},
+			</if>
+			<if test="selfSign!=null">
+				SELF_SIGN = #{selfSign,jdbcType=DECIMAL},
+			</if>
+			<if test="stationMeasure!=null">
+				STATION_MEASURE = #{stationMeasure,jdbcType=DECIMAL},
+			</if>
+			<if test="receiveMeasure!=null">
+				RECEIVE_MEASURE = #{receiveMeasure,jdbcType=DECIMAL},
+			</if>
+			<if test="sustainDayMeasure!=null">
+				SUSTAIN_DAY_MEASURE = #{sustainDayMeasure,jdbcType=DECIMAL},
+			</if>
+			<if test="statisticsTimeTheory!=null">
+				STATISTICS_TIME_THEORY = #{statisticsTimeTheory,jdbcType=TIMESTAMP},
+			</if>
+			<if test="deliverSign!=null">
+				DELIVER_SIGN = #{deliverSign,jdbcType=DECIMAL},
+			</if>
+			<if test="sustainMonthMeasure!=null">
+				sustain_month_measure = #{sustainMonthMeasure,jdbcType=DECIMAL},
+			</if>
+			<if test="operateMeasureDay!=null">
+				operate_measure_day = #{operateMeasureDay,jdbcType=DECIMAL},
+			</if>
+			<if test="operateMeasureMonth!=null">
+				operate_measure_month = #{operateMeasureMonth,jdbcType=DECIMAL},
+			</if>
+			<if test="saturationDay!=null">
+				saturation_day = #{saturationDay,jdbcType=DECIMAL},
+			</if>
+			<if test="saturationMonth!=null">
+				saturation_month = #{saturationMonth,jdbcType=DECIMAL},
+			</if>
+		</set>
+		where SATURATION_ID = #{saturationId,jdbcType=VARCHAR}
+	</update>
+	
+	<!-- 获取月操作货量 -->
+	<select id="queryOperateMeasureMonth" resultType="java.math.BigDecimal" parameterType="map">
+		select sum(a.operate_measure_day) operate_measure_month
+        from tfr.t_opt_stock_saturation a
+        where a.statistics_time_theory between
+             to_date(#{queryDateA} || ' 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+             and 
+             to_date(#{queryDateB} || ' 23:59:59', 'yyyy-mm-dd hh24:mi:ss')
+             and a.org_code=#{orgCode}
+	</select>
+	
+	<!-- 统计当月预警天数与当月危险预警天数 -->
+	<select id="calculateWarningAndDangerMothDays" parameterType="map" resultMap="stockSaturationResultAllMap">
+		SELECT /*统计当月预警天数与当月危险预警天数 */
+		    TA1.ORG_CODE, WARNINGDAYS, DANGERDAYS
+		  FROM (SELECT T.ORG_CODE
+		          FROM TFR.T_OPT_STOCK_SATURATION T
+		         WHERE T.ORG_CODE IN 
+		            <foreach collection="orgCodeList" index="index" item="item" open="(" separator="," close=")">
+				         #{item}
+		            </foreach>
+		           AND T.STATISTICS_TIME_THEORY BETWEEN
+		               TO_DATE(#{startTime}, 'yyyy-MM-dd') AND
+		               TO_DATE(#{endTime}, 'yyyy-MM-dd')
+		         GROUP BY T.ORG_CODE) TA1
+		  LEFT JOIN (SELECT COUNT(1) WARNINGDAYS, MAX(ORG_CODE) ORG_CODE
+		               FROM (SELECT T.SATURATION_DAY,
+		                            T.WARNRANGE WARNRANGE,
+		                            T.DANGERRANGE,
+		                            T.ORG_CODE
+		                       FROM TFR.T_OPT_STOCK_SATURATION T
+		                      WHERE T.ORG_CODE IN
+		                          <foreach collection="orgCodeList" index="index" item="item" open="(" separator="," close=")">
+				                      #{item}
+		                          </foreach>
+		                        AND T.STATISTICS_TIME_THEORY BETWEEN
+		                             TO_DATE(#{startTime}, 'yyyy-MM-dd') AND
+		                             TO_DATE(#{endTime}, 'yyyy-MM-dd')) TAB
+		              WHERE <![CDATA[ TAB.SATURATION_DAY >= TAB.WARNRANGE
+		                AND TAB.SATURATION_DAY < TAB.DANGERRANGE]]>
+		                GROUP BY TAB.ORG_CODE) TA2
+		    ON TA1.ORG_CODE = TA2.ORG_CODE
+		  LEFT JOIN (SELECT COUNT(1) DANGERDAYS, MAX(ORG_CODE) ORG_CODE
+		               FROM (SELECT T.SATURATION_DAY,
+		                            T.DANGERRANGE DANGERRANGE,
+		                            T.ORG_CODE
+		                       FROM TFR.T_OPT_STOCK_SATURATION T
+		                      WHERE T.ORG_CODE IN
+		                          <foreach collection="orgCodeList" index="index" item="item" open="(" separator="," close=")">
+				                     #{item}
+		                          </foreach>
+		                        AND T.STATISTICS_TIME_THEORY BETWEEN
+		                            TO_DATE(#{startTime}, 'yyyy-MM-dd') AND
+		                            TO_DATE(#{endTime}, 'yyyy-MM-dd')) TAB
+		              WHERE TAB.SATURATION_DAY >= TAB.DANGERRANGE
+		              GROUP BY TAB.ORG_CODE) TA3
+		    ON TA1.ORG_CODE = TA3.ORG_CODE
+	
+	</select>
+	
+	
+</mapper>

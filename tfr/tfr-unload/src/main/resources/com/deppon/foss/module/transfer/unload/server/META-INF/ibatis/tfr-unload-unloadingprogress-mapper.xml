@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.unload.unloadingprogress">
+	<resultMap id="queryUnloadingProgressResultMap"
+		type="com.deppon.foss.module.transfer.unload.api.shared.dto.QueryUnloadingProgressResultDto">
+		<result property="id" column="id" />
+		<result property="taskNo" column="taskNo" />
+		<result property="billNumber" column="billNumber" />
+		<result property="arrivedTime" column="arrivedTime" />
+		<result property="distributeTime" column="distributeTime" />
+		<result property="taskBeginTime" column="taskBeginTime" />
+		<result property="taskCompleteTime" column="taskCompleteTime" />
+		<result property="taskPlanTime" column="taskPlanTime" />
+		<result property="predictCompleteTime" column="predictCompleteTime" />
+		<result property="predictCompleteMinutes" column="predictCompleteMinutes" />
+		<result property="vehicleNumber" column="vehicleNumber" />
+		<result property="isTimeout" column="isTimeout" />
+		<result property="taskType" column="taskType" />
+		<result property="totalVolume" column="totalVolume" />
+		<result property="totalWeight" column="totalWeight" />
+		<result property="totalPieces" column="totalPieces" />
+		<result property="leftVolume" column="leftVolume" />
+		<result property="leftWeight" column="leftWeight" />
+		<result property="leftPieces" column="leftPieces" />
+		<result property="unloadedVolume" column="unloadedVolume" />
+		<result property="unloadedWeight" column="unloadedWeight" />
+		<result property="unloadedPieces" column="unloadedPieces" />
+		<result property="platform" column="platform" />
+		<result property="unLoadMember" column="unLoadMember" />
+		<result property="leaveDept" column="leaveDept" />
+		<result property="taskState" column="taskState" />
+	</resultMap>
+	
+	<!-- 单据查询结果 -->
+	<resultMap id="queryBillInfoResultMap"
+		type="com.deppon.foss.module.transfer.unload.api.shared.dto.QueryBillInfoResultDto">
+		<result property="billNumber" column="billNumber" />
+		<result property="arrivedTime" column="arrivedTime" />
+		<result property="distributeTime" column="distributeTime" />
+		<result property="totalVolume" column="totalVolume" />
+		<result property="totalWeight" column="planDepartDate" />
+		<result property="totalPieces" column="totalPieces" />
+		<result property="leaveDept" column="leaveDept" />
+	</resultMap>
+	
+		<!--查询卸车进度-->
+	<select id="queryUnloadingProgress" 
+		parameterType="com.deppon.foss.module.transfer.unload.api.shared.dto.QueryUnloadingProgressConditionDto" 
+	resultMap="queryUnloadingProgressResultMap">
+		select unload.id id,
+       max(unload.vehicleNumber) vehicleNumber,
+       max(unload.taskState) taskState,
+       max(unload.platform) platform,
+       max(unload.taskBeginTime) taskBeginTime,
+       max(unload.taskCompleteTime) taskCompleteTime,
+       max(unload.unLoadMember) unLoadMember,
+       max(unload.taskPlanTime) taskPlanTime,
+       max(unload.unloadedPieces) unloadedPieces,
+       max(unload.unloadedWeight) unloadedWeight,
+       max(unload.unloadedVolume) unloadedVolume,
+       max(billTask.BILL_NO) billNumber,
+       max(billTask.ARRIVE_TIME) arrivedTime,
+       max(billTask.ASSIGN_TIME) distributeTime,
+       max(billTask.Bill_Orig_Org_Code) leaveDept,
+       sum(detail.VOLUME) totalVolume,
+       sum(detail.WEIGHT) totalWeight,
+       sum(detail.PIECES) totalPieces,
+       sum(detail.WEIGHT) - max(unload.unloadedWeight) leftWeight,
+       sum(detail.VOLUME) - max(unload.unloadedVolume) leftVolume,
+       sum(detail.pieces) - max(unload.unloadedPieces) leftPieces,
+       decode(sign((sum(detail.WEIGHT) - max(unload.unloadedWeight)) / (#{unloadWeightStd}*1000) -
+                  (sum(detail.VOLUME) - max(unload.unloadedVolume)) / #{unloadVolumeStd}),
+                  1,
+                  (sum(detail.WEIGHT) - max(unload.unloadedWeight)) / (#{unloadWeightStd}*1000),
+                  (sum(detail.VOLUME) - max(unload.unloadedVolume)) / #{unloadVolumeStd}) predictCompleteMinutes,
+       decode(max(unload.taskCompleteTime),
+              null,
+              decode(sign(sysdate - cast(max(unload.taskPlanTime) as date)),
+                     1,
+                     'TIME_OUT',
+                     'NO_TIME_OUT'),
+              decode(sign(cast(max(unload.taskCompleteTime) as date) -
+                          cast(max(unload.taskPlanTime) as date)),
+                     1,
+                     'TIME_OUT',
+                     'NO_TIME_OUT')) isTimeout           
+  from (select task.id id, 
+               max(task.unload_task_no) taskNo,
+               max(task.TASK_STATE) taskState,
+               max(task.vehicle_no) vehicleNumber,
+               max(task.platform_no) platform,
+               max(task.unload_start_time) taskBeginTime,
+               max(task.unload_end_time) taskCompleteTime,
+               max(part.loader_name) unLoadMember,
+               max(task.plan_complete_time) taskPlanTime,
+               sum(taskDetail.OPERATION_GOODS_QTY) unloadedPieces,
+               sum(taskDetail.Unload_Weight_Total) unloadedWeight,
+               sum(taskDetail.Unload_Volume_Total) unloadedVolume
+          from tfr.t_opt_unload_task task
+          left join tfr.t_Opt_Unload_Waybill_Detail taskDetail on taskDetail.Unload_Task_Id =
+                                                                  task.id
+          left join tfr.T_OPT_LOADER_PARTICIPATION part on part.task_id =
+                                                           task.id
+                                                       and part.be_creator = 'Y'
+        <include refid="select_Where_unloadingProgress"/>
+         group by task.id
+         union all
+         select taskWK.id id, 
+               max(taskWK.unload_task_no) taskNo,
+               max(taskWK.TASK_STATE) taskState,
+               max(taskWK.vehicle_no) vehicleNumber,
+               max(taskWK.platform_no) platform,
+               max(taskWK.unload_start_time) taskBeginTime,
+               max(taskWK.unload_end_time) taskCompleteTime,
+               max(partWK.loader_name) unLoadMember,
+               max(taskWK.plan_complete_time) taskPlanTime,
+               sum(taskDetailWK.OPERATION_GOODS_QTY) unloadedPieces,
+               sum(taskDetailWK.Unload_Weight_Total) unloadedWeight,
+               sum(taskDetailWK.Unload_Volume_Total) unloadedVolume
+          from tfr.t_opt_unload_task taskWK
+          left join ECS.MV_TFR_T_OPT_UNWAYBILL_DETAIL taskDetailWK 
+           on taskDetailWK.Unload_Task_Id = taskWK.id
+          left join tfr.T_OPT_LOADER_PARTICIPATION partWK 
+           on partWK.task_id =  taskWK.id and partWK.be_creator = 'Y'
+        <include refid="select_Where_unloadingProgressWK"/>
+         group by taskWK.id
+         ) unload
+  inner join tfr.T_OPT_UNLOAD_BILL_DETAIL detail on detail.unload_task_id =
+                                                   unload.id
+ inner join tfr.T_OPT_UNLOAD_ASSIGN_TASK billTask on detail.BILL_NO =
+                                                     billTask.BILL_NO and billTask.Be_Canceled='N'
+        <include refid="select_Where_billInfo"/>
+ group by unload.id 
+ 		<include refid="select_having_unloadingProgress"/>
+ 		<include refid="select_Orderby_unloadingProgress"/>	
+	</select>
+			<!--查询卸车进度-->
+	<select id="queryUnloadingProgressCount" 
+		parameterType="com.deppon.foss.module.transfer.unload.api.shared.dto.QueryUnloadingProgressConditionDto" resultType="java.lang.Long">
+		select count(1) from (select
+count(unload.id)
+  from (select task.id id, 
+               max(task.unload_task_no) taskNo,
+               max(task.TASK_STATE) taskState,
+               max(task.vehicle_no) vehicleNumber,
+               max(task.platform_no) platform,
+               max(task.unload_start_time) taskBeginTime,
+               max(task.unload_end_time) taskCompleteTime,
+               max(part.loader_name) unLoadMember,
+               max(task.plan_complete_time) taskPlanTime,
+               sum(taskDetail.OPERATION_GOODS_QTY) unloadedPieces,
+               sum(taskDetail.Unload_Weight_Total) unloadedWeight,
+               sum(taskDetail.Unload_Volume_Total) unloadedVolume
+          from tfr.t_opt_unload_task task
+          left join tfr.t_Opt_Unload_Waybill_Detail taskDetail on taskDetail.Unload_Task_Id =
+                                                                  task.id
+          left join tfr.T_OPT_LOADER_PARTICIPATION part on part.task_id =
+                                                           task.id
+                                                       and part.be_creator = 'Y'
+        <include refid="select_Where_unloadingProgress"/>
+         group by task.id
+          union all
+         select taskWK.id id, 
+               max(taskWK.unload_task_no) taskNo,
+               max(taskWK.TASK_STATE) taskState,
+               max(taskWK.vehicle_no) vehicleNumber,
+               max(taskWK.platform_no) platform,
+               max(taskWK.unload_start_time) taskBeginTime,
+               max(taskWK.unload_end_time) taskCompleteTime,
+               max(partWK.loader_name) unLoadMember,
+               max(taskWK.plan_complete_time) taskPlanTime,
+               sum(taskDetailWK.OPERATION_GOODS_QTY) unloadedPieces,
+               sum(taskDetailWK.Unload_Weight_Total) unloadedWeight,
+               sum(taskDetailWK.Unload_Volume_Total) unloadedVolume
+          from tfr.t_opt_unload_task taskWK
+          left join ECS.MV_TFR_T_OPT_UNWAYBILL_DETAIL taskDetailWK 
+           on taskDetailWK.Unload_Task_Id = taskWK.id
+          left join tfr.T_OPT_LOADER_PARTICIPATION partWK 
+           on partWK.task_id =  taskWK.id and partWK.be_creator = 'Y'
+        <include refid="select_Where_unloadingProgressWK"/>
+         group by taskWK.id) unload
+  inner join tfr.T_OPT_UNLOAD_BILL_DETAIL detail on detail.unload_task_id =
+                                                   unload.id
+ inner join tfr.T_OPT_UNLOAD_ASSIGN_TASK billTask on detail.BILL_NO =
+                                                     billTask.BILL_NO and billTask.Be_Canceled='N'
+        <include refid="select_Where_billInfo"/>
+         group by unload.id 
+ 		<include refid="select_having_unloadingProgress"/>)
+	</select>
+	
+	
+	<!-- 卸车任务查询条件 -->
+	<sql id="select_Where_unloadingProgress">
+		<where>
+			<if test="deptCode!=null and deptCode!='' ">	
+					AND task.unload_org_code = #{deptCode}
+			</if>				
+			<if test="id!=null and id!='' ">	
+					AND task.id = #{id}
+			</if>
+			<if test="taskStartTime!=null and taskEndTime!=null ">	
+					AND task.unload_start_time between #{taskStartTime} and #{taskEndTime}
+			</if>
+			<if test="vehicleNumber!=null and vehicleNumber!='' ">	
+					AND task.vehicle_no = #{vehicleNumber}
+			</if>
+			<if test="taskState!=null and taskState!='' and taskState != 'ALL'">	
+					AND task.task_state = #{taskState}
+			</if>
+			<if test="taskType!=null and taskType!='' and taskType != 'ALL'">	
+					AND task.unload_type = #{taskType}
+			</if>
+		</where>
+	</sql>
+	<!-- 卸车任务查询条件 -->
+	<sql id="select_Where_unloadingProgressWK">
+		<where>
+			<if test="deptCode!=null and deptCode!='' ">	
+					AND taskWK.unload_org_code = #{deptCode}
+			</if>				
+			<if test="id!=null and id!='' ">	
+					AND taskWK.id = #{id}
+			</if>
+			<if test="taskStartTime!=null and taskEndTime!=null ">	
+					AND taskWK.unload_start_time between #{taskStartTime} and #{taskEndTime}
+			</if>
+			<if test="vehicleNumber!=null and vehicleNumber!='' ">	
+					AND taskWK.vehicle_no = #{vehicleNumber}
+			</if>
+			<if test="taskState!=null and taskState!='' and taskState != 'ALL'">	
+					AND taskWK.task_state = #{taskState}
+			</if>
+			<if test="taskType!=null and taskType!='' and taskType != 'ALL'">	
+					AND taskWK.unload_type = #{taskType}
+			</if>
+		</where>
+	</sql>
+	
+	<!-- 单据信息查询条件 -->
+	<sql id="select_Where_billInfo">
+		<where>
+			<if test="billNumber!=null and billNumber!='' ">	
+					AND billTask.BILL_NO = #{billNumber}
+			</if>				
+			<if test="id!=null and id!='' ">	
+					AND billTask.id = #{id}
+			</if>
+			<if test="leaveDept!=null and leaveDept!=''">
+					AND billTask.Bill_Orig_Org_Code = #{leaveDept}
+			</if>
+			
+		</where>
+	</sql>
+	<!-- 排序条件 -->
+	<sql id="select_Orderby_unloadingProgress">
+		<choose>
+			<when test="sortRule=='ORDER_BY_CREATETASKDATE_DESC'"> <!-- 按建立任务时间降序 -->
+				order by taskBeginTime DESC
+			</when>	
+			<when test="sortRule=='ORDER_BY_CREATETASKDATE_ASC' "><!-- 按建立任务时间升序 -->
+				order by taskBeginTime ASC
+			</when>	
+			<when test="sortRule=='ORDER_BY_PREDICTCOMPLETETIME_DESC'"><!-- 按预计完成时间降序 -->
+				order by predictCompleteMinutes DESC
+			</when>	
+			<when test="sortRule=='ORDER_BY_PREDICTCOMPLETETIME_ASC'"><!-- 按预计完成时间升序 -->
+				order by predictCompleteMinutes ASC
+			</when>	
+			<when test="sortRule=='ORDER_BY_LEFTWEIGHT_DESC'"><!-- 按剩余重量降序 -->
+				order by leftWeight DESC
+			</when>	
+			<when test="sortRule=='ORDER_BY_LEFTWEIGHT_ASC'"><!-- 按剩余重量升序 -->
+				order by leftWeight ASC
+			</when>	
+			<when test="sortRule=='ORDER_BY_LEFTVOLUME_DESC'"><!-- 按剩余体积降序 -->
+				order by leftVolume DESC
+			</when>	
+			<when test="sortRule=='ORDER_BY_LEFTVOLUME_ASC'"><!-- 按剩余体积升序 -->
+				order by leftVolume ASC
+			</when>	
+			<otherwise>
+            	order by taskBeginTime DESC
+        	</otherwise>
+		</choose>
+	</sql>
+	
+	<!-- 是否超时 -->
+	<sql id="select_having_unloadingProgress">
+		<choose>
+			<when test="timeOver!='ALL' and timeOver!=''"> <!-- 超时 -->
+				having decode(max(unload.taskCompleteTime),
+              			null,
+              			decode(sign(sysdate - cast(max(unload.taskPlanTime)as date)),1,'TIME_OUT','NO_TIME_OUT'),
+              			decode(sign(cast(max(unload.taskCompleteTime)as date) -cast(max(unload.taskPlanTime)as date)),1,'TIME_OUT','NO_TIME_OUT')) 
+              			= #{timeOver}
+			</when>	
+		</choose>
+	</sql> 
+	 
+	 <!-- 
+	 
+	 select task.id id,id
+           max(task.unload_task_no) taskNo,
+           max(task.vehicle_no) vehicleNumber,
+           max(task.platform_no) platform,
+           max(task.unload_start_time) taskBeginTime,
+           max(task.unload_end_time) taskCompleteTime,
+           max(part.loader_name) unLoadMember,
+           max(task.plan_complete_time) taskPlanTime,
+           sum(taskDetail.OPERATION_GOODS_QTY) unloadedPieces
+         from tfr.t_opt_unload_task task
+    left join tfr.t_Opt_Unload_Waybill_Detail taskDetail on taskDetail.Unload_Task_Id=task.id
+    left join tfr.T_OPT_LOADER_PARTICIPATION part on part.task_id=task.id
+                                                  and part.be_creator='Y'
+    group by task.id
+	 
+	  -->
+	
+	
+	<!-- 根据id查询单据信息 -->
+	<select id="queryBillInfoResult" parameterType="HashMap"
+		resultMap="queryBillInfoResultMap">
+		select billTask.BILL_NO            billNumber,
+		       billTask.ARRIVE_TIME        arrivedTime,
+		       billTask.ASSIGN_TIME        distributeTime,
+		       billTask.WEIGHT_TOTAL       totalVolume,
+		       billTask.VOLUME_TOTAL       totalWeight,
+		       billTask.GOODS_QTY_TOTAL    totalPieces,
+		       o.name leaveDept
+		  from tfr.T_OPT_UNLOAD_BILL_DETAIL detail
+		 inner join tfr.T_OPT_UNLOAD_ASSIGN_TASK billTask on detail.BILL_NO =
+		                                                     billTask.BILL_NO and billTask.Be_Canceled='N'
+		 left join bse.t_bas_org o on o.code = billTask.Bill_Orig_Org_Code and o.active='Y'
+     where detail.UNLOAD_TASK_ID = #{id}
+ 
+	</select>
+	 
+	
+	
+</mapper>
+
+

@@ -1,0 +1,849 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.deppon.foss.module.pickup.sign.api.shared.domain.RepaymentEntity">
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.pickup.sign.api.shared.domain.RepaymentEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+    <result column="REPAYMENT_NO" property="repaymentNo" jdbcType="VARCHAR" />
+    <result column="ACTIVE" property="active" jdbcType="CHAR" />
+    <result column="CONSIGNEE_CODE" property="consigneeCode" jdbcType="VARCHAR" />
+    <result column="CONSIGNEE_NAME" property="consigneeName" jdbcType="VARCHAR" />
+    <result column="PAYMENT_TYPE" property="paymentType" jdbcType="VARCHAR" />
+    <result column="CLAIM_NO" property="claimNo" jdbcType="VARCHAR" />
+    <result column="ACTUAL_FREIGHT" property="actualFreight" jdbcType="DECIMAL" />
+    <result column="COD_AMOUNT" property="codAmount" jdbcType="DECIMAL" />
+    <result column="PAYMENT_TIME" property="paymentTime" jdbcType="TIMESTAMP" />
+    <result column="STORAGE_FEE" property="storageFee" jdbcType="DECIMAL" />
+    <result column="OPERATOR" property="operator" jdbcType="VARCHAR" />
+    <result column="OPERATOR_CODE" property="operatorCode" jdbcType="VARCHAR" />
+    <result column="OPERATE_ORG_NAME" property="operateOrgName" jdbcType="VARCHAR" />
+    <result column="OPERATE_ORG_CODE" property="operateOrgCode" jdbcType="VARCHAR" />
+    <result column="CURRENCY_CODE" property="currencyCode" jdbcType="VARCHAR" />
+    <result column="IS_RFCING" property="isRfcing" jdbcType="CHAR" />
+    <result column="STLBILL_GENERATED_STATUS" property="stlbillGeneratedStatus" jdbcType="CHAR" />
+  	<result column="JOB_ID" property="jobId" jdbcType="VARCHAR" />
+  	<result column="PDA_SERIAL" property="pdaSerial" jdbcType="VARCHAR" />
+  	<result column="BANK_TRADE_SERIAL" property="bankTradeSerail" jdbcType="VARCHAR" />
+  	
+  	<result column="IDENTITY_TYPE" property="identifyType" jdbcType="VARCHAR"/>
+  	<result column="IDENTITY_CODE" property="identifyCode" jdbcType="VARCHAR"/>
+  	<result column="COD_IDENTITY_TYPE" property="codIdentifyType" jdbcType="VARCHAR"/>
+  	<result column="COD_IDENTITY_CODE" property="codIdentifyCode" jdbcType="VARCHAR"/>
+  </resultMap>
+  
+  <resultMap id="PendingMap" type="com.deppon.foss.module.pickup.sign.api.shared.dto.AirAgencyQueryDto">
+    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+    <result column="STOCK_GOODS_QTY" property="storageQty" jdbcType="VARCHAR" />
+    <result column="GOODS_QTY_TOTAL" property="storageQty" jdbcType="VARCHAR" />
+    <result column="RECEIVE_CUSTOMER_CONTACT" property="receiveCustomerName" jdbcType="VARCHAR" />
+  </resultMap>
+  
+  <resultMap id="RepaymentArriveDtoMap" type="com.deppon.foss.module.pickup.sign.api.shared.dto.RepaymentArriveDto">
+    <result column="R_ARRIVEAMOUNT" property="arriveAmount" jdbcType="DECIMAL" />
+    <result column="R_ACTUAL_FREIGHT" property="actualFreight" jdbcType="DECIMAL" />
+    <result column="R_PAYMENT_TYPE" property="paymentType" jdbcType="VARCHAR" />
+    <result column="R_PAYMENT_TIME" property="paymentTime" jdbcType="TIMESTAMP" />
+  </resultMap>
+  
+  <sql id="WaybillTransaction_Column" >
+  		/*模块：接送货-付款-根据运单号获取付款信息*/
+   		(R.ACTUAL_FREIGHT+R.COD_AMOUNT)/100 R_ARRIVEAMOUNT,
+        R.ACTUAL_FREIGHT/100  R_ACTUAL_FREIGHT, 
+        R.PAYMENT_TYPE  R_PAYMENT_TYPE,
+        TO_DATE(TO_CHAR(R.PAYMENT_TIME,'yyyy-MM-dd'),'yyyy-MM-dd') R_PAYMENT_TIME
+  </sql>
+  
+  
+  <sql id="Base_Column_List" >
+  	/*模块：接送货-付款-查询付款信息*/
+    ID, WAYBILL_NO, REPAYMENT_NO, ACTIVE, CONSIGNEE_CODE, CONSIGNEE_NAME, PAYMENT_TYPE, 
+    CLAIM_NO, ACTUAL_FREIGHT/100 ACTUAL_FREIGHT, COD_AMOUNT/100 COD_AMOUNT, PAYMENT_TIME, STORAGE_FEE/100 STORAGE_FEE, OPERATOR, OPERATOR_CODE, 
+    OPERATE_ORG_NAME, OPERATE_ORG_CODE, CURRENCY_CODE, IS_RFCING, STLBILL_GENERATED_STATUS,JOB_ID,
+    IDENTITY_TYPE,IDENTITY_CODE,COD_IDENTITY_TYPE,COD_IDENTITY_CODE
+  </sql>
+  
+  <!--新增付款信息-->
+  <insert id="addRepaymentInfo" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.RepaymentEntity" >
+	 insert into PKP.T_SRV_REPAYMENT
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="waybillNo != null" >
+        WAYBILL_NO,
+      </if>
+      <if test="repaymentNo != null" >
+        REPAYMENT_NO,
+      </if>
+      <if test="active != null" >
+        ACTIVE,
+      </if>
+      <if test="consigneeCode != null" >
+        CONSIGNEE_CODE,
+      </if>
+      <if test="consigneeName != null" >
+        CONSIGNEE_NAME,
+      </if>
+      <if test="paymentType != null" >
+        PAYMENT_TYPE,
+      </if>
+      <if test="claimNo != null" >
+        CLAIM_NO,
+      </if>
+      <if test="actualFreight != null" >
+        ACTUAL_FREIGHT,
+      </if>
+      <if test="codAmount != null" >
+        COD_AMOUNT,
+      </if>
+      <if test="paymentTime != null" >
+        PAYMENT_TIME,
+      </if>
+      <if test="storageFee != null" >
+        STORAGE_FEE,
+      </if>
+      <if test="operator != null" >
+        OPERATOR,
+      </if>
+      <if test="operatorCode != null" >
+        OPERATOR_CODE,
+      </if>
+      <if test="operateOrgName != null" >
+        OPERATE_ORG_NAME,
+      </if>
+      <if test="operateOrgCode != null" >
+        OPERATE_ORG_CODE,
+      </if>
+      <if test="currencyCode != null" >
+        CURRENCY_CODE,
+      </if>
+      <if test="isRfcing != null" >
+        IS_RFCING,
+      </if>
+      <if test="stlbillGeneratedStatus != null" >
+        STLBILL_GENERATED_STATUS,
+      </if>
+      <if test="jobId != null" >
+        JOB_ID,
+      </if>
+      <if test="modifyTime != null" >
+        MODIFY_TIME,
+      </if>
+      <if test="pdaSerial != null and pdaSerial !='' " >
+        PDA_SERIAL,
+      </if>
+      <if test="bankTradeSerail != null and bankTradeSerail !='' " >
+        BANK_TRADE_SERIAL,
+      </if>
+      <if test="identifyType !=null and identifyType !='' ">
+      	IDENTITY_TYPE,
+      </if>
+      <if test="identifyCode !=null and identifyCode !='' ">
+      	IDENTITY_CODE,
+      </if>
+      <if test="identityIsScan !=null and identityIsScan !='' ">
+      	IDENTITY_ISSCAN,
+      </if>
+      <if test="codIdentifyType !=null and codIdentifyType !='' ">
+      	COD_IDENTITY_TYPE,
+      </if>
+      <if test="codIdentifyCode !=null and codIdentifyCode !='' ">
+      	COD_IDENTITY_CODE,
+      </if>
+      <if test="codIdentityIsScan !=null and codIdentityIsScan !='' ">
+      	COD_IDENTITY_ISSCAN,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="waybillNo != null" >
+        #{waybillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="repaymentNo != null" >
+        #{repaymentNo,jdbcType=VARCHAR},
+      </if>
+      <if test="active != null" >
+        #{active,jdbcType=CHAR},
+      </if>
+      <if test="consigneeCode != null" >
+        #{consigneeCode,jdbcType=VARCHAR},
+      </if>
+      <if test="consigneeName != null" >
+        #{consigneeName,jdbcType=VARCHAR},
+      </if>
+      <if test="paymentType != null" >
+        #{paymentType,jdbcType=VARCHAR},
+      </if>
+      <if test="claimNo != null" >
+        #{claimNo,jdbcType=VARCHAR},
+      </if>
+      <if test="actualFreight != null" >
+        #{actualFreight,jdbcType=DECIMAL}*100,
+      </if>
+      <if test="codAmount != null" >
+        #{codAmount,jdbcType=DECIMAL}*100,
+      </if>
+      <if test="paymentTime != null" >
+        #{paymentTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="storageFee != null" >
+        #{storageFee,jdbcType=DECIMAL}*100,
+      </if>
+      <if test="operator != null" >
+        #{operator,jdbcType=VARCHAR},
+      </if>
+      <if test="operatorCode != null" >
+        #{operatorCode,jdbcType=VARCHAR},
+      </if>
+      <if test="operateOrgName != null" >
+        #{operateOrgName,jdbcType=VARCHAR},
+      </if>
+      <if test="operateOrgCode != null" >
+        #{operateOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="currencyCode != null" >
+        #{currencyCode,jdbcType=VARCHAR},
+      </if>
+      <if test="isRfcing != null" >
+        #{isRfcing,jdbcType=CHAR},
+      </if>
+      <if test="stlbillGeneratedStatus != null" >
+        #{stlbillGeneratedStatus,jdbcType=VARCHAR},
+      </if>
+      <if test="jobId != null" >
+        #{jobId,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyTime != null" >
+        #{modifyTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="pdaSerial != null and pdaSerial !='' " >
+        #{pdaSerial,jdbcType=VARCHAR},
+      </if>
+      <if test="bankTradeSerail != null and bankTradeSerail !='' " >
+        #{bankTradeSerail,jdbcType=VARCHAR},
+      </if>
+      <if test="identifyType !=null and identifyType !='' ">
+      	#{identifyType,jdbcType=VARCHAR},
+      </if>
+      <if test="identifyCode !=null and identifyCode !='' ">
+      	#{identifyCode,jdbcType=VARCHAR},
+      </if>
+      <if test="identityIsScan !=null and identityIsScan !='' ">
+      	#{identityIsScan,jdbcType=CHAR},
+      </if>
+      <if test="codIdentifyType !=null and codIdentifyType !='' ">
+      	#{codIdentifyType,jdbcType=VARCHAR},
+      </if>
+      <if test="codIdentifyCode !=null and codIdentifyCode !='' ">
+      	#{codIdentifyCode,jdbcType=VARCHAR},
+      </if>
+      <if test="codIdentityIsScan !=null and codIdentityIsScan !='' ">
+      	#{codIdentityIsScan,jdbcType=CHAR},
+      </if>
+    </trim>
+  </insert>
+  
+  <!--获得付款List-->
+  <select id="selectRepaymentList" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.RepaymentEntity" >
+    select 
+    <include refid="Base_Column_List" />
+    from PKP.T_SRV_REPAYMENT
+    <where>
+		<if test="waybillNo!=null and waybillNo!='' ">
+			<![CDATA[and WAYBILL_NO=#{waybillNo,jdbcType=VARCHAR}]]>
+		</if>
+		<if test="isRfcing!=null and isRfcing!='' ">
+			<![CDATA[and IS_RFCING = #{isRfcing,jdbcType=CHAR}]]>
+		</if>
+		<if test="active!=null and active!='' ">
+			<![CDATA[and ACTIVE = #{active,jdbcType=CHAR}]]>
+		</if>
+    </where>
+  </select>
+  
+  <!--获得未生成财务单据的付款信息 -->
+  <select id="queryRepaymentList" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.RepaymentEntity" >
+    select 
+    <include refid="Base_Column_List" />
+    from PKP.T_SRV_REPAYMENT
+    <where>
+		<if test="stlbillGeneratedStatus!=null and stlbillGeneratedStatus!='' ">
+			<![CDATA[and STLBILL_GENERATED_STATUS in(#{stlbillGeneratedStatus,jdbcType=VARCHAR},#{firStlbillGeneratedStatus,jdbcType=VARCHAR})]]>
+		</if>
+		<if test="waybillNo!=null and waybillNo!='' ">
+			<![CDATA[and WAYBILL_NO=#{waybillNo,jdbcType=VARCHAR}]]>
+		</if>
+		<if test="active!=null and active!='' ">
+			<![CDATA[and ACTIVE = #{active,jdbcType=CHAR}]]>
+		</if>
+    </where>
+  </select>
+  
+  <!--获得生成财务单据和无需生成的付款信息 -->
+  <select id="queryRepaymentListForSign" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.RepaymentEntity" >
+    select 
+    <include refid="Base_Column_List" />
+    from PKP.T_SRV_REPAYMENT
+    <where>
+		<if test="waybillNo!=null and waybillNo!='' ">
+			<![CDATA[and WAYBILL_NO=#{waybillNo,jdbcType=VARCHAR}]]>
+		</if>
+		<if test="active!=null and active!='' ">
+			<![CDATA[and ACTIVE = #{active,jdbcType=CHAR}]]>
+		</if>
+		<if test="stlbillGeneratedStatus!=null and stlbillNotStatus!=null ">
+			<![CDATA[and (STLBILL_GENERATED_STATUS=#{stlbillGeneratedStatus} or STLBILL_GENERATED_STATUS=#{stlbillNotStatus})]]>
+		</if>
+    </where>
+  </select>
+  
+  <!--根据运单号获取付款信息 -->
+  <select id="queryRepaymentListbyNo" resultMap="RepaymentArriveDtoMap" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.RepaymentEntity" >
+    select 
+    <include refid="WaybillTransaction_Column" />
+    from PKP.T_SRV_REPAYMENT R
+    <where>
+		<if test="stlbillGeneratedStatus!=null and stlbillGeneratedStatus!='' ">
+			<![CDATA[and STLBILL_GENERATED_STATUS=#{stlbillGeneratedStatus,jdbcType=VARCHAR}]]>
+		</if>
+		<if test="waybillNo!=null and waybillNo!='' ">
+			<![CDATA[and WAYBILL_NO=#{waybillNo,jdbcType=VARCHAR}]]>
+		</if>
+		<if test="active!=null and active!='' ">
+			<![CDATA[and ACTIVE = #{active,jdbcType=CHAR}]]>
+		</if>
+    </where>
+  </select>
+  
+  <!--查询job所需付款信息 -->
+  <select id="queryRepaymentListForJob" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.RepaymentEntity" >
+    select 
+    <include refid="Base_Column_List" />
+    from PKP.T_SRV_REPAYMENT R
+    <where>
+    	<if test="currentTime!=null">
+			<![CDATA[R.PAYMENT_TIME < #{currentTime,jdbcType=TIMESTAMP} - #{timeRange,jdbcType=DECIMAL}]]>
+    		<![CDATA[and R.PAYMENT_TIME >= #{currentTime,jdbcType=TIMESTAMP} - 1]]>
+		</if>
+		<if test="stlbillGeneratedStatus!=null and stlbillGeneratedStatus!='' ">
+			<![CDATA[and R.STLBILL_GENERATED_STATUS=#{stlbillGeneratedStatus,jdbcType=VARCHAR}]]>
+		</if>
+		<if test="active!=null and active!='' ">
+			<![CDATA[and R.ACTIVE=#{active,jdbcType=VARCHAR}]]>
+		</if>
+		<if test="jobId!=null and jobId!='' ">
+			<![CDATA[and R.JOB_ID=#{jobId,jdbcType=VARCHAR}]]>
+		</if>
+    </where>
+  </select>
+  
+  <!--更新job所需付款信息 -->
+  <update id="updateRepaymentListForJob" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.RepaymentEntity" >
+    update PKP.T_SRV_REPAYMENT 	R
+    <set>
+        JOB_ID = #{jobId,jdbcType=VARCHAR},
+        STLBILL_GENERATED_STATUS = #{stlbillGeneratedStatus,jdbcType=VARCHAR}
+    </set>
+    <where>
+    	<![CDATA[R.PAYMENT_TIME < #{currentTime,jdbcType=TIMESTAMP} - #{timeRange,jdbcType=DECIMAL}]]>
+    	<![CDATA[and R.PAYMENT_TIME >= #{currentTime,jdbcType=TIMESTAMP} - 1]]>
+    	<![CDATA[and R.ACTIVE=#{active,jdbcType=VARCHAR}]]>
+    	<![CDATA[and R.STLBILL_GENERATED_STATUS=#{firStlbillGeneratedStatus,jdbcType=VARCHAR}]]>
+    	<![CDATA[and R.JOB_ID=#{defJobId,jdbcType=VARCHAR}]]>
+    </where>
+  </update>
+  
+  <!-- 按照ID查询付款信息 -->
+  <select id="selectRepaymentById" resultMap="BaseResultMap" parameterType="java.lang.String" >
+    select 
+    <include refid="Base_Column_List" />
+    from PKP.T_SRV_REPAYMENT
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+  
+  <!--退款业务 -->
+  <update id="refundRepaymentInfo" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.RepaymentEntity" >
+    update PKP.T_SRV_REPAYMENT
+    <set >
+      <if test="repaymentNo != null" >
+        REPAYMENT_NO = #{repaymentNo,jdbcType=VARCHAR},
+      </if>
+      <if test="active != null" >
+        ACTIVE = #{active,jdbcType=CHAR},
+      </if>
+      <if test="consigneeCode != null" >
+        CONSIGNEE_CODE = #{consigneeCode,jdbcType=VARCHAR},
+      </if>
+      <if test="consigneeName != null" >
+        CONSIGNEE_NAME = #{consigneeName,jdbcType=VARCHAR},
+      </if>
+      <if test="paymentType != null" >
+        PAYMENT_TYPE = #{paymentType,jdbcType=VARCHAR},
+      </if>
+      <if test="claimNo != null" >
+        CLAIM_NO = #{claimNo,jdbcType=VARCHAR},
+      </if>
+      <if test="actualFreight != null" >
+        ACTUAL_FREIGHT = #{actualFreight,jdbcType=DECIMAL}*100,
+      </if>
+      <if test="codAmount != null" >
+        COD_AMOUNT = #{codAmount,jdbcType=DECIMAL}*100,
+      </if>
+      <if test="paymentTime != null" >
+        PAYMENT_TIME = #{paymentTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="storageFee != null" >
+        STORAGE_FEE = #{storageFee,jdbcType=DECIMAL}*100,
+      </if>
+      <if test="operator != null" >
+        OPERATOR = #{operator,jdbcType=VARCHAR},
+      </if>
+      <if test="operatorCode != null" >
+        OPERATOR_CODE = #{operatorCode,jdbcType=VARCHAR},
+      </if>
+      <if test="operateOrgName != null" >
+        OPERATE_ORG_NAME = #{operateOrgName,jdbcType=VARCHAR},
+      </if>
+      <if test="operateOrgCode != null" >
+        OPERATE_ORG_CODE = #{operateOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="currencyCode != null" >
+        CURRENCY_CODE = #{currencyCode,jdbcType=VARCHAR},
+      </if>
+      <if test="isRfcing != null" >
+        IS_RFCING = #{isRfcing,jdbcType=CHAR},
+      </if>
+      <if test="stlbillGeneratedStatus != null" >
+        STLBILL_GENERATED_STATUS = #{stlbillGeneratedStatus,jdbcType=CHAR},
+      </if>
+      <if test="pdaSerial != null and pdaSerial !='' " >
+        PDA_SERIAL = #{pdaSerial,jdbcType=VARCHAR},
+      </if>
+      <if test="bankTradeSerail != null and bankTradeSerail !='' " >
+        BANK_TRADE_SERIAL = #{bankTradeSerail,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+    and STLBILL_GENERATED_STATUS = #{stlbillGeneratedStatus,jdbcType=VARCHAR}
+  </update>
+  
+  <!--更新付款 -->
+  <update id="updateRepaymentById" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.RepaymentEntity" >
+    update PKP.T_SRV_REPAYMENT
+    <set >
+      <if test="waybillNo != null" >
+        WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="repaymentNo != null" >
+        REPAYMENT_NO = #{repaymentNo,jdbcType=VARCHAR},
+      </if>
+      <if test="active != null" >
+        ACTIVE = #{active,jdbcType=CHAR},
+      </if>
+      <if test="consigneeCode != null" >
+        CONSIGNEE_CODE = #{consigneeCode,jdbcType=VARCHAR},
+      </if>
+      <if test="consigneeName != null" >
+        CONSIGNEE_NAME = #{consigneeName,jdbcType=VARCHAR},
+      </if>
+      <if test="paymentType != null" >
+        PAYMENT_TYPE = #{paymentType,jdbcType=VARCHAR},
+      </if>
+      <if test="claimNo != null" >
+        CLAIM_NO = #{claimNo,jdbcType=VARCHAR},
+      </if>
+      <if test="actualFreight != null" >
+        ACTUAL_FREIGHT = #{actualFreight,jdbcType=DECIMAL}*100,
+      </if>
+      <if test="codAmount != null" >
+        COD_AMOUNT = #{codAmount,jdbcType=DECIMAL}*100,
+      </if>
+      <if test="paymentTime != null" >
+        PAYMENT_TIME = #{paymentTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="storageFee != null" >
+        STORAGE_FEE = #{storageFee,jdbcType=DECIMAL}*100,
+      </if>
+      <if test="operator != null" >
+        OPERATOR = #{operator,jdbcType=VARCHAR},
+      </if>
+      <if test="operatorCode != null" >
+        OPERATOR_CODE = #{operatorCode,jdbcType=VARCHAR},
+      </if>
+      <if test="operateOrgName != null" >
+        OPERATE_ORG_NAME = #{operateOrgName,jdbcType=VARCHAR},
+      </if>
+      <if test="operateOrgCode != null" >
+        OPERATE_ORG_CODE = #{operateOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="currencyCode != null" >
+        CURRENCY_CODE = #{currencyCode,jdbcType=VARCHAR},
+      </if>
+      <if test="isRfcing != null" >
+        IS_RFCING = #{isRfcing,jdbcType=CHAR},
+      </if>
+      <if test="stlbillGeneratedStatus != null" >
+        STLBILL_GENERATED_STATUS = #{stlbillGeneratedStatus,jdbcType=CHAR},
+      </if>
+      <if test="jobId != null" >
+        JOB_ID = #{jobId,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyTime != null" >
+        MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  
+	<!-- 查询待处理列表 -->
+	<select id="queryPendingList" resultMap="PendingMap" >
+		SELECT
+			  /*模块：接送货-付款-查询待处理列表*/	
+			  W.WAYBILL_NO,
+			  S.STOCK_GOODS_QTY,
+			  W.RECEIVE_CUSTOMER_CONTACT
+	    FROM 
+	    	PKP.T_SRV_WAYBILL W
+  		JOIN 
+  			TFR.T_OPT_WAYBILL_STOCK S 
+		ON 
+			S.WAYBILL_NO = W.WAYBILL_NO
+		JOIN
+			PKP.T_SRV_ACTUAL_FREIGHT ACT
+		ON
+			ACT.WAYBILL_NO = W.WAYBILL_NO	
+		<where>
+				    <if test=" active != null  and active != ''  ">
+				    W.ACTIVE = #{active,jdbcType=CHAR}
+				    </if>
+				    <if test=" settleStatus != null  and settleStatus != ''  ">
+				    AND ACT.SETTLE_STATUS = #{settleStatus,jdbcType=CHAR}
+				    </if>
+				    <if test=" lastLoadOrgCode != null  and lastLoadOrgCode != ''  ">
+				    AND W.LAST_LOAD_ORG_CODE = #{lastLoadOrgCode,jdbcType=VARCHAR}
+					</if>
+				    <if test=" receiveOrgCode != null  and receiveOrgCode != ''  ">
+				    AND W.RECEIVE_ORG_CODE = #{receiveOrgCode,jdbcType=VARCHAR}
+					</if>
+	 				<if test="checkStatus != null and checkStatus.size > 0">
+	 					and w.pending_type in 
+		 				<foreach collection="checkStatus" open="(" close=")" separator="," item="item">
+						    <if test="item != null and item != ''">
+						              <![CDATA[#{item,jdbcType=VARCHAR} ]]>
+						    </if>
+						</foreach>
+					</if> 
+					<include refid="select_stock_area_Where"/>
+			<choose>
+				<when test=" waybillNo != null  and waybillNo != ''  ">
+					<![CDATA[and W.WAYBILL_NO=#{waybillNo,jdbcType=VARCHAR}]]>
+				</when>
+				<otherwise>	
+					<if test=" receiveCustomerName != null  and receiveCustomerName != ''  ">
+					<![CDATA[and W.RECEIVE_CUSTOMER_CONTACT=#{receiveCustomerName,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" receiveCustomerPhone != null  and receiveCustomerPhone != ''  ">
+					<![CDATA[and W.RECEIVE_CUSTOMER_PHONE=#{receiveCustomerPhone,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" receiveCustomerMobilephone != null  and receiveCustomerMobilephone != ''  ">
+					<![CDATA[and W.RECEIVE_CUSTOMER_MOBILEPHONE=#{receiveCustomerMobilephone,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" productCode != null  and productCode != ''  ">
+					<![CDATA[and W.PRODUCT_CODE= #{productCode,jdbcType=NUMERIC}]]>
+					</if>
+					<if test=" storageTimeBegin != null  and storageTimeBegin != ''  ">
+					<![CDATA[and S.IN_STOCK_TIME >=#{storageTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" storageTimeEnd != null  and storageTimeEnd != ''  ">
+					<![CDATA[and S.IN_STOCK_TIME<=#{storageTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+				</otherwise>
+			</choose>
+			<![CDATA[
+			AND (ACT.STATUS IS  NULL OR ACT.STATUS NOT IN ('OBSOLETE','ABORTED'))
+					and W.PRODUCT_CODE NOT IN('PLF','AF','PACKAGE','RCP','EPEP','DEAP') 
+					]]>
+		</where>
+	</select>
+	
+	<!-- 查询快递待处理列表 -->
+	<select id="queryExpressPendingList" resultMap="PendingMap" >
+		SELECT
+			  /*模块：接送货-付款-查询待处理列表*/	
+			  W.WAYBILL_NO,
+			  S.STOCK_GOODS_QTY,
+			  W.RECEIVE_CUSTOMER_CONTACT
+	    FROM 
+	    	PKP.T_SRV_WAYBILL W
+  		JOIN 
+  			TFR.T_OPT_WAYBILL_STOCK S 
+		ON 
+			S.WAYBILL_NO = W.WAYBILL_NO
+		JOIN
+			PKP.T_SRV_ACTUAL_FREIGHT ACT
+		ON
+			ACT.WAYBILL_NO = W.WAYBILL_NO	
+		<where>
+				    <if test=" active != null  and active != ''  ">
+				    W.ACTIVE = #{active,jdbcType=CHAR}
+				    </if>
+				    <if test=" settleStatus != null  and settleStatus != ''  ">
+				    AND ACT.SETTLE_STATUS = #{settleStatus,jdbcType=CHAR}
+				    </if>
+				    <if test=" lastLoadOrgCode != null  and lastLoadOrgCode != ''  ">
+				    AND W.LAST_LOAD_ORG_CODE = #{lastLoadOrgCode,jdbcType=VARCHAR}
+					</if>
+				    <if test=" receiveOrgCode != null  and receiveOrgCode != ''  ">
+				    AND W.RECEIVE_ORG_CODE = #{receiveOrgCode,jdbcType=VARCHAR}
+					</if>
+	 				<if test="checkStatus != null and checkStatus.size > 0">
+	 					and w.pending_type in 
+		 				<foreach collection="checkStatus" open="(" close=")" separator="," item="item">
+						    <if test="item != null and item != ''">
+						              <![CDATA[#{item,jdbcType=VARCHAR} ]]>
+						    </if>
+						</foreach>
+					</if> 
+					<include refid="select_stock_area_Where"/>
+			<choose>
+				<when test=" waybillNo != null  and waybillNo != ''  ">
+					<![CDATA[and W.WAYBILL_NO=#{waybillNo,jdbcType=VARCHAR}]]>
+				</when>
+				<otherwise>	
+					<if test=" receiveCustomerName != null  and receiveCustomerName != ''  ">
+					<![CDATA[and W.RECEIVE_CUSTOMER_CONTACT=#{receiveCustomerName,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" receiveCustomerPhone != null  and receiveCustomerPhone != ''  ">
+					<![CDATA[and W.RECEIVE_CUSTOMER_PHONE=#{receiveCustomerPhone,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" receiveCustomerMobilephone != null  and receiveCustomerMobilephone != ''  ">
+					<![CDATA[and W.RECEIVE_CUSTOMER_MOBILEPHONE=#{receiveCustomerMobilephone,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" productCode != null  and productCode != ''  ">
+					<![CDATA[and W.PRODUCT_CODE= #{productCode,jdbcType=NUMERIC}]]>
+					</if>
+					<if test=" storageTimeBegin != null  and storageTimeBegin != ''  ">
+					<![CDATA[and S.IN_STOCK_TIME >=#{storageTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" storageTimeEnd != null  and storageTimeEnd != ''  ">
+					<![CDATA[and S.IN_STOCK_TIME<=#{storageTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+				</otherwise>
+			</choose>
+			<![CDATA[
+			AND (ACT.STATUS IS NULL OR ACT.STATUS NOT IN ('OBSOLETE','ABORTED'))
+					and (W.PRODUCT_CODE IN( 'PACKAGE', 'RCP','EPEP','DEAP'))]]>
+		</where>
+	</select>
+	
+	<!-- 查询待处理列表 -->
+	<select id="queryPendingListByReceiveOrg" resultMap="PendingMap" >
+		SELECT
+			  /*模块：接送货-付款-查询待处理列表*/	
+			  W.WAYBILL_NO,
+			  W.GOODS_QTY_TOTAL,
+			  W.RECEIVE_CUSTOMER_CONTACT
+	    FROM 
+	    	PKP.T_SRV_WAYBILL W
+		JOIN
+			PKP.T_SRV_ACTUAL_FREIGHT ACT
+		ON
+			ACT.WAYBILL_NO = W.WAYBILL_NO	
+		<where>
+				    <if test=" active != null  and active != ''  ">
+				    W.ACTIVE = #{active,jdbcType=CHAR}
+				    </if>
+				    <if test=" settleStatus != null  and settleStatus != ''  ">
+				    AND ACT.SETTLE_STATUS = #{settleStatus,jdbcType=CHAR}
+				    </if>
+				    <if test=" lastLoadOrgCode != null  and lastLoadOrgCode != ''  ">
+				    AND W.LAST_LOAD_ORG_CODE = #{lastLoadOrgCode,jdbcType=VARCHAR}
+					</if>
+				    <if test=" receiveOrgCode != null  and receiveOrgCode != ''  ">
+				    AND W.RECEIVE_ORG_CODE = #{receiveOrgCode,jdbcType=VARCHAR}
+					</if>
+	 				<if test="checkStatus != null and checkStatus.size > 0">
+	 					and w.pending_type in 
+		 				<foreach collection="checkStatus" open="(" close=")" separator="," item="item">
+						    <if test="item != null and item != ''">
+						              <![CDATA[#{item,jdbcType=VARCHAR} ]]>
+						    </if>
+						</foreach>
+					</if> 
+			<choose>
+				<when test=" waybillNo != null  and waybillNo != ''  ">
+					<![CDATA[and W.WAYBILL_NO=#{waybillNo,jdbcType=VARCHAR}]]>
+				</when>
+				<otherwise>	
+					<if test=" receiveCustomerName != null  and receiveCustomerName != ''  ">
+					<![CDATA[and W.RECEIVE_CUSTOMER_CONTACT=#{receiveCustomerName,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" receiveCustomerPhone != null  and receiveCustomerPhone != ''  ">
+					<![CDATA[and W.RECEIVE_CUSTOMER_PHONE=#{receiveCustomerPhone,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" receiveCustomerMobilephone != null  and receiveCustomerMobilephone != ''  ">
+					<![CDATA[and W.RECEIVE_CUSTOMER_MOBILEPHONE=#{receiveCustomerMobilephone,jdbcType=VARCHAR}]]>
+					</if>
+					<if test=" productCode != null  and productCode != ''  ">
+					<![CDATA[and W.PRODUCT_CODE= #{productCode,jdbcType=NUMERIC}]]>
+					</if>
+					<if test=" storageTimeBegin != null  and storageTimeBegin != ''  ">
+					<![CDATA[and S.IN_STOCK_TIME >=#{storageTimeBegin,jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test=" storageTimeEnd != null  and storageTimeEnd != ''  ">
+					<![CDATA[and S.IN_STOCK_TIME<=#{storageTimeEnd,jdbcType=TIMESTAMP}]]>
+					</if>
+				</otherwise>
+			</choose>
+			<![CDATA[
+			AND (ACT.STATUS IS NULL OR ACT.STATUS NOT IN ('OBSOLETE','ABORTED'))
+					 and W.PRODUCT_CODE NOT IN('PLF','AF')]]>
+		</where>
+	</select>
+  
+  
+   <!--根据运单号获取最后插入的 一条付款方式-->
+  <select id="queryRepaymentTypebyNo" resultType="com.deppon.foss.module.pickup.sign.api.shared.domain.RepaymentEntity" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.RepaymentEntity" >
+    select
+    /*模块：接送货-付款-根据运单号获取最后插入的 一条付款记录 */	
+    PAYMENT_TYPE paymentType,
+    actual_freight actualFreight
+    from PKP.T_SRV_REPAYMENT 
+    <where>
+		<if test="waybillNo!=null and waybillNo!='' ">
+			<![CDATA[and WAYBILL_NO=#{waybillNo,jdbcType=VARCHAR}]]>
+		</if>
+		<if test="active!=null and active!='' ">
+			<![CDATA[and ACTIVE = #{active,jdbcType=CHAR}]]>
+		</if>
+		and rownum = 1
+    </where>
+    order by payment_time desc
+  </select>
+  
+  	<!--库存部门、库区关联 -->
+	<sql id="select_stock_area_Where">
+	    <!-- 最后库存code=库存的部门编码 -->
+		<if test="endStockOrgCode != null and endStockOrgCode !=''">	
+			<![CDATA[ and S.ORG_CODE  = #{endStockOrgCode, jdbcType=VARCHAR}]]>
+		</if>
+		<!-- 库区-->
+		<!--add by chenjunying DMANA-9499 判断保留之前的条件，新加多库区查询条件-->
+		<if test="goodsAreaCode != null and goodsAreaCode !=''">	
+			<![CDATA[ AND S.GOODS_AREA_CODE = #{goodsAreaCode, jdbcType=VARCHAR}]]>
+		</if>
+		<if test="goodsAreaCodes!= null and goodsAreaCodes.size>0">
+		and s.GOODS_AREA_CODE  in
+		<foreach collection="goodsAreaCodes" open="(" close=")" separator=","
+			item="mgoodsAreaCode">
+       	      #{mgoodsAreaCode,jdbcType=VARCHAR}
+		</foreach>
+    </if>
+	</sql>
+	
+		<!-- 根据运单号更新运单的仓储费 -->
+	<update id="updatestorageCharge" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.RepaymentEntity" >
+	 update pkp.t_srv_actual_freight actual
+		 <set>
+		 		<if test="storageFee != null">
+					actual.STORAGE_CHARGE = #{storageFee,jdbcType=DECIMAL},
+					actual.MODIFY_TIME = SYSDATE
+				</if>
+		 </set>
+	     <where>
+    	   actual.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+    	</where> 
+	</update>
+	<insert id="insertUpdateStoregeChargeHistory" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.RepaymentEntity" >
+	insert into PKP.T_SRV_STORAGEFEE_UPDATE
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="waybillNo != null" >
+        WAYBILL_NO,
+      </if>
+      <if test="storageFee != null" >
+        STORAGE_CHARGE,
+      </if>
+       <if test="operator != null" >
+        OPERATOR_NAME,
+      </if>
+       <if test="operatorCode != null" >
+        OPERATOR_CODE,
+      </if>
+       <if test="operateOrgName != null" >
+        OPERATOR_DEPT_NAME,
+      </if>
+       <if test="operateOrgCode != null" >
+        OPERATOR_DEPT_CODE,
+      </if>
+      <if test="modifyTime != null" >
+        OPERATOR_TIME,
+      </if>
+      <if test="storageFeeOld != null" >
+        OLD_STORAGE_CHARGE,
+      </if>
+      <if test="updateStorageChargeReason != null" >
+        UPDATE_REASON,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+    <if test="id != null" >
+       #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="waybillNo != null" >
+        #{waybillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="storageFee != null" >
+        #{storageFee,jdbcType=DECIMAL},
+      </if>
+       <if test="operator != null" >
+        #{operator,jdbcType=VARCHAR},
+      </if>
+       <if test="operatorCode != null" >
+        #{operatorCode,jdbcType=VARCHAR},
+      </if>
+       <if test="operateOrgName != null" >
+        #{operateOrgName,jdbcType=VARCHAR},
+      </if>
+       <if test="operateOrgCode != null" >
+        #{operateOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyTime != null" >
+         #{modifyTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="storageFeeOld != null" >
+         #{storageFeeOld,jdbcType=DECIMAL},
+      </if>
+      <if test="updateStorageChargeReason != null" >
+         #{updateStorageChargeReason,jdbcType=VARCHAR},
+      </if>
+    </trim>
+	</insert>		
+	<!--根据司机工号和车牌号,验证运单号是否已经下拉 -->  
+   <select id="checkWaybill" parameterType="java.util.Map" resultType="java.lang.String">
+	   select 
+	     /*模块：接送货-派送单-验证运单号是否处于派送单内*/	
+	   pk.waybill_no from PKP.T_SRV_DELIVERBILL p 
+		inner join PKP.T_SRV_DELIVERBILL_DETAIL pk
+		on p.id=pk.t_srv_deliverbill_id
+		where p.vehicle_no=#{vehicleNo ,jdbcType=VARCHAR} 
+		and p.driver_code=#{driverCode ,jdbcType=VARCHAR}
+		and pk.waybill_no=#{waybill_no ,jdbcType=VARCHAR}
+		and p.status='PDA_DOWNLOADED'
+		and p.is_express is null 
+	 	<![CDATA[and 4>=trunc(sysdate)-trunc(p.operate_time)]]>
+	 	 order by pk.create_time desc	
+  	</select>	
+  	
+  	<select id="getTotalAmount" parameterType="java.lang.String" resultType="java.math.BigDecimal">
+	   select /*模块：接送货-运单-查询运单总金额*/ total_fee/100
+      from pkp.t_srv_waybill  
+      where waybill_no=#{waybill ,jdbcType=VARCHAR}
+      		and active='Y'
+      order by create_time desc
+  	</select>																							
+</mapper>

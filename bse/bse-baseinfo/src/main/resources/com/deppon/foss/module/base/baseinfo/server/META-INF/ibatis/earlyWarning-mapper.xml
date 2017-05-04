@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.earlyWarning">
+	<resultMap id="earlyWarningResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.EarlyWarningEntity">
+		<result column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="START_CITY_CODE" property="startCityCode" jdbcType="VARCHAR" />
+		<result column="START_CITY_NAME" property="startCityName" jdbcType="VARCHAR" />
+		<result column="END_CITY_CODE" property="endCityCode" jdbcType="VARCHAR" />
+		<result column="END_CITY_NAME" property="endCityName" jdbcType="VARCHAR" />
+		<result column="OPERA_TICKETS" property="operaTickets" jdbcType="NUMERIC" />
+		<result column="PROMISE_TICKETS" property="promiseTickets" jdbcType="NUMERIC" />
+		<result column="PROMISE_RATE" property="promiseRate" jdbcType="NUMERIC" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<!-- 数据字段 -->
+	<sql id="earlyWarning_Column_List">
+		ID,START_CITY_CODE,START_CITY_NAME, END_CITY_CODE,END_CITY_NAME,OPERA_TICKETS,PROMISE_TICKETS,PROMISE_RATE,CREATE_TIME,MODIFY_TIME,ACTIVE,CREATE_USER_CODE,MODIFY_USER_CODE
+	</sql>
+	
+	<sql id="insertColumns">
+		ID,START_CITY_CODE,START_CITY_NAME, END_CITY_CODE,END_CITY_NAME,OPERA_TICKETS,PROMISE_TICKETS,PROMISE_RATE,CREATE_TIME,ACTIVE,CREATE_USER_CODE
+	</sql>
+	
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<if test="startCityCode != null and startCityCode != ''">
+				T.START_CITY_CODE = #{startCityCode,jdbcType=VARCHAR}
+			</if>
+			<if test="endCityCode != null and endCityCode != ''">
+				AND T.END_CITY_CODE = #{endCityCode,jdbcType=CHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</sql>
+	
+	<!-- 查询所有提前预警线路信息 -->
+	<select id="queryAllEarlyWarning"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.EarlyWarningEntity"
+		resultMap="earlyWarningResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有提前预警信息**/
+		]]>
+		<include refid="earlyWarning_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_EARLY_WARNING T
+		]]>
+		<include refid="queryWhere" />
+	</select>
+	
+	<!-- 统计总记录数 -->
+	<select id="queryCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.EarlyWarningEntity">
+	    <![CDATA[
+	       	select/** 综合:提前预警线路统计总记录数**/ count(*) FROM BSE.T_BAS_EARLY_WARNING T 
+	    ]]>
+		<include refid="queryWhere" />
+
+	</select>
+	<!-- 批量作废提前预警线路信息 -->
+	<update id="deleteEarlyWarningBatch" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.EarlyWarningEntity">
+		UPDATE/** 综合:修改信息**/ BSE.T_BAS_EARLY_WARNING
+		SET 
+		MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+		MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+		ACTIVE = #{active, jdbcType=CHAR}
+		WHERE ACTIVE = 'Y'
+	</update>
+	<!-- 批量插入导入的提前预警线路信息 -->
+	<insert id="importEarlyWarningBatch" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.EarlyWarningEntity">
+		INSERT/** 综合:新增信息**/ INTO　BSE.T_BAS_EARLY_WARNING(<include refid="insertColumns"/>)
+		(
+			<foreach collection="list" index="index" item="earlyWarningEntity" separator="union ">
+				SELECT #{earlyWarningEntity.id,jdbcType=VARCHAR},
+				       #{earlyWarningEntity.startCityCode,jdbcType=VARCHAR},
+    				   #{earlyWarningEntity.startCityName,jdbcType=VARCHAR},
+    				   #{earlyWarningEntity.endCityCode,jdbcType=VARCHAR},
+    				   #{earlyWarningEntity.endCityName,jdbcType=VARCHAR},
+    				   #{earlyWarningEntity.operaTickets,jdbcType=DECIMAL},
+    				   #{earlyWarningEntity.promiseTickets,jdbcType=DECIMAL},
+    				   #{earlyWarningEntity.promiseRate,jdbcType=VARCHAR},
+    				   #{earlyWarningEntity.createDate,jdbcType=TIMESTAMP},
+    				   #{earlyWarningEntity.active,jdbcType=CHAR},
+    				   #{earlyWarningEntity.createUser,jdbcType=VARCHAR} FROM DUAL
+			</foreach>
+		)
+	</insert>
+	
+</mapper>

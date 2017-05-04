@@ -1,0 +1,391 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="com.deppon.foss.module.transfer.scheduling.api.server.dao.IPlatformDistributeDao">
+
+	<resultMap id="platformVehicleInfoDto"
+		type="com.deppon.foss.module.transfer.scheduling.api.shared.dto.PlatformVehicleInfoDto">
+		<result column="truckTaskId" property="truckTaskId" />
+		<result column="taskDetailId" property="taskDetailId" />
+		<result column="vehicleNo" property="vehicleNo" />
+		<result column="businessType" property="businessType" />
+		<result column="estimatedArriveTime" property="estimatedArriveTime" />
+		<result column="voteTansferInTime" property="voteTansferInTime" />
+		<result column="prePlatformCode" property="prePlatformCode" />
+		<result column="voteFlf" property="voteFlf" />
+		<result column="voteFsf" property="voteFsf" />
+		<result column="voteAf" property="voteAf" />
+		<result column="line" property="line" />
+		<result column="late" property="late" />
+		<result column="departTime" property="departTime" />
+		<result column="origDeptName" property="origDeptName" />
+		<result column="origDeptCode" property="origDeptCode" />
+		<result column="destDeptName" property="destDeptName" />
+		<result column="destDeptCode" property="destDeptCode" />
+		<result column="vehicleOwnerType" property="vehicleOwnerType" />
+		<result column="timeWait" property="timeWait" />
+		<result column="status" property="status" />
+		<result column="actualArriveTime" property="actualArriveTime" />
+		<result column="weightAndVolumn" property="weightAndVolumn" />
+		<result column="time4UnloadTake" property="time4UnloadTake" />
+		<result column="sealCheckTime" property="sealCheckTime" />
+	</resultMap>
+
+	<resultMap id="platformWaybillDto"
+		type="com.deppon.foss.module.transfer.scheduling.api.shared.dto.PlatformWaybillDto">
+		<result column="waybillNo" property="waybillNo" />
+		<result column="handoverWeight" property="handoverWeight" />
+		<result column="handoverVolumn" property="handoverVolumn" />
+		<result column="transportTypeCode" property="transportTypeCode" />
+		<result column="planDepartTime" property="planDepartTime" />
+		<result column="origDeptCode" property="origDeptCode" />
+		<result column="destDeptCode" property="destDeptCode" />
+	</resultMap>
+
+	<!-- 查询车辆信息select子句 -->
+	<sql id="sql_queryVechileInfo_select_clause">
+	SELECT td.truck_task_id truckTaskId,
+	       td.id taskDetailId,
+	       td.vehicle_no vehicleNo,
+	       td.business_type businessType,
+	       td.plan_arrive_time estimatedArriveTime,
+	       td.actual_arrive_time actualArriveTime,
+	       td.orig_org_name || '-' || td.dest_org_name line,
+	       td.actual_depart_time departTime,
+	       td.vehicle_owner_type vehicleOwnerType,
+	       td.status status,
+	       td.orig_org_code origDeptCode,
+	       td.orig_org_name origDeptName,
+	       td.dest_org_code destDeptCode,
+	       td.dest_org_name destDeptName,
+	       a.platform_code prePlatformCode
+	  FROM tfr.t_opt_truck_task_detail td
+	  LEFT JOIN tfr.t_opt_platform_pre_assign a
+	    ON a.tfr_ctr_code = td.dest_org_code
+	   AND a.truck_task_id = td.truck_task_id
+	   AND a.status = 'PRE'
+	</sql>
+
+	<!-- 查询在途车辆信息where子句 -->
+	<sql id="sql_queryOnTheWay_where_clause">
+		<where>
+			td.dest_org_code = #{destDeptCode,jdbcType=VARCHAR}
+			AND td.status = #{status,jdbcType=VARCHAR}
+			AND td.vehicle_owner_type = #{vehicleOwnerType,jdbcType=VARCHAR}
+			AND td.be_car_load = 'N'
+			<if test="(handoverNo == null || handoverNo == '') and (vehicleNo == null || vehicleNo == '')">
+				<![CDATA[
+				AND (td.plan_arrive_time BETWEEN #{beginEstimatedArriveTime,jdbcType=TIMESTAMP} 
+				AND #{endEstimatedArriveTime,jdbcType=TIMESTAMP}
+				OR td.plan_arrive_time IS NULL)
+				]]>
+			</if>
+			<if test="vehicleNo != null and vehicleNo != ''">
+				AND td.vehicle_no = #{vehicleNo,jdbcType=VARCHAR}
+			</if>
+			<if test="origDeptCode != null and origDeptCode != ''">
+				AND td.orig_org_code = #{origDeptCode,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</sql>
+
+	<!-- 查询在途公司车车辆信息 -->
+	<select id="queryCompanyOnTheWay" resultMap="platformVehicleInfoDto"
+		parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.dto.PlatformDistributeQcDto">
+		<include refid="sql_queryVechileInfo_select_clause" />
+		<include refid="sql_queryOnTheWay_where_clause" />
+	</select>
+
+	<!-- 查询在途公司车车辆数量 -->
+	<select id="queryCntCompanyOnTheWay" resultType="Long"
+		parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.dto.PlatformDistributeQcDto">
+		SELECT COUNT(1)
+		  FROM tfr.t_opt_truck_task_detail td
+		<include refid="sql_queryOnTheWay_where_clause" />
+	</select>
+
+	<!-- 查询在途外请车车辆信息 -->
+	<select id="queryLeasedOnTheWay" resultMap="platformVehicleInfoDto"
+		parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.dto.PlatformDistributeQcDto">
+		<include refid="sql_queryVechileInfo_select_clause" />
+		<include refid="sql_queryOnTheWay_where_clause" />
+	</select>
+
+	<!-- 查询在途外请车车辆数量 -->
+	<select id="queryCntLeasedOnTheWay" resultType="Long"
+		parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.dto.PlatformDistributeQcDto">
+		SELECT COUNT(1)
+		  FROM tfr.t_opt_truck_task_detail td
+		<include refid="sql_queryOnTheWay_where_clause" />
+	</select>
+	
+	<!-- 按交接编号查询在途车辆任务明细id -->
+	<select id="queryTaskDetailIdOnTheWayByNum" resultType="String"
+		parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.dto.PlatformDistributeQcDto">
+		SELECT td.id
+		  FROM tfr.t_opt_truck_task_detail td
+		 INNER JOIN tfr.t_opt_truck_task_bill tb
+		    ON tb.truck_task_detail_id = td.id
+		   AND tb.bill_no = #{handoverNo,jdbcType=VARCHAR}
+		<include refid="sql_queryOnTheWay_where_clause"/>
+		 AND rownum = 1
+	</select>
+	
+	<!-- 按交接编号查询已到达未分配车辆任务明细id -->
+	<select id="queryTaskDetailIdArrivedByNum" resultType="String"
+		parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.dto.PlatformDistributeQcDto">
+		SELECT td.id
+		  FROM tfr.t_opt_truck_task_detail td
+		 INNER JOIN tfr.t_opt_truck_task_bill tb
+		    ON tb.truck_task_detail_id = td.id
+		   AND tb.bill_no = #{handoverNo,jdbcType=VARCHAR}
+		<include refid="sql_queryArrived_where_clause"/>
+		 AND rownum = 1
+	</select>
+	
+	<!-- 按车辆任务明细id查询车辆信息 -->
+	<select id="queryVehicleInfoByTaskDetailId" resultMap="platformVehicleInfoDto" parameterType="String">
+		<include refid="sql_queryVechileInfo_select_clause"/>
+		WHERE td.id = #{id,jdbcType=VARCHAR}
+	</select>
+	
+	<!-- 查询到达未分配车辆信息where子句 -->
+	<!-- 只查最近7天到达未卸车的 ;需求有变，从7天变成2天-->
+	<sql id="sql_queryArrived_where_clause">
+         WHERE td.dest_org_code = #{destDeptCode,jdbcType=VARCHAR}
+           AND td.actual_arrive_time >= SYSDATE - 2 /*业务默认到达两天内一定卸车*/
+           AND td.status = 'ARRIVED'
+           AND td.be_car_load = 'N' /*剔除整车*/
+         <if test="vehicleNo != null and vehicleNo != ''">
+           AND td.vehicle_no = #{vehicleNo,jdbcType=VARCHAR}
+         </if>
+         <if test="origDeptCode != null and origDeptCode != ''">
+           AND td.orig_org_code = #{origDeptCode,jdbcType=VARCHAR}
+         </if>
+         <if test="handoverNo != null and handoverNo != ''">
+		   AND EXISTS (SELECT 1
+		          FROM tfr.t_opt_truck_task_bill b
+		         WHERE b.truck_task_detail_id = td.id
+		           AND b.bill_no = #{handoverNo,jdbcType=VARCHAR})
+         </if>
+	</sql>
+
+	<!-- 查询到达未分配车辆信息 -->
+	<select id="queryArrived" resultMap="platformVehicleInfoDto"
+		parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.dto.PlatformDistributeQcDto">
+		SELECT MAX(td.truck_task_id) truckTaskId,
+			   td.id taskDetailId,
+		       MAX(td.vehicle_no) vehicleNo,
+		       MAX(td.business_type) businessType,
+		       MAX(td.plan_arrive_time) estimatedArriveTime,
+		       MAX(td.actual_arrive_time) actualArriveTime,
+		       MAX(td.orig_org_name) || '-' || MAX(td.dest_org_name) line,
+		       MAX(td.actual_depart_time) departTime,
+		       MAX(td.vehicle_owner_type) vehicleOwnerType,
+		       MAX(td.status) status,
+		       MAX(td.orig_org_code) origDeptCode,
+		       MAX(td.orig_org_name) origDeptName,
+		       MAX(td.dest_org_code) destDeptCode,
+		       MAX(td.dest_org_name) destDeptName,
+		       MAX(a.platform_code) prePlatformCode,
+		       MAX(s.modify_time) sealCheckTime
+		  FROM tfr.t_opt_truck_task_detail td
+		 INNER JOIN tfr.t_opt_truck_task_bill tb
+		    ON tb.truck_task_detail_id = td.id
+		   AND tb.assign_state = 'UNASSIGN'
+		   AND tb.bill_level = 1
+		 LEFT JOIN tfr.t_opt_platform_pre_assign a
+		    ON a.tfr_ctr_code = td.dest_org_code
+		   AND a.truck_task_id = td.truck_task_id
+		   AND a.status = 'PRE'
+		  LEFT JOIN tfr.t_opt_vehicle_entrance s
+		    ON s.truck_task_id = td.truck_task_id
+		   AND s.tfr_ctr_code = td.dest_org_code
+	  <include refid="sql_queryArrived_where_clause"/>
+	  GROUP BY td.id, td.actual_arrive_time, s.modify_time
+	  ORDER BY td.actual_arrive_time DESC, s.modify_time DESC NULLS LAST
+	</select>
+	
+	<!-- 查询到达未分配车辆数量 -->
+	<select id="queryCntArrived" resultType="Long"
+		parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.dto.PlatformDistributeQcDto">
+		SELECT COUNT(1) FROM
+		(SELECT 1
+		  FROM tfr.t_opt_truck_task_detail td
+		 INNER JOIN tfr.t_opt_truck_task_bill tb
+		    ON tb.truck_task_detail_id = td.id
+		   AND tb.assign_state = 'UNASSIGN'
+		   AND tb.bill_level = 1
+	  <include refid="sql_queryArrived_where_clause"/>
+	  	GROUP BY td.id
+	  	)
+	</select>
+	
+	<!-- 按车辆任务明细id查询对应运单信息 -->
+	<select id="queryWaybillInfosByTaskDetailId" resultMap="platformWaybillDto"
+		parameterType="String">
+		SELECT hd.waybill_no          waybillNo,
+		       hd.handover_weight     handoverWeight,
+		       hd.handover_volume     handoverVolumn,
+		       hd.transport_type_code transportTypeCode,
+		       td.dest_org_code       destDeptCode
+		  FROM tfr.t_opt_truck_task_detail td
+		 INNER JOIN tfr.t_opt_truck_task_bill tb
+		    ON td.id = tb.truck_task_detail_id
+		   AND tb.bill_type = 'HANDOVER'
+		 INNER JOIN tfr.t_opt_handoverbill_detail hd
+		    ON tb.bill_no = hd.handover_no
+		 INNER JOIN pkp.t_srv_waybill w
+		 	ON w.waybill_no = hd.waybill_no
+	       AND w.product_code not in ('PACKAGE','RCP','EPEP')
+		   AND w.active = 'Y'
+		 WHERE td.id = #{taskDetailId,jdbcType=VARCHAR}
+	</select>
+
+	<!-- 按运单号、出发部门查询走货路径得到运单的下一到达部门 -->
+	<select id="queryNextDeptCode" resultType="String"
+		parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.dto.PlatformWaybillDto">
+		SELECT t.objective_org_code
+		  FROM tfr.t_opt_path_detail t
+		 WHERE t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		   AND t.orig_org_code = #{destDeptCode,jdbcType=VARCHAR}
+		   AND rownum = 1
+	</select>
+
+	<!-- 查询外场、月台是否存在对应占用状态的月台占用信息where子句 -->
+	<sql id="sql_queryCntPlatformDistribute_where_calsue">
+		<where>
+			t.transfer_center_no = #{transferCenterNo,jdbcType=VARCHAR}
+			AND t.platform_no = #{platformNo,jdbcType=VARCHAR}
+			AND t.status = #{status,jdbcType=VARCHAR}
+			<if test="status == 'AVAILABLE'">
+				AND t.use_end_time >= #{useEndTime,jdbcType=TIMESTAMP}
+				AND rownum = 1
+			</if>
+			<if test="status == 'USING'">
+				AND t.use_start_time >= #{useStartTime,jdbcType=TIMESTAMP}
+				AND rownum = 1
+			</if>
+		</where>
+	</sql>
+	
+	<!-- 查询外场、月台是否存在对应占用状态的月台占用信息 -->
+	<select id="queryCntPlatformDistribute" resultType="Long"
+		parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.PlatformDistributeEntity">
+		SELECT COUNT(1)
+ 		 FROM tfr.t_opt_platform_distribute t
+ 		<include refid="sql_queryCntPlatformDistribute_where_calsue"/>
+	</select>
+	
+	<!-- 查询车辆在1.5小时前的月台预分配记录 -->
+	<select id="queryVehiclePrePlatform" resultType="String"
+		parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.PlatformDistributeEntity">
+		SELECT p.platform_code
+		  FROM tfr.t_opt_platform_distribute d
+		 INNER JOIN bse.t_bas_platform p
+		    ON d.platform_no = p.virtual_code
+		   AND d.transfer_center_no = p.org_code
+		   AND p.active = 'Y'
+		 WHERE d.transfer_center_no = #{transferCenterNo,jdbcType=VARCHAR}
+		   AND d.vehicle_no = #{vehicleNo,jdbcType=VARCHAR}
+		   AND d.status = #{status,jdbcType=VARCHAR}
+		   AND d.create_time >= sysdate - 1.5/24
+		 ORDER BY d.create_time DESC
+	</select>
+	
+	<!-- 月台预分配-->
+	<insert id="predistribute"
+		parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.PlatformDistributeEntity">
+		INSERT INTO tfr.t_opt_platform_distribute
+		(platform_distribute_id,
+		transfer_center_no,
+		transfer_center_name,
+		platform_no,
+		use_start_time,
+		use_end_time,
+		vehicle_model,
+		vehicle_no,
+		status,
+		type,
+		schedule_source,
+		load_task_no,
+		create_time)
+		VALUES
+		(#{id,jdbcType=VARCHAR},
+		#{transferCenterNo,jdbcType=VARCHAR},
+		#{transferCenterName,jdbcType=VARCHAR},
+		#{platformNo,jdbcType=VARCHAR},
+		#{useStartTime,jdbcType=TIMESTAMP},
+		#{useEndTime,jdbcType=TIMESTAMP},
+		#{vehicleModel,jdbcType=VARCHAR},
+		#{vehicleNo,jdbcType=VARCHAR},
+		#{status,jdbcType=VARCHAR},
+		#{type,jdbcType=VARCHAR},
+		#{scheduleSource,jdbcType=VARCHAR},
+		#{loadTaskNo,jdbcType=VARCHAR},
+		#{createDate,jdbcType=TIMESTAMP})
+	</insert>
+	
+	<!-- 月台预分配-->
+	<insert id="preAssign"
+		parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.PlatformPreAssignEntity">
+		INSERT INTO tfr.t_opt_platform_pre_assign
+		  (id,
+		   truck_task_id,
+		   tfr_ctr_code,
+		   tfr_ctr_name,
+		   platform_code,
+		   vehicle_no,
+		   use_start_time,
+		   use_end_time,
+		   status,
+		   create_user_code,
+		   create_user_name,
+		   create_time,
+		   modify_user_code,
+		   modify_user_name,
+		   modify_time)
+		VALUES
+		  (#{id,jdbcType=VARCHAR},
+		   #{truckTaskId,jdbcType=VARCHAR},
+		   #{tfrCtrCode,jdbcType=VARCHAR},
+		   #{tfrCtrName,jdbcType=VARCHAR},
+		   #{platformCode,jdbcType=VARCHAR},
+		   #{vehicleNo,jdbcType=VARCHAR},
+		   #{useStartTime,jdbcType=TIMESTAMP},
+		   #{useEndTime,jdbcType=TIMESTAMP},
+		   #{status,jdbcType=VARCHAR},
+		   #{createUserCode,jdbcType=VARCHAR},
+		   #{createUserName,jdbcType=VARCHAR},
+		   #{createTime,jdbcType=TIMESTAMP},
+		   #{modifyUserCode,jdbcType=VARCHAR},
+		   #{modifyUserName,jdbcType=VARCHAR},
+		   #{modifyTime,jdbcType=TIMESTAMP})
+	</insert>
+	
+	<update id="updatePreAssign"
+	parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.PlatformPreAssignEntity">
+		UPDATE tfr.t_opt_platform_pre_assign t
+		   SET t.platform_code    = #{platformCode,jdbcType=VARCHAR},
+		       t.status           = #{status,jdbcType=VARCHAR},
+		       t.use_start_time   = #{useStartTime,jdbcType=TIMESTAMP},
+		       t.use_end_time     = #{useEndTime,jdbcType=TIMESTAMP},
+		       t.modify_user_code = #{modifyUserCode,jdbcType=VARCHAR},
+		       t.modify_user_name = #{modifyUserName,jdbcType=VARCHAR},
+		       t.modify_time      = #{modifyTime,jdbcType=TIMESTAMP}
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.truck_task_id = #{truckTaskId,jdbcType=VARCHAR}
+	</update>
+	
+	<select id="findPlatformGoodsAreaDistance" parameterType="java.util.Map"
+		resultType="java.math.BigDecimal">
+		SELECT t.plat_area_distance
+		  FROM bse.t_bas_dis_plat_area t
+		 WHERE t.active = 'Y'
+		   AND t.platform_virtual_code = #{platformVirtualCode,jdbcType=VARCHAR}
+		   AND t.goods_area_virtual_code = #{goodsAreaVirtualCode,jdbcType=VARCHAR}
+	</select>
+
+</mapper>

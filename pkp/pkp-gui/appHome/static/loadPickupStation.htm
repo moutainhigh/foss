@@ -1,0 +1,154 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0052)http://fstatic.deppon.com/dpap/foss/help/help.htm#Q5 -->
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" type="text/css" href="./layout.css"/>
+    <script language="javascript" type="text/javascript">
+	
+		function bodyReady(){
+			var bottomFloatToolbar = document.getElementById('bottomFloatToolbar'),
+				w=window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+			bottomFloatToolbar.style.marginLeft = (w-80)+'px';
+			bottomFloatToolbar.style.marginBottom = '10px';
+			document.onkeydown = function(evt){
+				if(window.event){
+					evt = window.event;
+				}
+				if(evt.keyCode==13){
+					var queryButton = document.getElementById('queryButton');
+					queryButton.focus();
+				}
+			};
+		}
+	
+		/**
+		 * 回到页面顶部
+		 * @param acceleration 加速度
+		 * @param time 时间间隔 (毫秒)
+		 **/
+		function goTop(acceleration, time) {
+			acceleration = acceleration || 0.5;
+			time = time || 6;
+		 
+			var x1 = 0;
+			var y1 = 0;
+			var x2 = 0;
+			var y2 = 0;
+			var x3 = 0;
+			var y3 = 0;
+		 
+			if (document.documentElement) {
+				x1 = document.documentElement.scrollLeft || 0;
+				y1 = document.documentElement.scrollTop || 0;
+			}
+			if (document.body) {
+				x2 = document.body.scrollLeft || 0;
+				y2 = document.body.scrollTop || 0;
+			}
+			var x3 = window.scrollX || 0;
+			var y3 = window.scrollY || 0;
+		 
+			// 滚动条到页面顶部的水平距离
+			var x = Math.max(x1, Math.max(x2, x3));
+			// 滚动条到页面顶部的垂直距离
+			var y = Math.max(y1, Math.max(y2, y3));
+		 
+			// 滚动距离 = 目前距离 / 速度, 因为距离原来越小, 速度是大于 1 的数, 所以滚动距离会越来越小
+			var speed = 1 + acceleration;
+			window.scrollTo(Math.floor(x / speed), Math.floor(y / speed));
+		 
+			// 如果距离不为零, 继续调用迭代本函数
+			if(x > 0 || y > 0) {
+				var invokeFunction = "goTop(" + acceleration + ", " + time + ")";
+				window.setTimeout(invokeFunction, time);
+			}
+		}
+		
+		//页面滚轮事件handler
+		function onScroll(){
+			//标签页的悬浮工具条
+			var topFloatToolbar = document.getElementById('topFloatToolbar');
+			var bottomFloatToolbar = document.getElementById('bottomFloatToolbar');
+			//标签页悬浮工具条位置控制：
+			topFloatToolbar.style.position='fixed';
+			topFloatToolbar.style.top='0px';
+			bottomFloatToolbar.style.position='fixed';
+			topFloatToolbar.style.bottom='0px';
+		}
+		//添加滚动事件监控(因浏览器兼容缘故，window和document上都要添加)
+		document.onscroll=onScroll;
+		window.onscroll=onScroll;
+		
+		//点击查询的时候
+		function onButtonClick(keydown){
+			var queryTextInput = document.getElementById('queryText'),
+				queryText = queryTextInput.value,
+				contextDiv = document.getElementById('contextDiv');
+			queryTextInput.value = '';
+			findInPage(contextDiv, queryText);
+			queryTextInput.value = queryText;
+		}
+		
+		//在整个文本中查找第几个，从0开始  
+		var nextIndex = 0;  
+		//上一次需要查找的字符串  
+		var searchValue = '';  
+		  
+		function findInPage(targetEle,searchText) {  
+			//判断搜索字符是否为空  
+			if (!searchText){  
+				alert('搜索字符串为空');  
+			}  
+			//判断搜索条件是否已经改变  
+			if(searchText && searchText != searchValue && nextIndex > 0){  
+				searchValue = searchText;  
+				nextIndex = 0;  
+			}else{  
+				searchValue = searchText;  
+			}  
+		  
+			if (document.all) {  
+				txt = targetEle.createTextRange();  
+				//搜索str  
+				var found = '';   
+				for (i = 0; i <= nextIndex && (found = txt.findText(searchValue))==true; i++) {  
+					txt.moveStart("character", 1);  
+					txt.moveEnd("textedit");  
+				}  
+				//选中本次查找的字符串  
+				if (found) {  
+					txt.moveStart("character", -1);  
+					txt.findText(searchValue);  
+					txt.select();  
+									   //滚动屏幕到合适位置  
+					txt.scrollIntoView();  
+					nextIndex++;  
+				}else{  
+					//循环查找  
+					if (nextIndex > 0) {   
+						nextIndex = 0;   
+						findInPage(searchValue);   
+					}  
+				}  
+			}else{  
+				//谷歌循环查找
+				window.find(searchValue,true)
+			}  
+		} 
+    </script>
+</head>
+<body onLoad="bodyReady()">
+	<div class="floatToolbar top" id="topFloatToolbar">
+    	<div>
+        	<input id='queryText'/>
+            <button id="queryButton" type="button" onClick="onButtonClick()">查询</button>
+        </div>
+	</div>
+
+	<div style="margin-top:50px" id="contextDiv">
+        <ul>
+        <script language="javascript" type="text/javascript" src="./json.js"></script>
+	</div>
+	<div class="floatToolbar bottom" id="bottomFloatToolbar"><a href="#" onclick="goTop();return false;">TOP</a></div>
+</body></html>

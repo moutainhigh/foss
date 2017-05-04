@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tfr-makeupwaybill">
+	<resultMap id="makeUpWaybillResultMap"	type="com.deppon.foss.module.transfer.load.api.shared.domain.MakeUpWaybillEntity">
+		<id column="id" property="id" jdbcType="VARCHAR" />
+		<result column="waybillNo" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="weight" property="weight" jdbcType="DECIMAL" />
+		<result column="volume" property="volume" jdbcType="DECIMAL" />
+		<result column="quantity" property="quantity" jdbcType="DECIMAL" />
+	</resultMap>
+	
+	<insert id="addWaybillInfo" parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.MakeUpWaybillEntity">
+		INSERT INTO TFR.T_OPT_MAKEUP_WAYBILL
+  			(ID, WAYBILL_NO, WEIGHT, VOLUME,QUANTITY, MAKEUP_TIME)
+		VALUES
+  			(#{id,jdbcType=VARCHAR},
+  			 #{waybillNo,jdbcType=VARCHAR},
+  			 #{weight,jdbcType=DECIMAL},
+  			 #{volume,jdbcType=DECIMAL},
+  			 #{quantity,jdbcType=DECIMAL},
+  			 #{makeUpTime,jdbcType=TIMESTAMP})
+	</insert>
+	
+	<select id="queryMakeUpWaybill" parameterType="string" resultMap="makeUpWaybillResultMap">
+		SELECT 	W.ID ID, 
+       		   	W.WAYBILL_NO WAYBILLNO, 
+       			W.WEIGHT WEIGHT, 
+      			W.VOLUME VOLUME,
+      			W.QUANTITY QUANTITY
+  		FROM TFR.T_OPT_MAKEUP_WAYBILL W
+ 		WHERE  W.IS_DONE = 'N'
+ 		ORDER BY W.WAYBILL_NO,W.MAKEUP_TIME DESC
+	</select>
+	
+	<update id="updateMakeUpWaybill" parameterType="map">
+		 UPDATE TFR.T_OPT_MAKEUP_WAYBILL W
+    		SET W.DONE_TIME = #{doneTime,jdbcType=TIMESTAMP}, W.IS_DONE = 'Y'
+  		 WHERE W.ID = #{waybillId,jdbcType=VARCHAR}
+	</update>
+</mapper>

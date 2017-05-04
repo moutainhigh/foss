@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.commonBusinessPartner">
+    
+    <!-- 偏线/空运代理公司 -->
+	<resultMap id="businessPartnerResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.BusinessPartnerEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="AGENT_COMPANY_CODE" property="agentCompanyCode"
+			jdbcType="VARCHAR" />
+		<result column="MANAGEMENT" property="management" jdbcType="VARCHAR" />
+		<result column="AGENT_COMPANY_NAME" property="agentCompanyName"
+			jdbcType="VARCHAR" />
+		<result column="SIMPLENAME" property="simplename" jdbcType="VARCHAR" />
+		<result column="PROV_CODE" property="provCode" jdbcType="VARCHAR" />
+		<result column="CITY_CODE" property="cityCode" jdbcType="VARCHAR" />
+		<result column="CONTACT_ADDRESS" property="contactAddress"
+			jdbcType="VARCHAR" />
+		<result column="CONTACT_PHONE" property="contactPhone"
+			jdbcType="VARCHAR" />
+		<result column="CONTACT" property="contact" jdbcType="VARCHAR" />
+		<result column="MOBILE_PHONE" property="mobilePhone" jdbcType="VARCHAR" />
+		<result column="AGENT_COMPANY_SORT" property="agentCompanySort"
+			jdbcType="VARCHAR" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+		<result column="VIRTUAL_CODE" property="virtualCode" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<!-- 数据字段 -->
+	<sql id="businessPartner_Column_List">
+		ID, AGENT_COMPANY_CODE, MANAGEMENT, AGENT_COMPANY_NAME, SIMPLENAME,
+		PROV_CODE, CITY_CODE,
+		CONTACT_ADDRESS, CONTACT_PHONE, CONTACT, MOBILE_PHONE, AGENT_COMPANY_SORT, NOTES,
+		CREATE_TIME, MODIFY_TIME, ACTIVE, CREATE_USER_CODE, MODIFY_USER_CODE,
+		VIRTUAL_CODE
+	</sql>
+	
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="agentCompanyName != null and agentCompanyName != ''">				
+			AND 
+					(
+					  AGENT_COMPANY_NAME LIKE CONCAT(CONCAT('%', #{agentCompanyName,jdbcType=VARCHAR} ), '%')
+				   OR	  
+					  AGENT_COMPANY_CODE LIKE CONCAT(CONCAT('%', #{agentCompanyName,jdbcType=VARCHAR} ), '%')			   
+					) 
+			</if>
+			<if test="agentCompanyCode != null and agentCompanyCode != ''">
+				and AGENT_COMPANY_CODE = #{agentCompanyCode,jdbcType=VARCHAR}
+			</if>
+			<if test="management != null and management != ''">
+				and MANAGEMENT = #{management,jdbcType=VARCHAR}
+			</if>
+			<if test="agentCompanySort != null and agentCompanySort != ''">
+			   and AGENT_COMPANY_SORT = #{agentCompanySort,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</sql>
+
+	<!-- 查询信息 -->
+	<select id="queryAllInfos"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.BusinessPartnerEntity"
+		resultMap="businessPartnerResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询信息 **/
+		]]>
+		<include refid="businessPartner_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_BUSINESS_PARTNER T
+		]]>
+		<include refid="queryWhere" />
+	</select>
+	
+
+	<!-- 统计总记录数 -->
+	<select id="queryCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.BusinessPartnerEntity">
+	    <![CDATA[
+	       	select/** 综合:统计总记录数 **/ count(*) from BSE.T_BAS_BUSINESS_PARTNER T
+	    ]]>
+		<include refid="queryWhere" />
+	</select>
+</mapper>

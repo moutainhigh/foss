@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.management.waybillFeeDetail" >
+  <resultMap id="WaybillFeeDetailResultMap" type="com.deppon.foss.module.transfer.management.api.shared.domain.WaybillFeeDetailEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="WAYBILL_NO" property="wayBillNo" jdbcType="VARCHAR" />
+    <result column="USETRUCK_ORG_CODE" property="useTruckOrgCode" jdbcType="VARCHAR" />
+    <result column="USETRUCK_ORG_NAME" property="useTruckOrgName" jdbcType="VARCHAR" />
+    <result column="WEIGHT" property="weight" jdbcType="DECIMAL"/>
+    <result column="VOLUME" property="volume" jdbcType="DECIMAL" />
+    <result column="USE_TRUCK_FEE" property="useTruckFee" jdbcType="DECIMAL" />
+    <result column="DRIVER_ROYALTY" property="driverRoyalty" jdbcType="DECIMAL" />
+    <result column="NOTES" property="notes" jdbcType="VARCHAR" />
+    <result column="IS_UPSTAIRS" property="isUpstairs" jdbcType="CHAR" />
+    <result column="IS_SINGLE_RECEIVE" property="isSingleReceive" jdbcType="CHAR" />
+    <result column="SIGN_BILL_NO" property="signBillNo" jdbcType="VARCHAR" />
+    <result column="CURRENCY_CODE" property="currencyCode" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+    <result column="GOODS_QTY" property="goodsQty" jdbcType="DECIMAL" />
+    <result column="GOODS_PACKAGE" property="goodsPackage" jdbcType="VARCHAR" />
+    <result column="IS_CASH_PAYMENT" property="isCashPayment" jdbcType="VARCHAR" />
+    <result column="TOTAL_FEE" property="totalFee" jdbcType="DECIMAL" />
+  </resultMap>
+  
+  <sql id="WaybillFeeDetail_Column_List" >
+    ID, 
+    WAYBILL_NO, 
+    USE_TRUCK_FEE/100 AS USE_TRUCK_FEE, 
+    DRIVER_ROYALTY/100 AS DRIVER_ROYALTY , 
+    NOTES, 
+    IS_UPSTAIRS, 
+    IS_SINGLE_RECEIVE, 
+    SIGN_BILL_NO,
+    WEIGHT,
+    VOLUME,
+    USETRUCK_ORG_CODE,
+    CUSTOMER_NAME,
+    GOODS_QTY,
+    GOODS_PACKAGE,
+    IS_CASH_PAYMENT,
+    TOTAL_FEE
+  </sql>
+  <!-- 根据签单号查询集中接货签单费用明细信息 -->
+  <select id="selectWaybillFeeDetailByNo" resultMap="WaybillFeeDetailResultMap" parameterType="java.lang.String" >
+    select D.ID,
+       D.WAYBILL_NO,
+       D.USE_TRUCK_FEE / 100 AS USE_TRUCK_FEE,
+       D.DRIVER_ROYALTY / 100 AS DRIVER_ROYALTY,
+       D.NOTES,
+       D.IS_UPSTAIRS,
+       D.IS_SINGLE_RECEIVE,
+       D.SIGN_BILL_NO,
+       D.WEIGHT,
+       D.VOLUME,
+       D.USETRUCK_ORG_CODE,
+       ORG.NAME USETRUCK_ORG_NAME,
+       D.CUSTOMER_NAME,
+       D.GOODS_QTY,
+       D.GOODS_PACKAGE,
+       D.IS_CASH_PAYMENT,
+       D.TOTAL_FEE
+  from TFR.T_OPT_WAYBILL_FEE_DETAIL D
+  LEFT JOIN BSE.T_BAS_ORG ORG
+    ON ORG.CODE = D.USETRUCK_ORG_CODE
+   AND ORG.ACTIVE = 'Y'
+ where D.SIGN_BILL_NO = #{signBillNo,jdbcType=VARCHAR}
+  </select>
+  
+  <!-- 删除集中接货指定签单号对应的所有明细信息 -->
+  <delete id="deleteWaybillFeeDetail" parameterType="java.lang.String" >
+    delete 
+    from 
+    	TFR.T_OPT_WAYBILL_FEE_DETAIL
+    where 
+    	SIGN_BILL_NO = #{signBillNo,jdbcType=VARCHAR}
+  </delete>
+  
+  <!-- 根据待删列表删除集中接货签单明细信息 -->
+   <delete id="deleteWaybillFeeDetailList" parameterType="java.util.List" >
+   	begin
+   		<foreach collection="list" item="item" separator=";">
+   			DELETE
+   			FROM
+   				TFR.T_OPT_WAYBILL_FEE_DETAIL
+   			WHERE
+   				ID = #{item,jdbcType=VARCHAR}
+   		</foreach>
+   	;end;
+   </delete>
+   
+  <!-- 新增签单明细  -->
+  <insert id="insertWaybillFeeDetail" parameterType="java.util.List" >
+   begin 
+    <foreach collection="list" item="item"  separator=";">
+    INSERT INTO 
+    	TFR.T_OPT_WAYBILL_FEE_DETAIL
+    <trim prefix="(" suffix=")" >
+        ID,
+        WAYBILL_NO,
+        SIGN_BILL_NO,
+        USETRUCK_ORG_CODE,
+        USE_TRUCK_FEE,
+        DRIVER_ROYALTY,
+        WEIGHT,
+        VOLUME,
+      <if test="item.notes != null" >
+        NOTES,
+      </if>
+        IS_UPSTAIRS,
+        IS_SINGLE_RECEIVE,
+        CUSTOMER_NAME,
+        GOODS_QTY,
+        GOODS_PACKAGE,
+        IS_CASH_PAYMENT,
+        TOTAL_FEE
+    </trim>
+    <trim prefix="values (" suffix=")" >
+        #{item.id,jdbcType=VARCHAR},
+        #{item.wayBillNo,jdbcType=VARCHAR},
+        #{item.signBillNo,jdbcType=VARCHAR},
+        #{item.useTruckOrgCode,jdbcType=VARCHAR},
+        #{item.useTruckFee,jdbcType=DECIMAL},
+        #{item.driverRoyalty,jdbcType=DECIMAL},
+        #{item.weight,jdbcType=DECIMAL},
+        #{item.volume,jdbcType=DECIMAL},
+      <if test="item.notes != null" >
+        #{item.notes,jdbcType=VARCHAR},
+      </if>
+        #{item.isUpstairs,jdbcType=CHAR},
+        #{item.isSingleReceive,jdbcType=CHAR},
+        #{item.customerName,jdbcType=VARCHAR},
+        #{item.goodsQty,jdbcType=DECIMAL},
+        #{item.goodsPackage,jdbcType=VARCHAR},
+        #{item.isCashPayment,jdbcType=CHAR},
+        #{item.totalFee,jdbcType=DECIMAL}
+    </trim>
+    </foreach>
+    ; end;
+  </insert>
+  
+  <!-- 更新签单费用明细列表 -->
+  <update id="updateWaybillFeeDetailList" parameterType="java.util.List" >
+    begin 
+    <foreach collection="list" item="item"  separator=";">
+    update 
+    	TFR.T_OPT_WAYBILL_FEE_DETAIL
+    <set>
+    <trim suffixOverrides="," >
+    	SIGN_BILL_NO = #{item.signBillNo,jdbcType=VARCHAR},
+        WAYBILL_NO = #{item.wayBillNo,jdbcType=VARCHAR},
+        CUSTOMER_NAME = #{item.customerName,jdbcType=VARCHAR},
+        GOODS_QTY = #{item.goodsQty,jdbcType=DECIMAL},
+        GOODS_PACKAGE = #{item.goodsPackage,jdbcType=VARCHAR},
+        IS_CASH_PAYMENT = #{item.isCashPayment,jdbcType=CHAR},
+        USETRUCK_ORG_CODE = #{item.useTruckOrgCode,jdbcType=VARCHAR},
+        WEIGHT = #{item.weight,jdbcType=DECIMAL},
+        VOLUME = #{item.volume,jdbcType=DECIMAL},
+        TOTAL_FEE = #{item.totalFee,jdbcType=DECIMAL},
+        USE_TRUCK_FEE = #{item.useTruckFee,jdbcType=DECIMAL},
+        DRIVER_ROYALTY = #{item.driverRoyalty,jdbcType=DECIMAL},
+      <if test="notes != null" >
+        NOTES = #{item.notes,jdbcType=VARCHAR},
+      </if>
+        IS_UPSTAIRS = #{item.isUpstairs,jdbcType=CHAR},
+        IS_SINGLE_RECEIVE = #{item.isSingleReceive,jdbcType=CHAR},
+    </trim>
+    <where>
+    	ID = #{item.id,jdbcType=VARCHAR}
+    </where>
+    </set>
+    </foreach>
+     ; end;
+  </update>
+  
+</mapper>

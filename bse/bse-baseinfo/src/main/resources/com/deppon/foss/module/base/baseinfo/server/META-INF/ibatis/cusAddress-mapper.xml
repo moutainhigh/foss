@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.cusAddress">
+
+	<!-- 客户接送货地址 --> 
+	<resultMap id="cusAddressResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusAddressEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<!-- CUSTOMER_CODE 字段重命名为：CRM_CUS_ID 实体属性 customerCode 未作更改-->
+		<result column="CRM_CUS_ID" property="customerCode"
+			jdbcType="DECIMAL" />
+		<result column="ADDRESS" property="address" jdbcType="VARCHAR" />
+		<result column="ZIP_CODE" property="zipCode" jdbcType="VARCHAR" />
+		<result column="PROVINCE_CODE" property="provinceName"
+			jdbcType="VARCHAR" />
+		<result column="CITY_CODE" property="cityCode" jdbcType="VARCHAR" />
+		<result column="COUNTY_CODE" property="countyCode" jdbcType="VARCHAR" />
+		<result column="ADDRESS_TYPE" property="addressType" jdbcType="VARCHAR" />
+		<result column="STATUS" property="status" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+		<result column="VIRTUAL_CODE" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="CRM_ID" property="crmId" jdbcType="DECIMAL" />
+		<!--crm2期-->
+		<result column="CUSTFOSSID" property="ownCustId" jdbcType="VARCHAR" />
+		<!-- 132599 客户接送货地址备注信息 -->
+		<result column="ADDRESS_REMARK" property="addressRemark" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 客户接送货地址数据字段 -->
+	<sql id="cusAddress_Column_List">
+		ID, CRM_CUS_ID, ADDRESS, ZIP_CODE, PROVINCE_CODE,
+		CITY_CODE,
+		COUNTY_CODE, ADDRESS_TYPE,
+		STATUS, CREATE_TIME, MODIFY_TIME,
+		ACTIVE, CREATE_USER_CODE, MODIFY_USER_CODE,
+		VIRTUAL_CODE,CRM_ID,CUSTFOSSID,ADDRESS_REMARK
+	</sql>
+
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<if test="active != null and active != ''">
+				and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</sql>
+
+	<!-- 查询所有客户接送货地址信息 -->
+	<select id="queryAllInfos"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusAddressEntity"
+		resultMap="cusAddressResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有客户接送货地址信息 **/
+		]]>
+		<include refid="cusAddress_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUS_ADDRESS T
+		]]>
+		<include refid="queryWhere" />
+	</select>
+
+	<!-- 验证客户接送货地址是否存在 -->
+	<select id="queryCusAddressByCrmId" parameterType="map"
+		resultMap="cusAddressResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:验证客户接送货地址是否存在 **/
+		]]>
+		<include refid="cusAddress_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUS_ADDRESS 
+		]]>
+		<where>
+			<if test="crmId != null and crmId != ''">
+				CRM_ID = #{crmId,jdbcType=DECIMAL}
+			</if>
+			<if test="modifyDate != null and modifyDate != ''">
+				AND MODIFY_TIME <![CDATA[  >=  ]]> #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="active != null and active != ''">
+				AND active = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+
+	<!-- 统计总记录数 -->
+	<select id="queryCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusAddressEntity">
+	    <![CDATA[
+	       	select/** 综合:统计总记录数 **/ count(*) from BSE.T_BAS_CUS_ADDRESS T
+	    ]]>
+		<include refid="queryWhere" />
+
+	</select>
+
+	<!-- 根据ID查询客户接送货地址信息 -->
+	<select id="queryCusAddressById" parameterType="java.lang.String"
+		resultMap="cusAddressResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据ID查询客户接送货地址信息 **/
+		]]>
+		<include refid="cusAddress_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUS_ADDRESS T
+		]]>
+		<where>
+            CRM_ID = #{serviceAddressId,jdbcType=VARCHAR}
+			AND ACTIVE = 'Y'
+		</where>
+	</select>
+
+	<!-- 新增信息 -->
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusAddressEntity">
+		
+		<![CDATA[
+			INSERT/** 综合:新增信息 **/ INTO BSE.T_BAS_CUS_ADDRESS T	(
+		]]>
+		<include refid="cusAddress_Column_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, #{customerCode,jdbcType=DECIMAL},
+		#{address,jdbcType=VARCHAR},
+		#{zipCode,jdbcType=VARCHAR},
+		#{provinceName,jdbcType=VARCHAR}, #{cityCode,jdbcType=VARCHAR},
+		#{countyCode,jdbcType=VARCHAR}, #{addressType,jdbcType=VARCHAR},
+		#{status,jdbcType=VARCHAR},
+		#{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP}, #{active,jdbcType=CHAR},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR},
+		#{virtualCode,jdbcType=VARCHAR},
+		#{crmId,jdbcType=DECIMAL},
+		#{ownCustId,jdbcType=VARCHAR},
+		#{addressRemark,jdbcType=VARCHAR}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+
+	<!-- 修改信息 -->
+	<update id="update"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusAddressEntity">
+		update/** 综合:修改信息**/ BSE.T_BAS_CUS_ADDRESS
+		<set>   
+				<if test="crmId != null and customserNature == 'SC_CUSTOMER'">
+					CRM_ID = #{crmId,jdbcType=DECIMAL},
+				</if> 
+				CRM_CUS_ID = #{customerCode,jdbcType=DECIMAL},
+				ADDRESS = #{address,jdbcType=VARCHAR},
+				ZIP_CODE = #{zipCode,jdbcType=VARCHAR},
+				PROVINCE_CODE = #{provinceName,jdbcType=VARCHAR},
+				CITY_CODE = #{cityCode,jdbcType=VARCHAR},
+				COUNTY_CODE = #{countyCode,jdbcType=VARCHAR},
+				ADDRESS_TYPE = #{addressType,jdbcType=VARCHAR},
+				STATUS = #{status,jdbcType=VARCHAR},
+				CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+				ACTIVE = #{active,jdbcType=CHAR},
+				CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+				VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR},
+				ADDRESS_REMARK = #{addressRemark,jdbcType=VARCHAR}
+		</set>
+
+		<where>
+<!-- 			<if test="crmId != null and crmId != ''"> -->
+<!-- 				CRM_ID = #{crmId,jdbcType=DECIMAL} -->
+<!-- 			</if> -->
+			<if test="crmId != null">
+			 <choose>
+			   <when test="customserNature == 'SC_CUSTOMER'">
+			       <if test="ownCustId != null and ownCustId != ''">
+			    		CUSTFOSSID = #{ownCustId,jdbcType=VARCHAR}
+			       </if>
+			       <if test="crmId != null">
+			          OR CRM_ID = #{crmId,jdbcType=DECIMAL}
+			       </if>
+			   </when>
+			   <otherwise>
+				CRM_ID = #{crmId,jdbcType=DECIMAL}
+			   </otherwise>
+			 </choose>
+			</if>
+		</where>
+
+	</update>
+
+	<!-- 作废信息 -->
+	<update id="deleteByCode" parameterType="map">
+		update/** 综合:作废信息**/ BSE.T_BAS_CUS_ADDRESS
+
+		<set>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				MODIFY_USER_CODE = #{modifyUser, jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+		</set>
+
+		<where>
+			<if test="code!=null and code != ''">
+				CRM_ID = #{code,jdbcType=DECIMAL}
+			</if>
+			<if test="active0 != null and active0 != ''">
+				AND ACTIVE = #{active0,jdbcType=CHAR}
+			</if>
+		</where>
+	</update>
+	
+	<!-- (散客)根据custfossid查询客户接送货地址信息 -->
+	<select id="queryCusAddressByCustfossid" parameterType="java.lang.String"
+		resultMap="cusAddressResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据custfossid查询客户接送货地址信息 **/
+		]]>
+		<include refid="cusAddress_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUS_ADDRESS T
+		]]>
+		<where>
+            CUSTFOSSID = #{ownCustId,jdbcType=VARCHAR}
+			AND ACTIVE = 'Y'
+		</where>
+	</select>
+	
+	<!-- （散客）通过custfossid修改信息 -->
+	<update id="updateCusAddressByCusfossid"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusAddressEntity">
+		update/** 综合:通过custfossid修改信息**/ BSE.T_BAS_CUS_ADDRESS
+		<set>   
+				<if test="crmId != null ">
+					CRM_ID = #{crmId,jdbcType=DECIMAL},
+				</if> 
+				CRM_CUS_ID = #{customerCode,jdbcType=DECIMAL},
+				ADDRESS = #{address,jdbcType=VARCHAR},
+				ZIP_CODE = #{zipCode,jdbcType=VARCHAR},
+				PROVINCE_CODE = #{provinceName,jdbcType=VARCHAR},
+				CITY_CODE = #{cityCode,jdbcType=VARCHAR},
+				COUNTY_CODE = #{countyCode,jdbcType=VARCHAR},
+				ADDRESS_TYPE = #{addressType,jdbcType=VARCHAR},
+				STATUS = #{status,jdbcType=VARCHAR},
+				CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+				ACTIVE = #{active,jdbcType=CHAR},
+				CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+				VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR},
+				ADDRESS_REMARK = #{addressRemark,jdbcType=VARCHAR}
+		</set>
+		<where>
+			       <if test="ownCustId != null and ownCustId != ''">
+			    		CUSTFOSSID = #{ownCustId,jdbcType=VARCHAR}
+			       </if>
+		</where>
+
+	</update>
+
+</mapper>

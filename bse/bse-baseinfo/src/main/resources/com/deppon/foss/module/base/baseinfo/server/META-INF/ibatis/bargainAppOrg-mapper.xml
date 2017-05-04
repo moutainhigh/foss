@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.bargainAppOrg">
+	<!-- 合同适用部门 -->
+	<resultMap id="bargainAppOrgResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.BargainAppOrgEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="UNIFIED_CODE" property="unifiedCode" jdbcType="VARCHAR" />
+		<result column="BEGIN_TIME" property="beginTime" jdbcType="TIMESTAMP" />
+		<result column="END_TIME" property="endTime" jdbcType="TIMESTAMP" />
+		<result column="WORKFLOW_NO" property="workflowNo" jdbcType="VARCHAR" />
+		<result column="OA_APPROVE_STATUS" property="oaApproveStatus"
+			jdbcType="VARCHAR" />
+		<result column="APPROVER" property="approver" jdbcType="VARCHAR" />
+		<result column="WORKFLOW_STATUS" property="workflowStatus"
+			jdbcType="VARCHAR" />
+		<result column="STATUS" property="status" jdbcType="VARCHAR" />
+		<result column="ORG_BELONGING" property="orgBelonging"
+			jdbcType="CHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+		<!-- BARGAIN_ID 字段重命名为：BARGAIN_CRM_ID 实体属性 bargainId 未作更改-->
+		<result column="BARGAIN_CRM_ID" property="bargainId" jdbcType="DECIMAL" />
+		<result column="VIRTUAL_CODE" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="CRM_ID" property="crmId" jdbcType="DECIMAL" />
+	</resultMap>
+	<!-- 合同适用部门数据字段 -->
+	<sql id="bargainAppOrg_Column_List">
+		ID, UNIFIED_CODE, BEGIN_TIME, END_TIME, WORKFLOW_NO,
+		OA_APPROVE_STATUS,
+		APPROVER,
+		WORKFLOW_STATUS, STATUS, ORG_BELONGING,
+		CREATE_TIME, MODIFY_TIME, ACTIVE,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE,
+		BARGAIN_CRM_ID, VIRTUAL_CODE, CRM_ID
+	</sql>
+
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<if test="active != null and active != ''">
+				and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</sql>
+
+	<!-- 查询所有合同适用部门信息 -->
+	<select id="queryAllInfos"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.BargainAppOrgEntity"
+		resultMap="bargainAppOrgResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有合同适用部门信息 **/
+		]]>
+		<include refid="bargainAppOrg_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUS_BARGAIN_APP_ORG T
+		]]>
+		<include refid="queryWhere" />
+	</select>
+	
+	<!-- 验证合同适用部门是否存在 -->
+	<select id="queryBargainAppOrgByCrmId" parameterType="map" resultMap="bargainAppOrgResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:验证合同适用部门是否存在 **/
+		]]>
+		<include refid="bargainAppOrg_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUS_BARGAIN_APP_ORG 
+		]]>
+		<where>
+		    <if test="crmId != null and crmId != ''">
+		        CRM_ID = #{crmId,jdbcType=DECIMAL}
+		    </if>
+		    <if test="modifyDate != null and modifyDate != ''">
+		        AND MODIFY_TIME >=  #{modifyDate,jdbcType=TIMESTAMP}
+		    </if>
+		    <if test="active != null and active != ''">
+		        AND active =  #{active,jdbcType=CHAR}
+		    </if>
+		</where>
+	</select>
+	
+	<!-- 根据所属合同CRM_ID查询合同适用部门-->
+	<select id="queryAppOrgByBargainCrmId" parameterType="map" resultMap="bargainAppOrgResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据所属合同CRM_ID查询合同适用部门 **/
+		]]>
+		<include refid="bargainAppOrg_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUS_BARGAIN_APP_ORG 
+		]]>
+		<where>
+		    <if test="bargainId != null and bargainId != ''">
+		        BARGAIN_CRM_ID = #{bargainId,jdbcType=DECIMAL}
+		    </if>
+		    <if test="active != null and active != ''">
+		        AND active =  #{active,jdbcType=CHAR}
+		    </if>
+		</where>
+	</select>
+
+	<!-- 统计总记录数 -->
+	<select id="queryCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.BargainAppOrgEntity">
+	    <![CDATA[
+	       	select/** 综合:统计总记录数 **/ count(*) from BSE.T_BAS_CUS_BARGAIN_APP_ORG T
+	    ]]>
+		<include refid="queryWhere" />
+
+	</select>
+
+	<!-- 新增信息 -->
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.BargainAppOrgEntity">
+		
+		<![CDATA[
+			INSERT/** 综合:新增信息 **/ INTO BSE.T_BAS_CUS_BARGAIN_APP_ORG T	(
+		]]>
+		<include refid="bargainAppOrg_Column_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, #{unifiedCode,jdbcType=VARCHAR},
+		#{beginTime,jdbcType=TIMESTAMP},
+		#{endTime,jdbcType=TIMESTAMP},
+		#{workflowNo,jdbcType=VARCHAR}, #{oaApproveStatus,jdbcType=VARCHAR},
+		#{approver,jdbcType=VARCHAR}, #{workflowStatus,jdbcType=VARCHAR},
+		#{status,jdbcType=VARCHAR},
+		#{orgBelonging,jdbcType=CHAR},
+		#{createDate,jdbcType=TIMESTAMP}, #{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=CHAR}, #{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR},
+		#{bargainId,jdbcType=DECIMAL},
+		#{virtualCode,jdbcType=VARCHAR}, #{crmId,jdbcType=DECIMAL}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+
+	<!-- 修改信息 -->
+	<update id="update"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.BargainAppOrgEntity">
+		update/** 综合:修改信息 **/ BSE.T_BAS_CUS_BARGAIN_APP_ORG
+		<set>
+				UNIFIED_CODE = #{unifiedCode,jdbcType=VARCHAR},
+				BEGIN_TIME = #{beginTime,jdbcType=TIMESTAMP},
+				END_TIME = #{endTime,jdbcType=TIMESTAMP},
+				WORKFLOW_NO = #{workflowNo,jdbcType=VARCHAR},
+				OA_APPROVE_STATUS = #{oaApproveStatus,jdbcType=VARCHAR},
+				APPROVER = #{approver,jdbcType=VARCHAR},
+				WORKFLOW_STATUS = #{workflowStatus,jdbcType=VARCHAR},
+				STATUS = #{status,jdbcType=VARCHAR},
+				ORG_BELONGING = #{orgBelonging,jdbcType=CHAR},
+				 CREATE_TIME = #{createDate,jdbcType=TIMESTAMP}, 
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+				 ACTIVE = #{active,jdbcType=CHAR}, 
+				 CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR}, 
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+				BARGAIN_CRM_ID = #{bargainId,jdbcType=DECIMAL},
+				VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR}
+			<!-- <if test="crmId != null">
+				CRM_ID = #{crmId,jdbcType=DECIMAL},
+			</if> -->
+		</set>
+
+		<where>
+			<if test="crmId != null and crmId != ''">
+				CRM_ID = #{crmId,jdbcType=DECIMAL}
+			</if>
+		</where>
+
+	</update>
+
+	<!-- 作废信息 -->
+	<update id="deleteByCode" parameterType="map">
+		update/** 综合:作废信息 **/ BSE.T_BAS_CUS_BARGAIN_APP_ORG
+
+		<set>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+
+		</set>
+
+		<where>
+			<if test="code !=null and code != ''">
+				CRM_ID = #{code,jdbcType=DECIMAL}
+			</if>
+			<if test="active0 != null and active0 != ''">
+				AND ACTIVE = #{active0,jdbcType=CHAR}
+			</if>
+		</where>
+	</update>
+	
+	<!-- 根据crmId和部门编码获取合同适用部门-->
+	<select id="queryAppOrgByBargainCrmIdAndCode" parameterType="map" resultMap="bargainAppOrgResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据所属合同CRM_ID查询合同适用部门 **/
+		]]>
+		<include refid="bargainAppOrg_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUS_BARGAIN_APP_ORG 
+		]]>
+		<where>
+		    <if test="bargainId != null and bargainId != ''">
+		        BARGAIN_CRM_ID = #{bargainId,jdbcType=DECIMAL}
+		    </if>
+		    <if test="active != null and active != ''">
+		        AND active =  #{active,jdbcType=CHAR}
+		    </if>
+		    <if test="unifiedCode != null and unifiedCode != ''">
+		        AND UNIFIED_CODE =  #{unifiedCode,jdbcType=VARCHAR}
+		    </if>
+		</where>
+	</select>
+	
+	<!-- 根据crmId和部门编码列表获取合同适用部门-->
+	<select id="queryAppOrgByBargainCrmIdAndCodeList" parameterType="map" resultMap="bargainAppOrgResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据所属合同CRM_ID查询合同适用部门 **/
+		]]>
+		<include refid="bargainAppOrg_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUS_BARGAIN_APP_ORG 
+		]]>
+		<where>
+		    <if test="bargainId != null and bargainId != ''">
+		        BARGAIN_CRM_ID = #{bargainId,jdbcType=DECIMAL}
+		    </if>
+		    <if test="active != null and active != ''">
+		        AND active =  #{active,jdbcType=CHAR}
+		    </if>
+		    <if test="unifiedCodeList != null and unifiedCodeList != ''">
+		        AND UNIFIED_CODE in
+				<foreach collection="unifiedCodeList" index="index" item="unifiedCode"
+					open="(" separator="," close=")">
+					#{unifiedCode}
+				</foreach>
+		    </if>
+		</where>
+	</select>
+
+</mapper>

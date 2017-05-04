@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.pickup.order.TruckResource">
+
+	<!--OwnTruckDto结果映射 -->
+	<resultMap id="OwnTruckResultMap"
+		type="com.deppon.foss.module.pickup.order.api.shared.dto.OwnTruckDto">
+		<result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+		<result column="DRIVER_CODE" property="driverCode" jdbcType="VARCHAR" />
+		<result column="DRIVER_NAME" property="driverName" jdbcType="VARCHAR" />
+		<result column="VEHICLE_TYPE" property="vehicleType" jdbcType="VARCHAR" />
+		<result column="DEVICE_NO" property="deviceNo" jdbcType="VARCHAR" />
+		<result column="DRIVER_MOBILE" property="driverMobile"
+			jdbcType="VARCHAR" />
+		<result column="SELF_VOLUME" property="netVolume" jdbcType="DECIMAL" />
+		<result column="SELF_WEIGHT" property="netWeight" jdbcType="DECIMAL" />
+		<result column="REMAINING_WEIGHT" property="remainingWeight"
+			jdbcType="DECIMAL" />
+		<result column="REMAINING_VOLUME" property="remainingVolume"
+			jdbcType="DECIMAL" />
+		<result column="ISPDABUNDLE" property="isPdaBundle" jdbcType="VARCHAR" />
+		<result column="REGION_NAME" property="ownedZoneName" jdbcType="VARCHAR" />
+		<result column="REGION_CODE" property="ownedZoneCode" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!--查询物流班车 -->
+	<select id="queryTruckDepartPlan" resultMap="OwnTruckResultMap">
+		select /*模块：接送货-处理订单-查询物流班车*/ T.VEHICLE_NO,/**车牌号**/
+			OW.VEHICLE_LENGTH VEHICLE_TYPE,/**车型**/
+			S.DEVICE_NO,/**设备号**/
+			DECODE(S.DEVICE_NO,null,'N','Y') ISPDABUNDLE,/**是否PDA绑定**/
+			T.DRIVER_CODE1 DRIVER_CODE,/**司机编码**/
+			T.DRIVER_PHONE1 DRIVER_MOBILE,/**司机手机**/
+			T.DRIVER_NAME1 DRIVER_NAME,/**司机姓名**/
+			OW.SELF_WEIGHT,/**载重**/
+			OW.SELF_VOLUME,/**载空**/
+			VA.REMAINING_WEIGHT,/**剩余重量**/
+			VA.REMAINING_VOLUME,/**剩余体积**/
+			to_char(wm_concat(V.REGION_NAME) over(partition BY T.VEHICLE_NO)) REGION_NAME, /** 接货小区名称 **/
+			to_char(wm_concat(sm.REGION_CODE) over(partition BY T.VEHICLE_NO))
+			REGION_CODE /** 接货小区编码 **/
+		from TFR.T_OPT_TRUCK_DEPART_PLAN_DETAIL T
+			left join PKP.T_SRV_PDA_SIGN S on T.VEHICLE_NO = S.VEHICLE_NO
+			and T.DRIVER_CODE1 = S.DRIVER_CODE
+			and S.STATUS = #{bundleStatus,jdbcType=VARCHAR}
+			left join PKP.T_SRV_VEHICLE_ACTUALSITUATION VA on T.VEHICLE_NO = VA.VEHICLE_NO
+			left join BSE.T_BAS_OWN_TRUCK OW ON T.VEHICLE_NO = OW.VEHICLE_NO and OW.ACTIVE = #{active,jdbcType=VARCHAR}
+			left join BSE.T_BAS_REGION_VEHICLE V on V.VEHICLE_NO = T.VEHICLE_NO 
+			and V.REGION_TYPE = #{regionType,jdbcType=VARCHAR}
+			and V.REGION_NATURE = #{regionNature,jdbcType=VARCHAR}
+			and V.ACTIVE = #{active,jdbcType=VARCHAR}
+			left join bse.t_bas_service_smallzone sm /*14.7.29 gcl AUTO-212 联合接送货小区表获得小区编码 */
+    		on sm.virtual_code = v.region_code and sm.region_type=v.region_type and sm.ACTIVE = #{active,jdbcType=VARCHAR}
+		where t.plan_type = #{departPlanType,jdbcType=VARCHAR}
+			AND t.Orig_Org_Code = #{orgCode,jdbcType=VARCHAR}
+			AND t.depart_date = TRUNC(SYSDATE,'dd')
+			AND t.status = #{departPlanStatus,jdbcType=VARCHAR}
+	</select>
+	<!-- 查询约车 -->
+	<select id="queryOrderVehicle" resultMap="OwnTruckResultMap">
+		select /*模块：接送货-处理订单-查询约车*/OA.VEHICLE_NO,
+			VT.VEHICLE_LENGTH_NAME VEHICLE_TYPE, /**车型**/
+			S.DEVICE_NO, /**设备号**/
+			DECODE(S.DEVICE_NO, null, 'N', 'Y') ISPDABUNDLE, /**是否PDA绑定**/
+			DECODE(S.DRIVER_NAME,NULL,OA.DRIVER_NAME) DRIVER_NAME, /**司机姓名**/
+ 			DECODE(S.DRIVER_CODE,NULL,OA.DRIVER_CODE) DRIVER_CODE, /**司机编码**/
+			D.EMP_PHONE DRIVER_MOBILE, /**司机手机**/
+			OW.SELF_WEIGHT, /**载重**/
+			OW.SELF_VOLUME, /**载空**/
+			VA.REMAINING_WEIGHT, /**剩余重量**/
+			VA.REMAINING_VOLUME, /**剩余体积**/
+			to_char(wm_concat(V.REGION_NAME) over(partition BY OA.VEHICLE_NO)) REGION_NAME, /** 接货小区名称 **/
+			to_char(wm_concat(sm.REGION_CODE) over(partition BY OA.VEHICLE_NO))
+			REGION_CODE /** 接货小区编码 **/
+		from TFR.T_OPT_ORDER_VEHICLE OV
+		join TFR.T_OPT_PASS_ORDER_APPLY OA on OV.ORDER_NO = OA.ORDER_NO
+			left join PKP.T_SRV_PDA_SIGN S on S.VEHICLE_NO = OA.VEHICLE_NO
+			and S.STATUS = #{bundleStatus,jdbcType=VARCHAR}
+			left join PKP.T_SRV_VEHICLE_ACTUALSITUATION VA on OA.VEHICLE_NO =
+			VA.VEHICLE_NO
+			left join BSE.T_BAS_OWN_TRUCK OW ON OA.VEHICLE_NO = OW.VEHICLE_NO and OW.ACTIVE = #{active,jdbcType=VARCHAR}
+			left join BSE.T_BAS_OWNDRIVER D on S.DRIVER_CODE = D.EMP_CODE and D.ACTIVE = #{active,jdbcType=VARCHAR}
+			left join BSE.T_BAS_REGION_VEHICLE V on V.VEHICLE_NO = OA.VEHICLE_NO
+			and V.REGION_TYPE = #{regionType,jdbcType=VARCHAR}
+			and V.REGION_NATURE = #{regionNature,jdbcType=VARCHAR}
+			and V.ACTIVE = #{active,jdbcType=VARCHAR}
+			left join bse.t_bas_service_smallzone sm /*14.7.29 gcl AUTO-212 联合接送货小区表获得小区编码 */
+    		on sm.virtual_code = v.region_code and sm.region_type=v.region_type and sm.ACTIVE = #{active,jdbcType=VARCHAR}
+		left join BSE.T_BAS_VEHICLE_TYPE_LENGTH VT on VT.VEHICLE_LENGTH_CODE = OW.VEHICLE_LENGHT_CODE and VT.ACTIVE = #{active,jdbcType=VARCHAR}
+		where OV.USE_VEHICLE_ORG_CODE = #{orgCode,jdbcType=VARCHAR} and OV.STATUS in 
+				<foreach collection="orderVehicleStatus" item="item" index="index"
+					open="(" separator="," close=")">
+						#{item}
+				</foreach>
+	</select>
+
+	<!-- 查询借车 -->
+	<select id="queryBorrowVehicle" resultMap="OwnTruckResultMap">
+		<![CDATA[
+			select /*模块：接送货-处理订单-查询借车*/BA.VEHICLE_NO,/**车牌号**/
+				VT.VEHICLE_LENGTH_NAME VEHICLE_TYPE, /**车型**/
+				S.DEVICE_NO, /**设备号**/
+				DECODE(S.DEVICE_NO, null, 'N', 'Y') ISPDABUNDLE, /**是否PDA绑定**/
+				S.DRIVER_NAME,/**司机姓名**/
+				S.DRIVER_CODE,/**司机编码**/
+				D.EMP_PHONE DRIVER_MOBILE,/**司机手机**/
+				OW.SELF_WEIGHT, /**载重**/
+				OW.SELF_VOLUME, /**载空**/
+				VA.REMAINING_WEIGHT, /**剩余重量**/
+				VA.REMAINING_VOLUME, /**剩余体积**/
+				to_char(wm_concat(V.REGION_NAME) over(partition BY BA.VEHICLE_NO)) REGION_NAME, /** 接货小区名称 **/
+				to_char(wm_concat(sm.REGION_CODE) over(partition BY BA.VEHICLE_NO))
+				REGION_CODE /** 接货小区编码 **/
+			from TFR.T_OPT_BORROW_VEHICLE BV
+				join TFR.T_OPT_PASS_BORROW_APPLY BA on BV.BORROW_NO = BA.BORROW_NO
+				left join PKP.T_SRV_PDA_SIGN S on S.VEHICLE_NO = BA.VEHICLE_NO
+				and S.STATUS = #{bundleStatus,jdbcType=VARCHAR}
+				left join PKP.T_SRV_VEHICLE_ACTUALSITUATION VA on BA.VEHICLE_NO = VA.VEHICLE_NO
+				left join BSE.T_BAS_OWN_TRUCK OW ON BA.VEHICLE_NO = OW.VEHICLE_NO and OW.ACTIVE = #{active,jdbcType=VARCHAR}
+				left join BSE.T_BAS_OWNDRIVER D on S.DRIVER_CODE = D.EMP_CODE and D.ACTIVE = #{active,jdbcType=VARCHAR}
+				left join BSE.T_BAS_REGION_VEHICLE V on V.VEHICLE_NO = BA.VEHICLE_NO
+				and V.REGION_TYPE = #{regionType,jdbcType=VARCHAR}
+				and V.REGION_NATURE = #{regionNature,jdbcType=VARCHAR}
+				and V.ACTIVE = #{active,jdbcType=VARCHAR}
+				left join bse.t_bas_service_smallzone sm /*14.7.29 gcl AUTO-212 联合接送货小区表获得小区编码 */
+    			on sm.virtual_code = v.region_code and sm.region_type=v.region_type and sm.ACTIVE = #{active,jdbcType=VARCHAR}
+				left join BSE.T_BAS_VEHICLE_TYPE_LENGTH VT on VT.VEHICLE_LENGTH_CODE = OW.VEHICLE_LENGHT_CODE and VT.ACTIVE = #{active,jdbcType=VARCHAR}
+			where BV.APPLY_ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+				and BV.BORROW_BEGIN_TIME <= SYSDATE
+				and BV.Borrow_End_Time >= SYSDATE
+		]]>
+	</select>
+	
+	<!--OwnTruckDto结果映射 -->
+	<resultMap id="OwnTruckVolumeMap"
+		type="com.deppon.foss.module.pickup.order.api.shared.dto.OwnTruckDto">
+		<result column="SELF_VOLUME" property="netVolume" jdbcType="VARCHAR" />
+		<result column="REMAINING_VOLUME" property="remainingVolume" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<select id="queryVolumeByVehicleNo" resultMap="OwnTruckVolumeMap">
+		select /*模块：接送货-处理订单-根据车牌查询净空和剩余体积*/T.SELF_VOLUME,A.REMAINING_VOLUME 
+			from BSE.T_BAS_OWN_TRUCK T 
+			join PKP.T_SRV_VEHICLE_ACTUALSITUATION A on T.VEHICLE_NO = A.VEHICLE_NO
+		where T.VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR} and T.ACTIVE = #{active,jdbcType=VARCHAR}
+		order by t.create_time DESC
+	</select>
+	
+	<!--OwnTruckDto结果映射 -->
+	<resultMap id="VehicleInfoMap"
+		type="com.deppon.foss.module.pickup.order.api.shared.dto.VehicleInfoDto">
+		<result column="VEHICLE_LENGTH_NAME" property="vehicleLengthName" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<select id="queryVehicleTypeByVehicleNo" resultMap="VehicleInfoMap">
+		select VEHICLE_LENGTH_NAME from
+			(select TL.VEHICLE_LENGTH_NAME
+	  			From bse.t_bas_own_truck T
+	  			JOIN BSE.T_BAS_VEHICLE_TYPE_LENGTH TL ON T.VEHICLE_LENGHT_CODE =
+	                                           TL.VEHICLE_LENGTH_CODE
+	 			where T.VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR} and T.ACTIVE = #{active,jdbcType=VARCHAR}
+			union
+			select TL.VEHICLE_LENGTH_NAME
+			  	From BSE.T_BAS_LEASED_TRUCK T
+			  	JOIN BSE.T_BAS_VEHICLE_TYPE_LENGTH TL ON T.VEHICLE_LENGHT_CODE =
+			                                           TL.VEHICLE_LENGTH_CODE
+			 	where T.VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR} and T.ACTIVE = #{active,jdbcType=VARCHAR})
+		where rownum = 1
+	</select>
+	
+</mapper>

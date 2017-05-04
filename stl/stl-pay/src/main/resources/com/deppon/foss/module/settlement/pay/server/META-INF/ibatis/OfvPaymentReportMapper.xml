@@ -1,0 +1,2039 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.OfvPaymentReportDao" >
+  
+  <!-- 外请车付款报表ResultMap -->
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.pay.api.shared.dto.OfvPaymentReportResultDto" >
+    <result column="ORIG_ORG_CODE" property="origOrgCode" jdbcType="VARCHAR" />
+    <result column="ORIG_ORG_NAME" property="origOrgName" jdbcType="VARCHAR" />
+    <result column="DEST_ORG_CODE" property="destOrgCode" jdbcType="VARCHAR" />
+    <result column="DEST_ORG_NAME" property="destOrgName" jdbcType="VARCHAR" />
+    <result column="ORIG_CITY_CODE" property="origCityCode" jdbcType="VARCHAR" />
+    <result column="ORIG_CITY_NAME" property="origCityName" jdbcType="VARCHAR" />
+    <result column="DEST_CITY_CODE" property="destCityCode" jdbcType="VARCHAR" />
+    <result column="DEST_CITY_NAME" property="destCityName" jdbcType="VARCHAR" />
+    <result column="PAYABLE_TYPE" property="payableType" jdbcType="VARCHAR" />
+    <result column="VEHICLE_ASSEMBLE_BILL_NO" property="vehicleAssembleBillNo" jdbcType="VARCHAR" />
+    <result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+    <result column="DRIVER_CODE" property="driverCode" jdbcType="VARCHAR" />
+    <result column="DRIVER_NAME" property="driverName" jdbcType="VARCHAR" />
+    <result column="STOWAGE_DATE" property="stowageDate" jdbcType="TIMESTAMP" />
+    <result column="TOTAL_FEE" property="feeTotal" jdbcType="DECIMAL" />
+    <result column="PRE_PAID_FEE" property="prePaidFee" jdbcType="DECIMAL" />
+    <result column="ARRIVE_PAID_FEE" property="arrivePaidFee" jdbcType="DECIMAL" />
+    <result column="ADJUST_PAID_FEE" property="adjustPaidFee" jdbcType="DECIMAL" />
+    <result column="PRE_PAID_PAYER" property="prePaidPayer" jdbcType="VARCHAR" />
+    <result column="PRE_PAID_AUDITER" property="prePaidAuditer" jdbcType="VARCHAR" />
+    <result column="ARRIVE_PAID_PAYER" property="arrivePaidPayer" jdbcType="VARCHAR" />
+     <result column="ARRIVE_PAID_AUDITER" property="arrivePaidAuditer" jdbcType="VARCHAR" />
+    <result column="ACTUAL_DEPART_TIME" property="actualDepartTime" jdbcType="TIMESTAMP" />
+    <result column="ACTUAL_ARRIVE_TIME" property="actualArriveTime" jdbcType="TIMESTAMP" />
+    <result column="VEHICLE_OWNER_SHIP" property="vehicleOwnerShip" jdbcType="VARCHAR" />
+    <result column="BE_RETURN_RECEIPT" property="beReturnReceipt" jdbcType="VARCHAR" />       
+    <result column="WORK_FLOW_NO" property="workFlowNo" jdbcType="VARCHAR" />    
+    <result column="CONTACT" property="carOwnerName" jdbcType="VARCHAR" />   
+    <result column="MINISTRYINFORMATION" property="informationName" jdbcType="VARCHAR" />            
+  </resultMap>
+  
+  <!-- 根据查询条件查询外请车付款报表 -->
+  <select id="queryOfvPaymentReport" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.OfvPaymentReportQueryDto" >
+	SELECT P.* FROM (SELECT
+			/*根据查询条件查询外请车付款报表*/ 
+		   P.ORIG_ORG_CODE as ORIG_ORG_CODE,
+	       P.ORIG_ORG_NAME as ORIG_ORG_NAME,
+	       P.DEST_ORG_CODE as DEST_ORG_CODE,
+	       P.DEST_ORG_NAME as DEST_ORG_NAME,
+	       P.PAYABLE_TYPE as PAYABLE_TYPE,
+	       B.VEHICLEASSEMBLE_NO as VEHICLE_ASSEMBLE_BILL_NO,
+	       B.VEHICLE_NO as VEHICLE_NO,
+	       B.DRIVER_NAME as DRIVER_NAME,
+	       B.DRIVER_CODE as DRIVER_CODE,
+	       B.CREATE_TIME as STOWAGE_DATE,
+	       (B.FEE_TOTAL+NVL(A.ADJUST_FEE,0)) /100 AS TOTAL_FEE,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN P.AMOUNT/100 
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN P.AMOUNT/100 
+	       ELSE 0 END  AS PRE_PAID_FEE,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN P.AMOUNT/100 
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN P.AMOUNT/100 
+	       ELSE 0 END  AS ARRIVE_PAID_FEE,
+	       A.ADJUST_FEE/100 as ADJUST_PAID_FEE,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN M.CREATE_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN M.CREATE_USER_NAME
+	       ELSE '' END  AS PRE_PAID_PAYER,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN P.AUDIT_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN P.AUDIT_USER_NAME
+	       ELSE '' END  AS PRE_PAID_AUDITER,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN M.CREATE_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN M.CREATE_USER_NAME
+	       ELSE '' END  AS ARRIVE_PAID_PAYER,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN P.AUDIT_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN P.AUDIT_USER_NAME
+	       ELSE '' END  AS ARRIVE_PAID_AUDITER,
+	       
+	       CASE
+	       WHEN  B.VEHICLE_OWNERSHIP=#{ASSETS_OWNERSHIP_TYPE_COMPANY} THEN '公司'  
+	       WHEN  B.VEHICLE_OWNERSHIP=#{ASSETS_OWNERSHIP_TYPE_LEASED} THEN '外请'
+	       ELSE '' END  AS VEHICLE_OWNER_SHIP,
+	        
+	       CASE
+	       WHEN B.BE_RETURN_RECEIPT=#{BE_RETURN_RECEIPT_Y} THEN '是'  
+	       WHEN B.BE_RETURN_RECEIPT=#{BE_RETURN_RECEIPT_N} THEN '否'  
+	       ELSE '' END  AS BE_RETURN_RECEIPT,
+	       D.ACTUAL_DEPART_TIME as ACTUAL_DEPART_TIME,
+	       D.ACTUAL_ARRIVE_TIME as ACTUAL_ARRIVE_TIME,
+	       
+	       CASE
+	       WHEN M.WORKFLOW_NO IS NOT NULL THEN M.WORKFLOW_NO
+	       ELSE M.APPLY_WORK_FLOW_NO END  AS WORK_FLOW_NO,
+	       
+	       L.CONTACT AS CONTACT,
+	       P.BUSINESS_DATE AS BUSINESS_DATE,
+		   Y.MINISTRYINFORMATION AS MINISTRYINFORMATION
+	FROM STL.T_STL_BILL_PAYABLE P,
+	       TFR.T_OPT_VEHICLEASSEMBLEBILL B,
+	       STL.T_STL_BILL_PAYMENT M,
+	       TFR.T_OPT_TRUCK_TASK_BILL T,
+	       TFR.T_OPT_TRUCK_TASK_DETAIL D,
+		   BSE.T_BAS_LEASED_TRUCK L,
+		   TFR.T_OPT_PASS_INVITE_APPLY Y,
+	       (
+          		SELECT A_TEMP.VEHICLEASSEMBLE_NO AS VEHICLEASSEMBLE_NO,
+          			   SUM(A_TEMP.ADJUST_FEE) AS ADJUST_FEE
+          		FROM (
+                		SELECT F.VEHICLEASSEMBLE_NO,
+                       		CASE 
+                       		WHEN F.AWARD_TYPE=#{ADJUST_AWARD_TYPE_FINE} THEN F.ADJUST_FEE*-1 
+                       		WHEN F.AWARD_TYPE=#{ADJUST_TYPE_FEE_REDUCE} THEN F.ADJUST_FEE*-1 
+                       		ELSE F.ADJUST_FEE 
+                       		END  AS ADJUST_FEE
+                		FROM TFR.T_OPT_ADJUST_OUTVEHICLE_FEE F
+                		WHERE F.AUDIT_STATE = #{ADJUST_AUDIT_STATUS_PASS}
+                ) A_TEMP 
+           		GROUP BY A_TEMP.VEHICLEASSEMBLE_NO
+         	) A        
+		WHERE P.SOURCE_BILL_NO = B.VEHICLEASSEMBLE_NO
+			  AND P.SOURCE_BILL_NO = A.VEHICLEASSEMBLE_NO(+)
+			  AND P.PAYMENT_NO = M.PAYMENT_NO
+			  AND B.VEHICLEASSEMBLE_NO = T.BILL_NO(+)
+			  AND T.TRUCK_TASK_DETAIL_ID = D.ID(+)
+			  AND P.ACTIVE=#{OFV_PAYMENT_REPORT_YES}
+  			  AND P.IS_RED_BACK=#{OFV_PAYMENT_REPORT_NO}
+  			  AND Y.INVITE_NO(+) = B.INVITE_NO
+  			  AND Y.VEHICLE_NO(+) = B.VEHICLE_NO
+  			  AND L.VEHICLE_NO(+) = B.VEHICLE_NO
+  			  AND L.ACTIVE = 'Y'
+  			<if test="startPaymentDate != null and startPaymentDate != '' and endPaymentDate != null and endPaymentDate != ''">
+				AND<![CDATA[ M.CREATE_TIME >=#{startPaymentDate} AND M.CREATE_TIME <#{endPaymentDate} ]]>
+			</if>
+			<if test="workFlowNos!=null and workFlowNos.size()>0">
+				AND (
+					M.WORKFLOW_NO IN 
+     				<foreach collection="workFlowNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        	#{item} 
+					</foreach>
+					OR M.APPLY_WORK_FLOW_NO IN
+					<foreach collection="workFlowNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        	#{item} 
+					</foreach>
+				)
+	 		</if>
+  			<if test="vchAbillNos!=null and vchAbillNos.size()>0">
+				AND B.VEHICLEASSEMBLE_NO IN 
+     				<foreach collection="vchAbillNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        	#{item} 
+					</foreach>
+	 		</if>  
+			<if test="payableTypeList!=null and payableTypeList.size()>0">
+				AND P.PAYABLE_TYPE in
+     			<foreach collection="payableTypeList"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		</if>
+			<if test="auditStatus != null and auditStatus != ''">
+				AND P.APPROVE_STATUS = #{auditStatus}
+			</if>
+			<if test="origDept != null and origDept != ''">
+				AND P.ORIG_ORG_CODE = #{origDept}
+			</if>
+			<if test="destDept != null and destDept != ''">
+				AND P.DEST_ORG_CODE = #{destDept}
+			</if>
+	 		AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = P.PAYABLE_ORG_CODE<!-- 登录者部门等于应付部门过滤 -->
+     			)
+     		union all
+     		/*查询快递的外请车付款信息*/ 
+	SELECT
+			/*根据查询条件查询外请车付款报表*/ 
+		   P.ORIG_ORG_CODE as ORIG_ORG_CODE,
+	       P.ORIG_ORG_NAME as ORIG_ORG_NAME,
+	       P.DEST_ORG_CODE as DEST_ORG_CODE,
+	       P.DEST_ORG_NAME as DEST_ORG_NAME,
+	       P.PAYABLE_TYPE as PAYABLE_TYPE,
+	       B.HANDOVERBILLNO as VEHICLE_ASSEMBLE_BILL_NO,
+	       B.VEHICLENO as VEHICLE_NO,
+	       B.DRIVERNAME as DRIVER_NAME,
+	       B.DRIVERCODE as DRIVER_CODE,
+	       B.CREATETIME as STOWAGE_DATE,
+	       (B.TOTALFEE+NVL(A.ADJUST_FEE,0)) /100 AS TOTAL_FEE,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN P.AMOUNT/100 
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN P.AMOUNT/100 
+	       ELSE 0 END  AS PRE_PAID_FEE,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN P.AMOUNT/100 
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN P.AMOUNT/100 
+	       ELSE 0 END  AS ARRIVE_PAID_FEE,
+	       A.ADJUST_FEE/100 as ADJUST_PAID_FEE,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN M.CREATE_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN M.CREATE_USER_NAME
+	       ELSE '' END  AS PRE_PAID_PAYER,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN P.AUDIT_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN P.AUDIT_USER_NAME
+	       ELSE '' END  AS PRE_PAID_AUDITER,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN M.CREATE_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN M.CREATE_USER_NAME
+	       ELSE '' END  AS ARRIVE_PAID_PAYER,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN P.AUDIT_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN P.AUDIT_USER_NAME
+	       ELSE '' END  AS ARRIVE_PAID_AUDITER,
+	       
+	       CASE
+	       WHEN  B.CAROWNERSHIPTYPE=#{ASSETS_OWNERSHIP_TYPE_COMPANY} THEN '公司'  
+	       WHEN  B.CAROWNERSHIPTYPE=#{ASSETS_OWNERSHIP_TYPE_LEASED} THEN '外请'
+	       ELSE '' END  AS VEHICLE_OWNER_SHIP,
+	        
+	       CASE
+	       WHEN B.BE_RETURN_RECEIPT=#{BE_RETURN_RECEIPT_Y} THEN '是'  
+	       WHEN B.BE_RETURN_RECEIPT=#{BE_RETURN_RECEIPT_N} THEN '否'  
+	       ELSE '' END  AS BE_RETURN_RECEIPT,
+	       D.ACTUAL_DEPART_TIME as ACTUAL_DEPART_TIME,
+	       D.ACTUAL_ARRIVE_TIME as ACTUAL_ARRIVE_TIME,
+	       
+	       CASE
+	       WHEN M.WORKFLOW_NO IS NOT NULL THEN M.WORKFLOW_NO
+	       ELSE M.APPLY_WORK_FLOW_NO END  AS WORK_FLOW_NO,
+	       
+	       L.CONTACT AS CONTACT,
+	       P.BUSINESS_DATE AS BUSINESS_DATE,
+		   Y.MINISTRYINFORMATION AS MINISTRYINFORMATION
+	FROM STL.T_STL_BILL_PAYABLE P,
+	       TFR.T_WK_TRF_BILL B,
+	       STL.T_STL_BILL_PAYMENT M,
+	       TFR.T_OPT_TRUCK_TASK_BILL T,
+	       TFR.T_OPT_TRUCK_TASK_DETAIL D,
+		   BSE.T_BAS_LEASED_TRUCK L,
+		   TFR.T_OPT_PASS_INVITE_APPLY Y,
+	       (
+          		SELECT A_TEMP.VEHICLEASSEMBLE_NO AS VEHICLEASSEMBLE_NO,
+          			   SUM(A_TEMP.ADJUST_FEE) AS ADJUST_FEE
+          		FROM (
+                		SELECT F.VEHICLEASSEMBLE_NO,
+                       		CASE 
+                       		WHEN F.AWARD_TYPE=#{ADJUST_AWARD_TYPE_FINE} THEN F.ADJUST_FEE*-1 
+                       		WHEN F.AWARD_TYPE=#{ADJUST_TYPE_FEE_REDUCE} THEN F.ADJUST_FEE*-1 
+                       		ELSE F.ADJUST_FEE 
+                       		END  AS ADJUST_FEE
+                		FROM TFR.T_OPT_ADJUST_OUTVEHICLE_FEE F
+                		WHERE F.AUDIT_STATE = #{ADJUST_AUDIT_STATUS_PASS}
+                ) A_TEMP 
+           		GROUP BY A_TEMP.VEHICLEASSEMBLE_NO
+         	) A        
+		WHERE P.SOURCE_BILL_NO = B.HANDOVERBILLNO
+			  AND P.SOURCE_BILL_NO = A.VEHICLEASSEMBLE_NO(+)
+			  AND P.PAYMENT_NO = M.PAYMENT_NO
+			  AND B.HANDOVERBILLNO = T.BILL_NO(+)
+			  AND T.TRUCK_TASK_DETAIL_ID = D.ID(+)
+			  AND P.ACTIVE=#{OFV_PAYMENT_REPORT_YES}
+  			  AND P.IS_RED_BACK=#{OFV_PAYMENT_REPORT_NO}
+  			  AND Y.INVITE_NO(+) = B.ABOUTVEHICLENO
+  			  AND Y.VEHICLE_NO(+) = B.VEHICLENO
+  			  AND L.VEHICLE_NO(+) = B.vehicleno
+  			  AND L.ACTIVE = 'Y'
+  			<if test="startPaymentDate != null and startPaymentDate != '' and endPaymentDate != null and endPaymentDate != ''">
+				AND<![CDATA[ M.CREATE_TIME >=#{startPaymentDate} AND M.CREATE_TIME <#{endPaymentDate} ]]>
+			</if>
+			<if test="workFlowNos!=null and workFlowNos.size()>0">
+				AND (
+					M.WORKFLOW_NO IN 
+     				<foreach collection="workFlowNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        	#{item} 
+					</foreach>
+					OR M.APPLY_WORK_FLOW_NO IN
+					<foreach collection="workFlowNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        	#{item} 
+					</foreach>
+				)
+	 		</if>
+  			<if test="vchAbillNos!=null and vchAbillNos.size()>0">
+				AND B.HANDOVERBILLNO IN 
+     				<foreach collection="vchAbillNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        	#{item} 
+					</foreach>
+	 		</if>  
+			<if test="payableTypeList!=null and payableTypeList.size()>0">
+				AND P.PAYABLE_TYPE in
+     			<foreach collection="payableTypeList"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		</if>
+			<if test="auditStatus != null and auditStatus != ''">
+				AND P.APPROVE_STATUS = #{auditStatus}
+			</if>
+			<if test="origDept != null and origDept != ''">
+				AND P.ORIG_ORG_CODE = #{origDept}
+			</if>
+			<if test="destDept != null and destDept != ''">
+				AND P.DEST_ORG_CODE = #{destDept}
+			</if>
+	 		AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = P.PAYABLE_ORG_CODE<!-- 登录者部门等于应付部门过滤 -->
+     			)) P     					
+     		ORDER BY P.BUSINESS_DATE DESC			
+  </select>
+  
+   <!-- 外请车付款报表ResultMap -->
+  <resultMap id="TotalAmountResultMap" type="com.deppon.foss.module.settlement.pay.api.shared.dto.OfvPaymentReportResultDto" >
+    <result column="TOTAL_RECORDS_IN_DB" property="totalRecordsInDB" jdbcType="VARCHAR" />
+    <result column="TOTAL_FEE_SUM" property="totalFeeSum" jdbcType="DECIMAL" />
+    <result column="PRE_PAID_FEE_SUM" property="prePaidFeeSum" jdbcType="DECIMAL" />
+    <result column="ARRIVE_PAID_FEE_SUM" property="arrivePaidFeeSum" jdbcType="DECIMAL" />
+    <result column="ADJUST_PAID_FEE_SUM" property="adjustPaidFeeSum" jdbcType="DECIMAL" />
+  </resultMap>
+  
+  <!-- 根据查询条件查询外请车付款报表存在的总条数 -->
+   <select id="queryTotalRecords" resultMap="TotalAmountResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.OfvPaymentReportQueryDto" >
+	SELECT 
+			/*根据查询条件查询外请车付款报表存在的总条数 */
+		count(*) as TOTAL_RECORDS_IN_DB,
+<!-- 		SUM((B.FEE_TOTAL+NVL(A.ADJUST_FEE,0)) / 100) as TOTAL_FEE_SUM, -->
+       	SUM(
+           CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN P.AMOUNT/100 
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN P.AMOUNT/100 
+	       ELSE 0 END
+       	) AS PRE_PAID_FEE_SUM,
+        SUM(
+           CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN P.AMOUNT/100 
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN P.AMOUNT/100 
+	       ELSE 0 END
+       	) AS ARRIVE_PAID_FEE_SUM,
+       	SUM( P.ADJUST_FEE/100) AS ADJUST_PAID_FEE_SUM FROM
+   ( SELECT 
+     	P.BILL_TYPE,
+     	P.AMOUNT,
+     	A.ADJUST_FEE,
+     	P.BUSINESS_DATE
+	FROM STL.T_STL_BILL_PAYABLE P,
+	       TFR.T_OPT_VEHICLEASSEMBLEBILL B,
+	       STL.T_STL_BILL_PAYMENT M,
+	       TFR.T_OPT_TRUCK_TASK_BILL T,
+	       TFR.T_OPT_TRUCK_TASK_DETAIL D,
+	       BSE.T_BAS_LEASED_TRUCK L,
+		   TFR.T_OPT_PASS_INVITE_APPLY Y,
+	       (
+          		SELECT A_TEMP.VEHICLEASSEMBLE_NO AS VEHICLEASSEMBLE_NO,
+          			   SUM(A_TEMP.ADJUST_FEE) AS ADJUST_FEE
+          		FROM (
+                		SELECT F.VEHICLEASSEMBLE_NO,
+                       		CASE 
+                       		WHEN F.AWARD_TYPE=#{ADJUST_AWARD_TYPE_FINE} THEN F.ADJUST_FEE*-1 
+                       		WHEN F.AWARD_TYPE=#{ADJUST_TYPE_FEE_REDUCE} THEN F.ADJUST_FEE*-1 
+                       		ELSE F.ADJUST_FEE 
+                       		END  AS ADJUST_FEE
+                		FROM TFR.T_OPT_ADJUST_OUTVEHICLE_FEE F
+                		WHERE F.AUDIT_STATE = #{ADJUST_AUDIT_STATUS_PASS}
+                ) A_TEMP 
+           		GROUP BY A_TEMP.VEHICLEASSEMBLE_NO
+         	) A            
+		WHERE P.SOURCE_BILL_NO = B.VEHICLEASSEMBLE_NO
+			  AND P.SOURCE_BILL_NO = A.VEHICLEASSEMBLE_NO(+)
+			  AND P.PAYMENT_NO = M.PAYMENT_NO
+			  AND B.VEHICLEASSEMBLE_NO = T.BILL_NO(+)
+			  AND T.TRUCK_TASK_DETAIL_ID = D.ID(+)
+			  AND P.ACTIVE=#{OFV_PAYMENT_REPORT_YES}
+  			  AND P.IS_RED_BACK=#{OFV_PAYMENT_REPORT_NO}
+  			  AND Y.INVITE_NO(+) = B.INVITE_NO
+  			  AND Y.VEHICLE_NO(+) = B.VEHICLE_NO
+  			  AND L.VEHICLE_NO(+) = B.VEHICLE_NO
+  			  AND L.ACTIVE = 'Y'
+  			<if test="startPaymentDate != null and startPaymentDate != '' and endPaymentDate != null and endPaymentDate != ''">
+				AND<![CDATA[ M.CREATE_TIME >=#{startPaymentDate} AND M.CREATE_TIME <#{endPaymentDate} ]]>
+			</if>
+			<if test="workFlowNos!=null and workFlowNos.size()>0">
+				AND (
+					M.WORKFLOW_NO IN 
+     				<foreach collection="workFlowNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        	#{item} 
+					</foreach>
+					OR M.APPLY_WORK_FLOW_NO IN
+					<foreach collection="workFlowNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        	#{item} 
+					</foreach>
+				)
+	 		</if>
+  			<if test="vchAbillNos!=null and vchAbillNos.size()>0">
+				AND B.VEHICLEASSEMBLE_NO IN 
+     				<foreach collection="vchAbillNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        	#{item} 
+					</foreach>
+	 		</if>  
+  			<if test="payableTypeList!=null and payableTypeList.size()>0">
+				AND P.PAYABLE_TYPE in
+     			<foreach collection="payableTypeList"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		</if>
+	 		<if test="auditStatus != null and auditStatus != ''">
+				AND P.APPROVE_STATUS = #{auditStatus}
+			</if>
+			<if test="origDept != null and origDept != ''">
+				AND P.ORIG_ORG_CODE = #{origDept}
+			</if>
+			<if test="destDept != null and destDept != ''">
+				AND P.DEST_ORG_CODE = #{destDept}
+			</if>
+	 		AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = P.PAYABLE_ORG_CODE<!-- 登录者部门等于应付部门过滤 -->
+     			)	
+     			union all
+     			/*查询快递的外请车付款信息*/ 
+ SELECT 
+     	P.BILL_TYPE,
+     	P.AMOUNT,
+     	A.ADJUST_FEE,
+     	P.BUSINESS_DATE
+	FROM STL.T_STL_BILL_PAYABLE P,
+	       TFR.T_WK_TRF_BILL B,
+	       STL.T_STL_BILL_PAYMENT M,
+	       TFR.T_OPT_TRUCK_TASK_BILL T,
+	       TFR.T_OPT_TRUCK_TASK_DETAIL D,
+	       BSE.T_BAS_LEASED_TRUCK L,
+		   TFR.T_OPT_PASS_INVITE_APPLY Y,
+	       (
+          		SELECT A_TEMP.VEHICLEASSEMBLE_NO AS VEHICLEASSEMBLE_NO,
+          			   SUM(A_TEMP.ADJUST_FEE) AS ADJUST_FEE
+          		FROM (
+                		SELECT F.VEHICLEASSEMBLE_NO,
+                       		CASE 
+                       		WHEN F.AWARD_TYPE=#{ADJUST_AWARD_TYPE_FINE} THEN F.ADJUST_FEE*-1 
+                       		WHEN F.AWARD_TYPE=#{ADJUST_TYPE_FEE_REDUCE} THEN F.ADJUST_FEE*-1 
+                       		ELSE F.ADJUST_FEE 
+                       		END  AS ADJUST_FEE
+                		FROM TFR.T_OPT_ADJUST_OUTVEHICLE_FEE F
+                		WHERE F.AUDIT_STATE = #{ADJUST_AUDIT_STATUS_PASS}
+                ) A_TEMP 
+           		GROUP BY A_TEMP.VEHICLEASSEMBLE_NO
+         	) A            
+		WHERE P.SOURCE_BILL_NO = B.HANDOVERBILLNO
+			  AND P.SOURCE_BILL_NO = A.VEHICLEASSEMBLE_NO(+)
+			  AND P.PAYMENT_NO = M.PAYMENT_NO
+			  AND B.HANDOVERBILLNO = T.BILL_NO(+)
+			  AND T.TRUCK_TASK_DETAIL_ID = D.ID(+)
+			  AND P.ACTIVE=#{OFV_PAYMENT_REPORT_YES}
+  			  AND P.IS_RED_BACK=#{OFV_PAYMENT_REPORT_NO}
+  			  AND Y.INVITE_NO(+) = B.ABOUTVEHICLENO
+  			  AND Y.VEHICLE_NO(+) = B.VEHICLENO
+  			  AND L.VEHICLE_NO(+) = B.vehicleno
+  			  AND L.ACTIVE = 'Y'
+  			<if test="startPaymentDate != null and startPaymentDate != '' and endPaymentDate != null and endPaymentDate != ''">
+				AND<![CDATA[ M.CREATE_TIME >=#{startPaymentDate} AND M.CREATE_TIME <#{endPaymentDate} ]]>
+			</if>
+			<if test="workFlowNos!=null and workFlowNos.size()>0">
+				AND (
+					M.WORKFLOW_NO IN 
+     				<foreach collection="workFlowNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        	#{item} 
+					</foreach>
+					OR M.APPLY_WORK_FLOW_NO IN
+					<foreach collection="workFlowNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        	#{item} 
+					</foreach>
+				)
+	 		</if>
+  			<if test="vchAbillNos!=null and vchAbillNos.size()>0">
+				AND B.HANDOVERBILLNO IN 
+     				<foreach collection="vchAbillNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        	#{item} 
+					</foreach>
+	 		</if>  
+  			<if test="payableTypeList!=null and payableTypeList.size()>0">
+				AND P.PAYABLE_TYPE in
+     			<foreach collection="payableTypeList"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		</if>
+	 		<if test="auditStatus != null and auditStatus != ''">
+				AND P.APPROVE_STATUS = #{auditStatus}
+			</if>
+			<if test="origDept != null and origDept != ''">
+				AND P.ORIG_ORG_CODE = #{origDept}
+			</if>
+			<if test="destDept != null and destDept != ''">
+				AND P.DEST_ORG_CODE = #{destDept}
+			</if>
+	 		AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = P.PAYABLE_ORG_CODE<!-- 登录者部门等于应付部门过滤 -->
+     			)) P	     			
+     		ORDER BY P.BUSINESS_DATE DESC		
+  </select>
+  
+    <!-- 根据查询条件查询外请车付款报表存在的总金额 -->
+   <select id="queryTotalAmount" resultMap="TotalAmountResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.OfvPaymentReportQueryDto" >
+	SELECT
+		/*根据查询条件查询外请车付款报表存在的总金额*/
+		SUM(TOTAL_FEE) AS TOTAL_FEE_SUM
+  	FROM (
+  		SELECT 	distinct ((B.FEE_TOTAL + NVL(A.ADJUST_FEE, 0)) / 100) AS TOTAL_FEE,
+				P.ORIG_ORG_CODE as ORIG_ORG_CODE,
+               	P.DEST_ORG_CODE as DEST_ORG_CODE,
+               	B.VEHICLEASSEMBLE_NO as VEHICLE_ASSEMBLE_BILL_NO,
+               	B.VEHICLE_NO as VEHICLE_NO,
+               	B.DRIVER_CODE as DRIVER_CODE,
+               	B.CREATE_TIME as STOWAGE_DATE
+        FROM STL.T_STL_BILL_PAYABLE P,
+	       		TFR.T_OPT_VEHICLEASSEMBLEBILL B,
+	       		STL.T_STL_BILL_PAYMENT M,
+	       		TFR.T_OPT_TRUCK_TASK_BILL T,
+	       		TFR.T_OPT_TRUCK_TASK_DETAIL D,
+	       		BSE.T_BAS_LEASED_TRUCK L,
+		   		TFR.T_OPT_PASS_INVITE_APPLY Y,
+	       		(
+          			SELECT 
+          				A_TEMP.VEHICLEASSEMBLE_NO AS VEHICLEASSEMBLE_NO,
+          			   	SUM(A_TEMP.ADJUST_FEE) AS ADJUST_FEE
+          			FROM (
+                		SELECT F.VEHICLEASSEMBLE_NO,
+                       	CASE 
+                       	WHEN F.AWARD_TYPE=#{ADJUST_AWARD_TYPE_FINE} THEN F.ADJUST_FEE*-1 
+                       	WHEN F.AWARD_TYPE=#{ADJUST_TYPE_FEE_REDUCE} THEN F.ADJUST_FEE*-1 
+                       	ELSE F.ADJUST_FEE 
+                       	END  AS ADJUST_FEE
+                		FROM TFR.T_OPT_ADJUST_OUTVEHICLE_FEE F
+                		WHERE F.AUDIT_STATE = #{ADJUST_AUDIT_STATUS_PASS}
+                	) A_TEMP 
+           		GROUP BY A_TEMP.VEHICLEASSEMBLE_NO
+         		) A            
+		WHERE 	P.SOURCE_BILL_NO = B.VEHICLEASSEMBLE_NO
+			  	AND P.SOURCE_BILL_NO = A.VEHICLEASSEMBLE_NO(+)
+			  	AND P.PAYMENT_NO = M.PAYMENT_NO
+			  	AND B.VEHICLEASSEMBLE_NO = T.BILL_NO(+)
+			    AND T.TRUCK_TASK_DETAIL_ID = D.ID(+)
+			  	AND P.ACTIVE=#{OFV_PAYMENT_REPORT_YES}
+  			  	AND P.IS_RED_BACK=#{OFV_PAYMENT_REPORT_NO}
+  			  	AND Y.INVITE_NO(+) = B.INVITE_NO
+  			  	AND Y.VEHICLE_NO(+) = B.VEHICLE_NO
+  			    AND L.VEHICLE_NO(+) = B.VEHICLE_NO
+  			    AND L.ACTIVE = 'Y'
+  			<if test="startPaymentDate != null and startPaymentDate != '' and endPaymentDate != null and endPaymentDate != ''">
+				AND<![CDATA[ M.CREATE_TIME >=#{startPaymentDate} AND M.CREATE_TIME <#{endPaymentDate} ]]>
+			</if>
+			<if test="workFlowNos!=null and workFlowNos.size()>0">
+				AND (
+					M.WORKFLOW_NO IN 
+     				<foreach collection="workFlowNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        	#{item} 
+					</foreach>
+					OR M.APPLY_WORK_FLOW_NO IN
+					<foreach collection="workFlowNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        	#{item} 
+					</foreach>
+				)
+	 		</if>
+  			<if test="vchAbillNos!=null and vchAbillNos.size()>0">
+				AND B.VEHICLEASSEMBLE_NO IN 
+     				<foreach collection="vchAbillNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        	#{item} 
+					</foreach>
+	 		</if>  
+  			<if test="payableTypeList!=null and payableTypeList.size()>0">
+				AND P.PAYABLE_TYPE in
+     			<foreach collection="payableTypeList"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		</if>
+	 		<if test="auditStatus != null and auditStatus != ''">
+				AND P.APPROVE_STATUS = #{auditStatus}
+			</if>
+			<if test="origDept != null and origDept != ''">
+				AND P.ORIG_ORG_CODE = #{origDept}
+			</if>
+			<if test="destDept != null and destDept != ''">
+				AND P.DEST_ORG_CODE = #{destDept}
+			</if>
+	 			AND EXISTS (
+	 				SELECT 
+	 					ORG_CODE
+    				FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   					WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   					AND V.ORG_CODE = P.PAYABLE_ORG_CODE<!-- 登录者部门等于应付部门过滤 -->
+     			)
+     			union all
+  		SELECT 	distinct ((B.TOTALFEE + NVL(A.ADJUST_FEE, 0)) / 100) AS TOTAL_FEE,
+				P.ORIG_ORG_CODE as ORIG_ORG_CODE,
+               	P.DEST_ORG_CODE as DEST_ORG_CODE,
+               	B.HANDOVERBILLNO as VEHICLE_ASSEMBLE_BILL_NO,
+               	B.VEHICLENO as VEHICLE_NO,
+               	B.DRIVERCODE as DRIVER_CODE,
+               	B.CREATETIME as STOWAGE_DATE
+        FROM STL.T_STL_BILL_PAYABLE P,
+	       		TFR.T_WK_TRF_BILL B,
+	       		STL.T_STL_BILL_PAYMENT M,
+	       		TFR.T_OPT_TRUCK_TASK_BILL T,
+	       		TFR.T_OPT_TRUCK_TASK_DETAIL D,
+	       		BSE.T_BAS_LEASED_TRUCK L,
+		   		TFR.T_OPT_PASS_INVITE_APPLY Y,
+	       		(
+          			SELECT 
+          				A_TEMP.VEHICLEASSEMBLE_NO AS VEHICLEASSEMBLE_NO,
+          			   	SUM(A_TEMP.ADJUST_FEE) AS ADJUST_FEE
+          			FROM (
+                		SELECT F.VEHICLEASSEMBLE_NO,
+                       	CASE 
+                       	WHEN F.AWARD_TYPE=#{ADJUST_AWARD_TYPE_FINE} THEN F.ADJUST_FEE*-1 
+                       	WHEN F.AWARD_TYPE=#{ADJUST_TYPE_FEE_REDUCE} THEN F.ADJUST_FEE*-1 
+                       	ELSE F.ADJUST_FEE 
+                       	END  AS ADJUST_FEE
+                		FROM TFR.T_OPT_ADJUST_OUTVEHICLE_FEE F
+                		WHERE F.AUDIT_STATE = #{ADJUST_AUDIT_STATUS_PASS}
+                	) A_TEMP 
+           		GROUP BY A_TEMP.VEHICLEASSEMBLE_NO
+         		) A            
+		WHERE 	P.SOURCE_BILL_NO = B.HANDOVERBILLNO
+			  	AND P.SOURCE_BILL_NO = A.VEHICLEASSEMBLE_NO(+)
+			  	AND P.PAYMENT_NO = M.PAYMENT_NO
+			  	AND B.HANDOVERBILLNO = T.BILL_NO(+)
+			    AND T.TRUCK_TASK_DETAIL_ID = D.ID(+)
+			  	AND P.ACTIVE=#{OFV_PAYMENT_REPORT_YES}
+  			  	AND P.IS_RED_BACK=#{OFV_PAYMENT_REPORT_NO}
+  			  	AND Y.INVITE_NO(+) = B.ABOUTVEHICLENO
+  			  	AND Y.VEHICLE_NO(+) = B.VEHICLENO
+  			    AND L.VEHICLE_NO(+) = B.VEHICLENO
+  			    AND L.ACTIVE = 'Y'
+  			<if test="startPaymentDate != null and startPaymentDate != '' and endPaymentDate != null and endPaymentDate != ''">
+				AND<![CDATA[ M.CREATE_TIME >=#{startPaymentDate} AND M.CREATE_TIME <#{endPaymentDate} ]]>
+			</if>
+			<if test="workFlowNos!=null and workFlowNos.size()>0">
+				AND (
+					M.WORKFLOW_NO IN 
+     				<foreach collection="workFlowNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        	#{item} 
+					</foreach>
+					OR M.APPLY_WORK_FLOW_NO IN
+					<foreach collection="workFlowNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        	#{item} 
+					</foreach>
+				)
+	 		</if>
+  			<if test="vchAbillNos!=null and vchAbillNos.size()>0">
+				AND B.HANDOVERBILLNO IN 
+     				<foreach collection="vchAbillNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        	#{item} 
+					</foreach>
+	 		</if>  
+  			<if test="payableTypeList!=null and payableTypeList.size()>0">
+				AND P.PAYABLE_TYPE in
+     			<foreach collection="payableTypeList"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		</if>
+	 		<if test="auditStatus != null and auditStatus != ''">
+				AND P.APPROVE_STATUS = #{auditStatus}
+			</if>
+			<if test="origDept != null and origDept != ''">
+				AND P.ORIG_ORG_CODE = #{origDept}
+			</if>
+			<if test="destDept != null and destDept != ''">
+				AND P.DEST_ORG_CODE = #{destDept}
+			</if>
+	 			AND EXISTS (
+	 				SELECT 
+	 					ORG_CODE
+    				FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   					WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   					AND V.ORG_CODE = P.PAYABLE_ORG_CODE<!-- 登录者部门等于应付部门过滤 -->
+     			)     				
+     		)
+  </select>
+  
+  
+   <!-- 根据工作流号查询外请车付款报表 -->
+  <select id="queryOfvPaymentReportByWorkFlowNo" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.OfvPaymentReportQueryDto" >
+	SELECT P.* FROM 
+	(SELECT 
+			/*根据查询条件查询外请车付款报表*/ 
+		   P.ORIG_ORG_CODE as ORIG_ORG_CODE,
+	       P.ORIG_ORG_NAME as ORIG_ORG_NAME,
+	       P.DEST_ORG_CODE as DEST_ORG_CODE,
+	       P.DEST_ORG_NAME as DEST_ORG_NAME,
+	       P.PAYABLE_TYPE as PAYABLE_TYPE,
+	       B.VEHICLEASSEMBLE_NO as VEHICLE_ASSEMBLE_BILL_NO,
+	       B.VEHICLE_NO as VEHICLE_NO,
+	       B.DRIVER_NAME as DRIVER_NAME,
+	       B.DRIVER_CODE as DRIVER_CODE,
+	       B.CREATE_TIME as STOWAGE_DATE,
+	       (B.FEE_TOTAL+NVL(A.ADJUST_FEE,0)) /100 AS TOTAL_FEE,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN P.AMOUNT/100 
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN P.AMOUNT/100 
+	       ELSE 0 END  AS PRE_PAID_FEE,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN P.AMOUNT/100 
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN P.AMOUNT/100 
+	       ELSE 0 END  AS ARRIVE_PAID_FEE,
+	       A.ADJUST_FEE/100 as ADJUST_PAID_FEE,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN M.CREATE_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN M.CREATE_USER_NAME
+	       ELSE '' END  AS PRE_PAID_PAYER,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN P.AUDIT_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN P.AUDIT_USER_NAME
+	       ELSE '' END  AS PRE_PAID_AUDITER,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN M.CREATE_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN M.CREATE_USER_NAME
+	       ELSE '' END  AS ARRIVE_PAID_PAYER,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN P.AUDIT_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN P.AUDIT_USER_NAME
+	       ELSE '' END  AS ARRIVE_PAID_AUDITER,
+	       
+	       CASE
+	       WHEN  B.VEHICLE_OWNERSHIP=#{ASSETS_OWNERSHIP_TYPE_COMPANY} THEN '公司'  
+	       WHEN  B.VEHICLE_OWNERSHIP=#{ASSETS_OWNERSHIP_TYPE_LEASED} THEN '外请'
+	       ELSE '' END  AS VEHICLE_OWNER_SHIP,
+	        
+	       CASE
+	       WHEN B.BE_RETURN_RECEIPT=#{BE_RETURN_RECEIPT_Y} THEN '是'  
+	       WHEN B.BE_RETURN_RECEIPT=#{BE_RETURN_RECEIPT_N} THEN '否'  
+	       ELSE '' END  AS BE_RETURN_RECEIPT,
+	       D.ACTUAL_DEPART_TIME as ACTUAL_DEPART_TIME,
+	       D.ACTUAL_ARRIVE_TIME as ACTUAL_ARRIVE_TIME,
+	       
+	       CASE
+	       WHEN M.WORKFLOW_NO IS NOT NULL THEN M.WORKFLOW_NO
+	       ELSE M.APPLY_WORK_FLOW_NO END  AS WORK_FLOW_NO,
+			
+		   L.CONTACT AS CONTACT,
+		   P.BUSINESS_DATE AS BUSINESS_DATE,
+		   Y.MINISTRYINFORMATION AS MINISTRYINFORMATION
+
+	FROM STL.T_STL_BILL_PAYABLE P,
+	       TFR.T_OPT_VEHICLEASSEMBLEBILL B,
+	       STL.T_STL_BILL_PAYMENT M,
+	       TFR.T_OPT_TRUCK_TASK_BILL T,
+	       TFR.T_OPT_TRUCK_TASK_DETAIL D,
+	       BSE.T_BAS_LEASED_TRUCK L,
+		   TFR.T_OPT_PASS_INVITE_APPLY Y,
+	       (
+          		SELECT A_TEMP.VEHICLEASSEMBLE_NO AS VEHICLEASSEMBLE_NO,
+          			   SUM(A_TEMP.ADJUST_FEE) AS ADJUST_FEE
+          		FROM (
+                		SELECT F.VEHICLEASSEMBLE_NO,
+                       		CASE 
+                       		WHEN F.AWARD_TYPE=#{ADJUST_AWARD_TYPE_FINE} THEN F.ADJUST_FEE*-1 
+                       		WHEN F.AWARD_TYPE=#{ADJUST_TYPE_FEE_REDUCE} THEN F.ADJUST_FEE*-1 
+                       		ELSE F.ADJUST_FEE 
+                       		END  AS ADJUST_FEE
+                		FROM TFR.T_OPT_ADJUST_OUTVEHICLE_FEE F
+                		WHERE F.AUDIT_STATE = #{ADJUST_AUDIT_STATUS_PASS}
+                ) A_TEMP 
+           		GROUP BY A_TEMP.VEHICLEASSEMBLE_NO
+         	) A        
+		WHERE P.SOURCE_BILL_NO = B.VEHICLEASSEMBLE_NO
+			  AND P.SOURCE_BILL_NO = A.VEHICLEASSEMBLE_NO(+)
+			  AND P.PAYMENT_NO = M.PAYMENT_NO
+			  AND B.VEHICLEASSEMBLE_NO = T.BILL_NO(+)
+			  AND T.TRUCK_TASK_DETAIL_ID = D.ID(+)
+			  AND P.ACTIVE=#{OFV_PAYMENT_REPORT_YES}
+  			  AND P.IS_RED_BACK=#{OFV_PAYMENT_REPORT_NO}
+  			  AND Y.INVITE_NO(+) = B.INVITE_NO
+  			  AND Y.VEHICLE_NO(+) = B.VEHICLE_NO
+  			  AND L.VEHICLE_NO(+) = B.VEHICLE_NO
+  			  AND L.ACTIVE = 'Y'
+  			  <if test="payableTypeList!=null and payableTypeList.size()>0">
+				AND P.PAYABLE_TYPE in
+     			<foreach collection="payableTypeList"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		  </if>
+  			  AND P.BILL_TYPE in (#{PAYABLE_TYPE_F},#{PAYABLE_TYPE_L},#{PAYABLE_TYPE_TF},#{PAYABLE_TYPE_TL})
+			  AND (
+        				M.WORKFLOW_NO = #{workFlowNo} 
+        			 OR M.APPLY_WORK_FLOW_NO = #{workFlowNo} 
+       				)	 
+	 		AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = P.PAYABLE_ORG_CODE<!-- 登录者部门等于应付部门过滤 -->
+     			)		
+     			union all
+     			/*查询快递的外请车付款信息*/ 
+	SELECT 
+			/*根据查询条件查询外请车付款报表*/ 
+		   P.ORIG_ORG_CODE as ORIG_ORG_CODE,
+	       P.ORIG_ORG_NAME as ORIG_ORG_NAME,
+	       P.DEST_ORG_CODE as DEST_ORG_CODE,
+	       P.DEST_ORG_NAME as DEST_ORG_NAME,
+	       P.PAYABLE_TYPE as PAYABLE_TYPE,
+	       B.HANDOVERBILLNO as VEHICLE_ASSEMBLE_BILL_NO,
+	       B.VEHICLENO as VEHICLE_NO,
+	       B.DRIVERNAME as DRIVER_NAME,
+	       B.DRIVERCODE as DRIVER_CODE,
+	       B.CREATETIME as STOWAGE_DATE,
+	       (B.TOTALFEE+NVL(A.ADJUST_FEE,0)) /100 AS TOTAL_FEE,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN P.AMOUNT/100 
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN P.AMOUNT/100 
+	       ELSE 0 END  AS PRE_PAID_FEE,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN P.AMOUNT/100 
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN P.AMOUNT/100 
+	       ELSE 0 END  AS ARRIVE_PAID_FEE,
+	       A.ADJUST_FEE/100 as ADJUST_PAID_FEE,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN M.CREATE_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN M.CREATE_USER_NAME
+	       ELSE '' END  AS PRE_PAID_PAYER,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN P.AUDIT_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN P.AUDIT_USER_NAME
+	       ELSE '' END  AS PRE_PAID_AUDITER,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN M.CREATE_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN M.CREATE_USER_NAME
+	       ELSE '' END  AS ARRIVE_PAID_PAYER,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN P.AUDIT_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN P.AUDIT_USER_NAME
+	       ELSE '' END  AS ARRIVE_PAID_AUDITER,
+	       
+	       CASE
+	       WHEN  B.CAROWNERSHIPTYPE=#{ASSETS_OWNERSHIP_TYPE_COMPANY} THEN '公司'  
+	       WHEN  B.CAROWNERSHIPTYPE=#{ASSETS_OWNERSHIP_TYPE_LEASED} THEN '外请'
+	       ELSE '' END  AS VEHICLE_OWNER_SHIP,
+	        
+	       CASE
+	       WHEN B.BE_RETURN_RECEIPT=#{BE_RETURN_RECEIPT_Y} THEN '是'  
+	       WHEN B.BE_RETURN_RECEIPT=#{BE_RETURN_RECEIPT_N} THEN '否'  
+	       ELSE '' END  AS BE_RETURN_RECEIPT,
+	       D.ACTUAL_DEPART_TIME as ACTUAL_DEPART_TIME,
+	       D.ACTUAL_ARRIVE_TIME as ACTUAL_ARRIVE_TIME,
+	       
+	       CASE
+	       WHEN M.WORKFLOW_NO IS NOT NULL THEN M.WORKFLOW_NO
+	       ELSE M.APPLY_WORK_FLOW_NO END  AS WORK_FLOW_NO,
+			
+		   L.CONTACT AS CONTACT,
+		   P.BUSINESS_DATE AS BUSINESS_DATE,
+		   Y.MINISTRYINFORMATION AS MINISTRYINFORMATION
+
+	FROM STL.T_STL_BILL_PAYABLE P,
+	       TFR.T_WK_TRF_BILL B,
+	       STL.T_STL_BILL_PAYMENT M,
+	       TFR.T_OPT_TRUCK_TASK_BILL T,
+	       TFR.T_OPT_TRUCK_TASK_DETAIL D,
+	       BSE.T_BAS_LEASED_TRUCK L,
+		   TFR.T_OPT_PASS_INVITE_APPLY Y,
+	       (
+          		SELECT A_TEMP.VEHICLEASSEMBLE_NO AS VEHICLEASSEMBLE_NO,
+          			   SUM(A_TEMP.ADJUST_FEE) AS ADJUST_FEE
+          		FROM (
+                		SELECT F.VEHICLEASSEMBLE_NO,
+                       		CASE 
+                       		WHEN F.AWARD_TYPE=#{ADJUST_AWARD_TYPE_FINE} THEN F.ADJUST_FEE*-1 
+                       		WHEN F.AWARD_TYPE=#{ADJUST_TYPE_FEE_REDUCE} THEN F.ADJUST_FEE*-1 
+                       		ELSE F.ADJUST_FEE 
+                       		END  AS ADJUST_FEE
+                		FROM TFR.T_OPT_ADJUST_OUTVEHICLE_FEE F
+                		WHERE F.AUDIT_STATE = #{ADJUST_AUDIT_STATUS_PASS}
+                ) A_TEMP 
+           		GROUP BY A_TEMP.VEHICLEASSEMBLE_NO
+         	) A        
+		WHERE P.SOURCE_BILL_NO = B.HANDOVERBILLNO
+			  AND P.SOURCE_BILL_NO = A.VEHICLEASSEMBLE_NO(+)
+			  AND P.PAYMENT_NO = M.PAYMENT_NO
+			  AND B.HANDOVERBILLNO = T.BILL_NO(+)
+			  AND T.TRUCK_TASK_DETAIL_ID = D.ID(+)
+			  AND P.ACTIVE=#{OFV_PAYMENT_REPORT_YES}
+  			  AND P.IS_RED_BACK=#{OFV_PAYMENT_REPORT_NO}
+  			  AND Y.INVITE_NO(+) = B.ABOUTVEHICLENO
+  			  AND Y.VEHICLE_NO(+) = B.VEHICLENO
+  			  AND L.VEHICLE_NO(+) = B.vehicleno
+  			  AND L.ACTIVE = 'Y'
+  			  <if test="payableTypeList!=null and payableTypeList.size()>0">
+				AND P.PAYABLE_TYPE in
+     			<foreach collection="payableTypeList"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		  </if>
+  			  AND P.BILL_TYPE in (#{PAYABLE_TYPE_F},#{PAYABLE_TYPE_L},#{PAYABLE_TYPE_TF},#{PAYABLE_TYPE_TL})
+			  AND (
+        				M.WORKFLOW_NO = #{workFlowNo} 
+        			 OR M.APPLY_WORK_FLOW_NO = #{workFlowNo} 
+       				)	 
+	 		AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = P.PAYABLE_ORG_CODE<!-- 登录者部门等于应付部门过滤 -->
+     			)
+     			union all
+     			SELECT
+			/*根据查询条件查询外请车付款报表*/ 
+		   P.ORIG_ORG_CODE as ORIG_ORG_CODE,
+	       P.ORIG_ORG_NAME as ORIG_ORG_NAME,
+	       P.DEST_ORG_CODE as DEST_ORG_CODE,
+	       P.DEST_ORG_NAME as DEST_ORG_NAME,
+	       P.PAYABLE_TYPE as PAYABLE_TYPE,
+	       P.SOURCE_BILL_NO as VEHICLE_ASSEMBLE_BILL_NO,
+	       '' as VEHICLE_NO,
+	       P.CUSTOMER_CONTACT_NAME as DRIVER_NAME,
+	       P.CUSTOMER_CONTACT as DRIVER_CODE,
+	       P.CREATE_TIME as STOWAGE_DATE,
+	       B_TEMP.AMOUNT /100 AS TOTAL_FEE,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN P.AMOUNT/100 
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN P.AMOUNT/100 
+	       ELSE 0 END  AS PRE_PAID_FEE,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN P.AMOUNT/100 
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN P.AMOUNT/100 
+	       ELSE 0 END  AS ARRIVE_PAID_FEE,
+	       A.ADJUST_FEE/100 as ADJUST_PAID_FEE,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN M.CREATE_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN M.CREATE_USER_NAME
+	       ELSE '' END  AS PRE_PAID_PAYER,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN P.AUDIT_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN P.AUDIT_USER_NAME
+	       ELSE '' END  AS PRE_PAID_AUDITER,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN M.CREATE_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN M.CREATE_USER_NAME
+	       ELSE '' END  AS ARRIVE_PAID_PAYER,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN P.AUDIT_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN P.AUDIT_USER_NAME
+	       ELSE '' END  AS ARRIVE_PAID_AUDITER,
+	       
+	       '外请'   AS VEHICLE_OWNER_SHIP,
+	        
+		   '是'   AS BE_RETURN_RECEIPT,
+		   null as ACTUAL_DEPART_TIME,
+	       F.ARRIVE_TIME as ACTUAL_ARRIVE_TIME,
+	       
+	       CASE
+	       WHEN M.WORKFLOW_NO IS NOT NULL THEN M.WORKFLOW_NO
+	       ELSE M.APPLY_WORK_FLOW_NO END  AS WORK_FLOW_NO,
+	       
+	       P.CUSTOMER_CONTACT_NAME AS CONTACT,
+	       P.BUSINESS_DATE AS BUSINESS_DATE,
+		   P.CUSTOMER_NAME AS MINISTRYINFORMATION
+	FROM STL.T_STL_BILL_PAYABLE P,
+	       STL.T_STL_BILL_PAYMENT M,
+	       TFR.T_OPT_VEHICLEASSEMBLEBILL B,
+	       PKP.T_SRV_ACTUAL_FREIGHT F,
+	       (
+          		SELECT A_TEMP.CONTRACT_CODE AS VEHICLEASSEMBLE_NO,
+          			   SUM(A_TEMP.ADJUST_AMOUNT) AS ADJUST_FEE
+          		FROM (
+                		SELECT F.CONTRACT_CODE,
+                       		CASE 
+                       		WHEN F.ADJUST_TYPE=#{ADJUST_TYPE_DECREASE} THEN F.ADJUST_AMOUNT*-1
+                       		WHEN F.ADJUST_TYPE=#{ADJUST_TYPE_INCREASE} THEN F.ADJUST_AMOUNT*1  
+                       		ELSE F.ADJUST_AMOUNT
+                       		END  AS ADJUST_AMOUNT
+                		FROM STL.T_VTS_OUT_ADJUSTMENT F
+                ) A_TEMP 
+           		GROUP BY A_TEMP.CONTRACT_CODE
+         	) A ,
+         	(
+           select p.source_bill_no, sum(p.amount) as amount
+        	from stl.t_stl_bill_payable p
+       		where p.active = 'Y'
+         	and p.is_red_back = 'N'
+       		group by p.source_bill_no
+           	)B_TEMP           
+		WHERE P.WAYBILL_NO = F.WAYBILL_NO
+			  AND P.PAYMENT_NO = M.PAYMENT_NO
+			  AND P.ACTIVE=#{OFV_PAYMENT_REPORT_YES}
+  			  AND P.IS_RED_BACK=#{OFV_PAYMENT_REPORT_NO}
+  			  AND P.SOURCE_BILL_NO = B_TEMP.SOURCE_BILL_NO
+			  AND P.SOURCE_BILL_NO = A.VEHICLEASSEMBLE_NO(+)
+			  AND P.SOURCE_BILL_NO = B.VEHICLEASSEMBLE_NO(+)
+              AND B.VEHICLEASSEMBLE_NO IS NULL
+	 		<if test="payableTypeList!=null and payableTypeList.size()>0">
+				AND P.PAYABLE_TYPE in
+     			<foreach collection="payableTypeList"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		</if>
+	 		 AND P.BILL_TYPE in (#{PAYABLE_TYPE_F},#{PAYABLE_TYPE_L},#{PAYABLE_TYPE_TF},#{PAYABLE_TYPE_TL})
+			  AND (
+        				M.WORKFLOW_NO = #{workFlowNo} 
+        			 OR M.APPLY_WORK_FLOW_NO = #{workFlowNo} 
+       				)	
+	 		AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = P.PAYABLE_ORG_CODE<!-- 登录者部门等于应付部门过滤 -->
+     			))P		     			
+     		ORDER BY P.BUSINESS_DATE DESC			
+  </select>
+  
+    <!-- 根据合同编号查询外请车付款报表 -->
+  <select id="queryOfvPaymentReportByContractCodesNo" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.OfvPaymentReportQueryDto" >
+	SELECT P.* FROM (SELECT
+			/*根据查询条件查询外请车付款报表*/ 
+		   P.ORIG_ORG_CODE as ORIG_ORG_CODE,
+	       P.ORIG_ORG_NAME as ORIG_ORG_NAME,
+	       P.DEST_ORG_CODE as DEST_ORG_CODE,
+	       P.DEST_ORG_NAME as DEST_ORG_NAME,
+	       P.PAYABLE_TYPE as PAYABLE_TYPE,
+	       P.SOURCE_BILL_NO as VEHICLE_ASSEMBLE_BILL_NO,
+	       '' as VEHICLE_NO,
+	       P.CUSTOMER_CONTACT_NAME as DRIVER_NAME,
+	       P.CUSTOMER_CONTACT as DRIVER_CODE,
+	       P.CREATE_TIME as STOWAGE_DATE,
+	       B_TEMP.AMOUNT /100 AS TOTAL_FEE,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN P.AMOUNT/100 
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN P.AMOUNT/100 
+	       ELSE 0 END  AS PRE_PAID_FEE,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN P.AMOUNT/100 
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN P.AMOUNT/100 
+	       ELSE 0 END  AS ARRIVE_PAID_FEE,
+	       A.ADJUST_FEE/100 as ADJUST_PAID_FEE,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN M.CREATE_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN M.CREATE_USER_NAME
+	       ELSE '' END  AS PRE_PAID_PAYER,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN P.AUDIT_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN P.AUDIT_USER_NAME
+	       ELSE '' END  AS PRE_PAID_AUDITER,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN M.CREATE_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN M.CREATE_USER_NAME
+	       ELSE '' END  AS ARRIVE_PAID_PAYER,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN P.AUDIT_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN P.AUDIT_USER_NAME
+	       ELSE '' END  AS ARRIVE_PAID_AUDITER,
+	       
+	       '外请'  AS VEHICLE_OWNER_SHIP,
+	        
+		   '是'   AS BE_RETURN_RECEIPT,
+		   null as ACTUAL_DEPART_TIME,
+	       F.ARRIVE_TIME as ACTUAL_ARRIVE_TIME,
+	       
+	       CASE
+	       WHEN M.WORKFLOW_NO IS NOT NULL THEN M.WORKFLOW_NO
+	       ELSE M.APPLY_WORK_FLOW_NO END  AS WORK_FLOW_NO,
+	       
+	       P.CUSTOMER_CONTACT_NAME AS CONTACT,
+	       P.BUSINESS_DATE AS BUSINESS_DATE,
+		   P.CUSTOMER_NAME AS MINISTRYINFORMATION
+	FROM STL.T_STL_BILL_PAYABLE P,
+	       STL.T_STL_BILL_PAYMENT M,
+	       PKP.T_SRV_ACTUAL_FREIGHT F,
+	       (
+          		SELECT A_TEMP.CONTRACT_CODE AS VEHICLEASSEMBLE_NO,
+          			   SUM(A_TEMP.ADJUST_AMOUNT) AS ADJUST_FEE
+          		FROM (
+                		SELECT F.CONTRACT_CODE,
+                       		CASE 
+                       		WHEN F.ADJUST_TYPE=#{ADJUST_TYPE_DECREASE} THEN F.ADJUST_AMOUNT*-1
+                       		WHEN F.ADJUST_TYPE=#{ADJUST_TYPE_INCREASE} THEN F.ADJUST_AMOUNT*1  
+                       		ELSE F.ADJUST_AMOUNT
+                       		END  AS ADJUST_AMOUNT
+                		FROM STL.T_VTS_OUT_ADJUSTMENT F
+                ) A_TEMP 
+           		GROUP BY A_TEMP.CONTRACT_CODE
+         	) A,
+         	(
+         	select p.source_bill_no, sum(p.amount) as amount
+  			from stl.t_stl_bill_payable p
+ 			where p.active = 'Y'
+   			and p.is_red_back = 'N'
+ 			group by p.source_bill_no
+         	)B_TEMP        
+		WHERE P.WAYBILL_NO = F.WAYBILL_NO
+			  AND P.PAYMENT_NO = M.PAYMENT_NO
+			  AND B_TEMP.SOURCE_BILL_NO = P.SOURCE_BILL_NO
+			  AND P.ACTIVE=#{OFV_PAYMENT_REPORT_YES}
+  			  AND P.IS_RED_BACK=#{OFV_PAYMENT_REPORT_NO}
+			  AND P.SOURCE_BILL_NO = A.VEHICLEASSEMBLE_NO(+)
+			<if test="contractCodesNos!=null and contractCodesNos.size()>0">
+				AND P.SOURCE_BILL_NO in
+     			<foreach collection="contractCodesNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		</if>
+	 		<if test="payableTypeList!=null and payableTypeList.size()>0">
+				AND P.PAYABLE_TYPE in
+     			<foreach collection="payableTypeList"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		</if>
+			<if test="auditStatus != null and auditStatus != ''">
+				AND P.APPROVE_STATUS = #{auditStatus}
+			</if>
+	 		AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = P.PAYABLE_ORG_CODE<!-- 登录者部门等于应付部门过滤 -->
+     			)
+     	) P     					
+     		ORDER BY P.BUSINESS_DATE DESC			
+  </select>
+   <!-- 根据合同编号查询外请车付款报表存在的总条数 -->
+   <select id="queryOfvPaymentReportTotalRecordsByContractCodesNo" resultMap="TotalAmountResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.OfvPaymentReportQueryDto" >
+	SELECT 
+			/*根据查询条件查询外请车付款报表存在的总条数 */
+		count(*) as TOTAL_RECORDS_IN_DB,
+       	SUM(
+           CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN P.AMOUNT/100 
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN P.AMOUNT/100 
+	       ELSE 0 END
+       	) AS PRE_PAID_FEE_SUM,
+        SUM(
+           CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN P.AMOUNT/100 
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN P.AMOUNT/100 
+	       ELSE 0 END
+       	) AS ARRIVE_PAID_FEE_SUM,
+       	SUM( P.ADJUST_FEE/100) AS ADJUST_PAID_FEE_SUM FROM
+   ( SELECT 
+     	P.BILL_TYPE,
+     	P.AMOUNT,
+     	A.ADJUST_FEE,
+     	P.BUSINESS_DATE
+	FROM STL.T_STL_BILL_PAYABLE P,
+	       STL.T_STL_BILL_PAYMENT M,
+	       PKP.T_SRV_ACTUAL_FREIGHT F,
+	       (
+          		SELECT A_TEMP.CONTRACT_CODE AS VEHICLEASSEMBLE_NO,
+          			   SUM(A_TEMP.ADJUST_AMOUNT) AS ADJUST_FEE
+          		FROM (
+                		SELECT F.CONTRACT_CODE,
+                       		CASE 
+                       		WHEN F.ADJUST_TYPE=#{ADJUST_TYPE_DECREASE} THEN F.ADJUST_AMOUNT*-1
+                       		WHEN F.ADJUST_TYPE=#{ADJUST_TYPE_INCREASE} THEN F.ADJUST_AMOUNT*1  
+                       		ELSE F.ADJUST_AMOUNT
+                       		END  AS ADJUST_AMOUNT
+                		FROM STL.T_VTS_OUT_ADJUSTMENT F
+                ) A_TEMP 
+           		GROUP BY A_TEMP.CONTRACT_CODE
+         	) A        
+		WHERE P.WAYBILL_NO = F.WAYBILL_NO
+			  AND P.PAYMENT_NO = M.PAYMENT_NO
+			  AND P.ACTIVE=#{OFV_PAYMENT_REPORT_YES}
+  			  AND P.IS_RED_BACK=#{OFV_PAYMENT_REPORT_NO}
+			  AND P.SOURCE_BILL_NO = A.VEHICLEASSEMBLE_NO(+)
+			<if test="contractCodesNos!=null and contractCodesNos.size()>0">
+				AND P.SOURCE_BILL_NO in
+     			<foreach collection="contractCodesNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		</if>
+	 		<if test="payableTypeList!=null and payableTypeList.size()>0">
+				AND P.PAYABLE_TYPE in
+     			<foreach collection="payableTypeList"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		</if>
+			<if test="auditStatus != null and auditStatus != ''">
+				AND P.APPROVE_STATUS = #{auditStatus}
+			</if>
+	 		AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = P.PAYABLE_ORG_CODE<!-- 登录者部门等于应付部门过滤 -->
+     			)	
+     	) P     	     			
+  </select>
+    <!-- 根据合同编号查询外请车付款报表存在的总金额 -->
+   <select id="queryOfvPaymentReportTotalAmountByContractCodesNo" resultMap="TotalAmountResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.OfvPaymentReportQueryDto" >
+	SELECT
+		/*根据查询条件查询外请车付款报表存在的总金额*/
+		SUM(TOTAL_FEE) AS TOTAL_FEE_SUM
+  		FROM (
+  		SELECT 	distinct (P.AMOUNT / 100) AS TOTAL_FEE,
+				P.ORIG_ORG_CODE as ORIG_ORG_CODE,
+               	P.DEST_ORG_CODE as DEST_ORG_CODE,
+               	P.SOURCE_BILL_NO as VEHICLE_ASSEMBLE_BILL_NO,
+               	'' as VEHICLE_NO,
+               	P.CUSTOMER_CONTACT as DRIVER_CODE,
+               	P.CREATE_TIME as STOWAGE_DATE
+		   FROM STL.T_STL_BILL_PAYABLE P,
+	       STL.T_STL_BILL_PAYMENT M,
+	       PKP.T_SRV_ACTUAL_FREIGHT F,
+	       (
+          		SELECT A_TEMP.CONTRACT_CODE AS VEHICLEASSEMBLE_NO,
+          			   SUM(A_TEMP.ADJUST_AMOUNT) AS ADJUST_FEE
+          		FROM (
+                		SELECT F.CONTRACT_CODE,
+                       		CASE 
+                       		WHEN F.ADJUST_TYPE=#{ADJUST_TYPE_DECREASE} THEN F.ADJUST_AMOUNT*-1 
+                       		WHEN F.ADJUST_TYPE=#{ADJUST_TYPE_INCREASE} THEN F.ADJUST_AMOUNT*1  
+                       		ELSE F.ADJUST_AMOUNT
+                       		END  AS ADJUST_AMOUNT
+                		FROM STL.T_VTS_OUT_ADJUSTMENT F
+                ) A_TEMP 
+           		GROUP BY A_TEMP.CONTRACT_CODE
+         	) A        
+		   WHERE P.WAYBILL_NO = F.WAYBILL_NO
+			  AND P.PAYMENT_NO = M.PAYMENT_NO
+			  AND P.ACTIVE=#{OFV_PAYMENT_REPORT_YES}
+  			  AND P.IS_RED_BACK=#{OFV_PAYMENT_REPORT_NO}
+			  AND P.SOURCE_BILL_NO = A.VEHICLEASSEMBLE_NO(+)
+			<if test="contractCodesNos!=null and contractCodesNos.size()>0">
+				AND P.SOURCE_BILL_NO in
+     			<foreach collection="contractCodesNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		</if>
+	 		<if test="payableTypeList!=null and payableTypeList.size()>0">
+				AND P.PAYABLE_TYPE in
+     			<foreach collection="payableTypeList"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		</if>
+			<if test="auditStatus != null and auditStatus != ''">
+				AND P.APPROVE_STATUS = #{auditStatus}
+			</if>
+	 			AND EXISTS (
+	 				SELECT 
+	 					ORG_CODE
+    				FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   					WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   					AND V.ORG_CODE = P.PAYABLE_ORG_CODE<!-- 登录者部门等于应付部门过滤 -->
+     			)
+     		)
+  </select>
+      <!-- 根据查询条件查询外请车付款报表存在的总金额 -->
+   <select id="queryTotalAmount2" resultMap="TotalAmountResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.OfvPaymentReportQueryDto" >
+	SELECT
+		/*根据查询条件查询外请车付款报表存在的总金额*/
+		SUM(TOTAL_FEE) AS TOTAL_FEE_SUM
+  	FROM (
+  		SELECT 	distinct ((B.FEE_TOTAL + NVL(A.ADJUST_FEE, 0)) / 100) AS TOTAL_FEE,
+				P.ORIG_ORG_CODE as ORIG_ORG_CODE,
+               	P.DEST_ORG_CODE as DEST_ORG_CODE,
+               	B.VEHICLEASSEMBLE_NO as VEHICLE_ASSEMBLE_BILL_NO,
+               	B.VEHICLE_NO as VEHICLE_NO,
+               	B.DRIVER_CODE as DRIVER_CODE,
+               	B.CREATE_TIME as STOWAGE_DATE
+        FROM STL.T_STL_BILL_PAYABLE P,
+	       		TFR.T_OPT_VEHICLEASSEMBLEBILL B,
+	       		STL.T_STL_BILL_PAYMENT M,
+	       		TFR.T_OPT_TRUCK_TASK_BILL T,
+	       		TFR.T_OPT_TRUCK_TASK_DETAIL D,
+	       		BSE.T_BAS_LEASED_TRUCK L,
+		   		TFR.T_OPT_PASS_INVITE_APPLY Y,
+	       		(
+          			SELECT 
+          				A_TEMP.VEHICLEASSEMBLE_NO AS VEHICLEASSEMBLE_NO,
+          			   	SUM(A_TEMP.ADJUST_FEE) AS ADJUST_FEE
+          			FROM (
+                		SELECT F.VEHICLEASSEMBLE_NO,
+                       	CASE 
+                       	WHEN F.AWARD_TYPE=#{ADJUST_AWARD_TYPE_FINE} THEN F.ADJUST_FEE*-1 
+                       	WHEN F.AWARD_TYPE=#{ADJUST_TYPE_FEE_REDUCE} THEN F.ADJUST_FEE*-1 
+                       	ELSE F.ADJUST_FEE 
+                       	END  AS ADJUST_FEE
+                		FROM TFR.T_OPT_ADJUST_OUTVEHICLE_FEE F
+                		WHERE F.AUDIT_STATE = #{ADJUST_AUDIT_STATUS_PASS}
+                	) A_TEMP 
+           		GROUP BY A_TEMP.VEHICLEASSEMBLE_NO
+         		) A            
+		WHERE 	P.SOURCE_BILL_NO = B.VEHICLEASSEMBLE_NO
+			  	AND P.SOURCE_BILL_NO = A.VEHICLEASSEMBLE_NO(+)
+			  	AND P.PAYMENT_NO = M.PAYMENT_NO
+			  	AND B.VEHICLEASSEMBLE_NO = T.BILL_NO(+)
+			    AND T.TRUCK_TASK_DETAIL_ID = D.ID(+)
+			  	AND P.ACTIVE=#{OFV_PAYMENT_REPORT_YES}
+  			  	AND P.IS_RED_BACK=#{OFV_PAYMENT_REPORT_NO}
+  			  	AND Y.INVITE_NO(+) = B.INVITE_NO
+  			  	AND Y.VEHICLE_NO(+) = B.VEHICLE_NO
+  			    AND L.VEHICLE_NO(+) = B.VEHICLE_NO
+  			    AND L.ACTIVE = 'Y'
+  			<if test="startPaymentDate != null and startPaymentDate != '' and endPaymentDate != null and endPaymentDate != ''">
+				AND<![CDATA[ M.CREATE_TIME >=#{startPaymentDate} AND M.CREATE_TIME <#{endPaymentDate} ]]>
+			</if>
+  			<if test="payableTypeList!=null and payableTypeList.size()>0">
+				AND P.PAYABLE_TYPE in
+     			<foreach collection="payableTypeList"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		</if>
+	 		<if test="auditStatus != null and auditStatus != ''">
+				AND P.APPROVE_STATUS = #{auditStatus}
+			</if>
+			<if test="origDept != null and origDept != ''">
+				AND P.ORIG_ORG_CODE = #{origDept}
+			</if>
+			<if test="destDept != null and destDept != ''">
+				AND P.DEST_ORG_CODE = #{destDept}
+			</if>
+	 			AND EXISTS (
+	 				SELECT 
+	 					ORG_CODE
+    				FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   					WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   					AND V.ORG_CODE = P.PAYABLE_ORG_CODE<!-- 登录者部门等于应付部门过滤 -->
+     			)
+     			union all
+     			SELECT 	
+     			distinct ((B.TOTALFEE + NVL(A.ADJUST_FEE, 0)) / 100) AS TOTAL_FEE,
+				P.ORIG_ORG_CODE as ORIG_ORG_CODE,
+               	P.DEST_ORG_CODE as DEST_ORG_CODE,
+               	B.HANDOVERBILLNO as VEHICLE_ASSEMBLE_BILL_NO,
+               	B.VEHICLENO as VEHICLE_NO,
+               	B.DRIVERCODE as DRIVER_CODE,
+               	B.CREATETIME as STOWAGE_DATE
+        FROM STL.T_STL_BILL_PAYABLE P,
+	       		TFR.T_WK_TRF_BILL B,
+	       		STL.T_STL_BILL_PAYMENT M,
+	       		TFR.T_OPT_TRUCK_TASK_BILL T,
+	       		TFR.T_OPT_TRUCK_TASK_DETAIL D,
+	       		BSE.T_BAS_LEASED_TRUCK L,
+		   		TFR.T_OPT_PASS_INVITE_APPLY Y,
+	       		(
+          			SELECT 
+          				A_TEMP.VEHICLEASSEMBLE_NO AS VEHICLEASSEMBLE_NO,
+          			   	SUM(A_TEMP.ADJUST_FEE) AS ADJUST_FEE
+          			FROM (
+                		SELECT F.VEHICLEASSEMBLE_NO,
+                       	CASE 
+                       	WHEN F.AWARD_TYPE=#{ADJUST_AWARD_TYPE_FINE} THEN F.ADJUST_FEE*-1 
+                       	WHEN F.AWARD_TYPE=#{ADJUST_TYPE_FEE_REDUCE} THEN F.ADJUST_FEE*-1 
+                       	ELSE F.ADJUST_FEE 
+                       	END  AS ADJUST_FEE
+                		FROM TFR.T_OPT_ADJUST_OUTVEHICLE_FEE F
+                		WHERE F.AUDIT_STATE = #{ADJUST_AUDIT_STATUS_PASS}
+                	) A_TEMP 
+           		GROUP BY A_TEMP.VEHICLEASSEMBLE_NO
+         		) A            
+		WHERE 	P.SOURCE_BILL_NO = B.HANDOVERBILLNO
+			  	AND P.SOURCE_BILL_NO = A.VEHICLEASSEMBLE_NO(+)
+			  	AND P.PAYMENT_NO = M.PAYMENT_NO
+			  	AND B.HANDOVERBILLNO = T.BILL_NO(+)
+			    AND T.TRUCK_TASK_DETAIL_ID = D.ID(+)
+			  	AND P.ACTIVE=#{OFV_PAYMENT_REPORT_YES}
+  			  	AND P.IS_RED_BACK=#{OFV_PAYMENT_REPORT_NO}
+  			  	AND Y.INVITE_NO(+) = B.ABOUTVEHICLENO
+  			  	AND Y.VEHICLE_NO(+) = B.VEHICLENO
+  			    AND L.VEHICLE_NO(+) = B.VEHICLENO
+  			    AND L.ACTIVE = 'Y'
+  			<if test="startPaymentDate != null and startPaymentDate != '' and endPaymentDate != null and endPaymentDate != ''">
+				AND<![CDATA[ M.CREATE_TIME >=#{startPaymentDate} AND M.CREATE_TIME <#{endPaymentDate} ]]>
+			</if>
+  			<if test="payableTypeList!=null and payableTypeList.size()>0">
+				AND P.PAYABLE_TYPE in
+     			<foreach collection="payableTypeList"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		</if>
+	 		<if test="auditStatus != null and auditStatus != ''">
+				AND P.APPROVE_STATUS = #{auditStatus}
+			</if>
+			<if test="origDept != null and origDept != ''">
+				AND P.ORIG_ORG_CODE = #{origDept}
+			</if>
+			<if test="destDept != null and destDept != ''">
+				AND P.DEST_ORG_CODE = #{destDept}
+			</if>
+	 			AND EXISTS (
+	 				SELECT 
+	 					ORG_CODE
+    				FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   					WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   					AND V.ORG_CODE = P.PAYABLE_ORG_CODE<!-- 登录者部门等于应付部门过滤 -->
+     			)     		
+     			union all
+     			SELECT 	
+     			distinct (P.AMOUNT / 100) AS TOTAL_FEE,
+				P.ORIG_ORG_CODE as ORIG_ORG_CODE,
+               	P.DEST_ORG_CODE as DEST_ORG_CODE,
+               	P.SOURCE_BILL_NO as VEHICLE_ASSEMBLE_BILL_NO,
+               	'' as VEHICLE_NO,
+               	P.CUSTOMER_CONTACT as DRIVER_CODE,
+               	P.CREATE_TIME as STOWAGE_DATE
+		   FROM STL.T_STL_BILL_PAYABLE P,
+	       STL.T_STL_BILL_PAYMENT M,
+	       PKP.T_SRV_ACTUAL_FREIGHT F,
+	       TFR.T_OPT_VEHICLEASSEMBLEBILL B,
+	       (
+          		SELECT A_TEMP.CONTRACT_CODE AS VEHICLEASSEMBLE_NO,
+          			   SUM(A_TEMP.ADJUST_AMOUNT) AS ADJUST_FEE
+          		FROM (
+                		SELECT F.CONTRACT_CODE,
+                       		CASE 
+                       		WHEN F.ADJUST_TYPE=#{ADJUST_TYPE_DECREASE} THEN F.ADJUST_AMOUNT*-1 
+                       		WHEN F.ADJUST_TYPE=#{ADJUST_TYPE_INCREASE} THEN F.ADJUST_AMOUNT*1  
+                       		ELSE F.ADJUST_AMOUNT
+                       		END  AS ADJUST_AMOUNT
+                		FROM STL.T_VTS_OUT_ADJUSTMENT F
+                ) A_TEMP 
+           		GROUP BY A_TEMP.CONTRACT_CODE
+         	) A,(
+         	select P.SOURCE_BILL_NO from STL.T_STL_BILL_PAYMENT M,  STL.T_STL_BILL_PAYABLE P WHERE
+         	 M.PAYMENT_NO = P.PAYMENT_NO
+         	<if test="startPaymentDate != null and startPaymentDate != '' and endPaymentDate != null and endPaymentDate != ''">
+			 AND  <![CDATA[ M.CREATE_TIME >=#{startPaymentDate} AND M.CREATE_TIME <#{endPaymentDate} ]]>
+			</if> 
+         	) M_TEMP           
+		   WHERE P.WAYBILL_NO = F.WAYBILL_NO
+			  AND M_TEMP.SOURCE_BILL_NO = P.SOURCE_BILL_NO
+			  AND M.PAYMENT_NO(+) = P.PAYMENT_NO
+			  AND P.ACTIVE=#{OFV_PAYMENT_REPORT_YES}
+  			  AND P.IS_RED_BACK=#{OFV_PAYMENT_REPORT_NO}
+			  AND P.SOURCE_BILL_NO = A.VEHICLEASSEMBLE_NO(+)
+			  AND P.SOURCE_BILL_NO = B.VEHICLEASSEMBLE_NO(+)
+			  AND B.VEHICLEASSEMBLE_NO IS NULL
+			<if test="contractCodesNos!=null and contractCodesNos.size()>0">
+				AND P.SOURCE_BILL_NO in
+     			<foreach collection="contractCodesNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		</if>
+	 		<if test="payableTypeList!=null and payableTypeList.size()>0">
+				AND P.PAYABLE_TYPE in
+     			<foreach collection="payableTypeList"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		</if>
+			<if test="auditStatus != null and auditStatus != ''">
+				AND P.APPROVE_STATUS = #{auditStatus}
+			</if>
+			<if test="origDept != null and origDept != ''">
+				AND P.ORIG_ORG_CODE = #{origDept}
+			</if>
+			<if test="destDept != null and destDept != ''">
+				AND P.DEST_ORG_CODE = #{destDept}
+			</if>
+	 			AND EXISTS (
+	 				SELECT 
+	 					ORG_CODE
+    				FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   					WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   					AND V.ORG_CODE = P.PAYABLE_ORG_CODE<!-- 登录者部门等于应付部门过滤 -->
+     			)	
+     		)
+  </select>
+   <!-- 根据查询条件查询外请车付款报表存在的总条数 -->
+   <select id="queryTotalRecords2" resultMap="TotalAmountResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.OfvPaymentReportQueryDto" >
+	SELECT 
+			/*根据查询条件查询外请车付款报表存在的总条数 */
+		count(*) as TOTAL_RECORDS_IN_DB,
+<!-- 		SUM((B.FEE_TOTAL+NVL(A.ADJUST_FEE,0)) / 100) as TOTAL_FEE_SUM, -->
+       	SUM(
+           CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN P.AMOUNT/100 
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN P.AMOUNT/100 
+	       ELSE 0 END
+       	) AS PRE_PAID_FEE_SUM,
+        SUM(
+           CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN P.AMOUNT/100 
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN P.AMOUNT/100 
+	       ELSE 0 END
+       	) AS ARRIVE_PAID_FEE_SUM,
+       	SUM( P.ADJUST_FEE/100) AS ADJUST_PAID_FEE_SUM FROM
+   ( SELECT 
+     	P.BILL_TYPE,
+     	P.AMOUNT,
+     	A.ADJUST_FEE,
+     	P.BUSINESS_DATE
+	FROM STL.T_STL_BILL_PAYABLE P,
+	       TFR.T_OPT_VEHICLEASSEMBLEBILL B,
+	       STL.T_STL_BILL_PAYMENT M,
+	       TFR.T_OPT_TRUCK_TASK_BILL T,
+	       TFR.T_OPT_TRUCK_TASK_DETAIL D,
+	       BSE.T_BAS_LEASED_TRUCK L,
+		   TFR.T_OPT_PASS_INVITE_APPLY Y,
+	       (
+          		SELECT A_TEMP.VEHICLEASSEMBLE_NO AS VEHICLEASSEMBLE_NO,
+          			   SUM(A_TEMP.ADJUST_FEE) AS ADJUST_FEE
+          		FROM (
+                		SELECT F.VEHICLEASSEMBLE_NO,
+                       		CASE 
+                       		WHEN F.AWARD_TYPE=#{ADJUST_AWARD_TYPE_FINE} THEN F.ADJUST_FEE*-1 
+                       		WHEN F.AWARD_TYPE=#{ADJUST_TYPE_FEE_REDUCE} THEN F.ADJUST_FEE*-1 
+                       		ELSE F.ADJUST_FEE 
+                       		END  AS ADJUST_FEE
+                		FROM TFR.T_OPT_ADJUST_OUTVEHICLE_FEE F
+                		WHERE F.AUDIT_STATE = #{ADJUST_AUDIT_STATUS_PASS}
+                ) A_TEMP 
+           		GROUP BY A_TEMP.VEHICLEASSEMBLE_NO
+         	) A            
+		WHERE P.SOURCE_BILL_NO = B.VEHICLEASSEMBLE_NO
+			  AND P.SOURCE_BILL_NO = A.VEHICLEASSEMBLE_NO(+)
+			  AND P.PAYMENT_NO = M.PAYMENT_NO
+			  AND B.VEHICLEASSEMBLE_NO = T.BILL_NO(+)
+			  AND T.TRUCK_TASK_DETAIL_ID = D.ID(+)
+			  AND P.ACTIVE=#{OFV_PAYMENT_REPORT_YES}
+  			  AND P.IS_RED_BACK=#{OFV_PAYMENT_REPORT_NO}
+  			  AND Y.INVITE_NO(+) = B.INVITE_NO
+  			  AND Y.VEHICLE_NO(+) = B.VEHICLE_NO
+  			  AND L.VEHICLE_NO(+) = B.VEHICLE_NO
+  			  AND L.ACTIVE = 'Y'
+  			<if test="startPaymentDate != null and startPaymentDate != '' and endPaymentDate != null and endPaymentDate != ''">
+				AND<![CDATA[ M.CREATE_TIME >=#{startPaymentDate} AND M.CREATE_TIME <#{endPaymentDate} ]]>
+			</if>
+			<if test="workFlowNos!=null and workFlowNos.size()>0">
+				AND (
+					M.WORKFLOW_NO IN 
+     				<foreach collection="workFlowNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        	#{item} 
+					</foreach>
+					OR M.APPLY_WORK_FLOW_NO IN
+					<foreach collection="workFlowNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        	#{item} 
+					</foreach>
+				)
+	 		</if>
+  			<if test="vchAbillNos!=null and vchAbillNos.size()>0">
+				AND B.VEHICLEASSEMBLE_NO IN 
+     				<foreach collection="vchAbillNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        	#{item} 
+					</foreach>
+	 		</if>  
+  			<if test="payableTypeList!=null and payableTypeList.size()>0">
+				AND P.PAYABLE_TYPE in
+     			<foreach collection="payableTypeList"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		</if>
+	 		<if test="auditStatus != null and auditStatus != ''">
+				AND P.APPROVE_STATUS = #{auditStatus}
+			</if>
+			<if test="origDept != null and origDept != ''">
+				AND P.ORIG_ORG_CODE = #{origDept}
+			</if>
+			<if test="destDept != null and destDept != ''">
+				AND P.DEST_ORG_CODE = #{destDept}
+			</if>
+	 		AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = P.PAYABLE_ORG_CODE<!-- 登录者部门等于应付部门过滤 -->
+     			)	
+     	union all
+     	SELECT 
+     	P.BILL_TYPE,
+     	P.AMOUNT,
+     	A.ADJUST_FEE,
+     	P.BUSINESS_DATE
+	FROM STL.T_STL_BILL_PAYABLE P,
+	       TFR.T_WK_TRF_BILL B,
+	       STL.T_STL_BILL_PAYMENT M,
+	       TFR.T_OPT_TRUCK_TASK_BILL T,
+	       TFR.T_OPT_TRUCK_TASK_DETAIL D,
+	       BSE.T_BAS_LEASED_TRUCK L,
+		   TFR.T_OPT_PASS_INVITE_APPLY Y,
+	       (
+          		SELECT A_TEMP.VEHICLEASSEMBLE_NO AS VEHICLEASSEMBLE_NO,
+          			   SUM(A_TEMP.ADJUST_FEE) AS ADJUST_FEE
+          		FROM (
+                		SELECT F.VEHICLEASSEMBLE_NO,
+                       		CASE 
+                       		WHEN F.AWARD_TYPE=#{ADJUST_AWARD_TYPE_FINE} THEN F.ADJUST_FEE*-1 
+                       		WHEN F.AWARD_TYPE=#{ADJUST_TYPE_FEE_REDUCE} THEN F.ADJUST_FEE*-1 
+                       		ELSE F.ADJUST_FEE 
+                       		END  AS ADJUST_FEE
+                		FROM TFR.T_OPT_ADJUST_OUTVEHICLE_FEE F
+                		WHERE F.AUDIT_STATE = #{ADJUST_AUDIT_STATUS_PASS}
+                ) A_TEMP 
+           		GROUP BY A_TEMP.VEHICLEASSEMBLE_NO
+         	) A            
+		WHERE P.SOURCE_BILL_NO = B.HANDOVERBILLNO
+			  AND P.SOURCE_BILL_NO = A.VEHICLEASSEMBLE_NO(+)
+			  AND P.PAYMENT_NO = M.PAYMENT_NO
+			  AND B.HANDOVERBILLNO = T.BILL_NO(+)
+			  AND T.TRUCK_TASK_DETAIL_ID = D.ID(+)
+			  AND P.ACTIVE=#{OFV_PAYMENT_REPORT_YES}
+  			  AND P.IS_RED_BACK=#{OFV_PAYMENT_REPORT_NO}
+  			  AND Y.INVITE_NO(+) = B.ABOUTVEHICLENO
+  			  AND Y.VEHICLE_NO(+) = B.VEHICLENO
+  			  AND L.VEHICLE_NO(+) = B.vehicleno
+  			  AND L.ACTIVE = 'Y'
+  			<if test="startPaymentDate != null and startPaymentDate != '' and endPaymentDate != null and endPaymentDate != ''">
+				AND<![CDATA[ M.CREATE_TIME >=#{startPaymentDate} AND M.CREATE_TIME <#{endPaymentDate} ]]>
+			</if>
+  			<if test="payableTypeList!=null and payableTypeList.size()>0">
+				AND P.PAYABLE_TYPE in
+     			<foreach collection="payableTypeList"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		</if>
+	 		<if test="auditStatus != null and auditStatus != ''">
+				AND P.APPROVE_STATUS = #{auditStatus}
+			</if>
+			<if test="origDept != null and origDept != ''">
+				AND P.ORIG_ORG_CODE = #{origDept}
+			</if>
+			<if test="destDept != null and destDept != ''">
+				AND P.DEST_ORG_CODE = #{destDept}
+			</if>
+	 		AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = P.PAYABLE_ORG_CODE<!-- 登录者部门等于应付部门过滤 -->
+     			)
+     	union all
+     	SELECT 
+     	P.BILL_TYPE,
+     	P.AMOUNT,
+     	A.ADJUST_FEE,
+     	P.BUSINESS_DATE
+	FROM STL.T_STL_BILL_PAYABLE P,
+	       STL.T_STL_BILL_PAYMENT M,
+	       PKP.T_SRV_ACTUAL_FREIGHT F,
+	       TFR.T_OPT_VEHICLEASSEMBLEBILL B,
+	       (
+          		SELECT A_TEMP.CONTRACT_CODE AS VEHICLEASSEMBLE_NO,
+          			   SUM(A_TEMP.ADJUST_AMOUNT) AS ADJUST_FEE
+          		FROM (
+                		SELECT F.CONTRACT_CODE,
+                       		CASE 
+                       		WHEN F.ADJUST_TYPE=#{ADJUST_TYPE_DECREASE} THEN F.ADJUST_AMOUNT*-1
+                       		WHEN F.ADJUST_TYPE=#{ADJUST_TYPE_INCREASE} THEN F.ADJUST_AMOUNT*1  
+                       		ELSE F.ADJUST_AMOUNT
+                       		END  AS ADJUST_AMOUNT
+                		FROM STL.T_VTS_OUT_ADJUSTMENT F
+                ) A_TEMP 
+           		GROUP BY A_TEMP.CONTRACT_CODE
+         	) A        
+		WHERE P.WAYBILL_NO = F.WAYBILL_NO
+			  AND P.PAYMENT_NO = M.PAYMENT_NO
+			  AND P.ACTIVE=#{OFV_PAYMENT_REPORT_YES}
+  			  AND P.IS_RED_BACK=#{OFV_PAYMENT_REPORT_NO}
+			  AND P.SOURCE_BILL_NO = A.VEHICLEASSEMBLE_NO(+)
+			  AND P.SOURCE_BILL_NO = B.VEHICLEASSEMBLE_NO(+)
+			  AND B.VEHICLEASSEMBLE_NO IS NULL
+			<if test="contractCodesNos!=null and contractCodesNos.size()>0">
+				AND P.SOURCE_BILL_NO in
+     			<foreach collection="contractCodesNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		</if>
+	 		<if test="startPaymentDate != null and startPaymentDate != '' and endPaymentDate != null and endPaymentDate != ''">
+				AND<![CDATA[ M.CREATE_TIME >=#{startPaymentDate} AND M.CREATE_TIME <#{endPaymentDate} ]]>
+			</if>
+	 		<if test="payableTypeList!=null and payableTypeList.size()>0">
+				AND P.PAYABLE_TYPE in
+     			<foreach collection="payableTypeList"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		</if>
+			<if test="auditStatus != null and auditStatus != ''">
+				AND P.APPROVE_STATUS = #{auditStatus}
+			</if>
+			<if test="origDept != null and origDept != ''">
+				AND P.ORIG_ORG_CODE = #{origDept}
+			</if>
+			<if test="destDept != null and destDept != ''">
+				AND P.DEST_ORG_CODE = #{destDept}
+			</if>
+	 		AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = P.PAYABLE_ORG_CODE<!-- 登录者部门等于应付部门过滤 -->
+     			)	
+    		) P	     			
+     		ORDER BY P.BUSINESS_DATE DESC		
+  </select>
+    <!-- 根据查询条件查询外请车付款报表 -->
+  <select id="queryOfvPaymentReport2" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.OfvPaymentReportQueryDto" >
+	SELECT P.* FROM (SELECT
+			/*根据查询条件查询外请车付款报表*/ 
+		   P.ORIG_ORG_CODE as ORIG_ORG_CODE,
+	       P.ORIG_ORG_NAME as ORIG_ORG_NAME,
+	       P.DEST_ORG_CODE as DEST_ORG_CODE,
+	       P.DEST_ORG_NAME as DEST_ORG_NAME,
+	       P.PAYABLE_TYPE as PAYABLE_TYPE,
+	       B.VEHICLEASSEMBLE_NO as VEHICLE_ASSEMBLE_BILL_NO,
+	       B.VEHICLE_NO as VEHICLE_NO,
+	       B.DRIVER_NAME as DRIVER_NAME,
+	       B.DRIVER_CODE as DRIVER_CODE,
+	       B.CREATE_TIME as STOWAGE_DATE,
+	       (B.FEE_TOTAL+NVL(A.ADJUST_FEE,0)) /100 AS TOTAL_FEE,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN P.AMOUNT/100 
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN P.AMOUNT/100 
+	       ELSE 0 END  AS PRE_PAID_FEE,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN P.AMOUNT/100 
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN P.AMOUNT/100 
+	       ELSE 0 END  AS ARRIVE_PAID_FEE,
+	       A.ADJUST_FEE/100 as ADJUST_PAID_FEE,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN M.CREATE_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN M.CREATE_USER_NAME
+	       ELSE '' END  AS PRE_PAID_PAYER,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN P.AUDIT_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN P.AUDIT_USER_NAME
+	       ELSE '' END  AS PRE_PAID_AUDITER,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN M.CREATE_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN M.CREATE_USER_NAME
+	       ELSE '' END  AS ARRIVE_PAID_PAYER,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN P.AUDIT_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN P.AUDIT_USER_NAME
+	       ELSE '' END  AS ARRIVE_PAID_AUDITER,
+	       
+	       CASE
+	       WHEN  B.VEHICLE_OWNERSHIP=#{ASSETS_OWNERSHIP_TYPE_COMPANY} THEN '公司'  
+	       WHEN  B.VEHICLE_OWNERSHIP=#{ASSETS_OWNERSHIP_TYPE_LEASED} THEN '外请'
+	       ELSE '' END  AS VEHICLE_OWNER_SHIP,
+	        
+	       CASE
+	       WHEN B.BE_RETURN_RECEIPT=#{BE_RETURN_RECEIPT_Y} THEN '是'  
+	       WHEN B.BE_RETURN_RECEIPT=#{BE_RETURN_RECEIPT_N} THEN '否'  
+	       ELSE '' END  AS BE_RETURN_RECEIPT,
+	       D.ACTUAL_DEPART_TIME as ACTUAL_DEPART_TIME,
+	       D.ACTUAL_ARRIVE_TIME as ACTUAL_ARRIVE_TIME,
+	       
+	       CASE
+	       WHEN M.WORKFLOW_NO IS NOT NULL THEN M.WORKFLOW_NO
+	       ELSE M.APPLY_WORK_FLOW_NO END  AS WORK_FLOW_NO,
+	       
+	       L.CONTACT AS CONTACT,
+	       P.BUSINESS_DATE AS BUSINESS_DATE,
+		   Y.MINISTRYINFORMATION AS MINISTRYINFORMATION
+	FROM STL.T_STL_BILL_PAYABLE P,
+	       TFR.T_OPT_VEHICLEASSEMBLEBILL B,
+	       STL.T_STL_BILL_PAYMENT M,
+	       TFR.T_OPT_TRUCK_TASK_BILL T,
+	       TFR.T_OPT_TRUCK_TASK_DETAIL D,
+		   BSE.T_BAS_LEASED_TRUCK L,
+		   TFR.T_OPT_PASS_INVITE_APPLY Y,
+	       (
+          		SELECT A_TEMP.VEHICLEASSEMBLE_NO AS VEHICLEASSEMBLE_NO,
+          			   SUM(A_TEMP.ADJUST_FEE) AS ADJUST_FEE
+          		FROM (
+                		SELECT F.VEHICLEASSEMBLE_NO,
+                       		CASE 
+                       		WHEN F.AWARD_TYPE=#{ADJUST_AWARD_TYPE_FINE} THEN F.ADJUST_FEE*-1 
+                       		WHEN F.AWARD_TYPE=#{ADJUST_TYPE_FEE_REDUCE} THEN F.ADJUST_FEE*-1 
+                       		ELSE F.ADJUST_FEE 
+                       		END  AS ADJUST_FEE
+                		FROM TFR.T_OPT_ADJUST_OUTVEHICLE_FEE F
+                		WHERE F.AUDIT_STATE = #{ADJUST_AUDIT_STATUS_PASS}
+                ) A_TEMP 
+           		GROUP BY A_TEMP.VEHICLEASSEMBLE_NO
+         	) A        
+		WHERE P.SOURCE_BILL_NO = B.VEHICLEASSEMBLE_NO
+			  AND P.SOURCE_BILL_NO = A.VEHICLEASSEMBLE_NO(+)
+			  AND P.PAYMENT_NO = M.PAYMENT_NO
+			  AND B.VEHICLEASSEMBLE_NO = T.BILL_NO(+)
+			  AND T.TRUCK_TASK_DETAIL_ID = D.ID(+)
+			  AND P.ACTIVE=#{OFV_PAYMENT_REPORT_YES}
+  			  AND P.IS_RED_BACK=#{OFV_PAYMENT_REPORT_NO}
+  			  AND Y.INVITE_NO(+) = B.INVITE_NO
+  			  AND Y.VEHICLE_NO(+) = B.VEHICLE_NO
+  			  AND L.VEHICLE_NO(+) = B.VEHICLE_NO
+  			  AND L.ACTIVE = 'Y'
+  			<if test="startPaymentDate != null and startPaymentDate != '' and endPaymentDate != null and endPaymentDate != ''">
+				AND<![CDATA[ M.CREATE_TIME >=#{startPaymentDate} AND M.CREATE_TIME <#{endPaymentDate} ]]>
+			</if>
+			<if test="workFlowNos!=null and workFlowNos.size()>0">
+				AND (
+					M.WORKFLOW_NO IN 
+     				<foreach collection="workFlowNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        	#{item} 
+					</foreach>
+					OR M.APPLY_WORK_FLOW_NO IN
+					<foreach collection="workFlowNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        	#{item} 
+					</foreach>
+				)
+	 		</if>
+  			<if test="vchAbillNos!=null and vchAbillNos.size()>0">
+				AND B.VEHICLEASSEMBLE_NO IN 
+     				<foreach collection="vchAbillNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        	#{item} 
+					</foreach>
+	 		</if>  
+			<if test="payableTypeList!=null and payableTypeList.size()>0">
+				AND P.PAYABLE_TYPE in
+     			<foreach collection="payableTypeList"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		</if>
+			<if test="auditStatus != null and auditStatus != ''">
+				AND P.APPROVE_STATUS = #{auditStatus}
+			</if>
+			<if test="origDept != null and origDept != ''">
+				AND P.ORIG_ORG_CODE = #{origDept}
+			</if>
+			<if test="destDept != null and destDept != ''">
+				AND P.DEST_ORG_CODE = #{destDept}
+			</if>
+	 		AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = P.PAYABLE_ORG_CODE<!-- 登录者部门等于应付部门过滤 -->
+     			)
+     		union all
+     		SELECT
+			/*根据查询条件查询外请车付款报表*/ 
+		   P.ORIG_ORG_CODE as ORIG_ORG_CODE,
+	       P.ORIG_ORG_NAME as ORIG_ORG_NAME,
+	       P.DEST_ORG_CODE as DEST_ORG_CODE,
+	       P.DEST_ORG_NAME as DEST_ORG_NAME,
+	       P.PAYABLE_TYPE as PAYABLE_TYPE,
+	       B.HANDOVERBILLNO as VEHICLE_ASSEMBLE_BILL_NO,
+	       B.VEHICLENO as VEHICLE_NO,
+	       B.DRIVERNAME as DRIVER_NAME,
+	       B.DRIVERCODE as DRIVER_CODE,
+	       B.CREATETIME as STOWAGE_DATE,
+	       (B.TOTALFEE+NVL(A.ADJUST_FEE,0)) /100 AS TOTAL_FEE,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN P.AMOUNT/100 
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN P.AMOUNT/100 
+	       ELSE 0 END  AS PRE_PAID_FEE,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN P.AMOUNT/100 
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN P.AMOUNT/100 
+	       ELSE 0 END  AS ARRIVE_PAID_FEE,
+	       A.ADJUST_FEE/100 as ADJUST_PAID_FEE,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN M.CREATE_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN M.CREATE_USER_NAME
+	       ELSE '' END  AS PRE_PAID_PAYER,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN P.AUDIT_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN P.AUDIT_USER_NAME
+	       ELSE '' END  AS PRE_PAID_AUDITER,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN M.CREATE_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN M.CREATE_USER_NAME
+	       ELSE '' END  AS ARRIVE_PAID_PAYER,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN P.AUDIT_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN P.AUDIT_USER_NAME
+	       ELSE '' END  AS ARRIVE_PAID_AUDITER,
+	       
+	       CASE
+	       WHEN  B.CAROWNERSHIPTYPE=#{ASSETS_OWNERSHIP_TYPE_COMPANY} THEN '公司'  
+	       WHEN  B.CAROWNERSHIPTYPE=#{ASSETS_OWNERSHIP_TYPE_LEASED} THEN '外请'
+	       ELSE '' END  AS VEHICLE_OWNER_SHIP,
+	        
+	       CASE
+	       WHEN B.BE_RETURN_RECEIPT=#{BE_RETURN_RECEIPT_Y} THEN '是'  
+	       WHEN B.BE_RETURN_RECEIPT=#{BE_RETURN_RECEIPT_N} THEN '否'  
+	       ELSE '' END  AS BE_RETURN_RECEIPT,
+	       D.ACTUAL_DEPART_TIME as ACTUAL_DEPART_TIME,
+	       D.ACTUAL_ARRIVE_TIME as ACTUAL_ARRIVE_TIME,
+	       
+	       CASE
+	       WHEN M.WORKFLOW_NO IS NOT NULL THEN M.WORKFLOW_NO
+	       ELSE M.APPLY_WORK_FLOW_NO END  AS WORK_FLOW_NO,
+	       
+	       L.CONTACT AS CONTACT,
+	       P.BUSINESS_DATE AS BUSINESS_DATE,
+		   Y.MINISTRYINFORMATION AS MINISTRYINFORMATION
+	FROM STL.T_STL_BILL_PAYABLE P,
+	       TFR.T_WK_TRF_BILL B,
+	       STL.T_STL_BILL_PAYMENT M,
+	       TFR.T_OPT_TRUCK_TASK_BILL T,
+	       TFR.T_OPT_TRUCK_TASK_DETAIL D,
+		   BSE.T_BAS_LEASED_TRUCK L,
+		   TFR.T_OPT_PASS_INVITE_APPLY Y,
+	       (
+          		SELECT A_TEMP.VEHICLEASSEMBLE_NO AS VEHICLEASSEMBLE_NO,
+          			   SUM(A_TEMP.ADJUST_FEE) AS ADJUST_FEE
+          		FROM (
+                		SELECT F.VEHICLEASSEMBLE_NO,
+                       		CASE 
+                       		WHEN F.AWARD_TYPE=#{ADJUST_AWARD_TYPE_FINE} THEN F.ADJUST_FEE*-1 
+                       		WHEN F.AWARD_TYPE=#{ADJUST_TYPE_FEE_REDUCE} THEN F.ADJUST_FEE*-1 
+                       		ELSE F.ADJUST_FEE 
+                       		END  AS ADJUST_FEE
+                		FROM TFR.T_OPT_ADJUST_OUTVEHICLE_FEE F
+                		WHERE F.AUDIT_STATE = #{ADJUST_AUDIT_STATUS_PASS}
+                ) A_TEMP 
+           		GROUP BY A_TEMP.VEHICLEASSEMBLE_NO
+         	) A        
+		WHERE P.SOURCE_BILL_NO = B.HANDOVERBILLNO
+			  AND P.SOURCE_BILL_NO = A.VEHICLEASSEMBLE_NO(+)
+			  AND P.PAYMENT_NO = M.PAYMENT_NO
+			  AND B.HANDOVERBILLNO = T.BILL_NO(+)
+			  AND T.TRUCK_TASK_DETAIL_ID = D.ID(+)
+			  AND P.ACTIVE=#{OFV_PAYMENT_REPORT_YES}
+  			  AND P.IS_RED_BACK=#{OFV_PAYMENT_REPORT_NO}
+  			  AND Y.INVITE_NO(+) = B.ABOUTVEHICLENO
+  			  AND Y.VEHICLE_NO(+) = B.VEHICLENO
+  			  AND L.VEHICLE_NO(+) = B.vehicleno
+  			  AND L.ACTIVE = 'Y'
+  			<if test="startPaymentDate != null and startPaymentDate != '' and endPaymentDate != null and endPaymentDate != ''">
+				AND<![CDATA[ M.CREATE_TIME >=#{startPaymentDate} AND M.CREATE_TIME <#{endPaymentDate} ]]>
+			</if>
+			<if test="payableTypeList!=null and payableTypeList.size()>0">
+				AND P.PAYABLE_TYPE in
+     			<foreach collection="payableTypeList"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		</if>
+			<if test="auditStatus != null and auditStatus != ''">
+				AND P.APPROVE_STATUS = #{auditStatus}
+			</if>
+			<if test="origDept != null and origDept != ''">
+				AND P.ORIG_ORG_CODE = #{origDept}
+			</if>
+			<if test="destDept != null and destDept != ''">
+				AND P.DEST_ORG_CODE = #{destDept}
+			</if>
+	 		AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = P.PAYABLE_ORG_CODE<!-- 登录者部门等于应付部门过滤 -->
+     			)
+     		union all
+     		SELECT
+			/*根据查询条件查询外请车付款报表*/ 
+		   P.ORIG_ORG_CODE as ORIG_ORG_CODE,
+	       P.ORIG_ORG_NAME as ORIG_ORG_NAME,
+	       P.DEST_ORG_CODE as DEST_ORG_CODE,
+	       P.DEST_ORG_NAME as DEST_ORG_NAME,
+	       P.PAYABLE_TYPE as PAYABLE_TYPE,
+	       P.SOURCE_BILL_NO as VEHICLE_ASSEMBLE_BILL_NO,
+	       '' as VEHICLE_NO,
+	       P.CUSTOMER_CONTACT_NAME as DRIVER_NAME,
+	       P.CUSTOMER_CONTACT as DRIVER_CODE,
+	       P.CREATE_TIME as STOWAGE_DATE,
+	       B_TEMP.AMOUNT /100 AS TOTAL_FEE,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN P.AMOUNT/100 
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN P.AMOUNT/100 
+	       ELSE 0 END  AS PRE_PAID_FEE,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN P.AMOUNT/100 
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN P.AMOUNT/100 
+	       ELSE 0 END  AS ARRIVE_PAID_FEE,
+	       A.ADJUST_FEE/100 as ADJUST_PAID_FEE,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN M.CREATE_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN M.CREATE_USER_NAME
+	       ELSE '' END  AS PRE_PAID_PAYER,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_F} THEN P.AUDIT_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TF} THEN P.AUDIT_USER_NAME
+	       ELSE '' END  AS PRE_PAID_AUDITER,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN M.CREATE_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN M.CREATE_USER_NAME
+	       ELSE '' END  AS ARRIVE_PAID_PAYER,
+	       CASE
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_L} THEN P.AUDIT_USER_NAME
+	       WHEN P.BILL_TYPE = #{PAYABLE_TYPE_TL} THEN P.AUDIT_USER_NAME
+	       ELSE '' END  AS ARRIVE_PAID_AUDITER,
+	       
+	       '外请'  AS VEHICLE_OWNER_SHIP,
+	        
+		   '是'   AS BE_RETURN_RECEIPT,
+		   null as ACTUAL_DEPART_TIME,
+	       F.ARRIVE_TIME as ACTUAL_ARRIVE_TIME,
+	       
+	       CASE
+	       WHEN M.WORKFLOW_NO IS NOT NULL THEN M.WORKFLOW_NO
+	       ELSE M.APPLY_WORK_FLOW_NO END  AS WORK_FLOW_NO,
+	       
+	       P.CUSTOMER_CONTACT_NAME AS CONTACT,
+	       P.BUSINESS_DATE AS BUSINESS_DATE,
+		   P.CUSTOMER_NAME AS MINISTRYINFORMATION
+	FROM STL.T_STL_BILL_PAYABLE P,
+	       STL.T_STL_BILL_PAYMENT M,
+	       PKP.T_SRV_ACTUAL_FREIGHT F,
+	       TFR.T_OPT_VEHICLEASSEMBLEBILL B,
+	       (
+          		SELECT A_TEMP.CONTRACT_CODE AS VEHICLEASSEMBLE_NO,
+          			   SUM(A_TEMP.ADJUST_AMOUNT) AS ADJUST_FEE
+          		FROM (
+                		SELECT F.CONTRACT_CODE,
+                       		CASE 
+                       		WHEN F.ADJUST_TYPE=#{ADJUST_TYPE_DECREASE} THEN F.ADJUST_AMOUNT*-1
+                       		WHEN F.ADJUST_TYPE=#{ADJUST_TYPE_INCREASE} THEN F.ADJUST_AMOUNT*1  
+                       		ELSE F.ADJUST_AMOUNT
+                       		END  AS ADJUST_AMOUNT
+                		FROM STL.T_VTS_OUT_ADJUSTMENT F
+                ) A_TEMP 
+           		GROUP BY A_TEMP.CONTRACT_CODE
+         	) A,
+            (
+         	select p.source_bill_no, sum(p.amount) as amount
+  			from stl.t_stl_bill_payable p
+ 			where p.active = 'Y'
+   			and p.is_red_back = 'N'
+ 			group by p.source_bill_no
+         	)B_TEMP          
+		WHERE P.WAYBILL_NO = F.WAYBILL_NO
+			  AND P.PAYMENT_NO = M.PAYMENT_NO
+			  AND P.ACTIVE=#{OFV_PAYMENT_REPORT_YES}
+			  AND P.SOURCE_BILL_NO = B_TEMP.SOURCE_BILL_NO
+  			  AND P.IS_RED_BACK=#{OFV_PAYMENT_REPORT_NO}
+			  AND P.SOURCE_BILL_NO = A.VEHICLEASSEMBLE_NO(+)
+			  AND P.SOURCE_BILL_NO = B.VEHICLEASSEMBLE_NO(+)
+			  AND B.VEHICLEASSEMBLE_NO IS NULL
+			<if test="startPaymentDate != null and startPaymentDate != '' and endPaymentDate != null and endPaymentDate != ''">
+				AND<![CDATA[ M.CREATE_TIME >=#{startPaymentDate} AND M.CREATE_TIME <#{endPaymentDate} ]]>
+			</if>
+			<if test="contractCodesNos!=null and contractCodesNos.size()>0">
+				AND P.SOURCE_BILL_NO in
+     			<foreach collection="contractCodesNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		</if>
+	 		<if test="payableTypeList!=null and payableTypeList.size()>0">
+				AND P.PAYABLE_TYPE in
+     			<foreach collection="payableTypeList"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+				</foreach>
+	 		</if>
+			<if test="auditStatus != null and auditStatus != ''">
+				AND P.APPROVE_STATUS = #{auditStatus}
+			</if>
+			<if test="origDept != null and origDept != ''">
+				AND P.ORIG_ORG_CODE = #{origDept}
+			</if>
+			<if test="destDept != null and destDept != ''">
+				AND P.DEST_ORG_CODE = #{destDept}
+			</if>
+	 		AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = P.PAYABLE_ORG_CODE<!-- 登录者部门等于应付部门过滤 -->
+     			)
+   		) P     					
+     		ORDER BY P.BUSINESS_DATE DESC			
+  </select>
+</mapper>

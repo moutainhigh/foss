@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.pda.bdm.module.foss.upgrade.server.dao.impl.UserDataVerGenDao">
+	<!-- 用户信息 -->
+	<select id="queryLocalDatas" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.UserEntity">
+		<![CDATA[
+			SELECT 
+				ID,
+				EMPCODE,
+				PASSWORD,
+				ISCARRIER,
+				ISCLEARER,
+				ISADMIN,
+				DEPTID,
+				USERNAME,
+				USERTYPE,
+				OPERFLAG,
+				to_char(UPDTIME,'yyyy-mm-dd hh24:mi:ss') as updTime,
+				to_char(ACTIVETIME,'yyyy-mm-dd hh24:mi:ss') as activeTime,
+				VERSION,
+				(case OPERFLAG
+				 when '3' then 
+				 '0'
+				 else 
+				 '1' 
+				 end) as isActive 
+			FROM T_SVR_USER
+			WHERE 
+				DEPTID = #{deptCode}
+		]]>
+		<if test="flag != null and flag != ''  ">
+			<![CDATA[ AND OPERFLAG <> '3']]>
+		</if>
+		<if test="start_version_no != null and start_version_no != ''  ">
+			<![CDATA[ AND VERSION > #{start_version_no}]]>
+		</if>
+		<if test="end_version_no != null and end_version_no != '' ">
+			<![CDATA[ AND VERSION <= #{end_version_no}]]>
+		</if>
+	</select>
+	
+	<select id="queryLocalIncDataList" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="int">
+		<![CDATA[
+			SELECT COUNT(*) FROM T_SVR_USER 
+		]]>
+		<if test="start_version_no != null and start_version_no != ''  ">
+			<![CDATA[ WHERE VERSION > #{start_version_no}]]>
+		</if>
+		<if test="end_version_no != null and end_version_no != '' ">
+			<![CDATA[ AND VERSION <= #{end_version_no}]]>
+		</if>
+	</select>
+</mapper>

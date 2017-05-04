@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="com.deppon.foss.module.transfer.platform.api.server.dao.ITfrCtrOnDutyDao">
+
+	<insert id="insertTfrCtrOnDuty"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.TfrCtrOnDutyEntity">
+		INSERT INTO tfr.t_opt_tfr_ctr_on_duty
+		  (id,
+		   tfr_ctr_code,
+		   tfr_ctr_name,
+		   org_code,
+		   org_name,
+		   emp_code,
+		   emp_name,
+		   post_code,
+		   post_name,
+		   on_duty_date,
+		   begin_time,
+		   end_time,
+		   special,
+		   create_user_code,
+		   create_user_name,
+		   create_time,
+		   modify_user_code,
+		   modify_user_name,
+		   modify_time)
+		VALUES
+		  (#{id,jdbcType=VARCHAR},
+		   #{tfrCtrCode,jdbcType=VARCHAR},
+		   #{tfrCtrName,jdbcType=VARCHAR},
+		   #{orgCode,jdbcType=VARCHAR},
+		   #{orgName,jdbcType=VARCHAR},
+		   #{empCode,jdbcType=VARCHAR},
+		   #{empName,jdbcType=VARCHAR},
+		   #{postCode,jdbcType=VARCHAR},
+		   #{postName,jdbcType=VARCHAR},
+		   #{onDutyDate,jdbcType=TIMESTAMP},
+		   #{beginTime,jdbcType=TIMESTAMP},
+		   #{endTime,jdbcType=TIMESTAMP},
+		   #{special,jdbcType=VARCHAR},
+		   #{createUserCode,jdbcType=VARCHAR},
+		   #{createUserName,jdbcType=VARCHAR},
+		   #{createTime,jdbcType=TIMESTAMP},
+		   #{modifyUserCode,jdbcType=VARCHAR},
+		   #{modifyUserName,jdbcType=VARCHAR},
+		   #{modifyTime,jdbcType=TIMESTAMP})
+	</insert>
+
+	<update id="updateTfrCtrOnDuty"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.TfrCtrOnDutyEntity">
+		UPDATE tfr.t_opt_tfr_ctr_on_duty t
+		   SET t.on_duty_date = #{onDutyDate,jdbcType=TIMESTAMP},
+		       t.begin_time   = #{beginTime,jdbcType=TIMESTAMP},
+		       t.end_time     = #{endTime,jdbcType=TIMESTAMP},
+		       t.modify_user_code = #{modifyUserCode,jdbcType=VARCHAR},
+		       t.modify_user_name = #{modifyUserName,jdbcType=VARCHAR},
+		       t.modify_time  = SYSDATE
+		 WHERE t.id = #{id,jdbcType=VARCHAR}
+		   AND t.modify_time  = #{modifyTime,jdbcType=TIMESTAMP}
+	</update>
+
+	<delete id="deleteTfrCtrOnDuty" parameterType="java.lang.String">
+		DELETE FROM tfr.t_opt_tfr_ctr_on_duty t
+		 WHERE t.id = #{id,jdbcType=VARCHAR}
+	</delete>
+
+	<select id="findTfrCtrOnDutys"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.TfrCtrOnDutyQcDto"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.TfrCtrOnDutyEntity">
+		SELECT t.id           id,
+		       t.tfr_ctr_name tfrCtrName,
+		       t.org_name     orgName,
+		       t.emp_code     empCode,
+		       t.emp_name     empName,
+		       t.post_name    postName,
+		       t.begin_time   beginTime,
+		       t.end_time     endTime,
+		       t.modify_time modifyTime
+		  FROM tfr.t_opt_tfr_ctr_on_duty t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		 <if test="orgCode != null and orgCode !=''">
+		   AND t.org_code = #{orgCode,jdbcType=VARCHAR}
+		 </if>
+		   AND t.on_duty_date BETWEEN #{beginDate,jdbcType=TIMESTAMP} AND #{endDate,jdbcType=TIMESTAMP}
+	</select>
+	
+	<select id="cntTfrCtrOnDutys"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.TfrCtrOnDutyQcDto"
+		resultType="java.lang.Long">
+		SELECT COUNT(1)
+		  FROM tfr.t_opt_tfr_ctr_on_duty t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		 <if test="orgCode != null and orgCode !=''">
+		   AND t.org_code = #{orgCode,jdbcType=VARCHAR}
+		 </if>
+		   AND t.on_duty_date BETWEEN #{beginDate,jdbcType=TIMESTAMP} AND #{endDate,jdbcType=TIMESTAMP}
+	</select>
+
+	<select id="findInfos4Add" 
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.TfrCtrOnDutyQcDto" 
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.TfrCtrOnDutyEntity">
+		WITH tmp AS
+		 (SELECT t.emp_code,
+		         max(t.begin_time) begin_time_part,
+		         max(t.end_time) end_time_part
+		    FROM tfr.t_opt_tfr_ctr_on_duty t
+		   WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		     AND t.org_code = #{orgCode,jdbcType=VARCHAR}
+		     AND t.on_duty_date >= #{onDutyDate,jdbcType=TIMESTAMP} - 3
+		     <![CDATA[
+		     AND t.on_duty_date < #{onDutyDate,jdbcType=TIMESTAMP}
+		     ]]>
+		   GROUP BY t.emp_code)
+		SELECT #{tfrCtrCode,jdbcType=VARCHAR} tfrCtrCode,
+		       #{tfrCtrName,jdbcType=VARCHAR} tfrCtrName,
+		       #{orgCode,jdbcType=VARCHAR} orgCode,
+		       #{orgName,jdbcType=VARCHAR} orgName,
+		       e.emp_code   empCode,
+		       e.emp_name   empName,
+		       d.value_code postCode,
+		       d.value_name postName,
+		       #{onDutyDate,jdbcType=TIMESTAMP} onDutyDate,
+		       #{onDutyDate,jdbcType=TIMESTAMP} beginDatePart,
+		       #{onDutyDate,jdbcType=TIMESTAMP} endDatePart,
+		       tmp.begin_time_part beginTimePart,
+		       tmp.end_time_part   endTimePart
+		  FROM bse.t_bas_employee e
+		 INNER JOIN bse.t_bas_data_postion_degree d
+		    ON d.value_code = e.title
+		   AND d.active = 'Y'
+		  LEFT JOIN tmp
+		    ON tmp.emp_code = e.emp_code
+		 WHERE e.org_code = #{orgCode,jdbcType=VARCHAR}
+		   AND e.active = 'Y'
+		   AND NOT EXISTS
+		 (SELECT 1
+		          FROM tfr.t_opt_tfr_ctr_on_duty t
+		         WHERE t.on_duty_date = #{onDutyDate,jdbcType=TIMESTAMP}
+		           AND t.emp_code = e.emp_code)
+	</select>
+</mapper>

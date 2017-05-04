@@ -1,0 +1,181 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.classifiedIncomeEntity">
+
+	<resultMap id="classifiedIncomeEntityResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.domain.ClassifiedIncomeEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="PRODUCT_TYPE_CODE" property="productTypeCode" jdbcType="VARCHAR" />
+		<result column="PRODUCT_TYPE_NAME" property="productTypeName" jdbcType="VARCHAR" />
+		<result column="OWNED_SUBSIDIARY_CODE" property="owendSubsidiaryCode" jdbcType="VARCHAR" />
+		<result column="OWNED_SUBSIDIARY_NAME" property="owendSubsidiaryName" jdbcType="VARCHAR" />
+		<result column="SIX_PERCENT" property="sixPercent" jdbcType="VARCHAR" />
+		<result column="ELEVEN_PERCENT" property="elevenPercent" jdbcType="VARCHAR" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+		
+	</resultMap>
+
+	<sql id="Base_Column_List">
+		ID,
+		PRODUCT_TYPE_CODE,
+		PRODUCT_TYPE_NAME,
+		OWNED_SUBSIDIARY_CODE,
+		OWNED_SUBSIDIARY_NAME,
+		SIX_PERCENT,
+		ELEVEN_PERCENT,
+		CREATE_USER_CODE,
+		MODIFY_USER_CODE,
+		CREATE_TIME,
+		MODIFY_TIME,
+		ACTIVE
+	</sql>
+
+
+	<!-- 插入重分类收入基础信息 -->
+	<insert id="addClassifiedIncome"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ClassifiedIncomeEntity">
+		
+		<![CDATA[
+			INSERT/** 综合:重分类收入基础信息 **/ INTO bse.t_bas_classified_income 	(
+		]]>
+		<include refid="Base_Column_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR},
+		#{productTypeCode,jdbcType=VARCHAR},
+		#{productTypeName,jdbcType=VARCHAR},
+		#{owendSubsidiaryCode,jdbcType=VARCHAR},
+		#{owendSubsidiaryName,jdbcType=VARCHAR},
+		#{sixPercent,jdbcType=VARCHAR},
+		#{elevenPercent,jdbcType=VARCHAR},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR},
+		#{createTime,jdbcType=TIMESTAMP},
+		#{modifyTime,jdbcType=TIMESTAMP},
+		#{active,jdbcType=VARCHAR}
+		)
+	</insert>
+
+	<!-- 批量插入重分类收入基础信息 -->
+	<insert id="addClassifiedIncomes"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ClassifiedIncomeEntity">
+		insert into /*重分类收入基础信息*/ bse.t_bas_classified_income (
+		<include refid="Base_Column_List" />
+		(
+		<foreach collection="list" index="index" item="classifiedIncomeEntity"
+			separator="union">
+			SELECT
+			#{classifiedIncomeEntity.id,jdbcType=VARCHAR},
+			#{classifiedIncomeEntity.productTypeCode,jdbcType=VARCHAR},
+			#{classifiedIncomeEntity.productTypeName,jdbcType=VARCHAR},
+			#{classifiedIncomeEntity.owendSubsidiaryCode,jdbcType=VARCHAR},
+			#{classifiedIncomeEntity.owendSubsidiaryName,jdbcType=VARCHAR},
+			#{classifiedIncomeEntity.sixPercent,jdbcType=VARCHAR},
+			#{classifiedIncomeEntity.elevenPercent,jdbcType=VARCHAR},
+			#{classifiedIncomeEntity.createuser,jdbcType=VARCHAR},
+			#{classifiedIncomeEntity.modifyuser,jdbcType=VARCHAR},
+			#{classifiedIncomeEntity.createTime,jdbcType=TIMESTAMP},
+			#{classifiedIncomeEntity.modifyTime,jdbcType=TIMESTAMP},
+			#{classifiedIncomeEntity.active,jdbcType=VARCHAR} FROM DUAL
+		</foreach>
+		)
+	</insert>
+	
+	<!-- 根据前台传的参数动态精确查询  -->
+	<sql id="queryClassifiedIncome_Conditions">
+		<where>
+		<if test="productTypeCode != null and productTypeCode != ''">
+			AND T.PRODUCT_TYPE_CODE = #{productTypeCode,jdbcType=VARCHAR}
+		</if>
+		<if test="owendSubsidiaryCode != null and owendSubsidiaryCode != ''">
+			AND T.OWNED_SUBSIDIARY_CODE = #{owendSubsidiaryCode,jdbcType=DECIMAL}
+		</if>
+		<if test="businessTime!=null">
+      			<![CDATA[ AND T.CREATE_TIME < #{businessTime} AND T.MODIFY_TIME >= #{businessTime}]]> 
+      		</if>
+		<if test="active != null and active != ''">
+			AND T.ACTIVE = #{active,jdbcType=CHAR}
+		</if>
+		
+		</where>
+	</sql>
+	
+	<!-- 查询列-->
+	<sql id="queryClassifiedIncome_Params">
+		T.ID,
+		T.PRODUCT_TYPE_CODE,
+		T.PRODUCT_TYPE_NAME,
+		T.OWNED_SUBSIDIARY_CODE,
+		T.OWNED_SUBSIDIARY_NAME,
+		T.SIX_PERCENT,
+		T.ELEVEN_PERCENT,
+		T.CREATE_USER_CODE,
+		T.MODIFY_USER_CODE,
+		T.CREATE_TIME,
+		T.MODIFY_TIME,
+		T.ACTIVE
+	</sql>
+	<!-- 动态查询重分类收入基础信息总条数 -->
+	<select id="queryTotalByCondition" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.ClassifiedIncomeQueryDto" >
+		<![CDATA[
+			SELECT
+			/** 综合:重分类收入基础信息总条数 **/
+			COUNT(*)
+		FROM bse.t_bas_classified_income T 
+		]]>
+		<include refid="queryClassifiedIncome_Conditions" />
+	</select>
+	
+	
+	<!-- 动态查询重分类收入基础信息-->
+	<select id="queryClassifiedIncomeByCondition" resultMap="classifiedIncomeEntityResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.ClassifiedIncomeQueryDto" >
+		  SELECT 
+		  /** 综合:重分类收入基础信息 **/
+		<include refid="queryClassifiedIncome_Params" />
+		<![CDATA[
+	    	FROM bse.t_bas_classified_income T 
+		]]>
+		<include refid="queryClassifiedIncome_Conditions" />
+	</select>
+	
+	
+	<!--修改重分类收入基础信息 -->
+
+	<update id="updateOrDeleteClassifiedIncome" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ClassifiedIncomeEntity">
+	UPDATE /*重分类收入基础信息*/ bse.t_bas_classified_income T
+	SET T.ACTIVE = #{active,jdbcType=CHAR},
+	T.MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP},
+	T.MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR}
+	WHERE T.ID = #{id,jdbcType=VARCHAR}
+	</update>
+	
+	
+	<!-- 根据产品类型、所属子公司查询-->
+	<select id="queryClassifiedIncomeBySubAndType" resultMap="classifiedIncomeEntityResultMap" parameterType="map" >
+	   SELECT /* 综合：根据产品类型、所属子公司查询*/
+	      <include refid="queryClassifiedIncome_Params" />
+	    	    FROM bse.t_bas_classified_income T 
+      			where  T.PRODUCT_TYPE_CODE = #{productTypeCode,jdbcType=VARCHAR}
+      			AND T.OWNED_SUBSIDIARY_CODE=#{owendSubsidiaryCode,jdbcType=VARCHAR}   
+      		    AND t.active =#{active,jdbcType=VARCHAR}
+	</select>
+
+
+
+	<!-- 根据id查询重分类基础信息-->
+	<select id="queryInfosByIds" resultMap="classifiedIncomeEntityResultMap" parameterType="map" >
+	   	SELECT /* 综合：根据id查询重分类基础信息*/
+	   	<include refid="queryClassifiedIncome_Params" />
+	     FROM bse.t_bas_classified_income T 
+		WHERE ID IN 
+			<foreach collection="ids"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+			</foreach>
+	</select>
+</mapper>

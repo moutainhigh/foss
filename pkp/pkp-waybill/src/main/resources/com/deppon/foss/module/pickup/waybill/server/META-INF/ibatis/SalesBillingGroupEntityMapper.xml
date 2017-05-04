@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="pkp.waybill.SalesBillingGroupEntityMapper" >
+
+  <resultMap id="salesBillingGroupResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.domain.SalesBillingGroupEntity" >
+        <id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="VIRTUAL_CODE" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="SALESDEPT_CODE" property="salesDeptCode" jdbcType="VARCHAR" />
+		<result column="SALESDEPT_NAME" property="salesDeptName" jdbcType="VARCHAR" />
+		<result column="BILLINGGROUP_CODE" property="billingGroupCode" jdbcType="VARCHAR" />
+		<result column="BILLINGGROUP_NAME" property="billingGroupName" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="VERSION_NO" property="version" jdbcType="DECIMAL" />
+  </resultMap>
+  
+  <sql id="salesBillingGroup_Column_List" >
+    ID ,  VIRTUAL_CODE ,  SALESDEPT_CODE , SALESDEPT_NAME ,BILLINGGROUP_CODE ,BILLINGGROUP_NAME,CREATE_TIME ,
+  	MODIFY_TIME ,  ACTIVE ,  CREATE_USER_CODE ,  MODIFY_USER_CODE, VERSION_NO
+  </sql>
+  
+ 
+  <insert id="insertSelective" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SalesBillingGroupEntity">
+		insert into BSE.T_BAS_SALESDEPT_BILLINGGROUP (
+			ID ,  VIRTUAL_CODE ,  SALESDEPT_CODE , SALESDEPT_NAME ,BILLINGGROUP_CODE ,BILLINGGROUP_NAME,CREATE_TIME ,
+	  		MODIFY_TIME ,  ACTIVE ,  CREATE_USER_CODE ,  MODIFY_USER_CODE, VERSION_NO
+  		) 
+		values ( #{id,jdbcType=VARCHAR},#{virtualCode,jdbcType=VARCHAR},#{salesDeptCode,jdbcType=VARCHAR},#{salesDeptName,jdbcType=VARCHAR},
+		#{billingGroupCode,jdbcType=VARCHAR},#{billingGroupName,jdbcType=VARCHAR},#{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},#{active,jdbcType=CHAR},#{createUser,jdbcType=VARCHAR},#{modifyUser,jdbcType=VARCHAR},
+		#{version,jdbcType=DECIMAL})
+ </insert>
+  
+  <update id="updateByPrimaryKeySelective" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SalesBillingGroupEntity" >
+    update BSE.T_BAS_SALESDEPT_BILLINGGROUP
+    <set >
+      <if test="virtualCode != null" >
+        VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR},
+      </if>
+      <if test="salesDeptCode != null" >
+        SALESDEPT_CODE = #{salesDeptCode,jdbcType=VARCHAR},
+      </if>
+      <if test="salesDeptName != null" >
+        SALESDEPT_NAME = #{salesDeptName,jdbcType=VARCHAR},
+      </if>
+      <if test="billingGroupCode != null" >
+        BILLINGGROUP_CODE = #{billingGroupCode,jdbcType=VARCHAR},
+      </if>
+      <if test="billingGroupName != null" >
+        BILLINGGROUP_NAME = #{billingGroupName,jdbcType=VARCHAR},
+      </if>
+       <if test="createDate != null" >
+        CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+      </if>
+       <if test="modifyDate != null" >
+        MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="active != null" >
+        ACTIVE = #{active,jdbcType=CHAR},
+      </if>
+      <if test="createUser != null" >
+        CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyUser != null" >
+        MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+      </if>
+      <if test="version != null" >
+        VERSION_NO = #{version,jdbcType=DECIMAL},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  
+  <select id="selectById" resultType="String"
+		parameterType="java.util.Map">
+		<![CDATA[
+		SELECT 
+	        ID
+	    	FROM BSE.T_BAS_SALESDEPT_BILLINGGROUP
+		]]>
+		<where>
+			ID = #{id,jdbcType=VARCHAR}	
+		</where>
+	</select>
+  <delete id="delete" 
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SalesBillingGroupEntity">
+		delete from BSE.T_BAS_SALESDEPT_BILLINGGROUP
+		 where ID =  #{id,jdbcType=VARCHAR}	
+	</delete>
+	
+ 	<!-- 根据集中开单部门编码查询旗下所有营业部  --> 
+	<select id="querySalesListByBillingGroupCode" resultMap="salesBillingGroupResultMap" parameterType="java.util.Map">
+		select  /**接送货－查询离线数据：根据集中开单部门编码查询旗下所有营业部**/
+		<include refid="salesBillingGroup_Column_List"/>
+		from BSE.T_BAS_SALESDEPT_BILLINGGROUP  
+		where BILLINGGROUP_CODE in
+		<foreach collection="code" item="code" open="(" separator="," close=")" >
+		 #{code,jdbcType=VARCHAR}
+		</foreach>
+		and ACTIVE = #{active,jdbcType=CHAR}
+	</select>
+
+ 	<!-- 根据营业部编码查询所属集中开单组   -->
+	<select id="queryBillingGroupListBySalesCode" resultMap="salesBillingGroupResultMap" parameterType="java.util.Map">
+		select /**接送货－查询离线数据：根据营业部编码查询所属集中开单组**/
+		<include refid="salesBillingGroup_Column_List"/>
+		from BSE.T_BAS_SALESDEPT_BILLINGGROUP  
+		where SALESDEPT_CODE = #{code,jdbcType=VARCHAR}
+		and ACTIVE = #{active,jdbcType=CHAR}
+	</select>
+</mapper>

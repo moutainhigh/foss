@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+	"-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.stl.PaymentSettlementDao" >
+
+	<resultMap id="ListResultMapForPayment" type="com.deppon.foss.module.settlement.consumer.api.shared.dto.ArriveOnlineDto" >
+	    <result column="AMOUNT" property="amount" jdbcType="DECIMAL" />
+	    <result column="VERIFY_AMOUNT" property="verifyAmount" jdbcType="DECIMAL" />
+	    <result column="UNVERIFY_AMOUNT" property="unverifyAmount" jdbcType="DECIMAL" />
+	</resultMap>
+
+	<!-- 查询应收单到达网上支付结果 -->
+	<select id="queryArriveIsOnlinePay" resultMap="ListResultMapForPayment" parameterType="java.util.Map">
+		Select /*结算-核销-查询应收单到达网上支付结果*/ Sum(r.amount) AMOUNT,
+		       sum(r.verify_amount) VERIFY_AMOUNT,
+		       sum(r.unverify_amount) UNVERIFY_AMOUNT
+		From stl.t_stl_bill_receivable r
+		Left Join stl.t_stl_bill_writeoff f On r.receivable_no = f.end_no
+		Left Join stl.t_stl_bill_repayment ra On f.begin_no = ra.repayment_no
+		Where 1=1
+		And r.waybill_no= #{waybillNo, jdbcType=VARCHAR}
+		And r.active='Y'
+		And f.active='Y'
+		And ra.active='Y'
+		And r.bill_type= #{billType, jdbcType=VARCHAR}
+		And ra.payment_type= #{payType, jdbcType=VARCHAR}
+	</select>
+
+</mapper>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.DebtCreditLimitInfoQueryDao" >
+	
+  <!-- 查询最早欠款客户已用额度信息resultMap -->
+  <resultMap id="DebtCreditLimitInfoResultMap" type="com.deppon.foss.module.settlement.consumer.api.shared.dto.DebtCreditLimitInfoResultDto" >
+    <result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+    <result column="USED_AMOUNT" property="usedAmount" jdbcType="DECIMAL" />
+    <result column="BUSINESS_DATE" property="businessDate" jdbcType="TIMESTAMP" />
+  </resultMap>
+
+  <!-- 根据单据类型记账日期等查询应付单信息(关联应收单中未核销金额为0的数据)   -->
+  <select id="queryDebtCreditLimitInfo" resultMap="DebtCreditLimitInfoResultMap" parameterType="java.util.Map">
+	SELECT /*结算-客户管理-根据单据类型记账日期等查询应付单信息(关联应收单中未核销金额为0的数据)    */
+	 C.CUSTOMER_NAME CUSTOMER_NAME,
+	 C.CUSTOMER_CODE CUSTOMER_CODE,
+	 C.USED_AMOUNT / 100 USED_AMOUNT,
+	 NVL(MIN(R.BUSINESS_DATE), SYSDATE) BUSINESS_DATE
+		FROM STL.T_STL_CREDIT_CUSTOMER C
+		LEFT JOIN STL.T_STL_BILL_RECEIVABLE R
+			ON C.CUSTOMER_CODE = R.CUSTOMER_CODE
+				 AND
+				 R.UNVERIFY_AMOUNT>0  
+				 AND R.ACTIVE = #{active}
+				 AND R.IS_INIT = #{isInit}
+				 AND R.PAYMENT_TYPE = #{payment_type_CT}
+				 AND R.BUSINESS_DATE >= #{fossOnlineDate}
+	 WHERE C.ACTIVE = #{active}
+	 	   <![CDATA[
+				 AND ((C.MODIFY_TIME >= #{beginDate} AND C.MODIFY_TIME < #{endDate}) OR
+				 (C.CREATE_TIME >= #{beginDate} AND C.CREATE_TIME < #{endDate}))
+	 	   ]]>
+	 GROUP BY C.CUSTOMER_NAME, C.CUSTOMER_CODE, C.USED_AMOUNT
+  </select>
+</mapper>

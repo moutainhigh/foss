@@ -1,0 +1,119 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.BillUnverifyCompletedQueryDao" >
+   <!-- 未完全核销单据ResultMap -->
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.consumer.api.shared.dto.BillUnverifyComletedResultDto" >
+    <result column="BILL_NO" property="billNo" jdbcType="VARCHAR" />
+    <result column="BILL_PARENT_TYPE" property="billParentType" jdbcType="VARCHAR" />
+    <result column="BILL_TYPE" property="billType" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_NAME" property="custoemerName" jdbcType="VARCHAR" />
+    <result column="UNVERIFY_AMOUNT" property="unverifyAmount" jdbcType="DECIMAL" />                   
+  </resultMap>
+  
+  <!-- 根据客户编码查询未完全核销的单据 -->
+  <select id="queryBillUnverifyCompletedList" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.BillUnverifyCompletedQueryDto" >
+		SELECT /*根据客户编码查询未完全核销的单据：预收单 */
+			D.DEPOSIT_RECEIVED_NO AS BILL_NO,
+       		#{BILL_UNVERIFY_ACTIVE_US} AS BILL_PARENT_TYPE,
+       		D.BILL_TYPE AS BILL_TYPE,
+       		D.CUSTOMER_NAME AS CUSTOMER_NAME,
+       		D.CUSTOMER_CODE AS CUSTOMER_CODE,
+       		D.UNVERIFY_AMOUNT AS UNVERIFY_AMOUNT
+  		FROM STL.T_STL_BILL_DEPOSIT_RECEIVED D
+ 		WHERE D.CUSTOMER_CODE = #{customerCode} 
+   			AND D.UNVERIFY_AMOUNT>0 
+   			AND D.ACTIVE = #{BILL_UNVERIFY_ACTIVE_Y}
+		UNION    
+		SELECT  /*根据客户编码查询未完全核销的单据：应收单 */
+			R.RECEIVABLE_NO AS BILL_NO,
+       		#{BILL_UNVERIFY_ACTIVE_YS} AS BILL_PARENT_TYPE,
+       		R.BILL_TYPE AS BILL_TYPE,
+       		R.CUSTOMER_NAME AS CUSTOMER_NAME,
+       		R.CUSTOMER_CODE AS CUSTOMER_CODE,
+       		R.UNVERIFY_AMOUNT AS UNVERIFY_AMOUNT
+  		FROM STL.T_STL_BILL_RECEIVABLE R
+ 		WHERE R.CUSTOMER_CODE = #{customerCode} 
+   			AND R.UNVERIFY_AMOUNT>0  
+   			AND R.ACTIVE = #{BILL_UNVERIFY_ACTIVE_Y}
+		UNION    
+		SELECT  /*根据客户编码查询未完全核销的单据：应付单 */
+			P.PAYABLE_NO AS BILL_NO,
+       		#{BILL_UNVERIFY_ACTIVE_YF} AS BILL_PARENT_TYPE,
+       		P.BILL_TYPE AS BILL_TYPE,
+       		P.CUSTOMER_NAME AS CUSTOMER_NAME,
+       		P.CUSTOMER_CODE AS CUSTOMER_CODE,
+       		P.UNVERIFY_AMOUNT AS UNVERIFY_AMOUNT
+  		FROM STL.T_STL_BILL_PAYABLE P
+ 		WHERE P.CUSTOMER_CODE = #{customerCode} 
+   			AND P.UNVERIFY_AMOUNT > 0
+   			AND P.ACTIVE = #{BILL_UNVERIFY_ACTIVE_Y}
+		UNION   
+		SELECT  /*根据客户编码查询未完全核销的单据：预付单 */
+			A.ADVANCES_NO AS BILL_NO,
+       		#{BILL_UNVERIFY_ACTIVE_UF} AS BILL_PARENT_TYPE,
+       		A.BILL_TYPE AS BILL_TYPE,
+       		A.CUSTOMER_NAME AS CUSTOMER_NAME,
+       		A.CUSTOMER_CODE AS CUSTOMER_CODE,
+       		A.UNVERIFY_AMOUNT AS UNVERIFY_AMOUNT
+  		FROM STL.T_STL_BILL_ADVANCED_PAYMENT A
+ 		WHERE A.CUSTOMER_CODE = #{customerCode} 
+   			AND A.UNVERIFY_AMOUNT > 0
+   			AND A.ACTIVE = #{BILL_UNVERIFY_ACTIVE_Y}
+  </select>
+  
+   <!-- 根据客户编码查询未完全核销的单据的总条数-->
+  <select id="queryBillUnverifyCompletedTotals" resultType="long" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.BillUnverifyCompletedQueryDto" >
+		SELECT /*根据客户编码查询未完全核销的单据的总条数 */
+			COUNT(BILL_NO) 
+		FROM (
+			SELECT /*根据客户编码查询未完全核销的单据：预收单 */
+				D.DEPOSIT_RECEIVED_NO AS BILL_NO,
+       			#{BILL_UNVERIFY_ACTIVE_US} AS BILL_PARENT_TYPE,
+       			D.BILL_TYPE AS BILL_TYPE,
+       			D.CUSTOMER_NAME AS CUSTOMER_NAME,
+       			D.CUSTOMER_CODE AS CUSTOMER_CODE,
+       			D.UNVERIFY_AMOUNT AS UNVERIFY_AMOUNT
+  			FROM STL.T_STL_BILL_DEPOSIT_RECEIVED D
+ 			WHERE D.CUSTOMER_CODE = #{customerCode} 
+   				AND D.UNVERIFY_AMOUNT>0 
+   				AND D.ACTIVE = #{BILL_UNVERIFY_ACTIVE_Y}
+			UNION    
+			SELECT  /*根据客户编码查询未完全核销的单据：应收单 */
+				R.RECEIVABLE_NO AS BILL_NO,
+       			#{BILL_UNVERIFY_ACTIVE_YS} AS BILL_PARENT_TYPE,
+       			R.BILL_TYPE AS BILL_TYPE,
+       			R.CUSTOMER_NAME AS CUSTOMER_NAME,
+       			R.CUSTOMER_CODE AS CUSTOMER_CODE,
+       			R.UNVERIFY_AMOUNT AS UNVERIFY_AMOUNT
+  			FROM STL.T_STL_BILL_RECEIVABLE R
+ 			WHERE R.CUSTOMER_CODE = #{customerCode} 
+   				AND R.UNVERIFY_AMOUNT>0  
+   				AND R.ACTIVE = #{BILL_UNVERIFY_ACTIVE_Y}
+			UNION    
+			SELECT  /*根据客户编码查询未完全核销的单据：应付单 */
+				P.PAYABLE_NO AS BILL_NO,
+       			#{BILL_UNVERIFY_ACTIVE_YF} AS BILL_PARENT_TYPE,
+       			P.BILL_TYPE AS BILL_TYPE,
+       			P.CUSTOMER_NAME AS CUSTOMER_NAME,
+       			P.CUSTOMER_CODE AS CUSTOMER_CODE,
+       			P.UNVERIFY_AMOUNT AS UNVERIFY_AMOUNT
+  			FROM STL.T_STL_BILL_PAYABLE P
+ 			WHERE P.CUSTOMER_CODE = #{customerCode} 
+   				AND P.UNVERIFY_AMOUNT > 0
+   				AND P.ACTIVE = #{BILL_UNVERIFY_ACTIVE_Y}
+			UNION   
+			SELECT  /*根据客户编码查询未完全核销的单据：预付单 */
+				A.ADVANCES_NO AS BILL_NO,
+       			#{BILL_UNVERIFY_ACTIVE_UF} AS BILL_PARENT_TYPE,
+       			A.BILL_TYPE AS BILL_TYPE,
+       			A.CUSTOMER_NAME AS CUSTOMER_NAME,
+       			A.CUSTOMER_CODE AS CUSTOMER_CODE,
+       			A.UNVERIFY_AMOUNT AS UNVERIFY_AMOUNT
+  			FROM STL.T_STL_BILL_ADVANCED_PAYMENT A
+ 			WHERE A.CUSTOMER_CODE = #{customerCode} 
+   				AND A.UNVERIFY_AMOUNT > 0 
+   				AND A.ACTIVE = #{BILL_UNVERIFY_ACTIVE_Y}	
+		)
+  </select>
+</mapper>

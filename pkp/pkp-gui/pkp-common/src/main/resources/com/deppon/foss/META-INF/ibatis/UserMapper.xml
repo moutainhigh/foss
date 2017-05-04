@@ -1,0 +1,85 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.pkp.UserEntityMapper">
+	 
+		<resultMap id="userResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.UserEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+	    <result column="EMP_CODE" property="empCode" jdbcType="VARCHAR" />
+	    <result column="USER_NAME" property="userName" jdbcType="VARCHAR" />
+	    <result column="PASSWORD" property="password" jdbcType="VARCHAR" />
+	    <result column="EMP_NAME" property="empName" jdbcType="VARCHAR" />
+	    <result column="LAST_LOGIN" property="lastLogin" jdbcType="TIMESTAMP" />
+	    <result column="ACTIVE" property="active" jdbcType="CHAR" />
+	    <result column="TITLE" property="title" jdbcType="VARCHAR" />
+	    <result column="BEGIN_TIME" property="beginDate" jdbcType="TIMESTAMP" />
+	    <result column="END_TIME" property="endDate" jdbcType="TIMESTAMP" />
+	    <result property="createUser" column="CREATE_USER_CODE" jdbcType="VARCHAR" />
+		<result property="createDate" column="CREATE_TIME" jdbcType="TIMESTAMP" />
+		<result property="modifyUser" column="MODIFY_USER_CODE"  jdbcType="VARCHAR" />
+		<result property="modifyDate" column="MODIFY_TIME" jdbcType="TIMESTAMP" />
+		<result property="version" column="VERSION_NO" jdbcType="DECIMAL" />
+		<association property="employee" column="EMP_NAME"
+			javaType="com.deppon.foss.module.base.baseinfo.api.shared.domain.EmployeeEntity">
+			<id property="empName" column="EMP_NAME" />
+		</association>
+	</resultMap>
+	
+	
+ <select id="selectUserByCode" resultMap="userResultMap" parameterType="java.util.Map" >
+    select 
+   ID, EMP_CODE, USER_NAME, 
+	      PASSWORD, EMP_NAME, LAST_LOGIN, 
+	      ACTIVE, TITLE, BEGIN_TIME, 
+	      END_TIME, CREATE_TIME, MODIFY_TIME, 
+	      CREATE_USER_CODE, MODIFY_USER_CODE,VERSION_NO
+    from BSE.T_BAS_USER
+    where EMP_CODE = #{userCode,jdbcType=VARCHAR}
+    	and ACTIVE = #{active,jdbcType=CHAR}
+  </select>
+	
+	
+	 <insert id="insertSelective" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.UserEntity" >
+	    insert into BSE.T_BAS_USER (ID, EMP_CODE, USER_NAME, 
+	      PASSWORD, EMP_NAME, LAST_LOGIN, 
+	      ACTIVE, TITLE, BEGIN_TIME, 
+	      END_TIME, CREATE_TIME, MODIFY_TIME, 
+	      CREATE_USER_CODE, MODIFY_USER_CODE,VERSION_NO)
+	    values (#{id,jdbcType=VARCHAR}, #{empCode,jdbcType=VARCHAR}, #{userName,jdbcType=VARCHAR}, 
+	      #{password,jdbcType=VARCHAR}, #{employee.empName,jdbcType=VARCHAR}, #{lastLogin,jdbcType=TIMESTAMP}, 
+	      #{active,jdbcType=CHAR}, #{title,jdbcType=VARCHAR}, #{beginDate,jdbcType=TIMESTAMP}, 
+	      #{endDate,jdbcType=TIMESTAMP}, #{createDate,jdbcType=TIMESTAMP}, #{modifyDate,jdbcType=TIMESTAMP}, 
+	      #{createUser,jdbcType=VARCHAR}, #{modifyUser,jdbcType=VARCHAR},#{version,jdbcType=DECIMAL})
+  </insert>
+  
+  <update id="updateByPrimaryKeySelective" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.UserEntity" >
+    update BSE.T_BAS_USER
+    set EMP_CODE = #{empCode,jdbcType=VARCHAR},
+      USER_NAME = #{userName,jdbcType=VARCHAR},
+      PASSWORD = #{password,jdbcType=VARCHAR},
+      EMP_NAME = #{employee.empName,jdbcType=VARCHAR},
+      LAST_LOGIN = #{lastLogin,jdbcType=TIMESTAMP},
+      ACTIVE = #{active,jdbcType=CHAR},
+      TITLE = #{title,jdbcType=VARCHAR},
+      BEGIN_TIME = #{beginDate,jdbcType=TIMESTAMP},
+      END_TIME = #{endDate,jdbcType=TIMESTAMP},
+      CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+      MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+      CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+      MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+      VERSION_NO = #{version,jdbcType=DECIMAL}
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  
+  <select id="selectById" resultType="String"
+		parameterType="java.util.Map">
+		<![CDATA[
+		SELECT 
+	        ID
+	    	FROM BSE.T_BAS_USER
+		]]>
+		<where>
+			ID = #{id,jdbcType=VARCHAR}	
+		</where>
+	</select>
+</mapper>

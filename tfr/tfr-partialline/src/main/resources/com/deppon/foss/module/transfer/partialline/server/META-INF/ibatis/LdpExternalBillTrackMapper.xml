@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.partialline.ldpExternalBillTrackMapper" >
+	<!-- 落地配轨迹 -->
+	<resultMap id="LdpExternalBillTrackResultMap" type="com.deppon.foss.module.transfer.partialline.api.shared.dto.LdpExternalBillTrackDto" >
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="TRACEID" property="traceId" jdbcType="VARCHAR" />
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="AGENT_COMPANY_CODE" property="agentCompanyCode" jdbcType="VARCHAR" />
+		<result column="AGENT_COMPANY_NAME" property="agentCompanyName" jdbcType="VARCHAR" /> 
+		<result column="AGENT_ORG_CODE" property="agentOrgCode" jdbcType="VARCHAR" />
+		<result column="AGENT_ORG_NAME" property="agentOrgName" jdbcType="VARCHAR" /> 
+		<result column="OPERATIONCITY" property="operationcity" jdbcType="VARCHAR" /> 
+		<result column="OPERATIONTYPE" property="operationtype" jdbcType="VARCHAR" /> 
+		<result column="DISPATCHNAME" property="dispatchname" jdbcType="VARCHAR" /> 
+		<result column="DISPATCHPHONENO" property="dispatchphoneno" jdbcType="VARCHAR" /> 
+		<result column="OPERATIONTIME" property="operationTime" jdbcType="TIMESTAMP" /> 
+		<result column="OPERATIONUSERNAME" property="operationUserName" jdbcType="VARCHAR" /> 
+		<result column="OPERATIONDESCRIBE" property="operationDescribe" jdbcType="VARCHAR" /> 
+	</resultMap>
+	  
+	<!--落地配轨迹表字段  -->
+	<sql id="ExternalBillTrack_Column_List" >
+   	    TRACK.ID,
+		TRACK.TRACEID,
+		TRACK.WAYBILL_NO,
+		TRACK.AGENT_COMPANY_CODE,
+		TRACK.AGENT_COMPANY_NAME,
+		TRACK.AGENT_ORG_CODE,
+		TRACK.AGENT_ORG_NAME,
+		TRACK.OPERATIONCITY,
+		TRACK.OPERATIONTYPE,
+		TRACK.DISPATCHNAME,
+		TRACK.DISPATCHPHONENO,
+		TRACK.OPERATIONTIME,
+		TRACK.OPERATIONUSERNAME,
+		TRACK.OPERATIONDESCRIBE
+	</sql>
+  
+	<!-- 插入落地配外发单 -->
+	<insert id="addLdpExternalBillTrack" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.LdpExternalBillTrackDto" >
+    insert into TFR.T_OPT_LDP_EXTERNAL_BILL_TRACK TRACK(
+    	<include refid="ExternalBillTrack_Column_List" />
+    	)
+    values (#{id,jdbcType=VARCHAR}, #{traceId,jdbcType=VARCHAR}, #{waybillNo,jdbcType=VARCHAR},
+    	#{agentCompanyCode,jdbcType=VARCHAR},#{agentCompanyName,jdbcType=VARCHAR}, #{agentOrgCode,jdbcType=VARCHAR},
+    	#{agentOrgName,jdbcType=VARCHAR}, #{operationcity,jdbcType=VARCHAR}, #{operationtype,jdbcType=VARCHAR},
+    	#{dispatchname,jdbcType=VARCHAR},#{dispatchphoneno,jdbcType=VARCHAR}, #{operationTime,jdbcType=TIMESTAMP},
+    	#{operationUserName,jdbcType=VARCHAR},#{operationDescribe,jdbcType=VARCHAR}
+    	)
+	</insert>	
+	<select id="queryLdpExternalBillTrackList" resultMap="LdpExternalBillTrackResultMap" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.LdpExternalBillTrackDto" >
+		select <include refid="ExternalBillTrack_Column_List" />
+		  from TFR.T_OPT_LDP_EXTERNAL_BILL_TRACK TRACK
+		      ,pkp.T_SRV_WAYBILL WAYBILL
+		  where TRACK.WAYBILL_NO = WAYBILL.WAYBILL_NO
+		    and WAYBILL.ACTIVE = #{active}
+		  	<if test="waybillNo != null and waybillNo != ''">
+				AND TRACK.WAYBILL_NO = #{waybillNo}
+			</if>
+		  	<if test="startTime!=null">
+				<![CDATA[ and WAYBILL.BILL_TIME >= #{startTime,jdbcType=TIMESTAMP} ]]>
+			</if>
+		  	<if test="endTime!=null">
+				<![CDATA[ and WAYBILL.BILL_TIME >= #{endTime,jdbcType=TIMESTAMP} ]]>
+			</if>
+		  order by TRACK.OPERATIONTIME ASC
+	</select>
+	
+	<select id="queryLdpBillTrackList" resultMap="LdpExternalBillTrackResultMap" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.LdpExternalBillTrackDto" >
+		select <include refid="ExternalBillTrack_Column_List" />
+		  from TFR.T_OPT_LDP_EXTERNAL_BILL_TRACK TRACK
+		where TRACK.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		and TRACK.operationtype = #{operationtype,jdbcType=VARCHAR}
+		and to_char(TRACK.operationtime,'yyyy-mm-dd hh24:mi:ss') = to_char(#{operationTime,jdbcType=TIMESTAMP},'yyyy-mm-dd hh24:mi:ss')
+	</select>
+	
+	<delete id="deleteLDPTrack" parameterType="string">
+		delete from tfr.t_opt_ldp_external_bill_track t
+		where t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+	</delete>
+</mapper>

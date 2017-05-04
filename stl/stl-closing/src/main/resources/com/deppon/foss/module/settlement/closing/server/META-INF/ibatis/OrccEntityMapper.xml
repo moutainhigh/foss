@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stv.OrccEntityMapper" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.closing.api.shared.domain.MvrOrccEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="PERIOD" property="period" jdbcType="VARCHAR" />
+     <result column="Product_Code" property="productCode" jdbcType="VARCHAR" />
+    <result column="VOUCHER_BEGIN_TIME" property="voucherBeginTime" jdbcType="TIMESTAMP" />
+    <result column="VOUCHER_END_TIME" property="voucherEndTime" jdbcType="TIMESTAMP" />
+    <result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+    <result column="ORIG_ORG_CODE" property="origOrgCode" jdbcType="VARCHAR" />
+    <result column="ORIG_ORG_NAME" property="origOrgName" jdbcType="VARCHAR" />
+    <result column="DEST_ORG_CODE" property="destOrgCode" jdbcType="VARCHAR" />
+    <result column="DEST_ORG_NAME" property="destOrgName" jdbcType="VARCHAR" />
+    <result column="ORIG_PAY" property="origPay" jdbcType="DECIMAL" />
+    <result column="DEST_CFM_OCOST" property="destCfmOcost" jdbcType="DECIMAL" />
+    <result column="DEST_CFM_DCOST" property="destCfmDcost" jdbcType="DECIMAL" />
+    <result column="UDEST_CFM_OCOST" property="udestCfmOcost" jdbcType="DECIMAL" />
+    <result column="UDEST_CRM_DCOST" property="udestCrmDcost" jdbcType="DECIMAL" />
+    <result column="ORIG_PAY_TAIL" property="origPayTail" jdbcType="DECIMAL" />
+    <result column="DEST_PAY_TAIL" property="destPayTail" jdbcType="DECIMAL" />
+  </resultMap>
+   <sql id="Base_Column_List" >
+    ID, PERIOD,Product_Code,VOUCHER_BEGIN_TIME, VOUCHER_END_TIME, CUSTOMER_CODE, CUSTOMER_NAME, ORIG_ORG_CODE, 
+    ORIG_ORG_NAME, DEST_ORG_CODE, DEST_ORG_NAME, ORIG_PAY/100 ORIG_PAY, DEST_CFM_OCOST/100 DEST_CFM_OCOST, DEST_CFM_DCOST/100 DEST_CFM_DCOST, 
+    UDEST_CFM_OCOST/100 UDEST_CFM_OCOST, UDEST_CRM_DCOST/100 UDEST_CRM_DCOST, ORIG_PAY_TAIL/100 ORIG_PAY_TAIL, DEST_PAY_TAIL/100 DEST_PAY_TAIL
+  </sql>
+ <sql id="Base_amount_Sum" >
+    SUM(ORIG_PAY)/100 ORIG_PAY, SUM(DEST_CFM_OCOST)/100 DEST_CFM_OCOST, SUM(DEST_CFM_DCOST)/100 DEST_CFM_DCOST, 
+    SUM(UDEST_CFM_OCOST)/100 UDEST_CFM_OCOST, SUM(UDEST_CRM_DCOST)/100 UDEST_CRM_DCOST, SUM(ORIG_PAY_TAIL)/100 ORIG_PAY_TAIL, SUM(DEST_PAY_TAIL)/100 DEST_PAY_TAIL
+  </sql>
+<select id="selectByConditions"
+ parameterType="com.deppon.foss.module.settlement.closing.api.shared.dto.MvrOrccQueryDto" resultMap="BaseResultMap">
+SELECT <include refid="Base_Column_List"/> FROM 
+STV.T_STL_MVR_ORCC CC 
+<where>
+ <if test="period !=null">
+ AND CC.PERIOD = #{period,jdbcType=VARCHAR}
+ </if>
+ <if test="productCodeList !=null">
+    AND CC.Product_Code in
+	   <foreach collection="productCodeList" item="productCode" open="(" close=")" separator=",">
+	   	#{productCode,jdbcType=VARCHAR}
+	   </foreach>
+ </if>
+ <if test="origOrgCode !=null and origOrgCode!= ''">
+ AND CC.Orig_Org_Code = #{origOrgCode,jdbcType=VARCHAR}
+ </if>
+ <if test="destOrgCode !=null and destOrgCode!= ''">
+ AND CC.Dest_Org_Code = #{destOrgCode,jdbcType=VARCHAR}
+ </if>
+</where>
+</select>
+
+<select id="selectByConditionsToltal"
+ parameterType="com.deppon.foss.module.settlement.closing.api.shared.dto.MvrOrccQueryDto" resultType="long">
+SELECT count(CC.ID) FROM 
+STV.T_STL_MVR_ORCC CC 
+<where>
+ <if test="period !=null">
+ AND CC.PERIOD = #{period,jdbcType=VARCHAR}
+ </if>
+ <if test="productCodeList !=null ">
+    and CC.Product_Code in
+	   <foreach collection="productCodeList" item="productCode" open="(" close=")" separator=",">
+	   	#{productCode,jdbcType=VARCHAR}
+	   </foreach>
+ </if>
+ <if test="origOrgCode !=null and origOrgCode!=''">
+  AND CC.Orig_Org_Code = #{origOrgCode,jdbcType=VARCHAR}
+ </if>
+ <if test="destOrgCode !=null and destOrgCode!=''">
+ AND CC.Dest_Org_Code = #{destOrgCode,jdbcType=VARCHAR}
+ </if>
+</where>
+</select>
+
+
+<select id="selectAmountSum"
+ parameterType="com.deppon.foss.module.settlement.closing.api.shared.dto.MvrOrccQueryDto" resultMap="BaseResultMap">
+SELECT <include refid="Base_amount_Sum"/> FROM 
+STV.T_STL_MVR_ORCC CC 
+<where>
+ <if test="period !=null">
+ AND CC.PERIOD = #{period,jdbcType=VARCHAR}
+ </if>
+ <if test="productCodeList !=null ">
+    and CC.Product_Code in
+	   <foreach collection="productCodeList" item="productCode" open="(" close=")" separator=",">
+	   	#{productCode,jdbcType=VARCHAR}
+	   </foreach>
+ </if>
+ <if test="origOrgCode !=null and origOrgCode!=''">
+  AND CC.Orig_Org_Code = #{origOrgCode,jdbcType=VARCHAR}
+ </if>
+ <if test="destOrgCode !=null and destOrgCode!=''">
+ AND CC.Dest_Org_Code = #{destOrgCode,jdbcType=VARCHAR}
+ </if>
+</where>
+</select>
+</mapper>

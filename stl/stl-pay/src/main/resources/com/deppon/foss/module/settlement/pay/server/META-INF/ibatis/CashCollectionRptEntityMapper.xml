@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.CashCollectionRptEntityDao" >
+	<!-- base 现金收入缴款报表汇总 resultMap -->
+    <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.pay.api.shared.domain.CashCollectionRptEntity" >
+	    <id column="ID" property="id" jdbcType="VARCHAR" />
+	    <result column="REPORT_NO" property="reportNo" jdbcType="VARCHAR" />
+	    <result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+	    <result column="ORG_NAME" property="orgName" jdbcType="VARCHAR" />
+	    <result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+	    <result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+	    <result column="BUSINESS_DATE" property="businessDate" jdbcType="TIMESTAMP" />
+	    <result column="DUES_AMOUNT" property="duesAmount" jdbcType="DECIMAL" />
+	    <result column="PAID_AMOUNT" property="paidAmount" jdbcType="DECIMAL" />
+	    <result column="OVERDUE_AMOUNT" property="overdueAmount" jdbcType="DECIMAL" />
+	    <result column="CLERKS_AMOUNT" property="clerksAmount" jdbcType="DECIMAL" />
+	    <result column="UNCLERKS_AMOUNT" property="unclerksAmount" jdbcType="DECIMAL" />
+	    <result column="PRECOLLECTED_AMOUNT" property="precollectedAmount" jdbcType="DECIMAL" />
+	    <result column="CREATE_USER_CODE" property="createUserCode" jdbcType="VARCHAR" />
+	    <result column="CREATE_USER_NAME" property="createUserName" jdbcType="VARCHAR" />
+	    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+	    <result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+	    <result column="NOTES" property="notes" jdbcType="VARCHAR" />
+	    <result column="VERSION_NO" property="versionNo" jdbcType="DECIMAL" />
+    </resultMap>
+  
+	<!-- 生成所有部门的现金收入报表，用于每天的定时任务 -->
+    <select id="createAllReportCashRecPayIn" parameterType="java.util.Map" statementType="CALLABLE">
+        {<![CDATA[call /*生成单个部门的现金收入报表，用于实时缴款任务*/]]> STL.PKG_STL_CASH_RECEIVE_REPORT.PROC_STL_CASH_RECEIVE_RPT(#{beginDate,mode=IN},#{endDate,mode=IN})}
+    </select>
+    <!-- 生成单个部门的现金收入报表，用于实时缴款任务 -->
+    <select id="createOneReportCashRecPayIn" parameterType="java.util.Map" statementType="CALLABLE">
+           {<![CDATA[call /*生成单个部门的现金收入报表，用于实时缴款任务*/]]> STL.PKG_STL_CASH_RECEIVE_REPORT.PROC_STL_CASH_RECEIVE_RPT_ORG(#{beginDate,mode=IN},#{endDate,mode=IN},
+           #{orgCode,mode=IN},#{currentTime,mode=IN},1)}
+    </select>
+    
+    <!-- 每日定时查询部门前一天的应缴款总金额 -->
+    <!-- MODIFY BY 092036-FOSS-BOCHENLONG 2013-09-03 HAS CHECKED -->
+    <!-- 重要：使用现有BseResultMap封装结果，CLERKS_AMOUNT 现金金额 ，UNCLERKS_AMOUNT 非现金金额 -->
+    <select id="selectUploadCashAllAmount" parameterType="java.util.Map" resultMap="BaseResultMap" >
+          <![CDATA[
+          		SELECT  /*每日定时上传前一天部门的现金、非现金缴款金额*/
+          ]]>
+				O.UNIFIED_CODE ORG_CODE, <!-- 部门编码 -->
+          		SUM(TT.AMOUNTCASH)/100 CLERKS_AMOUNT,<!-- 现金金额 -->
+          		SUM(TT.AMOUNTNOTCASH)/100 UNCLERKS_AMOUNT <!-- 非现金金额 -->
+
+	      FROM (
+				<!--查询现金收款单-->
+				SELECT TBC.COLLECTION_ORG_CODE AS COLLECTION_ORG_CODE,
+					   NVL(TBC.AMOUNT,0)       AS AMOUNTCASH,
+					   0                       AS AMOUNTNOTCASH          
+					   FROM stl.T_STL_BILL_CASH_COLLECTION TBC
+				       WHERE <![CDATA[TBC.ACCOUNT_DATE >= #{beginDate}
+							 AND TBC.ACCOUNT_DATE < #{endDate}]]>
+                             AND TBC.STATUS = 'C'
+							 AND TBC.PAYMENT_TYPE IN 
+							 <foreach collection="paymentTypeList"  index="index"  open="(" separator="," close=")" item="item">
+							 	#{item}
+							 </foreach>
+				UNION ALL						 
+				SELECT TBC.COLLECTION_ORG_CODE AS COLLECTION_ORG_CODE,
+					   0                       AS AMOUNTCASH,
+					   NVL(TBC.AMOUNT,0)       AS AMOUNTNOTCASH          
+					   FROM stl.T_STL_BILL_CASH_COLLECTION TBC
+				       WHERE <![CDATA[TBC.ACCOUNT_DATE >= #{beginDate}
+							 AND TBC.ACCOUNT_DATE < #{endDate}]]>
+                             AND TBC.STATUS = 'C'
+							 AND TBC.PAYMENT_TYPE NOT IN 
+							 <foreach collection="paymentTypeList"  index="index"  open="(" separator="," close=")" item="item">
+							 	#{item}
+							 </foreach>			 
+				UNION ALL
+				<!--查询预收单-->
+				SELECT TSD.COLLECTION_ORG_CODE AS COLLECTION_ORG_CODE,
+					   NVL(TSD.AMOUNT,0)       AS AMOUNTCASH,
+					   0                       AS AMOUNTNOTCASH         
+					   FROM stl.T_STL_BILL_DEPOSIT_RECEIVED TSD
+				       WHERE <![CDATA[TSD.ACCOUNT_DATE >= #{beginDate}
+							 AND TSD.ACCOUNT_DATE < #{endDate}]]>
+                             AND TSD.STATUS = 'C'
+							 AND TSD.PAYMENT_TYPE IN
+							 <foreach collection="paymentTypeList"  index="index"   open="("  separator="," close=")" item="item" >
+							 	#{item}
+							 </foreach>
+				UNION ALL
+				SELECT TSD.COLLECTION_ORG_CODE AS COLLECTION_ORG_CODE,
+					   0                       AS AMOUNTCASH,
+					   NVL(TSD.AMOUNT,0)       AS AMOUNTNOTCASH
+					   FROM stl.T_STL_BILL_DEPOSIT_RECEIVED TSD
+				       WHERE <![CDATA[TSD.ACCOUNT_DATE >= #{beginDate}
+							 AND TSD.ACCOUNT_DATE < #{endDate}]]>
+                             AND TBC.STATUS = 'C'
+							 AND TSD.PAYMENT_TYPE NOT IN
+							 <foreach collection="paymentTypeList"  index="index"   open="("  separator="," close=")" item="item" >
+							 	#{item}
+							 </foreach>
+				UNION ALL
+				<!--查询还款单-->
+				SELECT TBR.COLLECTION_ORG_CODE AS COLLECTION_ORG_CODE,
+					   NVL(TBR.AMOUNT,0)       AS AMOUNTCASH,
+					   0                       AS AMOUNTNOTCASH
+					   FROM STL.T_STL_BILL_REPAYMENT TBR
+				       WHERE <![CDATA[TBR.ACCOUNT_DATE >= #{beginDate}
+							 AND TBR.ACCOUNT_DATE < #{endDate}]]>
+                             AND TBC.STATUS = 'C'
+							 AND TBR.PAYMENT_TYPE IN
+							 <foreach collection="paymentTypeList"  index="index"   open="(" separator="," close=")" item="item" >
+							 	#{item}
+							 </foreach>
+				UNION ALL
+				SELECT TBR.COLLECTION_ORG_CODE AS COLLECTION_ORG_CODE,
+					   0                       AS AMOUNTCASH,
+					   NVL(TBR.AMOUNT,0)       AS AMOUNTNOTCASH
+					   FROM STL.T_STL_BILL_REPAYMENT TBR
+				       WHERE <![CDATA[TBR.ACCOUNT_DATE >= #{beginDate}
+							 AND TBR.ACCOUNT_DATE < #{endDate}]]>
+                             AND TBC.STATUS = 'C'
+							 AND TBR.PAYMENT_TYPE NOT IN
+							 <foreach collection="paymentTypeList"  index="index"   open="(" separator="," close=")" item="item" >
+							 	#{item}
+							 </foreach>			 
+			) TT
+		LEFT JOIN BSE.T_BAS_ORG O ON O.CODE = TT.COLLECTION_ORG_CODE
+			AND ROWNUM = 1
+          GROUP BY TT.COLLECTION_ORG_CODE,O.UNIFIED_CODE ORG_CODE
+    </select>
+</mapper> 

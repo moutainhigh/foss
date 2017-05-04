@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.bse.bse-baseinfo.markMultiple">
+    <!--市场活动枚举对象-->
+	<resultMap id="markMultipleResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.domain.MarkMultipleEntity" >
+	<result column="ID" property="id" jdbcType="VARCHAR" />
+	<result column="ACTIVITE_CRM_ID" property="activiteCrmId" jdbcType="DECIMAL" />
+	<result column="ACTIVITEID" property="activiteId" jdbcType="VARCHAR" />
+	<result column="ENUMTYPE" property="enumType" jdbcType="VARCHAR" />
+	<result column="VALUE_CODE" property="valueCode" jdbcType="VARCHAR" />
+	<result column="VALUE_NAME" property="valueName" jdbcType="VARCHAR" />
+	<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+	<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+	<result column="ACTIVE" property="active" jdbcType="CHAR" />
+	<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+	<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<!--枚举列-->
+	<sql id="markMultiple_column">
+	ID,
+    ACTIVITE_CRM_ID,
+    ACTIVITEID,
+   	ENUMTYPE,
+   	VALUE_CODE,
+   	VALUE_NAME,
+   	CREATE_TIME,
+   	MODIFY_TIME,
+   	ACTIVE,
+   	CREATE_USER_CODE,
+  	MODIFY_USER_CODE
+	</sql>
+	
+	<!--新增一条市场活动枚举信息 -->
+	<insert id="addMarkActivitiesMultiple" parameterType = "map">
+	 BEGIN 
+	<foreach  collection="list" item="item"  separator=";">
+    <![CDATA[
+      insert into BSE.T_BAS_MARK_MULTIPLE (
+    ]]>
+    <include refid="markMultiple_column"/>
+    <![CDATA[
+    )values(
+    ]]>
+    #{item.id,jdbcType=VARCHAR}, 
+    #{item.activiteCrmId,jdbcType=DECIMAL},
+	#{item.activiteId,jdbcType=VARCHAR},
+	#{item.enumType,jdbcType=VARCHAR},
+	#{item.valueCode,jdbcType=VARCHAR},
+	#{item.valueName,jdbcType=VARCHAR},
+	#{item.createDate,jdbcType=TIMESTAMP},
+	#{item.modifyDate,jdbcType=TIMESTAMP},
+	#{item.active,jdbcType=VARCHAR},
+	#{item.createUser,jdbcType=VARCHAR},
+	#{item.modifyUser,jdbcType=VARCHAR}
+    <![CDATA[
+    )
+    ]]>
+     </foreach>
+	;END; 
+	</insert>
+	
+	<!--作废一条市场活动枚举信息 -->
+	<update id="updateMarkActivitiesMultiple" parameterType="java.util.List">
+	<![CDATA[
+	  UPDATE BSE.T_BAS_MARK_MULTIPLE 
+	]]>
+	  SET 	MODIFY_TIME = SYSDATE,
+   	        ACTIVE = 'N',
+  	        MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR}
+  	<where>
+  	            ACTIVE = 'Y'
+  	  <if test="multipleList !=null"> 
+				AND ID in
+				<foreach collection="multipleList" index="index" item="multipleItem"
+					open="(" separator="," close=")">
+					#{multipleItem.id,jdbcType=VARCHAR}
+				</foreach>
+	  </if>
+  	</where>
+	</update>
+	
+	<!--根据市场活动CrmId以及枚举类型查询一条市场活动枚举信息是否存在 -->
+	<select id="queryMarkActivitiesMultiplieByCrmId" parameterType="map" 
+	                        resultMap="markMultipleResultMap">
+	<![CDATA[
+	   SELECT 
+	]]>
+	<include refid="markMultiple_column"/>
+	<![CDATA[
+	  FROM BSE.T_BAS_MARK_MULTIPLE
+	]]>
+	<where>
+	       ACTIVE = 'Y'
+	    <if test="activiteCrmId != null">
+  	       AND ACTIVITE_CRM_ID = #{activiteCrmId,jdbcType=DECIMAL}
+  	    </if>
+  	    <if test="type != null and type != ''">
+  	       AND ENUMTYPE = #{type,jdbcType=VARCHAR}
+  	    </if>
+	</where>
+	</select>
+	
+	<!--根据市场活动CrmId以及枚举类型查询一条市场活动枚举信息是否存在 -->
+	<select id="queryMarkActivityMultiplie" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.MarkMultipleEntity" 
+	                        resultMap="markMultipleResultMap">
+	<![CDATA[
+	   SELECT 
+	]]>
+	<include refid="markMultiple_column"/>
+	<![CDATA[
+	  FROM BSE.T_BAS_MARK_MULTIPLE
+	]]>
+	<where>
+	       ACTIVE = 'Y'
+	    <if test="activiteCrmId != null">
+  	       AND ACTIVITE_CRM_ID = #{activiteCrmId,jdbcType=DECIMAL}
+  	    </if>
+  	    <choose>
+	  	    <when test="enumType=='GOODS_NAME'">
+				<if test="valueCode != null and valueCode != ''">
+		  	       AND VALUE_CODE like '%'||#{valueCode,jdbcType=VARCHAR}||'%'		  	       
+		  	    </if>
+			</when>
+			<otherwise>
+				<if test="valueCode != null and valueCode != ''">
+		  	       AND VALUE_CODE = #{valueCode,jdbcType=VARCHAR}
+		  	    </if>
+			</otherwise>
+		</choose>  	    
+  	    <if test="enumType != null and enumType != ''">
+  	       AND ENUMTYPE = #{enumType,jdbcType=VARCHAR}
+  	    </if>
+	</where>
+	</select>
+	
+	<!--根据市场活动的CRMID作废与其相关的枚举信息 -->
+	<update id="deleteMarkActivitiesMultiple" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.MarkMultipleEntity">
+	<![CDATA[
+	  UPDATE BSE.T_BAS_MARK_MULTIPLE 
+	]]>
+	  SET 	MODIFY_TIME = SYSDATE,
+   	        ACTIVE = 'N',
+  	        MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR}
+  	<where>
+  	            ACTIVE = 'Y'
+  	   <if test="activiteCrmId != null">
+  	       AND ACTIVITE_CRM_ID = #{activiteCrmId,jdbcType=DECIMAL}
+  	    </if>
+  	</where>
+	</update>
+</mapper>

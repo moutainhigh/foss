@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.pda.bdm.module.foss.unload.server.dao.impl.UnloadDao" >
+	<!-- 新增卸车货物扫描 -->
+	<insert id="saveUnldScan" parameterType="com.deppon.pda.bdm.module.foss.unload.shared.domain.UnldScanEntity">
+		insert into pda.T_PDA_SCANMSG(id,scanUser,scanPdaCode,scanType,scanTime,scanDept,labelCode,taskCode,
+		scanFlag,syncStatus,scanStatus,waybillCode,uploadTime) values(#{id},#{scanUser},#{pdaCode},#{scanType},#{scanTime},#{deptCode},
+		#{labelCode},#{taskCode},#{scanFlag},0,#{scanStatus},#{wblCode},#{uploadTime})
+	</insert>
+	<!-- 保存撤销卸车扫描 -->
+	<insert id="saveCaclUnldScan" parameterType="com.deppon.pda.bdm.module.foss.unload.shared.domain.UnloadCancelScanEntity">
+		insert into pda.T_PDA_SCANMSG(id,scanUser,scanPdaCode,scanTime,scanType,scanDept,labelCode,taskCode,
+		scanFlag,syncStatus,waybillCode,uploadTime) values(#{id},#{scanUser},#{pdaCode},#{scanTime},#{scanType},#{deptCode},
+		#{labelCode},#{taskCode},#{scanFlag},0,#{wblCode},#{uploadTime})
+	</insert>
+	<insert id="saveFnshUnldScan" parameterType="com.deppon.pda.bdm.module.foss.unload.shared.domain.FnshUnldTaskScanEntity">
+		insert into pda.T_PDA_SCANMSG(id,scanUser,scanPdaCode,scanTime,scanType,scanDept,labelCode,taskCode,
+		scanFlag,syncStatus,uploadTime) values(#{id},#{scanUser},#{pdaCode},#{scanTime},#{scanType},#{deptCode},
+		#{taskCode},#{taskCode},#{scanFlag},0,#{uploadTime})
+	</insert>
+	<select id="queryNoSyncScanMsgCount" parameterType="string" resultType="int">
+		SELECT count(*) FROM pda.t_pda_asyncmsg WHERE (asyncStatus <![CDATA[<]]> 2  or (asyncStatus = 3 and synccount <![CDATA[<]]> 3))  and taskCode = #{taskCode} 
+	</select>
+	<!-- 保存绑定托盘扫描信息 -->
+	<insert id="saveUnldSindingScan" parameterType="com.deppon.pda.bdm.module.foss.unload.shared.domain.PalletBindingEntity">
+		insert into pda.T_PDA_SCANMSG(id,scanUser,scanPdaCode,scanTime,scanType,scanDept,labelCode,syncStatus,uploadTime)
+		 values(#{id},#{scanUser},#{pdaCode},#{bindingDate},#{scanType},#{deptCode},#{bindingNo},0,#{uploadTime})
+	</insert>
+	<!-- 保存绑定扫描明细信息 -->
+	<insert id="saveUnldSindingScanDetail" parameterType="com.deppon.pda.bdm.module.foss.unload.shared.domain.BindingScanEntity">
+		insert into pda.T_PDA_PALLET_BIND_SCAN(id,bindingNo,waybillCode,serialNo,bindingDate)
+		 values(#{id},#{bindingNo,jdbcType=VARCHAR},#{wl,jdbcType=VARCHAR},#{serialNo},#{bindingDate})
+	</insert>
+		<!-- 保存提交托盘任务扫描信息 -->
+	<insert id="saveFinishUnldPalletBindingTask" parameterType="com.deppon.pda.bdm.module.foss.unload.shared.domain.PalletBindingEntity">
+		insert into pda.T_PDA_SCANMSG(id,scanUser,scanPdaCode,scanTime,scanType,scanDept,labelCode,syncStatus,uploadTime)
+		 values(#{id},#{scanUser},#{pdaCode},#{fnshDate},#{scanType},#{deptCode},#{bindingNo},0,#{uploadTime})
+	</insert>
+	
+	
+	<insert id="saveLoader" parameterType="com.deppon.pda.bdm.module.foss.load.shared.domain.LoaderAddDelModel">
+		insert into pda.T_PDA_SCANMSG(id,scanUser,scanPdaCode,scanType,scanTime,scanDept,labelCode,taskCode,
+		scanFlag,syncStatus,scanStatus,oldlabelcodes,uploadTime) values(#{id,jdbcType=VARCHAR},#{scanUser,jdbcType=VARCHAR},#{pdaCode,jdbcType=VARCHAR},#{scanType,jdbcType=VARCHAR},#{scanTime},#{deptCode,jdbcType=VARCHAR},
+		#{labelCode,jdbcType=VARCHAR},#{taskCode,jdbcType=VARCHAR},'BY_HAND',0,#{status,jdbcType=VARCHAR},#{wblCode,jdbcType=VARCHAR},#{uploadTime})
+	</insert>
+	
+	<!-- 保存异常叉车绑定信息 -->
+	<insert id="saveExcPalletBoundScan" parameterType="com.deppon.pda.bdm.module.foss.unload.shared.domain.ExcPalletBoundScanEntity">
+		insert into pda.T_PDA_SCANMSG(id,scanUser,scanPdaCode,scanTime,scanType,scanDept,labelCode,syncStatus,uploadTime)
+		 values(#{id},#{scanUser},#{pdaCode},#{bindingDate},#{scanType},#{deptCode},#{forkBindingNo},0,#{uploadTime})
+	</insert>
+	
+	<!-- 保存叉车异常扫描明细信息 -->
+	<insert id="saveExcPalletBoundScanDetail" parameterType="com.deppon.pda.bdm.module.foss.unload.shared.domain.BindingScanEntity">
+		insert into pda.T_PDA_PALLET_BIND_SCAN(id,bindingNo,waybillCode,serialNo,bindingDate)
+		 values(#{id},#{bindingNo,jdbcType=VARCHAR},#{wl,jdbcType=VARCHAR},#{serialNo},#{bindingDate})
+	</insert>
+</mapper>

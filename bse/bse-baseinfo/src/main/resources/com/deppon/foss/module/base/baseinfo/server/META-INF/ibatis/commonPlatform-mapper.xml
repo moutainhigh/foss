@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.platforminfo" >
+
+	<resultMap id="platformResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.PlatformEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="org_code" property="organizationCode" jdbcType="VARCHAR" />
+		<result column="platform_code" property="platformCode" jdbcType="VARCHAR" />
+		<result column="virtual_code" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="haslift" property="hasLift" jdbcType="CHAR" />
+		<result column="platform_height" property="height" jdbcType="NUMERIC" />
+		<result column="platform_width" property="width" jdbcType="NUMERIC" />
+		<result column="platform_position" property="position" jdbcType="VARCHAR" />
+ 		<result column="active" property="active" jdbcType="CHAR" />
+		<result column="notes" property="notes" jdbcType="VARCHAR" />
+		<result column="create_time" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="modify_time" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="VEHICLE_LENGTH_CODE" property="vehicleCode" jdbcType="VARCHAR" />
+		<result column="VEHICLE_LENGTH_NAME" property="vehicleNameInfo" jdbcType="VARCHAR" />
+		<result column="ABSCISSA" property="abscissa" jdbcType="VARCHAR" />
+  		<result column="ORDINATE" property="ordinate" jdbcType="VARCHAR" />
+		<!-- 冗余属性	 -->
+		<result column="orgName" property="organizationName" jdbcType="VARCHAR" />
+		<result column="transferCode" property="transferCode" jdbcType="VARCHAR" />
+		<result column="vehicleName" property="vehicleName" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<sql id="extColumns">
+		O.NAME as orgName, 
+		C.CODE as transferCode, 
+		V.VEHICLE_LENGTH_NAME as vehicleName,	
+	</sql>
+
+	<sql id="columns">
+		T.ID,
+		T.ORG_CODE,
+		T.PLATFORM_CODE,
+		T.HASLIFT,
+		T.PLATFORM_HEIGHT,
+		T.PLATFORM_WIDTH,
+		T.PLATFORM_POSITION,
+ 		T.CREATE_TIME,
+		T.MODIFY_TIME,
+		T.ACTIVE,
+		T.CREATE_USER_CODE,
+		T.MODIFY_USER_CODE,
+		T.NOTES,
+		T.VIRTUAL_CODE,
+		T.ABSCISSA,
+		T.ORDINATE,
+		T.VEHICLE_LENGTH_CODE,
+		C.VEHICLE_LENGTH_NAME
+	</sql>
+
+	
+	<sql id="values">
+		#{id,jdbcType=VARCHAR},
+		#{organizationCode,jdbcType=VARCHAR}, 
+		#{platformCode,jdbcType=VARCHAR}, 
+		#{hasLift,jdbcType=VARCHAR}, 
+		#{height,jdbcType=NUMERIC}, 
+		#{width,jdbcType=NUMERIC}, 
+		#{position,jdbcType=VARCHAR}, 
+ 		#{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=VARCHAR}, 
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR}, 
+		#{notes,jdbcType=VARCHAR}, 
+		#{virtualCode, jdbcType=VARCHAR},
+		#{vehicleCode, jdbcType=VARCHAR}
+	</sql>
+
+
+	<sql id="wherePlatformListByCondition">
+		<where>
+			<if test="orgCodeList != null and orgCodeList.size > 0">
+				AND T.org_code in 
+				<foreach collection="orgCodeList" open="(" close=")" separator="," item="orgCode">
+					#{orgCode} 
+				</foreach>
+			</if>
+			<if test="platformCode != null and platformCode != ''">
+				AND T.platform_code like CONCAT(CONCAT('%', #{platformCode, jdbcType=VARCHAR}), '%')  
+			</if>
+			<if test="position != null and position != ''">
+				AND T.platform_position like CONCAT(CONCAT('%', #{position, jdbcType=VARCHAR}), '%') 
+			</if>
+ 			<if test="vehicleCode != null and vehicleCode != ''">
+				AND T.VEHICLE_LENGTH_CODE = #{vehicleCode, jdbcType=VARCHAR}
+			</if>
+			<if test="vehicleName != null and vehicleName != ''">
+				AND  C.VEHICLE_TYPE = #{vehicleName, jdbcType=VARCHAR}
+			</if>
+		 	AND T.active = #{active, jdbcType=CHAR}
+		</where>
+	</sql>
+
+	<select id="queryPlatformListByCondition" resultMap="platformResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PlatformEntity">
+		select   
+		<include refid="columns"/>
+		FROM BSE.T_BAS_PLATFORM T
+		LEFT JOIN BSE.t_bas_vehicle_type_length C ON C.VEHICLE_LENGTH_CODE=T.VEHICLE_LENGTH_CODE
+		<include refid="wherePlatformListByCondition"/>
+		order by T.org_code, T.platform_code
+	</select>
+	
+	<select id="countPlatformListByCondition" resultType="long" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PlatformEntity">
+		select count(1) 
+		FROM BSE.T_BAS_PLATFORM T
+		<include refid="wherePlatformListByCondition"/>
+	</select>
+
+
+</mapper>

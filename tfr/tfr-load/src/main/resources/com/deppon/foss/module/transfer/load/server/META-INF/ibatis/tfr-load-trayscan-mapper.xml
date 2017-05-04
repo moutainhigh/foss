@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.load.trayscan">
+	<resultMap id="Map" type="java.util.HashMap">
+	</resultMap>
+	<!-- 零担 -->
+	<resultMap id="queryTrayScanResultMap"
+			   type="com.deppon.foss.module.transfer.load.api.shared.dto.TrayScanDto">
+		<result property="id" column="id" />
+		<result property="taskNo" column="taskNo"/>
+		<result property="trayscanTime" column="trayscanTime"/>
+		<result property="forkliftDriverCode" column="forkliftDriverCode"/>
+		<result property="forkliftDriverName" column="forkliftDriverName"/>
+		<result property="forkliftDepartment" column="forkliftDepartment"/>
+		<result property="bindingCode" column="bindingCode"/>
+		<result property="bindingName" column="bindingName"/>
+		<result property="bindingDept" column="bindingDept"/>
+		<result property="traytaskCreatTime" column="traytaskCreatTime"/>
+		<result property="trayscanType" column="trayscanType"/>
+		<result property="forkliftCount" column="forkliftCount"/>
+		<result property="totalCount" column="totalCount"/>
+	</resultMap>
+	<!-- 快递 -->
+	<resultMap id="queryTrayScanExpressResultMap"
+			   type="com.deppon.foss.module.transfer.load.api.shared.domain.TrayScanExpressEntity">
+		<result property="id" column="id" />
+		<result property="taskNo" column="taskNo"/>
+		<result property="trayscanTime" column="trayscanTime"/>
+		<result property="forkliftDriverCode" column="forkliftDriverCode"/>
+		<result property="forkliftDriverName" column="forkliftDriverName"/>
+		<result property="forkliftDepartment" column="forkliftDepartment"/>
+		<result property="bindingCode" column="bindingCode"/>
+		<result property="bindingName" column="bindingName"/>
+		<result property="bindingDept" column="bindingDept"/>
+		<result property="traytaskCreatTime" column="traytaskCreatTime"/>
+		<result property="statu" column="statu"/>
+		<result property="forkliftCount" column="forkliftCount"/>
+		<result property="waybillNumber" column="waybillNumber"/>
+		<result property="DestinationStation" column="DestinationStation"/>
+	</resultMap>
+	<resultMap id="queryWaybillResultMap"
+			   type="com.deppon.foss.module.transfer.load.api.shared.domain.TrayScanDetaiEntity">
+		<result property="id" column="id" />
+		<result property="waybillNo" column="waybillNo"/>
+		<result property="serialNo" column="serialNo"/>
+		<result property="destDeptName" column="destDeptName"/>
+		<result property="destDeptCode" column="destDeptCode"/>
+		<result property="trayScanTaskNo" column="trayScanTaskNo"/>
+		<result property="packageNo" column="packageNo"/>
+	</resultMap>
+	
+	<!-- 查询托盘扫任务  零担 -->
+	<select id="queryTrayScanList" resultMap="queryTrayScanResultMap"
+		 parameterType="com.deppon.foss.module.transfer.load.api.shared.dto.QueryTrayScanConditionDto">
+		<![CDATA[
+		select 
+			distinct
+			TT.ID  id,
+			TT.TASK_NO  	   taskNo,
+			TT.STATU		   statu,
+			TT.CREATER_CODE    bindingCode,
+			TT.CREATER_NAME    bindingName,
+			TT.CREATE_TIME	   traytaskCreatTime,
+			 OG.NAME  bindingDept,
+			TT.FORKLIFT_DRIVER_CODE  forkliftDriverCode,
+			TT.FORKLIFT_DRIVER_NAME  forkliftDriverName,
+			 OG1.NAME    forkliftDepartment,
+			TT.TRAYSCAN_TIME  trayscanTime,
+			TT.FORKLIFT_TICKS_COUNT   forkliftCount	
+			FROM TFR.T_OPT_TRAYSCAN_TASK TT
+			LEFT JOIN TFR.T_OPT_TRAYSCAN_TASK_DETAIL TD 
+			ON TD.TRAYSCAN_TASK_NO = TT.TASK_NO
+			left join bse.t_bas_org OG on OG.code=TT.CREATER_ORG_CODE  and OG.ACTIVE = 'Y'
+      		left join bse.t_bas_org OG1 on OG1.code=TT.FORKLIFT_ORG_CODE and OG1.ACTIVE = 'Y'
+		]]>
+		<where>
+			<if test="trayScanStatus!=null and trayScanStatus!=''">TT.STATU=#{trayScanStatus}  </if>
+			<if test="trayScanStatus=='SCANNED' and beginTrayScanTime!=null and beginTrayScanTime!=''">
+				and TT.TRAYSCAN_TIME <![CDATA[>=]]> #{beginTrayScanTime}</if>
+			<if test="trayScanStatus=='SCANNED' and endTrayScanTime!=null and endTrayScanTime!=''">
+				and TT.TRAYSCAN_TIME <![CDATA[<=]]> #{endTrayScanTime}</if>
+			<if test="trayScanStatus=='UNSCAN' and beginTrayCreateTime!=null and beginTrayCreateTime!=''">
+				and TT.CREATE_TIME <![CDATA[>=]]> #{beginTrayCreateTime}</if>
+			<if test="trayScanStatus=='UNSCAN' and endTrayCreateTime!=null and endTrayCreateTime!=''">
+				and TT.CREATE_TIME <![CDATA[<=]]> #{endTrayCreateTime}</if>
+			<if test="bindingDept!=null and bindingDept!=''">
+				and TT.CREATER_ORG_CODE = #{bindingDept} 
+			</if>
+			<if test="bindingName!=null and bindingName!=''">
+				and TT.CREATER_CODE = #{bindingName}
+			</if>
+			<if test="forkLiftDept!=null and forkLiftDept!=''">
+				and TT.FORKLIFT_ORG_CODE = #{forkLiftDept}
+			</if>
+			<if test="forkLiftDriverName!=null and forkLiftDriverName!=''">
+				and TT.FORKLIFT_DRIVER_CODE = #{forkLiftDriverName}
+			</if>
+			<if test="billNo!=null and billNo!=''">
+				and TD.WAYBILL_NO = #{billNo}
+			</if>
+			<if test="trayScanStatus=='HANDSCAN' and beginTrayScanTime!=null and beginTrayScanTime!=''">
+				and TT.CREATE_TIME <![CDATA[>=]]> #{beginTrayScanTime}</if>
+			<if test="trayScanStatus=='HANDSCAN' and endTrayScanTime!=null and endTrayScanTime!=''">
+				and TT.CREATE_TIME <![CDATA[<=]]> #{endTrayScanTime}</if>	
+			<if test="!((bindingDept!=null and bindingDept!='') or (bindingName!=null and bindingName!='')
+			 	or (forkLiftDept!=null and forkLiftDept!='') or (forkLiftDriverName!=null and forkLiftDriverName!='')
+			 	or (billNo!=null and billNo!=''))">
+				and TT.OUTFIELD_ORG_CODE =#{currentDept}
+				
+			</if>
+			
+		</where>
+		
+	</select>
+	
+	<!--查询任务总条数    零担-->
+	<select id="getTrayScanListCount" resultType="Long"
+		 parameterType="com.deppon.foss.module.transfer.load.api.shared.dto.QueryTrayScanConditionDto">
+		<![CDATA[
+		select count(distinct TT.ID) 
+		FROM TFR.T_OPT_TRAYSCAN_TASK TT
+			LEFT JOIN TFR.T_OPT_TRAYSCAN_TASK_DETAIL TD 
+			ON TD.TRAYSCAN_TASK_NO = TT.TASK_NO
+		]]>
+		<where>
+			<if test="trayScanStatus!=null and trayScanStatus!=''">TT.STATU=#{trayScanStatus}  </if>
+			<if test="trayScanStatus=='SCANNED' and beginTrayScanTime!=null and beginTrayScanTime!=''">
+				and TT.TRAYSCAN_TIME <![CDATA[>=]]> #{beginTrayScanTime}</if>
+			<if test="trayScanStatus=='SCANNED' and endTrayScanTime!=null and endTrayScanTime!=''">
+				and TT.TRAYSCAN_TIME <![CDATA[<=]]> #{endTrayScanTime}</if>
+			<if test="trayScanStatus=='UNSCAN' and beginTrayCreateTime!=null and beginTrayCreateTime!=''">
+				and TT.CREATE_TIME <![CDATA[>=]]> #{beginTrayCreateTime}</if>
+			<if test="trayScanStatus=='UNSCAN' and endTrayCreateTime!=null and endTrayCreateTime!=''">
+				and TT.CREATE_TIME <![CDATA[<=]]> #{endTrayCreateTime}</if>
+			<if test="bindingDept!=null and bindingDept!=''">
+				and TT.CREATER_ORG_CODE = #{bindingDept}
+			</if>
+			<if test="bindingName!=null and bindingName!=''">
+				and TT.CREATER_CODE = #{bindingName}
+			</if>
+			<if test="forkLiftDept!=null and forkLiftDept!=''">
+				and TT.FORKLIFT_ORG_CODE = #{forkLiftDept}
+			</if>
+			<if test="forkLiftDriverName!=null and forkLiftDriverName!=''">
+				and TT.FORKLIFT_DRIVER_CODE = #{forkLiftDriverName}
+			</if>
+			<if test="billNo!=null and billNo!=''">
+				and TD.WAYBILL_NO = #{billNo}
+			</if>
+			<if test="trayScanStatus=='HANDSCAN' and beginTrayScanTime!=null and beginTrayScanTime!=''">
+				and TT.CREATE_TIME <![CDATA[>=]]> #{beginTrayScanTime}</if>
+			<if test="trayScanStatus=='HANDSCAN' and endTrayScanTime!=null and endTrayScanTime!=''">
+				and TT.CREATE_TIME <![CDATA[<=]]> #{endTrayScanTime}</if>	
+			<if test="!((bindingDept!=null and bindingDept!='') or (bindingName!=null and bindingName!='')
+			 	or (forkLiftDept!=null and forkLiftDept!='') or (forkLiftDriverName!=null and forkLiftDriverName!='')
+			 	or (billNo!=null and billNo!=''))">
+				and TT.OUTFIELD_ORG_CODE =#{currentDept}
+			</if>
+		</where>
+	</select>
+	<!-- 查询托盘扫任务  快递 -->
+	<select id="queryTrayScanListExpress" resultMap="queryTrayScanExpressResultMap"
+		 parameterType="com.deppon.foss.module.transfer.load.api.shared.dto.QueryTrayScanConditionDto">
+		  select '123456' taskNo,'2016-01-01 08:08:08' trayscanTime,'12547' forkliftDriverCode,'老李' forkliftDriverName,
+	'叉车一部' forkliftDepartment,'9527' bindingCode,'王老二' bindingName,'绑定部' bindingDept,
+	'2016-01-01 08:08:08' traytaskCreatTime,'SCANNED' statu,'2' forklifrCount,'654321' waybillNumber,
+	'天堂' DestinationStation  from tfr.t_opt_trayscan_task
+	</select>
+	
+	<!--查询任务总条数  快递 -->
+	<select id="getTrayScanListCountExpress" resultType="Long"
+		 parameterType="com.deppon.foss.module.transfer.load.api.shared.dto.QueryTrayScanConditionDto">
+		select count(*) from (  select '123456' taskNo,'2016-01-01 08:08:08' trayscanTime,'12547' forkliftDriverCode,'老李' forkliftDriverName,
+	'叉车一部' forkliftDepartment,'9527' bindingCode,'王老二' bindingName,'绑定部' bindingDept,
+	'2016-01-01 08:08:08' traytaskCreatTime,'SCANNED' statu,'2' forklifrCount,'654321' waybillNumber,
+	'天堂' DestinationStation  from tfr.t_opt_trayscan_task) t
+	</select>
+	
+	<!-- 查询叉车总票数   零担-->
+	<select id="queryTrayScanSummary" resultMap="queryTrayScanResultMap"
+		 parameterType="com.deppon.foss.module.transfer.load.api.shared.dto.QueryTrayScanConditionDto">
+		<![CDATA[
+		select sum(count) totalCount
+ 		   FROM (select distinct TT.id id, TT.FORKLIFT_TICKS_COUNT count
+           FROM TFR.T_OPT_TRAYSCAN_TASK TT
+           left JOIN TFR.T_OPT_TRAYSCAN_TASK_DETAIL TD ON TD.TRAYSCAN_TASK_NO =
+                                                          TT.TASK_NO
+		]]>
+		<where>
+			<if test="trayScanStatus!=null and trayScanStatus!=''">TT.STATU=#{trayScanStatus}  </if>
+			<if test="trayScanStatus=='SCANNED' and beginTrayScanTime!=null and beginTrayScanTime!=''">
+				and TT.TRAYSCAN_TIME <![CDATA[>=]]> #{beginTrayScanTime}</if>
+			<if test="trayScanStatus=='SCANNED' and endTrayScanTime!=null and endTrayScanTime!=''">
+				and TT.TRAYSCAN_TIME <![CDATA[<=]]> #{endTrayScanTime}</if>
+			<if test="trayScanStatus=='UNSCAN' and beginTrayCreateTime!=null and beginTrayCreateTime!=''">
+				and TT.CREATE_TIME <![CDATA[>=]]> #{beginTrayCreateTime}</if>
+			<if test="trayScanStatus=='UNSCAN' and endTrayCreateTime!=null and endTrayCreateTime!=''">
+				and TT.CREATE_TIME <![CDATA[<=]]> #{endTrayCreateTime}</if>
+			<if test="bindingDept!=null and bindingDept!=''">
+				and TT.CREATER_ORG_CODE = #{bindingDept}
+			</if>
+			<if test="bindingName!=null and bindingName!=''">
+				and TT.CREATER_CODE = #{bindingName}
+			</if>
+			<if test="forkLiftDept!=null and forkLiftDept!=''">
+				and TT.FORKLIFT_ORG_CODE = #{forkLiftDept}
+			</if>
+			<if test="forkLiftDriverName!=null and forkLiftDriverName!=''">
+				and TT.FORKLIFT_DRIVER_CODE = #{forkLiftDriverName}
+			</if>
+			<if test="billNo!=null and billNo!=''">
+				and TD.WAYBILL_NO = #{billNo}
+			</if>
+			<if test="trayScanStatus=='HANDSCAN' and beginTrayScanTime!=null and beginTrayScanTime!=''">
+				and TT.CREATE_TIME <![CDATA[>=]]> #{beginTrayScanTime}</if>
+			<if test="trayScanStatus=='HANDSCAN' and endTrayScanTime!=null and endTrayScanTime!=''">
+				and TT.CREATE_TIME <![CDATA[<=]]> #{endTrayScanTime}</if>	
+			<if test="!((bindingDept!=null and bindingDept!='') or (bindingName!=null and bindingName!='')
+			 	or (forkLiftDept!=null and forkLiftDept!='') or (forkLiftDriverName!=null and forkLiftDriverName!='')
+			 	or (billNo!=null and billNo!=''))">
+				and TT.OUTFIELD_ORG_CODE =#{currentDept}
+			</if>
+		</where>
+		)
+	</select>
+	
+	<!-- 查询叉车总票数   快递-->
+	<select id="queryTrayScanSummaryExpress" resultMap="queryTrayScanResultMap"
+		 parameterType="com.deppon.foss.module.transfer.load.api.shared.dto.QueryTrayScanConditionDto">
+		select sum(t.forklifrCount) totalCount from (select '123456' taskNo,'2016-01-01 08:08:08' trayscanTime,'12547' forkliftDriverCode,'老李' forkliftDriverName,
+	'叉车一部' forkliftDepartment,'9527' bindingCode,'王老二' bindingName,'绑定部' bindingDept,
+	'2016-01-01 08:08:08' traytaskCreatTime,'SCANNED' statu,2 forklifrCount,'654321' waybillNumber,
+	'天堂' DestinationStation  from tfr.t_opt_trayscan_task) t
+	</select>
+	
+	<!--根据运单流水外场查询是否绑定托盘 -->
+	<select id="queryTrayScanTaskDtailCount" resultType="Long" parameterType="java.util.Map">
+		 select COUNT(1) from tfr.t_opt_trayscan_task_detail td
+			 inner join tfr.t_opt_trayscan_task t on t.task_no=td.trayscan_task_no
+			and t.statu='SCANNED'
+			where td.waybill_no=#{wayBillNo}
+			and td.seria_no=#{seriano}
+			and t.OUTFIELD_ORG_CODE=#{outFieldCode}
+	</select>
+	<!--根据运单流水外场查询是否绑定托盘 离线扫描-->
+	<select id="queryOfflienTrayScanTaskDtailCount" resultType="Long" parameterType="java.util.Map">
+		 select COUNT(1) from tfr.t_opt_trayofflinescan_task t
+			where t.waybill_no=#{wayBillNo}
+			and t.seria_no=#{seriano}
+			and t.OUTFIELD_ORG_CODE=#{outFieldCode}
+	</select>
+	<select id="queryWaybillByTaskNoExpress" resultMap="queryTrayScanExpressResultMap" parameterType="java.util.HashMap">
+		select '654321' waybillNumber,'天堂' DestinationStation from tfr.t_opt_trayscan_task
+	</select>
+	<!-- 通过任务号id查询 任务明细-->
+	<select id="queryWaybillByTaskNo" resultMap="queryWaybillResultMap"
+		 parameterType="java.lang.String">
+		<![CDATA[
+			select  
+			td.id id,
+			td.waybill_no waybillNo,
+			td.seria_no  serialNo,
+			td.dest_org_code destDeptCode,
+			td.dest_org_name destDeptName,
+			td.package_no   packageNo
+			from tfr.t_opt_trayscan_task_detail td
+		]]>
+		<where>
+			td.trayscan_task_no =#{traytaskCode,jdbcType=VARCHAR}
+		</where>
+	</select>
+</mapper>

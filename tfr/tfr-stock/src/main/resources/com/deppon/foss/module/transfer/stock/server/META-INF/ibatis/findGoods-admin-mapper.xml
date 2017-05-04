@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tfr.stock.findGoodsAdmin" >
+ <resultMap id="findGoodsAdminResultMap"
+		type="com.deppon.foss.module.transfer.stock.api.shared.domain.FindGoodsAdminEntity">
+		<!--主键ID -->
+		<result column="id" property="id" jdbcType="VARCHAR" />
+		<!--任务编号 -->
+		<result column="task_no" property="taskNo" jdbcType="VARCHAR" />
+		<!--任务状态--> 
+	    <result column="task_status" property="taskStatus" jdbcType="VARCHAR" />
+		<!--货区Code--> 
+		<result column="goods_area_code" property="goodsAreaCode"  jdbcType="VARCHAR"/>
+		<!--货区所属外场Code--> 
+		<result column="org_code" property="orgCode"  jdbcType="VARCHAR"/>
+	    <!--货区 -->
+		<result column="goods_area_name" property="goodsAreaName" jdbcType="VARCHAR" />
+		<!--找货人Code -->
+		<result column="findgoods_man_code" property="findGoodsManCode" jdbcType="VARCHAR" />
+		<!--找货人 -->
+		<result column="findgoods_man_name" property="findGoodsManName"  jdbcType="VARCHAR"/>
+		<!--任务创建时间 -->
+		<result column="task_date" property="taskDate" jdbcType="TIMESTAMP"  />
+		<!--任务创建结束时间 -->
+		<result column="MODIFY_DATE" property="modifyDate" jdbcType="TIMESTAMP"  />
+	</resultMap>
+	<sql id="findGoodsAdmin_column">
+	    A.ID,                    
+		A.TASK_NO,                   
+		A.TASK_STATUS, 
+		A.ORG_CODE,                  
+		A.GOODS_AREA_CODE,                   
+		C.GOODS_AREA_NAME,                   
+		A.FINDGOODS_MAN_CODE,                   
+		B.EMP_NAME FINDGOODS_MAN_NAME,                   
+		A.TASK_DATE,
+		A.MODIFY_DATE           
+	</sql>
+	<sql id="findGoodsAdmin_where">
+	 <where>
+		<if test=" id != null and id !='' ">
+			<!--主键ID -->
+			and A.ID=#{id,jdbcType=VARCHAR}
+		</if>
+		<if test=" taskNo != null and taskNo != '' ">
+			<!--任务编号 -->
+			and A.TASK_NO=#{taskNo,jdbcType=VARCHAR}
+		</if>
+		<if test=" taskStatus != null and taskStatus != '' ">
+			<!--任务状态--> 
+		  and A.TASK_STATUS=#{taskStatus,jdbcType=VARCHAR}
+		 </if> 
+		<if test=" findGoodsManCode != null and findGoodsManCode != '' ">
+			<!--找货人Code -->
+			and A.FINDGOODS_MAN_CODE=#{findGoodsManCode,jdbcType=VARCHAR}
+		</if>
+		<if test="  taskCreateDate != null and taskCreateDate != '' and taskEndDate != null and taskEndDate != '' ">
+			<!--任务创建结束时间 -->
+			and (A.TASK_DATE between #{taskCreateDate,jdbcType=TIMESTAMP} AND 
+			 #{taskEndDate,jdbcType=TIMESTAMP}  )
+		</if> 
+		<if test="  goodsAreaCode != null and goodsAreaCode != '' "> 
+			<!--货区Code-->
+			and A.GOODS_AREA_CODE=#{goodsAreaCode,jdbcType=VARCHAR}
+		</if> 
+		<if test="  orgCode != null and orgCode != '' "> 
+			<!--货区部门Code-->
+			and A.ORG_CODE=#{orgCode,jdbcType=VARCHAR} 
+		</if> 
+	 </where>
+	</sql>
+	<select id="findGoodsAdmin_qurey" resultMap="findGoodsAdminResultMap" parameterType="com.deppon.foss.module.transfer.stock.api.shared.domain.FindGoodsAdminEntity">
+	 select  
+	 <include refid="findGoodsAdmin_column"/>
+	 FROM TFR.T_OPT_FINDGOODS_ADMIN  A
+	 LEFT JOIN BSE.T_BAS_EMPLOYEE B  ON A.FINDGOODS_MAN_CODE=B.EMP_CODE AND B.ACTIVE='Y'
+	 LEFT JOIN BSE.T_BAS_GOODS_AREA  C ON C.GOODS_AREA_CODE=A.GOODS_AREA_CODE 
+	  AND A.ORG_CODE=C.ORG_CODE  AND C.ACTIVE='Y'
+	 <include refid="findGoodsAdmin_where"/> 
+	</select>
+	
+	<select id="findGoodsAdmin_qurey_count" resultType="java.lang.Long" parameterType="com.deppon.foss.module.transfer.stock.api.shared.domain.FindGoodsAdminEntity">
+	 select  count(1)	 FROM TFR.T_OPT_FINDGOODS_ADMIN  A
+	 <include refid="findGoodsAdmin_where"/> 
+	</select>
+	<insert id="findGoodsAdmin_insert" parameterType="com.deppon.foss.module.transfer.stock.api.shared.domain.FindGoodsAdminEntity">
+	 INSERT INTO  TFR.T_OPT_FINDGOODS_ADMIN(
+	  ID,TASK_NO,TASK_STATUS,ORG_CODE,FINDGOODS_MAN_CODE,
+	  TASK_DATE,CREATE_DATE,MODIFY_DATE,CREATE_USER_CODE,MODIFY_USER_CODE       
+	 ) VALUES(
+			<!--主键ID -->
+			#{id,jdbcType=VARCHAR},
+			<!--任务编号 -->
+			#{taskNo,jdbcType=VARCHAR},
+			<!--任务状态--> 
+		    #{taskStatus,jdbcType=VARCHAR},
+		    <!--货区部门Code-->
+			#{orgCode,jdbcType=VARCHAR}, 
+		    <!--找货人Code -->
+			#{findGoodsManCode,jdbcType=VARCHAR},
+			<!--任务时间 -->
+			#{taskDate,jdbcType=TIMESTAMP},
+			#{createDate,jdbcType=TIMESTAMP},
+			#{modifyDate,jdbcType=TIMESTAMP},
+			#{createUserCode,jdbcType=VARCHAR},
+			#{modifyUserCode,jdbcType=VARCHAR}
+			
+	 )
+	</insert>
+	<update id="findGoodsAdmin_commit" parameterType="com.deppon.foss.module.transfer.stock.api.shared.domain.FindGoodsAdminEntity">
+	   UPDATE TFR.T_OPT_FINDGOODS_ADMIN A SET A.TASK_STATUS=#{taskStatus,jdbcType=VARCHAR},
+	        A.MODIFY_DATE =#{modifyDate,jdbcType=TIMESTAMP},
+	        A.MODIFY_USER_CODE =#{modifyUserCode,jdbcType=VARCHAR}
+	    WHERE A.TASK_NO=#{taskNo,jdbcType=VARCHAR}
+	</update>
+	<!-- 找货明细Begin -->
+	 <resultMap id="findGoodsAdminDeatilResultMap" type="com.deppon.foss.module.transfer.stock.api.shared.domain.FindGoodsAdminDetailEntity" >
+		<!--运单号-->
+		<result column="waybill_no" property="waybillNo" jdbcType="VARCHAR" />
+		<!--流水号-->
+		<result column="serial_no" property="serialNo" jdbcType="VARCHAR" /> 
+		<!--丢货件数--> 
+		<result column="lost_goods_qty" property="lostGoodsQty" jdbcType="NUMERIC" />
+		<!--总件数-->  
+		<result column="total_qty" property="totalQty" jdbcType="NUMERIC" /> 
+		<!--重量-->  
+		<result column="weight" property="weight" jdbcType="NUMERIC" />
+		<!--体积-->  
+		<result column="volume" property="volume" jdbcType="NUMERIC" />
+		<!--包装-->  
+		<result column="package_type" property="packageType" jdbcType="VARCHAR" /> 
+		<!--提货网点-->
+		<result column="dest_org_code" property="destOrgCode" jdbcType="VARCHAR" /> 
+		<!--提货网点名称-->
+		<result column="dest_org_name" property="destOrgName" jdbcType="VARCHAR" /> 
+		 <!--是否找到(Y是 ,N否)--> 
+		<result column="find_type" property="findType" jdbcType="CHAR" />  
+		<!--上报时间--> 
+		<result column="report_date" property="reportDate" jdbcType="TIMESTAMP" />
+	 </resultMap>
+	 <sql id="findGoodsAdminDetail_column">
+		<!--运单号-->A.WAYBILL_NO,
+		<!--流水号-->A.SERIAL_NO,
+		<!--丢货件数-->A.LOST_GOODS_QTY,
+		<!--总件数-->A.TOTAL_QTY,
+		<!--重量-->A.WEIGHT,
+		<!--体积-->A.VOLUME,
+		<!--包装-->A.PACKAGE_TYPE,
+		<!--提货网点-->A.DEST_ORG_CODE,
+		<!-- 提货网点名称 -->A.DEST_ORG_NAME,
+		<!--是否找到(Y是 ,N否)-->A.FIND_TYPE,
+		<!--上报时间-->A.REPORT_DATE,
+		A.CREATE_DATE,A.MODIFY_DATE,A.CREATE_USER_CODE,A.MODIFY_USER_CODE 
+	 </sql>
+	 <!-- 根据 运单号 流水号  查询找货明细 -->
+	 <select id="findGoodsAdminDetail_qurey" resultMap="findGoodsAdminDeatilResultMap" parameterType="com.deppon.foss.module.transfer.stock.api.shared.domain.FindGoodsAdminDetailEntity" >
+	   SELECT 
+	    <include refid="findGoodsAdminDetail_column"/>
+	 		FROM TFR.T_OPT_FINDGOODS_ADMIN_DETAIL  A
+		    <where>
+		     <if test=" waybillNo != null and waybillNo != '' ">
+		      A.WAYBILL_NO=#{waybillNo,jdbcType=VARCHAR}
+		     </if>	
+		     <if test=" serialNo != null and serialNo != '' ">
+		       AND A.SERIAL_NO=#{serialNo,jdbcType=VARCHAR}
+		     </if>	      
+		    </where> 
+		    
+	 </select>
+	 <!-- 批量新增明细 -->
+	 <insert id="findGoodsAdminDetail_insert" parameterType="java.util.List">
+	 BEGIN
+   	   <foreach collection="list" item="item"  separator=";">
+	     INSERT INTO  TFR.T_OPT_FINDGOODS_ADMIN_DETAIL(
+	     ID,
+	     <!--运单号-->WAYBILL_NO,
+	     <!--流水号-->SERIAL_NO,
+		 <!--丢货件数-->LOST_GOODS_QTY,
+		 <!--总件数-->TOTAL_QTY,
+		 <!--重量-->WEIGHT,
+		 <!--体积-->VOLUME,
+		<!--包装-->PACKAGE_TYPE,
+		<!--提货网点-->DEST_ORG_CODE,
+		<!--提货网点-->DEST_ORG_NAME,
+		<!--是否找到(Y是 ,N否)-->FIND_TYPE,
+		<!--上报时间-->REPORT_DATE,
+				CREATE_DATE,
+				MODIFY_DATE,
+				CREATE_USER_CODE,
+				MODIFY_USER_CODE
+				)
+		  values(
+		   <![CDATA[ SYS_GUID(),]]>
+			#{item.waybillNo,jdbcType=VARCHAR},
+			#{item.serialNo,jdbcType=VARCHAR},
+			#{item.lostGoodsQty,jdbcType=VARCHAR},
+			#{item.totalQty,jdbcType=VARCHAR},
+			#{item.weight,jdbcType=VARCHAR},
+			#{item.volume,jdbcType=VARCHAR},
+			#{item.packageType,jdbcType=CHAR},
+			#{item.destOrgCode,jdbcType=VARCHAR},
+			#{item.destOrgName,jdbcType=VARCHAR},
+			#{item.findType,jdbcType=CHAR},
+			#{item.reportDate,jdbcType=TIMESTAMP},
+			SYSDATE,
+			SYSDATE,
+			#{item.createUserCode,jdbcType=VARCHAR},
+			#{item.modifyUserCode,jdbcType=VARCHAR}
+		  )
+	 </foreach> 
+   	;END;
+	 </insert>
+	 <!-- 根据 部门编码 货区  上报时间 查询丢货的 详细信息 -->
+	 <select id="qurey_findGoodsAdminDeatil" resultMap="findGoodsAdminDeatilResultMap" parameterType="com.deppon.foss.module.transfer.stock.api.shared.domain.FindGoodsAdminEntity" >
+			Select f.WAYBILL_NO,
+			       f.SERIAL_NO,
+			       f.IN_STOCK_TIME REPORT_DATE,
+			       f.ORG_CODE,
+			       Count(f.Serial_No) Over(Partition By f.WAYBILL_NO) LOST_GOODS_QTY,
+			       w.CUSTOMER_PICKUP_ORG_CODE DEST_ORG_CODE,
+			       w.CUSTOMER_PICKUP_ORG_NAME DEST_ORG_NAME,
+			       w.GOODS_QTY_TOTAL TOTAL_QTY,
+			       w.GOODS_PACKAGE PACKAGE_TYPE,
+			       w.GOODS_WEIGHT_TOTAL WEIGHT,
+			       w.GOODS_VOLUME_TOTAL VOLUME
+			  From (Select * From Tfr.T_OPT_STOCK St
+			         <where>
+			            <![CDATA[
+						ST.ORG_CODE = 'W01000301050203'/**零担丢货管理组**/
+						]]>
+			            AND ST.WAYBILL_NO IN
+				          (SELECT S.WAYBILL_NO  FROM TFR.T_OPT_STOCK S
+				           LEFT JOIN TFR.T_OPT_PATH_DETAIL P ON S.WAYBILL_NO = P.WAYBILL_NO
+				            <choose>
+				            <when test=" goodsAreaCode != null and goodsAreaCode != '' ">
+				           LEFT JOIN BSE.T_BAS_GOODS_AREA A ON P.OBJECTIVE_ORG_CODE = A.ARRIVE_REGION_CODE AND A.ACTIVE = 'Y'
+				           </when>
+				           <otherwise></otherwise>
+				            </choose>
+			                  <where>
+								   <![CDATA[
+								    S.ORG_CODE = 'W01000301050203'/**零担丢货管理组**/
+									]]>
+									<if test=" orgCode != null and orgCode != '' ">
+										And (P.ORIG_ORG_CODE = #{orgCode,jdbcType=VARCHAR} Or
+										P.OBJECTIVE_ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+										)
+									</if>
+									<if test=" taskCreateDate != null and taskCreateDate != '' 
+									 and taskEndDate != null and taskEndDate != ''  ">
+										AND (S.IN_STOCK_TIME Between
+										#{taskCreateDate,jdbcType=TIMESTAMP}
+										AND
+										#{taskEndDate,jdbcType=TIMESTAMP}
+										)
+									</if>
+									<if test="orgCode != null and orgCode != '' and goodsAreaCode != null and goodsAreaCode != '' ">
+									    AND A.ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+									    AND A.ACTIVE = 'Y'
+										AND A.GOODS_AREA_CODE=#{goodsAreaCode,jdbcType=VARCHAR}
+									</if>
+							   </where> 
+						    ) 
+						<if test=" taskCreateDate != null and taskCreateDate != ''  
+						   and taskEndDate != null and taskEndDate != ''  ">
+						    AND (ST.IN_STOCK_TIME Between
+								  #{taskCreateDate,jdbcType=TIMESTAMP}
+								   AND
+								  #{taskEndDate,jdbcType=TIMESTAMP}
+							    )
+					    </if>
+			        </where>
+		) F LEFT JOIN PKP.T_SRV_WAYBILL W ON F.WAYBILL_NO = W.WAYBILL_NO AND W.ACTIVE = 'Y'
+	 </select>
+	 <insert id="insert_FGoodsfgoodsDetailMap" parameterType="java.util.List">
+		  BEGIN
+	   	   <foreach collection="list" item="item"  separator=";">
+		INSERT INTO TFR.T_OPT_FGOODSDETAILMAPPER(
+		ID ,TASK_NO ,WAYBILL_NO ,SERIAL_NO
+		) values(
+		  <![CDATA[ SYS_GUID(), ]]>
+		#{item.taskNo,jdbcType=VARCHAR}, #{item.waybillNo,jdbcType=VARCHAR}, #{item.serialNo,jdbcType=VARCHAR}
+		)
+		</foreach>
+		;END;
+	 </insert>
+	 <!-- pda 扫描 提交 明细 -->
+	 <update id="scan_FGoodsfgoodsDetail"  parameterType="java.util.HashMap">
+      UPDATE TFR.T_OPT_FINDGOODS_ADMIN_DETAIL F 
+      SET F.FIND_TYPE = #{findType,jdbcType=CHAR},
+	  F.MODIFY_USER_CODE=#{modifyUserCode,jdbcType=VARCHAR},
+	  F.MODIFY_DATE=#{modifyDate,jdbcType=TIMESTAMP}
+	  WHERE F.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+	   AND F.SERIAL_NO = #{serialNo,jdbcType=VARCHAR}
+	 </update>
+	<select id="fGoodsDetailBytaskNo" resultMap="findGoodsAdminDeatilResultMap"  parameterType="java.lang.String">
+	 SELECT 
+	 <include refid="findGoodsAdminDetail_column"/>
+		FROM TFR.T_OPT_FGOODSDETAILMAPPER D
+		LEFT JOIN TFR.T_OPT_FINDGOODS_ADMIN_DETAIL A 
+		ON D.WAYBILL_NO=A.WAYBILL_NO
+		AND D.SERIAL_NO =A.SERIAL_NO
+		WHERE D.TASK_NO=#{findType,jdbcType=VARCHAR}
+	</select>
+	<!-- 找货明细End -->
+</mapper>

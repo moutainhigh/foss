@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="com.deppon.pda.bdm.module.foss.upgrade.server.dao.impl.ExpressEffectivePlanDetailDataVerGenDao">
+	<select id="queryLocalDatas" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.EffectivePlanDetailEntity">
+		<![CDATA[
+			select id as id,
+			      t_srv_product_id as productId,
+			      t_srv_product_code as productCode,
+			      t_srv_express_effective_plan_i as effectivePlanId,
+			      dept_region_id as deptRegionId,
+			      dept_region_code as deptRegionCode,
+			      arrv_region_id as arrvRegionId,
+			      arrv_region_code as arrvRegionCode,
+			      max_time as maxTime,
+			      max_time_unit as maxTimeUnit,
+			      min_time as minTime, 
+			      min_time_unit as minTimeUnit,
+			      add_day as addDay,
+			      delivery_time as deliveryTime,
+			      has_sales_dept as hasSalesDept,
+			      long_or_short as longOrShort,
+			      operflag as operflag
+			 from t_base_express_eff_plan_detail
+			      WHERE operflag = '1'
+			      and dept_region_code=#{deptCode,jdbcType=VARCHAR}
+		]]>
+			<if test="startTime != null and startTime != ''  ">
+				<![CDATA[ AND UPDTIME > #{startTime,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="endTime != null and endTime != '' ">
+				<![CDATA[ AND UPDTIME <= #{endTime,jdbcType=TIMESTAMP}]]>
+			</if>
+		
+	</select>
+
+	<select id="queryLocalIncDataList"
+		parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="int">
+		<![CDATA[
+			SELECT COUNT(*) FROM t_base_express_eff_plan_detail	 
+			where dept_region_code=#{deptCode,jdbcType=VARCHAR}
+		]]>
+		<where>
+			<if test="startTime != null and startTime != ''  ">
+				<![CDATA[ AND UPDTIME > #{startTime,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="endTime != null and endTime != '' ">
+				<![CDATA[ AND UPDTIME <= #{endTime,jdbcType=TIMESTAMP}]]>
+			</if>
+		</where>
+	</select>
+	<select id="queryLocalDatasByDel" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.EffectivePlanDetailEntity">
+		<![CDATA[
+			SELECT 
+				ID as id
+			FROM t_base_express_eff_plan_detail
+			WHERE
+			 OPERFLAG = '3'
+			 and dept_region_code=#{deptCode,jdbcType=VARCHAR}
+			AND UPDTIME > #{startTime,jdbcType=TIMESTAMP}
+			AND UPDTIME <= #{endTime,jdbcType=TIMESTAMP}
+		]]>
+	</select>
+</mapper>

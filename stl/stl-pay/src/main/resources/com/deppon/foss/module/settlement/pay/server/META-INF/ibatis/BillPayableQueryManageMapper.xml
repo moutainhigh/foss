@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.stl.BillPayableEntityDao" >
+  <resultMap type="com.deppon.foss.module.settlement.pay.api.shared.dto.BillPayableManageResultDto" id="DtoResultMap">
+    <result column="TOTALCOUNT" property="totalCount" jdbcType="DECIMAL" />
+    <result column="TOTALAMOUNT" property="totalAmount" jdbcType="DECIMAL" />
+    <result column="TOTALVEIFYAMOUNT" property="totalVerifyAmount" jdbcType="DECIMAL" />
+    <result column="TOTALUNVERIFYAMOUNT" property="totalUnVerifyAmount" jdbcType="DECIMAL" />
+  </resultMap>
+  <!-- 根据日期查询应付单 -->
+  <select id="queryBillPayableByDate" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillPayableManageDto" resultMap="BaseResultMap">
+  	SELECT/*根据日期查询应付单 */
+  		<include refid="Payment_Column_List"/>
+ 	FROM STL.T_STL_BILL_PAYABLE T
+ 	inner join BSE.MV_BAS_USER_ORG_AUTH_VIEW V on V.ORG_CODE = T.PAYABLE_ORG_CODE
+ 	left join stl.t_stl_bill_payment p on p.payment_no = T.payment_no
+    and p.active = 'Y'
+ 	<where>
+        
+		AND V.EMP_CODE = #{empCode,jdbcType=VARCHAR}
+ 	   <if test="businessBeginDate!=null and businessBeginDate!='' and businessEndDate!=null and businessEndDate!=''">
+    		<![CDATA[ AND T.BUSINESS_DATE >=#{businessBeginDate} AND T.BUSINESS_DATE <#{businessEndDate} AND T.ACCOUNT_DATE >=#{businessBeginDate}]]>
+		</if>
+		<if test="accountBeginDate!=null and accountBeginDate!='' and accountEndDate!=null and accountEndDate!=''">
+    		<![CDATA[ AND T.ACCOUNT_DATE >=#{accountBeginDate} AND T.ACCOUNT_DATE <#{accountEndDate} ]]>
+		</if>
+		
+ 		<if test="orgCodeList!=null and orgCodeList.size>0 and createOrgCode =='' ">
+	 		AND T.PAYABLE_ORG_CODE IN
+	  		<foreach collection="orgCodeList" index="index" item="item" open="(" separator="," close=")">
+	           #{item}
+	        </foreach>
+ 		</if>
+        <if test=" customerCode!=null and customerCode!='' ">
+        	AND T.CUSTOMER_CODE = #{customerCode}
+        </if>
+        
+        <!-- @author 340403 -->
+        <if test=" truckCustomerName !=null and truckCustomerName!='' ">
+        	AND T.CUSTOMER_NAME like '%'|| #{truckCustomerName} ||'%'
+        </if>
+        
+        <!-- @author 340403 -->
+        <if test=" truckCustomerCode !=null and truckCustomerCode!='' ">
+        	AND T.CUSTOMER_CODE = #{truckCustomerCode}
+        </if>
+        
+        
+        <if test="customerCodeList!=null and customerCodeList.length>0 ">
+	 		AND T.CUSTOMER_CODE IN
+	  		<foreach collection="customerCodeList" index="index" item="item" open="(" separator="," close=")">
+	           #{item}
+	        </foreach>
+ 		</if>
+		<if test=" effectiveStatus!=null and effectiveStatus!='' ">
+			AND T.EFFECTIVE_STATUS = #{effectiveStatus}
+		</if>
+		<if test=" payStatus!=null and payStatus!='' ">
+			AND T.PAY_STATUS = #{payStatus}
+		</if>
+		<if test="payableBillType!=null and payableBillType.size>0">
+	 		AND T.BILL_TYPE IN
+	  		<foreach collection="payableBillType" index="index" item="item" open="(" separator="," close=")">
+	           #{item}
+	        </foreach>
+ 		</if>
+		<if test=" approveStatus!=null and approveStatus!='' ">
+			AND T.APPROVE_STATUS = #{approveStatus}
+		</if>
+		<if test=" writeoffStatus!=null and writeoffStatus!='' and writeoffStatus==WRITEOFF_NOT ">
+		 	<![CDATA[ AND T.UNVERIFY_AMOUNT>0  and T.UNVERIFY_AMOUNT = T.AMOUNT ]]> 
+		</if>
+		<if test="writeoffStatus!=null and writeoffStatus!='' and writeoffStatus==WRITEOFF_PART ">
+			<![CDATA[ AND T.UNVERIFY_AMOUNT>0  and T.UNVERIFY_AMOUNT < T.AMOUNT ]]>
+		</if>
+		<if test="writeoffStatus!=null and writeoffStatus!='' and writeoffStatus==WRITEOFF_DONE">
+			AND T.UNVERIFY_AMOUNT = 0
+		</if>
+		<if test="active!=null and active!=''">
+			AND T.ACTIVE = #{active}
+		</if>
+		<if test="isInit!=null and isInit!=''">
+			AND T.IS_INIT = #{isInit}
+		</if>
+		<if test="isSign!=null and isSign!=''">
+			<choose>
+				<when test="isSign == BILL_PAYABLE_IS_SIGN_NO">
+					AND T.SIGN_DATE IS NULL
+				</when>
+				<otherwise>
+					AND T.SIGN_DATE IS NOT NULL
+				</otherwise>
+			</choose>
+		</if>
+		<if test="isPartner != null and isPartner != ''">
+			<choose>
+				<when test="isPartner=='Y'.toString()">
+					AND t.BILL_TYPE IN ('PFCP','PDFP','PDDF','PLE','PB','POP')
+				</when>
+				<when test="isDiscount!='N'.toString()">
+					AND t.BILL_TYPE NOT IN ('PFCP','PDFP','PDDF','PLE','PB','POP')
+				</when>
+			</choose>
+		</if>
+		<if test="isPartner == null or isPartner == ''">
+			AND t.BILL_TYPE NOT IN ('PFCP','PDFP','PDDF','PLE','PB','POP')
+		</if>
+		<if test="productCodesList != null and productCodesList.size() > 0 ">
+			AND T.PRODUCT_CODE IN
+			<foreach collection="productCodesList"  index="index" item="item"  open="(" separator="," close=")">  
+		    	#{item} 
+			</foreach>				
+		</if>
+		<if test="createOrgCode!='' and createOrgCode !=null ">
+			AND T.CREATE_ORG_CODE = #{createOrgCode}
+		</if>
+		<if test="witholdingCostDept!=null and witholdingCostDept!='' ">
+ 	     	AND EXISTS ( SELECT 1 FROM STL.T_STL_BILL_WITHHOLDING W WHERE W.ACTIVE = 'Y' AND W.WORKFLOW_NO = T.WORKFLOW_NO
+ 	   	 				  AND W.COSTDEPT_CODE =#{witholdingCostDept,jdbcType=VARCHAR} )
+ 		</if> 
+ 	</where> 	
+  </select>
+  <!-- 查询应付单  计算总条数、总金额 -->
+  <select id="countBillPayableByDate" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillPayableManageDto" resultMap="DtoResultMap">
+  	SELECT
+  		/*查询应付单  计算总条数、总金额 */ 
+  		COUNT(PAY.ID) TOTALCOUNT,
+       SUM(PAY.AMOUNT)/100 TOTALAMOUNT,
+       SUM(PAY.VERIFY_AMOUNT)/100 TOTALVEIFYAMOUNT,
+       SUM(PAY.UNVERIFY_AMOUNT)/100 TOTALUNVERIFYAMOUNT
+  	FROM STL.T_STL_BILL_PAYABLE PAY,BSE.MV_BAS_USER_ORG_AUTH_VIEW V 
+ 	<where>
+        V.ORG_CODE = PAY.PAYABLE_ORG_CODE
+		AND V.EMP_CODE = #{empCode,jdbcType=VARCHAR}
+ 	   <if test="businessBeginDate!=null and businessBeginDate!='' and businessEndDate!=null and businessEndDate!=''">
+    		<![CDATA[ AND   BUSINESS_DATE >=#{businessBeginDate} AND   BUSINESS_DATE <#{businessEndDate} AND ACCOUNT_DATE >=#{businessBeginDate}]]>
+		</if>
+		<if test="accountBeginDate!=null and accountBeginDate!='' and accountEndDate!=null and accountEndDate!=''">
+    		<![CDATA[ AND   ACCOUNT_DATE >=#{accountBeginDate} AND   ACCOUNT_DATE <#{accountEndDate} ]]>
+		</if>
+ 		<if test="orgCodeList!=null and orgCodeList.size>0 and createOrgCode =='' ">
+	 		AND PAY.PAYABLE_ORG_CODE IN
+	  		<foreach collection="orgCodeList" index="index" item="item" open="(" separator="," close=")">
+	           #{item}
+	        </foreach>
+ 		</if>
+        <if test=" customerCode!=null and customerCode!='' ">
+        	AND PAY.CUSTOMER_CODE = #{customerCode}
+        </if>
+        <if test="customerCodeList!=null and customerCodeList.length>0 ">
+	 		AND PAY.CUSTOMER_CODE IN
+	  		<foreach collection="customerCodeList" index="index" item="item" open="(" separator="," close=")">
+	           #{item}
+	        </foreach>
+ 		</if>
+		<if test=" effectiveStatus!=null and effectiveStatus!='' ">
+			AND PAY.EFFECTIVE_STATUS = #{effectiveStatus}
+		</if>
+		<if test=" payStatus!=null and payStatus!='' ">
+			AND PAY.PAY_STATUS = #{payStatus}
+		</if>
+		<if test="payableBillType!=null and payableBillType.size>0">
+	 		AND PAY.BILL_TYPE IN
+	  		<foreach collection="payableBillType" index="index" item="item" open="(" separator="," close=")">
+	           #{item}
+	        </foreach>
+ 		</if>
+		<if test=" approveStatus!=null and approveStatus!='' ">
+			AND PAY.APPROVE_STATUS = #{approveStatus}
+		</if>
+		<if test=" writeoffStatus!=null and writeoffStatus!='' and writeoffStatus==WRITEOFF_NOT ">
+		 	<![CDATA[ AND PAY.UNVERIFY_AMOUNT>0  and PAY.UNVERIFY_AMOUNT = PAY.AMOUNT ]]> 
+		</if>
+		<if test="writeoffStatus!=null and writeoffStatus!='' and writeoffStatus==WRITEOFF_PART ">
+			<![CDATA[ AND PAY.UNVERIFY_AMOUNT>0  and PAY.UNVERIFY_AMOUNT < PAY.AMOUNT ]]>
+		</if>
+		<if test="writeoffStatus!=null and writeoffStatus!='' and writeoffStatus==WRITEOFF_DONE">
+			AND PAY.UNVERIFY_AMOUNT = 0
+		</if>
+		<if test="active!=null and active!=''">
+			AND PAY.ACTIVE = #{active}
+		</if>
+		<if test="isInit!=null and isInit!=''">
+			AND PAY.IS_INIT = #{isInit}
+		</if>
+		<if test="isSign!=null and isSign!=''">
+			<choose>
+				<when test="isSign == BILL_PAYABLE_IS_SIGN_NO">
+					AND PAY.SIGN_DATE IS NULL
+				</when>
+				<otherwise>
+					AND PAY.SIGN_DATE IS NOT NULL
+				</otherwise>
+			</choose>
+		</if>
+		<if test="isPartner != null and isPartner != ''">
+			<choose>
+				<when test="isPartner=='Y'.toString()">
+					AND PAY.BILL_TYPE IN ('PFCP','PDFP','PDDF','PLE','PB','POP')
+				</when>
+				<when test="isDiscount!='N'.toString()">
+					AND PAY.BILL_TYPE NOT IN ('PFCP','PDFP','PDDF','PLE','PB','POP')
+				</when>
+			</choose>
+		</if>
+		<if test="isPartner == null or isPartner == ''">
+			AND PAY.BILL_TYPE NOT IN ('PFCP','PDFP','PDDF','PLE','PB','POP')
+		</if>
+		<if test="productCodesList != null and productCodesList.size() > 0 ">
+			AND PAY.PRODUCT_CODE IN
+			<foreach collection="productCodesList"  index="index" item="item"  open="(" separator="," close=")">  
+		    	#{item} 
+			</foreach>				
+		</if>
+		<if test="createOrgCode!='' and createOrgCode !=null ">
+			AND PAY.CREATE_ORG_CODE = #{createOrgCode}
+		</if>
+		<if test="witholdingCostDept!=null and witholdingCostDept!='' ">
+ 	     	AND EXISTS ( SELECT 1 FROM STL.T_STL_BILL_WITHHOLDING W WHERE W.ACTIVE = 'Y' AND W.WORKFLOW_NO = PAY.WORKFLOW_NO
+ 	   	 				  AND W.COSTDEPT_CODE =#{witholdingCostDept,jdbcType=VARCHAR} )
+ 		</if> 
+ 	</where> 	
+  </select>
+  
+  <!-- 根据付款单号和付款单明细来源单号查询应付单 -->
+  <select id="queryListByPaymentNo" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillPayableManageDto" resultMap="BaseResultMap">
+  		SELECT /*根据付款单号和付款单明细来源单号查询应付单*/
+			<include refid="Base_Column_List"/>
+  		FROM STL.T_STL_BILL_PAYABLE 
+ 		<where>
+ 		 	IS_RED_BACK = #{isRedBack}
+ 			AND PAYABLE_NO IN 
+ 			(
+     			SELECT D.SOURCE_BILL_NO
+       			FROM STL.T_STL_BILL_PAYMENT_D D
+       			WHERE D.SOURCE_BILL_TYPE = #{sourceBillTypeFkd}
+       				AND D.PAYMENT_NO = #{paymentNo}
+       			UNION 
+        		SELECT P.PAYABLE_NO
+               	FROM STL.T_STL_BILL_PAYABLE P
+               	WHERE P.PAYMENT_NO = #{paymentNo}
+ 			)
+  	</where>	
+  </select>
+  
+      <!-- 根据应付单号查询应付单 -->
+  <select id="queryPayableByPayableNo" parameterType="map" resultMap="BaseResultMap">
+  		SELECT /*根据应付单号查询应付单 */
+			<include refid="Base_Column_List"/>
+  		FROM STL.T_STL_BILL_PAYABLE 
+	<where>
+            PAYABLE_NO = #{payableNo, jdbcType=VARCHAR}
+            AND
+            ACTIVE = 'Y'
+  	</where>
+ 	</select>	
+
+</mapper>

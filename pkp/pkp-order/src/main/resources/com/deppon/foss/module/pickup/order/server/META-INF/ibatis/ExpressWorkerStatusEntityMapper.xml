@@ -1,0 +1,477 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.deppon.foss.module.pickup.order.api.shared.domain.ExpressWorkerStatusEntity" >
+	<!--zxy 20140718 AUTO-170 新增字段 BUSINESSAREA,VEHICLE_NO-->
+	<resultMap id="BaseResultMap" type="com.deppon.foss.module.pickup.order.api.shared.domain.ExpressWorkerStatusEntity" >
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="EMP_CODE" property="empCode" jdbcType="OTHER" />
+		<result column="EMP_NAME" property="empName" jdbcType="OTHER" />
+		<result column="PAD_NO" property="padNo" jdbcType="OTHER" />
+		<result column="WORK_STATUS" property="workStatus" jdbcType="OTHER" />
+		<result column="CREATE_USERCODE" property="createUsercode" jdbcType="OTHER" />
+		<result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_CODE" property="modifyCode" jdbcType="OTHER" />
+		<result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="BUSINESSAREA" property="businessArea" jdbcType="VARCHAR" />
+		<result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+	</resultMap>
+	<!-- 快递员完成状态情况 -->
+	<resultMap id="BaseBillCountMap" type="com.deppon.foss.module.pickup.order.api.shared.dto.ExpressWorkerBillCountDto" >
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="employeeCode" property="employeeCode" jdbcType="VARCHAR" />
+		<result column="receiveCount" property="receiveCount" jdbcType="INTEGER" />
+		<result column="completeCount" property="completeCount" jdbcType="INTEGER" />
+		<result column="otherCount" property="otherCount" jdbcType="INTEGER" />
+	</resultMap>
+  
+	<sql id="Base_Column_List" >
+    ID, EMP_CODE, EMP_NAME, PAD_NO, WORK_STATUS, CREATE_USERCODE, CREATE_TIME, MODIFY_CODE, 
+    MODIFY_TIME, ACTIVE,BUSINESSAREA,VEHICLE_NO
+	</sql>
+  
+	<select id="selectOneByEmpcode" resultMap="BaseResultMap" parameterType="java.lang.Object" >
+    select *
+		from (select <include refid="Base_Column_List" />
+    from PKP.T_SRV_EMPLOYEEWORKSTATUS
+    where EMP_CODE = #{emp_Code,jdbcType=OTHER}  
+      and ACTIVE = 'Y' ORDER BY MODIFY_TIME DESC ) WHERE rownum=1
+	</select>
+	<!--14.7.16根据签到id 查询工作状态 -->
+	<select id="selectOneByPdaSignid" resultMap="BaseResultMap" parameterType="java.lang.Object" >
+    select 
+		<include refid="Base_Column_List" />
+    from PKP.T_SRV_EMPLOYEEWORKSTATUS
+    where T_SRV_PDA_SIGN_ID = #{pdaSignId,jdbcType=OTHER}
+    	  and ACTIVE = 'Y'
+    	  and ROWNUM = 1
+	</select> 
+	<!--14.7.17 gcl AUTO-170 零担自动分配 先 根据车牌号查询车辆工作状态  -->
+	<!--14.8.4 gcl AUTO-218  最新的一条工作状态 -->
+	<select id="selectOneByVehicleNo" resultType="java.lang.Long" parameterType="com.deppon.foss.module.pickup.order.api.shared.domain.ExpressWorkerStatusEntity" >
+    select count(1)
+    from (select WORK_STATUS
+           from (select WORK_STATUS
+    from PKP.T_SRV_EMPLOYEEWORKSTATUS
+		<where>
+			<if test="vehicleNo != null and vehicleNo != ''">
+		    and VEHICLE_NO = #{vehicleNo,jdbcType=OTHER}
+			</if>
+			<if test="businessArea != null and businessArea != ''">
+		    and BUSINESSAREA = #{businessArea,jdbcType=OTHER}
+			</if>
+			<if test="active != null and active != ''">
+		    and ACTIVE = #{active,jdbcType=OTHER}
+			</if>
+		</where>
+    ORDER BY MODIFY_TIME DESC ) WHERE rownum=1 )  
+    WHERE WORK_STATUS = #{workStatus,jdbcType=OTHER}
+	</select> 
+  
+	<!--zxy 20140717 AUTO-170 新增  根据车牌号查询车辆工作状态  ON-1405-->
+	<select id="queryOneByVehicleNo" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.pickup.order.api.shared.domain.ExpressWorkerStatusEntity" >
+		select * from ( select <include refid="Base_Column_List" /> 
+    from PKP.T_SRV_EMPLOYEEWORKSTATUS
+		<where>
+			<if test="vehicleNo != null and vehicleNo != ''">
+		    and VEHICLE_NO = #{vehicleNo,jdbcType=OTHER}
+			</if>
+			<if test="businessArea != null and businessArea != ''">
+		    and BUSINESSAREA = #{businessArea,jdbcType=OTHER}
+			</if>
+			<if test="workStatus != null and workStatus != ''">
+		    and WORK_STATUS = #{workStatus,jdbcType=OTHER}
+			</if>
+			<if test="active != null and active != ''">
+		    and ACTIVE = #{active,jdbcType=OTHER}
+			</if>
+		</where>
+    ORDER BY MODIFY_TIME DESC ) WHERE rownum=1 
+	</select> 
+	<!-- zxy 20140708 AUTO-112 新增 -->
+	<select id="selectByEmployeeCodesByEntity" resultMap="BaseResultMap" parameterType="java.util.Map" >
+    	select 
+		<include refid="Base_Column_List" />
+	    from PKP.T_SRV_EMPLOYEEWORKSTATUS
+		<where>
+			<if test="empCodeLst != null">
+			   and EMP_CODE in 
+				<foreach collection="empCodeLst" item="item" index="index"
+					open="(" separator="," close=")">
+									#{item.courierCode}
+				</foreach>
+			</if>
+			<if test="active != null and active != '' " >
+		      and active = #{active,jdbcType=VARCHAR}
+			</if>
+		</where> 
+	</select> 
+	<!-- gcl 20140709 AUTO-124 新加:获得快递员工作状态的最新一条数据 -->
+	<select id="selectUpDateByEmployeeCodes" resultMap="BaseResultMap" parameterType="list" >
+    select 
+		<include refid="Base_Column_List" />
+    from (select emp.*,row_number() over(partition by emp_code order by rownum) cn 
+    from (select * from PKP.T_SRV_EMPLOYEEWORKSTATUS 
+    where 
+		<choose>
+			<when test="list != null">
+     EMP_CODE in 
+				<foreach collection="list" item="item" index="index"
+					open="(" separator="," close=")">
+						#{item.courierCode}
+				</foreach>
+			</when>
+			<otherwise>1=2</otherwise>
+		</choose>
+    order by modify_time desc ) emp ) where cn = 1
+	</select>
+	<!-- zxy 20140708 AUTO-112 修改:增加排序 -->
+	<select id="selectByEmployeeCodes" resultMap="BaseResultMap" parameterType="list" >
+    select 
+		<include refid="Base_Column_List" />
+    from PKP.T_SRV_EMPLOYEEWORKSTATUS 
+      where   
+		<choose>
+			<when test="list != null">
+     EMP_CODE in 
+				<foreach collection="list" item="item" index="index"
+					open="(" separator="," close=")">
+						#{item.courierCode}
+				</foreach>
+			</when>
+			<otherwise>1=2</otherwise>
+		</choose>
+   order by modify_time desc 
+	</select>
+
+	<!--20140707 内部优化  去掉无用字段businessArea -->
+	<insert id="insertSelective" parameterType="com.deppon.foss.module.pickup.order.api.shared.domain.ExpressWorkerStatusEntity" >
+    insert into PKP.T_SRV_EMPLOYEEWORKSTATUS
+		<trim prefix="(" suffix=")" suffixOverrides="," >
+			<if test="id != null" >
+        ID,
+			</if>
+			<if test="empCode != null" >
+        EMP_CODE,
+			</if>
+			<if test="empName != null" >
+        EMP_NAME,
+			</if>
+			<if test="padNo != null" >
+        PAD_NO,
+			</if>
+			<if test="workStatus != null" >
+        WORK_STATUS,
+			</if>
+			<if test="createUsercode != null" >
+        CREATE_USERCODE,
+			</if>
+			<if test="createTime != null" >
+        CREATE_TIME,
+			</if>
+			<if test="modifyCode != null" >
+        MODIFY_CODE,
+			</if>
+			<if test="modifyTime != null" >
+        MODIFY_TIME,
+			</if>
+			<if test="pdaSignId != null" >
+        T_SRV_PDA_SIGN_ID,
+			</if>
+			<if test="businessArea != null" >
+        BUSINESSAREA,
+			</if>
+			<if test="vehicleNo != null" >
+         VEHICLE_NO,
+			</if>
+			<if test="active != null" >
+        ACTIVE,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides="," >
+			<if test="id != null" >
+        #{id,jdbcType=OTHER},
+			</if>
+			<if test="empCode != null" >
+        #{empCode,jdbcType=OTHER},
+			</if>
+			<if test="empName != null" >
+        #{empName,jdbcType=OTHER},
+			</if>
+			<if test="padNo != null" >
+        #{padNo,jdbcType=OTHER},
+			</if>
+			<if test="workStatus != null" >
+        #{workStatus,jdbcType=OTHER},
+			</if>
+			<if test="createUsercode != null" >
+        #{createUsercode,jdbcType=OTHER},
+			</if>
+			<if test="createTime != null" >
+        #{createTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyCode != null" >
+        #{modifyCode,jdbcType=OTHER},
+			</if>
+			<if test="modifyTime != null" >
+        #{modifyTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="pdaSignId != null" >
+        #{pdaSignId,jdbcType=VARCHAR},
+			</if>
+			<if test="businessArea != null" >
+         #{businessArea,jdbcType=VARCHAR},
+			</if>
+			<if test="vehicleNo != null" >
+         #{vehicleNo,jdbcType=VARCHAR},
+			</if>
+			<if test="active != null" >
+        #{active,jdbcType=CHAR},
+			</if>
+		</trim>
+	</insert>
+  
+	<update id="updateByPrimaryKeySelective" parameterType="com.deppon.foss.module.pickup.order.api.shared.domain.ExpressWorkerStatusEntity" >
+    update PKP.T_SRV_EMPLOYEEWORKSTATUS
+		<set >
+			<if test="empCode != null" >
+        EMP_CODE = #{empCode,jdbcType=OTHER},
+			</if>
+			<if test="empName != null" >
+        EMP_NAME = #{empName,jdbcType=OTHER},
+			</if>
+			<if test="padNo != null" >
+        PAD_NO = #{padNo,jdbcType=OTHER},
+			</if>
+			<if test="workStatus != null" >
+        WORK_STATUS = #{workStatus,jdbcType=OTHER},
+			</if>
+			<if test="createUsercode != null" >
+        CREATE_USERCODE = #{createUsercode,jdbcType=OTHER},
+			</if>
+			<if test="createTime != null" >
+        CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyCode != null" >
+        MODIFY_CODE = #{modifyCode,jdbcType=OTHER},
+			</if>
+			<if test="modifyTime != null" >
+        MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="active != null" >
+        ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="pdaSignId != null" >
+        T_SRV_PDA_SIGN_ID = #{pdaSignId,jdbcType=VARCHAR},
+			</if>
+			<if test="businessArea != null" >
+        BUSINESSAREA = #{businessArea,jdbcType=VARCHAR},
+			</if>
+			<if test="vehicleNo != null" >
+        VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR},
+			</if>
+		</set>
+    where ID = #{id,jdbcType=OTHER}
+	</update>
+  
+	<update id="updateByEmployeeCodes" parameterType="com.deppon.foss.module.pickup.order.api.shared.dto.ExpressWorkerStatusDto" >
+    update PKP.T_SRV_EMPLOYEEWORKSTATUS
+		<set >
+		MODIFY_TIME = <![CDATA[sysdate]]>,
+			<if test="PDANum != null" >
+        PAD_NO = #{PDANum,jdbcType=VARCHAR},
+			</if>
+			<if test="operateType != null" >
+        WORK_STATUS = #{operateType,jdbcType=VARCHAR},
+			</if>
+			<if test="creatorCode != null" >
+        MODIFY_CODE = #{creatorCode,jdbcType=VARCHAR},
+			</if> 
+		</set>
+    where 
+		<choose>
+			<when test="expressEmpCodes != null">
+    EMP_CODE in 
+				<foreach collection="expressEmpCodes" item="item" index="index" 
+					open="("  separator="," close=")">
+      #{item}
+				</foreach>
+			</when>
+			<otherwise>1=2</otherwise>
+		</choose>
+		<if test="active != null" ><!--14.7.17 gcl AUTO-177-->
+    	and active = #{active,jdbcType=VARCHAR}
+		</if>
+	</update>
+  
+	<!--统计运单送货数据 -->
+	<!--zxy 20140703 AUTO-80 修改:employeeCodes 改成 courierSignDtoList -->
+	<select id="queryWaybillCount" resultMap="BaseBillCountMap" parameterType="com.deppon.foss.module.pickup.order.api.shared.dto.WorkerbillCountQueryDto" >
+   select /*快递员工作状态*/bill.driver_code as employeeCode,
+       sum(decode(bill.status,'CONFIRMED',1,'PDA_DOWNLOADED',1,'SIGNINFO_CONFIRMED',1,0)) as receiveCount,
+       sum(decode(bill.status,'SIGNINFO_CONFIRMED',decode(ar.status,'REFUSE',0,1),0)) as completeCount,
+       0 as otherCount
+  from pkp.t_srv_deliverbill bill
+  inner join pkp.t_srv_deliverbill_detail detail on bill.id = detail.t_srv_deliverbill_id
+  inner join pkp.t_srv_arrivesheet ar on ar.waybill_no = detail.waybill_no
+        and ar.active = 'Y' 
+  where bill.is_express = 'Y'
+		<if test="startDate != null">
+		and bill.submit_time <![CDATA[>=]]> #{startDate,jdbcType=TIMESTAMP}
+		</if>
+		<if test="startDate == null">
+		and bill.submit_time <![CDATA[>=]]> TRUNC(SYSDATE)/*默认开始时间*/
+		</if>
+		<if test="endDate != null">
+		and bill.submit_time <![CDATA[<]]> #{endDate,jdbcType=TIMESTAMP}
+		</if>
+		<if test="endDate == null">
+		and bill.submit_time <![CDATA[<]]> TRUNC(SYSDATE+1)/*默认截止时间*/
+		</if>
+   and bill.driver_code in 
+		<if test="courierSignDtoList != null">
+			<foreach collection="courierSignDtoList" item="item" index="index" open="(" separator="," close=")" >
+   #{item.courierCode}
+			</foreach>
+		</if>
+   group by  bill.driver_code
+	</select> 
+  
+	<!--统计订单接货数据 -->
+	<!--zxy 20140703 AUTO-80 修改:employeeCodes 改成 courierSignDtoList -->
+	<select id="queryOrderCount" resultMap="BaseBillCountMap" parameterType="com.deppon.foss.module.pickup.order.api.shared.dto.WorkerbillCountQueryDto" >
+   select orders.driver_code as employeeCode,
+        sum(decode(orders.order_status,'PDA_ACCEPT',1,'PICKUPING',1,'WAYBILL',1,0)) as receiveCount,
+        sum(decode(orders.order_status,'WAYBILL',1,0)) as completeCount,
+       0 as otherCount
+  from pkp.t_srv_dispatch_order orders
+  where orders.product_code in 
+		<foreach collection="productCode" item="item" index="index" open="(" separator="," close=")" >
+   			#{item}
+		</foreach>
+		<if test="startDate != null">
+		and orders.order_vehicle_time <![CDATA[>=]]> #{startDate,jdbcType=TIMESTAMP}
+		</if>
+		<if test="endDate != null">
+		and orders.order_vehicle_time <![CDATA[<]]> #{endDate,jdbcType=TIMESTAMP}
+		</if>
+		<if test="courierSignDtoList != null">
+   and orders.driver_code in 
+			<foreach collection="courierSignDtoList" item="item" index="index" open="(" separator="," close=")" >
+   #{item.courierCode}
+			</foreach>
+		</if>
+   group by  orders.driver_code
+	</select> 
+  
+	<!--统计无订单开单据-查询运单 -->
+	<!--zxy 20140703 AUTO-80 修改:employeeCodes 改成 courierSignDtoList -->
+	<select id="queryNoOrderCount" resultMap="BaseBillCountMap" parameterType="com.deppon.foss.module.pickup.order.api.shared.dto.WorkerbillCountQueryDto" >
+		   select  wb.driver_code as employeeCode,
+		           0 as receiveCount,
+		           0 as completeCount,
+		           count(wb.id) as otherCount
+		  from pkp.t_srv_waybill wb
+		  where wb.order_no is null
+		    and wb.product_code in 
+		    <foreach collection="productCode" item="item" index="index" open="(" separator="," close=")" >
+   				#{item} 
+			</foreach>
+		    and wb.pending_type in ('PDA_ACTIVE','PDA_PENDING')
+		<if test="startDate != null">
+		and wb.bill_time <![CDATA[>=]]> #{startDate,jdbcType=TIMESTAMP}
+		</if>
+		<if test="endDate != null">
+		and wb.bill_time <![CDATA[<]]> #{endDate,jdbcType=TIMESTAMP}
+		</if>
+		<if test="courierSignDtoList != null">
+   		and wb.driver_code in 
+			<foreach collection="courierSignDtoList" item="item" index="index" open="(" separator="," close=")" >
+   		#{item.courierCode}
+			</foreach>
+		</if>
+   		group by  wb.driver_code
+	</select>
+  
+	<!--统计无订单开单据-查询PDA开单运单 -->
+	<!--zxy 20140703 AUTO-80 修改:employeeCodes 改成 courierSignDtoList -->
+	<select id="queryNoOrderPendingCount" resultMap="BaseBillCountMap" parameterType="com.deppon.foss.module.pickup.order.api.shared.dto.WorkerbillCountQueryDto" >
+		   select  wb.driver_code as employeeCode,
+		           0 as receiveCount,
+		           0 as completeCount,
+		           count(wb.id) as otherCount
+		  from pkp.t_srv_waybill_pending wb
+		  where wb.order_no is null
+		    and wb.product_code in 
+		    <foreach collection="productCode" item="item" index="index" open="(" separator="," close=")" >
+   				#{item}
+			</foreach>
+		    and wb.pending_type in ('PDA_ACTIVE','PDA_PENDING')
+		<if test="startDate != null">
+		and wb.bill_time <![CDATA[>=]]> #{startDate,jdbcType=TIMESTAMP}
+		</if>
+		<if test="endDate != null">
+		and wb.bill_time <![CDATA[<]]> #{endDate,jdbcType=TIMESTAMP}
+		</if>
+		<if test="courierSignDtoList != null">
+   		and wb.driver_code in 
+			<foreach collection="courierSignDtoList" item="item" index="index" open="(" separator="," close=")" >
+   		#{item.courierCode}
+			</foreach>
+		</if>
+   		group by wb.driver_code
+	</select> 
+   
+	<select id="queryWorkStatusByVehicle" resultMap="BaseResultMap" parameterType="java.util.Map" >
+		select <include refid="Base_Column_List" /> from (select es.*,row_number() over(partition by VEHICLE_NO order by rownum) cn  from (SELECT *
+	    FROM PKP.T_SRV_EMPLOYEEWORKSTATUS 
+		<where>
+			<if test="vehicleNoList != null and vehicleNoList.size() > 0">
+			   AND VEHICLE_NO IN 
+				<foreach collection="vehicleNoList" item="item" index="index"
+					open="(" separator="," close=")">
+						#{item}
+				</foreach>
+			</if>
+			<if test="active != null and active != '' " >
+		      AND ACTIVE = #{active,jdbcType=VARCHAR}
+			</if>
+			<if test="businessArea != null and businessArea != '' " >
+		      AND BUSINESSAREA = #{businessArea,jdbcType=VARCHAR}
+			</if>
+		</where> 
+	   order by modify_time desc ) es ) where cn=1
+	</select> 
+   
+	<update id="updateByVehicleNos" parameterType="com.deppon.foss.module.pickup.order.api.shared.dto.ExpressWorkerStatusDto" >
+    update PKP.T_SRV_EMPLOYEEWORKSTATUS
+		<set >
+		MODIFY_TIME = <![CDATA[sysdate]]>,
+			<if test="operateType != null" >
+        WORK_STATUS = #{operateType,jdbcType=VARCHAR},
+			</if>
+			<if test="creatorCode != null" >
+        MODIFY_CODE = #{creatorCode,jdbcType=VARCHAR},
+			</if> 
+		</set>
+    where 
+		<choose>
+			<when test="vehicleNoList != null">
+    id in 
+				<foreach collection="vehicleNoList" item="item" index="index" 
+					open="("  separator="," close=")">
+      #{item}
+				</foreach>
+			</when>
+			<otherwise>1=2</otherwise>
+		</choose>
+		<if test="active != null" ><!--14.7.17 gcl AUTO-177-->
+    	 AND ACTIVE = #{active,jdbcType=VARCHAR}
+		</if>
+		<if test="businessArea != null" >
+    	AND BUSINESSAREA = #{businessArea,jdbcType=VARCHAR}
+		</if>
+    
+	</update>
+   
+</mapper>

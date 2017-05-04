@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+	xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	xmlns:tns="http://www.deppon.com/foss/ccWaybillService" xmlns:tns_domain="http://www.deppon.com/esb/inteface/domain/ccWaybillService"
+	xmlns:tns_header="http://www.deppon.com/esb/header"
+	xmlns:tns_exception="http://www.deppon.com/esb/exception"
+	targetNamespace="http://www.deppon.com/foss/ccWaybillService" name="ccWaybillService">
+	<wsdl:types>
+		<xsd:schema targetNamespace="http://www.deppon.com/esb/inteface/domain/ccWaybillService">
+			<xsd:include schemaLocation="CC_QUERY_WAYBILLBYPHONE.xsd" />
+		</xsd:schema>
+
+		<xsd:schema targetNamespace="http://www.deppon.com/esb/header">
+			<xsd:include schemaLocation="ESBHeader.xsd" />
+		</xsd:schema>
+		<xsd:schema targetNamespace="http://www.deppon.com/esb/exception">
+			<xsd:include schemaLocation="CommonException.xsd" />
+		</xsd:schema>
+	</wsdl:types>
+
+
+	
+	<wsdl:message name="QueryWaybillByPhoneRequest">
+		<wsdl:part name="esbHeader" element="tns_header:esbHeader"></wsdl:part>
+		<wsdl:part element="tns_domain:queryWaybillByPhoneRequest" name="request" />
+	</wsdl:message>
+	<wsdl:message name="QueryWaybillByPhoneResponse">
+		<wsdl:part name="esbHeader" element="tns_header:esbHeader"></wsdl:part>
+		<wsdl:part element="tns_domain:queryWaybillByPhoneResponse" name="response" />
+	</wsdl:message>
+	
+	<wsdl:message name="ESBHeader">
+		<wsdl:part element="tns_header:esbHeader" name="header" />
+	</wsdl:message>
+
+	<wsdl:message name="CommonException">
+		<wsdl:part element="tns_exception:commonExceptionInfo" name="exception" />
+	</wsdl:message>
+
+	<wsdl:portType name="CCWaybillService">
+		
+		<wsdl:operation name="queryWaybillByPhone">
+			<wsdl:input message="tns:QueryWaybillByPhoneRequest" />
+			<wsdl:output message="tns:QueryWaybillByPhoneResponse" />
+			<wsdl:fault name="exception" message="tns:CommonException"></wsdl:fault>
+		</wsdl:operation>
+
+	</wsdl:portType>
+
+	<wsdl:binding name="CCWaybillServiceSOAP" type="tns:CCWaybillService">
+		<soap:binding style="document"
+			transport="http://schemas.xmlsoap.org/soap/http" />
+		<wsdl:operation name="queryWaybillByPhone">
+			<soap:operation
+				soapAction="http://www.deppon.com/foss/ccWaybillService/queryWaybillByPhone" />
+			<wsdl:input>
+				<soap:header use="literal" part="esbHeader" message="tns:QueryWaybillByPhoneRequest"></soap:header>
+				<soap:body use="literal" parts="request" />
+			</wsdl:input>
+			<wsdl:output>
+				<soap:header use="literal" part="esbHeader" message="tns:QueryWaybillByPhoneResponse"></soap:header>
+				<soap:body use="literal" parts="response" />
+			</wsdl:output>
+		</wsdl:operation>
+	</wsdl:binding>
+	<wsdl:service name="FossToCCWaybillService">
+		<wsdl:port binding="tns:CCWaybillServiceSOAP" name="FossToCCWaybillServiceSOAP">
+			<soap:address location="http://www.example.org/" />
+		</wsdl:port>
+	</wsdl:service>
+</wsdl:definitions>

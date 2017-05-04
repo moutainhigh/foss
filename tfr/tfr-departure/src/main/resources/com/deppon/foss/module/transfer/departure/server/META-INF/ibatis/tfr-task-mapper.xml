@@ -1,0 +1,441 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 定时任务 -->
+<mapper namespace="tfr-task">
+   <resultMap id="WayBillRefershResultMap"
+		type="com.deppon.foss.module.transfer.departure.api.shared.dto.WayBillRefershDTO">
+		<result column="waybill_no" property="waybillNo" />
+		<result column="SERIAL_NO" property="serialNo" />
+		<result column="ORIG_ORG_CODE" property="origOrgCode" />
+		<result column="DEST_ORG_CODE" property="destOrgCode" />
+		<result column="actual_depart_time" property="actualDepartTime" />
+		<result column="actual_arrive_time" property="actualArriveTime" />
+		<result column="vehicle_no" property="vehicleNo" />
+		<result column="be_scan_instock" property="beScanInstock" />
+		<result column="goods_state" property="goodsState" />
+		<result column="be_car_load" property="beCarLoad" />
+		<result column="bill_no" property="billNo" />
+	</resultMap>
+	<resultMap id="HandoverRefershResultMap"
+		type="com.deppon.foss.module.transfer.departure.api.shared.dto.WayBillRefershDTO">
+		<result column="waybill_no" property="waybillNo" />
+		<result column="SERIAL_NO" property="serialNo" />
+		<result column="ORIG_ORG_CODE" property="origOrgCode" />
+		<result column="actual_depart_time" property="actual_depart_time" />
+		<result column="vehicle_no" property="vehicleNo" />
+	</resultMap>
+	
+	<resultMap id="HandoverResultMap"
+		type="com.deppon.foss.module.transfer.departure.api.shared.dto.HandoverRefershDTO">
+		<result column="handover_no" property="handoverNo" />
+		<result column="vehicle_no" property="vehicleNo" />
+		<result column="orig_org_code" property="origOrgCode" />
+		<result column="dest_org_code" property="destOrgCode" />
+		<result column="handover_states" property="handoverStates" />
+		<result column="handover_type" property="handoverType" />
+		<result column="bill_level" property="billLevel" />
+	</resultMap>
+	
+	<!-- 任务车辆明绑定-->
+	<resultMap id="TruckActionDetailResultMap"
+		type="com.deppon.foss.module.transfer.departure.api.shared.domain.TruckActionDetailEntity">
+		<id column="ID" property="id" />
+		<result column="BUND_TYPE" property="bundType" />
+		<result column="TRUCK_TASK_DETAIL_ID" property="truckTaskDetailId" />
+		<result column="STATUS" property="status" />
+		<result column="CREATE_TIME" property="createTime" />
+		<result column="dest_org_code" property="destOrgCode" />
+		<result column="be_car_load" property="beCarLoad" />
+		<result column="plan_arrive_time" property="planArriveTime" />
+		<result column="plan_depart_time" property="planDepartTime" />
+		<result column="actual_depart_time" property="actualDepartTime" />
+		<result column="vehicle_owner_type" property="vehicleOwnerType" />
+		<result column="runing_times" property="runingTimes" />
+		<result column="actual_arrive_time" property="actualArriveTime"/>
+	</resultMap>
+	
+	<resultMap id="truckTaskDetailResultMap" type="com.deppon.foss.module.transfer.departure.api.shared.domain.TruckTaskDetailEntity">
+		<result property="truckTaskDetailId" column="truckTaskDetailId"/>
+		<result property="vehicleNo" column="vehicleNo"/>
+		<result property="lineNo" column="lineNo"/>
+		<result property="businessType" column="businessType"/>
+		<result property="origOrgCode" column="origOrgCode"/>
+		<result property="destOrgCode" column="destOrgCode"/>
+		<result property="origOrgName" column="origOrgName"/>
+		<result property="destOrgName" column="destOrgName"/>
+		<result property="status" column="status"/>
+		<result property="createTime" column="createTime"/>
+		<result property="planDepartTime" column="planDepartTime"/>
+		<result property="actualDepartTime" column="actualDepartTime"/>
+		<result property="planArriveTime" column="planArriveTime"/>
+		<result property="actualArriveTime" column="actualArriveTime"/>
+		<result property="truckDepartId" column="truckDepartId"/>
+		<result property="truckArriveId" column="truckArriveId"/>
+		<result property="beCarLoad" column="beCarLoad"/>
+		<result property="vehicleOwnerType" column="vehicleOwnerType"/>
+		<result property="actualDepartType" column="actualDepartType"/>
+		<result property="manualDepartTime" column="manualDepartTime"/>
+		<result property="manualArriveTime" column="manualArriveTime"/>
+		<result property="loaderName" column="loaderName"/>
+		<result property="loaderCode" column="loaderCode"/>
+	</resultMap>
+	
+	<!--查询未完成状态绑定的，用于传到后台，更新运单的数据-->
+	<select id="queryDataForWaybillRefresh" resultMap="WayBillRefershResultMap"  parameterType="java.lang.String">
+		select lab.SERIAL_NO,
+    lab.waybill_no,taskdetail.actual_depart_time,taskdetail.actual_arrive_time,taskdetail.vehicle_no,han.ORIG_ORG_CODE,han.Dest_ORG_CODE,han.be_car_load
+    from tfr.t_opt_handoverbill_serialno lab,
+    tfr.T_OPT_HANDOVERBILL_DETAIL hdetail,
+    tfr.T_OPT_HANDOVERBILL han,
+    tfr.T_OPT_TRUCK_TASK_BILL taskbill,
+    tfr.T_OPT_TRUCK_TASK_DETAIL taskdetail
+    where lab.WAYBILL_NO = hdetail.waybill_no and lab.handoverbill_no = hdetail.handover_no
+    and hdetail.HANDOVER_NO = han.HANDOVER_NO
+    and han.HANDOVER_NO = taskbill.BILL_NO
+    and taskbill.TRUCK_TASK_DETAIL_ID = taskdetail.id
+    and taskdetail.id =  #{id}
+	</select>
+	
+	<!--根据卸车任务ID获得搞卸车任务对应的一些信息-->
+	<select id="queryUnloadInfoByUnloadId" resultMap="WayBillRefershResultMap"
+	 parameterType="java.lang.String">
+		select w.waybill_no, s.serial_no,  
+			nvl(nvl(wb.customer_pickup_org_code,w.dest_org_code),t.unload_org_code)  as ORIG_ORG_CODE,
+			be_scan_instock,goods_state,w.bill_no
+		  from tfr.t_opt_unload_task t
+		  left join tfr.t_opt_unload_waybill_detail w on w.unload_task_id = t.id
+		  left join tfr.t_opt_unload_serialno s on s.unload_waybill_detail_id = w.id
+		  left join pkp.t_srv_waybill wb on wb.waybill_no =w.waybill_no 
+      		and wb.customer_pickup_org_code=t.unload_org_code and wb.active='Y' 
+		  where t.id = #{id}
+		   and t.task_state = 'FINISHED'
+		   and s.goods_state in
+		       ('MORE','NORMAL', 'MORE_ENTRAINED', 'MORE_ALLOPATRY_ENTRAINED')
+	</select>
+	
+	<!--根据卸车任务ID获取相应的运单号-->
+	<select id="queryWaybillByUnloadId" resultType="java.lang.String"
+	 parameterType="java.lang.String">
+		select w.waybill_no
+		  from tfr.t_opt_unload_task t
+		  left join tfr.t_opt_unload_waybill_detail w on w.unload_task_id = t.id
+		  where t.id = #{id}
+		   and t.task_state = 'FINISHED'
+	</select>
+	
+	<!-- 更新交接单状态 -->
+	<!--查询未完成状态绑定的，用于传到后台，更新交接单的数据-->
+	<select id="queryDataForHandoverRefresh" resultMap="HandoverRefershResultMap"  parameterType="java.lang.String">
+		select taskbill.BILL_NO, actiondetail.status
+        from tfr.T_OPT_TRUCK_TASK_BILL     taskbill,
+          tfr.T_OPT_TRUCK_ACTION_DETAIL actiondetail
+   		 where taskbill.truck_task_detail_id = actiondetail.truck_task_detail_id
+		 and actiondetail.truck_task_detail_id =  #{id} 
+	</select>
+	
+	<sql id="TruckActionDetail_Column_List">
+		a.ID,
+		a.BUND_TYPE,
+		a.TRUCK_TASK_DETAIL_ID,
+		a.STATUS,
+		a.CREATE_TIME,
+		d.BE_CAR_LOAD,
+		d.dest_org_code,
+		d.plan_arrive_time,
+		d.plan_depart_time,
+		d.actual_depart_time,
+		d.actual_arrive_time,
+		d.vehicle_owner_type,
+		d.runing_times
+	</sql>
+	
+	<!-- 查询车辆绑定信息 -->
+	<select id="queryTruckActionDetail" resultMap="TruckActionDetailResultMap"
+		parameterType="com.deppon.foss.module.transfer.departure.api.shared.domain.TruckActionDetailEntity">
+		select
+		<include refid="TruckActionDetail_Column_List" />
+		from tfr.t_opt_truck_action_detail a 
+		left join tfr.t_opt_truck_task_detail d on a.truck_task_detail_id=d.id
+		<where> 
+			 <if test="job1!=null">
+				and job1 = #{job1}
+			 </if>
+			  <if test="job2!=null">
+				and job2 = #{job2}
+			 </if>
+			  <if test="job3!=null">
+				and job3 = #{job3}
+			 </if>
+			 <if test="job4!=null">
+				and job4 = #{job4}
+			 </if>
+			 <if test="job1!=null or job2!=null or job4!=null">
+				and BUND_TYPE in ('1','2','3','4')
+			 </if>
+			 <if test="job3!=null">
+				and BUND_TYPE in ('MANUAL','PDA')
+			 </if>
+			 <![CDATA[ and a.create_time>=trunc(sysdate)-3
+			 And Rownum<=5000]]>
+			 and  a.beupd is null
+		</where>
+		order by a.create_time
+	</select>
+	
+	<!-- 查询车辆绑定信息 -->
+	<select id="getHandoverByDetail" resultMap="HandoverResultMap"
+		parameterType="java.lang.String">
+		select b.BILL_NO as handover_no, h.HANDOVERBILL_STATE as handover_states,d.vehicle_no,d.orig_Org_Code,d.dest_Org_Code,h.handover_type,b.bill_level
+		  from tfr.T_OPT_TRUCK_TASK_BILL b, tfr.t_opt_handoverbill h,tfr.t_opt_truck_task_detail d
+		 where b.bill_no = h.handover_no and b.TRUCK_TASK_DETAIL_ID = d.id
+		 and b.TRUCK_TASK_DETAIL_ID = #{truckTaskDetail} 
+		 <!-- and bill_level='1' -->
+		 and b.bill_type='HANDOVER'
+		 and h.handoverbill_state not in (10,90) 
+	</select>
+	<!-- 依据车辆任务明细查询快递交接单信息 -->
+	<select id="getWKHandoverByDetail" resultMap="HandoverResultMap"
+		parameterType="java.lang.String">
+		<![CDATA[
+		select b.BILL_NO as handover_no,
+            Case h.HANDOVERSTATE
+                 When 'HAVE_PLACED' Then
+                       20
+                 When 'HAVE_DEPART' Then
+                      30
+                 When 'HAVE_ARRIVE' Then
+                      40
+                 When 'HAVE_STOCK' Then
+                      50
+                 Else
+                      90
+                  End
+	            as handover_states,
+	            d.vehicle_no,
+	            d.orig_Org_Code,
+	            d.dest_Org_Code,
+	            h.HANDOVERTYPE handover_type,
+	            b.bill_level
+       	from 	tfr.T_OPT_TRUCK_TASK_BILL   b,
+            	TFR.T_WK_TRF_BILL      h,
+            	tfr.t_opt_truck_task_detail d
+      	where b.bill_no = h.HANDOVERBILLNO
+		        and b.TRUCK_TASK_DETAIL_ID = d.id
+		        and b.TRUCK_TASK_DETAIL_ID =#{truckTaskDetail} 
+		        and b.bill_type = 'HANDOVER'
+		        and h.HANDOVERSTATE !='HAVE_CANLE'
+		]]>
+	</select>
+	
+	
+	<!-- 查询车辆绑定信息 -->
+	<select id="getVehicleAssembByDetail" resultType="java.lang.String"
+		parameterType="java.lang.String">
+		select BILL_NO from tfr.T_OPT_TRUCK_TASK_BILL
+		 where
+		 TRUCK_TASK_DETAIL_ID = #{truckTaskDetail} 
+		 and bill_level='1' 
+		 and bill_type='VEHICLEASSEMBLE'
+	</select>
+	
+	<!-- 通过车辆明细ID获取运单号-->
+	<select id="getWaybillNoByDetail" resultType="java.lang.String"
+		parameterType="java.lang.String">
+		select hdetail.waybill_no
+	    from  tfr.T_OPT_HANDOVERBILL_DETAIL hdetail,
+	    tfr.T_OPT_HANDOVERBILL han,
+	    tfr.T_OPT_TRUCK_TASK_BILL taskbill,
+	    tfr.T_OPT_TRUCK_TASK_DETAIL taskdetail
+	    where  hdetail.HANDOVER_NO = han.HANDOVER_NO
+	    and han.HANDOVER_NO = taskbill.BILL_NO
+	    and taskbill.TRUCK_TASK_DETAIL_ID = taskdetail.id
+	    and taskdetail.id =  #{truckTaskDetail} 
+	</select>
+	
+	
+	<!-- 定时任务 -->
+	<update id="autoCancle" parameterType="com.deppon.foss.module.transfer.departure.api.shared.dto.AutoTaskDTO">
+		<![CDATA[
+		update tfr.T_OPT_TRUCK_DEPART set STATUS=#{newStatus}  where STATUS=#{oldStatus} and ACTIVE_TIME<#{currentTime}
+		]]>
+	</update>
+	
+	<!-- 更新任务状态表的状态 -->
+	<!-- 取消申请 -->
+	<update id="updateActionDetail"
+		parameterType="com.deppon.foss.module.transfer.departure.api.shared.domain.TruckActionDetailEntity">
+		UPDATE tfr.T_OPT_TRUCK_ACTION_DETAIL
+		<set>
+			<if test="job1!=null">
+				job1 = #{job1}
+			</if>
+			<if test="job2!=null">
+				job2 = #{job2}
+			</if>
+			<if test="job3!=null">
+				job3 = #{job3}
+			</if>
+			<if test="job4!=null">
+				job4 = #{job4}
+			</if>
+		</set>
+		WHERE ID = #{id}
+	</update>
+	
+	<!-- 更新GPS任务 -->
+	<update id="updateGpsTask"
+		parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.TruckGPSTaskEntity">
+		UPDATE tfr.T_OPT_TRUCK_GPS_TASK
+		<set>
+			<if test="beSuccess!=null">
+				BE_SUCCESS = #{beSuccess,jdbcType=VARCHAR}
+			</if>
+		</set>
+		WHERE truck_task_detail_id = #{truckTaskDetailId,jdbcType=VARCHAR}
+	</update>
+	
+	<!-- 定时任务 -->
+	<insert id="insertTempForPKP" parameterType="com.deppon.foss.module.transfer.departure.api.shared.dto.AutoTaskDTO">
+		insert into PKP.T_SRV_VEHICLE_ARRIVE_TEMP
+		  (id, T_OPT_TRUCK_TASK_DETAIL_ID, TASK_DETAIL_TYPE,STOCK_ORG_CODE)
+		    values
+		  (#{id,jdbcType=VARCHAR}, #{taskDetailId,jdbcType=VARCHAR}, #{taskDetailType,jdbcType=VARCHAR} ,#{stockOrgCode,jdbcType=VARCHAR})
+	</insert>
+	<!--单件出入库-->
+	<insert id="insertIOTempForPKP" parameterType="com.deppon.foss.module.transfer.departure.api.shared.dto.AutoTaskDTO">
+		insert into PKP.T_SRV_VEHICLE_ARRIVE_TEMP
+		  (id, T_OPT_TRUCK_TASK_DETAIL_ID, TASK_DETAIL_TYPE, IO_QTY, STOCK_ORG_CODE)
+		    values
+		  (#{id}, #{taskDetailId}, #{taskDetailType}, #{ioQty}, #{stockOrgCode})
+	</insert>
+	<!--更改运单到达部门-->
+	<insert id="insertONTempForPKP" parameterType="com.deppon.foss.module.transfer.departure.api.shared.dto.AutoTaskDTO">
+		insert into PKP.T_SRV_VEHICLE_ARRIVE_TEMP
+		  (id, T_OPT_TRUCK_TASK_DETAIL_ID, TASK_DETAIL_TYPE)
+		    values
+		  (#{id}, #{taskDetailId}, #{taskDetailType})
+	</insert>
+	<!-- 通过交接单号更改发车计划的状态 -->
+	<update id="updateTruckDepartPlanDetailStatus" parameterType="com.deppon.foss.module.transfer.departure.api.shared.dto.HandoverRefershDTO">
+		<if test="billType=='HANDOVER'">
+		update tfr.T_OPT_TRUCK_DEPART_PLAN_DETAIL set has_left='Y' 
+		where id in (select TruckDepartPlanDetail_ID from tfr.T_OPT_HANDOVERBILL where HANDOVER_NO=#{handoverNo})
+		</if>
+		<if test="billType=='VEHICLEASSEMBLE'">
+		update tfr.T_OPT_TRUCK_DEPART_PLAN_DETAIL set has_left='Y' 
+		where id in (select TruckDepartPlanDetail_ID from tfr.T_OPT_VEHICLEASSEMBLEBILL where VEHICLEASSEMBLE_NO=#{handoverNo})
+		</if>
+	</update>
+	<!-- 通过交接单号更改发车计划的状态 (取消)-->
+	<update id="updateTruckDepartPlanNotDetailStatus" parameterType="com.deppon.foss.module.transfer.departure.api.shared.dto.HandoverRefershDTO">
+		<if test="billType=='HANDOVER'">
+		update tfr.T_OPT_TRUCK_DEPART_PLAN_DETAIL set has_left='N' 
+		where id in (select TruckDepartPlanDetail_ID from tfr.T_OPT_HANDOVERBILL where HANDOVER_NO=#{handoverNo})
+		</if>
+		<if test="billType=='VEHICLEASSEMBLE'">
+		update tfr.T_OPT_TRUCK_DEPART_PLAN_DETAIL set has_left='N' 
+		where id in (select TruckDepartPlanDetail_ID from tfr.T_OPT_VEHICLEASSEMBLEBILL where VEHICLEASSEMBLE_NO=#{handoverNo})
+		</if>
+	</update>
+	
+	<!-- 通过任务车辆明细ID取得该外请车或者整车的未结清金额 -->
+	<select id="getLeadOrLoadFeeByTruckDetailId" resultType="Long" parameterType="com.deppon.foss.module.transfer.arrival.api.shared.domain.QueryArrivalEntity">
+		select count(1)
+		from tfr.t_opt_truck_task_detail detail
+		left join tfr.t_opt_truck_arrive arr
+		on detail.truck_arrive_id = arr.id
+		left join tfr.t_opt_truck_task ta
+		on detail.truck_task_id = ta.id
+		<!-- left join stl.t_stl_bill_payable pay
+		on ta.charging_assmeble_no = pay.payable_no -->
+		left join tfr.t_opt_certificatebag_action bag
+		on ta.id = bag.truck_task_id
+		<!-- left join tfr.t_opt_truck_depart de
+    	on detail.truck_depart_id = de.id -->
+<!-- 		 left join tfr.t_opt_truck_task_bill bi
+        on de.id = bi.truck_task_detail_id -->
+	</select>
+	
+   <!-- 根据任务车辆明细ID查询任务车辆明细 -->
+	<select id="queryTruckTaskDetailById" parameterType="String" resultMap="truckTaskDetailResultMap">
+	   select   
+		  td.ID                      truckTaskDetailId,
+		  td.VEHICLE_NO              vehicleNo,
+		  td.LINE_NAME               lineNo,
+		  td.BUSINESS_TYPE           businessType,
+		  td.ORIG_ORG_CODE           origOrgCode,
+		  td.DEST_ORG_CODE           destOrgCode,
+		  td.STATUS                  status,
+		  td.CREATE_TIME             createTime,
+		  td.TRUCK_DEPART_ID         truckDepartId,
+		  td.TRUCK_ARRIVE_ID         truckArriveId,
+		 -- td.TRUCK_TYPE              truckType,
+		  td.PLAN_DEPART_TIME        planDepartTime,
+		  td.ACTUAL_DEPART_TIME      actualDepartTime,
+		  td.PLAN_ARRIVE_TIME        planArriveTime,
+		  td.ACTUAL_ARRIVE_TIME      actualArriveTime,
+		  td.ORIG_ORG_NAME           origOrgName,
+		  td.DEST_ORG_NAME           destOrgName,
+		  td.BE_CAR_LOAD             beCarLoad,
+		  td.VEHICLE_ORG_CODE        vehicleOrgCode,
+		  td.VEHICLE_ORG_NAME        vehicleOrgName,
+		  td.VEHICLE_OWNER_TYPE      vehicleOwnerType,
+		  td.LOADER_NAME             loaderName,
+		  td.LOADER_CODE             loaderCode,
+		  td.ACTUAL_DEPART_TYPE      actualDepartType,
+		  td.MANUAL_DEPART_TIME      manualDepartTime,
+		  td.MANUAL_ARRIVE_TIME      manualArriveTime
+	   from tfr.t_Opt_Truck_Task_Detail td 
+		 <where>
+		  	td.id=#{id}
+		 </where> 
+	</select>
+		<!-- 更改数据前，先更改标识符 -->
+	<update id="updateNotModify" parameterType="String">
+		update tfr.T_OPT_TRUCK_ACTION_DETAIL tt set tt.beupd='1'
+        where tt.beupd is null  and tt.id=#{id}
+	</update>
+	
+		<!-- 更改数据后，返回标识符 -->
+	<update id="updateModify" parameterType="String">
+		update  tfr.T_OPT_TRUCK_ACTION_DETAIL tt  set tt.beupd=null
+		where tt.beupd='1' and tt.id=#{id}
+	</update>
+	
+	<!-- 根据明细ID查询交接单号 -->
+	<select id="queryEcsLongBill" resultType="java.lang.String"
+		parameterType="java.lang.String">
+		select /** 根据明细ID查询交接单号  author 332209 **/ 
+		 	tb.bill_no
+		 	from tfr.t_opt_truck_task_detail td
+		 	join tfr.t_opt_truck_task_bill tb
+			on tb.truck_task_detail_id = td.id
+			and tb.bill_level = '1'
+		 	join tfr.t_wk_trf_bill wb
+			on wb.handoverbillno = tb.bill_no
+			and wb.handovertype = 'LONG_DISTANCE_HANDOVER'
+		where td.id = #{truckTaskDetail}
+	</select>
+
+	<!-- 查询整车入库信息 -->
+	<select id="pushForWholeVehicle" resultMap="TruckActionDetailResultMap"
+		parameterType="com.deppon.foss.module.transfer.departure.api.shared.domain.TruckActionDetailEntity">
+		select
+		<include refid="TruckActionDetail_Column_List" />
+		from tfr.t_opt_truck_action_detail a
+		left join tfr.t_opt_truck_task_detail d on a.truck_task_detail_id = d.id
+		<where>
+			d.be_car_load = 'Y'
+			<if test="job3!=null">
+				and job3 = #{job3}
+			</if>
+			and a.BUND_TYPE = '2'
+			and a.beupd is null
+			<![CDATA[and a.create_time >= #{createTime}
+			And Rownum<=200]]>
+		</where>
+		order by a.create_time desc
+	</select>
+</mapper>

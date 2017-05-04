@@ -1,0 +1,1336 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.platform.fieldStockMovtion">
+
+  <resultMap id="fieldStockMovtionDetailMap" type="com.deppon.foss.module.transfer.platform.api.shared.domain.FieldStockMovtionDetailEntity">
+    <result property="waybillNo" column="waybill_no"/>
+    <result property="transportType" column="product_name"/>
+    <result property="pickupMethod" column="receive_method"/>
+    <result property="goodsQtyTotal" column="goods_qty_total"/>
+    <result property="goodsWeightTotal" column="goods_weight_total"/>
+    <result property="goodsVolumeTotal" column="goods_volume_total"/>
+    <result property="currentGoodsQty" column="current_qty"/>
+    <result property="currentWeight" column="current_weight"/>
+    <result property="currentVolume" column="current_volume"/>
+    <result property="transferCenterName" column="transferCenterName"/>
+    <result property="location" column="location"/>
+    <result property="vehicleNo" column="vehicle_no"/>
+    <result property="lastOrgName" column="last_org_name"/>
+    <result property="nextOrgName" column="next_org_name"/>
+  </resultMap>
+
+ <!-- 到达未卸车(包括长途短途) -->
+<select id="queryArrivedUnload" parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.QueryConditionStockMovtionDto" resultMap="fieldStockMovtionDetailMap">
+		
+		SELECT/*到达未卸车(包括长途短途)*/
+		  /*长途*/
+		 w.waybill_no waybill_no,
+		 MAX(p.name) product_name,
+		 MAX(CASE w.receive_method
+		       WHEN 'SELF_PICKUP' THEN
+		        '自提'
+		       WHEN 'INNER_PICKUP' THEN
+		        '内部带货自提'
+		       WHEN 'DELIVER_UP' THEN
+		        '送货上楼'
+		       WHEN 'DELIVER' THEN
+		        '免费送货'
+		       WHEN 'DELIVER_NOUP' THEN
+		        '送货（不含上楼）'
+		       WHEN 'SELF_PICKUP_FREE_AIR' THEN
+		        '免费自提(空运)'
+		       WHEN 'DELIVER_INGA_AIR' THEN
+		        '送货进仓(空运)'
+		       WHEN 'DELIVER_UP_AIR' THEN
+		        '送货上楼(空运)'
+		       WHEN 'DELIVER_AIR' THEN
+		        '免费送货(空运)'
+		       WHEN 'AIRPORT_PICKUP' THEN
+		        '机场自提'
+		       WHEN 'DELIVER_NOUP_AIR' THEN
+		        '空运送货（不含上楼)'
+		       WHEN 'SELF_PICKUP_AIR' THEN
+		        '自提（不含机场自提)'
+		       ELSE
+		        'other'
+		     END) receive_method,
+		 MAX(w.goods_qty_total) goods_qty_total,
+		 MAX(w.goods_weight_total) goods_weight_total,
+		 MAX(w.goods_volume_total) goods_volume_total,
+		 COUNT(1) current_qty,
+		 round(MAX(w.goods_weight_total) * COUNT(1) / MAX(w.goods_qty_total), 3) current_weight,
+		 round(MAX(w.goods_volume_total) * COUNT(1) / MAX(w.goods_qty_total), 3) current_volume,
+		 td.vehicle_no vehicle_no,
+		 MAX(td.dest_org_name) transfercentername,
+		 MAX(td.orig_org_name) last_org_name
+		  FROM tfr.t_opt_truck_task_detail td
+		 INNER JOIN tfr.t_opt_truck_task_bill tb
+		    ON td.id = tb.truck_task_detail_id
+		   AND tb.assign_state = 'UNASSIGN'
+		   AND tb.bill_level = '1'
+		   AND tb.bill_type = 'VEHICLEASSEMBLE'
+		 INNER JOIN tfr.t_opt_vehicleassemblebill v
+		    ON v.vehicleassemble_no = tb.bill_no
+		 INNER JOIN tfr.t_opt_vehicleassemble_detail vd
+		    ON vd.vehicleassemblebill_id = v.id
+		 INNER JOIN tfr.t_opt_handoverbill h
+		    ON h.handover_no = vd.handover_no
+		   AND h.handoverbill_state = 40
+		 INNER JOIN tfr.t_opt_handoverbill_detail hd
+		    ON hd.handover_no = h.handover_no
+		 INNER JOIN tfr.t_opt_handoverbill_serialno hs
+		    ON hs.handoverbill_no = hd.handover_no
+		   AND hs.waybill_no = hd.waybill_no
+		 INNER JOIN pkp.t_srv_waybill w
+		    ON w.waybill_no = hd.waybill_no
+		   AND w.active = 'Y'
+		 LEFT JOIN pkp.t_srv_product p
+		    ON p.code = w.product_code
+		   AND p.active = 'Y'
+		 WHERE td.dest_org_code = #{origOrgCode}
+		   AND td.status = 'ARRIVED'
+		   AND td.actual_arrive_time >= SYSDATE - 2 /*业务默认到达两天内一定卸车*/
+		   AND td.be_car_load = 'N' /*剔除整车*/
+		   AND NOT EXISTS /*不存在车辆到达后，有本部门的入库记录*/
+		 (SELECT /*+full(s)*/1
+		          FROM tfr.t_opt_in_stock s
+		         WHERE s.waybill_no = hs.waybill_no
+		           AND s.serial_no = hs.serial_no
+		           AND s.org_code = td.dest_org_code
+		           AND s.in_stock_time >= td.actual_arrive_time)
+		 GROUP BY w.waybill_no, td.vehicle_no
+		UNION ALL /*短途*/
+		SELECT w.waybill_no waybill_no,
+		       MAX(p.name) product_name,
+		       MAX(CASE w.receive_method
+		             WHEN 'SELF_PICKUP' THEN
+		              '自提'
+		             WHEN 'INNER_PICKUP' THEN
+		              '内部带货自提'
+		             WHEN 'DELIVER_UP' THEN
+		              '送货上楼'
+		             WHEN 'DELIVER' THEN
+		              '免费送货'
+		             WHEN 'DELIVER_NOUP' THEN
+		              '送货（不含上楼）'
+		             WHEN 'SELF_PICKUP_FREE_AIR' THEN
+		              '免费自提(空运)'
+		             WHEN 'DELIVER_INGA_AIR' THEN
+		              '送货进仓(空运)'
+		             WHEN 'DELIVER_UP_AIR' THEN
+		              '送货上楼(空运)'
+		             WHEN 'DELIVER_AIR' THEN
+		              '免费送货(空运)'
+		             WHEN 'AIRPORT_PICKUP' THEN
+		              '机场自提'
+		             WHEN 'DELIVER_NOUP_AIR' THEN
+		              '空运送货（不含上楼)'
+		             WHEN 'SELF_PICKUP_AIR' THEN
+		              '自提（不含机场自提)'
+		             ELSE
+		              'other'
+		           END) receive_method,
+		       MAX(w.goods_qty_total) goods_qty_total,
+		       MAX(w.goods_weight_total) goods_weight_total,
+		       MAX(w.goods_volume_total) goods_volume_total,
+		       COUNT(1) current_qty,
+		       round(MAX(w.goods_weight_total) * COUNT(1) / MAX(w.goods_qty_total),
+		             3) current_weight,
+		       round(MAX(w.goods_volume_total) * COUNT(1) / MAX(w.goods_qty_total),
+		             3) current_volume,
+		       td.vehicle_no vehicle_no,
+		       MAX(td.dest_org_name) transfercentername,
+		       MAX(td.orig_org_name) last_org_name
+		  FROM tfr.t_opt_truck_task_detail td
+		 INNER JOIN tfr.t_opt_truck_task_bill tb
+		    ON td.id = tb.truck_task_detail_id
+		   AND tb.assign_state = 'UNASSIGN'
+		   AND tb.bill_level = '1'
+		   AND tb.bill_type = 'HANDOVER'
+		 INNER JOIN tfr.t_opt_handoverbill h
+		    ON h.handover_no = tb.bill_no
+		   AND h.handoverbill_state = 40
+		 INNER JOIN tfr.t_opt_handoverbill_detail hd
+		    ON hd.handover_no = h.handover_no
+		 INNER JOIN tfr.t_opt_handoverbill_serialno hs
+		    ON hs.handoverbill_no = hd.handover_no
+		   AND hs.waybill_no = hd.waybill_no
+		 INNER JOIN pkp.t_srv_waybill w
+		    ON w.waybill_no = hd.waybill_no
+		   AND w.active = 'Y'
+		 LEFT JOIN pkp.t_srv_product p
+		    ON p.code = w.product_code
+		   AND p.active = 'Y'
+		 WHERE td.dest_org_code = #{origOrgCode}
+		   AND td.status = 'ARRIVED'
+		   AND td.actual_arrive_time >= SYSDATE - 2 /*业务默认到达两天内一定卸车*/
+		   AND td.be_car_load = 'N' /*剔除整车*/
+		   AND NOT EXISTS /*不存在车辆到达后，有本部门的入库记录*/
+		 (SELECT /*+full(s)*/1
+		          FROM tfr.t_opt_in_stock s
+		         WHERE s.waybill_no = hs.waybill_no
+		           AND s.serial_no = hs.serial_no
+		           AND s.org_code = td.dest_org_code
+		           AND s.in_stock_time >= td.actual_arrive_time)
+		 GROUP BY w.waybill_no, td.vehicle_no
+</select>
+
+<!-- 计算外场到达未卸总票数、重量、体积 -->
+<select id="queryArrivedUnloadTotalVote" parameterType="Map" resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.FieldStockMovtionEntity">
+	     
+SELECT  /*计算外场到达未卸总票数重量、体积*/ 
+	  COUNT(1) arrivedVotes, 
+	  SUM(current_weight) arrivedWeight, 
+	  SUM(current_volume) arrivedVolume
+  FROM (SELECT /*长途*/
+         w.waybill_no waybill_no,
+         round(MAX(w.goods_weight_total) * COUNT(1) / MAX(w.goods_qty_total),
+               3) current_weight,
+         round(MAX(w.goods_volume_total) * COUNT(1) / MAX(w.goods_qty_total),
+               3) current_volume
+          FROM tfr.t_opt_truck_task_detail td
+         INNER JOIN tfr.t_opt_truck_task_bill tb
+            ON td.id = tb.truck_task_detail_id
+           AND tb.assign_state = 'UNASSIGN'
+           AND tb.bill_level = '1'
+           AND tb.bill_type = 'VEHICLEASSEMBLE'
+         INNER JOIN tfr.t_opt_vehicleassemblebill v
+            ON v.vehicleassemble_no = tb.bill_no
+         INNER JOIN tfr.t_opt_vehicleassemble_detail vd
+            ON vd.vehicleassemblebill_id = v.id
+         INNER JOIN tfr.t_opt_handoverbill h
+            ON h.handover_no = vd.handover_no
+           AND h.handoverbill_state = 40
+         INNER JOIN tfr.t_opt_handoverbill_detail hd
+            ON hd.handover_no = h.handover_no
+         INNER JOIN tfr.t_opt_handoverbill_serialno hs
+            ON hs.handoverbill_no = hd.handover_no
+           AND hs.waybill_no = hd.waybill_no
+         INNER JOIN pkp.t_srv_waybill w
+            ON w.waybill_no = hd.waybill_no
+           AND w.active = 'Y'
+         WHERE td.dest_org_code = #{orgCode}
+           AND td.status = 'ARRIVED'
+           AND td.actual_arrive_time >= SYSDATE - 2 /*业务默认到达两天内一定卸车*/
+           AND td.be_car_load = 'N' /*剔除整车*/
+           AND NOT EXISTS /*不存在车辆到达后，有本部门的入库记录*/
+         (SELECT /*+full(s)*/1
+                  FROM tfr.t_opt_in_stock s
+                 WHERE s.waybill_no = hs.waybill_no
+                   AND s.serial_no = hs.serial_no
+                   AND s.org_code = td.dest_org_code
+                   AND s.in_stock_time >= td.actual_arrive_time)
+         GROUP BY w.waybill_no, td.vehicle_no
+        UNION ALL /*短途*/
+        SELECT w.waybill_no waybill_no,
+               round(MAX(w.goods_weight_total) * COUNT(1) /
+                     MAX(w.goods_qty_total),
+                     3) current_weight,
+               round(MAX(w.goods_volume_total) * COUNT(1) /
+                     MAX(w.goods_qty_total),
+                     3) current_volume
+          FROM tfr.t_opt_truck_task_detail td
+         INNER JOIN tfr.t_opt_truck_task_bill tb
+            ON td.id = tb.truck_task_detail_id
+           AND tb.assign_state = 'UNASSIGN'
+           AND tb.bill_level = '1'
+           AND tb.bill_type = 'HANDOVER'
+         INNER JOIN tfr.t_opt_handoverbill h
+            ON h.handover_no = tb.bill_no
+           AND h.handoverbill_state = 40
+         INNER JOIN tfr.t_opt_handoverbill_detail hd
+            ON hd.handover_no = h.handover_no
+         INNER JOIN tfr.t_opt_handoverbill_serialno hs
+            ON hs.handoverbill_no = hd.handover_no
+           AND hs.waybill_no = hd.waybill_no
+         INNER JOIN pkp.t_srv_waybill w
+            ON w.waybill_no = hd.waybill_no
+           AND w.active = 'Y'
+         WHERE td.dest_org_code = #{orgCode}
+           AND td.status = 'ARRIVED'
+           AND td.actual_arrive_time >= SYSDATE - 2 /*业务默认到达两天内一定卸车*/
+           AND td.be_car_load = 'N' /*剔除整车*/
+           AND NOT EXISTS /*不存在车辆到达后，有本部门的入库记录*/
+         (SELECT /*+full(s)*/1
+                  FROM tfr.t_opt_in_stock s
+                 WHERE s.waybill_no = hs.waybill_no
+                   AND s.serial_no = hs.serial_no
+                   AND s.org_code = td.dest_org_code
+                   AND s.in_stock_time >= td.actual_arrive_time)
+         GROUP BY w.waybill_no, td.vehicle_no)
+  
+</select>
+
+<!-- 卸车中 -->
+   <select id="queryUnLoading" parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.QueryConditionStockMovtionDto" resultMap="fieldStockMovtionDetailMap">
+       SELECT /*卸车中长途*/
+		 W.WAYBILL_NO WAYBILL_NO,
+		 MAX(P.NAME) PRODUCT_NAME,
+         MAX( 
+          CASE W.RECEIVE_METHOD WHEN 'SELF_PICKUP' THEN '自提'
+           WHEN 'INNER_PICKUP' THEN '内部带货自提'
+           WHEN 'DELIVER_UP' THEN '送货上楼'
+           WHEN 'DELIVER' THEN '免费送货'
+           WHEN 'DELIVER_NOUP' THEN '送货（不含上楼）'
+           WHEN 'SELF_PICKUP_FREE_AIR' THEN '免费自提(空运)'
+           WHEN 'DELIVER_INGA_AIR' THEN '送货进仓(空运)'
+           WHEN 'DELIVER_UP_AIR' THEN '送货上楼(空运)'
+           WHEN 'DELIVER_AIR' THEN '免费送货(空运)'
+           WHEN 'AIRPORT_PICKUP' THEN '机场自提'
+           WHEN 'DELIVER_NOUP_AIR' THEN '空运送货（不含上楼)'
+           WHEN 'SELF_PICKUP_AIR' THEN '自提（不含机场自提)'
+           ELSE 'other' END) RECEIVE_METHOD,
+		 MAX(W.GOODS_QTY_TOTAL) GOODS_QTY_TOTAL,
+		 MAX(W.GOODS_WEIGHT_TOTAL) GOODS_WEIGHT_TOTAL,
+		 MAX(W.GOODS_VOLUME_TOTAL) GOODS_VOLUME_TOTAL,
+		 COUNT(1) CURRENT_QTY,
+		 ROUND(MAX(W.GOODS_WEIGHT_TOTAL) * COUNT(1) / MAX(W.GOODS_QTY_TOTAL), 3) CURRENT_WEIGHT,
+		 ROUND(MAX(W.GOODS_VOLUME_TOTAL) * COUNT(1) / MAX(W.GOODS_QTY_TOTAL), 3) CURRENT_VOLUME,
+		 T.VEHICLE_NO VEHICLE_NO
+		  FROM TFR.T_OPT_UNLOAD_TASK T
+		 INNER JOIN TFR.T_OPT_UNLOAD_BILL_DETAIL UBD
+		    ON UBD.UNLOAD_TASK_ID = T.ID
+		   AND UBD.BILL_TYPE = 'VEHICLEASSEMBLE'
+		 INNER JOIN TFR.T_OPT_VEHICLEASSEMBLEBILL V
+		    ON V.VEHICLEASSEMBLE_NO = UBD.BILL_NO
+		 INNER JOIN TFR.T_OPT_VEHICLEASSEMBLE_DETAIL VD
+		    ON VD.VEHICLEASSEMBLEBILL_ID = V.ID
+		 INNER JOIN TFR.T_OPT_HANDOVERBILL H
+		    ON H.HANDOVER_NO = VD.HANDOVER_NO
+		   AND H.BE_CAR_LOAD = 'N' /*剔除整车*/
+		 INNER JOIN TFR.T_OPT_HANDOVERBILL_DETAIL HD
+		    ON HD.HANDOVER_NO = H.HANDOVER_NO
+		 INNER JOIN TFR.T_OPT_HANDOVERBILL_SERIALNO HS
+		    ON HS.HANDOVERBILL_NO = HD.HANDOVER_NO
+		   AND HS.WAYBILL_NO = HD.WAYBILL_NO
+		 INNER JOIN PKP.T_SRV_WAYBILL W
+		    ON W.WAYBILL_NO = HD.WAYBILL_NO
+		   AND W.ACTIVE = 'Y'
+		 LEFT JOIN PKP.T_SRV_PRODUCT P
+		    ON P.CODE = W.PRODUCT_CODE
+		   AND P.ACTIVE = 'Y'  
+		 WHERE T.UNLOAD_ORG_CODE = #{origOrgCode,jdbcType=VARCHAR}
+		   AND T.UNLOAD_START_TIME >= SYSDATE - 1 /*业务默认卸车开始一天内一定结束卸车*/
+		   AND T.TASK_STATE = 'UNLOADING'
+		   <if test="waybillNo!=null and waybillNo!=''">
+		     AND W.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+		   </if>
+		   <if test="productCode!=null and productCode!=''">
+             AND W.PRODUCT_CODE =#{productCode,jdbcType=VARCHAR}
+		   </if>
+		   AND NOT EXISTS /*不存在卸车开始后，有本部门的入库记录*/
+		 (SELECT /*+full(s)*/1
+		          FROM TFR.T_OPT_IN_STOCK S
+		         WHERE S.WAYBILL_NO = HS.WAYBILL_NO
+		           AND S.SERIAL_NO = HS.SERIAL_NO
+		           AND S.ORG_CODE = T.UNLOAD_ORG_CODE
+		           AND S.IN_STOCK_TIME >= T.UNLOAD_START_TIME)
+		 GROUP BY W.WAYBILL_NO, T.VEHICLE_NO
+		UNION ALL /*短途*/
+		SELECT W.WAYBILL_NO WAYBILL_NO,
+		       MAX(P.NAME) PRODUCT_NAME,
+		       MAX( 
+	           CASE W.RECEIVE_METHOD WHEN 'SELF_PICKUP' THEN '自提'
+	            WHEN 'INNER_PICKUP' THEN '内部带货自提'
+	            WHEN 'DELIVER_UP' THEN '送货上楼'
+	            WHEN 'DELIVER' THEN '免费送货'
+	            WHEN 'DELIVER_NOUP' THEN '送货（不含上楼）'
+	            WHEN 'SELF_PICKUP_FREE_AIR' THEN '免费自提(空运)'
+	            WHEN 'DELIVER_INGA_AIR' THEN '送货进仓(空运)'
+	            WHEN 'DELIVER_UP_AIR' THEN '送货上楼(空运)'
+	            WHEN 'DELIVER_AIR' THEN '免费送货(空运)'
+	            WHEN 'AIRPORT_PICKUP' THEN '机场自提'
+	            WHEN 'DELIVER_NOUP_AIR' THEN '空运送货（不含上楼)'
+	            WHEN 'SELF_PICKUP_AIR' THEN '自提（不含机场自提)'
+	            ELSE 'other' END) RECEIVE_METHOD,
+		       MAX(W.GOODS_QTY_TOTAL) GOODS_QTY_TOTAL,
+		       MAX(W.GOODS_WEIGHT_TOTAL) GOODS_WEIGHT_TOTAL,
+		       MAX(W.GOODS_VOLUME_TOTAL) GOODS_VOLUME_TOTAL,
+		       COUNT(1) CURRENT_QTY,
+		       ROUND(MAX(W.GOODS_WEIGHT_TOTAL) * COUNT(1) / MAX(W.GOODS_QTY_TOTAL),
+		             3) CURRENT_WEIGHT,
+		       ROUND(MAX(W.GOODS_VOLUME_TOTAL) * COUNT(1) / MAX(W.GOODS_QTY_TOTAL),
+		             3) CURRENT_VOLUME,
+		       T.VEHICLE_NO VEHICLE_NO
+		  FROM TFR.T_OPT_UNLOAD_TASK T
+		 INNER JOIN TFR.T_OPT_UNLOAD_BILL_DETAIL UBD
+		    ON UBD.UNLOAD_TASK_ID = T.ID
+		   AND UBD.BILL_TYPE = 'HANDOVER'
+		 INNER JOIN TFR.T_OPT_HANDOVERBILL H
+		    ON H.HANDOVER_NO = UBD.BILL_NO
+		   AND H.BE_CAR_LOAD = 'N' /*剔除整车*/
+		 INNER JOIN TFR.T_OPT_HANDOVERBILL_DETAIL HD
+		    ON HD.HANDOVER_NO = H.HANDOVER_NO
+		 INNER JOIN PKP.T_SRV_WAYBILL W
+		    ON W.WAYBILL_NO = HD.WAYBILL_NO
+		   AND W.ACTIVE = 'Y'
+		 INNER JOIN PKP.T_SRV_PRODUCT P
+		    ON P.CODE = W.PRODUCT_CODE
+		   AND P.ACTIVE = 'Y'
+		 INNER JOIN TFR.T_OPT_HANDOVERBILL_SERIALNO HS
+		    ON HS.HANDOVERBILL_NO = HD.HANDOVER_NO
+		   AND HS.WAYBILL_NO = HD.WAYBILL_NO
+		 WHERE T.UNLOAD_ORG_CODE = #{origOrgCode,jdbcType=VARCHAR}
+		   AND T.UNLOAD_START_TIME >= SYSDATE - 1 /*业务默认卸车开始一天内一定结束卸车*/
+		   AND T.TASK_STATE = 'UNLOADING'
+		    <if test="waybillNo!=null and waybillNo!=''">
+		     AND W.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+		   </if>
+		   <if test="productCode!=null and productCode!=''">
+             AND W.PRODUCT_CODE =#{productCode,jdbcType=VARCHAR}
+		   </if>
+		   AND NOT EXISTS /*不存在卸车开始后，有本部门的入库记录*/
+		 (SELECT /*+full(s)*/1
+		          FROM TFR.T_OPT_IN_STOCK S
+		         WHERE S.WAYBILL_NO = HS.WAYBILL_NO
+		           AND S.SERIAL_NO = HS.SERIAL_NO
+		           AND S.ORG_CODE = T.UNLOAD_ORG_CODE
+		           AND S.IN_STOCK_TIME >= T.UNLOAD_START_TIME)
+		 GROUP BY W.WAYBILL_NO, T.VEHICLE_NO
+    UNION ALL
+	SELECT /*集中接货*/
+	 W.WAYBILL_NO WAYBILL_NO,
+	 MAX(P.NAME) PRODUCT_NAME,
+	 MAX( 
+      CASE W.RECEIVE_METHOD WHEN 'SELF_PICKUP' THEN '自提'
+       WHEN 'INNER_PICKUP' THEN '内部带货自提'
+       WHEN 'DELIVER_UP' THEN '送货上楼'
+       WHEN 'DELIVER' THEN '免费送货'
+       WHEN 'DELIVER_NOUP' THEN '送货（不含上楼）'
+       WHEN 'SELF_PICKUP_FREE_AIR' THEN '免费自提(空运)'
+       WHEN 'DELIVER_INGA_AIR' THEN '送货进仓(空运)'
+       WHEN 'DELIVER_UP_AIR' THEN '送货上楼(空运)'
+       WHEN 'DELIVER_AIR' THEN '免费送货(空运)'
+       WHEN 'AIRPORT_PICKUP' THEN '机场自提'
+       WHEN 'DELIVER_NOUP_AIR' THEN '空运送货（不含上楼)'
+       WHEN 'SELF_PICKUP_AIR' THEN '自提（不含机场自提)'
+       ELSE 'other' END) RECEIVE_METHOD,
+	 MAX(W.GOODS_QTY_TOTAL) GOODS_QTY_TOTAL,
+	 MAX(W.GOODS_WEIGHT_TOTAL) GOODS_WEIGHT_TOTAL,
+	 MAX(W.GOODS_VOLUME_TOTAL) GOODS_VOLUME_TOTAL,
+	 COUNT(1) CURRENT_QTY,
+	 ROUND(MAX(W.GOODS_WEIGHT_TOTAL) * COUNT(1) / MAX(W.GOODS_QTY_TOTAL), 3) CURRENT_WEIGHT,
+	 ROUND(MAX(W.GOODS_VOLUME_TOTAL) * COUNT(1) / MAX(W.GOODS_QTY_TOTAL), 3) CURRENT_VOLUME,
+	 T.VEHICLE_NO VEHICLE_NO
+	  FROM TFR.T_OPT_UNLOAD_TASK T
+	 INNER JOIN TFR.T_OPT_UNLOAD_BILL_DETAIL UBD
+	    ON UBD.UNLOAD_TASK_ID = T.ID
+	   AND UBD.BILL_TYPE = 'PICKUP'
+	 INNER JOIN PKP.T_SRV_STAY_HANDOVER H
+	    ON H.HANDOVERTASK_NO = UBD.BILL_NO
+	 INNER JOIN PKP.T_SRV_STAY_HANDOVERDETAIL HD
+	    ON HD.T_SRV_STAY_HANDOVER_ID = H.ID
+	 INNER JOIN PKP.T_SRV_WAYBILL W
+	    ON W.WAYBILL_NO = HD.WAYBILL_NO
+	   AND W.ACTIVE = 'Y'
+	 left JOIN PKP.T_SRV_PRODUCT P
+	    ON P.CODE = W.PRODUCT_CODE
+	   AND P.ACTIVE = 'Y'
+	 INNER JOIN PKP.T_SRV_STAY_HANDOVERSERIAL HS
+	    ON HS.T_SRV_STAY_HANDOVERDETAIL_ID = HD.ID
+	 WHERE T.UNLOAD_ORG_CODE = #{origOrgCode}
+	   AND T.UNLOAD_START_TIME >= SYSDATE - 1 /*业务默认卸车开始一天内一定结束卸车*/
+	   AND T.TASK_STATE = 'UNLOADING'
+	   <if test="waybillNo!=null and waybillNo!=''">
+		     AND W.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+	   </if>
+	   <if test="productCode!=null and productCode!=''">
+             AND W.PRODUCT_CODE =#{productCode,jdbcType=VARCHAR}
+	   </if>
+	   AND NOT EXISTS /*不存在卸车开始后，有本部门的入库记录*/
+	 (SELECT /*+full(s)*/1
+	          FROM TFR.T_OPT_IN_STOCK S
+	         WHERE S.WAYBILL_NO = HD.WAYBILL_NO
+	           AND S.SERIAL_NO = HS.SERAILNO
+	           AND S.ORG_CODE = T.UNLOAD_ORG_CODE
+	           AND S.IN_STOCK_TIME >= T.UNLOAD_START_TIME)
+	 GROUP BY W.WAYBILL_NO, T.VEHICLE_NO	 
+    </select>
+   
+   <!-- 计算卸车中总票数 --> 
+  <select id="queryUnLoadingTotalVote" parameterType="Map" resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.FieldStockMovtionEntity">
+     SELECT /*计算卸车中总票数*/
+		 COUNT(1) unloadingvotes,
+		 SUM(current_weight) unloadingweight,
+		 SUM(current_volume) unloadingvolume
+	   FROM (SELECT /*长途*/
+	         w.waybill_no waybill_no,
+	         round(MAX(w.goods_weight_total) * COUNT(1) / MAX(w.goods_qty_total),
+	               3) current_weight,
+	         round(MAX(w.goods_volume_total) * COUNT(1) / MAX(w.goods_qty_total),
+	               3) current_volume
+	          FROM tfr.t_opt_unload_task t
+	         INNER JOIN tfr.t_opt_unload_bill_detail ubd
+	            ON ubd.unload_task_id = t.id
+	           AND ubd.bill_type = 'VEHICLEASSEMBLE'
+	         INNER JOIN tfr.t_opt_vehicleassemblebill v
+	            ON v.vehicleassemble_no = ubd.bill_no
+	         INNER JOIN tfr.t_opt_vehicleassemble_detail vd
+	            ON vd.vehicleassemblebill_id = v.id
+	         INNER JOIN tfr.t_opt_handoverbill h
+	            ON h.handover_no = vd.handover_no
+	           AND h.be_car_load = 'N' /*剔除整车*/
+	         INNER JOIN tfr.t_opt_handoverbill_detail hd
+	            ON hd.handover_no = h.handover_no
+	         INNER JOIN tfr.t_opt_handoverbill_serialno hs
+	            ON hs.handoverbill_no = hd.handover_no
+	           AND hs.waybill_no = hd.waybill_no
+	         INNER JOIN pkp.t_srv_waybill w
+	            ON w.waybill_no = hd.waybill_no
+	           AND w.active = 'Y'
+	         WHERE t.unload_org_code = #{orgCode}
+	           AND t.unload_start_time >= SYSDATE - 1 /*业务默认卸车开始一天内一定结束卸车*/
+	           AND t.task_state = 'UNLOADING'
+	           AND NOT EXISTS /*不存在卸车开始后，有本部门的入库记录*/
+	         (SELECT /*+full(s)*/1
+	                  FROM tfr.t_opt_in_stock s
+	                 WHERE s.waybill_no = hs.waybill_no
+	                   AND s.serial_no = hs.serial_no
+	                   AND s.org_code = t.unload_org_code
+	                   AND s.in_stock_time >= t.unload_start_time)
+	         GROUP BY w.waybill_no, t.vehicle_no
+	        UNION ALL
+	        SELECT /*短途*/
+	         w.waybill_no waybill_no,
+	         round(MAX(w.goods_weight_total) * COUNT(1) / MAX(w.goods_qty_total),
+	               3) current_weight,
+	         round(MAX(w.goods_volume_total) * COUNT(1) / MAX(w.goods_qty_total),
+	               3) current_volume
+	          FROM tfr.t_opt_unload_task t
+	         INNER JOIN tfr.t_opt_unload_bill_detail ubd
+	            ON ubd.unload_task_id = t.id
+	           AND ubd.bill_type = 'HANDOVER'
+	         INNER JOIN tfr.t_opt_handoverbill h
+	            ON h.handover_no = ubd.bill_no
+	           AND h.be_car_load = 'N' /*剔除整车*/
+	         INNER JOIN tfr.t_opt_handoverbill_detail hd
+	            ON hd.handover_no = h.handover_no
+	         INNER JOIN tfr.t_opt_handoverbill_serialno hs
+	            ON hs.handoverbill_no = hd.handover_no
+	           AND hs.waybill_no = hd.waybill_no
+	         INNER JOIN pkp.t_srv_waybill w
+	            ON w.waybill_no = hd.waybill_no
+	           AND w.active = 'Y'
+	         WHERE t.unload_org_code = #{orgCode}
+	           AND t.unload_start_time >= SYSDATE - 1 /*业务默认卸车开始一天内一定结束卸车*/
+	           AND t.task_state = 'UNLOADING'
+	           AND NOT EXISTS /*不存在卸车开始后，有本部门的入库记录*/
+	         (SELECT /*+full(s)*/1
+	                  FROM tfr.t_opt_in_stock s
+	                 WHERE s.waybill_no = hs.waybill_no
+	                   AND s.serial_no = hs.serial_no
+	                   AND s.org_code = t.unload_org_code
+	                   AND s.in_stock_time >= t.unload_start_time)
+	         GROUP BY w.waybill_no, t.vehicle_no
+	        UNION ALL
+	        SELECT /*集中接货*/
+	         w.waybill_no waybill_no,
+	         round(MAX(w.goods_weight_total) * COUNT(1) / MAX(w.goods_qty_total),
+	               3) current_weight,
+	         round(MAX(w.goods_volume_total) * COUNT(1) / MAX(w.goods_qty_total),
+	               3) current_volume
+	          FROM tfr.t_opt_unload_task t
+	         INNER JOIN tfr.t_opt_unload_bill_detail ubd
+	            ON ubd.unload_task_id = t.id
+	           AND ubd.bill_type = 'PICKUP'
+	         INNER JOIN pkp.t_srv_stay_handover h
+	            ON h.handovertask_no = ubd.bill_no
+	         INNER JOIN pkp.t_srv_stay_handoverdetail hd
+	            ON hd.t_srv_stay_handover_id = h.id
+	         INNER JOIN pkp.t_srv_stay_handoverserial hs
+	            ON hs.t_srv_stay_handoverdetail_id = hd.id
+	         INNER JOIN pkp.t_srv_waybill w
+	            ON w.waybill_no = hd.waybill_no
+	           AND w.active = 'Y'
+	         WHERE t.unload_org_code = #{orgCode}
+	           AND t.unload_start_time >= SYSDATE - 1 /*业务默认卸车开始一天内一定结束卸车*/
+	           AND t.task_state = 'UNLOADING'
+	           AND NOT EXISTS /*不存在卸车开始后，有本部门的入库记录*/
+	         (SELECT /*+full(s)*/1
+	                  FROM tfr.t_opt_in_stock s
+	                 WHERE s.waybill_no = hd.waybill_no
+	                   AND s.serial_no = hs.serailno
+	                   AND s.org_code = t.unload_org_code
+	                   AND s.in_stock_time >= t.unload_start_time)
+	         GROUP BY w.waybill_no, t.vehicle_no)
+
+  </select>
+    
+  <!-- 查询外场货区编码 -->
+  <select id="queryGoodsCodeByGoodsType" parameterType="map" resultType="string">
+     SELECT t.goods_area_code
+	  FROM bse.t_bas_goods_area t
+	 WHERE t.org_code = #{origOrgCode,jdbcType=VARCHAR}
+	   AND t.goods_area_type IN
+	       <foreach collection="goodsTypeList" index="index" item="item" open="(" separator="," close=")">
+				#{item}
+		  </foreach>
+	   AND t.active = 'Y'
+  </select>
+
+  <!-- 待叉区：托盘绑定未叉车扫描，且在库存中、非正在装车 -->
+  <select id="queryTray" parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.QueryConditionStockMovtionDto" resultMap="fieldStockMovtionDetailMap">
+	     SELECT 
+	       W.WAYBILL_NO WAYBILL_NO,
+           MAX(P.NAME) PRODUCT_NAME,
+           MAX( 
+	           CASE W.RECEIVE_METHOD WHEN 'SELF_PICKUP' THEN '自提'
+	            WHEN 'INNER_PICKUP' THEN '内部带货自提'
+	            WHEN 'DELIVER_UP' THEN '送货上楼'
+	            WHEN 'DELIVER' THEN '免费送货'
+	            WHEN 'DELIVER_NOUP' THEN '送货（不含上楼）'
+	            WHEN 'SELF_PICKUP_FREE_AIR' THEN '免费自提(空运)'
+	            WHEN 'DELIVER_INGA_AIR' THEN '送货进仓(空运)'
+	            WHEN 'DELIVER_UP_AIR' THEN '送货上楼(空运)'
+	            WHEN 'DELIVER_AIR' THEN '免费送货(空运)'
+	            WHEN 'AIRPORT_PICKUP' THEN '机场自提'
+	            WHEN 'DELIVER_NOUP_AIR' THEN '空运送货（不含上楼)'
+	            WHEN 'SELF_PICKUP_AIR' THEN '自提（不含机场自提)'
+	            ELSE 'other' END) RECEIVE_METHOD,
+           MAX(W.GOODS_QTY_TOTAL) GOODS_QTY_TOTAL,
+           MAX(W.GOODS_WEIGHT_TOTAL) GOODS_WEIGHT_TOTAL,
+           MAX(W.GOODS_VOLUME_TOTAL) GOODS_VOLUME_TOTAL,
+	       COUNT(1) current_qty,
+	       ROUND(MAX(w.goods_weight_total) * COUNT(1) / MAX(w.goods_qty_total),
+	             3) current_weight,
+	       ROUND(MAX(w.goods_volume_total) * COUNT(1) / MAX(w.goods_qty_total),
+	             3) current_volume,
+	       MAX(o.name) next_org_name
+	  FROM tfr.t_opt_trayscan_task t
+	 INNER JOIN tfr.t_opt_trayscan_task_detail td
+	    ON td.trayscan_task_no = t.task_no
+	 INNER JOIN tfr.t_opt_stock s
+	    ON s.org_code = t.outfield_org_code
+	   AND s.waybill_no = td.waybill_no
+	   AND s.serial_no = td.seria_no
+	 INNER JOIN pkp.t_srv_waybill w
+	    ON w.waybill_no = s.waybill_no
+	   AND w.active = 'Y'
+	 left JOIN pkp.t_srv_product p
+	    ON p.code = w.product_code
+	   AND p.active = 'Y'
+	 left JOIN bse.t_bas_org o
+	    ON o.code = s.next_org_code
+	   AND o.active = 'Y'
+	 WHERE t.outfield_org_code = #{origOrgCode,jdbcType=VARCHAR}
+	   AND t.create_time >= SYSDATE - 2 /*业务默认托盘绑定两天内，一定进行叉车扫描，未扫描的认为已从待叉区拉走*/
+	   AND t.statu = 'UNSCAN'
+	   <if test="waybillNo!=null and waybillNo!=''">
+		     AND W.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+	   </if>
+	   <if test="productCode!=null and productCode!=''">
+             AND W.PRODUCT_CODE =#{productCode,jdbcType=VARCHAR}
+	   </if>
+	 GROUP BY w.waybill_no
+  </select>
+  
+  <!-- 计算待叉区库存总票数 -->
+  <select id="queryTrayTotalVote" parameterType="Map" resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.FieldStockMovtionEntity">
+	SELECT /*计算待叉区库存总票数*/
+	 COUNT(1) trayvotes,
+	 SUM(current_weight) trayweight,
+	 SUM(current_volume) trayvolume
+	  FROM (SELECT /*+full(t)*/w.waybill_no AS waybill_no,
+	               round(MAX(w.goods_weight_total) * COUNT(1) /
+	                     MAX(w.goods_qty_total),
+	                     3) current_weight,
+	               round(MAX(w.goods_volume_total) * COUNT(1) /
+	                     MAX(w.goods_qty_total),
+	                     3) current_volume
+	          FROM tfr.t_opt_trayscan_task t
+	         INNER JOIN tfr.t_opt_trayscan_task_detail td
+	            ON td.trayscan_task_no = t.task_no
+	         INNER JOIN tfr.t_opt_stock s
+	            ON s.org_code = t.outfield_org_code
+	           AND s.waybill_no = td.waybill_no
+	           AND s.serial_no = td.seria_no
+	         INNER JOIN pkp.t_srv_waybill w
+	            ON w.waybill_no = s.waybill_no
+	           AND w.active = 'Y'
+	         WHERE t.outfield_org_code = #{orgCode}
+	           AND t.create_time >= SYSDATE - 2 /*业务默认托盘绑定两天内，一定进行叉车扫描，未扫描的认为已从待叉区拉走*/
+	           AND t.statu = 'UNSCAN'
+	         GROUP BY w.waybill_no)
+  </select>
+
+
+  <!-- 包装库区：包装库区、非正在装车 -->
+  <select id="queryPackaging" parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.QueryConditionStockMovtionDto" resultMap="fieldStockMovtionDetailMap">
+	     SELECT 
+	       W.WAYBILL_NO WAYBILL_NO,
+	       MAX(P.NAME) PRODUCT_NAME,
+	       MAX( 
+	           CASE W.RECEIVE_METHOD WHEN 'SELF_PICKUP' THEN '自提'
+	            WHEN 'INNER_PICKUP' THEN '内部带货自提'
+	            WHEN 'DELIVER_UP' THEN '送货上楼'
+	            WHEN 'DELIVER' THEN '免费送货'
+	            WHEN 'DELIVER_NOUP' THEN '送货（不含上楼）'
+	            WHEN 'SELF_PICKUP_FREE_AIR' THEN '免费自提(空运)'
+	            WHEN 'DELIVER_INGA_AIR' THEN '送货进仓(空运)'
+	            WHEN 'DELIVER_UP_AIR' THEN '送货上楼(空运)'
+	            WHEN 'DELIVER_AIR' THEN '免费送货(空运)'
+	            WHEN 'AIRPORT_PICKUP' THEN '机场自提'
+	            WHEN 'DELIVER_NOUP_AIR' THEN '空运送货（不含上楼)'
+	            WHEN 'SELF_PICKUP_AIR' THEN '自提（不含机场自提)'
+	            ELSE 'other' END) RECEIVE_METHOD,
+	       MAX(W.GOODS_QTY_TOTAL) GOODS_QTY_TOTAL,
+	       MAX(W.GOODS_WEIGHT_TOTAL) GOODS_WEIGHT_TOTAL,
+	       MAX(W.GOODS_VOLUME_TOTAL) GOODS_VOLUME_TOTAL,
+	       COUNT(1) current_qty,
+	       ROUND(MAX(w.goods_weight_total) * COUNT(1) / MAX(w.goods_qty_total),
+	             3) current_weight,
+	       ROUND(MAX(w.goods_volume_total) * COUNT(1) / MAX(w.goods_qty_total),
+	             3) current_volume,
+	       MAX(o.name) next_org_name
+	  FROM tfr.t_opt_stock s
+	 INNER JOIN pkp.t_srv_waybill w
+	    ON w.waybill_no = s.waybill_no
+	   AND w.active = 'Y'
+	 left JOIN pkp.t_srv_product p
+	    ON p.code = w.product_code
+	   AND p.active = 'Y'
+	 left JOIN bse.t_bas_org o
+	    ON o.code = s.next_org_code
+	   AND o.active = 'Y'
+	 WHERE s.org_code = #{origOrgCode,jdbcType=VARCHAR}
+	   AND s.goods_area_code = #{goodsAreaCode,jdbcType=VARCHAR}
+	   <if test="waybillNo!=null and waybillNo!=''">
+		     AND W.WAYBILL_NO = #{waybillNo}
+	   </if>
+	   <if test="productCode!=null and productCode!=''">
+             AND W.PRODUCT_CODE =#{productCode,jdbcType=VARCHAR}
+	   </if>
+	   AND NOT EXISTS (SELECT /*+full(lt)*/1 /*非正在装车*/
+	          FROM tfr.t_opt_load_task lt
+	         INNER JOIN tfr.t_opt_load_waybill_detail wd
+	            ON wd.load_task_id = lt.id
+	         INNER JOIN tfr.t_opt_load_serialno ls
+	            ON ls.load_waybill_detail_id = wd.id
+	           AND ls.be_loaded = 'Y'
+	         WHERE lt.orig_org_code = s.org_code
+	           AND lt.load_start_time >= SYSDATE - 1 /*业务默认装车一天内一定把车装好*/
+	           AND lt.task_state = 'LOADING'
+	           AND wd.waybill_no = s.waybill_no
+	           AND ls.serial_no = s.serial_no)
+	 GROUP BY w.waybill_no
+  </select>
+
+  <!-- 计算包装库区库存总票数 -->
+  <select id="queryPackagingTotalVote" parameterType="Map" resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.FieldStockMovtionEntity">
+    SELECT /*计算包装库区库存总票数*/
+	 COUNT(1) packagingvotes,
+	 SUM(current_weight) packagingweight,
+	 SUM(current_volume) packagingvolume
+	  FROM (SELECT /*+full(s)*/w.waybill_no AS waybill_no,
+	               round(MAX(w.goods_weight_total) * COUNT(1) /
+	                     MAX(w.goods_qty_total),
+	                     3) current_weight,
+	               round(MAX(w.goods_volume_total) * COUNT(1) /
+	                     MAX(w.goods_qty_total),
+	                     3) current_volume
+	          FROM tfr.t_opt_stock s
+	         INNER JOIN pkp.t_srv_waybill w
+	            ON w.waybill_no = s.waybill_no
+	           AND w.active = 'Y'
+	         WHERE s.org_code = #{orgCode}
+	           AND s.goods_area_code = #{goodsAreaCode}
+	           AND NOT EXISTS (SELECT /*+full(lt)*/1 /*非正在装车*/
+	                  FROM tfr.t_opt_load_task lt
+	                 INNER JOIN tfr.t_opt_load_waybill_detail wd
+	                    ON wd.load_task_id = lt.id
+	                 INNER JOIN tfr.t_opt_load_serialno ls
+	                    ON ls.load_waybill_detail_id = wd.id
+	                   AND ls.be_loaded = 'Y'
+	                 WHERE lt.orig_org_code = s.org_code
+	                   AND lt.load_start_time >= SYSDATE - 1 /*业务默认装车一天内一定把车装好*/
+	                   AND lt.task_state = 'LOADING'
+	                   AND wd.waybill_no = s.waybill_no
+	                   AND ls.serial_no = s.serial_no)
+	         GROUP BY w.waybill_no)
+
+  </select>
+
+  <!-- 零担中转库区：库存中,非快递货、非包装库区，非派送库区、非偏线库区、非空运库库区、非待叉区,非正在装车 -->
+  <select id="queryTfrStock" parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.QueryConditionStockMovtionDto" resultMap="fieldStockMovtionDetailMap">
+		   SELECT /*查询零担中转库区运单*//*+full(o)*/
+		       W.WAYBILL_NO WAYBILL_NO,
+		       MAX(P.NAME) PRODUCT_NAME,
+		       MAX( 
+	           CASE W.RECEIVE_METHOD WHEN 'SELF_PICKUP' THEN '自提'
+	            WHEN 'INNER_PICKUP' THEN '内部带货自提'
+	            WHEN 'DELIVER_UP' THEN '送货上楼'
+	            WHEN 'DELIVER' THEN '免费送货'
+	            WHEN 'DELIVER_NOUP' THEN '送货（不含上楼）'
+	            WHEN 'SELF_PICKUP_FREE_AIR' THEN '免费自提(空运)'
+	            WHEN 'DELIVER_INGA_AIR' THEN '送货进仓(空运)'
+	            WHEN 'DELIVER_UP_AIR' THEN '送货上楼(空运)'
+	            WHEN 'DELIVER_AIR' THEN '免费送货(空运)'
+	            WHEN 'AIRPORT_PICKUP' THEN '机场自提'
+	            WHEN 'DELIVER_NOUP_AIR' THEN '空运送货（不含上楼)'
+	            WHEN 'SELF_PICKUP_AIR' THEN '自提（不含机场自提)'
+	            ELSE 'other' END) RECEIVE_METHOD,
+		       MAX(W.GOODS_QTY_TOTAL) GOODS_QTY_TOTAL,
+		       MAX(W.GOODS_WEIGHT_TOTAL) GOODS_WEIGHT_TOTAL,
+		       MAX(W.GOODS_VOLUME_TOTAL) GOODS_VOLUME_TOTAL,
+		       COUNT(1) CURRENT_QTY,
+		       ROUND(MAX(W.GOODS_WEIGHT_TOTAL) * COUNT(1) / MAX(W.GOODS_QTY_TOTAL),
+		             3) CURRENT_WEIGHT,
+		       ROUND(MAX(W.GOODS_VOLUME_TOTAL) * COUNT(1) / MAX(W.GOODS_QTY_TOTAL),
+		             3) CURRENT_VOLUME,
+		       MAX(O.NAME) NEXT_ORG_NAME
+		  FROM TFR.T_OPT_STOCK S
+		 INNER JOIN PKP.T_SRV_WAYBILL W
+		    ON W.WAYBILL_NO = S.WAYBILL_NO
+		   AND W.PRODUCT_CODE NOT IN ('PACKAGE', 'RCP','EPEP') /*非快递货*/
+		   AND W.ACTIVE = 'Y'
+		   AND W.IS_WHOLE_VEHICLE = 'N'/*非整车*/
+		 left JOIN PKP.T_SRV_PRODUCT P
+		    ON P.CODE = W.PRODUCT_CODE
+		   AND P.ACTIVE = 'Y'
+		 left JOIN BSE.T_BAS_ORG O
+		    ON O.CODE = S.NEXT_ORG_CODE
+		   AND O.ACTIVE = 'Y'
+		 WHERE S.ORG_CODE = #{origOrgCode,jdbcType=VARCHAR}
+		  and  s.goods_area_code NOT IN /*非包装，非派送，非偏线，非空运库区*/
+		     <foreach collection="goodsAreaCodeList" item="item" separator="," close=")" open="(">
+                    #{item}
+             </foreach>
+		   <if test="waybillNo!=null and waybillNo!=''">
+		     AND W.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+	       </if>
+		   <if test="productCode!=null and productCode!=''">
+	             AND W.PRODUCT_CODE =#{productCode,jdbcType=VARCHAR}
+		   </if>
+		   AND NOT EXISTS (SELECT /*+full(TT)*/1 /*非待叉区*/
+		          FROM TFR.T_OPT_TRAYSCAN_TASK TT
+		         INNER JOIN TFR.T_OPT_TRAYSCAN_TASK_DETAIL TD
+		            ON TD.TRAYSCAN_TASK_NO = TT.TASK_NO
+		         WHERE TT.OUTFIELD_ORG_CODE = S.ORG_CODE
+		           AND TT.OUTFIELD_ORG_CODE=#{origOrgCode,jdbcType=VARCHAR}
+		           AND TT.CREATE_TIME >= SYSDATE - 2 /*业务默认托盘绑定两天内，一定进行叉车扫描，未扫描的认为已从待叉区拉走*/
+		           AND TT.STATU = 'UNSCAN'
+		           AND TD.WAYBILL_NO = W.WAYBILL_NO
+		           AND TD.SERIA_NO = S.SERIAL_NO)
+		   AND NOT EXISTS (SELECT 1 /*非正在装车*/
+		          FROM TFR.T_OPT_LOAD_TASK LT
+		         INNER JOIN TFR.T_OPT_LOAD_WAYBILL_DETAIL WD
+		            ON WD.LOAD_TASK_ID = LT.ID
+		         INNER JOIN TFR.T_OPT_LOAD_SERIALNO LS
+		            ON LS.LOAD_WAYBILL_DETAIL_ID = WD.ID
+		           AND LS.BE_LOADED = 'Y'
+		         WHERE LT.ORIG_ORG_CODE = S.ORG_CODE
+		           AND LT.ORIG_ORG_CODE=#{origOrgCode,jdbcType=VARCHAR}
+		           AND LT.LOAD_START_TIME >= SYSDATE - 1 /*业务默认装车一天内一定把车装好*/
+		           AND LT.TASK_STATE = 'LOADING'
+		           AND WD.WAYBILL_NO = S.WAYBILL_NO
+		           AND LS.SERIAL_NO = S.SERIAL_NO)
+		 GROUP BY W.WAYBILL_NO
+  </select>
+
+ <!-- 计算零担中转库区库存总票数 -->
+  <select id="queryTfrStockTotalVote" parameterType="Map" resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.FieldStockMovtionEntity">
+ select /*计算零担中转库区库存总票数*/
+	 COUNT(1) stockVotes,
+	 sum(CURRENT_WEIGHT) stockWeight,
+	 sum(CURRENT_VOLUME) stockVolume 
+	 from (SELECT W.WAYBILL_NO AS WAYBILL_NO,
+               ROUND(max(w.goods_weight_total) * count(1) /
+                     max(w.goods_qty_total),
+                     3) current_weight,
+               ROUND(max(w.goods_volume_total) * count(1) /
+                     max(w.goods_qty_total),
+                     3) current_volume
+                                    from TFR.T_OPT_STOCK S
+                                   inner join PKP.T_SRV_WAYBILL W
+                                      on W.WAYBILL_NO = S.WAYBILL_NO
+                                     and W.PRODUCT_CODE not in
+                                         ('PACKAGE', 'RCP') /*非快递货*/
+                                     and W.ACTIVE = 'Y'
+                                     and W.IS_WHOLE_VEHICLE = 'N' /*非整车*/
+                                   where S.ORG_CODE = #{orgCode}
+                                    and  s.goods_area_code NOT IN /*非包装，非派送，非偏线，非空运库区*/
+									     <foreach collection="goodsAreaCodeList" item="item" separator="," close=")" open="(">
+							                    #{item}
+							             </foreach>
+                                     and not exists
+                                   (select /*+full(TT)*/1 /*非待叉区*/
+                                            from TFR.T_OPT_TRAYSCAN_TASK TT
+                                           inner join TFR.T_OPT_TRAYSCAN_TASK_DETAIL TD
+                                              on TD.TRAYSCAN_TASK_NO =TT.TASK_NO
+                                           where TT.OUTFIELD_ORG_CODE =S.ORG_CODE
+                                             and TT.OUTFIELD_ORG_CODE =#{orgCode}
+                                             and TT.CREATE_TIME >=
+                                                 sysdate - 2 /*业务默认托盘绑定两天内，一定进行叉车扫描，未扫描的认为已从待叉区拉走*/
+                                             and TT.STATU = 'UNSCAN'
+                                             and TD.WAYBILL_NO = W.WAYBILL_NO
+                                             and TD.SERIA_NO = S.SERIAL_NO)
+                                     and not exists
+                                   (select /*+full(LT)*/1 /*非正在装车*/
+                                            from TFR.T_OPT_LOAD_TASK LT
+                                           inner join TFR.T_OPT_LOAD_WAYBILL_DETAIL WD
+                                              on WD.LOAD_TASK_ID = LT.ID
+                                           inner join TFR.T_OPT_LOAD_SERIALNO LS
+                                              on LS.LOAD_WAYBILL_DETAIL_ID =  WD.ID
+                                             and LS.BE_LOADED = 'Y'
+                                           where LT.ORIG_ORG_CODE =S.ORG_CODE
+                                             and LT.ORIG_ORG_CODE =#{orgCode}
+                                             and LT.LOAD_START_TIME >=sysdate - 1 /*业务默认装车一天内一定把车装好*/
+                                             and LT.TASK_STATE = 'LOADING'
+                                             and WD.WAYBILL_NO = S.WAYBILL_NO
+                                             and LS.SERIAL_NO = S.SERIAL_NO)
+                                   group by W.WAYBILL_NO)
+  </select>
+
+
+   <!-- 零担派送库区：派送库区库存中、非待叉区,非正在装车 -->
+   <select id="queryTfrPickupStock" parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.QueryConditionStockMovtionDto" resultMap="fieldStockMovtionDetailMap">
+		 SELECT /*+full(s)*//*零担派送库区库存*/W.WAYBILL_NO WAYBILL_NO,
+		       MAX(P.NAME) PRODUCT_NAME,
+		       MAX( 
+	           CASE W.RECEIVE_METHOD WHEN 'SELF_PICKUP' THEN '自提'
+	            WHEN 'INNER_PICKUP' THEN '内部带货自提'
+	            WHEN 'DELIVER_UP' THEN '送货上楼'
+	            WHEN 'DELIVER' THEN '免费送货'
+	            WHEN 'DELIVER_NOUP' THEN '送货（不含上楼）'
+	            WHEN 'SELF_PICKUP_FREE_AIR' THEN '免费自提(空运)'
+	            WHEN 'DELIVER_INGA_AIR' THEN '送货进仓(空运)'
+	            WHEN 'DELIVER_UP_AIR' THEN '送货上楼(空运)'
+	            WHEN 'DELIVER_AIR' THEN '免费送货(空运)'
+	            WHEN 'AIRPORT_PICKUP' THEN '机场自提'
+	            WHEN 'DELIVER_NOUP_AIR' THEN '空运送货（不含上楼)'
+	            WHEN 'SELF_PICKUP_AIR' THEN '自提（不含机场自提)'
+	            ELSE 'other' END) RECEIVE_METHOD,
+		       MAX(W.GOODS_QTY_TOTAL) GOODS_QTY_TOTAL,
+		       MAX(W.GOODS_WEIGHT_TOTAL) GOODS_WEIGHT_TOTAL,
+		       MAX(W.GOODS_VOLUME_TOTAL) GOODS_VOLUME_TOTAL,
+		       COUNT(1) CURRENT_QTY,
+		       ROUND(MAX(W.GOODS_WEIGHT_TOTAL) * COUNT(1) / MAX(W.GOODS_QTY_TOTAL),
+		             3) CURRENT_WEIGHT,
+		       ROUND(MAX(W.GOODS_VOLUME_TOTAL) * COUNT(1) / MAX(W.GOODS_QTY_TOTAL),
+		             3) CURRENT_VOLUME,
+		       MAX(O.NAME) NEXT_ORG_NAME
+		  FROM TFR.T_OPT_STOCK S
+		 INNER JOIN PKP.T_SRV_WAYBILL W
+		    ON W.WAYBILL_NO = S.WAYBILL_NO
+		   AND W.PRODUCT_CODE NOT IN ('PACKAGE', 'RCP','EPEP') /*非快递货*/
+		   AND W.ACTIVE = 'Y'
+		 left JOIN PKP.T_SRV_PRODUCT P
+		    ON P.CODE = W.PRODUCT_CODE
+		   AND P.ACTIVE = 'Y'
+		 left JOIN BSE.T_BAS_ORG O
+		    ON O.CODE = S.NEXT_ORG_CODE
+		   AND O.ACTIVE = 'Y'
+		 WHERE S.ORG_CODE = #{origOrgCode,jdbcType=VARCHAR}
+		   AND S.GOODS_AREA_CODE = #{goodsAreaCode,jdbcType=VARCHAR}/*派送库区*/
+		   <if test="waybillNo!=null and waybillNo!=''">
+		     AND W.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+	       </if>
+		   <if test="productCode!=null and productCode!=''">
+	         AND W.PRODUCT_CODE =#{productCode,jdbcType=VARCHAR}
+		   </if>
+		   AND NOT EXISTS (SELECT /*+full(TT)*/1 /*非待叉区*/
+		          FROM TFR.T_OPT_TRAYSCAN_TASK TT
+		         INNER JOIN TFR.T_OPT_TRAYSCAN_TASK_DETAIL TD
+		            ON TD.TRAYSCAN_TASK_NO = TT.TASK_NO
+		         WHERE TT.OUTFIELD_ORG_CODE = S.ORG_CODE
+		           AND TT.OUTFIELD_ORG_CODE=#{origOrgCode,jdbcType=VARCHAR}
+		           AND TT.CREATE_TIME >= SYSDATE - 2 /*业务默认托盘绑定两天内，一定进行叉车扫描，未扫描的认为已从待叉区拉走*/
+		           AND TT.STATU = 'UNSCAN'
+		           AND TD.WAYBILL_NO = S.WAYBILL_NO
+		           AND TD.SERIA_NO = S.SERIAL_NO)
+		   AND NOT EXISTS (SELECT /*+full(LT)*/1 /*非正在装车*/
+		          FROM TFR.T_OPT_LOAD_TASK LT
+		         INNER JOIN TFR.T_OPT_LOAD_WAYBILL_DETAIL WD
+		            ON WD.LOAD_TASK_ID = LT.ID
+		         INNER JOIN TFR.T_OPT_LOAD_SERIALNO LS
+		            ON LS.LOAD_WAYBILL_DETAIL_ID = WD.ID
+		           AND LS.BE_LOADED = 'Y'
+		         WHERE LT.ORIG_ORG_CODE = S.ORG_CODE
+		           AND LT.ORIG_ORG_CODE=#{origOrgCode,jdbcType=VARCHAR}
+		           AND LT.LOAD_START_TIME >= SYSDATE - 1 /*业务默认装车一天内一定把车装好*/
+		           AND LT.TASK_STATE = 'LOADING'
+		           AND WD.WAYBILL_NO = S.WAYBILL_NO
+		           AND LS.SERIAL_NO = S.SERIAL_NO)
+		    GROUP BY W.WAYBILL_NO
+   
+   </select>
+   
+   <!-- 计算零担派送库区库存总票数 -->
+   <select id="queryTfrPickupStockTotalVote" parameterType="Map" resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.FieldStockMovtionEntity">
+   SELECT /*计算零担派送库区库存总票数*/
+	 COUNT(1) deliverstockvotes,
+	 SUM(current_weight) deliverstockweight,
+	 SUM(current_volume) deliverstockvolume
+	  FROM (SELECT /*+full(s)*/w.waybill_no waybill_no,
+	               round(MAX(w.goods_weight_total) * COUNT(1) /
+	                     MAX(w.goods_qty_total),
+	                     3) current_weight,
+	               round(MAX(w.goods_volume_total) * COUNT(1) /
+	                     MAX(w.goods_qty_total),
+	                     3) current_volume
+	          FROM tfr.t_opt_stock s
+	         INNER JOIN pkp.t_srv_waybill w
+	            ON w.waybill_no = s.waybill_no
+	           AND w.product_code NOT IN ('PACKAGE', 'RCP') /*非快递货*/
+	           AND w.active = 'Y'
+	         WHERE s.org_code = #{orgCode}
+	           AND s.goods_area_code =#{goodsAreaCode} /*派送库区*/
+	           AND NOT EXISTS (SELECT 1 /*非待叉区*/
+	                  FROM tfr.t_opt_trayscan_task tt
+	                 INNER JOIN tfr.t_opt_trayscan_task_detail td
+	                    ON td.trayscan_task_no = tt.task_no
+	                 WHERE tt.outfield_org_code = s.org_code
+	                   AND tt.outfield_org_code = #{orgCode}
+	                   AND tt.create_time >= SYSDATE - 2 /*业务默认托盘绑定两天内，一定进行叉车扫描，未扫描的认为已从待叉区拉走*/
+	                   AND tt.statu = 'UNSCAN'
+	                   AND td.waybill_no = s.waybill_no
+	                   AND td.seria_no = s.serial_no)
+	           AND NOT EXISTS (SELECT /*+full(lt)*/1 /*非正在装车*/
+	                  FROM tfr.t_opt_load_task lt
+	                 INNER JOIN tfr.t_opt_load_waybill_detail wd
+	                    ON wd.load_task_id = lt.id
+	                 INNER JOIN tfr.t_opt_load_serialno ls
+	                    ON ls.load_waybill_detail_id = wd.id
+	                   AND ls.be_loaded = 'Y'
+	                 WHERE lt.orig_org_code = s.org_code
+	                   AND lt.orig_org_code = #{orgCode}
+	                   AND lt.load_start_time >= SYSDATE - 1 /*业务默认装车一天内一定把车装好*/
+	                   AND lt.task_state = 'LOADING'
+	                   AND wd.waybill_no = s.waybill_no
+	                   AND ls.serial_no = s.serial_no)
+	         GROUP BY w.waybill_no)
+   
+   </select>
+   
+   <!-- 快递中转库区库存 -->
+    <select id="queryRcpStock" parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.QueryConditionStockMovtionDto" resultMap="fieldStockMovtionDetailMap">
+		SELECT /*+full(s)*//*快递中转库区库存*/W.WAYBILL_NO WAYBILL_NO,
+		       MAX(P.NAME) PRODUCT_NAME,
+		       MAX( 
+	           CASE W.RECEIVE_METHOD WHEN 'SELF_PICKUP' THEN '自提'
+	            WHEN 'INNER_PICKUP' THEN '内部带货自提'
+	            WHEN 'DELIVER_UP' THEN '送货上楼'
+	            WHEN 'DELIVER' THEN '免费送货'
+	            WHEN 'DELIVER_NOUP' THEN '送货（不含上楼）'
+	            WHEN 'SELF_PICKUP_FREE_AIR' THEN '免费自提(空运)'
+	            WHEN 'DELIVER_INGA_AIR' THEN '送货进仓(空运)'
+	            WHEN 'DELIVER_UP_AIR' THEN '送货上楼(空运)'
+	            WHEN 'DELIVER_AIR' THEN '免费送货(空运)'
+	            WHEN 'AIRPORT_PICKUP' THEN '机场自提'
+	            WHEN 'DELIVER_NOUP_AIR' THEN '空运送货（不含上楼)'
+	            WHEN 'SELF_PICKUP_AIR' THEN '自提（不含机场自提)'
+	            ELSE 'other' END) RECEIVE_METHOD,
+		       MAX(W.GOODS_QTY_TOTAL) GOODS_QTY_TOTAL,
+		       MAX(W.GOODS_WEIGHT_TOTAL) GOODS_WEIGHT_TOTAL,
+		       MAX(W.GOODS_VOLUME_TOTAL) GOODS_VOLUME_TOTAL,
+		       COUNT(1) CURRENT_QTY,
+		       ROUND(MAX(W.GOODS_WEIGHT_TOTAL) * COUNT(1) / MAX(W.GOODS_QTY_TOTAL),
+		             3) CURRENT_WEIGHT,
+		       ROUND(MAX(W.GOODS_VOLUME_TOTAL) * COUNT(1) / MAX(W.GOODS_QTY_TOTAL),
+		             3) CURRENT_VOLUME,
+		       MAX(O.NAME) NEXT_ORG_NAME
+		  FROM TFR.T_OPT_STOCK S
+		 INNER JOIN PKP.T_SRV_WAYBILL W
+		    ON W.WAYBILL_NO = S.WAYBILL_NO
+		   AND W.PRODUCT_CODE  IN ('PACKAGE', 'RCP','EPEP') /*快递货*/
+		   AND W.ACTIVE = 'Y'
+		 left JOIN PKP.T_SRV_PRODUCT P
+		    ON P.CODE = W.PRODUCT_CODE
+		   AND P.ACTIVE = 'Y'
+		 left JOIN BSE.T_BAS_ORG O
+		    ON O.CODE = S.NEXT_ORG_CODE
+		   AND O.ACTIVE = 'Y'
+		 WHERE S.ORG_CODE = #{origOrgCode,jdbcType=VARCHAR}
+		   AND S.GOODS_AREA_CODE =#{goodsAreaCode,jdbcType=VARCHAR}  /*快递库区*/
+		   <if test="waybillNo!=null and waybillNo!=''">
+		     AND W.WAYBILL_NO = #{waybillNo}
+	       </if>
+		   <if test="productCode!=null and productCode!=''">
+	         AND W.PRODUCT_CODE =#{productCode}
+		   </if>
+		   AND NOT EXISTS (SELECT /*+full(TT)*/1 /*非待叉区*/
+		          FROM TFR.T_OPT_TRAYSCAN_TASK TT
+		         INNER JOIN TFR.T_OPT_TRAYSCAN_TASK_DETAIL TD
+		            ON TD.TRAYSCAN_TASK_NO = TT.TASK_NO
+		         WHERE TT.OUTFIELD_ORG_CODE = S.ORG_CODE
+		           AND TT.OUTFIELD_ORG_CODE=#{origOrgCode,jdbcType=VARCHAR}
+		           AND TT.CREATE_TIME >= SYSDATE - 2 /*业务默认托盘绑定两天内，一定进行叉车扫描，未扫描的认为已从待叉区拉走*/
+		           AND TT.STATU = 'UNSCAN'
+		           AND TD.WAYBILL_NO = W.WAYBILL_NO
+		           AND TD.SERIA_NO = S.SERIAL_NO)
+		   AND NOT EXISTS (SELECT /*+full(LT)*/1 /*非正在装车*/
+		          FROM TFR.T_OPT_LOAD_TASK LT
+		         INNER JOIN TFR.T_OPT_LOAD_WAYBILL_DETAIL WD
+		            ON WD.LOAD_TASK_ID = LT.ID
+		         INNER JOIN TFR.T_OPT_LOAD_SERIALNO LS
+		            ON LS.LOAD_WAYBILL_DETAIL_ID = WD.ID
+		           AND LS.BE_LOADED = 'Y'
+		         WHERE LT.ORIG_ORG_CODE = S.ORG_CODE
+		           AND LT.ORIG_ORG_CODE=#{origOrgCode,jdbcType=VARCHAR}
+		           AND LT.LOAD_START_TIME >= SYSDATE - 1 /*业务默认装车一天内一定把车装好*/
+		           AND LT.TASK_STATE = 'LOADING'
+		           AND WD.WAYBILL_NO = S.WAYBILL_NO
+		           AND LS.SERIAL_NO = S.SERIAL_NO)
+		 GROUP BY W.WAYBILL_NO
+    
+    </select>
+    
+    
+    <!-- 计算快递中转库区库存总票数 -->
+    <select id="queryRcpStockTotalVote" parameterType="Map" resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.FieldStockMovtionEntity">
+    SELECT /*计算快递中转库区库存总票数 */
+	 COUNT(1) expressstockvotes,
+	 SUM(current_weight) expressstockweight,
+	 SUM(current_volume) expressstockvolume
+	  FROM (SELECT w.waybill_no waybill_no,
+	               round(MAX(w.goods_weight_total) * COUNT(1) /
+	                     MAX(w.goods_qty_total),
+	                     3) current_weight,
+	               round(MAX(w.goods_volume_total) * COUNT(1) /
+	                     MAX(w.goods_qty_total),
+	                     3) current_volume
+	          FROM tfr.t_opt_stock s
+	         INNER JOIN pkp.t_srv_waybill w
+	            ON w.waybill_no = s.waybill_no
+	           AND w.product_code IN ('PACKAGE', 'RCP') /*快递货*/
+	           AND w.active = 'Y'
+	         WHERE s.org_code = #{orgCode}
+	           AND s.goods_area_code = #{goodsAreaCode} /*快递库区*/
+	           AND NOT EXISTS (SELECT /*+full(tt)*/1 /*非待叉区*/
+	                  FROM tfr.t_opt_trayscan_task tt
+	                 INNER JOIN tfr.t_opt_trayscan_task_detail td
+	                    ON td.trayscan_task_no = tt.task_no
+	                 WHERE tt.outfield_org_code = s.org_code
+	                   AND tt.outfield_org_code = #{orgCode}
+	                   AND tt.create_time >= SYSDATE - 2 /*业务默认托盘绑定两天内，一定进行叉车扫描，未扫描的认为已从待叉区拉走*/
+	                   AND tt.statu = 'UNSCAN'
+	                   AND td.waybill_no = w.waybill_no
+	                   AND td.seria_no = s.serial_no)
+	           AND NOT EXISTS (SELECT /*+full(lt)*/1 /*非正在装车*/
+	                  FROM tfr.t_opt_load_task lt
+	                 INNER JOIN tfr.t_opt_load_waybill_detail wd
+	                    ON wd.load_task_id = lt.id
+	                 INNER JOIN tfr.t_opt_load_serialno ls
+	                    ON ls.load_waybill_detail_id = wd.id
+	                   AND ls.be_loaded = 'Y'
+	                 WHERE lt.orig_org_code = s.org_code
+	                   AND lt.orig_org_code = #{orgCode}
+	                   AND lt.load_start_time >= SYSDATE - 1 /*业务默认装车一天内一定把车装好*/
+	                   AND lt.task_state = 'LOADING'
+	                   AND wd.waybill_no = s.waybill_no
+	                   AND ls.serial_no = s.serial_no)
+	         GROUP BY w.waybill_no)
+
+    
+    </select>
+    
+    <!-- 快递派送库区库存 -->
+    <select id="queryRcpPickupStock" parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.QueryConditionStockMovtionDto" resultMap="fieldStockMovtionDetailMap">
+		SELECT /*快递派送库区库存*/W.WAYBILL_NO WAYBILL_NO,
+		       MAX(P.NAME) PRODUCT_NAME,
+		       MAX( 
+	           CASE W.RECEIVE_METHOD WHEN 'SELF_PICKUP' THEN '自提'
+	            WHEN 'INNER_PICKUP' THEN '内部带货自提'
+	            WHEN 'DELIVER_UP' THEN '送货上楼'
+	            WHEN 'DELIVER' THEN '免费送货'
+	            WHEN 'DELIVER_NOUP' THEN '送货（不含上楼）'
+	            WHEN 'SELF_PICKUP_FREE_AIR' THEN '免费自提(空运)'
+	            WHEN 'DELIVER_INGA_AIR' THEN '送货进仓(空运)'
+	            WHEN 'DELIVER_UP_AIR' THEN '送货上楼(空运)'
+	            WHEN 'DELIVER_AIR' THEN '免费送货(空运)'
+	            WHEN 'AIRPORT_PICKUP' THEN '机场自提'
+	            WHEN 'DELIVER_NOUP_AIR' THEN '空运送货（不含上楼)'
+	            WHEN 'SELF_PICKUP_AIR' THEN '自提（不含机场自提)'
+	            ELSE 'other' END) RECEIVE_METHOD,
+		       MAX(W.GOODS_QTY_TOTAL) GOODS_QTY_TOTAL,
+		       MAX(W.GOODS_WEIGHT_TOTAL) GOODS_WEIGHT_TOTAL,
+		       MAX(W.GOODS_VOLUME_TOTAL) GOODS_VOLUME_TOTAL,
+		       COUNT(1) CURRENT_QTY,
+		       ROUND(MAX(W.GOODS_WEIGHT_TOTAL) * COUNT(1) / MAX(W.GOODS_QTY_TOTAL),
+		             3) CURRENT_WEIGHT,
+		       ROUND(MAX(W.GOODS_VOLUME_TOTAL) * COUNT(1) / MAX(W.GOODS_QTY_TOTAL),
+		             3) CURRENT_VOLUME,
+		       MAX(O.NAME) NEXT_ORG_NAME
+		  FROM TFR.T_OPT_STOCK S
+		 INNER JOIN PKP.T_SRV_WAYBILL W
+		    ON W.WAYBILL_NO = S.WAYBILL_NO
+		   AND W.PRODUCT_CODE  IN ('PACKAGE', 'RCP','EPEP') /*快递货*/
+		   AND W.ACTIVE = 'Y'
+		 left JOIN PKP.T_SRV_PRODUCT P
+		    ON P.CODE = W.PRODUCT_CODE
+		   AND P.ACTIVE = 'Y'
+		 left JOIN BSE.T_BAS_ORG O
+		    ON O.CODE = S.NEXT_ORG_CODE
+		   AND O.ACTIVE = 'Y'
+		 WHERE S.ORG_CODE = #{origOrgCode,jdbcType=VARCHAR}
+		   AND S.GOODS_AREA_CODE =#{goodsAreaCode,jdbcType=VARCHAR} /*派送库区*/
+		   <if test="waybillNo!=null and waybillNo!=''">
+		     AND W.WAYBILL_NO = #{waybillNo}
+	       </if>
+		   <if test="productCode!=null and productCode!=''">
+	         AND W.PRODUCT_CODE =#{productCode}
+		   </if>
+		   AND NOT EXISTS (SELECT /*+full(TT)*/1 /*非待叉区*/
+		          FROM TFR.T_OPT_TRAYSCAN_TASK TT
+		         INNER JOIN TFR.T_OPT_TRAYSCAN_TASK_DETAIL TD
+		            ON TD.TRAYSCAN_TASK_NO = TT.TASK_NO
+		         WHERE TT.OUTFIELD_ORG_CODE = S.ORG_CODE
+		           AND TT.OUTFIELD_ORG_CODE=#{origOrgCode,jdbcType=VARCHAR}
+		           AND TT.CREATE_TIME >= SYSDATE - 2 /*业务默认托盘绑定两天内，一定进行叉车扫描，未扫描的认为已从待叉区拉走*/
+		           AND TT.STATU = 'UNSCAN'
+		           AND TD.WAYBILL_NO = W.WAYBILL_NO
+		           AND TD.SERIA_NO = S.SERIAL_NO)
+		   AND NOT EXISTS (SELECT /*+full(LT)*/1 /*非正在装车*/
+		          FROM TFR.T_OPT_LOAD_TASK LT
+		         INNER JOIN TFR.T_OPT_LOAD_WAYBILL_DETAIL WD
+		            ON WD.LOAD_TASK_ID = LT.ID
+		         INNER JOIN TFR.T_OPT_LOAD_SERIALNO LS
+		            ON LS.LOAD_WAYBILL_DETAIL_ID = WD.ID
+		           AND LS.BE_LOADED = 'Y'
+		         WHERE LT.ORIG_ORG_CODE = S.ORG_CODE
+		           AND LT.ORIG_ORG_CODE=#{origOrgCode,jdbcType=VARCHAR}
+		           AND LT.LOAD_START_TIME >= SYSDATE - 1 /*业务默认装车一天内一定把车装好*/
+		           AND LT.TASK_STATE = 'LOADING'
+		           AND WD.WAYBILL_NO = S.WAYBILL_NO
+		           AND LS.SERIAL_NO = S.SERIAL_NO)
+		 GROUP BY W.WAYBILL_NO
+    </select>
+    <!-- 计算快递派送库区库存总票数  -->
+    <select id="queryRcpPickupStockTotalVote" parameterType="Map" resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.FieldStockMovtionEntity">
+		SELECT /*计算快递派送库区库存总票数 */
+		 COUNT(1) expressdeliverstockvotes,
+		 SUM(current_weight) expressdeliverstockweight,
+		 SUM(current_volume) expressdeliverstockvolume
+		  FROM (SELECT w.waybill_no waybill_no,
+		               round(MAX(w.goods_weight_total) * COUNT(1) /
+		                     MAX(w.goods_qty_total),
+		                     3) current_weight,
+		               round(MAX(w.goods_volume_total) * COUNT(1) /
+		                     MAX(w.goods_qty_total),
+		                     3) current_volume
+		          FROM tfr.t_opt_stock s
+		         INNER JOIN pkp.t_srv_waybill w
+		            ON w.waybill_no = s.waybill_no
+		           AND w.product_code IN ('PACKAGE', 'RCP') /*快递货*/
+		           AND w.active = 'Y'
+		         WHERE s.org_code = #{orgCode}
+		           AND s.goods_area_code = #{goodsAreaCode} /*派送库区*/
+		           AND NOT EXISTS (SELECT /*+full(tt)*/1 /*非待叉区*/
+		                  FROM tfr.t_opt_trayscan_task tt
+		                 INNER JOIN tfr.t_opt_trayscan_task_detail td
+		                    ON td.trayscan_task_no = tt.task_no
+		                 WHERE tt.outfield_org_code = s.org_code
+		                   AND tt.outfield_org_code = #{orgCode}
+		                   AND tt.create_time >= SYSDATE - 2 /*业务默认托盘绑定两天内，一定进行叉车扫描，未扫描的认为已从待叉区拉走*/
+		                   AND tt.statu = 'UNSCAN'
+		                   AND td.waybill_no = w.waybill_no
+		                   AND td.seria_no = s.serial_no)
+		           AND NOT EXISTS (SELECT /*+full(lt)*/1 /*非正在装车*/
+		                  FROM tfr.t_opt_load_task lt
+		                 INNER JOIN tfr.t_opt_load_waybill_detail wd
+		                    ON wd.load_task_id = lt.id
+		                 INNER JOIN tfr.t_opt_load_serialno ls
+		                    ON ls.load_waybill_detail_id = wd.id
+		                   AND ls.be_loaded = 'Y'
+		                 WHERE lt.orig_org_code = s.org_code
+		                   AND lt.orig_org_code = #{orgCode}
+		                   AND lt.load_start_time >= SYSDATE - 1 /*业务默认装车一天内一定把车装好*/
+		                   AND lt.task_state = 'LOADING'
+		                   AND wd.waybill_no = s.waybill_no
+		                   AND ls.serial_no = s.serial_no)
+		         GROUP BY w.waybill_no)
+
+    </select>
+    <!-- 正在装车 --> 
+    <select id="queryLoading" parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.QueryConditionStockMovtionDto" resultMap="fieldStockMovtionDetailMap">
+		SELECT /*+ordered*/W.WAYBILL_NO WAYBILL_NO,
+		       MAX(P.NAME) PRODUCT_NAME,
+		       MAX( 
+	           CASE W.RECEIVE_METHOD WHEN 'SELF_PICKUP' THEN '自提'
+	            WHEN 'INNER_PICKUP' THEN '内部带货自提'
+	            WHEN 'DELIVER_UP' THEN '送货上楼'
+	            WHEN 'DELIVER' THEN '免费送货'
+	            WHEN 'DELIVER_NOUP' THEN '送货（不含上楼）'
+	            WHEN 'SELF_PICKUP_FREE_AIR' THEN '免费自提(空运)'
+	            WHEN 'DELIVER_INGA_AIR' THEN '送货进仓(空运)'
+	            WHEN 'DELIVER_UP_AIR' THEN '送货上楼(空运)'
+	            WHEN 'DELIVER_AIR' THEN '免费送货(空运)'
+	            WHEN 'AIRPORT_PICKUP' THEN '机场自提'
+	            WHEN 'DELIVER_NOUP_AIR' THEN '空运送货（不含上楼)'
+	            WHEN 'SELF_PICKUP_AIR' THEN '自提（不含机场自提)'
+	            ELSE 'other' END) RECEIVE_METHOD,
+		       MAX(W.GOODS_QTY_TOTAL) GOODS_QTY_TOTAL,
+		       MAX(W.GOODS_WEIGHT_TOTAL) GOODS_WEIGHT_TOTAL,
+		       MAX(W.GOODS_VOLUME_TOTAL) GOODS_VOLUME_TOTAL,
+		       COUNT(1) CURRENT_QTY,
+		       ROUND(MAX(W.GOODS_WEIGHT_TOTAL) * COUNT(1) / MAX(W.GOODS_QTY_TOTAL),
+		             3) CURRENT_WEIGHT,
+		       ROUND(MAX(W.GOODS_VOLUME_TOTAL) * COUNT(1) / MAX(W.GOODS_QTY_TOTAL),
+		             3) CURRENT_VOLUME,
+		       MAX(O.NAME) NEXT_ORG_NAME
+		  FROM TFR.T_OPT_LOAD_TASK T
+		 INNER JOIN TFR.T_OPT_LOAD_WAYBILL_DETAIL WD
+		    ON WD.LOAD_TASK_ID = T.ID
+		 INNER JOIN TFR.T_OPT_LOAD_SERIALNO LS
+		    ON LS.LOAD_WAYBILL_DETAIL_ID = WD.ID
+		   AND LS.BE_LOADED = 'Y'
+		 INNER JOIN TFR.T_OPT_STOCK S
+		    ON S.WAYBILL_NO = WD.WAYBILL_NO
+		   AND S.SERIAL_NO = LS.SERIAL_NO
+		   AND S.ORG_CODE = T.ORIG_ORG_CODE
+		 INNER JOIN PKP.T_SRV_WAYBILL W
+		    ON W.WAYBILL_NO = WD.WAYBILL_NO
+		   AND W.ACTIVE = 'Y'
+		 left JOIN PKP.T_SRV_PRODUCT P
+		    ON P.CODE = W.PRODUCT_CODE
+		   AND P.ACTIVE = 'Y'
+		 left JOIN BSE.T_BAS_ORG O
+		    ON O.CODE = S.NEXT_ORG_CODE
+		   AND O.ACTIVE = 'Y'
+		 WHERE T.ORIG_ORG_CODE = #{origOrgCode,jdbcType=VARCHAR}
+		   AND T.LOAD_START_TIME >= SYSDATE - 1 /*业务默认装车一天内一定把车装好*/
+		   AND T.TASK_STATE = 'LOADING'
+		   <if test="waybillNo!=null and waybillNo!=''">
+		     AND W.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+	       </if>
+		   <if test="productCode!=null and productCode!=''">
+	         AND W.PRODUCT_CODE =#{productCode,jdbcType=VARCHAR}
+		   </if>
+		 GROUP BY W.WAYBILL_NO
+    </select>
+  <!-- 计算已装车总票数 -->
+  <select id="queryLoadingTotalVote" parameterType="Map" resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.FieldStockMovtionEntity">
+  SELECT /*计算正在装车总票数 */
+	 COUNT(1) loadedvotes,
+	 SUM(current_weight) loadedweight,
+	 SUM(current_volume) loadedvolume
+	  FROM (SELECT /*+ordered*/ w.waybill_no,
+	               round(MAX(w.goods_weight_total) * COUNT(1) /
+	                     MAX(w.goods_qty_total),
+	                     3) current_weight,
+	               round(MAX(w.goods_volume_total) * COUNT(1) /
+	                     MAX(w.goods_qty_total),
+	                     3) current_volume
+	          FROM tfr.t_opt_load_task t
+	         INNER JOIN tfr.t_opt_load_waybill_detail wd
+	            ON wd.load_task_id = t.id
+	         INNER JOIN tfr.t_opt_load_serialno ls
+	            ON ls.load_waybill_detail_id = wd.id
+	           AND ls.be_loaded = 'Y'
+	         INNER JOIN tfr.t_opt_stock s
+	            ON s.waybill_no = wd.waybill_no
+	           AND s.serial_no = ls.serial_no
+	           AND s.org_code = t.orig_org_code
+	         INNER JOIN pkp.t_srv_waybill w
+	            ON w.waybill_no = wd.waybill_no
+	           AND w.active = 'Y'
+	         WHERE t.orig_org_code = #{orgCode}
+	           AND t.load_start_time >= SYSDATE - 1 /*业务默认装车一天内一定把车装好*/
+	           AND t.task_state = 'LOADING'
+	         GROUP BY w.waybill_no)
+
+  </select>
+  
+</mapper>

@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://www.springframework.org/schema/jee 
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+			http://www.springframework.org/schema/aop 
+			http://www.springframework.org/schema/aop/spring-aop-3.0.xsd"
+	default-autowire="byName">
+	
+	<!-- 配置数据源 -->
+	<bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+	    <property name="driverClassName" value="oracle.jdbc.driver.OracleDriver"  />
+	    <property name="url" value="jdbc:oracle:thin:@192.168.10.111:1521:fossdbsb" />
+	    <property name="username" value="pkp" />
+	    <property name="password" value="fosssit"></property>
+	</bean>
+	<!-- 配置mybatis -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+	    <property name="mapperLocations">
+	       <list>
+	          <value>
+	              classpath:com/deppon/foss/module/pickup/pricing/server/META-INF/ibatis/PopPriceDetailSectionEntityMapper.xml
+	          </value>
+	          <value>
+	             classpath:com/deppon/foss/module/pickup/pricing/server/META-INF/ibatis/PricePlanEntityMapper.xml
+	          </value>
+	          <value>
+	              classpath:com/deppon/foss/module/pickup/pricing/server/META-INF/ibatis/pricingProductItem-mapper.xml
+	          </value>
+	          <value>
+	             classpath:com/deppon/foss/module/pickup/pricing/server/META-INF/ibatis/PriceEntityMapper.xml
+	          </value>
+	          <value>
+	             classpath:com/deppon/foss/module/pickup/pricing/server/META-INF/ibatis/pricingGoodsType-mapper.xml
+	          </value>
+	          <value>
+	             classpath:com/deppon/foss/module/pickup/pricing/server/META-INF/ibatis/pricingProduct-mapper.xml
+	          </value>
+	          <value>
+	             classpath:com/deppon/foss/module/pickup/pricing/server/META-INF/ibatis/pricingRegionArrive-mapper.xml
+	          </value>
+	          <value>
+	             classpath:com/deppon/foss/module/pickup/pricing/server/META-INF/ibatis/PriceValuationEntityMapper.xml
+	          </value>
+	          <value>
+	             classpath:com/deppon/foss/module/pickup/pricing/server/META-INF/ibatis/PriceCriteriaDetailEntityMapper.xml
+	          </value>
+	       </list>
+	    </property>
+	    <property name="dataSource" ref="dataSource"></property>
+	</bean>
+	<!-- 配置popPriceDetailSectionDao -->
+	<bean id="priceDetailSectionDao"
+	   class="com.deppon.foss.module.pickup.pricing.server.dao.impl.PopPriceDetailSectionDao"
+	   scope="prototype">
+	</bean>
+	<!-- 配置PricePlanDao -->
+	<bean id="pricePlanDao"
+	   class="com.deppon.foss.module.pickup.pricing.server.dao.impl.PricePlanDao"
+	   scope="prototype">
+	</bean>
+	<!-- 配置goodTypeDao -->
+	<bean id="goodsTypeDao"
+	   class=" com.deppon.foss.module.pickup.pricing.server.dao.impl.GoodsTypeDao"
+	   scope="prototype">
+	</bean>
+	<!-- 配置productDao -->
+	<bean id="productDao"
+	   class="com.deppon.foss.module.pickup.pricing.server.dao.impl.ProductDao"
+	   scope="prototype">
+	</bean>
+	<!-- 配置regionArriveDao -->
+	<bean id="regionArriveDao"
+	   class="com.deppon.foss.module.pickup.pricing.server.dao.impl.RegionArriveDao"
+	   scope="prototype">
+	</bean>
+	<!-- 配置"priceValuationDao" -->
+	<bean id="priceValuationDao"
+	   class="com.deppon.foss.module.pickup.pricing.server.dao.impl.PriceValuationDao"
+	   scope="prototype">
+	</bean>
+	<!-- setter注入popPriceDetailSectionDao -->
+	<bean id="popPriceDetailSection" 
+	   class="com.deppon.foss.module.pickup.pricing.server.dao.impl.PopPriceDetailSectionDao" />
+	<!-- setter注入priceEntryDao -->
+	<bean id="priceEntry"
+	   class="com.deppon.foss.module.pickup.pricing.server.dao.impl.PriceEntryDao"/>
+	 <!-- setter注入goodsTypeService -->
+	 <bean id="goodsType"
+	    class="com.deppon.foss.module.pickup.pricing.server.service.impl.GoodsTypeService">
+	 </bean>
+	 <!-- setter注入productService -->
+	 <bean id="productService"
+	    class="com.deppon.foss.module.pickup.pricing.server.service.impl.ProductService" >
+	 </bean>
+	<!-- setter注入priceCriteriaDetailDao -->
+	<bean id="priceCriteriaDetailDao"
+	   class="com.deppon.foss.module.pickup.pricing.server.dao.impl.PriceCriteriaDetailDao">
+	</bean>
+	<!-- setter注入productItemDao -->
+	<bean id="productItemDao"
+	   class="com.deppon.foss.module.pickup.pricing.server.dao.impl.ProductItemDao">
+	</bean>
+	<bean id="pricePlanService"
+	   class="com.deppon.foss.module.pickup.pricing.server.service.impl.PricePlanService"
+	   scope="prototype">
+	       <property name="popPriceDetailSectionDao" ref="popPriceDetailSection"></property>
+	       <property name="priceEntryDao" ref="priceEntry"></property>
+	       <property name="goodsTypeService" ref="goodsType"></property>
+	       <property name="productService" ref="productService"></property>
+	       <property name="regionArriveService" ref="regionArriveService"></property>
+	       <property name="priceValuationDao" ref="priceValuationDao"></property>
+	       <property name="priceCriteriaDetailDao" ref="priceCriteriaDetailDao"></property>
+	       <property name="productItemDao" ref="productItemDao"></property>
+	</bean>
+	<bean id="regionArriveService"
+	   class="com.deppon.foss.module.pickup.pricing.server.service.impl.RegionArriveService"   
+	   scope="prototype">
+		    <property name="regionArriveDao" ref="regionArriveDao"></property>
+    </bean>
+    
+    <!-- 组织机构service -->
+    <bean id="orgAdministrativeInfoService"
+     class="com.deppon.foss.module.base.baseinfo.server.service.impl.OrgAdministrativeInfoService">
+    </bean>
+    
+    <!-- 偏线服务 -->
+    <bean id="VehicleAgencyDeptService"
+     class="com.deppon.foss.module.base.baseinfo.server.service.impl.VehicleAgencyDeptService">
+    </bean>
+    
+    <!-- 走货路径 -->
+    <bean id="FreightRouteService"
+     class="com.deppon.foss.module.base.baseinfo.server.service.impl.FreightRouteService">
+    </bean>
+    
+    <bean id="publishPriceService"
+     class="com.deppon.foss.module.pickup.pricing.server.service.impl.PublishPriceService"
+     scope="prototype">
+        <property name="orgAdministrativeInfoService" ref="orgAdministrativeInfoService"></property>
+        <property name="vehicleAgencyDeptService" ref="VehicleAgencyDeptService"></property>
+        <property name="freightRouteService" ref="FreightRouteService"></property>
+    </bean>
+</beans>

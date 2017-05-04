@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://www.springframework.org/schema/jee 
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+			http://www.springframework.org/schema/aop 
+			http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">
+
+	<!-- 数据源 
+	<bean id="dataSource"
+		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver" />
+		<property name="url" value="jdbc:oracle:thin:@192.168.10.11:1521:fossdb" />
+		<property name="username" value="tfr" />
+		<property name="password" value="fossdev" />
+	</bean>
+	
+	<bean id="dataSource"
+		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver" />
+		<property name="url" value="jdbc:oracle:thin:@192.168.10.11:1521:fossdb" />
+		<property name="username" value="tfr" />
+		<property name="password" value="fossdev" />
+	</bean>
+
+	
+	<bean id="dataSource"
+		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver" />
+		<property name="url" value="jdbc:oracle:thin:@192.168.10.119:1521:fossdb" />
+		<property name="username" value="tfr" />
+		<property name="password" value="fossdev" />
+	</bean>
+	-->
+	<!-- 数据源 jndi方式 -->
+	<bean id="dataSource" class="org.springframework.jndi.JndiObjectFactoryBean">
+		<property name="jndiName">
+			<value>jdbc/fossds</value>
+		</property>
+		<property name="resourceRef" value="true" />
+	</bean>
+	
+	<!-- JDBC模版 -->
+	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+		<constructor-arg ref="dataSource" />
+	</bean>
+
+	<!-- 数据连接管理 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<!-- 事务注解支持 -->
+	<tx:annotation-driven transaction-manager="transactionManager" />
+	<aop:config proxy-target-class="true"></aop:config>
+
+	<!-- myBatis文件 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="configLocation"
+			value="/com/deppon/foss/module/transfer/stock/server/META-INF/mybatis.xml" />
+		<!-- 正式测试环境路径 -->
+		<property name="mapperLocations"
+			value="classpath*:com/deppon/**/META-INF/ibatis/*-mapper.xml" />
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+    <bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg index="0" ref="sqlSessionFactory" />
+	</bean>
+	<context:annotation-config />
+	<context:component-scan base-package="com.deppon.foss.module.transfer.stock" />
+	<bean id="transportationPathDao"	class="com.deppon.foss.module.transfer.scheduling.server.dao.impl.TransportationPathDao" />
+	<bean id="pathDetailDao"	class="com.deppon.foss.module.transfer.scheduling.server.dao.impl.PathDetailDao" />
+	<bean id="changePathDao"	class="com.deppon.foss.module.transfer.scheduling.server.dao.impl.ChangePathDao" />
+	<bean id="calculateTransportPathService" class="com.deppon.foss.module.transfer.scheduling.server.service.impl.CalculateTransportPathService">
+		<property name="transportationPathDao" ref="transportationPathDao"/>
+		<property name="pathDetailDao" ref="pathDetailDao"/>
+	</bean>
+	<bean id="orgAdministrativeInfoDao" 
+		  class="com.deppon.foss.module.base.baseinfo.server.dao.impl.OrgAdministrativeInfoDao">
+		<property name="sqlSession" ref="sqlSession" />
+	</bean>	
+	
+	<!-- 数据访问层 -->
+	<bean id="administrativeRegionsDao" 
+		  class="com.deppon.foss.module.base.baseinfo.server.dao.impl.AdministrativeRegionsDao">
+		<property name="sqlSession" ref="sqlSession" />
+	</bean>	
+	<!-- 业务服务层 -->
+	<bean id="administrativeRegionsService" 
+		  class="com.deppon.foss.module.base.baseinfo.server.service.impl.AdministrativeRegionsService">
+		<property name="administrativeRegionsDao" ref="administrativeRegionsDao" />
+	</bean>
+	<bean id="financialOrganizationsDao" 
+			class="com.deppon.foss.module.base.baseinfo.server.dao.impl.FinancialOrganizationsDao">
+		<property name="sqlSession" ref="sqlSession" />
+	</bean>
+	<bean id="financialOrganizationsService" 
+		  class="com.deppon.foss.module.base.baseinfo.server.service.impl.FinancialOrganizationsService">
+		<property name="financialOrganizationsDao" ref="financialOrganizationsDao" />
+	</bean>	
+	<bean id="orgAdministrativeInfoService" 
+		 class="com.deppon.foss.module.base.baseinfo.server.service.impl.OrgAdministrativeInfoService">
+		<property name="orgAdministrativeInfoDao" ref="orgAdministrativeInfoDao" />
+		<property name="administrativeRegionsService" ref="administrativeRegionsService" />
+		<property name="financialOrganizationsService" ref="financialOrganizationsService" />
+	</bean>	
+	<bean id="goodsAreaDao"
+		class="com.deppon.foss.module.base.baseinfo.server.dao.impl.GoodsAreaDao">
+		<property name="sqlSession" ref="sqlSession" />
+	</bean>
+	<bean id="goodsAreaService"
+		class="com.deppon.foss.module.base.baseinfo.server.service.impl.GoodsAreaService">
+		<property name="goodsAreaDao" ref="goodsAreaDao" />
+	</bean>
+	
+	<bean id="productService" class="com.deppon.foss.module.pickup.pricing.server.service.impl.ProductService">
+		<property name="productDao" ref="productDao" />
+	</bean>
+	
+	<bean id="productDao" class="com.deppon.foss.module.pickup.pricing.server.dao.impl.ProductDao">
+		<property name="sqlSession" ref="sqlSession" />
+	</bean>
+	
+	<bean id="noLabelGoodsDao" class="com.deppon.foss.module.transfer.exceptiongoods.server.dao.impl.NoLabelGoodsDao" />
+	<bean id="noLabelGoodsService" class="com.deppon.foss.module.transfer.exceptiongoods.server.service.impl.NoLabelGoodsService">
+		<property name="noLabelGoodsDao" ref="noLabelGoodsDao" />
+	</bean>
+	
+	<bean id="contrabandGoodsDao" class="com.deppon.foss.module.transfer.exceptiongoods.server.dao.impl.ContrabandGoodsDao" />
+	
+	<bean id="contrabandGoodsService" class="com.deppon.foss.module.transfer.exceptiongoods.server.service.impl.ContrabandGoodsService">
+		<property name="contrabandGoodsDao" ref="contrabandGoodsDao" />
+	</bean>
+	
+	<bean id="serialNumberRuleDao"	class="com.deppon.foss.module.transfer.common.server.dao.impl.SerialNumberRuleDao" />
+	
+	<!-- 数据访问层  -->
+	<bean id="employeeDao" 
+			class="com.deppon.foss.module.base.baseinfo.server.dao.impl.EmployeeDao">
+		<property name="sqlSession" ref="sqlSession" />
+	</bean>	
+	<!-- 业务服务层 -->
+	<bean id="employeeService" 
+		  class="com.deppon.foss.module.base.baseinfo.server.service.impl.EmployeeService">
+		<property name="employeeDao" ref="employeeDao" />
+		<property name="orgAdministrativeInfoService" ref="orgAdministrativeInfoService" />
+	</bean>	
+	<!-- 数据访问层  -->
+	<bean id="orgAdministrativeInfoComplexDao" 
+			class="com.deppon.foss.module.base.baseinfo.server.dao.impl.complex.OrgAdministrativeInfoComplexDao">
+		<property name="sqlSession" ref="sqlSession" />
+	</bean>	
+	<bean id="motorcadeDao" 
+			class="com.deppon.foss.module.base.baseinfo.server.dao.impl.MotorcadeDao">
+		<property name="sqlSession" ref="sqlSession" />
+	</bean>
+	<!-- 业务服务层 -->
+	<bean id="orgAdministrativeInfoComplexService" 
+		  class="com.deppon.foss.module.base.baseinfo.server.service.impl.complex.OrgAdministrativeInfoComplexService">
+		<property name="orgAdministrativeInfoDao" ref="orgAdministrativeInfoDao" />
+		<property name="orgAdministrativeInfoComplexDao" ref="orgAdministrativeInfoComplexDao" />
+		<property name="motorcadeDao" ref="motorcadeDao" />
+	</bean>	
+	
+	<bean id="printLabelService" class="com.deppon.foss.module.transfer.exceptiongoods.server.service.impl.PrintLabelService">
+		<property name="printLabelDao" ref="printLabelDao" />
+	</bean>
+	
+	<bean id="printLabelDao" class="com.deppon.foss.module.transfer.exceptiongoods.server.dao.impl.PrintLabelDao" />
+	
+	<bean id="pdaStockcheckingService" class="com.deppon.foss.module.transfer.stockchecking.server.service.impl.PdaStockcheckingService" />
+	
+	<bean id="stTaskDao" class="com.deppon.foss.module.transfer.stockchecking.server.dao.impl.StTaskDao"/>
+	<bean id="stTaskPdaDao" class="com.deppon.foss.module.transfer.stockchecking.server.dao.impl.StTaskPdaDao"/>
+	<bean id="stTaskListDao" class="com.deppon.foss.module.transfer.stockchecking.server.dao.impl.StTaskListDao"/>
+	<bean id="stOperatorDao" class="com.deppon.foss.module.transfer.stockchecking.server.dao.impl.StOperatorDao"/>
+	<!--  <bean id="tfrCommonService" class="com.deppon.foss.module.transfer.common.server.service.impl.TfrCommonService" /> -->
+	<bean id="saleDepartmentDao" 
+			class="com.deppon.foss.module.base.baseinfo.server.dao.impl.SaleDepartmentDao">
+		<property name="sqlSession" ref="sqlSession" />
+	</bean>	
+	<!-- 业务服务层 -->
+	<bean id="saleDepartmentService" 
+		  class="com.deppon.foss.module.base.baseinfo.server.service.impl.SaleDepartmentService">
+		<property name="saleDepartmentDao" ref="saleDepartmentDao" />
+		<property name="orgAdministrativeInfoService" ref="orgAdministrativeInfoService" />
+	</bean>	
+	
+	<bean id="vehicleAgencyDeptDao"
+		class="com.deppon.foss.module.base.baseinfo.server.dao.impl.VehicleAgencyDeptDao">
+		<property name="sqlSession" ref="sqlSession" />
+	</bean>
+	<bean id="vehicleAgencyDeptService"
+		class="com.deppon.foss.module.base.baseinfo.server.service.impl.VehicleAgencyDeptService">
+		<property name="vehicleAgencyDeptDao" ref="vehicleAgencyDeptDao" />
+	</bean>
+	
+	<bean id="waybillDao"
+		class="com.deppon.foss.module.pickup.waybill.server.dao.impl.WaybillDao">
+	</bean>
+	
+	<bean id="waybillManagerService"
+		class="com.deppon.foss.module.pickup.waybill.server.service.impl.WaybillManagerService">
+		<property name="waybillDao" ref="waybillDao" />
+	</bean>
+	
+	<import resource="spring.xml" />
+</beans>

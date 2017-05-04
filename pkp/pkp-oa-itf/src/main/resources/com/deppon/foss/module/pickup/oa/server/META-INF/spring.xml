@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:tx="http://www.springframework.org/schema/tx"  
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jaxws="http://cxf.apache.org/jaxws" 
+	xmlns:jaxrs="http://cxf.apache.org/jaxrs"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+		http://cxf.apache.org/jaxws http://cxf.apache.org/schemas/jaxws.xsd
+		http://cxf.apache.org/jaxrs http://cxf.apache.org/schemas/jaxrs.xsd	
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.0.xsd"
+		default-autowire="byName">	
+     
+	<!--==== 服务端spring配置======== -->
+	<!-- 弃货工作流发起审批结果接口  -->
+	<bean id="abandonGoodsOAService" class="com.deppon.foss.module.pickup.oa.server.jms.AbandonGoodsOAService" />
+
+
+	<bean id="esbInitUtil" class="com.deppon.esb.api.util.ESBInitUtil"
+		init-method="process" lazy-init="false">
+	
+		<property name="processMap">
+			<map>
+				<entry key="FOSS_ESB2FOSS_DISCARD_RESULT" value-ref="abandonGoodsOAService" /> 
+				<!-- 弃货工作流发起审批结果接口	-->
+			</map>
+		</property>
+	</bean>
+	
+	<bean id="pkpWorkflowServiceImpl" class="com.deppon.foss.module.pickup.oa.server.jms.PkpWorkflowServiceImpl">
+ 	</bean>
+ 	
+ 	<!--同步反签收信息:243921-->
+ 	<bean id="reverseSignSettleForTPS"
+		  class="com.deppon.foss.module.pickup.tps.server.rs.impl.ReverseSignSettleForTPS" />
+	
+	<!--同步签收结果表:330547-->
+	<bean id="vtsWaybillSignResultProcess" class="com.deppon.foss.module.pickup.tps.server.jms.VtsWaybillSignResultProcess"/>
+ 	
+	<!--==== 服务端spring配置======== -->
+	<jaxws:endpoint implementorClass="com.deppon.foss.fosspkpforoaservice.FossPkpforOAService"
+		implementor="#pkpWorkflowServiceImpl"
+		address="/oaws">
+		<jaxws:features>
+			<bean class="org.apache.cxf.feature.LoggingFeature"></bean>
+		</jaxws:features>
+		<jaxws:inInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingInInterceptor"/>
+		</jaxws:inInterceptors>
+		<jaxws:outInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingOutInterceptor"/>
+		</jaxws:outInterceptors>
+	</jaxws:endpoint>
+	
+	<bean id="abandonGoodsQmsService" class="com.deppon.foss.module.pickup.qms.service.impl.AbandonGoodsQmsService" />
+	<!-- restful服务端spring配置 -->
+	<jaxrs:server id="abandonGoodsQmsServiceRS" address="/abandonGoodsQmsService">
+		<jaxrs:serviceBeans>
+			<ref bean="abandonGoodsQmsService" />
+		</jaxrs:serviceBeans>
+		<jaxrs:extensionMappings>
+			<entry key="json" value="application/json" />
+		</jaxrs:extensionMappings>
+	    <jaxrs:languageMappings>
+			<entry key="en" value="en-gb" />
+		</jaxrs:languageMappings> 
+		<jaxrs:inInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	
+	<bean id="cubcQueryAmountService" class="com.deppon.foss.module.pickup.qms.service.impl.CubcQueryAmountService" />
+	<!-- restful服务端spring配置 -->
+	<jaxrs:server id="cubcQueryAmountServiceRS" address="/cubcQueryAmountService">
+		<jaxrs:serviceBeans>
+			<ref bean="cubcQueryAmountService" />
+		</jaxrs:serviceBeans>
+		<jaxrs:extensionMappings>
+			<entry key="json" value="application/json" />
+		</jaxrs:extensionMappings>
+	    <jaxrs:languageMappings>
+			<entry key="en" value="en-gb" />
+		</jaxrs:languageMappings> 
+		<jaxrs:inInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+</beans>

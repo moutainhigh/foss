@@ -1,0 +1,406 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="Foss.platform.platformOpeEffi" >
+	<resultMap id="PlatformOpeEffiMap" type="com.deppon.foss.module.transfer.platform.api.shared.domain.PlatformOpeEffiEntity" >
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="STA_DATE" property="statisticDate" jdbcType="TIMESTAMP" />
+		<result column="STA_MONTH" property="statisticMonth" jdbcType="NUMERIC" />
+		<result column="BUSINESS_DEPT_CODE" property="businessDeptCode" jdbcType="VARCHAR" />
+		<result column="BUSINESS_DEPT_NAME" property="businessDept" jdbcType="VARCHAR" />
+		<result column="TFR_CTR_CODE" property="outfieldCode" jdbcType="VARCHAR" />
+		<result column="TFR_CTR_NAME" property="outfield" jdbcType="VARCHAR" />
+		<result column="PLATFORM_CODE" property="platformNumber" jdbcType="VARCHAR" />
+		<result column="WEIGHT_LOAD_DAY" property="loadAmountByDay" jdbcType="DECIMAL" />
+		<result column="TIME_LOAD_DAY" property="loadTimeByDay" jdbcType="DECIMAL" />
+		<result column="WEIGHT_UNLOAD_DAY" property="downloadAmountByDay" jdbcType="DECIMAL" />
+		<result column="TIME_UNLOAD_DAY" property="downloadTimeByDay" jdbcType="DECIMAL" />
+		<result column="EFF_DAY" property="platformOpeEffiByDay" jdbcType="DECIMAL" />
+		<result column="WEIGHT_LOAD_MONTH" property="loadAmountByMonth" jdbcType="DECIMAL" />
+		<result column="TIME_LOAD_MONTH" property="loadTimeByMonth" jdbcType="DECIMAL" />
+		<result column="WEIGHT_UNLOAD_MONTH" property="downloadAmountByMonth" jdbcType="DECIMAL" />
+		<result column="TIME_UNLOAD_MONTH" property="downloadTimeByMonth" jdbcType="DECIMAL" />
+		<result column="EFF_MONTH" property="platformOpeEffiByMonth" jdbcType="DECIMAL" />
+		<result column="CREATE_DATE" property="createDate" jdbcType="TIMESTAMP" />
+	</resultMap>
+	
+	<!-- 查询月台操作效率-->
+	<select id="queryPlatformOpeEffi" parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.PlatformOpeEffiCondiDto" resultMap="PlatformOpeEffiMap">
+		<![CDATA[
+		SELECT EFF.ID,
+	       EFF.BUSINESS_DEPT_CODE,
+	       EFF.BUSINESS_DEPT_NAME,
+	       EFF.TFR_CTR_CODE,
+	       EFF.TFR_CTR_NAME,
+	       EFF.WEIGHT_LOAD_DAY,
+	       EFF.TIME_LOAD_DAY,
+	       EFF.WEIGHT_UNLOAD_DAY,
+	       EFF.TIME_UNLOAD_DAY,
+	       EFF.EFF_DAY,
+	       EFF.WEIGHT_LOAD_MONTH,
+	       EFF.TIME_LOAD_MONTH,
+	       EFF.WEIGHT_UNLOAD_MONTH,
+	       EFF.TIME_UNLOAD_MONTH,
+	       EFF.EFF_MONTH,
+	       EFF.STA_DATE,
+	       EFF.STA_MONTH,
+	       EFF.CREATE_DATE
+		FROM TFR.T_OPT_PLATFORM_EFF EFF 
+		WHERE EFF.STA_DATE >= TRUNC(#{statisticDate,jdbcType=TIMESTAMP},'dd') 
+		AND EFF.STA_DATE < TRUNC(#{statisticDate,jdbcType=TIMESTAMP},'dd')+1
+		]]>
+		<if test="businessDeptCode != null and businessDeptCode != ''">
+			AND EFF.BUSINESS_DEPT_CODE = #{businessDeptCode,jdbcType=VARCHAR}
+		</if>
+		<if test="outfieldCode != null and outfieldCode != ''">
+			AND EFF.TFR_CTR_CODE = #{outfieldCode,jdbcType=VARCHAR}
+		</if>
+		 ORDER BY EFF.ID
+	</select>
+	
+	<!-- 查询月台操作效率 总条数-->
+	<select id="queryPlatformOpeEffiCount" parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.PlatformOpeEffiCondiDto" resultType="int">
+		<![CDATA[
+		SELECT COUNT(1) 
+		FROM TFR.T_OPT_PLATFORM_EFF EFF 
+		WHERE EFF.STA_DATE >= TRUNC(#{statisticDate,jdbcType=TIMESTAMP},'dd')
+		AND EFF.STA_DATE < TRUNC(#{statisticDate,jdbcType=TIMESTAMP},'dd')+1
+		]]>
+		<if test="businessDeptCode != null and businessDeptCode != ''">
+			AND EFF.BUSINESS_DEPT_CODE = #{businessDeptCode,jdbcType=VARCHAR}
+		</if>
+		<if test="outfieldCode != null and outfieldCode != ''">
+			AND EFF.TFR_CTR_CODE = #{outfieldCode,jdbcType=VARCHAR}
+		</if>
+		ORDER BY EFF.ID
+	</select>
+	
+	<!-- 查询月台操作效率明细-->
+	<select id="queryPlatformOpeEffiDetail" parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.PlatformOpeEffiCondiDto" resultMap="PlatformOpeEffiMap">
+		<![CDATA[
+		SELECT ED.ID,
+	       ED.BUSINESS_DEPT_CODE,
+	       ED.BUSINESS_DEPT_NAME,
+	       ED.TFR_CTR_CODE,
+	       ED.TFR_CTR_NAME,
+	       ED.PLATFORM_CODE,
+	       ED.WEIGHT_LOAD_DAY,
+	       ED.TIME_LOAD_DAY,
+	       ED.WEIGHT_UNLOAD_DAY,
+	       ED.TIME_UNLOAD_DAY,
+	       ED.EFF_DAY,
+	       ED.WEIGHT_LOAD_MONTH,
+	       ED.TIME_LOAD_MONTH,
+	       ED.WEIGHT_UNLOAD_MONTH,
+	       ED.TIME_UNLOAD_MONTH,
+	       ED.EFF_MONTH,
+	       ED.STA_DATE,
+	       ED.STA_MONTH,
+	       ED.CREATE_DATE
+	  FROM TFR.T_OPT_PLATFORM_EFF_DETAIL ED 
+		WHERE ED.STA_DATE >= TRUNC(#{statisticDate,jdbcType=TIMESTAMP},'dd')
+		AND ED.STA_DATE < TRUNC(#{statisticDate,jdbcType=TIMESTAMP},'dd')+1
+		]]>
+		<if test="businessDeptCode != null and businessDeptCode != ''">
+			AND ED.BUSINESS_DEPT_CODE = #{businessDeptCode,jdbcType=VARCHAR}
+		</if>
+		<if test="outfieldCode != null and outfieldCode != ''">
+			AND ED.TFR_CTR_CODE = #{outfieldCode,jdbcType=VARCHAR}
+		</if>
+		<if test="platformNumber != null and platformNumber != ''">
+			AND ED.PLATFORM_CODE = #{platformNumber,jdbcType=VARCHAR}
+		</if>
+		ORDER BY ED.ID
+	</select>
+	
+	<!-- 查询月台操作效率明细 总条数-->
+	<select id="queryPlatformOpeEffiDetailCount" parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.PlatformOpeEffiCondiDto" resultType="int">
+		<![CDATA[
+		SELECT COUNT(1) 
+		FROM TFR.T_OPT_PLATFORM_EFF_DETAIL ED 
+		WHERE ED.STA_DATE >= TRUNC(#{statisticDate,jdbcType=TIMESTAMP},'dd')
+		AND ED.STA_DATE < TRUNC(#{statisticDate,jdbcType=TIMESTAMP},'dd')+1
+		]]>
+		<if test="businessDeptCode != null and businessDeptCode != ''">
+			AND ED.BUSINESS_DEPT_CODE = #{businessDeptCode,jdbcType=VARCHAR}
+		</if>
+		<if test="outfieldCode != null and outfieldCode != ''">
+			AND ED.TFR_CTR_CODE = #{outfieldCode,jdbcType=VARCHAR}
+		</if>
+		<if test="platformNumber != null and platformNumber != ''">
+			AND ED.PLATFORM_CODE = #{platformNumber,jdbcType=VARCHAR}
+		</if>
+		ORDER BY ED.ID
+	</select>
+	
+	<!-- 查询需要统计月台操作效率的外场列表 -->
+	<select id="queryOutfieldInfoList" resultMap="PlatformOpeEffiMap">
+		<![CDATA[
+			SELECT T.CODE TFR_CTR_CODE, T.NAME TFR_CTR_NAME
+			  FROM BSE.T_BAS_ORG T
+			 WHERE T.ACTIVE = 'Y'
+			   AND T.TRANSFER_CENTER = 'Y'
+			   AND (T.EXPRESS_BRANCH = 'N' OR T.EXPRESS_BRANCH IS NULL)
+			 ORDER BY T.ID
+		 ]]>
+	</select>
+	
+	<!-- 插入月台操作效率明细日数据-->
+	<insert id="insertPlatformOpeEffiDayDetailData" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.PlatformOpeEffiEntity">
+		<![CDATA[
+			INSERT INTO TFR.T_OPT_PLATFORM_EFF_DETAIL DE
+			  (DE.ID,
+			   DE.BUSINESS_DEPT_CODE,
+			   DE.BUSINESS_DEPT_NAME,
+			   DE.TFR_CTR_CODE,
+			   DE.TFR_CTR_NAME,
+			   DE.PLATFORM_CODE,
+			   DE.WEIGHT_LOAD_DAY,
+			   DE.TIME_LOAD_DAY,
+			   DE.WEIGHT_UNLOAD_DAY,
+			   DE.TIME_UNLOAD_DAY,
+			   DE.EFF_DAY,
+			   DE.WEIGHT_LOAD_MONTH,
+			   DE.TIME_LOAD_MONTH,
+			   DE.WEIGHT_UNLOAD_MONTH,
+			   DE.TIME_UNLOAD_MONTH,
+			   DE.EFF_MONTH,
+			   DE.STA_DATE,
+			   DE.STA_MONTH,
+			   DE.CREATE_DATE)
+			  SELECT SYS_GUID() ID,
+			         #{businessDeptCode,jdbcType=VARCHAR} HQ_CODE,
+			         #{businessDept,jdbcType=VARCHAR} HQ_NAME,
+			         #{outfieldCode,jdbcType=VARCHAR} TFR_CTR_CODE,
+			         #{outfield,jdbcType=VARCHAR} TFR_CTR_NAME,
+			         TMP.PLATFORM_CODE PLATFORM_CODE,
+			         ROUND(SUM(TMP.WEIGHT_LOAD_DAY) * 0.001, 2) WEIGHT_LOAD_DAY,
+			         ROUND(SUM(TMP.TIME_LOAD_DAY), 2) TIME_LOAD_DAY,
+			         ROUND(SUM(TMP.WEIGHT_UNLOAD_DAY) * 0.001, 2) WEIGHT_UNLOAD_DAY,
+			         ROUND(SUM(TMP.TIME_UNLOAD_DAY), 2) TIME_UNLOAD_DAY,
+			         
+			         DECODE(ROUND(SUM(TMP.TIME_LOAD_DAY), 2) + ROUND(SUM(TMP.TIME_UNLOAD_DAY), 2),
+		              0,
+		              0,
+		              NULL,
+		              0,
+		              ROUND((ROUND(SUM(TMP.WEIGHT_LOAD_DAY) * 0.001, 2) + ROUND(SUM(TMP.WEIGHT_UNLOAD_DAY) * 0.001, 2)) /
+		                    (ROUND(SUM(TMP.TIME_LOAD_DAY), 2) + ROUND(SUM(TMP.TIME_UNLOAD_DAY), 2)),
+		                    2)) EFF_DAY,
+			         NULL WEIGHT_LOAD_MONTH,
+			         NULL TIME_LOAD_MONTH,
+			         NULL WEIGHT_UNLOAD_MONTH,
+			         NULL TIME_UNLOAD_MONTH,
+			         NULL EFF_MONTH,
+			         TRUNC(#{statisticDate},'dd') STA_DATE,
+			         to_number(to_char(#{statisticDate},'yyyymm')) STA_MONTH,
+			         SYSDATE
+			    FROM (
+			          SELECT T.PLATFORM_CODE PLATFORM_CODE,
+			                  SUM(T.WEIGHT_LOAD_DAY) WEIGHT_LOAD_DAY,
+			                  SUM(T.TIME_LOAD_DAY) TIME_LOAD_DAY,
+			                  0 WEIGHT_UNLOAD_DAY,
+			                  0 TIME_UNLOAD_DAY
+			            FROM (SELECT SUM(WD.LOAD_WEIGHT_TOTAL) WEIGHT_LOAD_DAY,
+			                          (CAST(MAX(LT.LOAD_END_TIME) AS DATE) -
+			                          CAST(MAX(LT.LOAD_START_TIME) AS DATE)) * 24 TIME_LOAD_DAY,
+			                          MAX(LT.PLATFORM_NO) PLATFORM_CODE
+			                     FROM TFR.T_OPT_LOAD_TASK LT
+			                    INNER JOIN TFR.T_OPT_LOAD_WAYBILL_DETAIL WD
+			                       ON WD.LOAD_TASK_ID = LT.ID
+			                    INNER JOIN PKP.T_SRV_WAYBILL W
+			                       ON W.WAYBILL_NO = WD.WAYBILL_NO
+			                      AND W.ACTIVE = 'Y'
+			                    WHERE LT.ORIG_ORG_CODE = #{outfieldCode,jdbcType=VARCHAR}
+			                      AND LT.TASK_STATE IN ('FINISHED', 'SUBMITED')
+			                      AND LT.LOAD_END_TIME >= TRUNC(#{statisticDate,jdbcType=TIMESTAMP},'dd')
+								AND LT.LOAD_END_TIME < TRUNC(#{statisticDate,jdbcType=TIMESTAMP},'dd')+1
+			                    GROUP BY LT.ID) T
+			           GROUP BY T.PLATFORM_CODE
+			          
+			          UNION ALL
+			          
+			          SELECT T.PLATFORM_CODE PLATFORM_CODE,
+			                 0 WEIGHT_LOAD_DAY,
+			                 0 TIME_LOAD_DAY,
+			                 SUM(T.WEIGHT_UNLOAD_DAY) WEIGHT_UNLOAD_DAY,
+			                 SUM(T.TIME_UNLOAD_DAY) TIME_UNLOAD_DAY
+			            FROM (SELECT SUM(WD.UNLOAD_WEIGHT_TOTAL) WEIGHT_UNLOAD_DAY,
+			                         (CAST(MAX(LT.UNLOAD_END_TIME) AS DATE) -
+			                         CAST(MAX(LT.UNLOAD_START_TIME) AS DATE)) * 24 TIME_UNLOAD_DAY,
+			                         MAX(LT.PLATFORM_NO) PLATFORM_CODE
+			                    FROM TFR.T_OPT_UNLOAD_TASK LT
+			                   INNER JOIN TFR.T_OPT_UNLOAD_WAYBILL_DETAIL WD
+			                      ON WD.UNLOAD_TASK_ID = LT.ID
+			                   INNER JOIN PKP.T_SRV_WAYBILL W
+			                      ON W.WAYBILL_NO = WD.WAYBILL_NO
+			                     AND W.ACTIVE = 'Y'
+			                   WHERE LT.UNLOAD_ORG_CODE = #{outfieldCode,jdbcType=VARCHAR}
+			                     AND LT.TASK_STATE IN ('FINISHED', 'SUBMITED')
+			                     AND LT.UNLOAD_END_TIME >= TRUNC(#{statisticDate,jdbcType=TIMESTAMP},'dd')
+								AND LT.UNLOAD_END_TIME < TRUNC(#{statisticDate,jdbcType=TIMESTAMP},'dd')+1
+			                   GROUP BY LT.ID) T
+				           GROUP BY T.PLATFORM_CODE) TMP
+				   GROUP BY TMP.PLATFORM_CODE
+		]]>
+	</insert>
+	<!-- 更新月台操作效率明细月数据-->
+	<update id="updatePlatformOpeEffiMonthDetailData" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.PlatformOpeEffiEntity">
+		<![CDATA[
+		UPDATE TFR.T_OPT_PLATFORM_EFF_DETAIL U
+		   SET (U.WEIGHT_LOAD_MONTH,
+		        U.TIME_LOAD_MONTH,
+		        U.WEIGHT_UNLOAD_MONTH,
+		        U.TIME_UNLOAD_MONTH,
+		        U.EFF_MONTH) =
+		       (SELECT TMP.WEIGHT_LOAD_MONTH,
+		               TMP.TIME_LOAD_MONTH,
+		               TMP.WEIGHT_UNLOAD_MONTH,
+		               TMP.TIME_UNLOAD_MONTH,
+		               TMP.EFF_MONTH
+		          FROM (SELECT T.PLATFORM_CODE PLATFORM_CODE,
+		                       ROUND(SUM(T.WEIGHT_LOAD_DAY),2) WEIGHT_LOAD_MONTH,
+		                       ROUND(SUM(T.TIME_LOAD_DAY),2) TIME_LOAD_MONTH,
+		                       ROUND(SUM(T.WEIGHT_UNLOAD_DAY),2) WEIGHT_UNLOAD_MONTH,
+		                       ROUND(SUM(T.TIME_UNLOAD_DAY),2) TIME_UNLOAD_MONTH,
+		                       DECODE(ROUND(SUM(T.TIME_LOAD_DAY),2) + ROUND(SUM(T.TIME_UNLOAD_DAY),2),
+					              0,
+					              0,
+					              NULL,
+					              0,
+		                       	  ROUND((ROUND(SUM(T.WEIGHT_LOAD_DAY),2) +
+		                             ROUND(SUM(T.WEIGHT_UNLOAD_DAY),2)) /
+		                             (ROUND(SUM(T.TIME_LOAD_DAY),2) + ROUND(SUM(T.TIME_UNLOAD_DAY),2)),
+		                             2)) EFF_MONTH
+		                  FROM TFR.T_OPT_PLATFORM_EFF_DETAIL T
+		                 WHERE T.TFR_CTR_CODE = #{outfieldCode,jdbcType=VARCHAR}
+		                   AND T.STA_DATE <= TRUNC(#{statisticDate,jdbcType=TIMESTAMP},'dd')
+		                   AND T.STA_MONTH = to_number(to_char(#{statisticDate,jdbcType=TIMESTAMP},'yyyymm'))
+		                 GROUP BY T.PLATFORM_CODE) TMP
+		         WHERE U.PLATFORM_CODE = TMP.PLATFORM_CODE)
+		 WHERE U.TFR_CTR_CODE = #{outfieldCode,jdbcType=VARCHAR}
+		   AND U.STA_DATE = TRUNC(#{statisticDate,jdbcType=TIMESTAMP},'dd')
+		   AND U.STA_MONTH = to_number(to_char(#{statisticDate,jdbcType=TIMESTAMP},'yyyymm'))
+		]]>
+	</update>
+	<!-- 插入月台操作效率数据-->
+	<insert id="insertPlatformOpeEffiData" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.PlatformOpeEffiEntity">
+		<![CDATA[
+			INSERT INTO TFR.T_OPT_PLATFORM_EFF DE
+			  (DE.ID,
+			   DE.BUSINESS_DEPT_CODE,
+			   DE.BUSINESS_DEPT_NAME,
+			   DE.TFR_CTR_CODE,
+			   DE.TFR_CTR_NAME,
+			   DE.WEIGHT_LOAD_DAY,
+			   DE.TIME_LOAD_DAY,
+			   DE.WEIGHT_UNLOAD_DAY,
+			   DE.TIME_UNLOAD_DAY,
+			   DE.EFF_DAY,
+			   DE.WEIGHT_LOAD_MONTH,
+			   DE.TIME_LOAD_MONTH,
+			   DE.WEIGHT_UNLOAD_MONTH,
+			   DE.TIME_UNLOAD_MONTH,
+			   DE.EFF_MONTH,
+			   DE.STA_DATE,
+			   DE.STA_MONTH,
+			   DE.CREATE_DATE)
+			SELECT SYS_GUID(),
+		       MAX(TMP.BUSINESS_DEPT_CODE) BUSINESS_DEPT_CODE,
+		       MAX(TMP.BUSINESS_DEPT_NAME) BUSINESS_DEPT_NAME,
+		       TMP.TFR_CTR_CODE TFR_CTR_CODE,
+		       MAX(TMP.TFR_CTR_NAME) TFR_CTR_NAME,
+		       
+		       MAX(TMP.WEIGHT_LOAD_DAY),
+		       MAX(TMP.TIME_LOAD_DAY),
+		       MAX(TMP.WEIGHT_UNLOAD_DAY),
+		       MAX(TMP.TIME_UNLOAD_DAY),
+		       MAX(TMP.EFF_DAY),
+		       
+		       MAX(TMP.WEIGHT_LOAD_MONTH),
+		       MAX(TMP.TIME_LOAD_MONTH),
+		       MAX(TMP.WEIGHT_UNLOAD_MONTH),
+		       MAX(TMP.TIME_UNLOAD_MONTH),
+		       MAX(TMP.EFF_MONTH),
+		       
+		       TRUNC(#{statisticDate},'dd') STA_DATE,
+			   to_number(to_char(#{statisticDate},'yyyymm')) STA_MONTH,
+		       SYSDATE
+		  FROM (SELECT MAX(T.BUSINESS_DEPT_CODE) BUSINESS_DEPT_CODE,
+		               MAX(T.BUSINESS_DEPT_NAME) BUSINESS_DEPT_NAME,
+		               T.TFR_CTR_CODE TFR_CTR_CODE,
+		               MAX(T.TFR_CTR_NAME) TFR_CTR_NAME,
+		               
+		               ROUND(SUM(T.WEIGHT_LOAD_DAY), 2) WEIGHT_LOAD_DAY,
+		               ROUND(SUM(T.TIME_LOAD_DAY), 2) TIME_LOAD_DAY,
+		               ROUND(SUM(T.WEIGHT_UNLOAD_DAY), 2) WEIGHT_UNLOAD_DAY,
+		               ROUND(SUM(T.TIME_UNLOAD_DAY), 2) TIME_UNLOAD_DAY,
+		               
+		               DECODE(ROUND(SUM(T.TIME_LOAD_DAY), 2) +
+		                      ROUND(SUM(T.TIME_UNLOAD_DAY), 2),
+		                      0,
+		                      0,
+		                      NULL,
+		                      0,
+		                      ROUND((ROUND(SUM(T.WEIGHT_LOAD_DAY), 2) +
+		                            ROUND(SUM(T.WEIGHT_UNLOAD_DAY), 2)) /
+		                            (ROUND(SUM(T.TIME_LOAD_DAY), 2) +
+		                            ROUND(SUM(T.TIME_UNLOAD_DAY), 2)),
+		                            2)) EFF_DAY,
+		               
+		               0 WEIGHT_LOAD_MONTH,
+		               0 TIME_LOAD_MONTH,
+		               0 WEIGHT_UNLOAD_MONTH,
+		               0 TIME_UNLOAD_MONTH,
+		               
+		               0 EFF_MONTH,
+		               
+		               MAX(T.STA_DATE) STA_DATE,
+		               MAX(T.STA_MONTH) STA_MONTH
+		          FROM TFR.T_OPT_PLATFORM_EFF_DETAIL T
+		         WHERE T.TFR_CTR_CODE = #{outfieldCode,jdbcType=VARCHAR}
+		           AND T.STA_DATE = TRUNC(#{statisticDate,jdbcType=TIMESTAMP},'dd')
+		           AND T.STA_MONTH = to_number(to_char(#{statisticDate,jdbcType=TIMESTAMP},'yyyymm'))
+		         GROUP BY T.TFR_CTR_CODE
+		        
+		        UNION ALL
+		        
+		        SELECT MAX(T.BUSINESS_DEPT_CODE) BUSINESS_DEPT_CODE,
+		               MAX(T.BUSINESS_DEPT_NAME) BUSINESS_DEPT_NAME,
+		               T.TFR_CTR_CODE TFR_CTR_CODE,
+		               MAX(T.TFR_CTR_NAME) TFR_CTR_NAME,
+		               
+		               0 WEIGHT_LOAD_DAY,
+		               0 TIME_LOAD_DAY,
+		               0 WEIGHT_UNLOAD_DAY,
+		               0 TIME_UNLOAD_DAY,
+		               
+		               0 EFF_DAY,
+		               
+		               ROUND(SUM(T.WEIGHT_LOAD_DAY), 2) WEIGHT_LOAD_MONTH,
+		               ROUND(SUM(T.TIME_LOAD_DAY), 2) TIME_LOAD_MONTH,
+		               ROUND(SUM(T.WEIGHT_UNLOAD_DAY), 2) WEIGHT_UNLOAD_MONTH,
+		               ROUND(SUM(T.TIME_UNLOAD_DAY), 2) TIME_UNLOAD_MONTH,
+		               
+		               DECODE(ROUND(SUM(T.TIME_LOAD_DAY), 2) +
+		                      ROUND(SUM(T.TIME_UNLOAD_DAY), 2),
+		                      0,
+		                      0,
+		                      NULL,
+		                      0,
+		                      ROUND((ROUND(SUM(T.WEIGHT_LOAD_DAY), 2) +
+		                            ROUND(SUM(T.WEIGHT_UNLOAD_DAY), 2)) /
+		                            (ROUND(SUM(T.TIME_LOAD_DAY), 2) +
+		                            ROUND(SUM(T.TIME_UNLOAD_DAY), 2)),
+		                            2)) EFF_MONTH,
+		               
+		               MAX(T.STA_DATE) STA_DATE,
+		               MAX(T.STA_MONTH) STA_MONTH
+		          FROM TFR.T_OPT_PLATFORM_EFF_DETAIL T
+		         WHERE T.TFR_CTR_CODE = #{outfieldCode,jdbcType=VARCHAR}
+		           AND T.STA_DATE <= TRUNC(#{statisticDate,jdbcType=TIMESTAMP},'dd')
+		           AND T.STA_MONTH = to_number(to_char(#{statisticDate,jdbcType=TIMESTAMP},'yyyymm'))
+		         GROUP BY T.TFR_CTR_CODE) TMP
+		 GROUP BY TMP.TFR_CTR_CODE	
+	]]>
+	</insert>
+</mapper>

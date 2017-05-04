@@ -1,0 +1,688 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.regionvehicle">
+
+	<!-- 车辆定区 -->
+	<resultMap id="regionVehicleResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.RegionVehicleEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="REGION_NAME" property="regionName" jdbcType="VARCHAR" />
+		<result column="REGION_CODE" property="regionCode" jdbcType="VARCHAR" />
+		<result column="REGION_TYPE" property="regionType" jdbcType="VARCHAR" />
+		<result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+		<result column="VEHICLE_DEPT" property="vehicleDept" jdbcType="VARCHAR" />
+		<result column="VEHICLE_TYPE" property="vehicleType" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+		<result column="VIRTUAL_CODE" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="REGION_NATURE" property="regionNature"
+			jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<!-- 用于查询定人定区的mapper -->
+	<resultMap id="regionVehicleInfoResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.dto.RegionVehicleInfoDto">
+		<result column="REGION_NATURE" property="regionNature" jdbcType="VARCHAR" />
+		<result column="REGION_NAME" property="regionName" jdbcType="VARCHAR" />
+		<result column="REGION_CODE" property="regionCode" jdbcType="VARCHAR" />
+		<result column="REGION_TYPE" property="regionType" jdbcType="VARCHAR" />
+		<result column="VEHICLE_DEPT" property="vehicleDept" jdbcType="VARCHAR" />
+		<result column="MOTOR_VEHICLE_NO" property="motorVehicleNo" jdbcType="VARCHAR" />
+		<result column="FRIST_VEHICLE_NO" property="fristRegionVehicleNo" jdbcType="VARCHAR"/>
+		<result column="SECOND_VEHICLE_NO" property="secondRegionVehicleNo" jdbcType="VARCHAR"/>
+		<result column="MOTOR_VIRTUAL_CODE" property="motorVirtualCode" jdbcType="VARCHAR"/>
+		<result column="FRIST_VIRTUAL_CODE" property="fristRegionVehicleCode" jdbcType="VARCHAR"/>
+		<result column="SECOND_VIRTUAL_CODE" property="secondRegionVehicleCode" jdbcType="VARCHAR"/>
+	</resultMap>
+	
+	<!-- 数据字段 -->
+	<sql id="regionVehicle_Column_List">
+		ID, REGION_NAME, REGION_CODE, REGION_TYPE, VEHICLE_NO,
+		VEHICLE_DEPT,
+		VEHICLE_TYPE,
+		CREATE_TIME, MODIFY_TIME, ACTIVE,
+		CREATE_USER_CODE, MODIFY_USER_CODE, VIRTUAL_CODE,REGION_NATURE
+	</sql>
+	
+	<!-- 数据字段 -->
+	<sql id="regionVehicle_Columns">
+		T.ID, T.REGION_NAME, T.REGION_CODE, T.REGION_TYPE, T.VEHICLE_NO,
+		T.VEHICLE_DEPT,
+		T.VEHICLE_TYPE,
+		T.CREATE_TIME,T. MODIFY_TIME, T.ACTIVE,
+		T.CREATE_USER_CODE, T.MODIFY_USER_CODE, T.VIRTUAL_CODE,T.REGION_NATURE
+	</sql>
+
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="vehicleType != null and vehicleType != ''">
+				and VEHICLE_TYPE LIKE '%'|| #{vehicleType,jdbcType=VARCHAR}
+			</if>
+			<if test="vehicleNo != null and vehicleNo != ''">
+				and VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR}
+			</if>
+			<!-- <if test="vehicleDept != null and vehicleDept != ''">
+				and VEHICLE_DEPT = #{vehicleDept,jdbcType=VARCHAR}
+			</if> -->
+			<if test="vehicleDeptList != null and vehicleDeptList.size != 0">
+				and VEHICLE_DEPT in
+				<foreach collection="vehicleDeptList" index="index" item="code" open="("
+					separator="," close=")">
+					#{code}
+				</foreach>
+			</if>
+
+		</where>
+
+	</sql>
+
+	<!-- 分页查询车辆定区信息 -->
+	<select id="getAllInfos" resultMap="regionVehicleInfoResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.RegionVehicleEntity"> 
+			SELECT /** 综合:查询车辆定区信息  **/
+			   B.REGION_NATURE  REGION_NATURE,
+			   B.REGION_TYPE  REGION_TYPE,
+		       B.REGION_NAME  REGION_NAME,
+		       B.REGION_CODE  REGION_CODE,
+		       B.VEHICLE_DEPT  VEHICLE_DEPT,
+		       MAX(B.RV_FIRST) FRIST_VEHICLE_NO,
+		       MAX(B.VV_FIRST) FRIST_VIRTUAL_CODE,
+		       MAX(B.RV_SECOND) SECOND_VEHICLE_NO,
+		       MAX(B.VV_SECOND) SECOND_VIRTUAL_CODE,
+		       MAX(B.CAR) MOTOR_VEHICLE_NO,
+		       MAX(B.VV_CAR) MOTOR_VIRTUAL_CODE
+		  FROM (SELECT V.REGION_NATURE,
+		               V.REGION_NAME,
+		               V.REGION_CODE,
+		               V.VEHICLE_DEPT,
+		               V.REGION_TYPE,
+		               DECODE(V.VEHICLE_TYPE,
+		                      'FIRST_CONSTANT_AREA_CAR',V.VEHICLE_NO,NULL) RV_FIRST,
+		               DECODE(V.VEHICLE_TYPE,'FIRST_CONSTANT_AREA_CAR',V.VIRTUAL_CODE,NULL) VV_FIRST,
+		               DECODE(V.VEHICLE_TYPE,'SECOND_CONSTANT_AREA_CAR',V.VEHICLE_NO,NULL) RV_SECOND,
+		               DECODE(V.VEHICLE_TYPE,'SECOND_CONSTANT_AREA_CAR',V.VIRTUAL_CODE,NULL) VV_SECOND,
+		               DECODE(V.VEHICLE_TYPE, 'MOTOR_VEHICLE', V.VEHICLE_NO, NULL) CAR,
+		               DECODE(V.VEHICLE_TYPE, 'MOTOR_VEHICLE', V.VIRTUAL_CODE, NULL) VV_CAR
+		          FROM BSE.T_BAS_REGION_VEHICLE V
+		         <where>
+					<if test="active != null and active != ''">
+						ACTIVE = #{active,jdbcType=CHAR}
+					</if>
+					<if test="vehicleType != null and vehicleType != ''">
+						and VEHICLE_TYPE LIKE '%'|| #{vehicleType,jdbcType=VARCHAR}
+					</if>
+					<if test="vehicleNo != null and vehicleNo != ''">
+						and VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR}
+					</if>
+					<if test="vehicleDeptList != null and vehicleDeptList.size != 0">
+						and VEHICLE_DEPT in
+						<foreach collection="vehicleDeptList" index="index" item="code" open="("
+							separator="," close=")">
+							#{code}
+						</foreach>
+					</if>
+				</where>
+				) B
+		 GROUP BY B.REGION_NATURE, B.REGION_TYPE,B.REGION_NAME, B.REGION_CODE, B.VEHICLE_DEPT
+	</select>
+	<!-- 根据虚拟编码查询车辆定区信息 -->
+	<select id="queryRegionalVehiclesByVirtualCode"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.RegionVehicleEntity"
+		resultMap="regionVehicleResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询车辆定区信息  **/
+		]]>
+		<include refid="regionVehicle_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_REGION_VEHICLE T
+		]]>
+		<include refid="queryWhere" />
+		ORDER BY T.REGION_CODE
+	</select>
+
+	<!-- 统计总记录数 -->
+	<select id="getCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.RegionVehicleEntity">
+	    <![CDATA[
+	       	select/** 综合:统计总记录数  **/ count(*) 
+	    ]]>
+		FROM　(SELECT /** 综合:查询车辆定区信息  **/
+			   B.REGION_NATURE  REGION_NATURE,
+			   B.REGION_TYPE  REGION_TYPE,
+		       B.REGION_NAME  REGION_NAME,
+		       B.REGION_CODE  REGION_CODE,
+		       B.VEHICLE_DEPT  VEHICLE_DEPT,
+		       MAX(B.RV_FIRST) FRIST_VEHICLE_NO,
+		       MAX(B.VV_FIRST) FRIST_VIRTUAL_CODE,
+		       MAX(B.RV_SECOND) SECOND_VEHICLE_NO,
+		       MAX(B.VV_SECOND) SECOND_VIRTUAL_CODE,
+		       MAX(B.CAR) MOTOR_VEHICLE_NO,
+		       MAX(B.VV_CAR) MOTOR_VIRTUAL_CODE
+		  FROM (SELECT V.REGION_NATURE,
+		               V.REGION_NAME,
+		               V.REGION_CODE,
+		               V.VEHICLE_DEPT,
+		               V.REGION_TYPE,
+		               DECODE(V.VEHICLE_TYPE,
+		                      'FIRST_CONSTANT_AREA_CAR',V.VEHICLE_NO,NULL) RV_FIRST,
+		               DECODE(V.VEHICLE_TYPE,'FIRST_CONSTANT_AREA_CAR',V.VIRTUAL_CODE,NULL) VV_FIRST,
+		               DECODE(V.VEHICLE_TYPE,'SECOND_CONSTANT_AREA_CAR',V.VEHICLE_NO,NULL) RV_SECOND,
+		               DECODE(V.VEHICLE_TYPE,'SECOND_CONSTANT_AREA_CAR',V.VIRTUAL_CODE,NULL) VV_SECOND,
+		               DECODE(V.VEHICLE_TYPE, 'MOTOR_VEHICLE', V.VEHICLE_NO, NULL) CAR,
+		               DECODE(V.VEHICLE_TYPE, 'MOTOR_VEHICLE', V.VIRTUAL_CODE, NULL) VV_CAR
+		          FROM BSE.T_BAS_REGION_VEHICLE V
+		         <where>
+					<if test="active != null and active != ''">
+						ACTIVE = #{active,jdbcType=CHAR}
+					</if>
+					<if test="vehicleType != null and vehicleType != ''">
+						and VEHICLE_TYPE LIKE '%'|| #{vehicleType,jdbcType=VARCHAR}
+					</if>
+					<if test="vehicleNo != null and vehicleNo != ''">
+						and VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR}
+					</if>
+					<if test="vehicleDeptList != null and vehicleDeptList.size != 0">
+						and VEHICLE_DEPT in
+						<foreach collection="vehicleDeptList" index="index" item="code" open="("
+							separator="," close=")">
+							#{code}
+						</foreach>
+					</if>
+				</where>
+				) B
+		 GROUP BY B.REGION_NATURE,B.REGION_TYPE, B.REGION_NAME, B.REGION_CODE, B.VEHICLE_DEPT )C
+	</select>
+
+	<!-- 根据虚拟编码查询车辆定区信息 -->
+	<select id="queryRegionVehiclesByCode"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.RegionVehicleEntity"
+		resultMap="regionVehicleResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据虚拟编码查询车辆定区信息  **/
+		]]>
+		<include refid="regionVehicle_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_REGION_VEHICLE T
+		]]>
+		<where>
+			<if test="vehicleNoList != null">
+				AND VEHICLE_NO IN
+				<foreach collection="vehicleNoList" index="index" item="vehicleNo"
+					open="(" separator="," close=")">
+					#{vehicleNo}
+				</foreach>
+			</if>
+			<if test="regionCode !=null and regionCode !=''">
+				AND T.REGION_CODE =#{regionCode,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+		ORDER BY T.REGION_CODE
+	</select>
+	
+	<!-- 验证车牌号与区域的唯一性 -->
+	<select id="queryRegionVehicleByVehicleAndRegionCode"
+		parameterType="map"
+		resultMap="regionVehicleResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:验证车牌号与区域的唯一性  **/
+		]]>
+		<include refid="regionVehicle_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_REGION_VEHICLE T
+		]]>
+		<where>
+			<if test="regionCode != null and regionCode != ''">
+				REGION_CODE = #{regionCode,jdbcType=VARCHAR}
+			</if>
+			<if test="vehicleNo != null and vehicleNo != ''">
+				AND VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+
+		</where>
+	</select>
+	
+	<!-- 验证车牌号与车辆职责类型的唯一性-->
+	<select id="queryRegionVehicleByVehicleAndVehicleType"
+		parameterType="map"
+		resultMap="regionVehicleResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:验证车牌号与车辆职责类型的唯一性  **/
+		]]>
+		<include refid="regionVehicle_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_REGION_VEHICLE T
+		]]>
+		<where>
+<!-- 			(VEHICLE_TYPE = #{vehicleMotor,jdbcType=VARCHAR} or VEHICLE_TYPE = #{vehicleCar,jdbcType=VARCHAR}) -->
+<!-- 			update by 092020-lipengfei 车辆职责类型中一、二级定区车统一为定区车，通过like查询。 -->
+			(VEHICLE_TYPE = #{vehicleMotor,jdbcType=VARCHAR} or VEHICLE_TYPE LIKE '%'||#{vehicleCar,jdbcType=VARCHAR})
+			
+			<if test="vehicleNo != null and vehicleNo != ''">
+				AND VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+
+		</where>
+	</select>
+	
+	<!-- 验证车牌号与车辆职责类型的唯一性-->
+	<select id="queryInfosVehicleAndVehicleType"
+		parameterType="map"
+		resultMap="regionVehicleResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:验证车牌号与车辆职责类型的唯一性  **/
+		]]>
+		<include refid="regionVehicle_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_REGION_VEHICLE T
+		]]>
+		<where>
+			
+			<if test="vehicleNo != null and vehicleNo != ''">
+				VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR}
+			</if>
+			<if test="vehicleType != null and vehicleType != ''">
+<!-- 				AND VEHICLE_TYPE = #{vehicleType,jdbcType=VARCHAR} -->
+<!-- 			update by 092020-lipengfei 车辆职责类型中一、二级定区车统一为定区车，通过like查询。 -->
+			AND VEHICLE_TYPE LIKE '%'|| #{vehicleType,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+
+		</where>
+	</select>
+	
+	<!-- 根据车牌号、接送货类型、车辆职责类型验证定车定区是否存在-->
+	<select id="queryInfoByVehicleNoAndRegionType"
+		parameterType="map"
+		resultMap="regionVehicleResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据车牌号、接送货类型、车辆职责类型验证定车定区是否存在  **/
+		]]>
+		<include refid="regionVehicle_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_REGION_VEHICLE T
+		]]>
+		<where>
+			
+			<if test="vehicleNo != null and vehicleNo != ''">
+				VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR}
+			</if>
+			<if test="regionType != null and regionType != ''">
+				AND REGION_TYPE = #{regionType,jdbcType=VARCHAR}
+			</if>
+<!-- 			update by 092020-lipengfei 车辆职责类型中一、二级定区车统一为定区车，通过like查询。 -->
+			<if test="vehicleType != null and vehicleType != ''">
+				AND VEHICLE_TYPE LIKE '%'|| #{vehicleType,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+
+		</where>
+	</select>
+	
+<!-- 	根据区域编码和车辆职责类型查询定车定区数量  create by 092020-lipegfei -->
+	<select id="queryNumByRegionCodeAndVehicleType"
+		parameterType="map"
+		resultType="Integer">
+		<![CDATA[
+			SELECT
+			/** 综合:根据区域编码和车辆职责类型查询定车定区数量   **/
+			COUNT(1) FROM BSE.T_BAS_REGION_VEHICLE T
+		]]>
+		<where>
+			<if test="regionCode != null">
+				REGION_CODE = #{regionCode,jdbcType=VARCHAR}
+			</if>
+			<if test="vehicleType != null">
+				AND VEHICLE_TYPE = #{vehicleType,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 根据传入的参数查询车辆定区信息 -->
+	<select id="queryRegionVehiclesByParam" parameterType="map"
+		resultMap="regionVehicleResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据传入的参数查询车辆定区信息  **/
+		]]>
+		<include refid="regionVehicle_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_REGION_VEHICLE T
+		]]>
+		<where>
+			<if test="regionType != null">
+				REGION_TYPE = #{regionType,jdbcType=VARCHAR}
+			</if>
+			<if test="vehicleNoList != null">
+				AND VEHICLE_NO IN
+				<foreach collection="vehicleNoList" index="index" item="vehicleNo"
+					open="(" separator="," close=")">
+					#{vehicleNo}
+				</foreach>
+			</if>
+			<if test="regionNature != null">
+				and REGION_NATURE = #{regionNature,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 对外接口-->
+	<!-- 根据传入的参数gisId,区域类型查询车辆定区信息 -->
+	<select id="querySmallZoneInfoByGisId" parameterType="map"
+		resultMap="regionVehicleResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据传入的参数gisId,区域类型查询车辆定区信息  **/
+		]]>
+		<include refid="regionVehicle_Columns" />
+		<![CDATA[
+			FROM BSE.T_BAS_REGION_VEHICLE T,BSE.T_BAS_SERVICE_SMALLZONE D
+		]]>
+		<where>
+		    D.VIRTUAL_CODE = T.REGION_CODE(+) AND D.ACTIVE = T.ACTIVE(+)
+			
+			<if test="gisId != null">
+				AND D.GISID = #{gisId,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND D.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 通过传入一个车队或车队下调度组的code，查询出车队下的所有接货小区 -->
+	<select id="queryRegionVehiclesByOrgCode" parameterType="map"
+		resultMap="regionVehicleResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:通过传入一个车队或车队下调度组的code，查询出车队下的所有接货小区  **/
+		]]>
+		<include refid="regionVehicle_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_REGION_VEHICLE T
+		]]>
+		<where>
+			<if test="codeList != null">
+				VEHICLE_DEPT IN
+				<foreach collection="codeList" index="index" item="code" open="("
+					separator="," close=")">
+					#{code,jdbcType=VARCHAR}
+				</foreach>
+			</if>
+			<if test="active != null and active != ''">
+				AND ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 根据多个区域的虚拟编码查询定车定区信息 -->
+	<select id="queryRegionVehiclesByRegionCodes" parameterType="map"
+		resultMap="regionVehicleResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据多个区域的虚拟编码查询定车定区信息  **/
+		]]>
+		<include refid="regionVehicle_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_REGION_VEHICLE T
+		]]>
+		<where>
+			<if test="regionCodes != null">
+				REGION_CODE IN
+				<foreach collection="regionCodes" index="index" item="code" open="("
+					separator="," close=")">
+					#{code,jdbcType=VARCHAR}
+				</foreach>
+			</if>
+			<if test="active != null and active != ''">
+				AND ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+
+
+
+	<!-- 新增信息 -->
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.RegionVehicleEntity">
+		
+		<![CDATA[
+			INSERT/** 综合:新增信息  **/ INTO BSE.T_BAS_REGION_VEHICLE T	(
+		]]>
+		<include refid="regionVehicle_Column_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, #{regionName,jdbcType=VARCHAR},
+		#{regionCode,jdbcType=VARCHAR},
+		#{regionType,jdbcType=VARCHAR},
+		#{vehicleNo,jdbcType=VARCHAR}, #{vehicleDept,jdbcType=VARCHAR},
+		#{vehicleType,jdbcType=VARCHAR}, #{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=CHAR},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR},
+		#{virtualCode,jdbcType=VARCHAR},
+		#{regionNature,jdbcType=VARCHAR}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+
+	<!-- 修改信息 -->
+	<update id="update"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.RegionVehicleEntity">
+		update/** 综合:修改信息  **/ BSE.T_BAS_REGION_VEHICLE
+		<set>
+			<if test="regionName != null">
+				REGION_NAME = #{regionName,jdbcType=VARCHAR},
+			</if>
+			<if test="regionCode != null">
+				REGION_CODE = #{regionCode,jdbcType=VARCHAR},
+			</if>
+			<if test="regionType != null">
+				REGION_TYPE = #{regionType,jdbcType=VARCHAR},
+			</if>
+			<if test="vehicleNo != null">
+				VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR},
+			</if>
+			<if test="vehicleDept != null">
+				VEHICLE_DEPT = #{vehicleDept,jdbcType=VARCHAR},
+			</if>
+			<if test="vehicleType != null">
+				VEHICLE_TYPE = #{vehicleType,jdbcType=VARCHAR},
+			</if>
+			<if test="createDate != null">
+				CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="active != null">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="createUser != null">
+				CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="regionNature != null">
+			    REGION_NATURE = #{regionNature,jdbcType=VARCHAR},
+			</if>
+		</set>
+
+		<where>
+			<if test="regionCode != null">
+				VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR}
+			</if>
+		</where>
+
+	</update>
+
+	<!-- 作废信息 -->
+	<update id="deleteByCode" parameterType="map">
+		update/** 综合:作废信息  **/ BSE.T_BAS_REGION_VEHICLE
+
+		<set>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				MODIFY_USER_CODE = #{modifyUser, jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+		</set>
+
+		<where>
+			<if test="codes.size() > 0">
+				VIRTUAL_CODE in
+				<foreach collection="codes" index="index" item="code" open="("
+					separator="," close=")">
+					#{code}
+				</foreach>
+			</if>
+			<if test="active0 != null and active0 != ''">
+				AND ACTIVE = #{active0,jdbcType=CHAR}
+			</if>
+		</where>
+
+	</update>
+<!-- 	根据大区编码查询大区定区车 -->
+<select id="getRegionVehicleEntityByBigZoonCode"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.RegionVehicleEntity"
+		resultMap="regionVehicleResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据大区编码查询大区定区车   **/
+		]]>
+		<include refid="regionVehicle_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_REGION_VEHICLE T
+		]]>
+		<where>
+			<if test="regionCode!=null and regionCode != ''">
+				REGION_CODE =#{regionCode,jdbcType=CHAR}
+			</if>
+			<if test="active0 != null and active0 != ''">
+				AND ACTIVE = #{active0,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 根据大区或者小区的虚拟编码作废定人定区的信息 -->
+	<update id="deleteByRegionCode" parameterType="map">
+		update/** 综合:作废信息  **/ BSE.T_BAS_REGION_VEHICLE
+
+		<set>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				MODIFY_USER_CODE = #{modifyUser, jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+		</set>
+
+		<where>
+			<if test="codes!=null and codes.size() > 0">
+				REGION_CODE in
+				<foreach collection="codes" index="index" item="code" open="("
+					separator="," close=")">
+					#{code}
+				</foreach>
+			</if>
+			<if test="active0 != null and active0 != ''">
+				AND ACTIVE = #{active0,jdbcType=CHAR}
+			</if>
+		</where>
+	</update>
+	<select id="queryInfosByRegionCodeAndVihicleTypeAndRegionType" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.RegionVehicleEntity"
+		resultMap="regionVehicleResultMap">
+		<![CDATA[
+			SELECT
+			/** 根据区域名称，区域类型，和车辆职责类型查询唯一定区车记录   **/
+		]]>
+		<include refid="regionVehicle_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_REGION_VEHICLE T
+		]]>
+		<where>
+			<if test="regionCode!=null and regionCode != ''">
+				T.REGION_CODE =#{regionCode,jdbcType=CHAR}
+			</if>
+			<if test="regionType !=null and regionType !=''">
+				AND T.REGION_TYPE = #{regionType,jdbcType=VARCHAR}
+			</if>
+			<if test="vehicleType != null and vehicleType !=''">
+				AND T.VEHICLE_TYPE = #{vehicleType,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active!= ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+	<!-- 	根据小区编码查询小区车牌号 -->
+	<select id="getRegionVehicleNOBySmallZoneCode"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.RegionVehicleEntity"
+		resultMap="regionVehicleResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据小区编码查询小区车牌号   **/
+		]]>
+		<include refid="regionVehicle_Columns" />
+		<![CDATA[
+			FROM BSE.T_BAS_REGION_VEHICLE T
+			inner join bse.t_Bas_Service_Smallzone SS
+    		on T.region_code = ss.virtual_code
+   			and T.active = ss.active
+		]]>
+		<where>
+			<if test="regionCode !=null and regionCode != ''">
+				SS.REGION_CODE =#{regionCode,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="regionNature != null and regionNature != ''">
+				AND T.REGION_NATURE = #{regionNature,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</select>
+</mapper>

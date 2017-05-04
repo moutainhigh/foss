@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="com.deppon.pda.bdm.module.foss.upgrade.server.dao.impl.EffectiveRegionOrgDataVerGenDao">
+	<select id="queryLocalDatas" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.EffectiveRegionOrgEntity">
+		<![CDATA[
+			  select id as id,
+          effective_region_id as effectiveRegionId,
+           effective_region_code as effectiveRegionCode,
+           include_org_id as includeOrgId,
+           include_org_code as includeOrgCode,
+           operflag as operflag,
+           begin_time as beginTime,
+           end_time as endTime
+      from t_base_effective_region_org  
+      	WHERE operflag = '1' 
+		]]>
+		
+			<if test="startTime != null and startTime != ''  ">
+				<![CDATA[ AND UPDTIME > #{startTime,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="endTime != null and endTime != '' ">
+				<![CDATA[ AND UPDTIME <= #{endTime,jdbcType=TIMESTAMP}]]>
+			</if>
+		
+	</select>
+
+	<select id="queryLocalIncDataList"
+		parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="int">
+		<![CDATA[
+			SELECT COUNT(*) FROM t_base_effective_region_org	 
+		]]>
+		<where>
+			<if test="startTime != null and startTime != ''  ">
+				<![CDATA[ AND UPDTIME > #{startTime,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="endTime != null and endTime != '' ">
+				<![CDATA[ AND UPDTIME <= #{endTime,jdbcType=TIMESTAMP}]]>
+			</if>
+		</where>
+	</select>
+	<select id="queryLocalDatasByDel" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.EffectiveRegionEntity">
+		<![CDATA[
+			SELECT 
+				ID as id
+			FROM t_base_effective_region_org
+			WHERE
+			 OPERFLAG = '3'
+			AND UPDTIME > #{startTime,jdbcType=TIMESTAMP}
+			AND UPDTIME <= #{endTime,jdbcType=TIMESTAMP}
+		]]>
+	</select>
+</mapper>

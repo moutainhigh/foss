@@ -1,0 +1,1138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="com.deppon.foss.module.transfer.platform.api.server.dao.IStockDurationDao">
+	<!-- 查询提货方式 -->
+	<select id="findReceiveMethod" resultType="com.deppon.foss.module.transfer.platform.api.shared.dto.KeyValueDto">
+		SELECT t.value_code code, t.value_name NAME
+		  FROM bse.t_bas_data_dictionary_value t
+		 WHERE t.active = 'Y'
+		   AND t.terms_code IN ('PICKUPGOODSHIGHWAYS', 'PICKUPGOODSAIR')
+	</select>
+	
+	<!-- 查询分组外场，及是否含待叉区 -->
+	<select id="findTfrCtrs" parameterType="java.util.Map"
+		resultType="java.util.Map">
+		SELECT t.code TFR_CTR_CODE,
+		       t.name TFR_CTR_NAME,
+		       c.is_have_waitforarea HAS_FORK_AREA
+		  FROM bse.t_bas_org t
+		 INNER JOIN bse.t_bas_transfer_center c
+		    ON c.org_code = t.code
+		   AND c.active = 'Y'
+		 WHERE t.active = 'Y'
+		   AND t.transfer_center = 'Y'
+		   AND (t.express_branch = 'N' OR t.express_branch IS NULL)
+		   AND ora_hash(t.code, #{threadCount,jdbcType=VARCHAR}) = #{threadNo,jdbcType=VARCHAR}
+	</select>
+
+	<!-- 查询中转装车数据,快递 -->
+	<select id="findTfrLoadExp" parameterType="java.util.Map"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.StockDurationTransfer">
+		SELECT #{tfrCtrCode,jdbcType=VARCHAR} tfrCtrCode,
+		       #{tfrCtrName,jdbcType=VARCHAR} tfrCtrName,
+		       #{staDate,jdbcType=TIMESTAMP} staDate,
+		       #{staMonth,jdbcType=NUMERIC} staMonth,
+		       td.waybill_no waybillNo,
+		       MAX(s.load_time) tfrLoadScanTime,
+		       MAX(t.load_end_time) tfrLoadTaskSubmitTime
+		  FROM tfr.t_opt_load_task t
+		 INNER JOIN tfr.t_opt_load_waybill_detail td
+		    ON td.load_task_id = t.id
+		   AND td.load_qty > 0
+		 INNER JOIN pkp.t_srv_waybill w
+		    ON w.waybill_no = td.waybill_no
+		   AND w.product_code IN ('PACKAGE', 'RCP','EPEP')
+		   AND w.active = 'Y'
+		 INNER JOIN tfr.t_opt_load_serialno s
+		    ON s.load_waybill_detail_id = td.id
+		   AND s.goods_state != 'CANCELED'
+		 WHERE t.orig_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.task_type IN ('SHORT_DISTANCE_LOAD', 'LONG_DISTANCE_LOAD')
+		   AND t.task_state IN ('FINISHED', 'SUBMITED')
+		   AND t.load_end_time >= #{staDate,jdbcType=TIMESTAMP}
+		   <![CDATA[
+		   AND t.load_end_time < #{endDate,jdbcType=TIMESTAMP}
+		   ]]>
+		 GROUP BY td.waybill_no
+	</select>
+
+	<!-- 查询中转装车数据，零担 -->
+	<select id="findTfrLoadLtc" parameterType="java.util.Map"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.StockDurationTransfer">
+		SELECT #{tfrCtrCode,jdbcType=VARCHAR} tfrCtrCode,
+		       #{tfrCtrName,jdbcType=VARCHAR} tfrCtrName,
+		       #{staDate,jdbcType=TIMESTAMP} staDate,
+		       #{staMonth,jdbcType=NUMERIC} staMonth,
+		       td.waybill_no waybillNo,
+		       MAX(s.load_time) tfrLoadScanTime,
+		       MAX(t.load_end_time) tfrLoadTaskSubmitTime
+		  FROM tfr.t_opt_load_task t
+		 INNER JOIN tfr.t_opt_load_waybill_detail td
+		    ON td.load_task_id = t.id
+		   AND td.load_qty > 0
+		 INNER JOIN pkp.t_srv_waybill w
+		    ON w.waybill_no = td.waybill_no
+		   AND w.product_code NOT IN ('PACKAGE', 'RCP','EPEP')
+		   AND w.active = 'Y'
+		 INNER JOIN tfr.t_opt_load_serialno s
+		    ON s.load_waybill_detail_id = td.id
+		   AND s.goods_state != 'CANCELED'
+		 WHERE t.orig_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.task_type IN ('SHORT_DISTANCE_LOAD', 'LONG_DISTANCE_LOAD')
+		   AND t.task_state IN ('FINISHED', 'SUBMITED')
+		   AND t.load_end_time >= #{staDate,jdbcType=TIMESTAMP}
+		   <![CDATA[
+		   AND t.load_end_time < #{endDate,jdbcType=TIMESTAMP}
+		   ]]>
+		 GROUP BY td.waybill_no
+	</select>
+
+	<!-- 查询下一部门 -->
+	<select id="findNextOrg" parameterType="java.util.Map"
+		resultType="java.util.Map">
+		SELECT o.code NEXT_ORG_CODE, o.name NEXT_ORG_NAME
+		  FROM tfr.t_opt_path_detail t
+		 INNER JOIN bse.t_bas_org o
+		    ON o.code = t.objective_org_code
+		   AND o.active = 'Y'
+		 WHERE t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		   AND t.orig_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND rownum = 1
+	</select>
+
+	<!-- 查询到达时间 -->
+	<select id="findArrivedTime" parameterType="java.util.Map"
+		resultType="java.util.Date">
+		SELECT MIN(td.actual_arrive_time)
+		  FROM tfr.t_opt_truck_task_detail td
+		 INNER JOIN tfr.t_opt_truck_task_bill tb
+		    ON tb.truck_task_detail_id = td.id
+		 INNER JOIN tfr.t_opt_handoverbill h
+		    ON h.handover_no = tb.bill_no
+		 INNER JOIN tfr.t_opt_handoverbill_detail hd
+		    ON hd.handover_no = h.handover_no
+		   AND hd.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		 WHERE td.dest_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND td.status IN ('ARRIVED', 'UNLOADED')
+	</select>
+
+	<!-- 查询卸车开始和卸车扫描时间 -->
+	<select id="findUnloadTaskBeginAndScanTime" parameterType="java.util.Map"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.dto.Dates4StockDurationDto">
+		SELECT MAX(t.unload_start_time) unloadTaskBeginTime,
+		       MAX(s.unload_time) unloadScanTime
+		  FROM tfr.t_opt_unload_task t
+		 INNER JOIN tfr.t_opt_unload_waybill_detail wd
+		    ON wd.unload_task_id = t.id
+		   AND wd.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		   AND wd.operation_goods_qty > 0
+		 INNER JOIN tfr.t_opt_unload_serialno s
+		    ON s.unload_waybill_detail_id = wd.id
+		 WHERE t.unload_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.task_state != 'CANCELED'
+	</select>
+
+	<!-- 查询托盘绑定时间和叉车扫描时间 -->
+	<select id="findTrayBindingAndForkliftScanTime" parameterType="java.util.Map"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.dto.Dates4StockDurationDto">
+		SELECT MAX(t.create_time) trayBindingTime,
+		       MAX(t.trayscan_time) forkliftScanTime
+		  FROM tfr.t_opt_trayscan_task t
+		 INNER JOIN tfr.t_opt_trayscan_task_detail td
+		    ON td.trayscan_task_no = t.task_no
+		   AND td.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		 WHERE t.outfield_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.statu = 'SCANNED'
+	</select>
+
+	<!-- 查询出包装库区时间 -->
+	<select id="findOutPkgAreaTime" parameterType="java.util.Map"
+		resultType="java.util.Date">
+		SELECT MAX(s.out_stock_time)
+		  FROM tfr.t_opt_out_stock s
+		 WHERE s.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		   AND s.org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND s.out_stock_type = 'PACKAGE_AREA_NORMAL'
+	</select>
+
+	<!-- 查询入包装库区时间 -->
+	<select id="findInPkgAreaTime" parameterType="java.util.Map"
+		resultType="java.util.Date">
+		SELECT MAX(s.in_stock_time)
+		  FROM tfr.t_opt_in_stock s
+		 WHERE s.org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND s.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		   AND s.in_stock_type = 'PACKAGE_AREA'
+	</select>
+
+	<!-- 查询快递派送装车数据 -->
+	<select id="findDptLoadExp" parameterType="java.util.Map"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.StockDurationDispatch">
+		SELECT #{tfrCtrCode,jdbcType=VARCHAR} tfrCtrCode,
+			   #{tfrCtrName,jdbcType=VARCHAR} tfrCtrName,
+			   #{staDate,jdbcType=TIMESTAMP} staDate,
+			   #{staMonth,jdbcType=NUMERIC} staMonth,
+		       w.waybill_no waybillNo,
+		       MAX(w.receive_method) receiveMethod,
+		       MAX(s.load_time) dptLoadScanTime,
+		       MAX(t.load_end_time) dptLoadTaskSubmitTime
+		  FROM tfr.t_opt_load_task t
+		 INNER JOIN tfr.t_opt_load_waybill_detail td
+		    ON td.load_task_id = t.id
+		   AND td.load_qty > 0
+		 INNER JOIN pkp.t_srv_waybill w
+		    ON w.waybill_no = td.waybill_no
+		   AND w.product_code IN ('PACKAGE', 'RCP','EPEP')
+		   AND w.active = 'Y'
+		 INNER JOIN tfr.t_opt_load_serialno s
+		    ON s.load_waybill_detail_id = td.id
+		   AND s.goods_state != 'CANCELED'
+		 WHERE t.orig_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.task_type = 'DELIVER_LOAD'
+		   AND t.task_state IN ('FINISHED', 'SUBMITED')
+		   AND t.load_end_time >= #{staDate,jdbcType=TIMESTAMP}
+		   <![CDATA[
+		   AND t.load_end_time < #{endDate,jdbcType=TIMESTAMP}
+		   ]]>
+		 GROUP BY w.waybill_no
+	</select>
+
+	<!-- 查询零担派送装车数据 -->
+	<select id="findDptLoadLtc" parameterType="java.util.Map"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.StockDurationDispatch">
+		SELECT #{tfrCtrCode,jdbcType=VARCHAR} tfrCtrCode,
+			   #{tfrCtrName,jdbcType=VARCHAR} tfrCtrName,
+			   #{staDate,jdbcType=TIMESTAMP} staDate,
+			   #{staMonth,jdbcType=NUMERIC} staMonth,
+			   tmp.waybill_no waybillNo,
+		       MAX(tmp.receive_method) receiveMethod,
+		       MAX(tmp.load_time) dptLoadScanTime,
+		       MAX(tmp.load_end_time) dptLoadTaskSubmitTime
+		  FROM (SELECT w.waybill_no waybill_no,
+		               MAX(w.receive_method) receive_method,
+		               MAX(s.load_time) load_time,
+		               MAX(t.load_end_time) load_end_time
+		          FROM tfr.t_opt_load_task t
+		         INNER JOIN tfr.t_opt_load_waybill_detail td
+		            ON td.load_task_id = t.id
+		           AND td.load_qty > 0
+		         INNER JOIN pkp.t_srv_waybill w
+		            ON w.waybill_no = td.waybill_no
+		           AND w.product_code NOT IN ('PACKAGE', 'RCP','EPEP')
+		           AND w.active = 'Y'
+		         INNER JOIN tfr.t_opt_load_serialno s
+		            ON s.load_waybill_detail_id = td.id
+		           AND s.goods_state != 'CANCELED'
+		         WHERE t.orig_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		           AND t.task_type = 'DELIVER_LOAD'
+		           AND t.task_state IN ('FINISHED', 'SUBMITED')
+		           AND t.load_end_time >= #{staDate,jdbcType=TIMESTAMP}
+		           <![CDATA[
+		           AND t.load_end_time < #{endDate,jdbcType=TIMESTAMP}
+		           ]]>
+		         GROUP BY w.waybill_no
+		        UNION ALL
+		        SELECT w.waybill_no waybill_no,
+		               MAX(w.receive_method) receive_method,
+		               NULL load_time,
+		               NULL load_end_time
+		          FROM tfr.t_opt_out_stock os
+		         INNER JOIN pkp.t_srv_waybill w
+		            ON w.waybill_no = os.waybill_no
+		           AND w.product_code NOT IN ('PACKAGE', 'RCP','EPEP')
+		           AND w.active = 'Y'
+		         WHERE os.org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		           AND os.out_stock_type = 'SIGN'
+		           AND os.out_stock_time >= #{staDate,jdbcType=TIMESTAMP}
+		           <![CDATA[
+		           AND os.out_stock_time < #{endDate,jdbcType=TIMESTAMP}
+		           ]]>
+		         GROUP BY w.waybill_no) tmp
+		 GROUP BY tmp.waybill_no
+	</select>
+
+	<!-- 查询上一部门 -->
+	<select id="findPreOrg" parameterType="java.util.Map" resultType="java.util.Map">
+		SELECT o.code PRE_ORG_CODE, o.name PRE_ORG_NAME
+		  FROM tfr.t_opt_path_detail t
+		 INNER JOIN bse.t_bas_org o
+		    ON o.code = t.orig_org_code
+		   AND o.active = 'Y'
+		 WHERE t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		   AND t.objective_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND rownum = 1
+	</select>
+
+	<!-- 查询签收时间 -->
+	<select id="findSignTime" parameterType="java.util.Map"
+		resultType="java.util.Date">
+		SELECT MAX(t.sign_time)
+		  FROM pkp.t_srv_waybill_sign_result t
+		 WHERE t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		   AND t.active = 'Y'
+	</select>
+
+	<!-- 查询卸车等待时长 快递 -->
+	<select id="findUnloadWaitTimeExp" parameterType="java.util.Map"
+		resultType="java.util.Map">
+		SELECT SUM(unload_wait_time) unload_wait_time,
+		       SUM(unload_wait_vote) unload_wait_vote,
+		       round(SUM(unload_wait_time) / SUM(unload_wait_vote), 2) avg_unload_wait_time
+		  FROM (SELECT SUM(CAST(t.unload_task_begin_time AS DATE) -
+		                   CAST(t.arrived_time AS DATE)) * 24 unload_wait_time,
+		               COUNT(1) unload_wait_vote
+		          FROM tfr.t_opt_stock_duration_tfr_exp t
+		         WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		           AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		           AND t.unload_task_begin_time IS NOT NULL
+		           AND t.arrived_time IS NOT NULL
+		        UNION ALL
+		        SELECT SUM(CAST(t.unload_task_begin_time AS DATE) -
+		                   CAST(t.arrived_time AS DATE)) * 24 unload_wait_time,
+		               COUNT(1) unload_wait_vote
+		          FROM tfr.t_opt_stock_duration_dpt_exp t
+		         WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		           AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		           AND t.unload_task_begin_time IS NOT NULL
+		           AND t.arrived_time IS NOT NULL)
+	</select>
+	
+	<!-- 查询卸车时长 快递 -->
+	<select id="findUnloadTimeExp" parameterType="java.util.Map"
+		resultType="java.util.Map">
+		SELECT SUM(unload_time) unload_time,
+		       SUM(unload_vote) unload_vote,
+		       round(SUM(unload_time) / SUM(unload_vote), 2) avg_unload_time
+		  FROM (SELECT SUM(CAST(t.unload_scan_time AS DATE) -
+		                   CAST(t.unload_task_begin_time AS DATE)) * 24 unload_time,
+		               COUNT(1) unload_vote
+		          FROM tfr.t_opt_stock_duration_tfr_exp t
+		         WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		           AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		           AND t.unload_scan_time IS NOT NULL
+		           AND t.unload_task_begin_time IS NOT NULL
+		        UNION ALL
+		        SELECT SUM(CAST(t.unload_scan_time AS DATE) -
+		                   CAST(t.unload_task_begin_time AS DATE)) * 24 unload_time,
+		               COUNT(1) unload_vote
+		          FROM tfr.t_opt_stock_duration_dpt_exp t
+		         WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		           AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		           AND t.unload_scan_time IS NOT NULL
+		           AND t.unload_task_begin_time IS NOT NULL)
+	</select>
+	
+	<!-- 查询待叉区停留时长 快递 -->
+	<select id="findForkAreaStayTimeExp" parameterType="java.util.Map"
+		resultType="java.util.Map">
+		SELECT SUM(fork_area_stay_time) fork_area_stay_time,
+		       SUM(fork_area_stay_vote) fork_area_stay_vote,
+		       round(SUM(fork_area_stay_time) / SUM(fork_area_stay_vote), 2) avg_fork_area_stay_time
+		  FROM (SELECT SUM(CAST(t.forklift_scan_time AS DATE) -
+		                   CAST(t.tray_binding_time AS DATE)) * 24 fork_area_stay_time,
+		               COUNT(1) fork_area_stay_vote
+		          FROM tfr.t_opt_stock_duration_tfr_exp t
+		         WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		           AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		           AND t.forklift_scan_time IS NOT NULL
+		           AND t.tray_binding_time IS NOT NULL
+		        UNION ALL
+		        SELECT SUM(CAST(t.forklift_scan_time AS DATE) -
+		                   CAST(t.tray_binding_time AS DATE)) * 24 fork_area_stay_time,
+		               COUNT(1) fork_area_stay_vote
+		          FROM tfr.t_opt_stock_duration_dpt_exp t
+		         WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		           AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		           AND t.forklift_scan_time IS NOT NULL
+		           AND t.tray_binding_time IS NOT NULL)
+	</select>
+	
+	<!-- 查询包装库区停留时长 快递 -->
+	<select id="findPkgAreaStayTimeExp" parameterType="java.util.Map"
+		resultType="java.util.Map">
+		SELECT SUM(pkg_area_stay_time) pkg_area_stay_time,
+		       SUM(pkg_area_stay_vote) pkg_area_stay_vote,
+		       round(SUM(pkg_area_stay_time) / SUM(pkg_area_stay_vote), 2) avg_pkg_area_stay_time
+		  FROM (SELECT SUM(CAST(t.out_pkg_area_time AS DATE) -
+		                   CAST(t.in_pkg_area_time AS DATE)) * 24 pkg_area_stay_time,
+		               COUNT(1) pkg_area_stay_vote
+		          FROM tfr.t_opt_stock_duration_tfr_exp t
+		         WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		           AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		           AND t.out_pkg_area_time IS NOT NULL
+		           AND t.in_pkg_area_time IS NOT NULL
+		        UNION ALL
+		        SELECT SUM(CAST(t.out_pkg_area_time AS DATE) -
+		                   CAST(t.in_pkg_area_time AS DATE)) * 24 pkg_area_stay_time,
+		               COUNT(1) pkg_area_stay_vote
+		          FROM tfr.t_opt_stock_duration_dpt_exp t
+		         WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		           AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		           AND t.out_pkg_area_time IS NOT NULL
+		           AND t.in_pkg_area_time IS NOT NULL)
+	</select>
+	
+	<!-- 查询中转库区停留时长 快递 -->
+	<select id="findTfrAreaTimeExp" parameterType="java.util.Map"
+		resultType="java.util.Map">
+		SELECT SUM(CAST(t.tfr_load_scan_time AS DATE) -
+		           CAST(t.in_tfr_area_time AS DATE)) * 24 tfr_area_time,
+		       COUNT(1) tfr_area_vote,
+		       round(SUM(CAST(t.tfr_load_scan_time AS DATE) -
+		                 CAST(t.in_tfr_area_time AS DATE)) * 24 / COUNT(1),
+		            2) avg_tfr_area_time
+		  FROM tfr.t_opt_stock_duration_tfr_exp t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		   AND t.tfr_load_scan_time IS NOT NULL
+		   AND t.in_tfr_area_time IS NOT NULL
+	</select>
+	
+	<!-- 查询派送库区停留时长 快递 -->
+	<select id="findDptAreaTimeExp" parameterType="java.util.Map"
+		resultType="java.util.Map">
+		SELECT SUM(CAST(nvl(t.dpt_load_scan_time, t.sign_time) AS DATE) -
+		           CAST(t.in_dpt_area_time AS DATE)) * 24 dpt_area_time,
+		       COUNT(1) dpt_area_vote,
+		       round(SUM(CAST(nvl(t.dpt_load_scan_time, t.sign_time) AS DATE) -
+		                 CAST(t.in_dpt_area_time AS DATE)) * 24 / COUNT(1),
+		             2) avg_dpt_area_time
+		  FROM tfr.t_opt_stock_duration_dpt_exp t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		   AND (t.dpt_load_scan_time IS NOT NULL OR t.sign_time IS NOT NULL)
+		   AND t.in_dpt_area_time IS NOT NULL
+	</select>
+	
+	<!-- 查询卸车等待时长 零担 -->
+	<select id="findUnloadWaitTimeLtc" parameterType="java.util.Map"
+		resultType="java.util.Map">
+		SELECT SUM(unload_wait_time) unload_wait_time,
+		       SUM(unload_wait_vote) unload_wait_vote,
+		       round(SUM(unload_wait_time) / SUM(unload_wait_vote), 2) avg_unload_wait_time
+		  FROM (SELECT SUM(CAST(t.unload_task_begin_time AS DATE) -
+		                   CAST(t.arrived_time AS DATE)) * 24 unload_wait_time,
+		               COUNT(1) unload_wait_vote
+		          FROM tfr.t_opt_stock_duration_tfr_ltc t
+		         WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		           AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		           AND t.unload_task_begin_time IS NOT NULL
+		           AND t.arrived_time IS NOT NULL
+		        UNION ALL
+		        SELECT SUM(CAST(t.unload_task_begin_time AS DATE) -
+		                   CAST(t.arrived_time AS DATE)) * 24 unload_wait_time,
+		               COUNT(1) unload_wait_vote
+		          FROM tfr.t_opt_stock_duration_dpt_ltc t
+		         WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		           AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		           AND t.unload_task_begin_time IS NOT NULL
+		           AND t.arrived_time IS NOT NULL)
+	</select>
+	
+	<!-- 查询卸车时长 零担 -->
+	<select id="findUnloadTimeLtc" parameterType="java.util.Map"
+		resultType="java.util.Map">
+		SELECT SUM(unload_time) unload_time,
+		       SUM(unload_vote) unload_vote,
+		       round(SUM(unload_time) / SUM(unload_vote), 2) avg_unload_time
+		  FROM (SELECT SUM(CAST(t.unload_scan_time AS DATE) -
+		                   CAST(t.unload_task_begin_time AS DATE)) * 24 unload_time,
+		               COUNT(1) unload_vote
+		          FROM tfr.t_opt_stock_duration_tfr_ltc t
+		         WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		           AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		           AND t.unload_scan_time IS NOT NULL
+		           AND t.unload_task_begin_time IS NOT NULL
+		        UNION ALL
+		        SELECT SUM(CAST(t.unload_scan_time AS DATE) -
+		                   CAST(t.unload_task_begin_time AS DATE)) * 24 unload_time,
+		               COUNT(1) unload_vote
+		          FROM tfr.t_opt_stock_duration_dpt_ltc t
+		         WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		           AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		           AND t.unload_scan_time IS NOT NULL
+		           AND t.unload_task_begin_time IS NOT NULL)
+	</select>
+	
+	<!-- 查询待叉区停留时长 零担 -->
+	<select id="findForkAreaStayTimeLtc" parameterType="java.util.Map"
+		resultType="java.util.Map">
+		SELECT SUM(fork_area_stay_time) fork_area_stay_time,
+		       SUM(fork_area_stay_vote) fork_area_stay_vote,
+		       round(SUM(fork_area_stay_time) / SUM(fork_area_stay_vote), 2) avg_fork_area_stay_time
+		  FROM (SELECT SUM(CAST(t.forklift_scan_time AS DATE) -
+		                   CAST(t.tray_binding_time AS DATE)) * 24 fork_area_stay_time,
+		               COUNT(1) fork_area_stay_vote
+		          FROM tfr.t_opt_stock_duration_tfr_ltc t
+		         WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		           AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		           AND t.forklift_scan_time IS NOT NULL
+		           AND t.tray_binding_time IS NOT NULL
+		        UNION ALL
+		        SELECT SUM(CAST(t.forklift_scan_time AS DATE) -
+		                   CAST(t.tray_binding_time AS DATE)) * 24 fork_area_stay_time,
+		               COUNT(1) fork_area_stay_vote
+		          FROM tfr.t_opt_stock_duration_dpt_ltc t
+		         WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		           AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		           AND t.forklift_scan_time IS NOT NULL
+		           AND t.tray_binding_time IS NOT NULL)
+	</select>
+	
+	<!-- 查询包装库区停留时长 零担 -->
+	<select id="findPkgAreaStayTimeLtc" parameterType="java.util.Map"
+		resultType="java.util.Map">
+		SELECT SUM(pkg_area_stay_time) pkg_area_stay_time,
+		       SUM(pkg_area_stay_vote) pkg_area_stay_vote,
+		       round(SUM(pkg_area_stay_time) / SUM(pkg_area_stay_vote), 2) avg_pkg_area_stay_time
+		  FROM (SELECT SUM(CAST(t.out_pkg_area_time AS DATE) -
+		                   CAST(t.in_pkg_area_time AS DATE)) * 24 pkg_area_stay_time,
+		               COUNT(1) pkg_area_stay_vote
+		          FROM tfr.t_opt_stock_duration_tfr_ltc t
+		         WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		           AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		           AND t.out_pkg_area_time IS NOT NULL
+		           AND t.in_pkg_area_time IS NOT NULL
+		        UNION ALL
+		        SELECT SUM(CAST(t.out_pkg_area_time AS DATE) -
+		                   CAST(t.in_pkg_area_time AS DATE)) * 24 pkg_area_stay_time,
+		               COUNT(1) pkg_area_stay_vote
+		          FROM tfr.t_opt_stock_duration_dpt_ltc t
+		         WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		           AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		           AND t.out_pkg_area_time IS NOT NULL
+		           AND t.in_pkg_area_time IS NOT NULL)
+	</select>
+	
+	<!-- 查询中转库区停留时长 零担 -->
+	<select id="findTfrAreaTimeLtc" parameterType="java.util.Map"
+		resultType="java.util.Map">
+		SELECT SUM(CAST(t.tfr_load_scan_time AS DATE) -
+		           CAST(t.in_tfr_area_time AS DATE)) * 24 tfr_area_time,
+		       COUNT(1) tfr_area_vote,
+		       round(SUM(CAST(t.tfr_load_scan_time AS DATE) -
+		                 CAST(t.in_tfr_area_time AS DATE)) * 24 / COUNT(1),
+		             2) avg_tfr_area_time
+		  FROM tfr.t_opt_stock_duration_tfr_ltc t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		   AND t.tfr_load_scan_time IS NOT NULL
+		   AND t.in_tfr_area_time IS NOT NULL
+	</select>
+	
+	<!-- 查询派送库区停留时长 零担 -->
+	<select id="findDptAreaTimeLtc" parameterType="java.util.Map"
+		resultType="java.util.Map">
+		SELECT SUM(CAST(nvl(t.dpt_load_scan_time, t.sign_time) AS DATE) -
+		           CAST(t.in_dpt_area_time AS DATE)) * 24 dpt_area_time,
+		       COUNT(1) dpt_area_vote,
+		       round(SUM(CAST(nvl(t.dpt_load_scan_time, t.sign_time) AS DATE) -
+		                 CAST(t.in_dpt_area_time AS DATE)) * 24 / COUNT(1),
+		             2) avg_dpt_area_time
+		  FROM tfr.t_opt_stock_duration_dpt_ltc t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		   AND (t.dpt_load_scan_time IS NOT NULL OR t.sign_time IS NOT NULL)
+		   AND t.in_dpt_area_time IS NOT NULL
+	</select>
+
+	<!-- 新增快递中转数据 -->
+	<insert id="insertTfrExp"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.StockDurationTransfer">
+		INSERT INTO tfr.t_opt_stock_duration_tfr_exp
+		  (id,
+		   tfr_ctr_code,
+		   tfr_ctr_name,
+		   waybill_no,
+		   next_org_code,
+		   next_org_name,
+		   arrived_time,
+		   unload_task_begin_time,
+		   unload_scan_time,
+		   tray_binding_time,
+		   forklift_scan_time,
+		   in_pkg_area_time,
+		   out_pkg_area_time,
+		   in_tfr_area_time,
+		   tfr_load_scan_time,
+		   tfr_load_task_submit_time,
+		   sta_date,
+		   sta_month)
+		VALUES
+		  (#{id,jdbcType=VARCHAR},
+		   #{tfrCtrCode,jdbcType=VARCHAR},
+		   #{tfrCtrName,jdbcType=VARCHAR},
+		   #{waybillNo,jdbcType=VARCHAR},
+		   #{nextOrgCode,jdbcType=VARCHAR},
+		   #{nextOrgName,jdbcType=VARCHAR},
+		   #{arrivedTime,jdbcType=TIMESTAMP},
+		   #{unloadTaskBeginTime,jdbcType=TIMESTAMP},
+		   #{unloadScanTime,jdbcType=TIMESTAMP},
+		   #{trayBindingTime,jdbcType=TIMESTAMP},
+		   #{forkliftScanTime,jdbcType=TIMESTAMP},
+		   #{inPkgAreaTime,jdbcType=TIMESTAMP},
+		   #{outPkgAreaTime,jdbcType=TIMESTAMP},
+		   #{inTfrAreaTime,jdbcType=TIMESTAMP},
+		   #{tfrLoadScanTime,jdbcType=TIMESTAMP},
+		   #{tfrLoadTaskSubmitTime,jdbcType=TIMESTAMP},
+		   #{staDate,jdbcType=TIMESTAMP},
+		   #{staMonth,jdbcType=NUMERIC})
+	</insert>
+
+	<!-- 新增零担中转数据 -->
+	<insert id="insertTfrLtc"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.StockDurationTransfer">
+		INSERT INTO tfr.t_opt_stock_duration_tfr_ltc
+		  (id,
+		   tfr_ctr_code,
+		   tfr_ctr_name,
+		   waybill_no,
+		   next_org_code,
+		   next_org_name,
+		   arrived_time,
+		   unload_task_begin_time,
+		   unload_scan_time,
+		   tray_binding_time,
+		   forklift_scan_time,
+		   in_pkg_area_time,
+		   out_pkg_area_time,
+		   in_tfr_area_time,
+		   tfr_load_scan_time,
+		   tfr_load_task_submit_time,
+		   sta_date,
+		   sta_month)
+		VALUES
+		  (#{id,jdbcType=VARCHAR},
+		   #{tfrCtrCode,jdbcType=VARCHAR},
+		   #{tfrCtrName,jdbcType=VARCHAR},
+		   #{waybillNo,jdbcType=VARCHAR},
+		   #{nextOrgCode,jdbcType=VARCHAR},
+		   #{nextOrgName,jdbcType=VARCHAR},
+		   #{arrivedTime,jdbcType=TIMESTAMP},
+		   #{unloadTaskBeginTime,jdbcType=TIMESTAMP},
+		   #{unloadScanTime,jdbcType=TIMESTAMP},
+		   #{trayBindingTime,jdbcType=TIMESTAMP},
+		   #{forkliftScanTime,jdbcType=TIMESTAMP},
+		   #{inPkgAreaTime,jdbcType=TIMESTAMP},
+		   #{outPkgAreaTime,jdbcType=TIMESTAMP},
+		   #{inTfrAreaTime,jdbcType=TIMESTAMP},
+		   #{tfrLoadScanTime,jdbcType=TIMESTAMP},
+		   #{tfrLoadTaskSubmitTime,jdbcType=TIMESTAMP},
+		   #{staDate,jdbcType=TIMESTAMP},
+		   #{staMonth,jdbcType=NUMERIC})
+	</insert>
+
+	<!-- 新增快递派送数据 -->
+	<insert id="insertDptExp"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.StockDurationDispatch">
+		INSERT INTO tfr.t_opt_stock_duration_dpt_exp
+		  (id,
+		   tfr_ctr_code,
+		   tfr_ctr_name,
+		   waybill_no,
+		   receive_method,
+		   pre_org_code,
+		   pre_org_name,
+		   arrived_time,
+		   unload_task_begin_time,
+		   unload_scan_time,
+		   tray_binding_time,
+		   forklift_scan_time,
+		   in_pkg_area_time,
+		   out_pkg_area_time,
+		   in_dpt_area_time,
+		   dpt_load_scan_time,
+		   dpt_load_task_submit_time,
+		   sign_time,
+		   sta_date,
+		   sta_month)
+		VALUES
+		  (#{id,jdbcType=VARCHAR},
+		   #{tfrCtrCode,jdbcType=VARCHAR},
+		   #{tfrCtrName,jdbcType=VARCHAR},
+		   #{waybillNo,jdbcType=VARCHAR},
+		   #{receiveMethod,jdbcType=VARCHAR},
+		   #{preOrgCode,jdbcType=VARCHAR},
+		   #{preOrgName,jdbcType=VARCHAR},
+		   #{arrivedTime,jdbcType=TIMESTAMP},
+		   #{unloadTaskBeginTime,jdbcType=TIMESTAMP},
+		   #{unloadScanTime,jdbcType=TIMESTAMP},
+		   #{trayBindingTime,jdbcType=TIMESTAMP},
+		   #{forkliftScanTime,jdbcType=TIMESTAMP},
+		   #{inPkgAreaTime,jdbcType=TIMESTAMP},
+		   #{outPkgAreaTime,jdbcType=TIMESTAMP},
+		   #{inDptAreaTime,jdbcType=TIMESTAMP},
+		   #{dptLoadScanTime,jdbcType=TIMESTAMP},
+		   #{dptLoadTaskSubmitTime,jdbcType=TIMESTAMP},
+		   #{signTime,jdbcType=TIMESTAMP},
+		   #{staDate,jdbcType=TIMESTAMP},
+		   #{staMonth,jdbcType=NUMERIC})
+	</insert>
+
+	<!-- 新增零担派送数据 -->
+	<insert id="insertDptLtc"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.StockDurationDispatch">
+		INSERT INTO tfr.t_opt_stock_duration_dpt_ltc
+		  (id,
+		   tfr_ctr_code,
+		   tfr_ctr_name,
+		   waybill_no,
+		   receive_method,
+		   pre_org_code,
+		   pre_org_name,
+		   arrived_time,
+		   unload_task_begin_time,
+		   unload_scan_time,
+		   tray_binding_time,
+		   forklift_scan_time,
+		   in_pkg_area_time,
+		   out_pkg_area_time,
+		   in_dpt_area_time,
+		   dpt_load_scan_time,
+		   dpt_load_task_submit_time,
+		   sign_time,
+		   sta_date,
+		   sta_month)
+		VALUES
+		  (#{id,jdbcType=VARCHAR},
+		   #{tfrCtrCode,jdbcType=VARCHAR},
+		   #{tfrCtrName,jdbcType=VARCHAR},
+		   #{waybillNo,jdbcType=VARCHAR},
+		   #{receiveMethod,jdbcType=VARCHAR},
+		   #{preOrgCode,jdbcType=VARCHAR},
+		   #{preOrgName,jdbcType=VARCHAR},
+		   #{arrivedTime,jdbcType=TIMESTAMP},
+		   #{unloadTaskBeginTime,jdbcType=TIMESTAMP},
+		   #{unloadScanTime,jdbcType=TIMESTAMP},
+		   #{trayBindingTime,jdbcType=TIMESTAMP},
+		   #{forkliftScanTime,jdbcType=TIMESTAMP},
+		   #{inPkgAreaTime,jdbcType=TIMESTAMP},
+		   #{outPkgAreaTime,jdbcType=TIMESTAMP},
+		   #{inDptAreaTime,jdbcType=TIMESTAMP},
+		   #{dptLoadScanTime,jdbcType=TIMESTAMP},
+		   #{dptLoadTaskSubmitTime,jdbcType=TIMESTAMP},
+		   #{signTime,jdbcType=TIMESTAMP},
+		   #{staDate,jdbcType=TIMESTAMP},
+		   #{staMonth,jdbcType=NUMERIC})
+	</insert>
+
+	<!-- 新增快递数据日汇总 -->
+	<insert id="insertExpDay"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.StockDuration">
+		INSERT INTO tfr.t_opt_stock_duration_exp_day
+		  (id,
+		   tfr_ctr_code,
+		   tfr_ctr_name,
+		   unload_wait_time,
+		   unload_wait_vote,
+		   unload_time,
+		   unload_vote,
+		   fork_area_stay_time,
+		   fork_area_stay_vote,
+		   pkg_area_stay_time,
+		   pkg_area_stay_vote,
+		   tfr_area_time,
+		   tfr_area_vote,
+		   dpt_area_time,
+		   dpt_area_vote,
+		   avg_unload_wait_time,
+		   avg_unload_time,
+		   avg_fork_area_stay_time,
+		   avg_pkg_area_stay_time,
+		   avg_tfr_area_time,
+		   avg_dpt_area_time,
+		   sta_date,
+		   sta_month)
+		VALUES
+		  (#{id,jdbcType=VARCHAR},
+		   #{tfrCtrCode,jdbcType=VARCHAR},
+		   #{tfrCtrName,jdbcType=VARCHAR},
+		   #{unloadWaitTime,jdbcType=NUMERIC},
+		   #{unloadWaitVote,jdbcType=NUMERIC},
+		   #{unloadTime,jdbcType=NUMERIC},
+		   #{unloadVote,jdbcType=NUMERIC},
+		   #{forkAreaStayTime,jdbcType=NUMERIC},
+		   #{forkAreaStayVote,jdbcType=NUMERIC},
+		   #{pkgAreaStayTime,jdbcType=NUMERIC},
+		   #{pkgAreaStayVote,jdbcType=NUMERIC},
+		   #{tfrAreaTime,jdbcType=NUMERIC},
+		   #{tfrAreaVote,jdbcType=NUMERIC},
+		   #{dptAreaTime,jdbcType=NUMERIC},
+		   #{dptAreaVote,jdbcType=NUMERIC},
+		   #{avgUnloadWaitTime,jdbcType=NUMERIC},
+		   #{avgUnloadTime,jdbcType=NUMERIC},
+		   #{avgForkAreaStayTime,jdbcType=NUMERIC},
+		   #{avgPkgAreaStayTime,jdbcType=NUMERIC},
+		   #{avgTfrAreaTime,jdbcType=NUMERIC},
+		   #{avgDptAreaTime,jdbcType=NUMERIC},
+		   #{staDate,jdbcType=TIMESTAMP},
+		   #{staMonth,jdbcType=NUMERIC})
+	</insert>
+
+	<!-- 新增零担数据日汇总 -->
+	<insert id="insertLtcDay"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.StockDuration">
+		INSERT INTO tfr.t_opt_stock_duration_ltc_day
+		  (id,
+		   tfr_ctr_code,
+		   tfr_ctr_name,
+		   unload_wait_time,
+		   unload_wait_vote,
+		   unload_time,
+		   unload_vote,
+		   fork_area_stay_time,
+		   fork_area_stay_vote,
+		   pkg_area_stay_time,
+		   pkg_area_stay_vote,
+		   tfr_area_time,
+		   tfr_area_vote,
+		   dpt_area_time,
+		   dpt_area_vote,
+		   avg_unload_wait_time,
+		   avg_unload_time,
+		   avg_fork_area_stay_time,
+		   avg_pkg_area_stay_time,
+		   avg_tfr_area_time,
+		   avg_dpt_area_time,
+		   sta_date,
+		   sta_month)
+		VALUES
+		  (#{id,jdbcType=VARCHAR},
+		   #{tfrCtrCode,jdbcType=VARCHAR},
+		   #{tfrCtrName,jdbcType=VARCHAR},
+		   #{unloadWaitTime,jdbcType=NUMERIC},
+		   #{unloadWaitVote,jdbcType=NUMERIC},
+		   #{unloadTime,jdbcType=NUMERIC},
+		   #{unloadVote,jdbcType=NUMERIC},
+		   #{forkAreaStayTime,jdbcType=NUMERIC},
+		   #{forkAreaStayVote,jdbcType=NUMERIC},
+		   #{pkgAreaStayTime,jdbcType=NUMERIC},
+		   #{pkgAreaStayVote,jdbcType=NUMERIC},
+		   #{tfrAreaTime,jdbcType=NUMERIC},
+		   #{tfrAreaVote,jdbcType=NUMERIC},
+		   #{dptAreaTime,jdbcType=NUMERIC},
+		   #{dptAreaVote,jdbcType=NUMERIC},
+		   #{avgUnloadWaitTime,jdbcType=NUMERIC},
+		   #{avgUnloadTime,jdbcType=NUMERIC},
+		   #{avgForkAreaStayTime,jdbcType=NUMERIC},
+		   #{avgPkgAreaStayTime,jdbcType=NUMERIC},
+		   #{avgTfrAreaTime,jdbcType=NUMERIC},
+		   #{avgDptAreaTime,jdbcType=NUMERIC},
+		   #{staDate,jdbcType=TIMESTAMP},
+		   #{staMonth,jdbcType=NUMERIC})
+	</insert>
+	
+	<!-- 新增快递数据月汇总 -->
+	<insert id="insertExpMonth" parameterType="java.util.Map">
+		INSERT INTO tfr.t_opt_stock_duration_exp_month
+		  SELECT sys_guid(),
+		         t.tfr_ctr_code,
+		         MAX(t.tfr_ctr_name),
+		         round(SUM(t.unload_wait_time) / SUM(t.unload_wait_vote), 3),
+		         round(SUM(t.unload_time) / SUM(t.unload_vote), 3),
+		         round(SUM(t.fork_area_stay_time) / SUM(t.fork_area_stay_vote), 3),
+		         round(SUM(t.pkg_area_stay_time) / SUM(t.pkg_area_stay_vote), 3),
+		         round(SUM(t.tfr_area_time) / SUM(t.tfr_area_vote), 3),
+		         round(SUM(t.dpt_area_time) / SUM(t.dpt_area_vote), 3),
+		         #{staDate,jdbcType=TIMESTAMP},
+		         #{staMonth,jdbcType=NUMERIC}
+		    FROM tfr.t_opt_stock_duration_exp_day t
+		   WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		     <![CDATA[
+		     AND t.sta_date <= #{staDate,jdbcType=TIMESTAMP}
+		     ]]>
+		     AND t.sta_month = #{staMonth,jdbcType=NUMERIC}
+		   GROUP BY t.tfr_ctr_code
+	</insert>
+
+	<!-- 新增零担数据月汇总 -->
+	<insert id="insertLtcMonth" parameterType="java.util.Map">
+		INSERT INTO tfr.t_opt_stock_duration_ltc_month
+		  SELECT sys_guid(),
+		         t.tfr_ctr_code,
+		         MAX(t.tfr_ctr_name),
+		         round(SUM(t.unload_wait_time) / SUM(t.unload_wait_vote),3),
+		         round(SUM(t.unload_time) / SUM(t.unload_vote), 3),
+		         round(SUM(t.fork_area_stay_time) / SUM(t.fork_area_stay_vote), 3),
+		         round(SUM(t.pkg_area_stay_time) / SUM(t.pkg_area_stay_vote), 3),
+		         round(SUM(t.tfr_area_time) / SUM(t.tfr_area_vote), 3),
+		         round(SUM(t.dpt_area_time) / SUM(t.dpt_area_vote), 3),
+		         #{staDate,jdbcType=TIMESTAMP},
+		         #{staMonth,jdbcType=NUMERIC}
+		    FROM tfr.t_opt_stock_duration_ltc_day t
+		   WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		     <![CDATA[
+		     AND t.sta_date <= #{staDate,jdbcType=TIMESTAMP}
+		     ]]>
+		     AND t.sta_month = #{staMonth,jdbcType=NUMERIC}
+		   GROUP BY t.tfr_ctr_code
+	</insert>
+	
+	<!-- 查询快递数据日汇总 -->
+	<select id="findExpDay"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.StockDurationQcDto"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.StockDuration">
+		SELECT t.avg_unload_wait_time    avgUnloadWaitTime,
+		       t.avg_unload_time         avgUnloadTime,
+		       t.avg_fork_area_stay_time avgForkAreaStayTime,
+		       t.avg_pkg_area_stay_time  avgPkgAreaStayTime,
+		       t.avg_tfr_area_time       avgTfrAreaTime,
+		       t.avg_dpt_area_time       avgDptAreaTime,
+		       t.tfr_ctr_name            tfrCtrName
+		  FROM tfr.t_opt_stock_duration_exp_day t
+		 WHERE t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		 <if test="tfrCtrCode != null and tfrCtrCode != ''">
+		   AND t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		 </if>
+	</select>
+	
+	<!-- 查询快递数据月汇总 -->
+	<select id="findExpMonth"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.StockDurationQcDto"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.StockDuration">
+		SELECT t.avg_unload_wait_time    avgUnloadWaitTime,
+		       t.avg_unload_time         avgUnloadTime,
+		       t.avg_fork_area_stay_time avgForkAreaStayTime,
+		       t.avg_pkg_area_stay_time  avgPkgAreaStayTime,
+		       t.avg_tfr_area_time       avgTfrAreaTime,
+		       t.avg_dpt_area_time       avgDptAreaTime,
+		       t.tfr_ctr_name            tfrCtrName
+		  FROM tfr.t_opt_stock_duration_exp_month t
+		 WHERE t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		 <if test="tfrCtrCode != null and tfrCtrCode != ''">
+		   AND t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		 </if>
+	</select>
+	
+	<!-- 查询零担数据日汇总 -->
+	<select id="findLtcDay"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.StockDurationQcDto"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.StockDuration">
+		SELECT t.avg_unload_wait_time    avgUnloadWaitTime,
+		       t.avg_unload_time         avgUnloadTime,
+		       t.avg_fork_area_stay_time avgForkAreaStayTime,
+		       t.avg_pkg_area_stay_time  avgPkgAreaStayTime,
+		       t.avg_tfr_area_time       avgTfrAreaTime,
+		       t.avg_dpt_area_time       avgDptAreaTime,
+		       t.tfr_ctr_name            tfrCtrName
+		  FROM tfr.t_opt_stock_duration_ltc_day t
+		 WHERE t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		 <if test="tfrCtrCode != null and tfrCtrCode != ''">
+		   AND t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		 </if>
+	</select>
+	
+	<!-- 查询零担数据月汇总 -->
+	<select id="findLtcMonth"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.StockDurationQcDto"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.StockDuration">
+		SELECT t.avg_unload_wait_time    avgUnloadWaitTime,
+		       t.avg_unload_time         avgUnloadTime,
+		       t.avg_fork_area_stay_time avgForkAreaStayTime,
+		       t.avg_pkg_area_stay_time  avgPkgAreaStayTime,
+		       t.avg_tfr_area_time       avgTfrAreaTime,
+		       t.avg_dpt_area_time       avgDptAreaTime,
+		       t.tfr_ctr_name            tfrCtrName
+		  FROM tfr.t_opt_stock_duration_ltc_month t
+		 WHERE t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		 <if test="tfrCtrCode != null and tfrCtrCode != ''">
+		   AND t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		 </if>
+	</select>
+	
+	<!-- 查询快递中转数据 -->
+	<select id="findTfrExp"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.StockDurationQcDto"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.StockDurationTransfer">
+		SELECT t.tfr_ctr_name              tfrCtrName,
+		       t.waybill_no                waybillNo,
+		       t.next_org_name             nextOrgName,
+		       t.arrived_time              arrivedTime,
+		       t.unload_task_begin_time    unloadTaskBeginTime,
+		       t.unload_scan_time          unloadScanTime,
+		       t.tray_binding_time         trayBindingTime,
+		       t.forklift_scan_time        forkliftScanTime,
+		       t.in_pkg_area_time          inPkgAreaTime,
+		       t.out_pkg_area_time         outPkgAreaTime,
+		       t.in_tfr_area_time          inTfrAreaTime,
+		       t.tfr_load_scan_time        tfrLoadScanTime,
+		       t.tfr_load_task_submit_time tfrLoadTaskSubmitTime
+		  FROM tfr.t_opt_stock_duration_tfr_exp t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		 <if test="waybillNo != null and waybillNo != ''">
+		   AND t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		 </if>
+		 <if test="nextOrgCode != null and nextOrgCode != ''">
+		   AND t.next_org_code = #{nextOrgCode,jdbcType=VARCHAR}
+		 </if>
+	</select>
+	
+	<!-- 查询零担中转数据 -->
+	<select id="findTfrLtc"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.StockDurationQcDto"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.StockDurationTransfer">
+		SELECT t.tfr_ctr_name              tfrCtrName,
+		       t.waybill_no                waybillNo,
+		       t.next_org_name             nextOrgName,
+		       t.arrived_time              arrivedTime,
+		       t.unload_task_begin_time    unloadTaskBeginTime,
+		       t.unload_scan_time          unloadScanTime,
+		       t.tray_binding_time         trayBindingTime,
+		       t.forklift_scan_time        forkliftScanTime,
+		       t.in_pkg_area_time          inPkgAreaTime,
+		       t.out_pkg_area_time         outPkgAreaTime,
+		       t.in_tfr_area_time          inTfrAreaTime,
+		       t.tfr_load_scan_time        tfrLoadScanTime,
+		       t.tfr_load_task_submit_time tfrLoadTaskSubmitTime
+		  FROM tfr.t_opt_stock_duration_tfr_ltc t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		 <if test="waybillNo != null and waybillNo != ''">
+		   AND t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		 </if>
+		 <if test="nextOrgCode != null and nextOrgCode != ''">
+		   AND t.next_org_code = #{nextOrgCode,jdbcType=VARCHAR}
+		 </if>
+	</select>
+	
+	<!-- 查询快递派送数据 -->
+	<select id="findDptExp"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.StockDurationQcDto"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.StockDurationDispatch">
+		SELECT t.tfr_ctr_name              tfrCtrName,
+		       t.waybill_no                waybillNo,
+		       t.receive_method            receiveMethod,
+		       t.pre_org_name              preOrgName,
+		       t.arrived_time              arrivedTime,
+		       t.unload_task_begin_time    unloadTaskBeginTime,
+		       t.unload_scan_time          unloadScanTime,
+		       t.tray_binding_time         trayBindingTime,
+		       t.forklift_scan_time        forkliftScanTime,
+		       t.in_pkg_area_time          inPkgAreaTime,
+		       t.out_pkg_area_time         outPkgAreaTime,
+		       t.in_dpt_area_time          inDptAreaTime,
+		       t.dpt_load_scan_time        dptLoadScanTime,
+		       t.dpt_load_task_submit_time dptLoadTaskSubmitTime,
+		       t.sign_time                 signTime
+		  FROM tfr.t_opt_stock_duration_dpt_exp t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		 <if test="waybillNo != null and waybillNo != ''">
+		   AND t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		 </if>
+		 <if test="preOrgCode != null and preOrgCode != ''">
+		   AND t.pre_org_code = #{preOrgCode,jdbcType=VARCHAR}
+		 </if>
+		 <if test="receiveMethod != null and receiveMethod != ''">
+		   AND t.receive_method = #{receiveMethod,jdbcType=VARCHAR}
+		 </if>
+	</select>
+	
+	<!-- 查询零担派送数据 -->
+	<select id="findDptLtc"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.StockDurationQcDto"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.StockDurationDispatch">
+		SELECT t.tfr_ctr_name              tfrCtrName,
+		       t.waybill_no                waybillNo,
+		       t.receive_method            receiveMethod,
+		       t.pre_org_name              preOrgName,
+		       t.arrived_time              arrivedTime,
+		       t.unload_task_begin_time    unloadTaskBeginTime,
+		       t.unload_scan_time          unloadScanTime,
+		       t.tray_binding_time         trayBindingTime,
+		       t.forklift_scan_time        forkliftScanTime,
+		       t.in_pkg_area_time          inPkgAreaTime,
+		       t.out_pkg_area_time         outPkgAreaTime,
+		       t.in_dpt_area_time          inDptAreaTime,
+		       t.dpt_load_scan_time        dptLoadScanTime,
+		       t.dpt_load_task_submit_time dptLoadTaskSubmitTime,
+		       t.sign_time                 signTime
+		  FROM tfr.t_opt_stock_duration_dpt_ltc t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		 <if test="waybillNo != null and waybillNo != ''">
+		   AND t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		 </if>
+		 <if test="preOrgCode != null and preOrgCode != ''">
+		   AND t.pre_org_code = #{preOrgCode,jdbcType=VARCHAR}
+		 </if>
+		 <if test="receiveMethod != null and receiveMethod != ''">
+		   AND t.receive_method = #{receiveMethod,jdbcType=VARCHAR}
+		 </if>
+	</select>
+	
+	<!-- 查询快递中转数据总数 -->
+	<select id="findTfrExpCnt"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.StockDurationQcDto"
+		resultType="java.lang.Long">
+		SELECT COUNT(1)
+		  FROM tfr.t_opt_stock_duration_tfr_exp t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		 <if test="waybillNo != null and waybillNo != ''">
+		   AND t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		 </if>
+		 <if test="nextOrgCode != null and nextOrgCode != ''">
+		   AND t.next_org_code = #{nextOrgCode,jdbcType=VARCHAR}
+		 </if>
+	</select>
+	
+	<!-- 查询零担中转数据 -->
+	<select id="findTfrLtcCnt"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.StockDurationQcDto"
+		resultType="java.lang.Long">
+		SELECT COUNT(1)
+		  FROM tfr.t_opt_stock_duration_tfr_ltc t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		 <if test="waybillNo != null and waybillNo != ''">
+		   AND t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		 </if>
+		 <if test="nextOrgCode != null and nextOrgCode != ''">
+		   AND t.next_org_code = #{nextOrgCode,jdbcType=VARCHAR}
+		 </if>
+	</select>
+	
+	<!-- 查询快递派送数据 -->
+	<select id="findDptExpCnt"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.StockDurationQcDto"
+		resultType="java.lang.Long">
+		SELECT COUNT(1)
+		  FROM tfr.t_opt_stock_duration_dpt_exp t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		 <if test="waybillNo != null and waybillNo != ''">
+		   AND t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		 </if>
+		 <if test="preOrgCode != null and preOrgCode != ''">
+		   AND t.pre_org_code = #{preOrgCode,jdbcType=VARCHAR}
+		 </if>
+		 <if test="receiveMethod != null and receiveMethod != ''">
+		   AND t.receive_method = #{receiveMethod,jdbcType=VARCHAR}
+		 </if>
+	</select>
+	
+	<!-- 查询零担派送数据 -->
+	<select id="findDptLtcCnt"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.StockDurationQcDto"
+		resultType="java.lang.Long">
+		SELECT COUNT(1)
+		  FROM tfr.t_opt_stock_duration_dpt_ltc t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		 <if test="waybillNo != null and waybillNo != ''">
+		   AND t.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		 </if>
+		 <if test="preOrgCode != null and preOrgCode != ''">
+		   AND t.pre_org_code = #{preOrgCode,jdbcType=VARCHAR}
+		 </if>
+		 <if test="receiveMethod != null and receiveMethod != ''">
+		   AND t.receive_method = #{receiveMethod,jdbcType=VARCHAR}
+		 </if>
+	</select>
+
+</mapper>

@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.jobGrid">
+
+	<resultMap id="jobSchedulesResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.JobGridSchedulesEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="TRIGGER_GROUP" property="triggerGroup" jdbcType="VARCHAR" />
+		<result column="TRIGGER_NAME" property="triggerName" jdbcType="VARCHAR" />
+		<result column="JOB_GROUP" property="jobGroup" jdbcType="VARCHAR" />
+		<result column="JOB_NAME" property="jobName" jdbcType="VARCHAR" />
+		<result column="DESCRIPTION" property="jobDesc" jdbcType="VARCHAR" />
+		<result column="TRIGGER_TYPE" property="triggerType" jdbcType="DECIMAL" />
+		<result column="TRIGGER_EXPRESSION" property="triggerExpression" jdbcType="VARCHAR" />
+		<result column="JOB_CLASS" property="jobClass" jdbcType="VARCHAR" />
+		<result column="JOB_DATA" property="jobData" jdbcType="VARCHAR" />
+		<result column="UPDATE_TIME" property="updateTime" javaType="Date" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="INTEGER" />
+		<result column="INSTANCE_ID" property="instanceId" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<resultMap id="jobLoggingsResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.JobGridLoggingsEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="INSTANCE_ID" property="instanceId" jdbcType="VARCHAR" />
+		<result column="TRIGGER_GROUP" property="triggerGroup" jdbcType="VARCHAR" />
+		<result column="TRIGGER_NAME" property="triggerName" jdbcType="VARCHAR" />
+		<result column="JOB_GROUP" property="jobGroup" jdbcType="VARCHAR" />
+		<result column="JOB_NAME" property="jobName" jdbcType="VARCHAR" />
+		<result column="ERROR_MESSAGE" property="errorMessage" jdbcType="VARCHAR" />
+		<result column="START_TIME" property="startTime" jdbcType="VARCHAR" />
+		<result column="END_TIME" property="endTime" jdbcType="VARCHAR" />
+	</resultMap>
+	<resultMap id="jobGridClusterResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.JobGridClusterEntity">
+		<result column="INSTANCE_ID" property="instanceId" jdbcType="VARCHAR" />
+		<result column="SCOPE_TYPE" property="scopeType" jdbcType="DECIMAL" />
+		<result column="SCOPE_NAME" property="scopeName" jdbcType="VARCHAR" />
+		<result column="ACCESS_RULE" property="accessRule" jdbcType="DECIMAL" />
+	</resultMap>
+   <sql id="jobGridCluSchedule_Column_List">
+		INSTANCE_ID, SCOPE_TYPE, SCOPE_NAME, ACCESS_RULE
+	</sql>
+	<sql id="jobGridSchedules_Column_List">
+		ID, TRIGGER_GROUP, TRIGGER_NAME, JOB_GROUP, JOB_NAME, DESCRIPTION, TRIGGER_TYPE,
+		TRIGGER_EXPRESSION, JOB_CLASS, JOB_DATA, UPDATE_TIME, ACTIVE
+	</sql>
+	<sql id="jobGridSchedulesExtra_Column_List">
+		ID, TRIGGER_GROUP, TRIGGER_NAME, JOB_GROUP, JOB_NAME, DESCRIPTION, TRIGGER_TYPE,
+		TRIGGER_EXPRESSION, JOB_CLASS, JOB_DATA, UPDATE_TIME, ACTIVE,INSTANCE_ID
+	</sql>
+	<sql id="jobGridLoggings_Column_List">
+		ID, INSTANCE_ID, TRIGGER_GROUP, TRIGGER_NAME, JOB_GROUP, JOB_NAME, ERROR_MESSAGE,
+		to_char(START_TIME, 'YYYY-MM-DD HH24:MI:SS') AS START_TIME, to_char(END_TIME, 'YYYY-MM-DD HH24:MI:SS') AS END_TIME
+	</sql>
+	<sql id="Job_blong_module">
+	   	 <choose>
+			<when test="blongModule =='BSE'">
+					BSE.
+			</when>
+			<when test="blongModule =='TFR'">
+					TFR.
+			</when>
+			<when test="blongModule =='PKP'">
+					PKP.
+			</when>
+			<when test="blongModule =='STL'">
+					STL.
+			</when>
+	</choose>
+	</sql>
+	<sql id="jobGridSchedules_Where_Like_Param">
+		<trim prefix="WHERE" prefixOverrides="AND | OR">
+		    <if test="id !=null and id != ''">
+				AND ID LIKE CONCAT(CONCAT('%', #{id, jdbcType=VARCHAR}), '%')
+			</if>
+			<if test="jobGroup !=null and jobGroup != ''">
+				AND JOB_GROUP LIKE CONCAT(CONCAT('%', #{jobGroup, jdbcType=VARCHAR}), '%')
+			</if>
+			<if test="jobName != null and jobName != ''">
+				AND JOB_NAME LIKE CONCAT(CONCAT('%', #{jobName, jdbcType=VARCHAR}), '%')
+			</if>
+			<if test="triggerName != null and triggerName != ''">
+				AND TRIGGER_NAME LIKE CONCAT(CONCAT('%', #{triggerName, jdbcType=VARCHAR}), '%')
+			</if>
+			   <if test="active != null and active!=3">
+			 	  AND ACTIVE =#{active, jdbcType=INTEGER}
+			   </if>
+		</trim>
+	</sql>
+	<!-- 查询作业对象信息总数量 -->
+	<select id="getJobGridSchedulesCount" resultType="java.lang.Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.JobGridSchedulesEntity">
+		<![CDATA[ SELECT COUNT(*) FROM]]>
+		 <include refid="Job_blong_module"/>
+		 QRTZ_JOB_SCHEDULES 
+		<include refid="jobGridSchedules_Where_Like_Param"/>
+	</select>
+	
+	<!-- 查询作业对象 -->
+	<select id="getJobGridSchedulesRecords" 
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.JobGridSchedulesEntity"
+		resultMap="jobSchedulesResultMap">
+		<![CDATA[
+			SELECT
+		]]>
+		<include refid="jobGridSchedulesExtra_Column_List" />
+		<![CDATA[FROM ]]> <include refid="Job_blong_module"/>
+			<![CDATA[QRTZ_JOB_SCHEDULES ES
+				LEFT JOIN]]> 
+				<include refid="Job_blong_module"/>
+				<![CDATA[QRTZ_JOB_PLANNINGS GS on ES.job_group = GS.scope_name
+		]]>
+		<include refid="jobGridSchedules_Where_Like_Param"/>
+	</select>
+	
+	<!-- 插入作业对象 -->
+	<insert id="insertJobGridSchedule"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.JobGridSchedulesEntity">
+		<![CDATA[
+			INSERT INTO]]> <include refid="Job_blong_module"/><![CDATA[QRTZ_JOB_SCHEDULES (
+		]]>
+		<include refid="jobGridSchedules_Column_List" />
+		<![CDATA[
+			)VALUES(
+				#{id, jdbcType=VARCHAR},
+				#{triggerGroup, jdbcType=VARCHAR},
+				#{triggerName, jdbcType=VARCHAR},
+				#{jobGroup, jdbcType=VARCHAR},
+				#{jobName, jdbcType=VARCHAR},
+				#{jobDesc, jdbcType=VARCHAR},
+				#{triggerType, jdbcType=DECIMAL},
+				#{triggerExpression, jdbcType=VARCHAR},
+				#{jobClass, jdbcType=VARCHAR},
+				#{jobData, jdbcType=VARCHAR},
+				#{updateTime, jdbcType=TIMESTAMP},
+				#{active, jdbcType=INTEGER}
+			)
+		]]>
+	</insert>
+	
+	<!-- 更新作业对象 -->
+	<update id="updateJobGridSchedule" 
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.JobGridSchedulesEntity">
+		UPDATE <include refid="Job_blong_module"/>QRTZ_JOB_SCHEDULES
+		<set>
+			<if test="triggerGroup != null and triggerGroup != ''">
+				TRIGGER_GROUP = #{triggerGroup, jdbcType=VARCHAR},
+			</if>
+			<if test="triggerName != null and triggerName != ''">
+				TRIGGER_NAME = #{triggerName, jdbcType=VARCHAR},
+			</if>
+			<if test="jobGroup != null and jobGroup != ''">
+				JOB_GROUP = #{jobGroup, jdbcType=VARCHAR},
+			</if>
+			<if test="jobName != null and jobName != ''">
+				JOB_NAME = #{jobName, jdbcType=VARCHAR},
+			</if>
+			<if test="jobDesc != null">
+				DESCRIPTION = #{jobDesc, jdbcType=VARCHAR},
+			</if>
+			<if test="triggerType != null and triggerType != ''">
+				TRIGGER_TYPE = #{triggerType, jdbcType=DECIMAL},
+			</if>
+			<if test="triggerExpression != null and triggerExpression != ''">
+				TRIGGER_EXPRESSION = #{triggerExpression, jdbcType=VARCHAR},
+			</if>
+			<if test="jobClass != null and jobClass != ''">
+				JOB_CLASS = #{jobClass, jdbcType=VARCHAR},
+			</if>
+			<if test="jobData != null">
+				JOB_DATA = #{jobData, jdbcType=VARCHAR},
+			</if>
+			<if test="updateTime != null">
+				UPDATE_TIME = #{updateTime, jdbcType=TIMESTAMP},
+			</if>
+		</set>
+		<where>
+			<if test="id !=null and id != ''">
+				ID = #{id, jdbcType=VARCHAR}
+			</if>
+		</where>
+	</update>
+	
+	<!-- 更新作业对象调度标识 -->
+	<update id="updateActiveOfJobGridSchedule" 
+		parameterType="map">
+		<![CDATA[
+		UPDATE	]]> <include refid="Job_blong_module"/><![CDATA[QRTZ_JOB_SCHEDULES
+		SET ACTIVE = #{active, jdbcType=INTEGER}, UPDATE_TIME = #{updateTime, jdbcType=TIMESTAMP}
+		WHERE ID = #{id, jdbcType=VARCHAR}
+		]]>
+	</update>
+	
+	<!-- 根据ID查询作业对象 -->
+	<select id="getJobGridScheduleById" resultMap="jobSchedulesResultMap" parameterType="map">
+		SELECT
+		<include refid="jobGridSchedules_Column_List" />
+		<![CDATA[
+		FROM ]]> 
+		<include refid="Job_blong_module"/>
+		<![CDATA[QRTZ_JOB_SCHEDULES
+		WHERE ID = #{id, jdbcType=VARCHAR}
+		]]>
+	</select>
+	
+	<!-- 查询任务的历史记录信息总数量 -->
+	<select id="getJobGridLoggingsCount" resultType="java.lang.Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.JobGridLoggingsEntity">
+		<![CDATA[ 
+			SELECT COUNT(*)
+			FROM]]>
+			 <include refid="Job_blong_module"/>
+			<![CDATA[ QRTZ_JOB_LOGGINGS
+			WHERE JOB_GROUP = #{jobGroup, jdbcType=VARCHAR}
+				AND JOB_NAME = #{jobName, jdbcType=VARCHAR}
+				AND to_char(START_TIME, 'YYYY-MM-DD HH24:MI:SS') BETWEEN #{startTime, jdbcType=VARCHAR} AND #{endTime, jdbcType=VARCHAR}
+		]]>
+	</select>
+	 
+	<!-- 查询任务的历史记录信息 --> 
+	<select id="getJobGridLoggingsRecords" resultMap="jobLoggingsResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.JobGridLoggingsEntity">
+		SELECT
+		<include refid="jobGridLoggings_Column_List" />
+		<![CDATA[
+		FROM 	]]><include refid="Job_blong_module"/>
+		<![CDATA[QRTZ_JOB_LOGGINGS
+		WHERE JOB_GROUP = #{jobGroup, jdbcType=VARCHAR}
+			AND JOB_NAME = #{jobName, jdbcType=VARCHAR}
+			AND to_char(START_TIME, 'YYYY-MM-DD HH24:MI:SS') BETWEEN #{startTime, jdbcType=VARCHAR} AND #{endTime, jdbcType=VARCHAR}
+		ORDER BY START_TIME DESC
+		]]>
+	</select>
+	<!-- 插入任务群 -->
+	<insert id="addJobGridCluSchedule"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.JobGridClusterEntity">
+		<![CDATA[
+			INSERT INTO ]]>
+			<include refid="Job_blong_module"/>
+			<![CDATA[QRTZ_JOB_PLANNINGS (
+		]]>
+		<include refid="jobGridCluSchedule_Column_List" />
+		<![CDATA[
+			)VALUES(
+				#{instanceId, jdbcType=VARCHAR},
+				#{scopeType, jdbcType=DECIMAL},
+				#{scopeName, jdbcType=VARCHAR},
+				#{accessRule, jdbcType=DECIMAL}
+			)
+		]]>
+	</insert>
+		<!-- 查询任务群总数量 -->
+	<select id="queryJobGridCluSelectorCount" resultType="java.lang.Long" parameterType="map">
+		<![CDATA[ 
+			SELECT COUNT(*)
+			FROM  ]]>
+			<include refid="Job_blong_module"/>
+			<![CDATA[QRTZ_JOB_PLANNINGS]]>
+		<where>
+			<if test="selectParam != null and selectParam != ''">
+				AND SCOPE_NAME LIKE CONCAT(CONCAT('%', #{selectParam,
+				jdbcType=VARCHAR}), '%')
+			</if>
+		</where>
+	</select>
+		<!-- 查询任务群 -->
+	<select id="queryJobGridCluSelector" resultMap="jobGridClusterResultMap" parameterType="map">
+		<![CDATA[ 
+			SELECT 
+		]]>
+		<include refid="jobGridCluSchedule_Column_List" />
+		<![CDATA[ 
+			FROM  ]]>
+			<include refid="Job_blong_module"/>
+			<![CDATA[QRTZ_JOB_PLANNINGS
+		]]>
+		<where>
+			<if test="selectParam != null and selectParam != ''">
+				AND SCOPE_NAME LIKE CONCAT(CONCAT('%', #{selectParam,
+				jdbcType=VARCHAR}), '%')
+			</if>
+		</where>
+	</select>
+
+	<!-- 查询任务群 -->
+	<select id="queryJobGridCluInfos" resultMap="jobGridClusterResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.JobGridClusterEntity">
+		<![CDATA[ 
+			SELECT 
+		]]>
+		<include refid="jobGridCluSchedule_Column_List" />
+		<![CDATA[ 
+			FROM  ]]>
+			<include refid="Job_blong_module"/>
+			<![CDATA[QRTZ_JOB_PLANNINGS]]>
+		<where>
+			<if test="instanceId != null and instanceId != ''">
+				AND INSTANCE_ID = #{instanceId,jdbcType=VARCHAR}
+			</if>
+			<if test="scopeName != null and scopeName != ''">
+				AND SCOPE_NAME = #{scopeName,jdbcType=VARCHAR}
+			</if>
+			<if test="scopeType != null and scopeType != ''">
+				AND SCOPE_TYPE = #{scopeType,jdbcType=VARCHAR}
+			</if>
+			<if test="accessRule != null and accessRule != ''">
+				AND ACCESS_RULE = #{accessRule,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</select>
+</mapper>

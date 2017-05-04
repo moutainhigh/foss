@@ -1,0 +1,906 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.load.connectionbill">
+
+<!-- 交接单实体resuleMap -->
+
+<resultMap id="queryConnectionBillResultMap"
+		type="com.deppon.foss.module.transfer.load.api.shared.domain.ConnectionBillEntity">
+		<result property="id" column="id" />
+		<result property="connectionBillNo" column="connectionBillNo" />
+		<result property="handOverType" column="handOverType" />
+		<result property="statu" column="statu" />
+		<result property="handOverTime" column="handOverTime" />
+		<result property="vehicleNo" column="vehicleNo" />
+		<result property="departDeptName" column="departDeptName" />
+		<result property="departDeptCode" column="departDeptCode" />
+		<result property="arriveDeptName" column="arriveDeptName" />
+		<result property="arriveDeptCode" column="arriveDeptCode" />
+		<result property="arriveTime" column="arriveTime" />
+		<result property="waybillQtyTotal" column="waybillQtyTotal" />
+		<result property="goodsQtyTotal" column="goodsQtyTotal" />
+		<result property="volumeTotal" column="volumeTotal" />
+		<result property="weightTotal" column="weightTotal" />
+		<result property="createUserName" column="createUserName" />
+		<result property="createUserCode" column="createUserCode" />
+		<result property="driverName" column="driverName" />
+		<result property="driverCode" column="driverCode" />
+		<result property="loadEndTime" column="loadEndTime" />
+		<result property="driverTel" column="driverTel" />
+		<result property="modifyUserName" column="modifyUserName" />
+		<result property="modifyUserCode" column="modifyUserCode" />
+		<result property="isPda" column="isPda" />
+		<result property="notes" column="notes" />
+		<result property="loadTaskNo" column="loadTaskNo" />
+	</resultMap>
+
+
+	<resultMap id="connectionBillDetailResultMap"
+		type="com.deppon.foss.module.transfer.load.api.shared.domain.ConnectionBillDetailEntity">
+		
+		<result property="id" column="id" />
+		<result property="connectionBillNo" column="connectionBillNo" />
+		<result property="waybillNo" column="waybillNo" />
+		<result property="transProperty" column="transProperty" />
+		<result property="pieces" column="pieces" />
+		<result property="weight" column="weight" />
+		<result property="cubage" column="cubage" />
+		<result property="note" column="note" />
+		<result property="goodsName" column="goodsName" />
+		<result property="packing" column="packing" />
+		<result property="isPreciousGoods" column="isPreciousGoods" />
+		<result property="receiveOrgName" column="receiveOrgName" />
+		<result property="arriveDept" column="arriveDept" />
+		<result property="consignee" column="consignee" />
+		<result property="destination" column="destination" />
+		<result property="waybillPieces" column="waybillPieces" />
+		<result property="waybillFee" column="waybillFee" />
+		<result property="insuranceValue" column="insuranceValue" />
+		<result property="currencyCode" column="currencyCode" />
+		<result property="createDate" column="createDate" />
+		<result property="origOrgCode" column="origOrgCode" />
+		<result property="handOverType" column="handOverType" />
+		<result property="waybillNote" column="waybillNote" />
+		<result property="transPropertyCode" column="transPropertyCode" />
+		<result property="modifyDate" column="modifyDate" />
+		
+	</resultMap>
+
+
+<resultMap id="queryWaybillDetailMap"
+		type="com.deppon.foss.module.transfer.load.api.shared.domain.HandOverBillSerialNoDetailEntity">
+		<result property="handOverBillNo" column="handOverBillNo" />
+		<result property="waybillNo" column="waybillNo" />
+		<result property="serialNo" column="serialNo" /> 
+	</resultMap>
+
+<!-- 用于查询交接运单界面，双击某运单，得到该运单下的流水号列表 -->
+	<resultMap id="serialNoStockResultMap"
+		type="com.deppon.foss.module.transfer.load.api.shared.domain.SerialNoStockEntity">
+		<result property="serialNo" column="serialNo" />
+		<result property="storageDept" column="storageDept" />
+		<result property="waybillNo" column="waybillNo" />
+		<result property="instorageDate" column="instorageDate" />
+	</resultMap>
+	
+	
+	<resultMap id="handOverBillDtoResultMap" type="com.deppon.foss.module.transfer.load.api.shared.dto.HandOverBillDetailDto" >
+		<result property="waybillNo" column="waybillNo"/>
+		<result property="transProperty" column="transProperty"/>
+		<result property="pieces" column="pieces"/>
+		<result property="weight" column="weight"/>
+		<result property="cubage" column="cubage"/>
+		<result property="note" column="note"/>
+		<result property="goodsName" column="goodsName"/>
+		<result property="packing" column="packing"/>
+		<result property="waybillNote" column="waybillNote"/>
+		<result property="isPreciousGoods" column="isPreciousGoods"/>
+		<result property="receiveOrgName" column="receiveOrgName"/>
+		<result property="arriveDept" column="arriveDept"/>
+		<result property="consignee" column="consignee"/>
+		<!-- 更新走货路径部分-duyi -->
+		<result property="destination" column="destination" />
+		<result property="waybillPieces" column="waybillPieces" />
+		<result property="insuranceValue" column="insuranceValue" />
+		<result property="receiveMethod" column="receiveMethod" />
+		<result property="receiveCustomerMobilephone" column="receiveCustomerMobilephone" />
+		<result property="receiveCustomerPhone" column="receiveCustomerPhone" />
+		<result property="isPreciousGoods" column="isPreciousGoods" />
+	</resultMap>
+	
+	<!-- 查询交接单信息 -->
+	<select id="queryConnectionBillList" parameterType="com.deppon.foss.module.transfer.load.api.shared.dto.QueryConnectionBillConditionDto"
+				resultType="com.deppon.foss.module.transfer.load.api.shared.domain.ConnectionBillEntity" >
+				
+		select  /**中转-装车模块-接驳交接单管理-查询接驳交接单**/
+			 c.connection_bill_no    connectionBillNo ,
+			 c.handover_type         handOverType,
+			 c.connectionbill_state  statu,
+			 c.create_time           handOverTime,
+			 c.vehicle_no            vehicleNo,
+			 c.orig_org_name         departDeptName,
+			 c.orig_org_code         departDeptCode, 
+			 c.dest_org_name         arriveDeptName,
+			 c.dest_org_code		 arriveDeptCode,
+			 c.arrive_date           arriveTime,
+			 c.waybill_qty_total     waybillQtyTotal,
+			 c.goods_qty_total       goodsQtyTotal,
+			 c.volume_total          volumeTotal,
+			 c.weight_total          weightTotal,
+			 c.create_user_name      createUserName,
+			 c.create_user_code      createUserCode,
+			 c.driver_name           driverName,
+			 c.driver_Code           driverCode,
+			 c.driver_mobile_phone   driverTel,
+			 c.load_finish_time      loadEndTime,
+			 c.modify_user_name      modifyUserName,
+			 c.modify_user_code      modifyUserCode,
+			 c.be_create_by_pda      isPda,
+			 c.notes                 notes
+			from tfr.t_opt_connectionbill c
+			
+			where 
+				#{beginHandOverTime}<![CDATA[<=]]>c.create_time
+				and c.create_time<![CDATA[<=]]>#{endHandOverTime}
+			
+			 <if test="departDeptCode != null and departDeptCode!='' ">
+		 	  and  c.orig_org_code =#{departDeptCode,jdbcType=VARCHAR}
+		     </if>
+			
+			 <if test="arriveDeptCode != null and arriveDeptCode!='' ">
+		 	   and c.dest_org_code =#{arriveDeptCode,jdbcType=VARCHAR}
+		     </if>
+		     
+		     <if test="vehicleNo != null and vehicleNo!='' ">
+		 	   and c.vehicle_no =#{vehicleNo,jdbcType=VARCHAR}
+		     </if>
+		     
+		      <if test="handOverType != null and handOverType!='' ">
+		 	   and c.handover_type=#{handOverType,jdbcType=VARCHAR}
+		     </if>
+			
+			<if test="connectionBillNo != null and connectionBillNo != '' ">
+		 	   and  c.connection_bill_no=#{connectionBillNo,jdbcType=VARCHAR}
+		     </if>
+		    <if test="isArrived !=null and isArrived !='' and isArrived !='ALL'"> 
+			    <if test=" isArrived=='Yes' ">
+			 	   and c.arrive_date is not null
+			     </if>
+			     
+			      <if test=" isArrived=='No' ">
+			 	   and c.arrive_date is  null
+			     </if>
+		     </if>
+			and c.connectionbill_state!='90'
+ 
+	</select>
+	
+	<!-- 查询交接单（到达）信息  hongwy 218427-->
+	<select id="queryArrivalConnectionBillList" parameterType="com.deppon.foss.module.transfer.load.api.shared.dto.QueryArrivalConnectionBillConditionDto"
+				resultType="com.deppon.foss.module.transfer.load.api.shared.domain.ConnectionBillEntity">
+   select c.handover_no           connectionBillNo ,
+          c.ARRIVAL_STATUS        statu,
+          c.create_time           departTime,
+          c.vehicle_no            vehicleNo,
+          c.arrive_date           arriveTime,
+          c.WAYBILL_QTY           waybillQtyTotal,
+          c.GOODS_QTY_TOTAL       goodsQtyTotal,
+          c.volume_total          volumeTotal,
+          c.weight_total          weightTotal,
+          e.emp_name              driverName       
+	 from tfr.t_opt_pick_handover c 
+         left join bse.t_bas_employee e on c.create_user_code =e.emp_code
+	 where 
+	      c.create_time  <![CDATA[>=]]> #{departTime}
+      and c.create_time  <![CDATA[<=]]> #{arriveTime}
+      and c.handover_type ='EXPRESS_DRIVER' and e.active ='Y'
+	 <if test="arriveDeptCode != null and arriveDeptCode!='' ">
+		 	   and c.DEST_ORG_CODE =#{arriveDeptCode,jdbcType=VARCHAR}
+     </if>
+     <if test="connectionBillNo != null and connectionBillNo != '' ">
+		 	   and  c.handover_no =#{connectionBillNo,jdbcType=VARCHAR}
+	 </if>
+     <if test="vehicleNo != null and vehicleNo!='' ">
+ 	   		   and c.vehicle_no =#{vehicleNo,jdbcType=VARCHAR}
+     </if>
+     <if test="handOverType != null and handOverType!='' ">
+		 	   and c.handover_type=#{handOverType,jdbcType=VARCHAR}
+     </if>
+     <if test="isArrived !=null and isArrived !='' and isArrived !='ALL'"> 
+		    <if test=" isArrived=='Yes' ">
+		 	   and c.arrive_date is not null
+		    </if>
+			     
+		    <if test=" isArrived=='No' ">
+		 	   and c.arrive_date is  null
+		    </if>
+     </if>
+     and c.BILL_VALID!='0'
+	</select>
+	<!-- 查询交接单信息 -->
+	<select id="queryConnectionBillListCount" parameterType="com.deppon.foss.module.transfer.load.api.shared.dto.QueryConnectionBillConditionDto"
+				resultType="Long" >
+		
+		select  /**中转-装车模块-接驳交接单管理-查询接驳交接单条数**/
+			count(1)
+			from tfr.t_opt_connectionbill c
+			
+			where 
+				#{beginHandOverTime}<![CDATA[<=]]>c.create_time
+				and c.create_time<![CDATA[<=]]>#{endHandOverTime}
+			
+			 <if test="departDeptCode != null and departDeptCode!='' ">
+		 	  and  c.orig_org_code =#{departDeptCode,jdbcType=VARCHAR}
+		     </if>
+			
+			 <if test="arriveDeptCode != null and arriveDeptCode!='' ">
+		 	   and c.orig_org_code =#{arriveDeptCode,jdbcType=VARCHAR}
+		     </if>
+		     
+		     <if test="vehicleNo != null and vehicleNo!='' ">
+		 	   and c.vehicle_no =#{vehicleNo,jdbcType=VARCHAR}
+		     </if>
+		     
+		      <if test="handOverType != null and handOverType!='' ">
+		 	   and c.handover_type=#{handOverType,jdbcType=VARCHAR}
+		     </if>
+			
+			<if test="connectionBillNo != null and connectionBillNo != '' ">
+		 	   and  c.connection_bill_no=#{connectionBillNo,jdbcType=VARCHAR}
+		     </if>
+		    <if test="isArrived !=null and isArrived!='' and isArrived!='ALL'"> 
+			    <if test=" isArrived=='Yes' ">
+			 	   and c.arrive_date is not null
+			     </if>
+			     
+			      <if test=" isArrived=='No' ">
+			 	   and c.arrive_date is  null
+			     </if>
+		     </if>
+			and c.connectionbill_state!='90'
+ 
+	</select>
+	
+	<!-- 查询交接单(到达)记录数 -->
+	<select id="queryArrivalConnectionBillListCount"  parameterType="com.deppon.foss.module.transfer.load.api.shared.dto.QueryArrivalConnectionBillConditionDto"
+				resultType="Long">
+     select  
+			count(1)
+		 	from tfr.t_opt_pick_handover c 
+	 where 
+	     c.create_time <![CDATA[>=]]> #{departTime}
+     and c.create_time <![CDATA[<=]]> #{arriveTime}
+     <if test="arriveDeptCode != null and arriveDeptCode!='' ">
+		 	   and c.DEST_ORG_CODE =#{arriveDeptCode,jdbcType=VARCHAR}
+     </if>
+     <if test="connectionBillNo != null and connectionBillNo != '' ">
+		 	   and  c.handover_no=#{connectionBillNo,jdbcType=VARCHAR}
+	 </if>
+     <if test="vehicleNo != null and vehicleNo!='' ">
+ 	   		   and c.vehicle_no =#{vehicleNo,jdbcType=VARCHAR}
+     </if>
+     <if test="handOverType != null and handOverType!='' ">
+		 	   and c.handover_type=#{handOverType,jdbcType=VARCHAR}
+     </if>
+     <if test="isArrived !=null and isArrived !='' and isArrived !='ALL'"> 
+		    <if test=" isArrived=='Yes' ">
+		 	   and c.arrive_date is not null
+		    </if>
+			     
+		    <if test=" isArrived=='No' ">
+		 	   and c.arrive_date is  null
+		    </if>
+     </if>
+          and c.BILL_VALID!='0'
+	 </select>
+	
+	
+	
+	<!-- 查询库存运单信息 -->
+	
+	<select id="queryWaybillStockList" parameterType="com.deppon.foss.module.transfer.load.api.shared.dto.QueryWayBillForConnectionBillDto"
+				resultType="com.deppon.foss.module.transfer.load.api.shared.domain.ConnectionBillDetailEntity" >
+	
+		
+		select
+		  s.waybill_no as  waybillNo,
+		  pro.code   as  transPropertyCode ,
+		  pro.name   as  transProperty,
+		  w.goods_name as goodsName,
+		  w.goods_package as packing,
+		  round((w.goods_volume_total / w.goods_qty_total)*s.stock_goods_qty,2) as  cubage,
+		  round((w.goods_weight_total / w.goods_qty_total)*s.stock_goods_qty,2) as weight,
+		  s.stock_goods_qty  as pieces,
+		  s.in_stock_time as instorageDate,
+		  md.name as arriveDept,
+		  w.insurance_amount / 100 as insuranceValue,
+		   w.bill_time as waybillDate,
+		   w.goods_qty_total as waybillPieces,
+		   w.precious_goods as isPreciousGoods,
+		   w.inner_notes as waybillNote
+		 from
+		        
+		   tfr.t_opt_waybill_stock s
+		   left join pkp.t_srv_waybill w on s.waybill_no=w.waybill_no and w.active='Y'
+		   left join pkp.t_srv_product pro on w.product_code = pro.code and pro.active = 'Y' 
+		   left join bse.mv_dest_net md on w.CUSTOMER_PICKUP_ORG_CODE = md.code and md.active = 'Y'
+		   left join bse.mv_dest_net mdn on w.RECEIVE_ORG_CODE = mdn.code  and mdn.active = 'Y'
+		   
+		   where 
+		  
+		    w.is_express='Y'
+		   and  s.IN_STOCK_TIME between #{beginInStorageTime} and #{endInStorageTime}
+		   and s.org_code=#{orgCode,jdbcType=VARCHAR}
+		   and s.next_org_code in 	
+	       <foreach collection="acceptPointSalesDepts" item="item" separator="," close=")" open="(">
+	                    	#{item}
+			</foreach>
+		 <if test="transType != null and transType!='' and transType!='ALL' ">
+		 	and pro.transport_type =#{transType,jdbcType=VARCHAR}
+		 
+		 </if>
+		 <if test="transPropertyCode != null and transPropertyCode!='' ">
+		 	and  pro.code =#{transPropertyCode,jdbcType=VARCHAR}
+		 
+		 </if>
+		 <if test="waybillNo != null and waybillNo!='' ">
+		 	and  s.waybill_no =#{waybillNo,jdbcType=VARCHAR}
+		 
+		 </if>
+ 
+	</select>
+	
+	<!-- 查询库存运单数量分页 -->
+	
+	<select id="queryWaybillStockCount" parameterType="com.deppon.foss.module.transfer.load.api.shared.dto.QueryWayBillForConnectionBillDto"
+				resultType="Long" >
+	
+		
+		select
+		  count(1)
+		 from
+		        
+		   tfr.t_opt_waybill_stock s
+		   left join pkp.t_srv_waybill w on s.waybill_no=w.waybill_no and w.active='Y'
+		   left join pkp.t_srv_product pro on w.product_code = pro.code and pro.active = 'Y' 
+		   left join bse.mv_dest_net md on w.CUSTOMER_PICKUP_ORG_CODE = md.code and md.active = 'Y'
+		   left join bse.mv_dest_net mdn on w.RECEIVE_ORG_CODE = mdn.code  and mdn.active = 'Y'
+		   
+		   where 
+		    w.is_express='Y'
+		   and  s.IN_STOCK_TIME between #{beginInStorageTime} and #{endInStorageTime}
+		   and s.org_code=#{orgCode,jdbcType=VARCHAR}
+		   and s.next_org_code in 	
+	       <foreach collection="acceptPointSalesDepts" item="item" separator="," close=")" open="(">
+	                    	#{item}
+			</foreach>
+		 <if test="transType != null and transType!='' and transType!='ALL' ">
+		 	and pro.transport_type =#{transType,jdbcType=VARCHAR}
+		 
+		 </if>
+		 <if test="transPropertyCode != null and transPropertyCode!='' ">
+		 	and  pro.code =#{transPropertyCode,jdbcType=VARCHAR}
+		 
+		 </if>
+		 <if test="waybillNo != null and waybillNo!='' ">
+		 	and  s.waybill_no =#{waybillNo,jdbcType=VARCHAR}
+		 
+		 </if>
+ 
+	</select>
+	
+	<!--查询交接运单界面，双击某运单，查询本部库存的该运单的所有流水号 -->
+	<select id="querySerialNoStockList" parameterType="com.deppon.foss.module.transfer.load.api.shared.dto.QuerySerialNoListForWaybillConditionDto"
+		resultMap="serialNoStockResultMap">
+		select t.waybill_no waybillNo,
+            t.serial_no serialNo,
+            t.org_code storageDept,
+            t.in_stock_time instorageDate
+             from tfr.t_opt_STOCK t 
+		<where>
+			t.waybill_no = #{waybillNo} 
+			<if test="nextDeptCodeList != null and nextDeptCodeList.size() != 0">
+            	and  
+				(<foreach collection="nextDeptCodeList" item="item" separator="or">
+						t.next_org_code = #{item,jdbcType=VARCHAR}
+				</foreach>)
+			</if>
+			and t.org_code = #{currentDeptCode} 
+			
+		</where>
+			order by t.in_stock_time
+	</select>
+	
+	<!-- 保存接驳交接单 -->
+	<insert id="saveBill" parameterType="com.deppon.foss.module.transfer.load.api.shared.domain.ConnectionBillEntity">
+		insert into  tfr.t_opt_connectionbill(/***中转-装车模块-保存接驳交接单****/
+			ID,
+			CONNECTION_BILL_NO,
+			CREATE_TIME,
+			ORIG_ORG_CODE,
+			ORIG_ORG_NAME,
+			DEST_ORG_CODE,
+			DEST_ORG_NAME,
+			DRIVER_MOBILE_PHONE,
+			DRIVER_CODE,
+			DRIVER_NAME,
+			VEHICLE_NO,
+			LOAD_FINISH_TIME,
+			HANDOVER_TYPE,
+			CREATE_USER_CODE,
+			CREATE_USER_NAME,
+			NOTES,
+			CONNECTIONBILL_STATE,
+			GOODS_QTY_TOTAL,
+			WAYBILL_QTY_TOTAL,
+			WEIGHT_TOTAL,
+			VOLUME_TOTAL,
+			MODIFY_TIME,
+			MODIFY_USER_NAME,
+			MODIFY_USER_CODE,
+			BE_CREATE_BY_PDA
+					
+		) 
+		values(
+		 #{id,jdbcType=VARCHAR},
+		 #{connectionBillNo,jdbcType=VARCHAR},
+		 #{handOverTime,jdbcType=TIMESTAMP},
+		 #{departDeptCode,jdbcType=VARCHAR},
+		 #{departDeptName,jdbcType=VARCHAR},
+		 #{arriveDeptCode,jdbcType=VARCHAR},
+		 #{arriveDeptName,jdbcType=VARCHAR},
+		 #{driverTel,jdbcType=VARCHAR},
+		 #{driverCode,jdbcType=VARCHAR},
+		 #{driverName,jdbcType=VARCHAR},
+		 #{vehicleNo,jdbcType=VARCHAR},
+		 #{loadEndTime,jdbcType=TIMESTAMP},
+		 #{handOverType,jdbcType=VARCHAR},
+		 #{createUserCode,jdbcType=VARCHAR},
+		  #{createUserName,jdbcType=VARCHAR},
+		 #{notes,jdbcType=VARCHAR},
+		 #{statu,jdbcType=DECIMAL},
+		 #{goodsQtyTotal,jdbcType=DECIMAL},
+		 #{waybillQtyTotal,jdbcType=DECIMAL},
+		 #{weightTotal,jdbcType=DECIMAL},
+		 #{volumeTotal,jdbcType=DECIMAL},
+		 #{modifyDate,jdbcType=TIMESTAMP}, 
+		 #{modifyUserName,jdbcType=VARCHAR},
+		 #{modifyUserCode,jdbcType=VARCHAR},
+		 #{isPda,jdbcType=VARCHAR}
+		 )
+		
+	</insert>
+	
+	
+	<!-- 保存接驳交接单 明细-->
+	<insert id="saveBillDetail" parameterType="java.util.List">
+		begin
+  	/**中转-装车模块-保存接驳交接单明细**/
+		<foreach collection="list" item="item" separator=";" >
+		insert into tfr.t_opt_connectionbill_detail
+	  	
+		  (
+				ID,
+				CONNECTIONBILL_NO,
+				WAYBILL_NO,
+				TRANSPORT_TYPE,
+				HANDOVER_GOODS_QTY,
+				HANDOVER_WEIGHT,
+				HANDOVER_VOLUME,
+				NOTES,
+				GOODS_NAME,
+				PACKING,
+				BE_VALUABLE,
+				RECEIVE_ORG_NAME,
+				REACH_ORG_NAME,
+				RECEIVER_NAME,
+				DEST_REGION_NAME,
+				GOODS_QTY,
+				WAYBILL_FEE,
+				DECLARATION_VALUE,
+				CURRENCY_CODE,
+				CREATE_TIME,
+				ORIG_ORG_CODE,
+				HANDOVER_TYPE,
+				WAYBILL_NOTES,
+				TRANSPORT_TYPE_CODE,
+				MODIFY_TIME
+		   )
+		values	
+		(
+			#{item.id,jdbcType=VARCHAR},
+			#{item.connectionBillNo,jdbcType=VARCHAR},
+			#{item.waybillNo,jdbcType=VARCHAR},
+			#{item.transProperty,jdbcType=VARCHAR},
+			#{item.pieces,jdbcType=DECIMAL},
+			#{item.weight,jdbcType=DECIMAL},
+			#{item.cubage,jdbcType=DECIMAL},
+			#{item.note,jdbcType=VARCHAR},
+			#{item.goodsName,jdbcType=VARCHAR},
+			#{item.packing,jdbcType=VARCHAR},
+			#{item.isPreciousGoods,jdbcType=VARCHAR},
+			#{item.receiveOrgName,jdbcType=VARCHAR},
+			#{item.arriveDept,jdbcType=VARCHAR},
+			#{item.consignee,jdbcType=VARCHAR},
+			#{item.destination,jdbcType=VARCHAR},
+			#{item.waybillPieces,jdbcType=DECIMAL},
+			#{item.waybillFee,jdbcType=DECIMAL},
+			#{item.insuranceValue,jdbcType=DECIMAL},
+			#{item.currencyCode,jdbcType=VARCHAR},
+			#{item.createDate,jdbcType=TIMESTAMP},
+			#{item.origOrgCode,jdbcType=VARCHAR},
+			#{item.handOverType,jdbcType=VARCHAR},
+			#{item.waybillNote,jdbcType=VARCHAR},
+			#{item.transPropertyCode,jdbcType=VARCHAR},
+			#{item.createDate,jdbcType=TIMESTAMP}
+		)
+		</foreach>
+		;end;
+		
+	</insert>
+	
+	<!-- 保存接驳交接单流水 明细-->
+	<insert id="saveBillSerialNo" parameterType="java.util.List">
+		begin
+  	/*中转-装车模块-保存接驳交接单流水明细*/
+		<foreach collection="list" item="item" separator=";" >
+		insert into tfr.t_opt_connectionbill_serialno
+	  	
+		  (
+				ID,
+				SERIAL_NO,
+				CREATE_TIME,
+				ORIG_ORG_CODE,
+				CONNECTIONBILL_NO,
+				WAYBILL_NO
+		   )
+		values	
+		(
+			#{item.id,jdbcType=VARCHAR},
+			#{item.serialNo,jdbcType=VARCHAR},
+			#{item.handOverTime,jdbcType=TIMESTAMP},
+			#{item.origOrgCode,jdbcType=VARCHAR},
+			#{item.handOverBillNo,jdbcType=VARCHAR},
+			#{item.waybillNo,jdbcType=VARCHAR}
+		
+			
+		)
+		</foreach>
+		;end;
+	</insert>
+	
+	
+	<!-- 根据接驳交接单号查询交接单实体 -->
+	<select id="queryConnectionBillByNo" parameterType="java.lang.String" resultMap="queryConnectionBillResultMap">
+	
+		select  /**中转-装车模块-查询接驳交接单实体信息**/
+			  c.id id,
+			  c.connection_bill_no    connectionBillNo,
+			  c.handover_type         handOverType,
+			  c.connectionbill_state  statu,
+			  c.create_time           handOverTime,
+			  c.vehicle_no            vehicleNo,
+			  c.orig_org_name         departDeptName,
+			  c.orig_org_code         departDeptCode,
+			  c.dest_org_name         arriveDeptName,
+			  c.dest_org_code         arriveDeptCode,
+			  c.arrive_date           arriveTime,
+			  c.waybill_qty_total     waybillQtyTotal,
+			  c.goods_qty_total       goodsQtyTotal,
+			  c.volume_total          volumeTotal,
+			  c.weight_total          weightTotal,
+			  c.create_user_name      createUserName,
+			  c.create_user_code      createUserCode,
+			  c.driver_name           driverName,
+			  c.driver_code           driverCode,
+			  c.load_finish_time      loadEndTime,
+			  c.driver_mobile_phone   driverTel,
+			  c.modify_user_name      modifyUserName,
+			  c.modify_user_code      modifyUserCode,
+			  c.be_create_by_pda      isPda,
+			  c.notes                 notes,
+			  c.load_task_no          loadTaskNo
+			from tfr.t_opt_connectionbill c
+		<where> 
+			c.connection_bill_no=#{connctionBillNo,jdbcType=VARCHAR}
+		</where>
+	</select>
+	
+	<!-- 根据接驳交接(到达)单号查询交接单实体  218427 hongwy-->
+	<select id ="queryArrivalConnectionBillByNo" parameterType="java.lang.String" resultMap="queryConnectionBillResultMap">
+         select  
+			  c.id id,
+			  c.handover_no           connectionBillNo,
+			  c.handover_type         handOverType,
+			  c.create_time           departTime,
+			  c.vehicle_no            vehicleNo,
+			  c.dest_org_code         arriveDeptCode,
+              o.name                  arriveDeptName,
+			  c.arrive_date           arriveTime,
+			  c.WAYBILL_QTY           waybillQtyTotal,
+			  c.goods_qty_total       goodsQtyTotal,
+			  c.volume_total          volumeTotal,
+			  c.weight_total          weightTotal,
+			  c.create_user_code      driverCode,	
+              e.emp_name 		      driverName,
+              e.mobile_phone          driverTel
+		from tfr.t_opt_pick_handover c 
+			  left join bse.t_bas_employee e on c.create_user_code =e.emp_code
+			  left join bse.t_bas_org o on c.dest_org_code = o.code
+		<where> 
+			c.handover_no=#{arrivalConnectionBillNo,jdbcType=VARCHAR}
+		</where>
+		  	and e.active ='Y'
+       		and o.active ='Y'
+	</select>
+	
+	
+	<!--接驳交接单详情页面，根据交接单号查明细 -->
+	<select  id="queryConnectionBillDetailByNo"  parameterType="java.util.Map" resultMap="connectionBillDetailResultMap">
+	
+	  select
+		d.ID                   id,
+		d.CONNECTIONBILL_NO    connectionBillNo,
+		d.WAYBILL_NO           waybillNo,
+		d.TRANSPORT_TYPE       transProperty,
+		d.HANDOVER_GOODS_QTY   pieces,
+		d.HANDOVER_WEIGHT      weight,
+		d.HANDOVER_VOLUME      cubage,
+		d.NOTES                note,
+		d.GOODS_NAME           goodsName,
+		d.PACKING              packing,
+		d.BE_VALUABLE          isPreciousGoods,
+		d.RECEIVE_ORG_NAME     receiveOrgName,
+		d.REACH_ORG_NAME       arriveDept,
+		d.RECEIVER_NAME        consignee,
+		d.DEST_REGION_NAME     destination,
+		d.GOODS_QTY            waybillPieces,
+		d.WAYBILL_FEE          waybillFee,
+		d.DECLARATION_VALUE/100    insuranceValue,
+		d.CURRENCY_CODE         currencyCode,
+		d.CREATE_TIME           createDate,
+		d.ORIG_ORG_CODE         origOrgCode,
+		d.HANDOVER_TYPE         handOverType,
+		d.WAYBILL_NOTES         waybillNote,
+		d.TRANSPORT_TYPE_CODE   transPropertyCode,
+		d.MODIFY_TIME           modifyDate
+	  from
+		tfr.t_opt_connectionbill_detail d
+		left join pkp.t_srv_waybill waybill
+					on d.waybill_no = waybill.waybill_no and waybill.active = 'Y'
+		where d.connectionbill_no=#{connctionBillNo,jdbcType=VARCHAR}
+		<if test=" wayBillNo !=null and wayBillNo!='' ">
+			and d.waybill_no=#{wayBillNo,jdbcType=VARCHAR}
+		</if>
+		
+</select>
+
+	<!--接驳交接单(到达)详情页面，根据交接单号查明细 218427 foss-hongwy -->
+	<select id="queryArrivalConnectionBillDetailByNo" parameterType="java.util.Map" resultMap="connectionBillDetailResultMap">
+	   
+  select
+		d.ID                   id,
+		d.handover_no          connectionBillNo,
+		d.WAYBILL_NO           waybillNo,
+		p.name                 transProperty,
+		d.goods_qty            pieces,
+		(d.goods_qty/ w.goods_qty_total)*w.goods_weight_total        weight,
+        (d.goods_qty/ w.goods_qty_total)*w.goods_volume_total        cubage,
+		w.RECEIVE_ORG_NAME     receiveOrgName,
+		w.goods_qty_total          waybillPieces,
+		w.customer_pickup_org_name       arriveDept,
+		h.HANDOVER_TYPE        handOverType,
+		p.code                 transPropertyCode
+	from
+		tfr.t_opt_pick_handover_detail  d
+	    left join tfr.t_opt_pick_handover h on d.handover_no = h.handover_no
+		left join pkp.t_srv_waybill w  on d.waybill_no = w.waybill_no and w.active = 'Y'
+	    left join pkp.t_srv_product p on p.code =w.product_code and p.active ='Y'
+	 where d.handover_no=#{arrivalConnectionBillNo ,jdbcType=VARCHAR}
+	                              
+	</select>
+	
+	<!--接驳交接单详情页面，根据交接单号查明细流水 -->
+	<select  id="queryWaybillDetailByNos"  parameterType="java.util.Map" resultMap="queryWaybillDetailMap" >
+	
+	  select 
+		  s.serial_no  serialNo,
+		  s.waybill_no waybillNo
+		  from   
+		  tfr.t_opt_connectionbill c
+		  left join tfr.t_opt_connectionbill_detail d on c.connection_bill_no=d.connectionbill_no
+		  left join   tfr.t_opt_connectionbill_serialno s on s.waybill_no=d.waybill_no and s.connectionbill_no=c.connection_bill_no
+		  where 
+		  c.connection_bill_no=#{connctionBillNo,jdbcType=VARCHAR}
+          <if test=" waybillNo !=null and waybillNo !='' ">
+		  		and d.waybill_no=#{waybillNo,jdbcType=VARCHAR}
+		  </if>		
+		
+	</select>
+	
+	<!--接驳交接单(到达)详情页面，根据交接单号查明细流水 -->
+	<select id="queryArrivalWaybillDetailByNos" parameterType="java.util.Map" resultMap="queryWaybillDetailMap">
+	 select 
+	     s.serail_no serialNo,
+	     s.waybill_no waybillNo
+	 from tfr.t_opt_pick_handover h
+		 left join  tfr.t_opt_pick_handover_detail d on h.handover_no =d.handover_no
+		 left join  tfr.t_opt_pick_handover_serialno s on s.waybill_no = d.waybill_no and s.handover_no =h.handover_no
+	 where 
+	     h.handover_no =#{connctionBillNo,jdbcType=VARCHAR}
+      <if test=" waybillNo !=null and waybillNo !='' ">
+		  and d.waybill_no=#{waybillNo,jdbcType=VARCHAR}
+	 </if>	
+	</select>
+	
+	<!-- 修改交接单时，更新交接单基本信息 -->
+	<update id="updateConnectionBillBasicInfo" parameterType = "com.deppon.foss.module.transfer.load.api.shared.domain.ConnectionBillEntity">
+		update tfr.t_opt_connectionbill t  
+		set 
+		
+			<if test=" notes != null and notes != '' " >
+				t.NOTES=#{notes,jdbcType=VARCHAR},
+			</if>
+			
+			<if test=" goodsQtyTotal != null and goodsQtyTotal != '' " >
+				t.GOODS_QTY_TOTAL=#{goodsQtyTotal,jdbcType=DECIMAL},
+			</if>
+			
+			<if test=" waybillQtyTotal != null and waybillQtyTotal != '' " >
+				t.WAYBILL_QTY_TOTAL=#{goodsQtyTotal,jdbcType=DECIMAL},
+			</if>
+			
+			<if test=" weightTotal != null and weightTotal != '' " >
+				t.WEIGHT_TOTAL=#{goodsQtyTotal,jdbcType=DECIMAL},
+			</if>
+			
+			<if test=" volumeTotal != null and volumeTotal != '' " >
+				t.VOLUME_TOTAL=#{volumeTotal,jdbcType=DECIMAL},
+			</if>
+			
+			<if test=" isPda != null and isPda != '' " >
+				t.BE_CREATE_BY_PDA=#{isPda,jdbcType=VARCHAR},
+			</if>
+			
+			
+			t.modify_time = #{modifyDate,jdbcType=TIMESTAMP},
+			t.modify_user_name = #{modifyUserName,jdbcType=VARCHAR},
+			t.modify_user_code = #{modifyUserCode,jdbcType=VARCHAR}
+		<where>
+			t.CONNECTION_BILL_NO = #{connectionBillNo,jdbcType=VARCHAR}
+		</where>
+	</update>
+	
+	<!-- 修改交接单时，删除运单 -->
+	<delete id="deletedWaybillList" parameterType="java.util.List">
+		begin
+		<foreach collection="list" item="item" separator=";">
+			delete from 
+			tfr.t_opt_connectionbill_detail t
+			<where>
+				t.connectionbill_no = #{item.connectionBillNo,jdbcType=VARCHAR} 
+				and t.waybill_no = #{item.waybillNo,jdbcType=VARCHAR} 
+			</where>
+		</foreach>
+		;end;
+	</delete>
+	
+	<!-- 修改交接单时，更新运单 -->
+	<update id="updateWaybillList" parameterType="java.util.List">
+		begin
+		<foreach collection="list" item="item" separator=";">
+			update
+			tfr.t_opt_connectionbill_detail t
+			<set>
+				  t.handover_goods_qty = #{item.pieces,jdbcType=DECIMAL},
+			      t.handover_weight = #{item.weight,jdbcType=DECIMAL},
+			      t.handover_volume = #{item.cubage,jdbcType=DECIMAL},
+			      t.notes = #{item.note,jdbcType=VARCHAR},
+			      t.modify_time = #{item.modifyDate,jdbcType=TIMESTAMP}
+			</set>
+			<where>
+				t.CONNECTIONBILL_NO = #{item.connectionBillNo,jdbcType=VARCHAR} 
+				and t.waybill_no = #{item.waybillNo,jdbcType=VARCHAR} 
+			</where>
+		</foreach>
+		;end;
+	</update>
+	
+	<!--修改交接单时 删除运单明细 -->
+	
+	<delete id="deleteWaybillList" parameterType="java.util.List">
+			begin
+		<foreach collection="list" item="item" separator=";">
+			delete from 
+			tfr.t_opt_connectionbill_detail t
+			<where>
+				t.CONNECTIONBILL_NO = #{item.connectionBillNo,jdbcType=VARCHAR} 
+				and t.waybill_no = #{item.waybillNo,jdbcType=VARCHAR} 
+			</where>
+		</foreach>
+		;end;
+	</delete>
+	
+	
+	<!--修改交接单时 删除运单流水 -->
+	
+	<delete id="deleteSerialNoList" parameterType="java.util.List">
+			begin
+		<foreach collection="list" item="item" separator=";">
+			delete from 
+			tfr.t_opt_connectionbill_serialno t
+			<where>
+				t.CONNECTIONBILL_NO = #{item.handOverBillNo,jdbcType=VARCHAR} 
+				and t.waybill_no = #{item.waybillNo,jdbcType=VARCHAR} 
+				and t.serial_no = #{item.serialNo,jdbcType=VARCHAR} 
+			</where>
+		</foreach>
+		;end;
+	</delete>
+	
+	<!-- 根据交接单编号，作废交接单 -->
+	<update id='updateConnectionBillStateByNo' parameterType="java.util.Map" >
+	   update tfr.t_opt_connectionbill t
+			set 
+			t.connectionbill_state= #{statu}
+			where 
+			t.connection_bill_no=#{connectionBillNo,jdbcType=VARCHAR}
+	</update>
+	
+	 <!-- 根据交接单号查询出打印交接单中需要的数据  -->
+	<select id="queryPrintConnectionBillDataByNo" resultMap="handOverBillDtoResultMap"
+		parameterType="String">
+	<![CDATA[
+		select 
+			 td.waybill_no waybillNo,
+			      td.transport_type transProperty,
+			      td.handover_goods_qty pieces,
+			      td.handover_weight weight, 
+			      td.handover_volume cubage,
+			      td.notes note,
+			      td.goods_name goodsName,
+			      td.packing packing,
+			      td.waybill_notes waybillNote,
+			      td.be_valuable isPreciousGoods,
+			      td.receive_org_name receiveOrgName,
+			      td.reach_org_name arriveDept,
+			      td.receiver_name consignee,
+			      td.dest_region_name destination,
+			      td.goods_qty waybillPieces,
+			      td.declaration_value insuranceValue ,
+			      sr.receive_method receiveMethod,
+			      sr.receive_customer_mobilephone receiveCustomerMobilephone,
+			      sr.receive_customer_phone receiveCustomerPhone,
+			      sr.precious_goods isPreciousGoods
+			from tfr.t_opt_connectionbill_detail td
+			 left join pkp.t_srv_waybill sr
+			      on sr.waybill_no = td.waybill_no
+			      and sr.active = 'Y'
+			
+			where td.connectionbill_no=#{connectionBillNo}
+			      order by td.transport_type, td.waybill_no asc
+					]]>
+	</select>
+	
+	
+	<!--根据到达部门code、出发部门code、运单号、指定的交接单号list中匹配出交接单号，用于上报OA少货时获取交接单号-->
+	<select id="queryConnectionBillNoForUnloadTaskLackGoods" 
+		parameterType="com.deppon.foss.module.transfer.load.api.shared.dto.QueryHandOverBillNoForUnloadTaskLackGoodsDto" resultType="java.lang.String">
+		select c.connection_bill_no connectionBillNo
+  			from tfr.t_opt_connectionbill c ,
+  			tfr.t_opt_connectionbill_detail cd
+		<where>
+			c.connection_bill_no = cd.connectionbill_no(+)
+			and c.orig_org_code = #{departOrgCode}
+		    and cd.waybill_no = #{waybillNo}
+		    and c.connection_bill_no in 
+			<foreach collection="unloadedHandOverBillNoList" item="item" separator="," close=")" open="(">
+                    	#{item}
+			</foreach>
+		</where>
+	</select>
+	
+	
+</mapper>

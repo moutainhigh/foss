@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- administrativeRegions-mapper.xml 行政区域 -->
+<mapper namespace="foss.bse.bse-baseinfo.DownLoadExcelFileResourcesDao">
+	<resultMap id="downLoadExcelFileInfo"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.DownloadInfoEntity">
+		<result property="id" column="ID" jdbcType="VARCHAR" />
+		<result property="empCode" column="EMP_CODE" jdbcType="VARCHAR" />
+		<result property="orgCode" column="ORG_CODE" jdbcType="VARCHAR" />
+		<result property="fileName" column="FILENAME" jdbcType="VARCHAR" />
+		<result property="fileLoadPath" column="FILELOADPATH" jdbcType="VARCHAR" />
+		<result property="active" column="ACTIVE" jdbcType="CHAR" />
+		<result property="creator" column="CREATE_USER_CODE" jdbcType="VARCHAR" />
+		<result property="createTime" column="CREATE_TIME" jdbcType="TIMESTAMP" />
+	</resultMap>
+
+	<!-- 根据工号或者文件名查询可下载的资源 -->
+	<select id="queryDownLoadableResource" resultMap="downLoadExcelFileInfo"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.DownloadInfoEntity">
+       select 
+	   t.ID,
+	   t.EMP_CODE,
+	   o.name  ORG_CODE,
+	   t.FILENAME,
+	   t.FILELOADPATH,
+	   t.ACTIVE,
+	   e.emp_name CREATE_USER_CODE,
+	   t.CREATE_TIME
+	   from bse.T_BAS_DOWNLOAD_FILERESOURCES t
+	   left join bse.t_bas_org o on t.org_code = o.code
+	   and o.active = 'Y'
+	   left join bse.t_bas_employee e on t.CREATE_USER_CODE = e.emp_code
+	   and e.active = 'Y'
+		<where>
+			and t.active = 'Y'
+			and t.emp_code =
+			#{empCode,jdbcType=VARCHAR}
+			<if test="fileName != null and fileName != ''">
+				and t.FILENAME like concat(concat('%',#{fileName,jdbcType=VARCHAR}),'%')
+			</if>
+		    and  t.CREATE_TIME >= sysdate-3
+		</where>
+	</select>
+
+	<!-- 非物理删除某一条记录 -->
+	<update id="deleteRecordById" parameterType="Map">
+	<![CDATA[ update bse.T_BAS_DOWNLOAD_FILERESOURCES t
+       	set t.active = 'N'
+	]]>
+		<where>
+			t.active = 'Y'
+			and t.id in
+			<foreach collection="infos" index="index" item="id" open="("
+				separator="," close=")">
+				#{id,jdbcType=VARCHAR}
+			</foreach>
+		</where>
+	</update>
+
+	<!-- 根据选中的ID查询下载的url地址 -->
+	<!-- <select id="queryRecordById" resultMap = 'downLoadExcelFileInfo' parameterType="Map">
+	<![CDATA[ select FILELOADPATH 
+			  from bse.T_BAS_DOWNLOAD_FILERESOURCES t
+	]]>
+		<where>
+			t.active = 'Y'
+			and t.id in
+			<foreach collection="infos" index="index" item="id" open="("
+				separator="," close=")">
+				#{id,jdbcType=VARCHAR}
+			</foreach>
+		</where>
+	</select> -->
+</mapper>

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!-- 
+	“航空公司代理人” 
+-->
+<mapper namespace="foss.bse.bse-baseinfo.Agent">
+	<resultMap id="airlinesAgentResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.AgentEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="ASSEMBLY_DEPT_ID" property="assemblyDeptId" jdbcType="VARCHAR" />
+		<result column="AIRLINES_CODE" property="airlinesCode" jdbcType="VARCHAR" />
+		<result column="AGENT_CODE" property="agentCode" jdbcType="VARCHAR" />
+		<result column="AGENT_NAME" property="agentName" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="airlinesAgent_ResultMap_Param">
+		<![CDATA[
+			ID, ASSEMBLY_DEPT_ID, AIRLINES_CODE, AGENT_CODE,
+			AGENT_NAME, CREATE_TIME,
+			MODIFY_TIME,
+			ACTIVE, CREATE_USER_CODE,
+			MODIFY_USER_CODE
+		]]>
+	</sql>
+	<!-- 根据entity精确查询的查询条件 ，如果属性为空，则此属性不作为条件 -->
+	<sql id="airlinesAgent_Pagination_Where_Base_Param">
+		<if test="id != null and id != ''">
+			AND ID = #{id,jdbcType=VARCHAR}
+		</if>
+		<if test="assemblyDeptId != null and assemblyDeptId != ''">
+			AND ASSEMBLY_DEPT_ID = #{assemblyDeptId,jdbcType=VARCHAR}
+		</if>
+		<if test="airlinesCode != null and airlinesCode != ''">
+			AND AIRLINES_CODE = #{airlinesCode,jdbcType=VARCHAR}
+		</if>
+		<if test="createDate != null">
+			AND CREATE_TIME = #{createDate,jdbcType=TIMESTAMP}
+		</if>
+		<if test="modifyDate != null">
+			AND MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+		</if>
+		<if test="active != null and active != ''">
+			AND ACTIVE = #{active,jdbcType=CHAR}
+		</if>
+		<if test="createUser != null and createUser != ''">
+			AND CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR}
+		</if>
+		<if test="modifyUser != null and modifyUser != ''">
+			AND MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR}
+		</if>
+	</sql>
+	<sql id="airlinesAgent_Pagination_Where_Like_Param">	
+		<trim prefix="WHERE" prefixOverrides="AND | OR">
+			<include refid="airlinesAgent_Pagination_Where_Base_Param"/>
+			<if test="agentName != null and agentName != ''">
+				AND AGENT_NAME like CONCAT(CONCAT('%', #{agentName,jdbcType=VARCHAR}), '%')
+			</if>
+			<if test="agentCode != null and agentCode != ''">
+				AND AGENT_CODE like CONCAT(CONCAT('%', #{agentCode,jdbcType=VARCHAR}), '%')
+			</if>
+			<if test="assemblyDeptId != null and assemblyDeptId != ''">
+				AND ASSEMBLY_DEPT_ID like CONCAT(CONCAT('%', #{assemblyDeptId,jdbcType=VARCHAR}), '%')
+			</if>
+			<if test="airlinesCode != null and airlinesCode != ''">
+				AND AIRLINES_CODE like CONCAT(CONCAT('%', #{airlinesCode,jdbcType=VARCHAR}), '%')
+			</if>
+		</trim>
+	</sql>
+	<sql id="airlinesAgent_Pagination_Where_Equals_Param">
+		<trim prefix="WHERE" prefixOverrides="AND | OR">
+			<include refid="airlinesAgent_Pagination_Where_Base_Param"/>
+			<if test="agentName != null and agentName != ''">
+				AND AGENT_NAME = #{agentName,jdbcType=VARCHAR}
+			</if>
+			<if test="agentCode != null and agentCode != ''">
+				AND AGENT_CODE = #{agentCode,jdbcType=VARCHAR}
+			</if>
+		</trim>
+	</sql>
+	<!-- 查询航空公司代理人信息 -->
+	<select id="queryAirlinesAgentBySelective" resultMap="airlinesAgentResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AirlinesAgentEntity">
+		select
+		/** 综合:查询航空公司代理人信息 **/
+		<include refid="airlinesAgent_ResultMap_Param" />
+		from BSE.T_BAS_AIRLINES_AGENT
+		<include refid="airlinesAgent_Pagination_Where_Equals_Param"/>			
+	</select>
+	<select id="queryAirlinesAgentListBySelectiveCondition" resultMap="airlinesAgentResultMap" 
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AirlinesAgentEntity">
+		select
+		<include refid="airlinesAgent_ResultMap_Param" />
+		from BSE.T_BAS_AIRLINES_AGENT
+		<include refid="airlinesAgent_Pagination_Where_Like_Param"/>
+	</select>
+	<select id="queryAirlinesAgentRecordCountBySelectiveCondition" resultType="java.lang.Long" 
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AirlinesAgentEntity">
+		<![CDATA[ select count(*) from BSE.T_BAS_AIRLINES_AGENT ]]>
+		<include refid="airlinesAgent_Pagination_Where_Like_Param"/>
+	</select>
+	
+</mapper>

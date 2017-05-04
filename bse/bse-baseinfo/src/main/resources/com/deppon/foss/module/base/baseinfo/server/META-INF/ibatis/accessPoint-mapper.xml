@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- accessPoint-mapper.xml 接驳点 -->
+<mapper namespace="foss.bse.bse-baseinfo.accessPoint" >
+	<resultMap type="com.deppon.foss.module.base.baseinfo.api.shared.domain.AccessPointEntity" id="accessPointMap">
+		<result column="BIG_REGION_CODE" property="bigRegionCode" jdbcType="VARCHAR"/>
+		<result column="TRANSFER_CODE" property="transferCode" jdbcType="VARCHAR"/>
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP"/>
+		<result column="CREATE_USER" property="createUser" jdbcType="VARCHAR"/>
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP"/>
+		<result column="MODIFY_USER" property="modifyUser" jdbcType="VARCHAR"/>
+	</resultMap>
+
+
+	<sql id="columns">
+		A.ID,A.NAME,A.CODE,B.NAME BIG_REGION_CODE,T.NAME TRANSFER_CODE,A.PROVINCE,A.CITY,A.COUNTY,A.STREET,
+		A.STATU,A.CREATE_TIME,E.EMP_NAME CREATE_USER,A.MODIFY_TIME,EM.EMP_NAME MODIFY_USER,A.ACTIVE
+	</sql>
+	
+	<sql id="queryCondition">
+		<where>
+			<if test="name != null and name != ''">
+				AND A.NAME like #{name, jdbcType=VARCHAR}
+			</if>
+			<if test="code != null and code != ''">
+				AND A.CODE = #{code, jdbcType=VARCHAR}
+			</if>
+			<if test="bigRegionCode != null and bigRegionCode != ''">
+				AND A.BIG_REGION_CODE = #{bigRegionCode, jdbcType=VARCHAR}
+			</if>
+			<if test="transferCode != null and transferCode != ''">
+				AND A.TRANSFER_CODE = #{transferCode, jdbcType=VARCHAR}
+			</if>
+			<if test="statu != null and statu != ''">
+				AND A.STATU = #{statu, jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND A.ACTIVE = #{active, jdbcType=VARCHAR}
+			</if>
+		</where>
+	</sql>
+	
+	<insert id="insertAccessPoint" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AccessPointEntity">
+		INSERT INTO BSE.T_BAS_ACCESS_POINT(ID,NAME,CODE,BIG_REGION_CODE,TRANSFER_CODE,PROVINCE,CITY,COUNTY,STREET,
+		STATU,CREATE_TIME,CREATE_USER,MODIFY_TIME,MODIFY_USER,ACTIVE)
+		VALUES (
+			#{id, jdbcType=VARCHAR},
+			#{name, jdbcType=VARCHAR},
+			#{code, jdbcType=VARCHAR},
+			#{bigRegionCode, jdbcType=VARCHAR},
+			#{transferCode, jdbcType=VARCHAR},
+			#{province, jdbcType=VARCHAR},
+			#{city, jdbcType=VARCHAR},
+			#{county, jdbcType=VARCHAR},
+			#{street, jdbcType=VARCHAR},
+			#{statu, jdbcType=VARCHAR},
+			#{createDate, jdbcType=TIMESTAMP},
+			#{createUser, jdbcType=VARCHAR},
+			#{modifyDate, jdbcType=TIMESTAMP},
+			#{modifyUser, jdbcType=VARCHAR},
+			#{active, jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	<select id="queryAccessPointsByCondition" resultMap="accessPointMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AccessPointEntity">
+		SELECT <include refid="columns"/> FROM BSE.T_BAS_ACCESS_POINT A 
+		LEFT JOIN  BSE.T_BAS_ORG B ON A.BIG_REGION_CODE = B.CODE AND A.ACTIVE = B.ACTIVE
+		LEFT JOIN  BSE.T_BAS_ORG T ON A.TRANSFER_CODE = T.CODE AND A.ACTIVE = T.ACTIVE
+		LEFT JOIN  BSE.T_BAS_EMPLOYEE E ON A.CREATE_USER = E.EMP_CODE AND E.ACTIVE = A.ACTIVE
+		LEFT JOIN BSE.T_BAS_EMPLOYEE EM ON A.MODIFY_USER = EM.EMP_CODE AND EM.ACTIVE = A.ACTIVE
+		<include refid="queryCondition"/>
+	</select>
+	
+	<select id="queryAccessPointByCommon" resultMap="accessPointMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AccessPointEntity">
+		SELECT ID,NAME,CODE,BIG_REGION_CODE,TRANSFER_CODE,PROVINCE,CITY,COUNTY,STREET,
+		STATU,CREATE_TIME,CREATE_USER,MODIFY_TIME,MODIFY_USER,ACTIVE 
+		FROM BSE.T_BAS_ACCESS_POINT A
+		<include refid="queryCondition"/>
+	</select>
+	
+	<select id="getCountByCondition" resultType="long" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AccessPointEntity">
+		SELECT COUNT(1) FROM BSE.T_BAS_ACCESS_POINT A
+		<include refid="queryCondition"/>
+	</select>
+	<!-- 根据接驳点名称 -->
+	<select id="queryAccessPointsByName" resultMap="accessPointMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AccessPointEntity">
+		SELECT ID,NAME,CODE,BIG_REGION_CODE,TRANSFER_CODE,PROVINCE,CITY,COUNTY,STREET,
+		STATU,CREATE_TIME,CREATE_USER,MODIFY_TIME,MODIFY_USER,ACTIVE 
+		FROM BSE.T_BAS_ACCESS_POINT T
+		WHERE T.NAME = #{name, jdbcType=VARCHAR}
+		AND T.ACTIVE = #{active, jdbcType=VARCHAR}
+	</select>
+	<!-- 根据中转场编码 -->
+	<select id="queryAccessPointsByTransferCode" resultMap="accessPointMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AccessPointEntity">
+		SELECT ID,NAME,CODE,BIG_REGION_CODE,TRANSFER_CODE,PROVINCE,CITY,COUNTY,STREET,
+		STATU,CREATE_TIME,CREATE_USER,MODIFY_TIME,MODIFY_USER,ACTIVE 
+		FROM BSE.T_BAS_ACCESS_POINT T
+		WHERE T.TRANSFER_CODE = #{transferCode, jdbcType=VARCHAR}
+		AND T.ACTIVE = #{active, jdbcType=VARCHAR}
+	</select>
+	<!-- 根据接驳点编码 -->
+	<select id="queryAccessPointsByCode" resultMap="accessPointMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AccessPointEntity">
+		SELECT ID,NAME,CODE,BIG_REGION_CODE,TRANSFER_CODE,PROVINCE,CITY,COUNTY,STREET,
+		STATU,CREATE_TIME,CREATE_USER,MODIFY_TIME,MODIFY_USER,ACTIVE 
+		FROM BSE.T_BAS_ACCESS_POINT T
+		WHERE T.CODE = #{code, jdbcType=VARCHAR}
+		AND T.ACTIVE = #{active, jdbcType=VARCHAR}
+	</select>
+	<update id="updateAccessPointStatu" parameterType="Map">
+		UPDATE BSE.T_BAS_ACCESS_POINT T
+		SET T.STATU = DECODE(T.STATU,'Y','N','Y'),
+		 <if test="modifyUser != null">
+			T.MODIFY_USER = #{modifyUser, jdbcType=VARCHAR},
+		</if> 
+		T.MODIFY_TIME = sysdate
+		WHERE T.CODE IN
+		<foreach collection="accessPointCodes" open="(" separator="," close=")" item="accessPointCode">
+			#{accessPointCode, jdbcType=VARCHAR}
+		</foreach>
+	</update>
+	<update id="deleteAccessPoint" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.AccessPointEntity">
+		UPDATE BSE.T_BAS_ACCESS_POINT T
+		SET T.ACTIVE = 'N'
+		WHERE T.CODE = #{code, jdbcType=VARCHAR}
+		AND T.ACTIVE = 'Y'
+	</update>
+	<!-- 根据司机工号查询所属部门 -->
+	<select id="queryOrgAdministrativeInfoEntitysByEmpCode"
+		parameterType="java.lang.String"
+		resultMap="foss.bse.bse-baseinfo.orgAdministrativeInfo.orgAdministrativeInfoQueryResultMap">
+		SELECT 
+			<include refid="foss.bse.bse-baseinfo.orgAdministrativeInfo.query_orgAdministrativeInfo_param" />
+	    	FROM BSE.T_BAS_OWNDRIVER O 
+	    	LEFT JOIN BSE.T_BAS_ORG  A
+	    	ON O.ORG_ID = A.CODE AND A.ACTIVE = 'Y'
+	    	<!-- LEFT JOIN BSE.T_BAS_TRANS_DEPARTMENT A
+	    	ON T.CODE = A.CODE AND A.ACTIVE = 'Y'   -->
+		WHERE O.ACTIVE = 'Y'
+		AND O.EMP_CODE = #{empCode, jdbcType=VARCHAR}
+	</select>
+</mapper>

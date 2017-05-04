@@ -1,0 +1,509 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.stl.partnerStatementOfAwardMDao">
+	<resultMap id="DEntityResultMap"
+		type="com.deppon.foss.module.settlement.writeoff.api.shared.domain.PartnerStatementOfAwardDEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="STATEMENT_BILL_NO" property="statementBillNo" jdbcType="VARCHAR" />
+		<result column="SOURCE_BILL_NO" property="sourceBillNo" jdbcType="VARCHAR" />
+		<result column="ORIG_SOURCE_BILL_NO" property="origSourceBillNo" jdbcType="VARCHAR" />
+		<result column="BILL_TYPE" property="billType" jdbcType="VARCHAR" />
+		<result column="AMOUNT" property="amount" jdbcType="DECIMAL" />
+		<result column="VERIFY_AMOUNT" property="verifyAmount" jdbcType="DECIMAL" />
+		<result column="UNVERIFY_AMOUNT" property="unverifyAmount" jdbcType="DECIMAL" />
+		<result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+		<result column="ORG_NAME" property="orgName" jdbcType="VARCHAR" />		
+		<result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+		<result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+		<result column="IS_DELETE" property="isDelete" jdbcType="CHAR" />
+		<result column="DISABLE_TIME" property="disableTime" jdbcType="TIMESTAMP" />
+		<result column="BUSINESS_DATE" property="businessDate" jdbcType="TIMESTAMP" />
+		<result column="ACCOUNT_DATE" property="accountDate" jdbcType="TIMESTAMP" />
+		<result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+		<result column="AUDIT_STATUS" property="auditStatus" jdbcType="VARCHAR" />
+		<result column="BILL_PARENT_TYPE" property="billParentType" jdbcType="VARCHAR" />
+		<result column="VERSION_NO" property="versionNo" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<resultMap id="EntityResultMap"
+		type="com.deppon.foss.module.settlement.writeoff.api.shared.domain.PartnerStatementOfAwardEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="STATEMENT_BILL_NO" property="statementBillNo" jdbcType="VARCHAR" />
+		<result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+		<result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+		<result column="BILL_TYPE" property="billType" jdbcType="VARCHAR" />
+		<result column="CONFIRM_STATUS" property="confirmStatus" jdbcType="DECIMAL" />
+		<result column="PERIOD_AMOUNT" property="periodAmount" jdbcType="DECIMAL" />
+		<result column="PAID_AMOUNT" property="paidAmount" jdbcType="DECIMAL" />
+		<result column="UNPAID_AMOUNT" property="unpaidAmount" jdbcType="DECIMAL" />
+		<result column="PERIOD_BEGIN_DATE" property="periodBeginDate" jdbcType="TIMESTAMP" />		
+		<result column="PERIOD_END_DATE" property="periodEndDate" jdbcType="TIMESTAMP" />
+		<result column="PERIOD_REC_AMOUNT" property="periodRecAmount" jdbcType="DECIMAL" />
+		<result column="PERIOD_PAY_AMOUNT" property="periodPayAmount" jdbcType="DECIMAL" />
+		<result column="PERIOD_UNVERIFY_REC_AMOUNT" property="periodUnverifyRecAmount" jdbcType="DECIMAL" />
+		<result column="PERIOD_UNVERIFY_PAY_AMOUNT" property="periodUnverifyPayAmount" jdbcType="DECIMAL" />
+		<result column="COMPANY_CODE" property="companyCode" jdbcType="VARCHAR" />
+		<result column="COMPANY_NAME" property="companyName" jdbcType="VARCHAR" />
+		<result column="CONFIRM_TIME" property="confirmTime" jdbcType="TIMESTAMP" />
+		<result column="CREATE_ORG_CODE" property="createOrgCode" jdbcType="VARCHAR" />
+		<result column="CREATE_ORG_NAME" property="createOrgName" jdbcType="VARCHAR" />
+		<result column="UNIFIED_CODE" property="unifiedCode" jdbcType="VARCHAR" />
+		<result column="COMPANY_ACCOUNT_BANK_NO" property="companyAccountBankNo" jdbcType="VARCHAR" />
+		<result column="ACCOUNT_USER_NAME" property="accountUserName" jdbcType="VARCHAR" />
+		<result column="BANK_BRANCH_NAME" property="bankBranchName" jdbcType="VARCHAR" />
+		<result column="SETTLE_NUM" property="settleNum" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+	</resultMap>
+
+    <sql id="Base_Column_List">
+	   STATEMENT_BILL_NO,
+       CUSTOMER_CODE,
+       CUSTOMER_NAME,
+       BILL_TYPE,
+       CONFIRM_STATUS,
+       PERIOD_AMOUNT/100 PERIOD_AMOUNT,
+       PAID_AMOUNT/100 PAID_AMOUNT,
+       UNPAID_AMOUNT/100 UNPAID_AMOUNT,
+       PERIOD_BEGIN_DATE,
+       PERIOD_END_DATE,
+       PERIOD_REC_AMOUNT/100 PERIOD_REC_AMOUNT,
+       PERIOD_PAY_AMOUNT/100 PERIOD_PAY_AMOUNT,
+       PERIOD_UNVERIFY_REC_AMOUNT/100 PERIOD_UNVERIFY_REC_AMOUNT,
+       PERIOD_UNVERIFY_PAY_AMOUNT/100 PERIOD_UNVERIFY_PAY_AMOUNT,
+       COMPANY_CODE,
+       COMPANY_NAME,
+       CONFIRM_TIME,
+       CREATE_ORG_CODE,
+       CREATE_ORG_NAME,
+       UNIFIED_CODE,
+       COMPANY_ACCOUNT_BANK_NO,
+       ACCOUNT_USER_NAME,
+       BANK_BRANCH_NAME,
+       SETTLE_NUM,
+       CREATE_TIME,
+       NOTES
+	</sql>
+	
+	<!-- 根据合伙人查询对账单 -->
+	<select id="queryPStatementsByPartner" 
+	  parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.PartnerStatementOfAwardDto"
+	  resultMap="EntityResultMap">	
+		  SELECT 
+			<include refid="Base_Column_List"/>		       
+		  FROM STL.T_STL_STATEMENT_OF_PAWARD
+		  <where>
+			  <if test="periodBeginDate!=null and periodBeginDate!=''">
+			  	<![CDATA[ AND CREATE_TIME >= #{periodBeginDate,jdbcType=TIMESTAMP} ]]>
+			  </if>			  
+			  <if test="periodEndDate!=null and periodEndDate!=''">
+			  	<![CDATA[ AND CREATE_TIME < #{periodEndDate,jdbcType=TIMESTAMP} ]]>
+			  </if>
+			  
+			  <if test="orgCodeList!=null and orgCodeList.size()>0">
+			  	AND CREATE_ORG_CODE IN
+				  	<foreach  collection="orgCodeList" item="item" open="(" close=")" separator=",">
+						#{item,jdbcType=VARCHAR}
+					</foreach>
+			  </if>
+			  
+			  <if test="customerCode!=null and customerCode!=''">
+                and CUSTOMER_CODE = #{customerCode}
+              </if>
+			  
+			  <if test="confirmStatus!=null and confirmStatus!=''">
+                and CONFIRM_STATUS = #{confirmStatus}
+              </if>
+			  
+			  <if test="settleStatus!=null and settleStatus!='' and settleStatus==statementSettleStatus">
+		        and UNPAID_AMOUNT = 0
+		      </if>
+		      <if test="settleStatus!=null and settleStatus!='' and settleStatus==statementUnSettleStatus">
+		        and UNPAID_AMOUNT != 0
+		      </if>			  
+		  </where>
+	</select>
+	
+	<!-- 根据合伙人查询对账单总记录数 -->
+	<select id="queryPStatementsByPartnerNum" 
+	  parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.PartnerStatementOfAwardDto"
+	  resultType="java.lang.Long">	
+		  SELECT 
+			COUNT(1) /*查询合伙人对账单的总记录数 */		       
+		  FROM STL.T_STL_STATEMENT_OF_PAWARD
+		  <where>
+			  <if test="periodBeginDate!=null and periodBeginDate!=''">
+			  	<![CDATA[ AND CREATE_TIME >= #{periodBeginDate,jdbcType=TIMESTAMP} ]]>
+			  </if>			  
+			  <if test="periodEndDate!=null and periodEndDate!=''">
+			  	<![CDATA[ AND CREATE_TIME < #{periodEndDate,jdbcType=TIMESTAMP} ]]>
+			  </if>
+			  
+			  <if test="orgCodeList!=null and orgCodeList.size()>0">
+			  	AND CREATE_ORG_CODE IN
+				  	<foreach  collection="orgCodeList" item="item" open="(" close=")" separator=",">
+						#{item,jdbcType=VARCHAR}
+					</foreach>
+			  </if>
+			  
+			  <if test="customerCode!=null and customerCode!=''">
+                and CUSTOMER_CODE = #{customerCode}
+              </if>
+			  
+			  <if test="confirmStatus!=null and confirmStatus!=''">
+                and CONFIRM_STATUS = #{confirmStatus}
+              </if>
+			  
+			  <if test="settleStatus!=null and settleStatus!='' and settleStatus==statementSettleStatus">
+		        and UNPAID_AMOUNT = 0
+		      </if>
+		      <if test="settleStatus!=null and settleStatus!='' and settleStatus==statementUnSettleStatus">
+		        and UNPAID_AMOUNT != 0
+		      </if>			  
+		  </where>
+	</select>
+	
+	<!-- 按对账单号查询对账单 -->
+	<select id="queryPStatementsByStatementNos" resultMap="EntityResultMap" parameterType="java.util.List">	
+		  SELECT 
+			<include refid="Base_Column_List"/>		       
+		  FROM STL.T_STL_STATEMENT_OF_PAWARD
+		  <where>
+			  <if test="list!=null and list.size()>0">
+			  	AND STATEMENT_BILL_NO IN
+				  	<foreach  collection="list" index = "index" item="item" open="(" close=")" separator=",">
+						#{item,jdbcType=VARCHAR} 
+					</foreach>
+			  </if>		  
+		  </where>
+	</select>
+	
+	<!-- 查询对账单总记录数 -->
+	<select id="queryPStatementsNos" resultType="java.lang.Long" parameterType="java.util.List">	
+		  SELECT 
+			COUNT(1) /*查询合伙人对账单的总记录数 */		       
+		  FROM STL.T_STL_STATEMENT_OF_PAWARD
+		  <where>
+			  <if test="list!=null and list.size()>0">
+			  	AND STATEMENT_BILL_NO IN
+				  	<foreach  collection="list" index = "index" item="item" open="(" close=")" separator=",">
+						#{item,jdbcType=VARCHAR} 
+					</foreach>
+			  </if>		  
+		  </where>
+	</select>
+	
+	<!-- 根据运单号集合获取对账单明细集合 -->
+	<select id="queryPSAwardDList" resultMap="DEntityResultMap">	
+		  SELECT * FROM STL.T_STL_STATEMENT_OF_PAWARD_D
+		  <where>
+			  <if test="list!=null and list.size()>0">
+			  	 SOURCE_BILL_NO IN
+				  	<foreach  collection="list"  index = "index" item="item" open="(" close=")" separator=",">
+						#{item,jdbcType=VARCHAR}
+					</foreach>
+			  </if>	
+			  AND IS_DELETE = 'N'	  
+		  </where>
+	</select>
+
+	<!-- 根据对账单号集合查询对账单明细集合 -->
+	<select id="queryPStatementDByStaNoList" resultMap="DEntityResultMap">	
+		  SELECT * FROM STL.T_STL_STATEMENT_OF_PAWARD_D
+		  <where>
+			  <if test="list!=null and list.size()>0">
+			  	 STATEMENT_BILL_NO IN
+				  	<foreach  collection="list"  index = "index" item="item" open="(" close=")" separator=",">
+						#{item,jdbcType=VARCHAR}
+					</foreach>
+			  </if>	
+			  AND IS_DELETE = 'N'	  
+		  </where>
+	</select>
+	
+	<!-- 按部门查询对账单 -->
+	<select id="queryPStatementsBydep" 
+	  parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.PartnerStatementOfAwardDto"
+	  resultMap="EntityResultMap">	
+	      SELECT 
+			<include refid="Base_Column_List"/>		       
+		  FROM STL.T_STL_STATEMENT_OF_PAWARD
+		  <where>
+			  <if test="orgCode!=null and orgCode!=''">
+                CREATE_ORG_CODE = #{orgCode}
+              </if>		  
+		  </where>  
+	</select>
+	
+	<!-- 按部门查询对账单总记录数 -->
+	<select id="queryPStatementsBydepNum" 
+	  parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.PartnerStatementOfAwardDto"
+	  resultType="java.lang.Long">	
+	      SELECT 
+			COUNT(1) /*查询合伙人对账单的总记录数 */	       
+		  FROM STL.T_STL_STATEMENT_OF_PAWARD
+		  <where>
+			  <if test="orgCode!=null and orgCode!=''">
+                CREATE_ORG_CODE = #{orgCode}
+              </if>		  
+		  </where>  
+	</select>
+	
+	<!-- 更新合伙人对账单 -->
+	<update id="PAwardStatementUpdateByStatementBillNo"
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.PartnerStatementOfAwardDto">
+	    UPDATE STL.T_STL_STATEMENT_OF_PAWARD A
+		   SET A.PAID_AMOUNT    = #{paidAmount,jdbcType=DECIMAL} * 100,
+		       A.UNPAID_AMOUNT = #{unpaidAmount,jdbcType=DECIMAL}* 100,
+		       A.SETTLE_NUM = #{settleNum},
+		       A.MODIFY_USER_CODE = #{modifyUserCode},
+		       A.MODIFY_USER_NAME = #{modifyUserName},
+		       A.MODIFY_TIME      = SYSDATE,
+		       A.VERSION_NO       = A.VERSION_NO + 1
+		 WHERE A.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+	</update>
+	
+	<!-- 批量更新合伙人对账单 -->
+	<update id="updateStatementForWriteOffByList" parameterType="java.util.List">
+	    UPDATE STL.T_STL_STATEMENT_OF_PAWARD A SET
+	     <if test="list!=null and list.size()>0">
+	     	<foreach  collection="list" index = "index" item="item" open="(" close=")" separator=",">
+				   A.PERIOD_AMOUNT    = #{item.periodAmount,jdbcType=DECIMAL} * 100,
+			       A.PAID_AMOUNT    = #{item.paidAmount,jdbcType=DECIMAL} * 100,
+			       A.UNPAID_AMOUNT = #{item.unpaidAmount,jdbcType=DECIMAL}* 100,
+			       A.PERIOD_PAY_AMOUNT = #{item.periodPayAmount,jdbcType=DECIMAL}* 100,
+			       A.PERIOD_UNVERIFY_PAY_AMOUNT = #{item.periodUnverifyRecAmount,jdbcType=DECIMAL}* 100,
+			       A.PERIOD_REC_AMOUNT = #{item.periodPayAmount,jdbcType=DECIMAL}* 100,
+			       A.PERIOD_UNVERIFY_REC_AMOUNT = #{item.periodUnverifyRecAmount,jdbcType=DECIMAL}* 100,
+			       A.SETTLE_NUM = A.SETTLE_NUM+1,
+			       A.MODIFY_USER_CODE = #{item.modifyUserCode},
+			       A.MODIFY_USER_NAME = #{item.modifyUserName},
+			       A.MODIFY_TIME      = SYSDATE,
+			       A.VERSION_NO       = A.VERSION_NO + 1
+			   WHERE A.STATEMENT_BILL_NO = #{item.statementBillNo,jdbcType=VARCHAR}
+			</foreach>
+	     </if>
+	</update>
+	<!-- 按对账单号查询对账单 -->
+	<select id="queryPStatementsByStaNoNPage" parameterType="java.lang.String" resultMap="EntityResultMap">	
+	      SELECT 
+			<include refid="Base_Column_List"/>		       
+		  FROM STL.T_STL_STATEMENT_OF_PAWARD
+		  <where>
+                STATEMENT_BILL_NO = #{statementBillNo}		  
+		  </where>  
+	</select>
+	
+	<!-- 按条件查询需要重推的奖罚对账单 -->
+	<select id="querypartnerDNeedReDecduct" 
+	   parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.PartnerStatementOfAwardDto" 
+	   resultMap="EntityResultMap">	
+	      SELECT 
+			<include refid="Base_Column_List"/>		       
+		  FROM STL.T_STL_STATEMENT_OF_PAWARD
+          WHERE BILL_TYPE='PBPA'
+              AND PERIOD_UNVERIFY_REC_AMOUNT>PERIOD_UNVERIFY_PAY_AMOUNT 
+              AND UNPAID_AMOUNT>0  
+	</select>
+	
+	<!-- 更改对账单状态 -->
+	<update id="updateStatusByStatementNo"
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.PartnerStatementOfAwardDto">
+	    UPDATE STL.T_STL_STATEMENT_OF_PAWARD A
+		   SET A.CONFIRM_STATUS    = #{confirmStatus,jdbcType=VARCHAR},
+		       A.MODIFY_USER_CODE  = #{modifyUserCode,jdbcType=VARCHAR},
+		       A.MODIFY_USER_NAME  = #{modifyUserName,jdbcType=VARCHAR},
+		       A.MODIFY_TIME       = SYSDATE,
+		       A.CONFIRM_TIME      = SYSDATE,
+		       A.VERSION_NO        = A.VERSION_NO + 1
+		 WHERE A.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+	</update>
+	
+	<!-- 删除对账单明细 -->
+	<update id="delPAwardStatementD"
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.PartnerStatementOfAwardDto">
+	    UPDATE STL.T_STL_STATEMENT_OF_PAWARD_D PD
+		   SET PD.IS_DELETE = 'Y', PD.DISABLE_TIME = SYSDATE
+		 WHERE PD.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+		   AND PD.IS_DELETE = 'N'
+		   <if test="numbers!=null and numbers.size>0">
+		   AND PD.SOURCE_BILL_NO IN
+		    <foreach collection="numbers" index="index" item="item" open="(" separator="," close=")">
+	         #{item}
+	        </foreach>
+	       </if>
+	</update>	
+	<!-- 更新对账单金额 -->
+	<update id="pAwardStatementUpdateAmountByStatementBillNo"
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.PartnerStatementOfAwardDto">
+	    UPDATE STL.T_STL_STATEMENT_OF_PAWARD A
+		   SET A.PERIOD_AMOUNT    = #{periodAmount,jdbcType=DECIMAL} * 100,
+		       <!-- A.PAID_AMOUNT    = #{paidAmount,jdbcType=DECIMAL} * 100, -->
+		       A.UNPAID_AMOUNT = #{unpaidAmount,jdbcType=DECIMAL}* 100,
+		       A.PERIOD_PAY_AMOUNT = #{periodPayAmount,jdbcType=DECIMAL}* 100,
+		       A.PERIOD_REC_AMOUNT = #{periodRecAmount,jdbcType=DECIMAL}* 100,
+		       A.PERIOD_UNVERIFY_PAY_AMOUNT = #{periodUnverifyPayAmount,jdbcType=DECIMAL}* 100,
+		       A.PERIOD_UNVERIFY_REC_AMOUNT = #{periodUnverifyRecAmount,jdbcType=DECIMAL}* 100,
+		       A.MODIFY_USER_CODE = #{empCode,jdbcType=VARCHAR},
+		       A.MODIFY_USER_NAME = #{empName,jdbcType=VARCHAR},
+		       A.MODIFY_TIME      = SYSDATE,
+		       <!-- A.BILL_TYPE        = #{billType,jdbcType=VARCHAR}, -->
+		       A.VERSION_NO       = A.VERSION_NO + 1
+		 WHERE A.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+	</update>	
+	<!-- 更新应付单 -->
+	<update id="updatePayStatementBillNo"
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.PartnerStatementOfAwardDto">
+		UPDATE STL.T_STL_BILL_PAYABLE P
+		   SET P.STATEMENT_BILL_NO = 'N/A',
+		       P.MODIFY_TIME       = SYSDATE,
+		       P.MODIFY_USER_CODE  = #{empCode,jdbcType=VARCHAR},
+		       P.MODIFY_USER_NAME  = #{empName,jdbcType=VARCHAR},
+		       P.VERSION_NO        = P.VERSION_NO + 1
+		 WHERE P.ACTIVE = 'Y'
+		   AND P.BILL_TYPE IN ('PB','PLE')
+		   AND P.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+		   <if test="numbers!=null and numbers.size>0">
+		   AND P.PAYABLE_NO IN 
+		    <foreach collection="numbers" index="index" item="item" open="(" separator="," close=")">
+	         #{item}
+	        </foreach>
+	       </if>
+	</update>	
+	<!-- 更新应收单 -->
+	<update id="updateRecStatementBillNo"
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.PartnerStatementOfAwardDto">
+		UPDATE STL.T_STL_BILL_RECEIVABLE R
+		   SET R.STATEMENT_BILL_NO = 'N/A',
+		       R.MODIFY_TIME       = SYSDATE,
+		       R.MODIFY_USER_CODE  = #{empCode,jdbcType=VARCHAR},
+		       R.MODIFY_USER_NAME  = #{empName,jdbcType=VARCHAR},
+		       R.VERSION_NO        = R.VERSION_NO + 1
+		 WHERE R.ACTIVE = 'Y'
+		   AND R.BILL_TYPE IN ('PP','PTF','PER')
+		   AND R.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+		   <if test="numbers!=null and numbers.size>0">
+		   AND R.RECEIVABLE_NO IN 
+		    <foreach collection="numbers" index="index" item="item" open="(" separator="," close=")">
+	         #{item}
+	        </foreach>
+	       </if>
+	</update>	
+	<!-- 根据对账单号集合查询对账单集合 -->
+		<select id="queryPStatementsByStaNoList" resultMap="EntityResultMap" parameterType="java.util.List">	
+		  SELECT 
+			<include refid="Base_Column_List"/>		       
+		  FROM STL.T_STL_STATEMENT_OF_PAWARD
+		  <where>
+			  <if test="list!=null and list.size()>0">
+			  	STATEMENT_BILL_NO IN
+				  	<foreach  collection="list" index = "index" item="item" open="(" close=")" separator=",">
+						#{item,jdbcType=VARCHAR}
+					</foreach>
+			  </if>		  
+		  </where>
+	</select>
+	
+	<!-- 按对账单号、应收应付单号添加对账单明细 -->
+	<insert id="addPAwardStatementD"
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.PartnerStatementOfAwardDto">
+		INSERT INTO STL.T_STL_STATEMENT_OF_PAWARD_D
+		     (ID,
+			   STATEMENT_BILL_NO,
+			   SOURCE_BILL_NO,
+			   BILL_PARENT_TYPE,
+			   BILL_TYPE,
+			   AUDIT_STATUS,
+			   AMOUNT,
+			   VERIFY_AMOUNT,
+			   UNVERIFY_AMOUNT,
+			   ORG_CODE,
+			   ORG_NAME,
+			   CUSTOMER_CODE,
+			   CUSTOMER_NAME,
+			   IS_DELETE,
+			   DISABLE_TIME,
+			   BUSINESS_DATE,
+			   ACCOUNT_DATE,
+			   CREATE_TIME,
+			   NOTES,
+			   ORIG_SOURCE_BILL_NO)
+          SELECT 
+             SYS_GUID(),
+             #{statementBillNo,jdbcType=VARCHAR},
+             PAY.PAYABLE_NO,
+             '20.YF',
+             PAY.BILL_TYPE,
+             PAY.APPROVE_STATUS,
+             PAY.AMOUNT,
+             PAY.VERIFY_AMOUNT,
+             PAY.UNVERIFY_AMOUNT,
+             PAY.PAYABLE_ORG_CODE,
+             PAY.PAYABLE_ORG_NAME,
+             PAY.CUSTOMER_CODE,
+             PAY.CUSTOMER_NAME,
+             'N',
+             '',
+             PAY.BUSINESS_DATE,
+             PAY.ACCOUNT_DATE,
+             SYSDATE,
+             PAY.NOTES,
+             PAY.SOURCE_BILL_NO
+       FROM STL.t_Stl_Bill_Payable PAY
+       WHERE PAY.ACTIVE='Y'
+       AND PAY.UNVERIFY_AMOUNT>0
+       AND PAY.BILL_TYPE IN ('PB','PLE')
+       AND (PAY.STATEMENT_BILL_NO = 'N/A' OR PAY.STATEMENT_BILL_NO IS NULL)
+       AND PAY.PAYABLE_ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+       AND PAY.PAYABLE_NO = #{sourceBillNo,jdbcType=VARCHAR}    
+		  UNION ALL
+          SELECT 
+             SYS_GUID(),
+             #{statementBillNo,jdbcType=VARCHAR},
+             REC.RECEIVABLE_NO,
+             '10.YS',
+             REC.BILL_TYPE,
+             REC.APPROVE_STATUS,
+             REC.AMOUNT,
+             REC.VERIFY_AMOUNT,
+             REC.UNVERIFY_AMOUNT,
+             REC.RECEIVABLE_ORG_CODE,
+             REC.RECEIVABLE_ORG_NAME,
+             REC.CUSTOMER_CODE,
+             REC.CUSTOMER_NAME,
+             'N',
+             '',
+             REC.BUSINESS_DATE, 
+             REC.ACCOUNT_DATE, 
+             SYSDATE, 
+             REC.NOTES,                                      
+             REC.SOURCE_BILL_NO
+       FROM STL.T_STL_BILL_RECEIVABLE REC 
+       WHERE REC.ACTIVE = 'Y'
+       AND   REC.UNVERIFY_AMOUNT > 0
+       AND   REC.BILL_TYPE IN ('PP','PTF','PER')
+       AND (REC.STATEMENT_BILL_NO = 'N/A' OR REC.STATEMENT_BILL_NO IS NULL)
+       AND REC.RECEIVABLE_ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+       AND REC.RECEIVABLE_NO = #{sourceBillNo,jdbcType=VARCHAR}
+	</insert>
+	
+	<!-- 根据对账单号查询对账单明细集合 367752 2016-09-03 -->
+	<select id="queryPStatementDByStaNo" resultMap="DEntityResultMap" parameterType="java.lang.String">
+		  SELECT * FROM STL.T_STL_STATEMENT_OF_PAWARD_D
+		  <where>
+			  	 STATEMENT_BILL_NO = #{statementNo}	 
+			  	 AND IS_DELETE = 'N' 
+		  </where>
+	</select>
+
+	<!-- 按照对账单逻辑删除对账单 -->
+	<update id="deletePartnerStatementOfAward" parameterType="java.lang.String">
+	    UPDATE STL.T_STL_STATEMENT_OF_PAWARD_D PD
+		   SET PD.IS_DELETE = 'Y', PD.DISABLE_TIME = SYSDATE
+		 WHERE PD.STATEMENT_BILL_NO = #{statementNo,jdbcType=VARCHAR}
+		   AND PD.IS_DELETE = 'N'		   
+	</update>
+</mapper>

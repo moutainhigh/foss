@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:jaxws="http://cxf.apache.org/jaxws"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://www.springframework.org/schema/jee 
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+			http://www.springframework.org/schema/aop 
+			http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+			http://cxf.apache.org/jaxws
+        	http://cxf.apache.org/schemas/jaxws.xsd"
+	default-autowire="byName" default-lazy-init="true">
+	<bean id="queryNetMsgOnline"
+		class="com.deppon.foss.module.base.querying.server.action.QueryNetMsgOnlineAction"
+		scope="prototype" />
+	<bean id="writeNetMsgOnlineAction"
+		class="com.deppon.foss.module.base.querying.server.action.WriteNetMsgOnlineAction"
+		scope="prototype" />
+	<bean id="specialValueAddedService"
+		  class="com.deppon.foss.module.base.querying.server.service.impl.SpecialValueAddedService">
+		  <constructor-arg  type="java.lang.String" value="${dopDeliveryInformation.address}" />
+		  </bean>	
+	<bean id="msgOnlineService"
+		class="com.deppon.foss.module.base.querying.server.service.impl.MsgOnlineService" >
+		<property name="msgOnlineFromEcsAddress" value="${msgOnlineFromEcsAddress.address}"></property>
+	</bean>
+	<bean id="acceptNetMsgOnlineAction"
+		class="com.deppon.foss.module.base.querying.server.action.AcceptNetMsgOnlineAction"
+		scope="prototype" />
+	<!-- 查询运单财务相关信息 -->	
+	<bean id="integrativeQueryAction"
+		class="com.deppon.foss.module.base.querying.server.action.IntegrativeQueryAction"
+		scope="prototype" >
+			<property name="grayByWaybillNoUrl">
+			<value>${cubc.gray.vestSourceBillNo}</value>
+		</property>
+		<property name="queryFinanceConditionByWayBillNoByCUBCUrl">
+			<value>${cubc.queryFinanceConditionByWayBillNoByCUBC.address}</value>
+		</property>
+	</bean>		
+	<bean id="salesstatementAction"
+		class="com.deppon.foss.module.base.querying.server.action.SalesstatementAction"
+		scope="prototype" />
+	<bean id="integrativeQueryService"
+		class="com.deppon.foss.module.base.querying.server.service.impl.IntegrativeQueryService" />
+	<bean id="salesstatementService"
+		class="com.deppon.foss.module.base.querying.server.service.impl.SalesstatementService" />
+	
+	<!-- 查询运单相关信息 -->
+	<bean id="wayBillRelevanceQueryService"
+		class="com.deppon.foss.module.base.querying.server.service.impl.WayBillRelevanceQueryService" />
+	<!-- 查询运单理赔相关信息 -->
+	<bean id="queryCrmClaimbillService"
+		class="com.deppon.foss.module.base.querying.server.service.impl.QueryCrmClaimbillService" />
+	
+	<!-- CRM理赔接口Service -->
+	<jaxws:client id="fossToCrmService_" address="${esb.ws}/foss2crm/fossToCrmService"
+		serviceClass="com.deppon.crm._interface.crmservice.FossToCrmService">
+		<!-- <jaxws:inInterceptors> -->
+		<!-- <bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingInInterceptor"/> -->
+		<!-- </jaxws:inInterceptors> -->
+		<jaxws:outInterceptors>
+			<bean
+	 			 class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingOutInterceptor" />
+		</jaxws:outInterceptors>
+	</jaxws:client>
+	<!-- 注入webservice -->
+	<!-- CC单点登录到FOSS综合查询 -->
+	<bean id="ccToFossSsoAction"
+		class="com.deppon.foss.module.base.querying.server.action.CcToFossSsoAction"
+	scope="prototype" />
+	<!-- 同步给CC接口的Service -->
+	<bean id="syncWaybillInfoToCCService" 
+		class="com.deppon.foss.module.base.querying.server.service.impl.SyncWaybillInfoToCCService">
+		<property name="fossToCCService" ref="fossToCCService"/>
+	</bean>	
+	<!-- CC运单信息接口的Client -->
+	<jaxws:client id="fossToCCService" address="${esb.ws}/foss2ccs/fossToccsService?wsdl" 
+		serviceClass="com.deppon.cc.module.foss.server.service.IFossToCCService">
+		<jaxws:inInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingInInterceptor"/>
+		</jaxws:inInterceptors>
+		<jaxws:outInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingOutInterceptor"/>
+		</jaxws:outInterceptors>
+	</jaxws:client>
+	
+	
+
+	
+</beans>

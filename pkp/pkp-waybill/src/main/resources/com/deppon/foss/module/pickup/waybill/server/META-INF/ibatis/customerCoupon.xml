@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.pkp.customerCoupon" >
+
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.pickup.waybill.shared.domain.CustomerCouponEntity" >
+    <id column="ID" property="id"/>
+    <result column="CREATE_DATE" property="createDate" jdbcType="TIMESTAMP" />
+    <result column="CREATE_USER" property="createUser"/>
+    <result column="UPDATE_DATE" property="modifyDate" jdbcType="TIMESTAMP" />
+    <result column="MODIFY_USER" property="modifyUser"/>
+    <result column="CUSTOMER_CODE" property="customerCode"/>
+    <result column="COUPON_CODE" property="couponCode"/>
+    <result column="ACTIVE_DATE" property="activeDate" />
+    <result column="WAYBILL_NO" property="waybillNo" />
+    <result column="USED" property="used"/>
+    <result column="PHONE" property="phone" />
+    <result column="AMOUNT" property="amount" />
+  </resultMap>
+  
+  <sql id="Base_Column_List">
+    ID,CREATE_DATE,CREATE_USER,UPDATE_DATE,MODIFY_USER,CUSTOMER_CODE,COUPON_CODE,USED,
+    PHONE,AMOUNT,WAYBILL_NO,ACTIVE_DATE
+  </sql>
+  
+  <!-- 绑定用户与优惠券关系 -->
+  <insert id="insert" parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.CustomerCouponEntity" >
+    insert into PKP.T_SRV_CUSTOMER_COUPON 
+    (ID,CREATE_DATE,CUSTOMER_CODE,
+    COUPON_CODE,USED,PHONE,AMOUNT,WAYBILL_NO,ACTIVE_DATE)
+    values (#{id,jdbcType=VARCHAR},#{createDate,jdbcType=TIMESTAMP},#{customerCode,jdbcType=VARCHAR},
+    #{couponCode,jdbcType=VARCHAR},#{used,jdbcType=VARCHAR},#{phone,jdbcType=VARCHAR},#{amount,jdbcType=VARCHAR},#{waybillNo,jdbcType=VARCHAR},#{activeDate,jdbcType=TIMESTAMP})
+  </insert>
+  
+  <!-- 动态查询优惠券 -->
+  <select id="queryCustomerCouponList"  resultMap="BaseResultMap"  parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.CustomerCouponEntity" >
+    select 
+    <include refid="Base_Column_List" /> 
+    from  PKP.T_SRV_CUSTOMER_COUPON 
+   	<where>
+	    <if test="id != null and id !='' ">
+	    	and id = #{id}
+	    </if>
+	    <if test="customerCode != null and customerCode !='' ">
+	    	and CUSTOMER_CODE = #{customerCode}
+	    </if>
+	    <if test="couponCode != null and couponCode !='' ">
+	    	and COUPON_CODE = #{couponCode}
+	    </if>
+	    <if test="phone != null and phone !='' ">
+	    	and PHONE = #{phone}
+	    </if>
+	    <if test="waybillNo != null and waybillNo !='' ">
+	    	and WAYBILL_NO = #{waybillNo}
+	    </if>
+	    <if test="used != null and used !='' ">
+	    	and USED = #{used}
+	    </if>
+	     <if test="activeDate != null and activeDate !='' ">
+	         and ACTIVE_DATE >= #{activeDate}
+	     </if>
+    </where>
+  </select>
+  
+  <!-- 使用优惠券 -->
+  <update id="useCustomerCoupon" parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.ActualFreightBIEntity" >
+    update PKP.T_SRV_CUSTOMER_COUPON 
+    set  USED = 'N' 
+    where  CUSTOMER_CODE = #{customerCode} 
+           and COUPON_CODE = #{couponCode}
+  </update>
+  
+</mapper>

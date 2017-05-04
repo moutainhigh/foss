@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.platform.queryprogress">
+	
+	<!-- 月台调用接口结果 -->
+	<resultMap id="queryProgressResultMap"
+		type="com.deppon.foss.module.transfer.load.api.shared.dto.QueryProgressMapperResultDto">
+		<result property="taskNo" column="taskNo" />
+		<result property="taskType" column="taskType" />
+		<result property="taskEndTime" column="taskEndTime" />
+		<result property="ratedVolume" column="ratedVolume" />
+		<result property="ratedWeight" column="ratedWeight" />
+		<result property="loadedVolume" column="loadedVolume" />
+		<result property="loadedWeight" column="loadedWeight" />
+		
+	</resultMap>
+	
+		
+	<!-- 月台接口 装车查询 -->
+	<select id="queryLoadProgressResult" parameterType="HashMap"
+	 resultMap="queryProgressResultMap">
+		select task.task_no taskNo,          
+               max(task.load_end_time) taskEndTime,
+               max(task.task_type) taskType,
+               max(ot.self_volume) ratedVolume,
+               max(ot.dead_load) ratedWeight,
+               sum((ld.load_qty / wa.goods_qty_total) *
+                   wa.goods_weight_total) loadedWeight,
+               sum((ld.load_qty / wa.goods_qty_total) *
+                   wa.goods_volume_total) loadedVolume
+          from tfr.t_Opt_Load_Task task
+          left join bse.T_BAS_OWN_TRUCK ot on task.vehicle_no =
+                                              ot.vehicle_no                      
+          left join tfr.t_Opt_Load_Waybill_Detail ld on task.id =
+                                                        ld.load_task_id
+          left join pkp.t_srv_waybill wa on ld.waybill_no = wa.waybill_no
+          where task.task_no = #{taskNo}
+          <!-- and task.TASK_STATE = #{taskState} -->
+          group by  task.task_no
+	</select>
+	
+	<!-- 月台接口 卸车车查询 -->
+	<select id="queryUnloadProgressResult" parameterType="HashMap"
+	 resultMap="queryProgressResultMap">
+select unloadTask.taskNo taskNo,
+       max(unloadTask.taskEndTime) taskEndTime,
+       max(unloadTask.taskType) taskType,
+       max(unloadTask.unloadedWeight) loadedWeight,
+       max(unloadTask.unloadedVolume) loadedVolume,
+       max(billDetail.Weight) ratedWeight,
+       max(billDetail.Volume) ratedVolume
+  from (select max(task.id) id,
+               max(task.unload_task_no) taskNo,
+               max(task.unload_end_time) taskEndTime,
+               max(task.unload_type) taskType,
+               max(detail.unload_volume_total) unloadedWeight,
+               max(detail.unload_volume_total) unloadedVolume
+          from tfr.t_Opt_unLoad_Task task
+          left join tfr.t_opt_unload_waybill_detail detail on task.id =
+                                                              detail.unload_task_id
+        
+         where task.unload_task_no = #{taskNo}
+           <!-- and task.task_state = #{taskState} -->
+         group by vehicle_no) unloadTask
+  left join tfr.t_opt_unload_bill_detail billDetail on billDetail.Unload_Task_Id =
+                                                       unloadTask.id
+ group by taskNo
+	</select>
+	
+</mapper>
+
+

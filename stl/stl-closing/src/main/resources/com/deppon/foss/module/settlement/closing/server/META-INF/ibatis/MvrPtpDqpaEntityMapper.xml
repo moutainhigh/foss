@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="closing.MvrPtpDqpaMapper">
+    <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.closing.api.shared.domain.MvrPtpDqpaEntity" >
+        <id column="ID" property="id" jdbcType="VARCHAR" />
+        <result column="PERIOD" property="period" jdbcType="VARCHAR" />
+        <result column="PRODUCT_CODE" property="productCode" jdbcType="VARCHAR" />
+        <result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+        <result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+        <result column="ORIG_ORG_CODE" property="origOrgCode" jdbcType="VARCHAR" />
+        <result column="ORIG_ORG_NAME" property="origOrgName" jdbcType="VARCHAR" />
+        <result column="DEST_ORG_CODE" property="destOrgCode" jdbcType="VARCHAR" />
+        <result column="DEST_ORG_NAME" property="destOrgName" jdbcType="VARCHAR" />
+        <result column="VOUCHER_BEGIN_TIME" property="voucherBeginTime" jdbcType="TIMESTAMP" />
+        <result column="VOUCHER_END_TIME" property="voucherEndTime" jdbcType="TIMESTAMP" />
+        <result column="REC_ORG_CODE" property="recOrgCode" jdbcType="VARCHAR" />
+        <result column="REC_ORG_NAME" property="recOrgName" jdbcType="VARCHAR" />
+        <result column="PAY_ORG_CODE" property="payOrgCode" jdbcType="VARCHAR" />
+        <result column="PAY_ORG_NAME" property="payOrgName" jdbcType="VARCHAR" />
+        <result column="DEP_ORG_CODE" property="depOrgCode" jdbcType="VARCHAR" />
+        <result column="DEP_ORG_NAME" property="depOrgName" jdbcType="VARCHAR" />
+        <result column="RD_DR_PAY_APPLY" property="rdDrPayApply" jdbcType="DECIMAL" />
+        <result column="ARRIVE_PAY_APPLY" property="arrivePayApply" jdbcType="DECIMAL" />
+        <result column="DE_ADVANCE_APPLY" property="deAdvanceApply" jdbcType="DECIMAL" />
+        <result column="DEST_ADVANCE_APPLY" property="destAdvanceApply" jdbcType="DECIMAL" />
+        <result column="AD_PAY_APPLY" property="adPayApply" jdbcType="DECIMAL" />
+    </resultMap>
+
+    <sql id="baseColumns">
+        ID,
+        PERIOD,
+        PRODUCT_CODE,
+        CUSTOMER_CODE,
+        CUSTOMER_NAME,
+        ORIG_ORG_CODE,
+        ORIG_ORG_NAME,
+        DEST_ORG_CODE,
+        DEST_ORG_NAME,
+        VOUCHER_BEGIN_TIME,
+        VOUCHER_END_TIME,
+        REC_ORG_CODE,
+        REC_ORG_NAME,
+        PAY_ORG_CODE,
+        PAY_ORG_NAME,
+        DEP_ORG_CODE,
+        DEP_ORG_NAME,
+        RD_DR_PAY_APPLY/100 AS RD_DR_PAY_APPLY,
+        ARRIVE_PAY_APPLY/100 AS ARRIVE_PAY_APPLY,
+        DE_ADVANCE_APPLY/100 AS DE_ADVANCE_APPLY,
+        DEST_ADVANCE_APPLY/100 AS DEST_ADVANCE_APPLY,
+        AD_PAY_APPLY/100 AS AD_PAY_APPLY
+    </sql>
+
+    <sql id="select_mvrptpDqpa_where">
+        <where>
+            <if test="period != null and period != ''">
+                and  mvr.period =#{period ,jdbcType=VARCHAR}
+            </if>
+            <if test="customerCode != null and customerCode != ''">
+                and   mvr.customer_code = #{customerCode,jdbcType=VARCHAR}
+            </if>
+            <if test="origOrgCode != null and origOrgCode != ''">
+                and  mvr.ORIG_ORG_CODE = #{origOrgCode,jdbcType=VARCHAR}
+            </if>
+            <if test="destOrgCode !=null and destOrgCode != ''">
+                and  mvr.DEST_ORG_CODE =#{destOrgCode,jdbcType=VARCHAR}
+            </if>
+            <if test="productCodeList != null and productCodeList.size()>0">
+                and mvr.PRODUCT_CODE in
+                <foreach collection="productCodeList" index="index" item="item" open="(" separator="," close=")">
+                    #{item,jdbcType=VARCHAR}
+                </foreach>
+            </if>
+        </where>
+    </sql>
+
+    <select id="queryMvrPtpDqpaByParams"
+            parameterType="com.deppon.foss.module.settlement.closing.api.shared.dto.MvrPtpDqpaQueryDto"
+            resultMap="BaseResultMap">
+        select
+        <include refid="baseColumns"/>
+        FROM STV.T_STL_MVR_PTP_DQPA MVR
+        <include refid="select_mvrptpDqpa_where"></include>
+    </select>
+
+    <select id="queryMvrPtpDqpaEntityTotalCount"
+            parameterType="com.deppon.foss.module.settlement.closing.api.shared.dto.MvrPtpDqpaQueryDto"
+            resultType="long">
+        select count(*)
+        FROM STV.T_STL_MVR_PTP_DQPA MVR
+        <include refid="select_mvrptpDqpa_where"></include>
+    </select>
+</mapper>

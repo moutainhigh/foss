@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.supplier" >
+
+  <!-- 供应商实体的resultMap -->
+  <resultMap id="SupplierResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.domain.SupplierEntity" >
+  	<result column="id" property="id" jdbcType="VARCHAR" />
+    <result column="code" property="code" jdbcType="VARCHAR" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+    <result column="simple_Name" property="simpleName" jdbcType="VARCHAR" />
+    <result column="contact_Person" property="contactPerson" jdbcType="VARCHAR" />
+    <result column="contact_Phone" property="contactPhone" jdbcType="VARCHAR" />
+    <result column="contact_Address" property="contactAddress" jdbcType="VARCHAR" />
+    <result column="furniture_Flag" property="furnitureFlag" jdbcType="CHAR" />
+    <result column="household_Flag" property="householdFlag" jdbcType="CHAR" />
+    <result column="construction_Flag" property="constructionFlag" jdbcType="CHAR" />
+    <result column="remark" property="remark" jdbcType="VARCHAR" />
+	<result column="create_Time" property="createTime" jdbcType="TIMESTAMP" />
+	<result column="update_Time" property="updateTime" jdbcType="TIMESTAMP" />
+	<result column="active_Time" property="activeTime" jdbcType="TIMESTAMP"/>
+	<result column="is_Using" property="isUsing" jdbcType="CHAR" />
+    <result column="active" property="active" jdbcType="CHAR" />
+  </resultMap>
+   
+   
+   
+   <!--  供应商选择器，根据名称分页查询供应商信息   -->
+   <select id="comboQuerySupplier" resultMap="SupplierResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SupplierEntity">
+     SELECT  /** 综合：供应商选择器，根据名称分页查询供应商信息**/
+     	*
+    	FROM
+    	bse.t_Bas_supplier s
+    	<where>
+    		<if test="name != null and name !='' ">
+    			AND s.name like '%'||#{name,jdbcType=VARCHAR}||'%'
+    		</if>
+    		AND s.is_using='Y'
+    		AND s.active='Y'
+    	</where>
+    </select>
+    
+     <!--  供应商选择器，根据名称分页查询供应商信息   -->
+   <select id="countComboQuerySupplier" resultType="Long" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SupplierEntity">
+     SELECT  /** 综合：供应商选择器，根据名称分页查询供应商信息**/
+     	count(*)
+    	FROM
+    	bse.t_Bas_supplier s
+    	<where>
+    		<if test="name != null and name !='' ">
+    			AND s.name like '%'||#{name,jdbcType=VARCHAR}||'%'
+    		</if>
+    		AND s.is_using='Y'
+    		AND s.active='Y'
+    	</where>
+    </select>
+    <!-- 根据编码作废供应商 -->
+	<update id="deleteSupplierByCode" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SupplierEntity">
+		update bse.t_Bas_supplier s
+		<set>
+			s.active='N',
+			s.update_Time = #{updateTime,jdbcType=TIMESTAMP},
+		</set>
+    	where s.active='Y'
+			<if test="code != null and code !='' ">
+    			AND s.code=#{code,jdbcType=VARCHAR}
+    		</if>
+	</update>
+	<!-- 新增供应商 -->
+	<insert id="addSupplier" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SupplierEntity">
+		insert into bse.t_Bas_supplier s 
+		values (
+		#{id, jdbcType=VARCHAR},
+		#{code, jdbcType=VARCHAR},
+		#{name, jdbcType=VARCHAR},
+		#{simpleName, jdbcType=VARCHAR},
+		#{contactPerson, jdbcType=VARCHAR},
+		#{contactPhone, jdbcType=VARCHAR},
+		#{contactAddress, jdbcType=VARCHAR},
+		#{furnitureFlag, jdbcType=CHAR},
+		#{householdFlag, jdbcType=CHAR},
+		#{constructionFlag, jdbcType=CHAR},
+		#{remark, jdbcType=VARCHAR},
+		#{createTime, jdbcType=TIMESTAMP},
+		#{updateTime, jdbcType=TIMESTAMP},
+		#{activeTime, jdbcType=TIMESTAMP},
+		#{isUsing, jdbcType=CHAR},
+		'Y'
+		)
+	</insert>
+	<!-- 根据供应商编码，查询供应商信息 -->
+	<select id="querySupplierByCode" resultMap="SupplierResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SupplierEntity">
+		select /** 综合：根据供应商编码，查询供应商信息 **/
+		*
+		from bse.t_Bas_supplier s
+		<where>
+			active='Y'
+			<if test="code != null and code != ''">
+				AND code = #{code, jdbcType=VARCHAR} 
+			</if>
+		</where>
+	</select>
+
+</mapper>

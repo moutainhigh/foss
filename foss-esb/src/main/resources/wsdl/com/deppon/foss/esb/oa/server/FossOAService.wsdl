@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+	xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	xmlns:tns="http://www.deppon.com/foss/workflowService"
+	xmlns:tns_domain="http://www.deppon.com/esb/inteface/domain/workflow"
+	xmlns:tns_header="http://www.deppon.com/esb/header"
+	xmlns:tns_exception="http://www.deppon.com/esb/exception"
+	targetNamespace="http://www.deppon.com/foss/workflowService" name="WorkflowService">
+	<wsdl:types>
+		<xsd:schema targetNamespace="http://www.deppon.com/esb/inteface/domain/workflow">
+			<xsd:include schemaLocation="FOSS_NOTICE_FINDLABEL.xsd" />
+			<xsd:include schemaLocation="FOSS_CONTRABAND_STATUS_UPDATE.xsd" />
+			<xsd:include schemaLocation="FOSS_QUERY_PACKAGE.xsd"></xsd:include>
+		</xsd:schema>
+		<xsd:schema targetNamespace="http://www.deppon.com/esb/header">
+			<xsd:include schemaLocation="ESBHeader.xsd" />
+		</xsd:schema>
+		<xsd:schema targetNamespace="http://www.deppon.com/esb/exception">
+			<xsd:include schemaLocation="CommonException.xsd" />
+		</xsd:schema>
+	</wsdl:types>
+
+	<wsdl:message name="GoodsFoundRequest">
+		<wsdl:part element="tns_domain:goodsFoundRequest" name="goodsFoundRequest" />
+		<wsdl:part name="esbHeader" element="tns_header:esbHeader"></wsdl:part>
+	</wsdl:message>
+	<wsdl:message name="GoodsFoundResponse">
+		<wsdl:part element="tns_domain:goodsFoundResponse" name="goodsFoundResponse" />
+		<wsdl:part name="esbHeader" element="tns_header:esbHeader"></wsdl:part>
+	</wsdl:message>
+	
+	<wsdl:message name="ContrabandStatusRequest">
+		<wsdl:part name="contrabandStatusRequest" element="tns_domain:contrabandStatusRequest"></wsdl:part>
+		<wsdl:part name="esbHeader" element="tns_header:esbHeader"></wsdl:part>
+	</wsdl:message>
+	<wsdl:message name="ContrabandStatusResponse">
+		<wsdl:part element="tns_domain:contrabandStatusResponse" name="contrabandStatusResponse" />
+		<wsdl:part name="esbHeader" element="tns_header:esbHeader"></wsdl:part>
+	</wsdl:message>
+	
+	<wsdl:message name="queryExpressPackageRequest">
+		<wsdl:part name="queryExpressPackageRequest" element="tns_domain:queryExpressPackageRequest"></wsdl:part>
+		<wsdl:part name="esbHeader" element="tns_header:esbHeader"></wsdl:part>
+	</wsdl:message>
+	<wsdl:message name="queryExpressPackageResponse">
+		<wsdl:part name="queryExpressPackageResponse" element="tns_domain:queryExpressPackageResponse" />
+		<wsdl:part name="esbHeader" element="tns_header:esbHeader"></wsdl:part>
+	</wsdl:message>
+
+	<wsdl:message name="ESBHeader">
+		<wsdl:part element="tns_header:esbHeader" name="header" />
+	</wsdl:message>
+	<wsdl:message name="CommonException">
+		<wsdl:part element="tns_exception:commonExceptionInfo" name="exception" />
+	</wsdl:message>
+	<wsdl:portType name="WorkflowService">
+		<wsdl:operation name="notifyFindLable">
+			<wsdl:documentation>FOSS_NOTICE_FINDLABEL：通知无标签多货找到接口</wsdl:documentation>
+			<wsdl:input message="tns:GoodsFoundRequest" />
+			<wsdl:output message="tns:GoodsFoundResponse" />
+			<wsdl:fault name="exception" message="tns:CommonException"></wsdl:fault>
+		</wsdl:operation>
+		
+		<wsdl:operation name="updateContrabandStatus">
+			<wsdl:documentation>FOSS_CONTRABAND_STATUS_UPDATE  违禁品状态更新</wsdl:documentation>
+			<wsdl:input message="tns:ContrabandStatusRequest" />
+			<wsdl:output message="tns:ContrabandStatusResponse" />
+			<wsdl:fault name="exception" message="tns:CommonException"></wsdl:fault>
+		</wsdl:operation>
+
+		<wsdl:operation name="queryExpressPackage">
+			<wsdl:documentation>查询快递包</wsdl:documentation>
+			<wsdl:input message="tns:queryExpressPackageRequest" />
+			<wsdl:output message="tns:queryExpressPackageResponse" />
+			<wsdl:fault name="exception" message="tns:CommonException"></wsdl:fault>
+		</wsdl:operation>
+	</wsdl:portType>
+
+	<wsdl:binding name="WorkflowServiceSOAP" type="tns:WorkflowService">
+		<soap:binding style="document"
+			transport="http://schemas.xmlsoap.org/soap/http" />
+		<wsdl:operation name="notifyFindLable">
+			<soap:operation
+				soapAction="http://www.deppon.com/foss/fossOaService/notifyFindLable" />
+			<wsdl:input>
+				<soap:header use="literal" part="esbHeader" message="tns:GoodsFoundRequest"></soap:header>
+				<soap:body use="literal" parts="goodsFoundRequest" />
+			</wsdl:input>
+			<wsdl:output>
+				<soap:header use="literal" part="esbHeader" message="tns:GoodsFoundResponse"></soap:header>
+				<soap:body use="literal" parts="goodsFoundResponse"/>
+			</wsdl:output>
+		</wsdl:operation>
+		
+		<wsdl:operation name="updateContrabandStatus">
+			<soap:operation
+				soapAction="http://www.deppon.com/foss/fossOaService/updateContrabandStatus" />
+			<wsdl:input>
+				<soap:header use="literal" part="esbHeader" message="tns:ContrabandStatusRequest"></soap:header>
+				<soap:body use="literal" parts="contrabandStatusRequest" />
+			</wsdl:input>
+			<wsdl:output>
+				<soap:header use="literal" part="esbHeader" message="tns:ContrabandStatusResponse"></soap:header>
+				<soap:body use="literal" parts="contrabandStatusResponse"/>
+			</wsdl:output>
+		</wsdl:operation>
+		
+		<wsdl:operation name="queryExpressPackage">
+			<soap:operation soapAction="http://www.deppon.com/foss/fossOaService/queryExpressPackage"/>
+			<wsdl:input >
+				<soap:header use="literal" part="esbHeader" message="tns:queryExpressPackageRequest"></soap:header>
+				<soap:body use="literal" parts="queryExpressPackageRequest"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:header use="literal" part="esbHeader" message="tns:queryExpressPackageResponse"></soap:header>
+				<soap:body use="literal" parts="queryExpressPackageResponse"/>
+			</wsdl:output>
+		</wsdl:operation>
+	</wsdl:binding>
+
+	<wsdl:service name="WorkflowService">
+		<wsdl:port binding="tns:WorkflowServiceSOAP" name="WorkflowServiceSOAP">
+			<soap:address location="http://www.example.org/" />
+		</wsdl:port>
+	</wsdl:service>
+
+</wsdl:definitions>

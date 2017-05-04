@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.cusOrderSource">
+	<!-- 客户行业信息 -->
+	<resultMap id="cusOrderSourceResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusOrderSourceEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="SEC_PROFESSION_CODE" property="secDegreeProfessionCode" jdbcType="VARCHAR" />
+		<result column="SEC_PROFESSION_NAME" property="secDegreeProfessionName" jdbcType="VARCHAR" />
+		<result column="FIR_PROFESSION_CODE" property="firDegreeProfessionCode" jdbcType="VARCHAR" />
+		<result column="FIR_PROFESSION_NAME" property="firDegreeProfessionName" jdbcType="VARCHAR" />
+		<result column="DEGREE_NAME" property="customerDegreeName" jdbcType="VARCHAR" />
+		<result column="DEGREE_CODE" property="customerDegreeCode" jdbcType="VARCHAR" />
+		<result column="SOURCE_NAME" property="orderSourceName" jdbcType="VARCHAR" />
+		<result column="SOURCE_CODE" property="orderSourceCode" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="VERSION_NO" property="versionNo" jdbcType="NUMERIC" />	
+	</resultMap>
+	
+	<!-- 数据字段 -->
+	<sql id="cusProfession_Column_List">
+		P.ID AS ID,
+		P.CREATE_TIME AS CREATE_TIME, 
+		P.MODIFY_TIME AS MODIFY_TIME,
+		P.CREATE_USER AS CREATE_USER_CODE,
+		P.MODIFY_USER AS MODIFY_USER_CODE,
+		P.PROFESSION_CODE AS SEC_PROFESSION_CODE,
+		P.PROFESSION_NAME AS SEC_PROFESSION_NAME,
+		P.PARENT_PROFESSION_CODE AS FIR_PROFESSION_CODE,
+		P.PARENT_PROFESSION_NAME AS FIR_PROFESSION_NAME,
+		P.ACTIVE AS ACTIVE,
+		P.VERSION_NO AS VERSION_NO
+	</sql>
+	<sql id="cusDegree_Column_List">
+		D.ID AS ID,
+		D.CREATE_TIME AS CREATE_TIME,
+		D.MODIFY_TIME AS MODIFY_TIME,
+		D.CREATE_USER AS CREATE_USER_CODE,
+		D.MODIFY_USER AS MODIFY_USER_CODE,
+		D.DEGREE_NAME AS DEGREE_NAME,
+		D.DEGREE_CODE AS DEGREE_CODE,
+		D.ACTIVE AS ACTIVE,
+		D.VERSION_NO AS VERSION_NO
+	</sql>
+	<sql id="orderSource_Column_List">
+		O.ID AS ID,
+		O.CREATE_TIME AS CREATE_TIME,
+		O.MODIFY_TIME AS MODIFY_TIME,
+		O.CREATE_USER AS CREATE_USER_CODE,
+		O.MODIFY_USER AS MODIFY_USER_CODE,
+		O.SOURCE_NAME AS SOURCE_NAME,
+		O.SOURCE_CODE AS SOURCE_CODE,
+		O.ACTIVE AS ACTIVE,
+		O.VERSION_NO AS VERSION_NO
+	</sql>
+
+	<!-- 根据编码查询行业信息 -->
+	<select id="queryCusProfessionByCode" resultMap="cusOrderSourceResultMap"
+			parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusOrderSourceEntity" >
+		<![CDATA[
+			SELECT
+			/** 综合:根据二级行业编码查询行业信息实体 **/
+		]]>
+		<include refid="cusProfession_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUSTOMER_PROFESSION P
+		]]>
+		<where>
+		    <if test="secDegreeProfessionCode != null and secDegreeProfessionCode != ''">
+		        P.PROFESSION_CODE = #{secDegreeProfessionCode,jdbcType=VARCHAR}
+		    </if>
+		   <![CDATA[
+		        AND P.ACTIVE = 'Y'
+		   ]]>
+		</where>
+	</select>
+	<!-- 根据编码查询客户等级信息 -->
+	<select id="queryCusDegreeByCode" resultMap="cusOrderSourceResultMap"
+			parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusOrderSourceEntity" >
+		<![CDATA[
+			SELECT
+			/** 综合:根据编码查询客户等级信息实体 **/
+		]]>
+		<include refid="cusDegree_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUSTOMER_DEGREE D
+		]]>
+		<where>
+		    <if test="customerDegreeCode != null and customerDegreeCode != ''">
+		        D.DEGREE_CODE = #{customerDegreeCode,jdbcType=VARCHAR}
+		    </if>
+		   <![CDATA[
+		        AND D.ACTIVE = 'Y'
+		   ]]>
+		</where>
+	</select>
+	<!-- 根据编码查询订单来源 -->
+	<select id="queryOrderSourceByCode" resultMap="cusOrderSourceResultMap"
+			parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusOrderSourceEntity">
+		<![CDATA[
+			SELECT
+			/** 综合:根据编码查询订单来源信息实体 **/
+		]]>
+		<include refid="orderSource_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_ORDER_SOURCE O
+		]]>
+		<where>
+		    <if test="orderSourceCode != null and orderSourceCode != ''">
+		        O.SOURCE_CODE = #{orderSourceCode,jdbcType=VARCHAR}
+		    </if>
+		   <![CDATA[
+		        AND O.ACTIVE = 'Y'
+		   ]]>
+		</where>
+	</select>
+
+	<!-- 新增行业信息 -->
+	<insert id="insertCusProfession"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusOrderSourceEntity">
+		<![CDATA[
+			INSERT 
+			/** 综合:新增行业信息 **/ INTO BSE.T_BAS_CUSTOMER_PROFESSION P	(
+		ID,CREATE_TIME,MODIFY_TIME,CREATE_USER,MODIFY_USER,PROFESSION_CODE,
+		PROFESSION_NAME,PARENT_PROFESSION_CODE,PARENT_PROFESSION_NAME,ACTIVE,
+		VERSION_NO
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, 
+		#{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR},
+		#{secDegreeProfessionCode,jdbcType=VARCHAR},
+		#{secDegreeProfessionName,jdbcType=VARCHAR},
+		#{firDegreeProfessionCode,jdbcType=VARCHAR},
+		#{firDegreeProfessionName,jdbcType=VARCHAR},
+		#{active,jdbcType=CHAR},
+		#{versionNo,jdbcType=NUMERIC}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+	<!-- 新增客户等级信息 -->
+	<insert id="insertCusDegree"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusOrderSourceEntity">
+		<![CDATA[
+			INSERT 
+			/** 综合:新增客户等级信息 **/ INTO BSE.T_BAS_CUSTOMER_DEGREE D	(
+		ID,CREATE_TIME,MODIFY_TIME,CREATE_USER,MODIFY_USER,DEGREE_NAME,
+		DEGREE_CODE,ACTIVE,VERSION_NO
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, 
+		#{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR},
+		#{customerDegreeName,jdbcType=VARCHAR},
+		#{customerDegreeCode,jdbcType=VARCHAR},
+		#{active,jdbcType=CHAR},
+		#{versionNo,jdbcType=NUMERIC}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+	<!-- 新增订单来源信息 -->
+	<insert id="insertOrderSource"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusOrderSourceEntity">
+		<![CDATA[
+			INSERT 
+			/** 综合:新增订单来源信息 **/ INTO BSE.T_BAS_ORDER_SOURCE O(
+		ID,CREATE_TIME,MODIFY_TIME,CREATE_USER,MODIFY_USER,SOURCE_NAME,
+		SOURCE_CODE,ACTIVE,VERSION_NO
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, 
+		#{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR},
+		#{orderSourceName,jdbcType=VARCHAR},
+		#{orderSourceCode,jdbcType=VARCHAR},
+		#{active,jdbcType=CHAR},
+		#{versionNo,jdbcType=NUMERIC}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+
+	<!-- 作废行业信息 -->
+	<update id="deleteCusProfession"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusOrderSourceEntity">
+		update/** 综合:作废行业信息 **/ BSE.T_BAS_CUSTOMER_PROFESSION P
+		<set>
+		P.MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+		P.MODIFY_USER = #{modifyUser,jdbcType=VARCHAR},
+		P.ACTIVE = #{active,jdbcType=CHAR},
+		P.VERSION_NO = #{versionNo,jdbcType=NUMERIC}
+		</set>
+		<where>
+			<if test="secDegreeProfessionCode != null and secDegreeProfessionCode != ''">
+				P.PROFESSION_CODE = #{secDegreeProfessionCode,jdbcType=VARCHAR}
+			</if>
+			AND P.ACTIVE='Y'
+		</where>
+	</update>
+	<!-- 作废客户等级信息 -->
+	<update id="deleteCusDegree"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusOrderSourceEntity">
+		update/** 综合:作废客户等级信息 **/ BSE.T_BAS_CUSTOMER_DEGREE D
+		<set>
+		D.MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+		D.MODIFY_USER = #{modifyUser,jdbcType=VARCHAR},
+		D.ACTIVE = #{active,jdbcType=CHAR},
+		D.VERSION_NO = #{versionNo,jdbcType=NUMERIC}
+		</set>
+		<where>
+			<if test="customerDegreeCode != null and customerDegreeCode != ''">
+				D.DEGREE_CODE = #{customerDegreeCode,jdbcType=VARCHAR}
+			</if>
+			AND D.ACTIVE='Y'
+		</where>
+	</update>
+	<!-- 作废订单来源信息 -->
+	<update id="deleteOrderSource"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusOrderSourceEntity">
+		update/** 综合:作废订单来源信息 **/ BSE.T_BAS_ORDER_SOURCE O
+		<set>
+		O.MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+		O.MODIFY_USER = #{modifyUser,jdbcType=VARCHAR},
+		O.ACTIVE = #{active,jdbcType=CHAR},
+		O.VERSION_NO = #{versionNo,jdbcType=NUMERIC}
+		</set>
+		<where>
+			<if test="orderSourceCode != null and orderSourceCode != ''">
+				O.SOURCE_CODE = #{orderSourceCode,jdbcType=VARCHAR}
+			</if>
+			AND O.ACTIVE='Y'
+		</where>
+	</update>
+
+</mapper>

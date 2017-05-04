@@ -1,0 +1,1 @@
+ESBHeader.xsd,CommonException.xsd 在core包里

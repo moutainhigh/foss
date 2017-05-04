@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="Foss.scheduling.TruckDepartPlanUpdate" >
+  <resultMap id="TruckDepartPlanUpdateEntityResultMap" type="com.deppon.foss.module.transfer.scheduling.api.shared.domain.TruckDepartPlanUpdateEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="TRUCK_DEPART_PLAN_DETAIL_ID" property="truckDepartPlanDetailId" jdbcType="VARCHAR" />
+    <result column="MODIFY_CONTENT" property="modifyContent" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="CREATE_USER_CODE" property="createUserCode" jdbcType="VARCHAR" />
+    <result column="CREATE_USER_NAME" property="createUserName" jdbcType="VARCHAR" />
+    <result column="CREATE_ORG_CODE" property="createOrgCode" jdbcType="VARCHAR" />
+    <result column="LOG_TYPE" property="logType" jdbcType="VARCHAR" />
+  </resultMap>
+  
+  <sql id="TruckDepartPlanUpdate_Column_List" >
+    ID, TRUCK_DEPART_PLAN_DETAIL_ID, MODIFY_CONTENT, CREATE_TIME, CREATE_USER_CODE, CREATE_USER_NAME, 
+    CREATE_ORG_CODE,LOG_TYPE
+  </sql>  
+  
+  <!--新增日志-->
+  <insert id="addTruckDepartPlanUpdate" parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.TruckDepartPlanUpdateEntity" >
+    insert into TFR.T_OPT_TRUCK_DEPART_PLAN_UPDATE (ID, TRUCK_DEPART_PLAN_DETAIL_ID, MODIFY_CONTENT, 
+      CREATE_TIME, CREATE_USER_CODE, CREATE_USER_NAME, 
+      CREATE_ORG_CODE,LOG_TYPE)
+    values (#{id,jdbcType=VARCHAR}, #{truckDepartPlanDetailId,jdbcType=VARCHAR}, #{modifyContent,jdbcType=VARCHAR}, 
+      #{createTime,jdbcType=TIMESTAMP}, #{createUserCode,jdbcType=VARCHAR}, #{createUserName,jdbcType=VARCHAR}, 
+      #{createOrgCode,jdbcType=VARCHAR},#{logType,jdbcType=VARCHAR})
+  </insert>
+  
+  <!--批量新增日志-->
+  <insert id="addTruckDepartPlanUpdates" parameterType="java.util.List" >
+  	BEGIN 
+	<foreach collection="list" item="item"  separator=";">
+		    insert into TFR.T_OPT_TRUCK_DEPART_PLAN_UPDATE (ID, TRUCK_DEPART_PLAN_DETAIL_ID, MODIFY_CONTENT, 
+		      CREATE_TIME, CREATE_USER_CODE, CREATE_USER_NAME, 
+		      CREATE_ORG_CODE,LOG_TYPE)
+		    values (#{item.id,jdbcType=VARCHAR}, #{item.truckDepartPlanDetailId,jdbcType=VARCHAR}, #{item.modifyContent,jdbcType=VARCHAR}, 
+		      #{item.createTime,jdbcType=TIMESTAMP}, #{item.createUserCode,jdbcType=VARCHAR}, #{item.createUserName,jdbcType=VARCHAR}, 
+		      #{item.createOrgCode,jdbcType=VARCHAR},#{item.logType,jdbcType=VARCHAR})
+      </foreach>
+		;END;
+  </insert>
+  
+  <!--批量新增日志单条-->
+  <insert id="addTruckDepartPlanUpdatesOne" parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.TruckDepartPlanUpdateEntity" >
+  			insert into TFR.T_OPT_TRUCK_DEPART_PLAN_UPDATE (ID, TRUCK_DEPART_PLAN_DETAIL_ID, MODIFY_CONTENT, 
+		      CREATE_TIME, CREATE_USER_CODE, CREATE_USER_NAME, 
+		      CREATE_ORG_CODE,LOG_TYPE)
+		    values (#{id,jdbcType=VARCHAR}, #{truckDepartPlanDetailId,jdbcType=VARCHAR}, #{modifyContent,jdbcType=VARCHAR}, 
+		      #{createTime,jdbcType=TIMESTAMP}, #{createUserCode,jdbcType=VARCHAR}, #{createUserName,jdbcType=VARCHAR}, 
+		      #{createOrgCode,jdbcType=VARCHAR},#{logType,jdbcType=VARCHAR})
+      
+  </insert>
+  
+  <!--查询日志列表-->
+  <select id="queryTruckDepartPlanUpdates" resultMap="TruckDepartPlanUpdateEntityResultMap" parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.dto.TruckDepartPlanDetailDto" >
+    select 
+    <include refid="TruckDepartPlanUpdate_Column_List" />
+    from TFR.T_OPT_TRUCK_DEPART_PLAN_UPDATE loger
+     where  exists( select 1 from 
+    			 (select detail.id as DETAILID from  TFR.T_OPT_TRUCK_DEPART_PLAN dplan join TFR.T_OPT_TRUCK_DEPART_PLAN_DETAIL detail
+                 on detail.TRUCK_DEPART_PLAN_ID=dplan.ID
+                 where dplan.id=#{truckDepartPlanId}
+                 <if test="id!=null and id !=''">
+                 	and detail.id=#{id}
+                 </if>
+                 ) temp 
+      where temp.DETAILID=loger.TRUCK_DEPART_PLAN_DETAIL_ID 
+      )
+      ORDER BY loger.CREATE_TIME DESC
+  </select>
+  
+  <!--查询明细日志总数-->
+  <select id="queryTotalCount" parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.dto.TruckDepartPlanDetailDto" resultType="Long" >
+    select count(loger.ID) as cnt
+    from TFR.T_OPT_TRUCK_DEPART_PLAN_UPDATE loger
+     where  exists( select 1 from 
+    			 (select detail.id as DETAILID from  TFR.T_OPT_TRUCK_DEPART_PLAN dplan join TFR.T_OPT_TRUCK_DEPART_PLAN_DETAIL detail
+                 on detail.TRUCK_DEPART_PLAN_ID=dplan.ID
+                 where dplan.id=#{truckDepartPlanId}
+                  <if test="id!=null and id !=''">
+                 	and detail.id=#{id}
+                 </if>
+                 ) temp 
+      where temp.DETAILID=loger.TRUCK_DEPART_PLAN_DETAIL_ID
+      )
+  </select>
+  
+</mapper>

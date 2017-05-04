@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.PdaStatementManageDao">
+	<!-- 对账单结果集 -->
+	<resultMap id="PdaStatementResultMap"
+		type="com.deppon.foss.module.settlement.common.api.shared.domain.PdaStatementManageEntity">
+		<result column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="STATEMENT_BILL_NO" property="statementNo"
+			jdbcType="VARCHAR" />
+		<result column="CUSTOMER_CODE" property="customeCode" jdbcType="VARCHAR" />
+		<result column="CUSTOMER_NAME" property="customerName"
+			jdbcType="VARCHAR" />
+		<result column="PERIOD_AMOUNT" property="amount" jdbcType="DECIMAL" />
+		<result column="UNPAID_AMOUNT" property="unVerifyAmount"
+			jdbcType="DECIMAL" />
+		<result column="VERSION" property="version" jdbcType="VARCHAR"/>	
+	</resultMap>
+
+	<!-- 根据对账单号或客户编码去查询 -->
+	<select id="queryStatementByNo"
+		parameterType="com.deppon.foss.module.settlement.common.api.shared.dto.CommonQueryParamDto"
+		resultMap="PdaStatementResultMap">
+		<if test="orgCode ==  null or orgCode == ''">
+			SELECT /*根据对账单号或客户编码去查询对账单*/
+			sa.id ID,
+			sa.Statement_Bill_No STATEMENT_BILL_NO,--对账单号
+			sa.customer_name CUSTOMER_NAME,
+			sa.customer_code CUSTOMER_CODE,
+			sa.period_amount/100 PERIOD_AMOUNT,--本期发生额 --->对账单金额
+			sa.unpaid_amount/100 UNPAID_AMOUNT, --未还金额  -->未核销金额 
+			sa.version_no VERSION -- 版本
+			FROM STL.T_STL_STATEMENT_OF_ACCOUNT sa
+			WHERE sa.CONFIRM_STATUS = 'C'
+			AND sa.UNPAID_AMOUNT !=0
+			AND (sa.unified_settlement = 'N' or sa.unified_settlement is null) /*不是统一结算的*/
+      		AND (sa.customer_type != 'LC'  or sa.customer_type is null)  /*过滤掉大客户对账单*/
+		    AND (sa.statement_bill_no in 
+		   		 <foreach collection="numbers" item="item" index="index" open="(" close=")" separator=",">
+		    			#{item,jdbcType=VARCHAR}
+		    	 </foreach>
+	        or sa.customer_code in 
+	        	 <foreach collection="numbers" item="item" index="index" open="(" close=")" separator=",">
+		    		#{item,jdbcType=VARCHAR}
+		   		 </foreach>
+	        )
+	        AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V --当前用户可以操作的营业部信息
+   				WHERE V.EMP_CODE = #{empCode,jdbcType=VARCHAR}--登录者员工编码等于配置表编码
+   				AND V.ORG_CODE = sa.CREATE_ORG_CODE/*制作部门*/
+     			)
+	        order by sa.business_date desc
+		</if>
+		<if test="orgCode != null and orgCode != ''">
+		    SELECT
+				sa.id ID,
+				sa.Statement_Bill_No STATEMENT_BILL_NO,/*对账单号*/
+				sa.customer_name CUSTOMER_NAME,
+				sa.customer_code CUSTOMER_CODE,
+				sa.period_amount/100 PERIOD_AMOUNT,--本期发生额 --->对账单金额
+				sa.unpaid_amount/100 UNPAID_AMOUNT, --未还金额  -->未核销金额 
+				sa.version_no VERSION -- 版本
+			FROM STL.T_STL_STATEMENT_OF_ACCOUNT sa
+			WHERE sa.UNPAID_AMOUNT !=0
+			AND sa.CONFIRM_STATUS = 'C'
+			AND (sa.unified_settlement = 'N' or sa.unified_settlement is null) /*不是统一结算的*/
+      		AND (sa.customer_type != 'LC'  or sa.customer_type is null)   /*过滤掉大客户对账单*/
+			AND sa.CREATE_ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+			AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V --当前用户可以操作的营业部信息
+   				WHERE V.EMP_CODE = #{empCode,jdbcType=VARCHAR}--登录者员工编码等于配置表编码
+   				AND V.ORG_CODE = sa.CREATE_ORG_CODE/*制作部门*/
+     			)
+			order by sa.business_date desc
+		</if>
+		
+	</select>
+	<!-- 更新明细金额根据单据号和交易流水号-->
+  	<update id="updateSinglePosCardDetailByNo" parameterType="com.deppon.foss.module.settlement.common.api.shared.domain.PosCardDetailEntity">
+  			update 
+  				/******POS刷卡管理---更新明细金额根据单据号和交易流水号**********/
+	  		stl.t_stl_pos_card_detail cd set
+	            cd.occupate_amount = cd.occupate_amount + #{occupateAmount,jdbcType=DECIMAL}*100,
+	            cd.unverify_amount = cd.unverify_amount - #{occupateAmount,jdbcType=DECIMAL}*100,
+	            cd.modify_time = sysdate,
+	            cd.modify_user_name = #{modifyUser,jdbcType=VARCHAR},
+	            cd.modify_user_code = #{modifyUserCode,jdbcType=VARCHAR},
+	            cd.version = cd.version +1
+	            where cd.isdelete = 'N'
+	            AND cd.INVOICE_NO = #{invoiceNo,jdbcType=VARCHAR} 
+	            AND cd.TRADE_SERIAL_NO = #{tradeSerialNo,jdbcType=VARCHAR}
+  	</update>
+  	
+  	<!-- 根据交易流水号去更新已使用流水号金额和未使用金额 -->
+  	<update id="updatePosCardByNo" parameterType="com.deppon.foss.module.settlement.common.api.shared.domain.PosCardDetailEntity">
+  			update 
+  			/******POS刷卡管理--- 根据交易流水号去更新已使用流水号金额和未使用金额**********/
+  			stl.t_stl_pos_card pc set
+		       pc.used_amount =  pc.used_amount + #{occupateAmount,jdbcType=DECIMAL}*100,
+		       pc.unused_amount = pc.unused_amount - #{occupateAmount,jdbcType=DECIMAL}*100,/*occupateAmount 已使用流水号金额*/
+		       pc.modify_time = sysdate,
+		       pc.modify_user_name = #{modifyUser,jdbcType=VARCHAR},
+	           pc.modify_user_code = #{modifyUserCode,jdbcType=VARCHAR},
+		       pc.version = pc.version +1
+		    where pc.active = 'Y'
+		    and pc.TRADE_SERIAL_NO = #{tradeSerialNo,jdbcType=VARCHAR}   
+  	</update>
+  	
+  	<!-- 插入对账单还款单 -->
+    <insert id="insertSoaRepaymentEntity" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.domain.PdaSoaRepaymentEntity" >
+		    insert into /*插入对账单还款单*/ 
+		    STL.T_STL_SOA_REPAYMENT (
+		    ID,
+		    STATEMENT_BILL_NO,
+		    REPAYMENT_NO, 
+		    PAYMENT_DATE,
+			REPAYMENT_AMOUNT)
+		    values (
+			    #{id,jdbcType=VARCHAR}, 
+			    #{statementBillNo,jdbcType=VARCHAR}, 
+			    #{repaymentNo,jdbcType=VARCHAR}, 
+			    #{paymentDate,jdbcType=TIMESTAMP}, 
+			    #{repaymentAmount,jdbcType=DECIMAL}*100
+		    )
+   </insert>
+</mapper>

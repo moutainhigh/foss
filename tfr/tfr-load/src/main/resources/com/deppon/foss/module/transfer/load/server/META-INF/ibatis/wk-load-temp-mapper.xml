@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+"-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="wk-load-temp">
+
+	<resultMap id="queryData" 
+		type="com.deppon.foss.module.transfer.common.api.shared.dto.WKLoadTempDto">
+		<result property="taskNo" column="TASK_NO" />
+		<result property="taskType" column="TASK_TYPE" />
+		<result property="jsonData" column="JSON_DATA" />
+	</resultMap>
+
+	<insert id="insertData"
+		parameterType="com.deppon.foss.module.transfer.common.api.shared.dto.WKLoadTempDto">
+		insert into TFR.T_OPT_WK_LOAD_TEMP(
+		TASK_NO, TASK_TYPE, JSON_DATA
+		) values (
+		#{taskNo,jdbcType=VARCHAR},
+		#{taskType,jdbcType=DECIMAL},
+		#{jsonData,jdbcType=VARCHAR}
+
+		)
+	</insert>
+	<delete id="deleteData" parameterType="java.lang.String">
+		delete from
+		TFR.T_OPT_WK_LOAD_TEMP where TASK_NO=#{taskNo, jdbcType=VARCHAR}
+	</delete>
+	
+	<select id="getCount" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+		select count(*) from TFR.T_OPT_WK_LOAD_TEMP
+		<if test="_parameter != null and _parameter != 0">
+			where TASK_TYPE=#{_parameter, jdbcType=DECIMAL}
+		</if>		 
+		
+		
+	</select>
+	
+	<select id="getDatasByPage" parameterType="java.lang.Integer" resultMap="queryData">
+		select T.TASK_NO, T.TASK_TYPE, T.JSON_DATA 
+		from TFR.T_OPT_WK_LOAD_TEMP T
+		where  T.STATE = 0
+		order by TASK_NO, TASK_TYPE
+	</select>
+	
+	
+	<!-- 查询是否是公司外请车车 -->
+	  <select id="isLeasedTruck" parameterType="java.lang.String" resultType="Integer">  
+	  	select count(1) from bse.t_bas_leased_truck t where t.active='Y' and  t.vehicle_no=#{newVehicleNo,jdbcType=VARCHAR}
+	  </select>
+	  
+	  <!-- 安装taskno更新交接单状态 -->
+	  <update id="updateWKLoadTempDto">
+	  	update TFR.T_OPT_WK_LOAD_TEMP T 
+	  		set T.state = 1
+	  		where TASK_NO=#{taskNo, jdbcType=VARCHAR}
+	  </update>
+	  
+	  <!-- 更新所有交接单的状态 -->
+	  <update id="updateWKLoadTempDtoState">
+	  	update TFR.T_OPT_WK_LOAD_TEMP T 
+	  		set T.state = 0
+	  </update>
+
+</mapper>

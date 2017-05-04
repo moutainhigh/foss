@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://www.springframework.org/schema/jee 
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+			http://www.springframework.org/schema/aop 
+			http://www.springframework.org/schema/aop/spring-aop-3.0.xsd"
+	default-autowire="byName" default-lazy-init="true">
+
+	<!-- dao层配置 -->
+	<!-- 部门短信广告语 -->
+	<bean id="sMSAdvertisingSloganForDeptDao"
+		class="com.deppon.foss.module.base.common.server.dao.impl.SMSAdvertisingSloganForDeptDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory" />
+	</bean>
+	<!-- 短信广告语 -->
+	<bean id="sMSAdvertisingSloganDao"
+		class="com.deppon.foss.module.base.common.server.dao.impl.SMSAdvertisingSloganDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory" />
+	</bean>
+
+	<!-- 部门短信模板 -->
+	<bean id="sMSTempleteForDeptDao"
+		class="com.deppon.foss.module.base.common.server.dao.impl.SMSTempleteForDeptDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory" />
+	</bean>
+
+	<!-- 短信模板 -->
+	<bean id="sMSTempleteDao"
+		class="com.deppon.foss.module.base.common.server.dao.impl.SMSTempleteDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory" />
+	</bean>
+	
+	<!-- 短信模板数据缓存配置**开始 -->
+	<bean id="sMSTemplateEntityCacheProvider" class="com.deppon.foss.module.base.common.server.cache.SMSTemplateEntityCacheProvider">
+		<property name="sMSTempleteDao" ref="sMSTempleteDao"></property>
+	</bean>
+	<bean id="sMSTemplateEntityCache" class="com.deppon.foss.module.base.common.server.cache.SMSTemplateEntityCache"
+		lazy-init="false">
+		<property name="cacheProvider" ref="sMSTemplateEntityCacheProvider" />
+		<property name="cacheStorage" ref="storage" />
+	</bean>
+	<!-- 短信模板数据缓存配置**结束 -->
+	
+	<!-- 部门短信模板数据缓存配置**开始 -->
+	<bean id="templateAppOrgEntityCacheProvider" class="com.deppon.foss.module.base.common.server.cache.TemplateAppOrgEntityCacheProvider">
+		<property name="smsTempleteForDeptDao" ref="sMSTempleteForDeptDao"></property>
+	</bean>
+	<bean id="templateAppOrgEntityCache" class="com.deppon.foss.module.base.common.server.cache.TemplateAppOrgEntityCache"
+		lazy-init="false">
+		<property name="cacheProvider" ref="templateAppOrgEntityCacheProvider" />
+		<property name="cacheStorage" ref="storage" />
+	</bean>
+	<!-- 部门短信模板数据缓存配置**结束 -->
+
+	<!-- 短信模板Service配置 -->
+	<bean id="sMSTempleteService"
+		class="com.deppon.foss.module.base.common.server.service.impl.SMSTempleteService"
+		autowire="byName">
+		<property name="sMSTempleteDao" ref="sMSTempleteDao"></property>
+		<property name="sMSTempleteForDeptService" ref="sMSTempleteForDeptService"></property>
+	</bean>
+	<!-- 部门短信模板Service配置 -->
+	<bean id="sMSTempleteForDeptService"
+		class="com.deppon.foss.module.base.common.server.service.impl.SMSTempleteForDeptService">
+		<property name="smsTempleteForDeptDao" ref="sMSTempleteForDeptDao"></property>
+	</bean>
+	<!-- 部门短信广告语Service配置 -->
+	<bean id="sMSAdvertisingSloganForDeptService"
+		class="com.deppon.foss.module.base.common.server.service.impl.SMSAdvertisingSloganForDeptService">
+		<property name="smsAdvertisingSloganForDeptDao" ref="sMSAdvertisingSloganForDeptDao"></property>
+	</bean>
+	<!-- 短信广告语Service配置 -->
+	<bean id="sMSAdvertisingSloganService"
+		class="com.deppon.foss.module.base.common.server.service.impl.SMSAdvertisingSloganService">
+		<property name="smsAdvertisingSloganDao" ref="sMSAdvertisingSloganDao"></property>
+		<property name="smsAdvertisingSloganForDeptService" ref="sMSAdvertisingSloganForDeptService"></property>
+	</bean>
+
+	<!-- DAO: "短信发送失败日志" -->
+	<bean id="smsFailLogDao"
+		class="com.deppon.foss.module.base.common.server.dao.impl.SMSFailLogDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory" />
+	</bean>
+
+	<!-- DAO: "短信信息" -->
+	<bean id="smsSendLogDao"
+		class="com.deppon.foss.module.base.common.server.dao.impl.SMSSendLogDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory" />
+	</bean>
+
+	<!-- SERVICE: "短信发送失败日志" -->
+	<bean id="smsFailLogService"
+		class="com.deppon.foss.module.base.common.server.service.impl.SMSFailLogService">
+		<property name="smsFailLogDao" ref="smsFailLogDao" />
+	</bean>
+
+	<!-- SERVICE: "短信信息" -->
+	<!-- zhengwl 2013/01/05 
+	    不同环境的短信平台配置有可能不一样，所以无法在bse-common下直接配置死，需要挪到web项目下的spring-config.properties
+	-->
+	<!--
+	<context:property-placeholder
+		location="classpath:com/deppon/foss/module/base/common/server/META-INF/sms.properties" />
+	-->
+	<bean id="smsSendLogService"
+		class="com.deppon.foss.module.base.common.server.service.impl.SMSSendLogService">
+		<property name="orgAdministrativeInfoService" ref="orgAdministrativeInfoService" />
+		<property name="smsSendLogDao" ref="smsSendLogDao" />
+		<property name="smsAuthority">
+			<bean class="com.deppon.foss.module.base.common.api.shared.domain.SmsAuthorityInfo"
+				scope="singleton">
+				<property name="username" value="${sms.username}" />
+				<property name="password" value="${sms.password}" />
+				<property name="wsUrl" value="${sms.wsUrl}" />
+			</bean>
+		</property>
+	<!-- 	<property name="accessHeader">
+			<bean class="com.deppon.esb.api.domain.AccessHeader" scope="singleton">
+				<property name="esbServiceCode" value="ESB_FOSS2ESB_VOICEMESSAGE" />
+				<property name="version" value="0.1" />
+			</bean>
+		</property> -->
+	</bean> 
+
+	<!-- SERVICE: "短信发送失败日志" -->
+	<bean id="smsService"
+		class="com.deppon.foss.module.base.common.server.service.impl.SMSService">
+		<property name="smsSendLogService" ref="smsSendLogService" />
+		<property name="smsFailLogService" ref="smsFailLogService" />
+	</bean>
+
+	<!-- 待办事项与消息配置 -->
+	<bean id="msgAction"
+		class="com.deppon.foss.module.base.common.server.action.MsgAction"
+		scope="prototype" />
+
+	<!-- 待办事项Service -->
+	<bean id="toDoMsgService"
+		class="com.deppon.foss.module.base.common.server.service.impl.ToDoMsgService" />
+		
+	<!-- 站内消息 Service -->
+	<bean id="messageService"
+		class="com.deppon.foss.module.base.common.server.service.impl.MessageService" />
+
+	<!-- 待办事项Dao -->
+	<bean id="toDoMsgDao"
+		class="com.deppon.foss.module.base.common.server.dao.impl.ToDoMsgDao" />
+		
+	<!-- 站内消息分发 Dao -->
+	<bean id="instationJobMsgDao"
+		class="com.deppon.foss.module.base.common.server.dao.impl.InstationJobMsgDao" />
+		
+	<!-- 站内消息列表 Dao -->
+	<bean id="instationMsgDao"
+		class="com.deppon.foss.module.base.common.server.dao.impl.InstationMsgDao" />
+	
+	 <!-- 在线消息DAO -->
+	<bean id="msgOnlineDao" class="com.deppon.foss.module.base.common.server.dao.impl.MsgOnlineDao">
+	</bean>	
+	
+
+
+	<!-- 弹出框消息设置Action -->
+	<bean id="winFormSettingAction"
+		class="com.deppon.foss.module.base.common.server.action.WinFormSettingAction"
+		scope="prototype" />
+		
+	<!-- 弹出框消息设置Service -->
+	<bean id="winFormSettingService"
+		class="com.deppon.foss.module.base.common.server.service.impl.WinFormSettingService" />
+		
+	<!-- 弹出框消息设置 Dao -->
+	<bean id="winFormSettingDao"
+		class="com.deppon.foss.module.base.common.server.dao.impl.WinFormSettingDao" />
+
+	<!-- 待办事项与消息配置 End -->
+
+
+	<!-- ACTION -->
+	<!-- 短信模板action -->
+	<bean id="sMSTempleteAction"
+		class="com.deppon.foss.module.base.common.server.action.SMSTempleteAction"
+		scope="prototype">
+		<property name="sMSTempleteService" ref="sMSTempleteService" />
+		<property name="sMSTempleteForDeptService" ref="sMSTempleteForDeptService" />
+	</bean>
+	
+	<!-- 短信广告语action -->
+	<bean id="sMSAdvertisingSloganAction"
+		class="com.deppon.foss.module.base.common.server.action.SMSAdvertisingSloganAction"
+		scope="prototype">
+		<property name="sMSAdvertisingSloganForDeptService" ref="sMSAdvertisingSloganForDeptService" />
+		<property name="sMSAdvertisingSloganService" ref="sMSAdvertisingSloganService" />
+	</bean>
+
+	<!-- Business Lock Service -->
+	<bean id="businessLockService" class="com.deppon.foss.module.base.common.server.service.impl.BusinessLockService">
+		<property name="client" ref="client" />
+	</bean>
+	
+	<!-- Business Monitor Service -->
+	<bean id="businessMonitorService" class="com.deppon.foss.module.base.common.server.service.impl.BusinessMonitorService">
+		<property name="client" ref="client" />
+	</bean>
+	
+	<!-- 监控数据DAO -->
+	<bean id="monitorDataEntityDao" class="com.deppon.foss.module.base.common.server.dao.impl.MonitorDataEntityDao">
+	</bean>
+	
+	<!-- 监控数据服务 -->
+	<bean id="monitorDataService" class="com.deppon.foss.module.base.common.server.service.impl.MonitorDataService">
+	</bean>
+	
+	<!-- 监控处理服务 -->
+	<bean id="businessMonitorProcessService" class="com.deppon.foss.module.base.common.server.service.impl.BusinessMonitorProcessService">
+		<property name="client" ref="client" />
+	</bean>
+	
+	<!-- 监控ACTION -->
+	<bean id="monitorAction"
+		class="com.deppon.foss.module.base.common.server.action.MonitorAction"
+		scope="prototype" />
+	<!-- 监控SERVICE -->	
+	<bean id="monitorOrgService" class="com.deppon.foss.module.base.common.server.service.impl.MonitorOrgService"/>
+	<!-- 监控DAO -->	
+	<bean id="monitorOrgDao" class="com.deppon.foss.module.base.common.server.dao.impl.MonitorOrgDao"/>
+	<!-- 监控指标DAO -->
+	<bean id="monitorIndicatorEntityDao" class="com.deppon.foss.module.base.common.server.dao.impl.MonitorIndicatorEntityDao">
+	</bean>
+	
+	<!-- 监控指标服务 -->
+	<bean id="monitorIndicatorService" class="com.deppon.foss.module.base.common.server.service.impl.MonitorIndicatorService">
+	</bean>
+	
+	<!-- 监控查询服务Service -->
+	<bean id="monitorQueryService" class="com.deppon.foss.module.base.common.server.service.impl.MonitorQueryService">
+	</bean>
+	<!-- 监控查询服务DAO -->
+	<bean id="monitorQueryDao" class="com.deppon.foss.module.base.common.server.dao.impl.MonitorQueryDao">
+	</bean>
+	
+	<!-- 监控指标缓存provider -->
+	<bean id="monitorIndicatorCacheProvider" class="com.deppon.foss.module.base.common.server.cache.MonitorIndicatorCacheProvider">
+	</bean>
+
+	<!-- 监控指标缓存 -->
+	<bean id="monitorIndicatorCache" class="com.deppon.foss.module.base.common.server.cache.MonitorIndicatorCache"
+		lazy-init="false">
+		<property name="cacheProvider" ref="monitorIndicatorCacheProvider" />
+		<property name="cacheStorage" ref="storage" />
+	</bean>
+	
+	<!-- 监控状态数据DAO -->
+	<bean id="monitorStatusDataDao" class="com.deppon.foss.module.base.common.server.dao.impl.MonitorStatusDataDao">
+	</bean>
+	
+	<!-- 监控状态数据服务 -->
+	<bean id="monitorStatusDataService" class="com.deppon.foss.module.base.common.server.service.impl.MonitorStatusDataService">
+	</bean>
+	
+	<!-- 监控状态数据服务 -->
+	<bean id="onLineMsgService" class="com.deppon.foss.module.base.common.server.service.impl.OnLineMsgService">
+	</bean>
+	
+	<!-- 监控应用配置DAO -->
+	<bean id="monitorAppEntityDao" class="com.deppon.foss.module.base.common.server.dao.impl.MonitorAppEntityDao">
+	</bean>
+	<!-- 在线起草通知-->
+	<!-- 待办接口服务端处理类-->
+	<bean id="syncMessageService" class="com.deppon.foss.module.base.common.server.service.impl.SyncMessageService">
+	</bean>
+	
+</beans>

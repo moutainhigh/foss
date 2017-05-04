@@ -1,0 +1,1024 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="com.deppon.foss.module.transfer.platform.api.server.dao.ICargoFcstDao">
+
+	<!-- 查询某天是否节假日 -->
+	<select id="findHoliday" parameterType="java.util.Date"
+		resultType="java.lang.Long">
+		SELECT COUNT(1)
+		  FROM bse.t_bas_holiday t
+		  WHERE t.active = 'Y'
+		  <![CDATA[
+		   AND t.begin_time <= #{date,jdbcType=TIMESTAMP}
+		   ]]>
+		   AND t.end_time >= #{date,jdbcType=TIMESTAMP}
+	</select>
+	
+	<!-- 查询外场到达线路-->
+	<select id="findArrLines" parameterType="java.lang.String"
+		resultType="java.util.Map">
+		SELECT t.code CODE, MAX(t.name) NAME
+		  FROM (SELECT o.code, o.name
+		          FROM bse.t_bas_line l
+		         INNER JOIN bse.t_bas_org o
+		            ON o.code = l.orig_org_code
+		           AND o.active = 'Y'
+		         WHERE l.active = 'Y'
+		           AND l.line_sort = 'BSE_LINE_SORT_TRANSFER'
+		           AND l.line_type = 'ZX'
+		           AND l.dest_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		        UNION ALL
+		        SELECT o.code, o.name
+		          FROM bse.t_bas_line l
+		         INNER JOIN bse.t_bas_org o
+		            ON o.code = l.orig_org_code
+		           AND o.active = 'Y'
+		         WHERE l.active = 'Y'
+		           AND l.line_sort = 'BSE_LINE_SORT_SOURCE'
+		           AND l.trans_type = 'TRANS_VEHICLE'
+		           AND l.dest_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		        UNION ALL
+		        SELECT o.code, o.name
+		          FROM bse.t_bas_express_line l
+		         INNER JOIN bse.t_bas_org o
+		            ON o.code = l.orig_org_code
+		           AND o.active = 'Y'
+		         WHERE l.active = 'Y'
+		           AND l.line_sort = 'BSE_LINE_SORT_SOURCE'
+		           AND l.trans_type = 'TRANS_VEHICLE'
+		           AND l.dest_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		        UNION ALL
+		         SELECT o.code, o.name
+		          FROM ecs.v_bse_t_bas_line l
+		         INNER JOIN bse.t_bas_org o
+		            ON o.code = l.orig_org_code
+		           AND o.active = 'Y'
+		         WHERE l.active = 'Y'
+		           AND l.line_sort = 'BSE_LINE_SORT_TRANSFER'
+		           AND l.line_type = 'ZX'
+		           AND l.dest_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		        UNION ALL
+		        SELECT o.code, o.name
+		          FROM ecs.v_bse_t_bas_line l
+		         INNER JOIN bse.t_bas_org o
+		            ON o.code = l.orig_org_code
+		           AND o.active = 'Y'
+		         WHERE l.active = 'Y'
+		           AND l.line_sort = 'BSE_LINE_SORT_SOURCE'
+		           AND l.dest_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		        UNION ALL
+		        SELECT o.code, o.name
+		          FROM ecs.v_bse_t_bas_express_line l
+		         INNER JOIN bse.t_bas_org o
+		            ON o.code = l.orig_org_code
+		           AND o.active = 'Y'
+		         WHERE l.active = 'Y'
+		           AND l.line_sort = 'BSE_LINE_SORT_SOURCE'
+		           AND l.trans_type = 'TRANS_VEHICLE'
+		           AND l.dest_org_code = #{tfrCtrCode,jdbcType=VARCHAR}  
+		           ) t
+		 GROUP BY t.code
+	</select>
+	
+	<!-- 查询外场出发线路-->
+	<select id="findDepartLines" parameterType="java.lang.String"
+		resultType="java.util.Map">
+		SELECT t.code CODE, MAX(t.name) NAME
+		  FROM (SELECT o.code, o.name
+		          FROM bse.t_bas_line l
+		         INNER JOIN bse.t_bas_org o
+		            ON o.code = l.dest_org_code
+		           AND o.active = 'Y'
+		         WHERE l.active = 'Y'
+		           AND l.line_sort = 'BSE_LINE_SORT_TRANSFER'
+		           AND l.line_type = 'ZX'
+		           AND l.orig_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		        UNION ALL
+		        SELECT o.code, o.name
+		          FROM bse.t_bas_line l
+		         INNER JOIN bse.t_bas_org o
+		            ON o.code = l.dest_org_code
+		           AND o.active = 'Y'
+		         WHERE l.active = 'Y'
+		           AND l.line_sort = 'BSE_LINE_SORT_TARGET'
+		           AND l.trans_type = 'TRANS_VEHICLE'
+		           AND l.orig_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		        UNION ALL
+		        SELECT o.code, o.name
+		          FROM bse.t_bas_express_line l
+		         INNER JOIN bse.t_bas_org o
+		            ON o.code = l.dest_org_code
+		           AND o.active = 'Y'
+		         WHERE l.active = 'Y'
+		           AND l.line_sort = 'BSE_LINE_SORT_TARGET'
+		           AND l.trans_type = 'TRANS_VEHICLE'
+		           AND l.orig_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		        UNION ALL
+		        SELECT o.code, o.name
+		          FROM ecs.v_bse_t_bas_line l
+		         INNER JOIN bse.t_bas_org o
+		            ON o.code = l.dest_org_code
+		           AND o.active = 'Y'
+		         WHERE l.active = 'Y'
+		           AND l.line_sort = 'BSE_LINE_SORT_TRANSFER'
+		           AND l.line_type = 'ZX'
+		           AND l.orig_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		        UNION ALL
+		        SELECT o.code, o.name
+		          FROM ecs.v_bse_t_bas_line l
+		         INNER JOIN bse.t_bas_org o
+		            ON o.code = l.dest_org_code
+		           AND o.active = 'Y'
+		         WHERE l.active = 'Y'
+		           AND l.line_sort = 'BSE_LINE_SORT_TARGET'
+		           AND l.orig_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		        UNION ALL
+		        SELECT o.code, o.name
+		          FROM ecs.v_bse_t_bas_express_line l
+		         INNER JOIN bse.t_bas_org o
+		            ON o.code = l.dest_org_code
+		           AND o.active = 'Y'
+		         WHERE l.active = 'Y'
+		           AND l.line_sort = 'BSE_LINE_SORT_TARGET'
+		           AND l.trans_type = 'TRANS_VEHICLE'
+		           AND l.orig_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		       ) t
+		 GROUP BY t.code
+	</select>
+	
+	<!-- 查询所有外场(非快递分部)-->
+	<select id="findTfrCtrs" resultType="java.lang.String">
+		SELECT t.code
+		  FROM bse.t_bas_org t
+		 WHERE t.active = 'Y'
+		   AND t.transfer_center = 'Y'
+		   AND (t.express_branch = 'N' OR t.express_branch IS NULL)
+	</select>
+	
+	<!-- 查询外场货量预测配置-->
+	<select id="findFcstConfig" parameterType="java.util.Map" resultType="java.lang.String">
+		SELECT t.conf_value configValue
+		  FROM bse.t_bas_sys_config t
+		 WHERE t.conf_type = #{type,jdbcType=VARCHAR}
+		   AND t.code = #{code,jdbcType=VARCHAR}
+		   AND t.org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.active = 'Y'
+	</select>
+	
+	<!-- 实际长途到达货量 -->
+	<insert id="insertActualArrLng"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.CargoFcstDto">
+		INSERT INTO tfr.t_opt_actual_cargo_detail
+		  SELECT SYS_GUID(),
+			       MAX(T.DEST_ORG_CODE) TFR_CTR_CODE,
+			       T.ORG_CODE LINE_CODE,
+			       MAX(T.NAME) LINE_NAME,
+			       ROUND(SUM(T.WEIGHT_TOTAL), 3) WEIGHT,
+			       ROUND(SUM(T.VOLUME_TOTAL), 3) VOLUME,
+			       SUM(T.WAYBILL_QTY_TOTAL) VOTE,
+			       'ARRIVAL_LONG' GOODS_TYPE,
+		         #{staDate,jdbcType=TIMESTAMP} sta_date
+			  FROM (SELECT C.ORG_CODE,
+			               TD.DEST_ORG_CODE,
+			               C.NAME,
+			               H.WEIGHT_TOTAL,
+			               H.VOLUME_TOTAL,
+			               H.WAYBILL_QTY_TOTAL
+			          FROM TFR.T_OPT_TRUCK_TASK_DETAIL TD
+			         INNER JOIN TFR.T_OPT_TRUCK_TASK_BILL TB
+			            ON TB.TRUCK_TASK_DETAIL_ID = TD.ID
+			         INNER JOIN TFR.T_OPT_HANDOVERBILL H
+			            ON H.HANDOVER_NO = TB.BILL_NO
+			           AND H.HANDOVERBILL_STATE != 90
+			         INNER JOIN BSE.T_BAS_TRANSFER_CENTER C
+			            ON C.ORG_CODE = TD.ORIG_ORG_CODE
+			           AND C.ACTIVE = 'Y'
+				   WHERE td.dest_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+				     AND td.status IN ('ARRIVED', 'UNLOADED')
+				     AND td.actual_arrive_time >= #{beginTime,jdbcType=TIMESTAMP}
+				     <![CDATA[
+				     AND td.actual_arrive_time < #{endTime,jdbcType=TIMESTAMP}
+				     ]]>
+				  UNION ALL
+				        SELECT C.ORG_CODE,
+				               TD.DEST_ORG_CODE,
+				               C.NAME,
+				               H.WEIGHT_TOTAL,
+				               H.VOLUME_TOTAL,
+				               H.WAYBILL_QTY_TOTAL
+				          FROM TFR.T_OPT_TRUCK_TASK_DETAIL TD
+				         INNER JOIN TFR.T_OPT_TRUCK_TASK_BILL TB
+				            ON TB.TRUCK_TASK_DETAIL_ID = TD.ID
+				         INNER JOIN ECS.V_TFR_T_OPT_HANDOVERBILL H
+				            ON H.HANDOVER_NO = TB.BILL_NO
+				           AND H.HANDOVERBILL_STATE != 90
+				         INNER JOIN BSE.T_BAS_TRANSFER_CENTER C
+				            ON C.ORG_CODE = TD.ORIG_ORG_CODE
+				           AND C.ACTIVE = 'Y'
+				   WHERE td.dest_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+				     AND td.status IN ('ARRIVED', 'UNLOADED')
+				     AND td.actual_arrive_time >= #{beginTime,jdbcType=TIMESTAMP}
+				     <![CDATA[
+				     AND td.actual_arrive_time < #{endTime,jdbcType=TIMESTAMP}
+				     ]]>
+                 ) T
+				 GROUP BY T.ORG_CODE
+	</insert>
+
+	<!-- 实际短途到达货量 -->
+	<insert id="insertActualArrSht"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.CargoFcstDto">
+		INSERT INTO tfr.t_opt_actual_cargo_detail
+		   SELECT SYS_GUID(),
+		           MAX(T.DEST_ORG_CODE) TFR_CTR_CODE,
+		           T.CODE LINE_CODE,
+		           MAX(T.NAME) LINE_NAME,
+		           ROUND(SUM(T.WEIGHT_TOTAL), 3) WEIGHT,
+		           ROUND(SUM(T.VOLUME_TOTAL), 3) VOLUME,
+		           SUM(T.WAYBILL_QTY_TOTAL) VOTE,
+		           'ARRIVAL_SHORT' GOODS_TYPE,
+		         #{staDate,jdbcType=TIMESTAMP} sta_date
+		      FROM (SELECT C.CODE,
+		                   TD.DEST_ORG_CODE,
+		                   C.NAME,
+		                   H.WEIGHT_TOTAL,
+		                   H.VOLUME_TOTAL,
+		                   H.WAYBILL_QTY_TOTAL
+		              FROM TFR.T_OPT_TRUCK_TASK_DETAIL TD
+		             INNER JOIN TFR.T_OPT_TRUCK_TASK_BILL TB
+		                ON TB.TRUCK_TASK_DETAIL_ID = TD.ID
+		             INNER JOIN TFR.T_OPT_HANDOVERBILL H
+		                ON H.HANDOVER_NO = TB.BILL_NO
+		               AND H.HANDOVERBILL_STATE != 90
+		             INNER JOIN BSE.t_bas_sales_department C
+		                ON C.CODE = TD.ORIG_ORG_CODE
+		               AND C.ACTIVE = 'Y'
+		           WHERE td.dest_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+					     AND td.status IN ('ARRIVED', 'UNLOADED')
+					     AND td.actual_arrive_time >= #{beginTime,jdbcType=TIMESTAMP}
+					     <![CDATA[
+					     AND td.actual_arrive_time < #{endTime,jdbcType=TIMESTAMP}
+					     ]]>
+		            UNION ALL
+		            SELECT C.CODE,
+		                   TD.DEST_ORG_CODE,
+		                   C.NAME,
+		                   H.WEIGHT_TOTAL,
+		                   H.VOLUME_TOTAL,
+		                   H.WAYBILL_QTY_TOTAL
+		              FROM TFR.T_OPT_TRUCK_TASK_DETAIL TD
+		             INNER JOIN TFR.T_OPT_TRUCK_TASK_BILL TB
+		                ON TB.TRUCK_TASK_DETAIL_ID = TD.ID
+		             INNER JOIN ECS.V_TFR_T_OPT_HANDOVERBILL H
+		                ON H.HANDOVER_NO = TB.BILL_NO
+		               AND H.HANDOVERBILL_STATE != 90
+		             INNER JOIN BSE.t_bas_sales_department C
+		                ON C.CODE = TD.ORIG_ORG_CODE
+		               AND C.ACTIVE = 'Y'
+		           WHERE td.dest_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+					     AND td.status IN ('ARRIVED', 'UNLOADED')
+					     AND td.actual_arrive_time >= #{beginTime,jdbcType=TIMESTAMP}
+					     <![CDATA[
+					     AND td.actual_arrive_time < #{endTime,jdbcType=TIMESTAMP}
+					     ]]>
+		            ) T
+		     GROUP BY T.CODE
+	</insert>
+
+	<!-- 实际集中接货货量 -->
+	<insert id="insertActualArrPickup"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.CargoFcstDto">
+		INSERT INTO tfr.t_opt_actual_cargo_detail
+		  SELECT sys_guid(),
+		         MAX(t.transfer_center_code) tfr_ctr_code,
+		         o.code line_code,
+		         MAX(o.name) line_name,
+		         round(SUM(w.goods_weight_total), 3) weight,
+		         round(SUM(w.goods_volume_total), 3) volume,
+		         COUNT(1) vote,
+		         'ARRIVAL_PICKUP' goods_type,
+		         #{staDate,jdbcType=TIMESTAMP} sta_date
+		    FROM pkp.t_srv_waybill w
+		   INNER JOIN bse.t_bas_billinggroup_transfer t
+		      ON t.billinggroup_code = w.create_org_code
+		     AND t.transfer_center_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		     AND t.active = 'Y'
+		   INNER JOIN bse.t_bas_org o
+		      ON w.receive_org_code = o.code
+		     AND o.active = 'Y'
+		   WHERE w.pickup_centralized = 'Y'
+		     AND w.active = 'Y'
+		     AND w.bill_time >= #{beginTime,jdbcType=TIMESTAMP}
+		     <![CDATA[
+		     AND w.bill_time < #{endTime,jdbcType=TIMESTAMP}
+		     ]]>
+		   GROUP BY o.code
+	</insert>
+
+	<!-- 实际长途出发货量 -->
+	<insert id="insertActualDptLng"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.CargoFcstDto">
+		INSERT INTO tfr.t_opt_actual_cargo_detail
+		   	  SELECT SYS_GUID(),
+			       MAX(T.orig_org_code) TFR_CTR_CODE,
+			       T.ORG_CODE LINE_CODE,
+			       MAX(T.NAME) LINE_NAME,
+			       ROUND(SUM(T.WEIGHT_TOTAL), 3) WEIGHT,
+			       ROUND(SUM(T.VOLUME_TOTAL), 3) VOLUME,
+			       SUM(T.WAYBILL_QTY_TOTAL) VOTE,
+			       'DEPART_LONG' goods_type,
+		         #{staDate,jdbcType=TIMESTAMP} sta_date
+			  FROM (SELECT C.ORG_CODE,
+			               TD.orig_org_code,
+			               C.NAME,
+			               H.WEIGHT_TOTAL,
+			               H.VOLUME_TOTAL,
+			               H.WAYBILL_QTY_TOTAL
+			          FROM TFR.T_OPT_TRUCK_TASK_DETAIL TD
+			         INNER JOIN TFR.T_OPT_TRUCK_TASK_BILL TB
+			            ON TB.TRUCK_TASK_DETAIL_ID = TD.ID
+			         INNER JOIN TFR.T_OPT_HANDOVERBILL H
+			            ON H.HANDOVER_NO = TB.BILL_NO
+			           AND H.HANDOVERBILL_STATE != 90
+			         INNER JOIN BSE.T_BAS_TRANSFER_CENTER C
+			            ON C.ORG_CODE = TD.dest_org_code
+			           AND C.ACTIVE = 'Y'
+				   WHERE td.orig_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		    		 AND td.status IN ('ONTHEWAY', 'ARRIVED', 'UNLOADED')
+				     AND td.actual_depart_time >= #{beginTime,jdbcType=TIMESTAMP}
+				     <![CDATA[
+				     AND td.actual_depart_time < #{endTime,jdbcType=TIMESTAMP}
+				     ]]>
+				  UNION ALL
+				        SELECT C.ORG_CODE,
+				               TD.orig_org_code,
+				               C.NAME,
+				               H.WEIGHT_TOTAL,
+				               H.VOLUME_TOTAL,
+				               H.WAYBILL_QTY_TOTAL
+				          FROM TFR.T_OPT_TRUCK_TASK_DETAIL TD
+				         INNER JOIN TFR.T_OPT_TRUCK_TASK_BILL TB
+				            ON TB.TRUCK_TASK_DETAIL_ID = TD.ID
+				         INNER JOIN ECS.V_TFR_T_OPT_HANDOVERBILL H
+				            ON H.HANDOVER_NO = TB.BILL_NO
+				           AND H.HANDOVERBILL_STATE != 90
+				         INNER JOIN BSE.T_BAS_TRANSFER_CENTER C
+				            ON C.ORG_CODE = TD.dest_org_code
+				           AND C.ACTIVE = 'Y'
+				   WHERE td.orig_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		     	     AND td.status IN ('ONTHEWAY', 'ARRIVED', 'UNLOADED')
+				     AND td.actual_depart_time >= #{beginTime,jdbcType=TIMESTAMP}
+				     <![CDATA[
+				     AND td.actual_depart_time < #{endTime,jdbcType=TIMESTAMP}
+				     ]]>
+                 ) T
+				 GROUP BY T.ORG_CODE
+	</insert>
+
+	<!-- 实际短途出发货量 -->
+	<insert id="insertActualDptSht"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.CargoFcstDto">
+		INSERT INTO tfr.t_opt_actual_cargo_detail
+		  SELECT SYS_GUID(),
+		           MAX(T.orig_org_code) TFR_CTR_CODE,
+		           T.CODE LINE_CODE,
+		           MAX(T.NAME) LINE_NAME,
+		           ROUND(SUM(T.WEIGHT_TOTAL), 3) WEIGHT,
+		           ROUND(SUM(T.VOLUME_TOTAL), 3) VOLUME,
+		           SUM(T.WAYBILL_QTY_TOTAL) VOTE,
+		           'DEPART_SHORT' GOODS_TYPE,
+		         #{staDate,jdbcType=TIMESTAMP} sta_date
+		      FROM (SELECT C.CODE,
+		                   TD.orig_org_code,
+		                   C.NAME,
+		                   H.WEIGHT_TOTAL,
+		                   H.VOLUME_TOTAL,
+		                   H.WAYBILL_QTY_TOTAL
+		              FROM TFR.T_OPT_TRUCK_TASK_DETAIL TD
+		             INNER JOIN TFR.T_OPT_TRUCK_TASK_BILL TB
+		                ON TB.TRUCK_TASK_DETAIL_ID = TD.ID
+		             INNER JOIN TFR.T_OPT_HANDOVERBILL H
+		                ON H.HANDOVER_NO = TB.BILL_NO
+		               AND H.HANDOVERBILL_STATE != 90
+		             INNER JOIN BSE.t_bas_sales_department C
+		                ON C.CODE = TD.dest_org_code
+		               AND C.ACTIVE = 'Y'
+		           WHERE td.orig_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+					     AND td.status IN ('ONTHEWAY', 'ARRIVED', 'UNLOADED')
+					     AND td.actual_depart_time >= #{beginTime,jdbcType=TIMESTAMP}
+					     <![CDATA[
+					     AND td.actual_depart_time < #{endTime,jdbcType=TIMESTAMP}
+					     ]]>
+		            UNION ALL
+		            SELECT C.CODE,
+		                   TD.orig_org_code,
+		                   C.NAME,
+		                   H.WEIGHT_TOTAL,
+		                   H.VOLUME_TOTAL,
+		                   H.WAYBILL_QTY_TOTAL
+		              FROM TFR.T_OPT_TRUCK_TASK_DETAIL TD
+		             INNER JOIN TFR.T_OPT_TRUCK_TASK_BILL TB
+		                ON TB.TRUCK_TASK_DETAIL_ID = TD.ID
+		             INNER JOIN ECS.V_TFR_T_OPT_HANDOVERBILL H
+		                ON H.HANDOVER_NO = TB.BILL_NO
+		               AND H.HANDOVERBILL_STATE != 90
+		             INNER JOIN BSE.t_bas_sales_department C
+		                ON C.CODE = TD.dest_org_code
+		               AND C.ACTIVE = 'Y'
+		           WHERE td.orig_org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+					     AND td.status IN ('ONTHEWAY', 'ARRIVED', 'UNLOADED')
+					     AND td.actual_depart_time >= #{beginTime,jdbcType=TIMESTAMP}
+					     <![CDATA[
+					     AND td.actual_depart_time < #{endTime,jdbcType=TIMESTAMP}
+					     ]]>
+		            ) T
+		     GROUP BY T.CODE  
+		   
+		 
+	</insert>
+
+	<!-- 实际派送出发货量 -->
+	<insert id="insertActualDptDispatch"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.CargoFcstDto">
+		INSERT INTO tfr.t_opt_actual_cargo_detail
+		  SELECT sys_guid(),
+		         MAX(tfr_ctr_code),
+		         MAX(line_code),
+		         MAX(line_name),
+		         round(SUM(weight), 3) weight,
+		         round(SUM(volume), 3) volume,
+		         COUNT(1) vote,
+		         'DEPART_DISPATCH' goods_type,
+		         #{staDate,jdbcType=TIMESTAMP} sta_date
+		    FROM (SELECT MAX(s.org_code) tfr_ctr_code,
+		                 MAX(o.code) line_code,
+		                 MAX(o.name) line_name,
+		                 COUNT(1) / MAX(w.goods_qty_total) * MAX(w.goods_weight_total) weight,
+		                 COUNT(1) / MAX(w.goods_qty_total) * MAX(w.goods_volume_total) volume
+		            FROM tfr.t_opt_out_stock s
+		           INNER JOIN pkp.t_srv_waybill w
+		              ON w.waybill_no = s.waybill_no
+		             AND w.active = 'Y'
+		           INNER JOIN bse.t_bas_goods_area a
+		              ON a.org_code = s.org_code
+		             AND a.goods_area_code = s.goods_area_code
+		             AND a.goods_area_type = 'BSE_GOODSAREA_TYPE_STATION'
+		             AND a.active = 'Y'
+		           INNER JOIN bse.t_bas_org o
+		              ON o.code = a.arrive_region_code
+		             AND o.active = 'Y'
+		           WHERE s.org_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		             AND s.out_stock_time >= #{beginTime,jdbcType=TIMESTAMP}
+		             <![CDATA[
+		             AND s.out_stock_time < #{endTime,jdbcType=TIMESTAMP}
+		             ]]>
+		           GROUP BY w.waybill_no) GROUP BY tfr_ctr_code
+	</insert>
+
+	<!-- 实际货量汇总 -->
+	<insert id="insertActual"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.CargoFcstDto">
+		INSERT INTO tfr.t_opt_actual_cargo
+		  SELECT sys_guid(),
+		         MAX(t.tfr_ctr_code),
+		         t.line_code,
+		         MAX(t.line_name),
+		         SUM(t.weight),
+		         SUM(t.volume),
+		         SUM(t.vote),
+		         max(t.sta_date)
+		    FROM tfr.t_opt_actual_cargo_detail t
+		   WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		     AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		   GROUP BY t.line_code
+	</insert>
+
+	<!-- 查询实际总货量 -->
+	<select id="findActual"
+		parameterType="java.util.Map"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.CargoEntity">
+		SELECT t.tfr_ctr_code tfrCtrCode,
+		       t.line_code    lineCode,
+		       t.line_name    lineName,
+		       t.weight       weight,
+		       t.volume       volume,
+		       t.vote         vote,
+		       t.sta_date     staDate
+		  FROM tfr.t_opt_actual_cargo t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		   AND t.line_code = #{lineCode,jdbcType=VARCHAR}
+	</select>
+
+	<!-- 查询各类型实际货量 -->
+	<select id="findActualDetail"
+		parameterType="java.util.Map"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.domain.CargoDetailEntity">
+		SELECT t.tfr_ctr_code tfrCtrCode,
+		       t.line_code    lineCode,
+		       t.line_name    lineName,
+		       t.weight       weight,
+		       t.volume       volume,
+		       t.vote         vote,
+		       t.sta_date     staDate,
+		       t.goods_type   goodsType
+		  FROM tfr.t_opt_actual_cargo_detail t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+		   AND t.line_code = #{lineCode,jdbcType=VARCHAR}
+		   AND t.goods_type = #{goodsType,jdbcType=VARCHAR}
+	</select>
+	
+	<!-- 生成预测总货量 -->
+	<insert id="insertFcst"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.CargoEntity">
+		INSERT INTO tfr.t_opt_forecast_cargo
+		  (ID,
+		   tfr_ctr_code,
+		   line_code,
+		   line_name,
+		   weight,
+		   volume,
+		   vote,
+		   sta_date)
+		VALUES
+		  (#{id,jdbcType=VARCHAR}, #{tfrCtrCode,jdbcType=VARCHAR}, #{lineCode,jdbcType=VARCHAR}, 
+		  #{lineName,jdbcType=VARCHAR}, #{weight,jdbcType=NUMERIC}, #{volume,jdbcType=NUMERIC}, 
+		  #{vote,jdbcType=NUMERIC}, #{staDate,jdbcType=TIMESTAMP})
+	</insert>
+	
+	<!-- 生成各类型预测货量 -->
+	<insert id="insertFcstDetail"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.CargoDetailEntity">
+		INSERT INTO tfr.t_opt_forecast_cargo_detail
+		  (ID,
+		   tfr_ctr_code,
+		   line_code,
+		   line_name,
+		   weight,
+		   volume,
+		   vote,
+		   goods_type,
+		   sta_date)
+		VALUES
+		  (#{id,jdbcType=VARCHAR}, #{tfrCtrCode,jdbcType=VARCHAR}, #{lineCode,jdbcType=VARCHAR}, 
+		  #{lineName,jdbcType=VARCHAR}, #{weight,jdbcType=NUMERIC}, #{volume,jdbcType=NUMERIC}, 
+		  #{vote,jdbcType=NUMERIC}, #{goodsType,jdbcType=VARCHAR}, #{staDate,jdbcType=TIMESTAMP})
+	</insert>
+	
+	<!-- 界面查询 -->
+	<select id="findFcstResult"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.CargoFcstDto"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.dto.CargoFcstResultDto">
+		<include refid="sql_result_select_caluse"/>
+		MAX(line_name) lineName
+		FROM(
+		<include refid="sql_result_sub_table" />
+		)
+		GROUP BY line_code
+	</select>
+	
+	<!-- 界面查询  各线路汇总-->
+	<select id="findFcstResultTotal"
+		parameterType="com.deppon.foss.module.transfer.platform.api.shared.dto.CargoFcstDto"
+		resultType="com.deppon.foss.module.transfer.platform.api.shared.dto.CargoFcstResultDto">
+		<include refid="sql_result_select_caluse"/>
+		'总计' lineName
+		FROM(
+		<include refid="sql_result_sub_table" />
+		)
+	</select>
+	
+	<sql id="sql_result_select_caluse">
+	SELECT ROUND(SUM(fcstWeightArrLng/1000),3) fcstWeightArrLng,
+	       SUM(fcstVolumeArrLng) fcstVolumeArrLng,
+	       ROUND(SUM(fcstWeightArrSht/1000),3) fcstWeightArrSht,
+	       SUM(fcstVolumeArrSht) fcstVolumeArrSht,
+	       ROUND(SUM(fcstWeightArrPickup/1000),3) fcstWeightArrPickup,
+	       SUM(fcstVolumeArrPickup) fcstVolumeArrPickup,
+	       
+	       ROUND(SUM(fcstWeightDptLng/1000),3) fcstWeightDptLng,
+	       SUM(fcstVolumeDptLng) fcstVolumeDptLng,
+	       ROUND(SUM(fcstWeightDptSht/1000),3) fcstWeightDptSht,
+	       SUM(fcstVolumeDptSht) fcstVolumeDptSht,
+	       ROUND(SUM(fcstWeightDptDispath/1000),3) fcstWeightDptDispath,
+	       SUM(fcstVolumeDptDispath) fcstVolumeDptDispath,
+	       
+	       ROUND(SUM(fcstWeight/1000),3) fcstWeight,
+	       SUM(fcstVolume) fcstVolume,
+	       
+	       ROUND(SUM(actualWeight7/1000),3) actualWeight7,
+	       SUM(actualVolume7) actualVolume7,
+	       ROUND(SUM(actualWeight14/1000),3) actualWeight14,
+	       SUM(actualVolume14) actualVolume14,
+	       ROUND(SUM(actualWeight21/1000),3) actualWeight21,
+	       SUM(actualVolume21) actualVolume21,
+	       ROUND(SUM(actualWeight28/1000),3) actualWeight28,
+	       SUM(actualVolume28) actualVolume28,
+	</sql>
+	
+	<sql id="sql_result_sub_table">
+	SELECT t.line_code,
+	       t.line_name,
+	       
+	       t.weight fcstWeightArrLng,
+	       t.volume fcstVolumeArrLng,
+	       NULL     fcstWeightArrSht,
+	       NULL     fcstVolumeArrSht,
+	       NULL     fcstWeightArrPickup,
+	       NULL     fcstVolumeArrPickup,
+	       
+	       NULL fcstWeightDptLng,
+	       NULL fcstVolumeDptLng,
+	       NULL fcstWeightDptSht,
+	       NULL fcstVolumeDptSht,
+	       NULL fcstWeightDptDispath,
+	       NULL fcstVolumeDptDispath,
+	       
+	       NULL fcstWeight,
+	       NULL fcstVolume,
+	       
+	       NULL actualWeight7,
+	       NULL actualVolume7,
+	       NULL actualWeight14,
+	       NULL actualVolume14,
+	       NULL actualWeight21,
+	       NULL actualVolume21,
+	       NULL actualWeight28,
+	       NULL actualVolume28
+	  FROM tfr.t_opt_forecast_cargo_detail t
+	 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+	   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+	   AND t.goods_type = 'ARRIVAL_LONG'
+      <if test="lineCode != null and lineCode != ''">
+	   AND t.line_code = #{lineCode,jdbcType=VARCHAR}
+	  </if>
+	UNION ALL
+	SELECT t.line_code,
+	       t.line_name,
+	       
+	       NULL     fcstWeightArrLng,
+	       NULL     fcstVolumeArrLng,
+	       t.weight fcstWeightArrSht,
+	       t.volume fcstVolumeArrSht,
+	       NULL     fcstWeightArrPickup,
+	       NULL     fcstVolumeArrPickup,
+	       
+	       NULL fcstWeightDptLng,
+	       NULL fcstVolumeDptLng,
+	       NULL fcstWeightDptSht,
+	       NULL fcstVolumeDptSht,
+	       NULL fcstWeightDptDispath,
+	       NULL fcstVolumeDptDispath,
+	       
+	       NULL fcstWeight,
+	       NULL fcstVolume,
+	       
+	       NULL actualWeight7,
+	       NULL actualVolume7,
+	       NULL actualWeight14,
+	       NULL actualVolume14,
+	       NULL actualWeight21,
+	       NULL actualVolume21,
+	       NULL actualWeight28,
+	       NULL actualVolume28
+	  FROM tfr.t_opt_forecast_cargo_detail t
+	 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+	   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+	   AND t.goods_type = 'ARRIVAL_SHORT'
+      <if test="lineCode != null and lineCode != ''">
+	   AND t.line_code = #{lineCode,jdbcType=VARCHAR}
+	  </if>
+	UNION ALL
+	SELECT t.line_code,
+	       t.line_name,
+	       
+	       NULL     fcstWeightArrLng,
+	       NULL     fcstVolumeArrLng,
+	       NULL     fcstWeightArrSht,
+	       NULL     fcstVolumeArrSht,
+	       t.weight fcstWeightArrPickup,
+	       t.volume fcstVolumeArrPickup,
+	       
+	       NULL fcstWeightDptLng,
+	       NULL fcstVolumeDptLng,
+	       NULL fcstWeightDptSht,
+	       NULL fcstVolumeDptSht,
+	       NULL fcstWeightDptDispath,
+	       NULL fcstVolumeDptDispath,
+	       
+	       NULL fcstWeight,
+	       NULL fcstVolume,
+	       
+	       NULL actualWeight7,
+	       NULL actualVolume7,
+	       NULL actualWeight14,
+	       NULL actualVolume14,
+	       NULL actualWeight21,
+	       NULL actualVolume21,
+	       NULL actualWeight28,
+	       NULL actualVolume28
+	  FROM tfr.t_opt_forecast_cargo_detail t
+	 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+	   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+	   AND t.goods_type = 'ARRIVAL_PICKUP'
+      <if test="lineCode != null and lineCode != ''">
+	   AND t.line_code = #{lineCode,jdbcType=VARCHAR}
+	  </if>
+	UNION ALL
+	SELECT t.line_code,
+	       t.line_name,
+	       
+	       NULL fcstWeightArrLng,
+	       NULL fcstVolumeArrLng,
+	       NULL fcstWeightArrSht,
+	       NULL fcstVolumeArrSht,
+	       NULL fcstWeightArrPickup,
+	       NULL fcstVolumeArrPickup,
+	       
+	       t.weight fcstWeightDptLng,
+	       t.volume fcstVolumeDptLng,
+	       NULL     fcstWeightDptSht,
+	       NULL     fcstVolumeDptSht,
+	       NULL     fcstWeightDptDispath,
+	       NULL     fcstVolumeDptDispath,
+	       
+	       NULL fcstWeight,
+	       NULL fcstVolume,
+	       
+	       NULL actualWeight7,
+	       NULL actualVolume7,
+	       NULL actualWeight14,
+	       NULL actualVolume14,
+	       NULL actualWeight21,
+	       NULL actualVolume21,
+	       NULL actualWeight28,
+	       NULL actualVolume28
+	  FROM tfr.t_opt_forecast_cargo_detail t
+	 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+	   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+	   AND t.goods_type = 'DEPART_LONG'
+      <if test="lineCode != null and lineCode != ''">
+	   AND t.line_code = #{lineCode,jdbcType=VARCHAR}
+	  </if>
+	UNION ALL
+	SELECT t.line_code,
+	       t.line_name,
+	       
+	       NULL fcstWeightArrLng,
+	       NULL fcstVolumeArrLng,
+	       NULL fcstWeightArrSht,
+	       NULL fcstVolumeArrSht,
+	       NULL fcstWeightArrPickup,
+	       NULL fcstVolumeArrPickup,
+	       
+	       NULL     fcstWeightDptLng,
+	       NULL     fcstVolumeDptLng,
+	       t.weight fcstWeightDptSht,
+	       t.volume fcstVolumeDptSht,
+	       NULL     fcstWeightDptDispath,
+	       NULL     fcstVolumeDptDispath,
+	       
+	       NULL fcstWeight,
+	       NULL fcstVolume,
+	       
+	       NULL actualWeight7,
+	       NULL actualVolume7,
+	       NULL actualWeight14,
+	       NULL actualVolume14,
+	       NULL actualWeight21,
+	       NULL actualVolume21,
+	       NULL actualWeight28,
+	       NULL actualVolume28
+	  FROM tfr.t_opt_forecast_cargo_detail t
+	 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+	   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+	   AND t.goods_type = 'DEPART_SHORT'
+      <if test="lineCode != null and lineCode != ''">
+	   AND t.line_code = #{lineCode,jdbcType=VARCHAR}
+	  </if>
+	UNION ALL
+	SELECT t.line_code,
+	       t.line_name,
+	       
+	       NULL fcstWeightArrLng,
+	       NULL fcstVolumeArrLng,
+	       NULL fcstWeightArrSht,
+	       NULL fcstVolumeArrSht,
+	       NULL fcstWeightArrPickup,
+	       NULL fcstVolumeArrPickup,
+	       
+	       NULL     fcstWeightDptLng,
+	       NULL     fcstVolumeDptLng,
+	       NULL     fcstWeightDptSht,
+	       NULL     fcstVolumeDptSht,
+	       t.weight fcstWeightDptDispath,
+	       t.volume fcstVolumeDptDispath,
+	       
+	       NULL fcstWeight,
+	       NULL fcstVolume,
+	       
+	       NULL actualWeight7,
+	       NULL actualVolume7,
+	       NULL actualWeight14,
+	       NULL actualVolume14,
+	       NULL actualWeight21,
+	       NULL actualVolume21,
+	       NULL actualWeight28,
+	       NULL actualVolume28
+	  FROM tfr.t_opt_forecast_cargo_detail t
+	 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+	   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+	   AND t.goods_type = 'DEPART_DISPATCH'
+      <if test="lineCode != null and lineCode != ''">
+	   AND t.line_code = #{lineCode,jdbcType=VARCHAR}
+	  </if>
+	UNION ALL
+	SELECT t.line_code,
+	       t.line_name,
+	       
+	       NULL fcstWeightArrLng,
+	       NULL fcstVolumeArrLng,
+	       NULL fcstWeightArrSht,
+	       NULL fcstVolumeArrSht,
+	       NULL fcstWeightArrPickup,
+	       NULL fcstVolumeArrPickup,
+	       
+	       NULL fcstWeightDptLng,
+	       NULL fcstVolumeDptLng,
+	       NULL fcstWeightDptSht,
+	       NULL fcstVolumeDptSht,
+	       NULL fcstWeightDptDispath,
+	       NULL fcstVolumeDptDispath,
+	       
+	       t.weight fcstWeight,
+	       t.volume fcstVolume,
+	       
+	       NULL actualWeight7,
+	       NULL actualVolume7,
+	       NULL actualWeight14,
+	       NULL actualVolume14,
+	       NULL actualWeight21,
+	       NULL actualVolume21,
+	       NULL actualWeight28,
+	       NULL actualVolume28
+	  FROM tfr.t_opt_forecast_cargo t
+	 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+	   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+      <if test="lineCode != null and lineCode != ''">
+	   AND t.line_code = #{lineCode,jdbcType=VARCHAR}
+	  </if>
+	UNION ALL
+	SELECT t.line_code,
+	       t.line_name,
+	       
+	       NULL fcstWeightArrLng,
+	       NULL fcstVolumeArrLng,
+	       NULL fcstWeightArrSht,
+	       NULL fcstVolumeArrSht,
+	       NULL fcstWeightArrPickup,
+	       NULL fcstVolumeArrPickup,
+	       
+	       NULL fcstWeightDptLng,
+	       NULL fcstVolumeDptLng,
+	       NULL fcstWeightDptSht,
+	       NULL fcstVolumeDptSht,
+	       NULL fcstWeightDptDispath,
+	       NULL fcstVolumeDptDispath,
+	       
+	       NULL fcstWeight,
+	       NULL fcstVolume,
+	       
+	       t.weight actualWeight7,
+	       t.volume actualVolume7,
+	       NULL     actualWeight14,
+	       NULL     actualVolume14,
+	       NULL     actualWeight21,
+	       NULL     actualVolume21,
+	       NULL     actualWeight28,
+	       NULL     actualVolume28
+	  FROM tfr.t_opt_actual_cargo t
+	 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+	   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP} - 7
+      <if test="lineCode != null and lineCode != ''">
+	   AND t.line_code = #{lineCode,jdbcType=VARCHAR}
+	  </if>
+	UNION ALL
+	SELECT t.line_code,
+	       t.line_name,
+	       
+	       NULL fcstWeightArrLng,
+	       NULL fcstVolumeArrLng,
+	       NULL fcstWeightArrSht,
+	       NULL fcstVolumeArrSht,
+	       NULL fcstWeightArrPickup,
+	       NULL fcstVolumeArrPickup,
+	       
+	       NULL fcstWeightDptLng,
+	       NULL fcstVolumeDptLng,
+	       NULL fcstWeightDptSht,
+	       NULL fcstVolumeDptSht,
+	       NULL fcstWeightDptDispath,
+	       NULL fcstVolumeDptDispath,
+	       
+	       NULL fcstWeight,
+	       NULL fcstVolume,
+	       
+	       NULL     actualWeight7,
+	       NULL     actualVolume7,
+	       t.weight actualWeight14,
+	       t.volume actualVolume14,
+	       NULL     actualWeight21,
+	       NULL     actualVolume21,
+	       NULL     actualWeight28,
+	       NULL     actualVolume28
+	  FROM tfr.t_opt_actual_cargo t
+	 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+	   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP} - 14
+      <if test="lineCode != null and lineCode != ''">
+	   AND t.line_code = #{lineCode,jdbcType=VARCHAR}
+	  </if>
+	UNION ALL
+	SELECT t.line_code,
+	       t.line_name,
+	       
+	       NULL fcstWeightArrLng,
+	       NULL fcstVolumeArrLng,
+	       NULL fcstWeightArrSht,
+	       NULL fcstVolumeArrSht,
+	       NULL fcstWeightArrPickup,
+	       NULL fcstVolumeArrPickup,
+	       
+	       NULL fcstWeightDptLng,
+	       NULL fcstVolumeDptLng,
+	       NULL fcstWeightDptSht,
+	       NULL fcstVolumeDptSht,
+	       NULL fcstWeightDptDispath,
+	       NULL fcstVolumeDptDispath,
+	       
+	       NULL fcstWeight,
+	       NULL fcstVolume,
+	       
+	       NULL     actualWeight7,
+	       NULL     actualVolume7,
+	       NULL     actualWeight14,
+	       NULL     actualVolume14,
+	       t.weight actualWeight21,
+	       t.volume actualVolume21,
+	       NULL     actualWeight28,
+	       NULL     actualVolume28
+	  FROM tfr.t_opt_actual_cargo t
+	 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+	   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP} - 21
+      <if test="lineCode != null and lineCode != ''">
+	   AND t.line_code = #{lineCode,jdbcType=VARCHAR}
+	  </if>
+	UNION ALL
+	SELECT t.line_code,
+	       t.line_name,
+	       
+	       NULL fcstWeightArrLng,
+	       NULL fcstVolumeArrLng,
+	       NULL fcstWeightArrSht,
+	       NULL fcstVolumeArrSht,
+	       NULL fcstWeightArrPickup,
+	       NULL fcstVolumeArrPickup,
+	       
+	       NULL fcstWeightDptLng,
+	       NULL fcstVolumeDptLng,
+	       NULL fcstWeightDptSht,
+	       NULL fcstVolumeDptSht,
+	       NULL fcstWeightDptDispath,
+	       NULL fcstVolumeDptDispath,
+	       
+	       NULL fcstWeight,
+	       NULL fcstVolume,
+	       
+	       NULL     actualWeight7,
+	       NULL     actualVolume7,
+	       NULL     actualWeight14,
+	       NULL     actualVolume14,
+	       NULL     actualWeight21,
+	       NULL     actualVolume21,
+	       t.weight actualWeight28,
+	       t.volume actualVolume28
+	  FROM tfr.t_opt_actual_cargo t
+	 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+	   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP} - 28
+      <if test="lineCode != null and lineCode != ''">
+	   AND t.line_code = #{lineCode,jdbcType=VARCHAR}
+	  </if>
+	</sql>
+	
+	<select id="cntFcst" parameterType="java.util.Map" resultType="java.lang.Integer">
+		SELECT COUNT(1)
+		  FROM tfr.t_opt_forecast_cargo t
+		 WHERE t.tfr_ctr_code = #{tfrCtrCode,jdbcType=VARCHAR}
+		   AND t.line_code = #{lineCode,jdbcType=VARCHAR}
+		   AND t.sta_date = #{staDate,jdbcType=TIMESTAMP}
+	</select>
+
+</mapper>

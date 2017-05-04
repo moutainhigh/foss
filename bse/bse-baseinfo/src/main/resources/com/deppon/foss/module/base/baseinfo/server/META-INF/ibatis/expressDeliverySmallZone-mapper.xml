@@ -1,0 +1,566 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.expressDeliverySmallZone">
+	<!-- 集中接送货小区 -->
+
+	<resultMap id="smallZoneResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressDeliverySmallZoneEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="REGION_CODE" property="regionCode" jdbcType="VARCHAR" />
+		<result column="REGION_NAME" property="regionName" jdbcType="VARCHAR" />
+		<result column="MANAGEMENT" property="management" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+		<result column="VIRTUAL_CODE" jdbcType="VARCHAR" property="virtualCode" />
+		<result column="REGION_TYPE" property="regionType" jdbcType="VARCHAR" />
+		<result column="GISID" property="gisid" jdbcType="VARCHAR" />
+		<result column="BIGZONECODE" property="bigzonecode" jdbcType="VARCHAR" />
+		<result column="PROVCODE" property="provCode" jdbcType="VARCHAR" />
+		<result column="CITYCODE" property="cityCode" jdbcType="VARCHAR" />
+		<result column="COUNTYCODE" property="countyCode" jdbcType="VARCHAR" />
+		<result column="GIS_AREA" property="gisArea" jdbcType="VARCHAR" />
+		<result column="OPERATOR_CODE" property="operatorCode" jdbcType="VARCHAR"/>
+		<result column="SALES_TO_SMALLZONE" property="salesToSmallZone" jdbcType="VARCHAR"/>
+		<result column="DEP_COORDINATE" property="depCoordinate" jdbcType="VARCHAR"/>
+	</resultMap>
+
+	<!-- 数据字段 -->
+	<sql id="smallZone_Column_List">
+		ID, REGION_CODE, REGION_NAME, MANAGEMENT,
+		CREATE_TIME,
+		MODIFY_TIME,
+		ACTIVE, CREATE_USER_CODE, MODIFY_USER_CODE,
+		NOTES,VIRTUAL_CODE,
+		REGION_TYPE, GISID,
+		BIGZONECODE,PROVCODE,CITYCODE,COUNTYCODE,GIS_AREA,OPERATOR_CODE,COURIERCODE,COURIERNAME,SALES_TO_SMALLZONE
+	</sql>
+
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<if test="active != null and active != ''">
+				T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="regionCode != null and regionCode != ''">
+				and T.REGION_CODE like
+				CONCAT(CONCAT('%',#{regionCode}),'%')
+			</if>
+			<if test="regionName != null and regionName != ''">
+				and T.REGION_NAME like
+				CONCAT(CONCAT('%',#{regionName}),'%')
+			</if>
+			<if test="regionType != null and regionType != ''">
+				and T.REGION_TYPE = #{regionType,jdbcType=VARCHAR}
+			</if>
+			 <!--<if test="management != null and management != ''">
+				and MANAGEMENT = #{management,jdbcType=VARCHAR}
+			</if>-->
+			<if test="empCode!=null and empCode != ''">
+				 and t.management in (select k.org_code
+		                          from BSE.MV_BAS_USER_ORG_AUTH_VIEW k
+		                          join bse.t_bas_org t
+		                           on t.code = k.org_code
+		                           <!--and t.express_part = 'Y'-->
+		                           and t.active = 'Y'
+		                          <where>
+		                          	<if test="empCode != null and empCode != ''">
+		                          		k.emp_code =#{empCode,jdbcType=VARCHAR}
+		                          	</if>
+		                          	<if test="management != null and management != ''">
+		                          		and  k.org_code=#{management,jdbcType=VARCHAR}
+		                          	</if>
+		                          </where>
+		                          )
+			</if>
+		</where>
+
+	</sql>
+
+
+	<!-- 按照区域名称和code 小区信息 -->
+	<select id="querySmallZonesByNameOrCode"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressDeliverySmallZoneEntity"
+		resultMap="smallZoneResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:按照区域名称和code 查询小区信息 **/
+		]]>
+		<include refid="smallZone_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_EXPRESS_SMALLZONE T
+		]]>
+		<where>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR} AND
+			</if>
+				(REGION_CODE like
+				CONCAT(CONCAT('%',#{regionCode}),'%')
+				OR REGION_NAME like
+				CONCAT(CONCAT('%',#{regionName}),'%')
+				)
+		</where>
+	</select>
+	<!-- 查询 小区信息 -->
+	<select id="getAllInfos"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressDeliverySmallZoneEntity"
+		resultMap="smallZoneResultMap">
+		
+		
+		<![CDATA[
+			SELECT
+			/** 综合:查询 小区信息 **/
+		]]>
+		T.ID, T.REGION_CODE, T.REGION_NAME, T.MANAGEMENT,
+		T.CREATE_TIME,
+		T.MODIFY_TIME,
+		T.ACTIVE, T.CREATE_USER_CODE, T.MODIFY_USER_CODE,
+		T.NOTES,T.VIRTUAL_CODE,
+		T.REGION_TYPE, T.GISID,
+		T.BIGZONECODE,T.PROVCODE,T.CITYCODE,T.COUNTYCODE,
+		T.GIS_AREA,T.OPERATOR_CODE,T.COURIERCODE,
+		T.COURIERNAME,T.SALES_TO_SMALLZONE,S.DEP_COORDINATE
+		<![CDATA[
+			FROM BSE.T_BAS_EXPRESS_SMALLZONE T LEFT JOIN BSE.T_BAS_EXPRESS_VEHICLE V 
+			ON T.COURIERCODE=V.EMP_CODE AND V.ACTIVE='Y'
+			left join bse.t_bas_org s on s.code=v.org_code and s.active='Y'
+		]]>
+		<include refid="queryWhere" />
+	</select>
+
+	<!-- 统计总记录数 -->
+	<select id="getCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressDeliverySmallZoneEntity">
+	    <![CDATA[
+	       	select/** 综合:统计总记录数 **/ count(*) from BSE.T_BAS_EXPRESS_SMALLZONE T
+	    ]]>
+		<include refid="queryWhere" />
+
+	</select>
+
+	<!-- 根据区域编码查询 小区信息 -->
+	<select id="querySmallZoneByCode" parameterType="map"
+		resultMap="smallZoneResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据区域编码查询 小区信息 **/
+		]]>
+		<include refid="smallZone_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_EXPRESS_SMALLZONE T
+		]]>
+		<where>
+			<if test="regionCode != null and regionCode != ''">
+				REGION_CODE = #{regionCode,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 根据大区的区域编码模糊查询 小区 -->
+	<select id="querySmallZonesByBigZoneRegionCode" parameterType="map"
+		resultMap="smallZoneResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据大区的区域编码模糊查询 小区 **/
+		]]>
+		<include refid="smallZone_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_EXPRESS_SMALLZONE T
+		]]>
+		<where>
+			<if test="bigZoneRegionCode != null and bigZoneRegionCode != ''">
+				T.REGION_CODE like CONCAT(#{bigZoneRegionCode,jdbcType=VARCHAR},'%')
+			</if>
+			<if test="active != null and active != ''">
+				and T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+		order by T.REGION_CODE DESC
+	</select>
+	
+	<!-- 根据虚拟编码查询 小区信息 -->
+	<select id="querySmallByVirtualCode" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressDeliverySmallZoneEntity"
+		resultMap="smallZoneResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据虚拟编码查询 小区信息 **/
+		]]>
+		<include refid="smallZone_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_EXPRESS_SMALLZONE T
+		]]>
+		<where>
+			<if test="virtualCode != null and virtualCode != ''">
+				VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 验证小区名称是否唯一-->
+	<select id="querySmallZoneByName" parameterType="map"
+		resultMap="smallZoneResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:验证小区名称是否唯一 **/
+		]]>
+		<include refid="smallZone_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_EXPRESS_SMALLZONE T
+		]]>
+		<where>
+			<if test="regionName != null and regionName != ''">
+				REGION_NAME = #{regionName,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+
+	<!-- 根据传入管理部门Code、区域类型查询 小区信息 -->
+	<select id="querySmallZonesByDeptCode" parameterType="map"
+		resultMap="smallZoneResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据传入管理部门Code、区域类型查询 小区信息 **/
+		]]>
+		<include refid="smallZone_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_EXPRESS_SMALLZONE T
+		]]>
+		<where>
+			<if test="regionType != null and regionType != ''">
+				REGION_TYPE = #{regionType,jdbcType=VARCHAR}
+			</if>
+			<if test="deptCode != null and deptCode != ''">
+				AND MANAGEMENT = #{deptCode,jdbcType=VARCHAR}
+			</if>
+			<if test="bigZoneVirtualCode != null and bigZoneVirtualCode != ''">
+			    AND BIGZONECODE = #{bigZoneVirtualCode,jdbcType=VARCHAR}
+			</if>
+			<if test="bigZoneVirtualCode == null || bigZoneVirtualCode == ''">
+			    AND BIGZONECODE is null 
+			</if>
+			<if test="active != null and active != ''">
+				AND ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+
+	</select>
+
+	<!-- 新增  货小区信息 -->
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressDeliverySmallZoneEntity">
+		
+		<![CDATA[
+			INSERT/** 综合:新增  货小区信息  **/ INTO BSE.T_BAS_EXPRESS_SMALLZONE T	(
+		]]>
+		<include refid="smallZone_Column_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, #{regionCode,jdbcType=VARCHAR},
+		#{regionName,jdbcType=VARCHAR},
+		#{management,jdbcType=VARCHAR},
+		#{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=CHAR},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR},
+		#{notes,jdbcType=VARCHAR},
+		#{virtualCode,jdbcType=VARCHAR},
+		#{regionType,jdbcType=VARCHAR},
+		#{gisid,jdbcType=VARCHAR},
+		#{bigzonecode,jdbcType=VARCHAR},
+		#{provCode,jdbcType=VARCHAR}, #{cityCode,jdbcType=VARCHAR},
+		#{countyCode,jdbcType=VARCHAR},
+		#{gisArea,jdbcType=VARCHAR},
+		#{operatorCode,jdbcType=VARCHAR},
+		#{courierCode,jdbcType=VARCHAR},
+		#{courierName,jdbcType=VARCHAR},
+		#{salesToSmallZone,jdbcType=VARCHAR}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+
+	<!-- 修改  货小区信息 -->
+	<update id="update"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressDeliverySmallZoneEntity">
+		update/** 综合:修改  小区信息  **/ BSE.T_BAS_EXPRESS_SMALLZONE
+		<set>
+			<!-- <if test="regionCode != null"> REGION_CODE = #{regionCode,jdbcType=VARCHAR}, 
+				</if> -->
+			<if test="regionName != null">
+				REGION_NAME = #{regionName,jdbcType=VARCHAR},
+			</if>
+			<if test="management != null">
+				MANAGEMENT = #{management,jdbcType=VARCHAR},
+			</if>
+
+			<!-- <if test="createDate != null"> CREATE_TIME = #{createDate,jdbcType=TIMESTAMP}, 
+				</if> -->
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<!-- <if test="active != null"> ACTIVE = #{active,jdbcType=CHAR}, </if> -->
+			<!-- <if test="createUser != null"> CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR}, 
+				</if> -->
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="notes != null">
+				NOTES = #{notes,jdbcType=VARCHAR},
+			</if>
+			<if test="virtualCode != null">
+				VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR},
+			</if>
+			<if test="regionType != null">
+				REGION_TYPE = #{regionType,jdbcType=VARCHAR},
+			</if>
+			<if test="gisid != null">
+				GISID = #{gisid,jdbcType=VARCHAR},
+			</if>
+			<if test="bigzonecode != null">
+				BIGZONECODE = #{bigzonecode,jdbcType=VARCHAR},
+			</if>
+			<if test="provCode != null">
+				PROVCODE = #{provCode,jdbcType=VARCHAR},
+			</if>
+			<if test="cityCode != null">
+				CITYCODE = #{cityCode,jdbcType=VARCHAR},
+			</if>
+			<if test="countyCode != null">
+				COUNTYCODE = #{countyCode,jdbcType=VARCHAR},
+			</if>
+			<if test="gisArea != null">
+				GIS_AREA = #{gisArea,jdbcType=VARCHAR},
+			</if>
+			<if test="courierCode != null">
+				COURIERCODE=#{courierCode,jdbcType=VARCHAR},
+			</if>
+			<if test="courierName != null">
+				COURIERNAME=#{courierName,jdbcType=VARCHAR}
+			</if>
+		</set>
+
+		
+		<where>
+			<if test="virtualCode != null">
+				VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR}
+			</if>
+		</where>
+
+	</update>
+	
+	<!-- 根据小区虚拟编码修改小区的区域编码、所属大区-->
+	<update id="updateSmallZoneByVirtualCode"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressDeliverySmallZoneEntity">
+		update/** 综合:根据小区虚拟编码修改小区的区域编码、所属大区  **/ BSE.T_BAS_EXPRESS_SMALLZONE
+		<set>
+			<if test="regionCode != null">
+			 	REGION_CODE = #{regionCode,jdbcType=VARCHAR}, 
+			</if> 
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="bigzonecode != null">
+				BIGZONECODE = #{bigzonecode,jdbcType=VARCHAR},
+			</if>
+		</set>
+
+		<where>
+			<if test="virtualCode != null">
+				VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR}
+			</if>
+		</where>
+
+	</update>
+	
+	<!-- 根据所属大区编码修改小区编码、所属大区编码为空-->
+	<update id="updateSmallZoneByBigCode"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressDeliverySmallZoneEntity">
+		update/** 综合:根据小区虚拟编码修改小区的区域编码、所属大区  **/ BSE.T_BAS_EXPRESS_SMALLZONE
+		<set>
+			<if test="regionCode != null">
+			 	REGION_CODE = #{regionCode,jdbcType=VARCHAR}, 
+			</if> 
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=DATE},
+			</if>
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="bigzonecode1 != null">
+				BIGZONECODE = #{bigzonecode1,jdbcType=VARCHAR},
+			</if>
+		</set>
+		<where>
+			<if test="bigzonecode != null">
+				BIGZONECODE = #{bigzonecode,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null">
+				AND ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+
+	</update>
+
+	<!-- 作废  小区信息 -->
+	<update id="deleteByCode" parameterType="map">
+		update/** 综合:作废  小区信息  **/ BSE.T_BAS_EXPRESS_SMALLZONE
+
+		<set>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				MODIFY_USER_CODE = #{modifyUser, jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate != null and modifyDate!= ''">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+		</set>
+
+		<where>
+			<if test="codes!=null and codes.length > 0">
+				VIRTUAL_CODE in
+				<foreach collection="codes" index="index" item="code" open="("
+					separator="," close=")">
+					#{code}
+				</foreach>
+			</if>
+			<if test="active0 != null and active0 != ''">
+				AND ACTIVE = #{active0,jdbcType=CHAR}
+			</if>
+		</where>
+
+	</update>
+	<!--自动编码生成-->
+	<select id="queryRegionCodeByManagement" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressDeliverySmallZoneEntity"
+		resultType="java.lang.String">
+		<![CDATA[
+			SELECT
+			/** 综合:快递派送小区信息 **/
+		]]>
+		max(T.region_code)
+		<![CDATA[
+			FROM BSE.T_BAS_EXPRESS_SMALLZONE T
+		]]>
+		<where>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="management != null and management != ''">
+				and MANAGEMENT = #{management,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</select>
+	<!--通过虚拟编码查询-->
+	<select id="ByVirtualCode" parameterType="java.util.Map"  resultMap="smallZoneResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:快递派送小区信息 **/
+		]]>
+		*
+		<![CDATA[
+			FROM BSE.T_BAS_EXPRESS_SMALLZONE T
+		]]>
+		<where>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="virtualCode != null and virtualCode != ''">
+				and VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</select>
+	
+	<!--快递小区信息根据编码查询 -->
+	<select id="queryExpressDeliverySmallZoneByCode" parameterType="java.util.Map" resultMap="smallZoneResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:快递派送小区信息 **/
+		]]>
+		*
+		<![CDATA[
+			FROM BSE.T_BAS_EXPRESS_SMALLZONE T
+		]]>
+
+		<where>
+			<if test="codes!=null and codes.length > 0">
+				VIRTUAL_CODE in
+				<foreach collection="codes" index="index" item="code" open="("
+					separator="," close=")">
+					#{code}
+				</foreach>
+			</if>
+			<if test="active0 != null and active0 != ''">
+				AND ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+	
+<!--根据GIS ID查询-->
+	<select id="querySmallZoneByGisId" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressDeliverySmallZoneEntity"
+		resultMap="smallZoneResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:快递派送小区信息 **/
+		]]>
+		<include refid="smallZone_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_EXPRESS_SMALLZONE T
+		]]>
+		<where>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="management != null and management != ''">
+				and MANAGEMENT = #{management,jdbcType=VARCHAR}
+			</if>
+			<if test="gisid != null and gisid != ''">
+				and GISID = #{gisid,jdbcType=VARCHAR}
+			</if>
+			<if test="regionCode != null and regionCode != ''">
+				and REGION_CODE = #{regionCode,jdbcType=VARCHAR}
+			</if>
+			<if test="regionName != null and regionName != ''">
+				and REGION_NAME = #{regionName,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</select>
+	<!--根据用户编码和部门编码查询resultType="Long"-->
+	<select id="queryDataPermissions" parameterType="java.util.Map"
+		resultType="Long">
+		
+		select 
+			count(*)
+		from BSE.MV_BAS_USER_ORG_AUTH_VIEW k
+			join bse.t_bas_org t
+			on t.code = k.org_code
+			<!--and t.express_part = 'Y'-->
+			and t.active = 'Y'
+            <where>
+			 <if test="empCode != null and empCode != ''">
+			     k.emp_code =#{empCode,jdbcType=VARCHAR}
+			 </if>
+			 <if test="deptCode != null and deptCode != ''">
+			     and  k.org_code=#{deptCode,jdbcType=VARCHAR}
+			 </if>
+			</where>
+	</select>
+	
+</mapper>

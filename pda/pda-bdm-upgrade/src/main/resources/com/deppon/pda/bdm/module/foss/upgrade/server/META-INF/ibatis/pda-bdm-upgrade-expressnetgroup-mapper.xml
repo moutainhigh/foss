@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.pda.bdm.module.foss.upgrade.server.dao.impl.ExpressNetGroupDataVerGenDao">
+
+	<select id="queryLocalDatas" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.NetGroupEntity">
+		<![CDATA[
+			select M1.ID               AS id,
+			       M1.ROUTEVIRTUALCODE AS routeVirtualCode,
+			       M1.ORGCODE          AS orgCode,
+			       M1.ORGTYPE          AS orgType
+ 			 from T_BASE_NET_GROUP_MIX m1
+			 inner join T_BASE_ROUTE R ON R.VIRTUALCODE = M1.ROUTEVIRTUALCODE
+                          AND R.OPERFLAG = 1
+			 WHERE M1.OPERFLAG = 1
+			   AND M1.ORGCODE = #{deptCode,jdbcType=VARCHAR}
+			   AND M1.ORGTYPE = 'SOURCE'
+			   AND R.TRANSMODE = 'PACKAGE' ]]>
+			   <if test="startTime != null and startTime != ''  ">
+			<![CDATA[ AND m1.UPDTIME > #{startTime,jdbcType=TIMESTAMP}]]>
+		</if>
+		<if test="endTime != null and endTime != '' ">
+			<![CDATA[ AND m1.UPDTIME <= #{endTime,jdbcType=TIMESTAMP}]]>
+		</if>
+		<![CDATA[
+			UNION ALL
+			SELECT M2.ID               AS id,
+			       M2.ROUTEVIRTUALCODE AS routeVirtualCode,
+			       M2.ORGCODE          AS orgCode,
+			       M2.ORGTYPE          AS orgType
+			  FROM T_BASE_NET_GROUP_MIX M2
+			 INNER JOIN (select M1.ROUTEVIRTUALCODE
+			               from T_BASE_NET_GROUP_MIX m1
+			              inner join T_BASE_ROUTE R ON R.VIRTUALCODE =
+                                           M1.ROUTEVIRTUALCODE
+                                       AND R.OPERFLAG = 1
+              			WHERE M1.OPERFLAG = 1
+                			AND M1.ORGCODE = #{deptCode,jdbcType=VARCHAR}
+                			AND M1.ORGTYPE = 'SOURCE'
+                			AND R.TRANSMODE = 'PACKAGE') M3 ON M2.ROUTEVIRTUALCODE =
+                                                   M3.ROUTEVIRTUALCODE
+			 WHERE M2.OPERFLAG = 1
+			   AND M2.ORGTYPE = 'TARGET'
+		]]>
+		<if test="startTime != null and startTime != ''  ">
+			<![CDATA[ AND m2.UPDTIME > #{startTime,jdbcType=TIMESTAMP}]]>
+		</if>
+		<if test="endTime != null and endTime != '' ">
+			<![CDATA[ AND m2.UPDTIME <= #{endTime,jdbcType=TIMESTAMP}]]>
+		</if>
+	</select>
+	
+	<select id="queryLocalDatasByDel" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="com.deppon.pda.bdm.module.foss.upgrade.shared.domain.NetGroupEntity">
+		<![CDATA[
+			select 
+				M1.ID               AS id
+ 			 from T_BASE_NET_GROUP_MIX m1
+			 WHERE M1.OPERFLAG = 3
+			   AND M1.UPDTIME > #{startTime,jdbcType=TIMESTAMP}
+			   AND M1.UPDTIME <= #{endTime,jdbcType=TIMESTAMP}
+		]]>
+	</select>
+	
+	<select id="queryLocalIncDataList" parameterType="com.deppon.pda.bdm.module.foss.upgrade.shared.vo.BaseDataModel"
+		resultType="int">
+		<![CDATA[
+			SELECT COUNT(*) FROM T_BASE_NET_GROUP_MIX 
+		]]>
+		<if test="startTime != null and startTime != ''  ">
+			<![CDATA[ WHERE UPDTIME >= #{startTime,jdbcType=TIMESTAMP}]]>
+		</if>
+		<if test="endTime != null and endTime != '' ">
+			<![CDATA[ AND UPDTIME < #{endTime,jdbcType=TIMESTAMP}]]>
+		</if>
+	</select>
+</mapper>

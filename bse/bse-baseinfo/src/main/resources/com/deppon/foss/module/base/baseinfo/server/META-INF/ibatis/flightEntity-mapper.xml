@@ -1,0 +1,511 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!-- 
+	航班信息
+ -->
+<mapper namespace="foss.bse.bse-baseinfo.flight">
+	<resultMap id="flightResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.FlightEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="FLIGHT_SORT" property="flightSort" jdbcType="VARCHAR" />
+		<result column="FLIGHT_NO" property="flightNo" jdbcType="VARCHAR" />
+		<result column="AIRLINES" property="airlines" jdbcType="VARCHAR" />
+		<result column="DEPARTURE_AIRPORT" property="departureAirport" jdbcType="VARCHAR" />
+		<result column="DESTINATION_AIRPORT" property="destinationAirport" jdbcType="VARCHAR" />
+		<result column="PLAN_LEAVE_TIME" property="planLeaveTime" jdbcType="TIMESTAMP" />
+		<result column="PLAN_ARRIVE_TIME" property="planArriveTime" jdbcType="TIMESTAMP" />
+		<result column="AIRCRAFT_TYPE" property="aircraftType" jdbcType="VARCHAR" />
+		<result column="ORIG_CODE" property="origCode" jdbcType="VARCHAR" />
+		<result column="FLY_TIME" property="flyTime" jdbcType="DECIMAL" />
+		<result column="FLY_ON_MONDAY" property="flyOnMonday" jdbcType="CHAR" />
+		<result column="FLY_ON_TUESDAY" property="flyOnTuesday" jdbcType="CHAR" />
+		<result column="FLY_ON_WEDNESDAY" property="flyOnWednesday" jdbcType="CHAR" />
+		<result column="FLY_ON_THURSDAY" property="flyOnThursday" jdbcType="CHAR" />
+		<result column="FLY_ON_FRIDAY" property="flyOnFriday" jdbcType="CHAR" />
+		<result column="FLY_ON_SATURDAY" property="flyOnSaturday" jdbcType="CHAR" />
+		<result column="FLY_ON_SUNDAY" property="flyOnSunday" jdbcType="CHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="TARGET_CODE" property="targetCode" jdbcType="VARCHAR" />
+		<result column="isAgreementFlight" property="isAgreementFlight" jdbcType="CHAR" />
+		<result column="dailyAgreementVolume" property="dailyAgreementVolume" jdbcType="DECIMAL" />
+		<result column="belongsAirFreightDispatch" property="belongsAirFreightDispatch" jdbcType="VARCHAR" />
+		<result column="belongsAirFreightDispatchName" property="belongsAirFreightDispatchName" jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="flight_Column_List">
+		T.ID, T.FLIGHT_SORT, T.FLIGHT_NO, T.AIRLINES, T.DEPARTURE_AIRPORT,
+		T.DESTINATION_AIRPORT, T.PLAN_LEAVE_TIME,
+		T.PLAN_ARRIVE_TIME, T.AIRCRAFT_TYPE, T.ORIG_CODE, T.FLY_TIME, T.FLY_ON_MONDAY, T.FLY_ON_TUESDAY,
+		T.FLY_ON_WEDNESDAY, T.FLY_ON_THURSDAY, T.FLY_ON_FRIDAY, T.FLY_ON_SATURDAY,
+		T.FLY_ON_SUNDAY,
+		T.CREATE_TIME, T.MODIFY_TIME, T.ACTIVE, T.CREATE_USER_CODE, T.MODIFY_USER_CODE,
+		T.TARGET_CODE,T.isAgreementFlight,T.dailyAgreementVolume,T.belongsAirFreightDispatch,
+		O.NAME belongsAirFreightDispatchName
+	</sql>
+	<!-- 根据entity精确查询的查询条件 ，如果属性为空，则此属性不作为条件 -->
+	<sql id="flight_Pagination_Where_Base_Param">
+		<if test="id != null and id != ''">
+			AND T.ID = #{id,jdbcType=VARCHAR}
+		</if>
+		<if test="flightSort != null and flightSort != ''">
+			AND T.FLIGHT_SORT = #{flightSort,jdbcType=VARCHAR}
+		</if>
+		<if test="airlines != null and airlines != ''">
+			AND T.AIRLINES = #{airlines,jdbcType=VARCHAR}
+		</if>
+		<if test="aircraftType != null and aircraftType != ''">
+			AND T.AIRCRAFT_TYPE = #{aircraftType,jdbcType=VARCHAR}
+		</if>
+		<if test="origCode != null and origCode != ''">
+			AND T.ORIG_CODE = #{origCode,jdbcType=VARCHAR}
+		</if>
+		<if test="flyTime != null">
+			AND T.FLY_TIME = #{flyTime,jdbcType=DECIMAL}
+		</if>
+		<if test="flyOnMonday != null and flyOnMonday != ''">
+			AND T.FLY_ON_MONDAY = #{flyOnMonday,jdbcType=CHAR}
+		</if>
+		<if test="flyOnTuesday != null and flyOnTuesday != ''">
+			AND T.FLY_ON_TUESDAY = #{flyOnTuesday,jdbcType=CHAR}
+		</if>
+		<if test="flyOnWednesday != null and flyOnWednesday != ''">
+			AND T.FLY_ON_WEDNESDAY = #{flyOnWednesday,jdbcType=CHAR}
+		</if>
+		<if test="flyOnThursday != null and flyOnThursday != ''">
+			AND T.FLY_ON_THURSDAY = #{flyOnThursday,jdbcType=CHAR}
+		</if>
+		<if test="flyOnFriday != null and flyOnFriday != ''">
+			AND T.FLY_ON_FRIDAY = #{flyOnFriday,jdbcType=CHAR}
+		</if>
+		<if test="flyOnSaturday != null and flyOnSaturday != ''">
+			AND T.FLY_ON_SATURDAY = #{flyOnSaturday,jdbcType=CHAR}
+		</if>
+		<if test="flyOnSunday != null and flyOnSunday != ''">
+			AND T.FLY_ON_SUNDAY = #{flyOnSunday,jdbcType=CHAR}
+		</if>
+		<if test="createDate != null">
+			AND T.CREATE_TIME = #{createDate,jdbcType=TIMESTAMP}
+		</if>
+		<if test="modifyDate != null">
+			AND T.MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+		</if>
+		<if test="active != null and active != ''">
+			AND T.ACTIVE = #{active,jdbcType=CHAR}
+		</if>
+		<if test="createUser != null and createUser != ''">
+			AND T.CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR}
+		</if>
+		<if test="modifyUser != null and modifyUser != ''">
+			AND T.MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR}
+		</if>
+		<if test="modifyUser != null and modifyUser != ''">
+			AND T.MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR}
+		</if>
+		<if test="targetCode != null and targetCode != ''">
+			AND T.TARGET_CODE = #{targetCode,jdbcType=VARCHAR}
+		</if>
+		<if test="isAgreementFlight != null and isAgreementFlight != ''">
+			AND T.isAgreementFlight = #{isAgreementFlight,jdbcType=CHAR}
+		</if>
+		<if test="dailyAgreementVolume != null">
+			AND T.dailyAgreementVolume = #{dailyAgreementVolume,jdbcType=DECIMAL}
+		</if>
+		<if test="belongsAirFreightDispatch != null and belongsAirFreightDispatch != ''">
+			AND T.belongsAirFreightDispatch = #{belongsAirFreightDispatch,jdbcType=VARCHAR}
+		</if>
+	</sql>
+	<sql id="flight_Pagination_Where_Equals_Param">
+		<trim prefix="WHERE" prefixOverrides="AND | OR">
+			<include refid="flight_Pagination_Where_Base_Param"/>
+			<if test="planLeaveTime != null">
+				<![CDATA[ AND T.PLAN_LEAVE_TIME = #{planLeaveTime,jdbcType=TIMESTAMP} ]]>
+			</if>
+			<if test="planArriveTime != null">
+				<![CDATA[ AND T.PLAN_ARRIVE_TIME = #{planArriveTime,jdbcType=TIMESTAMP} ]]>
+			</if>
+			<if test="flightNo != null and flightNo != ''">
+				AND T.FLIGHT_NO = #{flightNo,jdbcType=VARCHAR}
+			</if>
+			<if test="departureAirport != null and departureAirport != ''">
+				AND T.DEPARTURE_AIRPORT = #{departureAirport,jdbcType=VARCHAR}
+			</if>
+			<if test="destinationAirport != null and destinationAirport != ''">
+				AND T.DESTINATION_AIRPORT = #{destinationAirport,jdbcType=VARCHAR}
+			</if>
+		</trim>
+	</sql>
+	<sql id="flight_Pagination_Where_Like_Param">
+		<trim prefix="WHERE" prefixOverrides="AND | OR">
+			<include refid="flight_Pagination_Where_Base_Param"/>
+			<!-- 属性引用特殊处理：使用用 ‘planLeaveTime’ 这个作为 ‘PLAN_LEAVE_TIME’ 计划起飞的开始时间-->
+			<if test="planLeaveTime != null">
+				<![CDATA[ AND T.PLAN_LEAVE_TIME >= #{planLeaveTime,jdbcType=TIMESTAMP} ]]>
+			</if>
+			<!-- 属性引用特殊处理：借用 ‘planArriveTime’ 这个作为 ‘PLAN_LEAVE_TIME’ 计划起飞的结束时间-->
+			<if test="planArriveTime != null">
+				<![CDATA[ AND T.PLAN_LEAVE_TIME <= #{planArriveTime,jdbcType=TIMESTAMP} ]]>
+			</if>
+			<if test="flightNo != null and flightNo != ''">
+				AND T.FLIGHT_NO like CONCAT(CONCAT('%', #{flightNo,jdbcType=VARCHAR}), '%')
+			</if>
+			<if test="departureAirport != null and departureAirport != ''">
+				AND T.DEPARTURE_AIRPORT like CONCAT(CONCAT('%', #{departureAirport,jdbcType=VARCHAR}), '%')
+			</if>
+			<if test="destinationAirport != null and destinationAirport != ''">
+				AND T.DESTINATION_AIRPORT like CONCAT(CONCAT('%', #{destinationAirport,jdbcType=VARCHAR}), '%')
+			</if>
+		</trim>
+	</sql>
+	<!-- 查询航班信息 -->
+	<select id="queryFlightListBySelective" resultMap="flightResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.FlightEntity">
+		select
+		/** 综合:查询航班信息 **/
+		<include refid="flight_Column_List" />
+		from BSE.T_BAS_FLIGHT T
+		left join bse.t_bas_org o
+		on t.belongsAirFreightDispatch = o.code
+		and o.active = 'Y'
+		<include refid="flight_Pagination_Where_Equals_Param"/>
+	</select>
+	<select id="queryFlightCountBySelectiveCondition" resultType="java.lang.Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.FlightEntity">
+		<![CDATA[ select count(*) from BSE.T_BAS_FLIGHT T]]>
+		<include refid="flight_Pagination_Where_Like_Param"/>
+	</select>
+	<select id="queryFlightListBySelectiveCondition" resultMap="flightResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.FlightEntity">
+		select
+		<include refid="flight_Column_List" />
+		from BSE.T_BAS_FLIGHT T
+		left join bse.t_bas_org o
+		on t.belongsAirFreightDispatch = o.code
+		and o.active = 'Y'
+		<include refid="flight_Pagination_Where_Like_Param"/>
+	</select>
+	<!-- 删除航班信息 -->
+	<delete id="deleteFlight" parameterType="java.lang.String">
+		delete/** 综合:删除航班信息 **/ from BSE.T_BAS_FLIGHT
+		where ID = #{id,jdbcType=VARCHAR}
+	</delete>
+	<!-- 新增航班信息 -->
+	<insert id="addFlight"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.FlightEntity">
+		insert/** 综合:新增航班信息 **/ into BSE.T_BAS_FLIGHT (ID, FLIGHT_SORT, FLIGHT_NO,
+		AIRLINES, DEPARTURE_AIRPORT, DESTINATION_AIRPORT,
+		PLAN_LEAVE_TIME, PLAN_ARRIVE_TIME, AIRCRAFT_TYPE,
+		ORIG_CODE, FLY_TIME, FLY_ON_MONDAY,
+		FLY_ON_TUESDAY, FLY_ON_WEDNESDAY, FLY_ON_THURSDAY,
+		FLY_ON_FRIDAY, FLY_ON_SATURDAY, FLY_ON_SUNDAY,
+		CREATE_TIME, MODIFY_TIME, ACTIVE,
+		CREATE_USER_CODE, MODIFY_USER_CODE,
+		TARGET_CODE,isAgreementFlight,dailyAgreementVolume,belongsAirFreightDispatch)
+		values (#{id,jdbcType=VARCHAR}, #{flightSort,jdbcType=VARCHAR},
+		#{flightNo,jdbcType=VARCHAR},
+		#{airlines,jdbcType=VARCHAR}, #{departureAirport,jdbcType=VARCHAR},
+		#{destinationAirport,jdbcType=VARCHAR},
+		#{planLeaveTime,jdbcType=TIMESTAMP}, #{planArriveTime,jdbcType=TIMESTAMP},
+		#{aircraftType,jdbcType=VARCHAR},
+		#{origCode,jdbcType=VARCHAR}, #{flyTime,jdbcType=DECIMAL}, #{flyOnMonday,jdbcType=CHAR},
+		#{flyOnTuesday,jdbcType=CHAR}, #{flyOnWednesday,jdbcType=CHAR},
+		#{flyOnThursday,jdbcType=CHAR},
+		#{flyOnFriday,jdbcType=CHAR}, #{flyOnSaturday,jdbcType=CHAR}, #{flyOnSunday,jdbcType=CHAR},
+		#{createDate,jdbcType=TIMESTAMP}, #{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=CHAR},
+		#{createUser,jdbcType=VARCHAR}, #{modifyUser,jdbcType=VARCHAR},
+		#{targetCode,jdbcType=VARCHAR}, #{isAgreementFlight,jdbcType=CHAR},
+		#{dailyAgreementVolume,jdbcType=DECIMAL}, #{belongsAirFreightDispatch,jdbcType=VARCHAR})
+	</insert>
+	<insert id="addFlightBySelective"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.FlightEntity">
+		insert into BSE.T_BAS_FLIGHT
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				ID,
+			</if>
+			<if test="flightSort != null">
+				FLIGHT_SORT,
+			</if>
+			<if test="flightNo != null">
+				FLIGHT_NO,
+			</if>
+			<if test="airlines != null">
+				AIRLINES,
+			</if>
+			<if test="departureAirport != null">
+				DEPARTURE_AIRPORT,
+			</if>
+			<if test="destinationAirport != null">
+				DESTINATION_AIRPORT,
+			</if>
+			<if test="planLeaveTime != null">
+				PLAN_LEAVE_TIME,
+			</if>
+			<if test="planArriveTime != null">
+				PLAN_ARRIVE_TIME,
+			</if>
+			<if test="aircraftType != null">
+				AIRCRAFT_TYPE,
+			</if>
+			<if test="origCode != null">
+				ORIG_CODE,
+			</if>
+			<if test="flyTime != null">
+				FLY_TIME,
+			</if>
+			<if test="flyOnMonday != null">
+				FLY_ON_MONDAY,
+			</if>
+			<if test="flyOnTuesday != null">
+				FLY_ON_TUESDAY,
+			</if>
+			<if test="flyOnWednesday != null">
+				FLY_ON_WEDNESDAY,
+			</if>
+			<if test="flyOnThursday != null">
+				FLY_ON_THURSDAY,
+			</if>
+			<if test="flyOnFriday != null">
+				FLY_ON_FRIDAY,
+			</if>
+			<if test="flyOnSaturday != null">
+				FLY_ON_SATURDAY,
+			</if>
+			<if test="flyOnSunday != null">
+				FLY_ON_SUNDAY,
+			</if>
+			<if test="createDate != null">
+				CREATE_TIME,
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME,
+			</if>
+			<if test="active != null">
+				ACTIVE,
+			</if>
+			<if test="createUser != null">
+				CREATE_USER_CODE,
+			</if>
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE,
+			</if>
+			<if test="targetCode != null">
+				TARGET_CODE,
+			</if>
+			
+			<if test="isAgreementFlight != null">
+				isAgreementFlight,
+			</if>
+			<if test="dailyAgreementVolume != null">
+				dailyAgreementVolume,
+			</if>
+			<if test="belongsAirFreightDispatch != null">
+				belongsAirFreightDispatch,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id,jdbcType=VARCHAR},
+			</if>
+			<if test="flightSort != null">
+				#{flightSort,jdbcType=VARCHAR},
+			</if>
+			<if test="flightNo != null">
+				#{flightNo,jdbcType=VARCHAR},
+			</if>
+			<if test="airlines != null">
+				#{airlines,jdbcType=VARCHAR},
+			</if>
+			<if test="departureAirport != null">
+				#{departureAirport,jdbcType=VARCHAR},
+			</if>
+			<if test="destinationAirport != null">
+				#{destinationAirport,jdbcType=VARCHAR},
+			</if>
+			<if test="planLeaveTime != null">
+				#{planLeaveTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="planArriveTime != null">
+				#{planArriveTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="aircraftType != null">
+				#{aircraftType,jdbcType=VARCHAR},
+			</if>
+			<if test="origCode != null">
+				#{origCode,jdbcType=VARCHAR},
+			</if>
+			<if test="flyTime != null">
+				#{flyTime,jdbcType=DECIMAL},
+			</if>
+			<if test="flyOnMonday != null">
+				#{flyOnMonday,jdbcType=CHAR},
+			</if>
+			<if test="flyOnTuesday != null">
+				#{flyOnTuesday,jdbcType=CHAR},
+			</if>
+			<if test="flyOnWednesday != null">
+				#{flyOnWednesday,jdbcType=CHAR},
+			</if>
+			<if test="flyOnThursday != null">
+				#{flyOnThursday,jdbcType=CHAR},
+			</if>
+			<if test="flyOnFriday != null">
+				#{flyOnFriday,jdbcType=CHAR},
+			</if>
+			<if test="flyOnSaturday != null">
+				#{flyOnSaturday,jdbcType=CHAR},
+			</if>
+			<if test="flyOnSunday != null">
+				#{flyOnSunday,jdbcType=CHAR},
+			</if>
+			<if test="createDate != null">
+				#{createDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyDate != null">
+				#{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="active != null">
+				#{active,jdbcType=CHAR},
+			</if>
+			<if test="createUser != null">
+				#{createUser,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyUser != null">
+				#{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="targetCode != null">
+				#{TARGET_CODE,jdbcType=VARCHAR},
+			</if>
+			
+			<if test="isAgreementFlight != null">
+				#{isAgreementFlight,jdbcType=CHAR},
+			</if>
+			<if test="dailyAgreementVolume != null">
+				#{dailyAgreementVolume,jdbcType=DECIMAL},
+			</if>
+			<if test="belongsAirFreightDispatch != null">
+				#{belongsAirFreightDispatch,jdbcType=VARCHAR},
+			</if>
+		</trim>
+	</insert>
+	<!-- 修改航班信息 -->
+	<update id="updateFlightBySelective"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.FlightEntity">
+		update/** 综合:修改航班信息 **/ BSE.T_BAS_FLIGHT 
+		<set>
+			<if test="flightSort != null">
+				FLIGHT_SORT = #{flightSort,jdbcType=VARCHAR},
+			</if>
+			<if test="flightNo != null">
+				FLIGHT_NO = #{flightNo,jdbcType=VARCHAR},
+			</if>
+			<if test="airlines != null">
+				AIRLINES = #{airlines,jdbcType=VARCHAR},
+			</if>
+			<if test="departureAirport != null">
+				DEPARTURE_AIRPORT = #{departureAirport,jdbcType=VARCHAR},
+			</if>
+			<if test="destinationAirport != null">
+				DESTINATION_AIRPORT = #{destinationAirport,jdbcType=VARCHAR},
+			</if>
+			<if test="planLeaveTime != null">
+				PLAN_LEAVE_TIME = #{planLeaveTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="planArriveTime != null">
+				PLAN_ARRIVE_TIME = #{planArriveTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="aircraftType != null">
+				AIRCRAFT_TYPE = #{aircraftType,jdbcType=VARCHAR},
+			</if>
+			<if test="origCode != null">
+				ORIG_CODE = #{origCode,jdbcType=VARCHAR},
+			</if>
+			<if test="flyTime != null">
+				FLY_TIME = #{flyTime,jdbcType=DECIMAL},
+			</if>
+			<if test="flyOnMonday != null">
+				FLY_ON_MONDAY = #{flyOnMonday,jdbcType=CHAR},
+			</if>
+			<if test="flyOnTuesday != null">
+				FLY_ON_TUESDAY = #{flyOnTuesday,jdbcType=CHAR},
+			</if>
+			<if test="flyOnWednesday != null">
+				FLY_ON_WEDNESDAY = #{flyOnWednesday,jdbcType=CHAR},
+			</if>
+			<if test="flyOnThursday != null">
+				FLY_ON_THURSDAY = #{flyOnThursday,jdbcType=CHAR},
+			</if>
+			<if test="flyOnFriday != null">
+				FLY_ON_FRIDAY = #{flyOnFriday,jdbcType=CHAR},
+			</if>
+			<if test="flyOnSaturday != null">
+				FLY_ON_SATURDAY = #{flyOnSaturday,jdbcType=CHAR},
+			</if>
+			<if test="flyOnSunday != null">
+				FLY_ON_SUNDAY = #{flyOnSunday,jdbcType=CHAR},
+			</if>
+			<if test="createDate != null">
+				CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="active != null">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="createUser != null">
+				CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="targetCode != null">
+				TARGET_CODE = #{targetCode,jdbcType=VARCHAR},
+			</if>
+			<if test="isAgreementFlight != null and isAgreementFlight != ''">
+			 isAgreementFlight = #{isAgreementFlight,jdbcType=CHAR},
+		    </if>
+		    <if test="dailyAgreementVolume != null">
+			 dailyAgreementVolume = #{dailyAgreementVolume,jdbcType=DECIMAL},
+		    </if>
+		    <if test="targetCode != null">
+			 belongsAirFreightDispatch = #{belongsAirFreightDispatch,jdbcType=VARCHAR},
+			</if>
+		</set>
+		where ID = #{id,jdbcType=VARCHAR}
+	</update>
+	<update id="updateFlight"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.FlightEntity">
+		update BSE.T_BAS_FLIGHT
+		set FLIGHT_SORT = #{flightSort,jdbcType=VARCHAR},
+		FLIGHT_NO = #{flightNo,jdbcType=VARCHAR},
+		AIRLINES = #{airlines,jdbcType=VARCHAR},
+		DEPARTURE_AIRPORT = #{departureAirport,jdbcType=VARCHAR},
+		DESTINATION_AIRPORT = #{destinationAirport,jdbcType=VARCHAR},
+		PLAN_LEAVE_TIME = #{planLeaveTime,jdbcType=TIMESTAMP},
+		PLAN_ARRIVE_TIME = #{planArriveTime,jdbcType=TIMESTAMP},
+		AIRCRAFT_TYPE = #{aircraftType,jdbcType=VARCHAR},
+		ORIG_CODE = #{origCode,jdbcType=VARCHAR},
+		FLY_TIME = #{flyTime,jdbcType=DECIMAL},
+		FLY_ON_MONDAY = #{flyOnMonday,jdbcType=CHAR},
+		FLY_ON_TUESDAY = #{flyOnTuesday,jdbcType=CHAR},
+		FLY_ON_WEDNESDAY = #{flyOnWednesday,jdbcType=CHAR},
+		FLY_ON_THURSDAY = #{flyOnThursday,jdbcType=CHAR},
+		FLY_ON_FRIDAY = #{flyOnFriday,jdbcType=CHAR},
+		FLY_ON_SATURDAY = #{flyOnSaturday,jdbcType=CHAR},
+		FLY_ON_SUNDAY = #{flyOnSunday,jdbcType=CHAR},
+		CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+		MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+		ACTIVE = #{active,jdbcType=CHAR},
+		CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+		MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+		TARGET_CODE = #{targetCode,jdbcType=VARCHAR},
+		isAgreementFlight = #{isAgreementFlight,jdbcType=CHAR},
+		dailyAgreementVolume = #{dailyAgreementVolume,jdbcType=DECIMAL},
+		belongsAirFreightDispatch = #{belongsAirFreightDispatch,jdbcType=VARCHAR}
+		where ID = #{id,jdbcType=VARCHAR}
+	</update>
+</mapper>

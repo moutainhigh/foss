@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.BillReceivableDEntityDao">
+	<resultMap id="BaseResultMap"
+		type="com.deppon.foss.module.settlement.common.api.shared.domain.BillReceivableDEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="SOURCE_BILL_NO" property="sourceBillNo" jdbcType="VARCHAR" />
+		<result column="RECEIVABLE_NO" property="receivableNo" jdbcType="VARCHAR" />
+		<result column="AMOUNT" property="amount" jdbcType="DECIMAL" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUserCode" jdbcType="VARCHAR" />
+		<result column="CREATE_USER_NAME" property="createUserName" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="RECEIVABLE_TYPE" property="receivableType" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<sql id="Base_Column_List">
+		ID,
+		SOURCE_BILL_NO,
+		RECEIVABLE_NO,
+		AMOUNT/100 AMOUNT,
+		ACTIVE,
+		CREATE_USER_CODE,
+		CREATE_USER_NAME,
+		CREATE_TIME,
+		RECEIVABLE_TYPE
+	</sql>
+	
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.settlement.common.api.shared.domain.BillReceivableDEntity">
+		insert into /*结算-应收单明细-新增应收单明细*/ STL.T_STL_BILL_RECEIVABLE_D 
+		(ID,
+		 SOURCE_BILL_NO,
+		 RECEIVABLE_NO,
+		 AMOUNT,
+		 ACTIVE,
+		 CREATE_USER_CODE,
+		 CREATE_USER_NAME,
+		 CREATE_TIME,
+		 RECEIVABLE_TYPE)
+		values (
+		#{id,jdbcType=VARCHAR},#{sourceBillNo,jdbcType=VARCHAR},
+		#{receivableNo,jdbcType=VARCHAR},#{amount,jdbcType=DECIMAL}*100,
+		#{active,jdbcType=CHAR},#{createUserCode,jdbcType=VARCHAR},
+		#{createUserName,jdbcType=VARCHAR},#{createTime,jdbcType=TIMESTAMP}, 
+		#{receivableType,jdbcType=VARCHAR}
+		)
+	</insert>
+
+
+	<!-- 根据应收单号查询应收单明细信息 -->
+	<select id="selectByReceivableNos" resultMap="BaseResultMap"
+		parameterType="java.util.Map">
+		SELECT /*结算-应收单明细-根据应收单号查询应收单信息*/
+		<include refid="Base_Column_List" />
+		FROM STL.T_STL_BILL_RECEIVABLE_D T WHERE RECEIVABLE_NO IN
+		<foreach collection="receivableNos" index="index" item="item"
+			open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		<if test="active!=null and active!='' ">
+			AND ACTIVE=#{active}
+		</if>
+	</select>
+	
+	<!-- 根据来源单据单号查询应收单明细信息 -->
+	<select id="selectBySourceBillNos" resultMap="BaseResultMap"
+		parameterType="java.util.Map">
+		SELECT /*结算-应收单明细-根据来源单据单号查询应收单信息*/
+		<include refid="Base_Column_List" />
+		FROM STL.T_STL_BILL_RECEIVABLE_D WHERE SOURCE_BILL_NO IN
+		<foreach collection="sourceBillNos" index="index" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		<if test="active!=null and active!='' ">
+			AND ACTIVE=#{active}
+		</if>
+	</select>
+
+	<!-- 根据来应收单单号查询应收单明细信息 -->
+	<select id="selectByReceivableNo" resultMap="BaseResultMap"
+			parameterType="java.lang.String">
+		SELECT /*根据来应收单单号查询应收单明细信息*/
+		<include refid="Base_Column_List" />
+		FROM STL.T_STL_BILL_RECEIVABLE_D
+		WHERE  ACTIVE='Y' AND RECEIVABLE_NO =#{receivableNo}
+	</select>
+</mapper>

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.pkp.DataConsistencyMapper">
+
+	<resultMap type="com.deppon.foss.module.pickup.waybill.shared.vo.DataConsistencyVo" id="DataConsistencyVo">
+		<id property="id" column="ID" />
+		<result column="ENTITYCLASSNAME" property="entityClsName"/>
+		<result column="SYNCDATE" property="localSyncDate" javaType="java.util.Date"/>
+		<result column="ORG_CODE" property="orgCode" javaType="java.lang.String"/>
+		<result column="REGION_ID" property="regionID" javaType="java.lang.String"/>
+		<result column="localCounts" property="localCounts" javaType="java.lang.Integer"/>
+		<result column="serviceCounts" property="counts" javaType="java.lang.Integer"/>
+		<result column="VERSION_NO" property="versionNo" javaType="java.lang.Long"/>
+	</resultMap>
+	
+	<!-- 获取表格数据 -->	
+	<select id="countQueryTableDate" parameterType="java.util.Map" statementType="STATEMENT"
+	    resultMap="DataConsistencyVo">
+	    select count(*) as serviceCounts,
+	    Max(PKP.T_SRV_PRICE_REGION_AIR.VERSION_NO) as VERSION_NO
+	    from PKP.T_SRV_PRICE_REGION_AIR
+	    where PKP.T_SRV_PRICE_REGION_AIR.ACTIVE='Y'
+        <foreach collection="ids" item="item" index="index" >
+		    union all
+		    select count(*) as serviceCounts,
+		    Max(${item.tabelName}.VERSION_NO) as VERSION_NO
+		    from ${item.tabelName} 
+		    where ${item.tabelName}.ACTIVE='Y'
+		    <if test="item.tabelName =='BSE.T_BAS_USER'">
+		        and ${item.tabelName}.emp_code=${user}        
+		    </if>
+		    <if test="item.tabelName =='BSE.T_BAS_USER_ORG_ROLE'">
+		        and ${item.tabelName}.emp_code=${user}       
+		    </if>
+		    <if test="item.tabelName =='PKP.T_SRV_PRICE_PLAN'">
+		        and ${item.tabelName}.t_srv_price_region_id=${item.regionID}
+		    </if>
+		    <if test="item.tabelName =='PKP.T_SRV_EFFECTIVE_PLAN_DETAIL'">
+		        and ${item.tabelName}.dept_region_id=${item.regionID}
+		    </if>	
+            <if test="item.entityClsName=='com.deppon.foss.module.pickup.waybill.shared.dto.PriceValuationAirDto'">
+		        and ${item.tabelName}.dept_region_id=${item.regionID}
+		        and ${item.tabelName}.type='PRICING'
+		    </if>
+		    <if test="item.entityClsName=='com.deppon.foss.module.pickup.waybill.shared.dto.PriceValuationFreightDto'">
+		        and ${item.tabelName}.dept_region_id=${item.regionID}
+		        and	${item.tabelName}.type='PRICING'
+		    </if>
+		    <if test="item.entityClsName=='com.deppon.foss.module.pickup.waybill.shared.dto.PriceValuationBasisAddDto'">
+		        and	${item.tabelName}.type='BASICVALUEADDED'
+		    </if>  
+		    <if test="item.entityClsName=='com.deppon.foss.module.pickup.waybill.shared.dto.PriceValuationProductAddDto'">
+		        and	${item.tabelName}.type='PRODUCTVALUEADDED'
+		    </if>
+		    <if test="item.entityClsName=='com.deppon.foss.module.pickup.waybill.shared.dto.PriceValuationRegionAddDto'">
+		        and	${item.tabelName}.type='REGIONVALUEADDED'
+		        <!-- <if test="item.regionID !=null and item.regionID !=''">
+		             and ${item.tabelName}.dept_region_id=${item.regionID}
+		        </if> -->
+		    </if>
+            	      
+		   
+        </foreach>
+	</select>
+ 
+</mapper>

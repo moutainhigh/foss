@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.sync.dataConsistencyCheck">
+
+	<select id="findLocalBaseLines"
+		resultMap="DataConsistencyCheckVo">
+		<![CDATA[
+		select * from PS_SYNCDATABASELINE
+		]]>
+	</select>
+	
+	
+	<select id="queryLocalDate" parameterType="java.util.Map" statementType="STATEMENT"
+	    resultMap="DataConsistencyCheckVo">
+	    select count(*) as localCounts from PS_SYNCDATABASELINE
+        <foreach collection="ids" item="loacalData" index="index" >
+		union all
+		select count(*) as localCounts	from ${loacalData.tabelName}	
+		where ${loacalData.tabelName}.active='Y'
+		<if test="loacalData.regionID!=null and loacalData.regionID!=''">
+		   <if test="loacalData.entityClsName=='com.deppon.foss.module.pickup.waybill.shared.dto.PriceAirPlanDto'">
+		      and ${loacalData.tabelName}.t_srv_price_region_id=${loacalData.regionID}
+		   </if>
+		   <if test="loacalData.entityClsName==' com.deppon.foss.module.pickup.pricing.api.shared.domain.PricePlanEntity'">
+		      and ${loacalData.tabelName}.t_srv_price_region_id=${loacalData.regionID}
+		   </if>
+		   <if test="loacalData.entityClsName=='com.deppon.foss.module.pickup.waybill.shared.dto.PriceValuationAirDto'">
+		      and ${loacalData.tabelName}.dept_region_id=${loacalData.regionID}
+		       and ${loacalData.tabelName}.type='PRICING'
+		   </if>
+		   <if test="loacalData.entityClsName=='com.deppon.foss.module.pickup.waybill.shared.dto.PriceValuationFreightDto'">
+		      and ${loacalData.tabelName}.dept_region_id=${loacalData.regionID}
+		       and ${loacalData.tabelName}.type='PRICING'
+		   </if>		  
+		   <if test="loacalData.entityClsName=='com.deppon.foss.module.pickup.pricing.api.shared.domain.EffectivePlanEntity'">
+		      and ${loacalData.tabelName}.dept_region_id=${loacalData.regionID}
+		   </if>
+		   <if test="loacalData.entityClsName=='com.deppon.foss.module.pickup.pricing.api.shared.domain.EffectivePlanDetailEntity'">
+		      and ${loacalData.tabelName}.dept_region_id=${loacalData.regionID}
+		   </if>
+		 </if>
+		 <if test="loacalData.entityClsName=='com.deppon.foss.module.pickup.waybill.shared.dto.PriceValuationBasisAddDto'">
+		     and ${loacalData.tabelName}.type='BASICVALUEADDED'
+		 </if>  
+		 <if test="loacalData.entityClsName=='com.deppon.foss.module.pickup.waybill.shared.dto.PriceValuationProductAddDto'">
+		     and ${loacalData.tabelName}.type='PRODUCTVALUEADDED'
+		 </if>
+		 <if test="loacalData.entityClsName=='com.deppon.foss.module.pickup.waybill.shared.dto.PriceValuationRegionAddDto'">
+		     and ${loacalData.tabelName}.type='REGIONVALUEADDED'		        
+		 </if>
+        </foreach>
+	</select>
+	
+	
+	<resultMap type="com.deppon.foss.module.pickup.common.client.vo.DataConsistencyCheckVo" id="DataConsistencyCheckVo">
+		<id property="id" column="ID" />
+		<result column="ENTITYCLASSNAME" property="entityClsName"/>
+		<result column="SYNCDATE" property="localSyncDate" javaType="java.util.Date"/>
+		<result column="ORG_CODE" property="orgCode" javaType="java.lang.String"/>
+		<result column="REGION_ID" property="regionID" javaType="java.lang.String"/>
+		<result column="localCounts" property="localCounts" javaType="java.lang.Integer"/>
+		<!--<result column="TABLE_NAME" property="tabelName" javaType="java.lang.String"/>
+		<result column="version_no" property="syncDate" javaType="java.util.Date"/>
+		<result column="TABLE_NAME" property="tabelName" javaType="java.lang.String"/>		
+		<result column="count(1)" property=counts javaType="java.lang.Integer"/>-->
+		<!-- <result column="SYNCPAGE" property="syncPage"/> -->
+	</resultMap>
+</mapper> 

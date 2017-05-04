@@ -1,0 +1,942 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.lostwarning.unloadLackdiffreport">
+	<!-- 用于查询卸车差异报告 -->
+	<resultMap id="queryUnloadDiffReportResultMap"
+		type="com.deppon.foss.module.transfer.unload.api.shared.domain.UnloadDiffReportEntity">
+		<result property="id" column="id" />
+		<result property="diffReportNo" column="diffReportNo" />
+		<result property="vehicleNo" column="vehicleNo" />
+		<result property="unloadTaskNo" column="unloadTaskNo" />
+		<result property="unloadTaskId" column="unloadTaskId" />
+		<result property="handleStatus" column="handleStatus" />
+		<result property="unloadType" column="unloadType" />
+		<result property="reportCreateTime" column="reportCreateTime" />
+		<result property="orgCode" column="orgCode" />
+		<result property="loadManName" column="loadManName" />
+		<result property="loadManCode" column="loadManCode" />
+		<result property="loadManDeptName" column="loadManDeptName" />
+		<result property="moreGoodsPieces" column="moreGoodsPieces" />
+		<result property="lackGoodsPieces" column="lackGoodsPieces" />
+		<result property="byhandGoodsPieces" column="byhandGoodsPieces" />
+		<result property="pdaHandleStatus" column="pdaHandleStatus" />
+	</resultMap>
+	<!-- 用于显示卸车差异报告详情 -->
+	<resultMap id="queryUnloadDiffReportDetailResultMap"
+		type="com.deppon.foss.module.transfer.unload.api.shared.domain.UnloadDiffReportDetailEntity">
+		<result property="id" column="id" />
+		<result property="diffReportId" column="diffReportId" />
+		<result property="waybillNo" column="waybillNo" />
+		<result property="serialNo" column="serialNo" />
+		<result property="note" column="note" />
+		<result property="oaMistakeBillNo" column="oaMistakeBillNo" />
+		<result property="diffType" column="diffType" />
+		<result property="scanState" column="scanState"/>
+		<result property="transProperty" column="transProperty" />
+		<result property="isScanedLastTime" column="isScanedLastTime" />
+		<result property="unloadTime" column="unloadTime" />
+		<result property="exceptionHandleTime" column="exceptionHandleTime" />
+		<result property="unloadOrgCode" column="unloadOrgCode" />
+		<result property="unloadTaskId" column="unloadTaskId" />
+		<result property="unloadTaskNo" column="unloadTaskNo" />
+		<result property="unloadTaskType" column="unloadTaskType" />
+		<result property="targetOrg" column="targetOrg" />
+		<result property="vehicleNo" column="vehicleNo" />
+		<result property="packageNo" column="packageNo" />
+	</resultMap>
+	
+	<!--根据差错单编号获取所有未找到的少货流水号-->
+	<resultMap id="queryNoFoundLackGoodsDetailResultMap"
+		type="com.deppon.foss.module.transfer.unload.api.shared.domain.LackGoodsFoundEntity">
+		<result property="id" column="id" />
+		<result property="waybillNo" column="waybillNo" />
+		<result property="serialNo" column="serialNo" />
+		<result property="reportType" column="reportType" />
+		<result property="oaErrorNo" column="oaErrorNo" />
+		<result property="reportId" column="reportId" />
+		<result property="reportOATime" column="reportOATime" />
+		<result property="lackGoodsOrgCode" column="lackGoodsOrgCode" />
+		<result property="beFound" column="beFound" />
+		<result property="foundTime" column="foundTime" />
+		<result property="discovererCode" column="discovererCode" />
+		<result property="discovererName" column="discovererName" />
+		<result property="discovererOrgCode" column="discovererOrgCode" />
+	</resultMap>
+	
+	<resultMap id="unloadTaskResultMap" type="com.deppon.foss.module.transfer.unload.api.shared.domain.UnloadTaskEntity" >
+    <id column="id" property="id" />
+    <result column="unloadTaskNo" property="unloadTaskNo" />
+    <result column="vehicleNo" property="vehicleNo" />
+    <result column="platformNo" property="platformNo" />
+    <result column="platformId" property="platformId" />
+    <result column="unloadStartTime" property="unloadStartTime" />
+    <result column="unloadEndTime" property="unloadEndTime" />
+    <result column="taskState" property="taskState" />
+    <result column="unloadType" property="unloadType" />
+    <result column="unloadWay" property="unloadWay" />
+    <result column="unloadOrgCode" property="unloadOrgCode" />
+    <result column="unloadOrgName" property="unloadOrgName" />
+    <result column="beException" property="beException" />
+    <result column="exceptionNotes" property="exceptionNotes" />
+    <result column="planCompleteTime" property="planCompleteTime" />
+    <result column="beScanInstock" property="beScanInstock" />
+  </resultMap>
+	
+	<!--查询卸车差异报告-->
+	<select id="queryUnloadDiffReportList" parameterType="com.deppon.foss.module.transfer.unload.api.shared.dto.QueryUnloadDiffReportConditionDto"
+			resultMap="queryUnloadDiffReportResultMap">
+		select rep.gaprep_no diffReportNo,
+      		rep.unload_task_no unloadTaskNo,
+			task.vehicle_no vehicleNo,
+			task.unload_type unloadType,
+			rep.exceed_goods_qty moreGoodsPieces,
+			rep.lack_goods_qty lackGoodsPieces,
+			rep.byhand_goods_qty byhandGoodsPieces,
+			rep.handle_status handleStatus,
+			loadMan.Loader_Name loadManName,
+			loadMan.Loader_Code loadManCode,
+			nvl(em.name,'') loadManDeptName,
+			rep.create_time reportCreateTime 
+			 from tfr.T_OPT_UNLOAD_GAPREP rep 
+			      left join tfr.T_OPT_UNLOAD_TASK task 
+			      on task.id = rep.unload_task_id
+			      left join tfr.T_OPT_LOADER_PARTICIPATION  loadMan
+			      on task.id = loadMan.Task_Id and loadMan.Be_Creator = 'Y'
+			      left join (select e.emp_code, e.emp_name, o.code, o.name
+              	 				from bse.t_bas_employee e
+              					inner join bse.t_bas_org o ON o.code = e.org_code 
+              					where e.active = 'Y'
+              						AND o.active = 'Y') em 
+              	  on em.emp_code = loadMan.Loader_Code
+		<where>
+			 rep.Unload_Org_Code = #{orgCode} 
+			<if test="waybillNo != null and waybillNo != ''">
+				and exists (select distinct de.unload_gaprep_id  
+                      from tfr.t_opt_unload_gaprep_detail de
+                      where de.waybill_no = #{waybillNo}
+                      and rep.id= de.unload_gaprep_id)
+			</if>
+			<if test="waybillNo == null or waybillNo == ''">
+				and rep.create_time between #{beginCreateTime} and #{endCreateTime}
+			</if>
+			<if test="diffReportNo != null and diffReportNo != ''">
+				and rep.gaprep_no = #{diffReportNo}
+			</if>
+			<if test="vehicleNo != null and vehicleNo != ''">
+				and task.vehicle_no = #{vehicleNo}
+			</if>
+			<if test="unloadTaskNo != null and unloadTaskNo != ''">
+				and rep.unload_task_no = #{unloadTaskNo}
+			</if>
+			<if test="handleStatus != null and handleStatus != '' and handleStatus != 'ALL'">
+				and rep.handle_status = #{handleStatus}
+			</if>
+			<if test="loadManCode != null and loadManCode != ''">
+				and loadMan.LOADER_CODE = #{loadManCode}
+			</if>
+		</where>
+	</select>
+	
+	<!--获取卸车差异报告的总条数-->
+	<select id="queryUnloadDiffReportCount" parameterType="com.deppon.foss.module.transfer.unload.api.shared.dto.QueryUnloadDiffReportConditionDto"
+			resultType="Long">
+		select count(1)
+			 from tfr.T_OPT_UNLOAD_GAPREP rep 
+			      left join tfr.T_OPT_UNLOAD_TASK task 
+			      on task.id = rep.unload_task_id
+			      left join tfr.T_OPT_LOADER_PARTICIPATION  loadMan
+			      on task.id = loadMan.Task_Id and loadMan.Be_Creator = 'Y'
+		<where>
+			 rep.Unload_Org_Code = #{orgCode} 
+			<if test="waybillNo != null and waybillNo != ''">
+				and exists (select distinct de.unload_gaprep_id  
+                      from tfr.t_opt_unload_gaprep_detail de
+                      where de.waybill_no = #{waybillNo}
+                      and rep.id= de.unload_gaprep_id)
+			</if>
+			<if test="waybillNo == null or waybillNo == ''">
+				and rep.create_time between #{beginCreateTime} and #{endCreateTime}
+			</if>
+			<if test="diffReportNo != null and diffReportNo != ''">
+				and rep.gaprep_no = #{diffReportNo}
+			</if>
+			<if test="vehicleNo != null and vehicleNo != ''">
+				and task.vehicle_no = #{vehicleNo}
+			</if>
+			<if test="unloadTaskNo != null and unloadTaskNo != ''">
+				and rep.unload_task_no = #{unloadTaskNo}
+			</if>
+			<if test="handleStatus != null and handleStatus != '' and handleStatus != 'ALL'">
+				and rep.handle_status = #{handleStatus}
+			</if>
+			<if test="loadManCode != null and loadManCode != ''">
+				and loadMan.LOADER_CODE = #{loadManCode}
+			</if>
+		</where>
+	</select>
+	<!--根据卸车差异报告编号，获取差异报告基本信息-->
+	<select id="queryUnloadDiffReportBasicInfo" parameterType="String" resultMap="queryUnloadDiffReportResultMap">
+		select rep.id              id,
+	       rep.gaprep_no       diffReportNo,
+	       rep.unload_task_no  unloadTaskNo,
+	       task.vehicle_no     vehicleNo,
+	       task.unload_type    unloadType,
+	       loadMan.Loader_Name loadManName,
+	       loadMan.Loader_Code loadManCode,
+	       rep.create_time     reportCreateTime,
+	       rep.unload_org_code orgCode,
+	       rep.unload_task_id unloadTaskId,
+           rep.pda_handle_status pdaHandleStatus
+	  from tfr.T_OPT_UNLOAD_GAPREP rep
+	  left join tfr.T_OPT_UNLOAD_TASK task
+	    on task.id = rep.unload_task_id
+	  left join  tfr.T_OPT_LOADER_PARTICIPATION  loadMan
+	    on task.id = loadMan.Task_Id and loadMan.Be_Creator = 'Y'
+		<where>
+			rep.gaprep_no = #{diffReportNo}
+		</where>
+	</select>	
+	
+	<!--根据卸车差异报告ID，获取差异报告基本信息-->
+	<select id="queryUnloadDiffReportBasicInfoByID" parameterType="String" resultMap="queryUnloadDiffReportResultMap">
+		select rep.id              id,
+	       rep.gaprep_no       diffReportNo,
+	       rep.unload_task_no  unloadTaskNo,
+	       task.vehicle_no     vehicleNo,
+	       task.unload_type    unloadType,
+	       loadMan.Loader_Name loadManName,
+	       loadMan.Loader_Code loadManCode,
+	       rep.create_time     reportCreateTime,
+	       rep.unload_org_code orgCode,
+	       rep.unload_task_id unloadTaskId,
+	       rep.lack_goods_qty lackGoodsPieces 
+	  from tfr.T_OPT_UNLOAD_GAPREP rep
+	  left join tfr.T_OPT_UNLOAD_TASK task
+	    on task.id = rep.unload_task_id
+	  left join  tfr.T_OPT_LOADER_PARTICIPATION  loadMan
+	    on task.id = loadMan.Task_Id and loadMan.Be_Creator = 'Y'
+		<where>
+			rep.id = #{diffReportId}
+		</where>
+	</select>	
+	
+	<!--根据卸车差异报告ID，获取差异报告详情-->
+	<select id="queryUnloadDiffReportDetail" parameterType="String" resultMap="queryUnloadDiffReportDetailResultMap">
+		select distinct dt.package_no packageNo,
+			gd.waybill_no waybillNo,
+			gd.serial_no serialNo,
+			gd.oa_error_no oaMistakeBillNo,
+			gd.difference_type diffType,
+			case gd.transport_type when '经济快递' then '标准快递'
+			 when '德邦快递' then '标准快递' else gd.transport_type end transProperty,
+			gd.be_scanned isScanedLastTime,
+			gd.unload_time unloadTime,
+			gd.handle_time exceptionHandleTime,
+			gd.notes note,
+			w.target_org_code targetOrg
+		   from tfr.T_OPT_UNLOAD_GAPREP_DETAIL gd, pkp.t_srv_waybill w,tfr.t_opt_unload_gaprep gp,tfr.t_opt_unload_task t,
+      		tfr.t_opt_unload_waybill_detail dt
+		<where>
+			gd.waybill_no = w.waybill_no
+			and w.active = 'Y'
+			and gd.unload_gaprep_id = gp.id
+      		and gp.unload_task_no = t.unload_task_no
+      		and t.id = dt.unload_task_id
+      		and gd.waybill_no = dt.waybill_no
+			and gd.unload_gaprep_id = #{diffReportId}
+		</where>
+	</select>
+	
+	<!--获取所有未生成卸车差异报告的、已经卸车结束的、货物状态不正常的卸车任务流水号明细list-->
+	<select id="queryUnresolvedUnloadSerialNoList"  resultMap="queryUnloadDiffReportDetailResultMap">
+		select 
+			waybill.waybill_no waybillNo,
+			serialNo_t.Serial_No serialNo,
+			waybill.transport_type transProperty,
+			serialNo_t.SCAN_STATE scanState,
+			serialNo_t.Goods_State diffType,
+			serialNo_t.Unload_Time unloadTime,
+			task.id unloadTaskId,
+			task.unload_task_no unloadTaskNo,
+			task.unload_org_code unloadOrgCode,
+			task.UNLOAD_TYPE unloadTaskType
+			 from tfr.t_opt_unload_serialno serialNo_t,
+			          tfr.t_opt_unload_waybill_detail waybill,
+			          tfr.t_opt_unload_task task
+		<where>
+			serialNo_t.Unload_Waybill_Detail_Id = waybill.id(+)
+			and waybill.unload_task_id = task.id(+)
+			and task.be_created_gaprep = 'N'
+			and task.task_state = 'FINISHED' 
+			and serialNo_t.Goods_State != 'NORMAL'  and serialNo_t.Goods_State != 'CANCELED'
+			and task.unload_end_time >= #{bizJobStartTime,jdbcType=TIMESTAMP} - #{minutes,jdbcType=DECIMAL}/60/24
+		</where>
+	    UNION ALL
+	      select  waybill.waybill_no     waybillNo,
+	           serialNo_t.Serial_No   serialNo,
+	           waybill.transport_type transProperty,
+	           serialNo_t.SCAN_STATE scanState,
+	           serialNo_t.Goods_State diffType,
+	           serialNo_t.Unload_Time unloadTime,
+	           task.id                unloadTaskId,
+	           task.unload_task_no    unloadTaskNo,
+	           task.unload_org_code   unloadOrgCode,
+	           task.UNLOAD_TYPE       unloadTaskType
+	      from tfr.t_opt_unload_serialno       serialNo_t,
+	           tfr.t_opt_unload_waybill_detail waybill,
+	           tfr.t_opt_unload_task           task,
+	           pkp.t_srv_waybill w
+		     where serialNo_t.Unload_Waybill_Detail_Id = waybill.id(+)
+	         and waybill.unload_task_id = task.id(+)
+	         and serialNo_t.Scan_State = 'BY_HAND'
+	         and serialNo_t.Goods_State not in ('MORE_ENTRAINED', 'MORE_ALLOPATRY_ENTRAINED', 'CANCELED')
+	         and waybill.waybill_no = w.waybill_no
+	         and w.product_code in ('PACKAGE','RCP','EPEP')
+	         and w.active = 'Y'
+	         and task.UNLOAD_TYPE in ('SHORT_DISTANCE','LONG_DISTANCE','SC_EXPRESS')
+	         and task.be_created_gaprep = 'N'
+	         and task.task_state = 'FINISHED' 
+	         and task.unload_end_time >= #{bizJobStartTime,jdbcType=TIMESTAMP} - #{minutes,jdbcType=DECIMAL}/60/24
+	</select>
+	
+	<!--新增卸车差异报告时，插入差异报告基本信息-->
+	<insert id="addUnloadDiffReport" parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.UnloadDiffReportEntity">
+			insert into tfr.t_opt_unload_gaprep
+			  (ID,
+			   UNLOAD_TASK_ID,
+			   GAPREP_NO,
+			   UNLOAD_TASK_NO,
+			   EXCEED_GOODS_QTY,
+			   LACK_GOODS_QTY,
+			   BYHAND_GOODS_QTY,
+			   HANDLE_STATUS,
+			   CREATE_TIME,
+			   UNLOAD_ORG_CODE)
+			   values(
+			   #{id,jdbcType=VARCHAR},
+			   #{unloadTaskId,jdbcType=VARCHAR},
+			   #{diffReportNo,jdbcType=VARCHAR},
+			   #{unloadTaskNo,jdbcType=VARCHAR},
+			   #{moreGoodsPieces,jdbcType=DECIMAL},
+			   #{lackGoodsPieces,jdbcType=DECIMAL},
+			   #{byhandGoodsPieces,jdbcType=DECIMAL},
+			   #{handleStatus,jdbcType=VARCHAR},
+			   #{reportCreateTime,jdbcType=TIMESTAMP},
+			   #{orgCode,jdbcType=VARCHAR})
+	</insert>
+	
+	<!--新增卸车差异报告时，批量插入差异报告基本信息-->
+	<insert id="addUnloadDiffReportBasicInfo" parameterType="java.util.List">
+		begin
+		<foreach collection="list" item="item" separator=";">
+			insert into tfr.t_opt_unload_gaprep
+			  (ID,
+			   UNLOAD_TASK_ID,
+			   GAPREP_NO,
+			   UNLOAD_TASK_NO,
+			   EXCEED_GOODS_QTY,
+			   LACK_GOODS_QTY,
+			   BYHAND_GOODS_QTY,
+			   HANDLE_STATUS,
+			   CREATE_TIME,
+			   UNLOAD_ORG_CODE)
+			   values(
+			   #{item.id,jdbcType=VARCHAR},
+			   #{item.unloadTaskId,jdbcType=VARCHAR},
+			   #{item.diffReportNo,jdbcType=VARCHAR},
+			   #{item.unloadTaskNo,jdbcType=VARCHAR},
+			   #{item.moreGoodsPieces,jdbcType=DECIMAL},
+			   #{item.lackGoodsPieces,jdbcType=DECIMAL},
+			   #{item.byhandGoodsPieces,jdbcType=DECIMAL},
+			   #{item.handleStatus,jdbcType=VARCHAR},
+			   #{item.reportCreateTime,jdbcType=TIMESTAMP},
+			   #{item.orgCode,jdbcType=VARCHAR})
+		   </foreach>
+		;end;
+	</insert>
+	
+	<!--新增卸车差异报告时，循环插入单个卸车流水号明细-->
+	<insert id="addUnloadDiffReportDetail"  parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.UnloadDiffReportDetailEntity">
+			insert into tfr.t_opt_unload_gaprep_detail
+			  (ID,
+			   UNLOAD_GAPREP_ID,
+			   WAYBILL_NO,
+			   SERIAL_NO,
+			   TRANSPORT_TYPE,
+			   DIFFERENCE_TYPE,
+			   BE_SCANNED,
+			   UNLOAD_TIME,
+			   CREATE_TIME,
+			   UNLOAD_ORG_CODE
+			)
+			values
+				(#{id,jdbcType=VARCHAR},
+				#{diffReportId,jdbcType=VARCHAR},
+				#{waybillNo,jdbcType=VARCHAR},
+				#{serialNo,jdbcType=VARCHAR},
+				#{transProperty,jdbcType=VARCHAR},
+				#{diffType,jdbcType=VARCHAR},
+				#{isScanedLastTime,jdbcType=VARCHAR},
+				#{unloadTime,jdbcType=TIMESTAMP},
+				#{reportCreatedTime,jdbcType=TIMESTAMP},
+				#{unloadOrgCode,jdbcType=VARCHAR})
+	</insert>
+	
+	<!--新增卸车差异报告时，批量插入卸车流水号明细-->
+	<insert id="addUnloadDiffReportDetailList"  parameterType="java.util.List">
+		begin
+		<foreach collection="list" item="item" separator=";">
+			insert into tfr.t_opt_unload_gaprep_detail
+			  (ID,
+			   UNLOAD_GAPREP_ID,
+			   WAYBILL_NO,
+			   SERIAL_NO,
+			   TRANSPORT_TYPE,
+			   DIFFERENCE_TYPE,
+			   BE_SCANNED,
+			   UNLOAD_TIME,
+			   CREATE_TIME,
+			   UNLOAD_ORG_CODE
+			)
+			values
+				(#{item.id,jdbcType=VARCHAR},
+				#{item.diffReportId,jdbcType=VARCHAR},
+				#{item.waybillNo,jdbcType=VARCHAR},
+				#{item.serialNo,jdbcType=VARCHAR},
+				#{item.transProperty,jdbcType=VARCHAR},
+				#{item.diffType,jdbcType=VARCHAR},
+				#{item.isScanedLastTime,jdbcType=VARCHAR},
+				#{item.unloadTime,jdbcType=TIMESTAMP},
+				#{item.reportCreatedTime,jdbcType=TIMESTAMP},
+				#{item.unloadOrgCode,jdbcType=VARCHAR})
+		</foreach>
+		;end;
+	</insert>
+	
+	<!--更新卸车差异报告的处理状态为“已处理”-->
+	<update id="updateUnloadDiffReportHandleState" parameterType="java.util.HashMap">
+		update tfr.t_opt_unload_gaprep g
+		<set>
+			g.HANDLE_STATUS = #{handleState}
+		</set>
+		<where>
+			g.id = #{diffReportId}
+		</where>
+	</update>
+	
+	<!--更新卸车差异报告明细表-->
+	<update id="updateUnloadDiffReportDetail" parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.UnloadDiffReportDetailEntity">
+		update tfr.t_opt_unload_gaprep_detail gd
+		<set>
+			<if test="oaMistakeBillNo != null">
+				gd.OA_ERROR_NO = #{oaMistakeBillNo},
+			</if>
+			<if test="exceptionHandleTime != null">
+				gd.HANDLE_TIME = #{exceptionHandleTime},
+			</if>
+			<if test="note != null">
+				gd.NOTES = #{note},
+			</if>
+			<if test="handlerCode != null">
+				gd.HANDLER_CODE = #{handlerCode},
+			</if>
+			<if test="handlerName != null">
+				gd.HANDLER_NAME = #{handlerName},
+			</if>
+			<if test="handleOrgCode != null">
+				gd.HANDLER_ORG_CODE = #{handleOrgCode},
+			</if>
+			<if test="handleOrgName != null">
+				gd.HANDLER_ORG_NAME = #{handleOrgName}
+			</if>
+		</set>
+		<where>
+			gd.id = #{id}
+		</where>
+	</update>
+	
+	<!--获取卸车任务下未处理的少货异常-->
+	<select id="queryUnresolvedLackGoodsException" parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.UnloadDiffReportDetailEntity"
+			resultMap="queryUnloadDiffReportDetailResultMap">
+		select 
+			gd.id id,
+			gd.unload_gaprep_id diffReportId,
+			gd.waybill_no waybillNo,
+			gd.serial_no serialNo,
+			gd.oa_error_no oaMistakeBillNo,
+			gd.handle_time exceptionHandleTime
+			 from tfr.t_opt_unload_gaprep_detail gd
+		<where>
+			gd.difference_type in ('LACKGOODS','BYHANDGOODS')
+			and gd.handle_time is null
+			<if test="diffReportId != null">
+				and gd.unload_gaprep_id = #{diffReportId}
+			</if>
+			<if test="waybillNo != null">
+				and gd.waybill_no = #{waybillNo}
+			</if>
+			<if test="serialNo != null">
+				and gd.serial_no = #{serialNo}
+			</if>
+			<if test="unloadOrgCode != null">
+				and gd.unload_org_code = #{unloadOrgCode}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 查询未处理完毕的卸车差异报告 -->
+	<select id="queryUnResolvedDiffReport" parameterType="map" resultType="string">
+		select g.id from tfr.t_opt_unload_gaprep g 
+		left join tfr.t_opt_unload_task task 
+		on g.unload_task_id = task.id 
+		where g.handle_status = #{handleStatus} 
+		<!--  此处更改是因为更改会影响到OGG的再次同步，不再更新状态 -->
+			<!-- and g.need_report_oa != 'L' -->
+			 <![CDATA[and g.CREATE_TIME > sysdate - 7]]> 
+			and task.unload_type in 
+			<foreach collection="unloadTypeList" item="item" separator="," close=")" open="(">
+            	#{item}
+            </foreach>
+            <!-- 查询存在少货的 -->
+            and exists (select 1 from 
+            	tfr.t_opt_unload_gaprep_detail d
+            	where d.difference_type in
+            	<foreach collection="lackGoodsTypeList" item="item" index="index" open="(" separator="," close=")">
+					#{item,jdbcType=VARCHAR}
+				</foreach>
+				and d.unload_gaprep_id = g.id
+            )
+            <!-- 不在临时表中 -->
+            and not exists (select 1 from TFR.T_OPT_UNLOAD_GAPREP_ID_TEMP p where p.UNLOAD_GAPREP_ID = g.id)
+            
+	 	union all
+	 	
+	 	select g.id from tfr.t_opt_unload_gaprep g 
+		left join tfr.t_opt_unload_task task 
+		on g.unload_task_id = task.id 
+		where g.handle_status = #{handleStatus} 
+			<!-- and g.need_report_oa != 'L' -->
+			 <![CDATA[and g.CREATE_TIME > sysdate - 7]]> 
+			and task.unload_type = #{unloadDeliverType,jdbcType=VARCHAR}
+			<!-- 查询存在少货的 -->
+			 and exists (select 1 from 
+            	tfr.t_opt_unload_gaprep_detail d
+            	where d.difference_type in
+            	<foreach collection="lackGoodsTypeListDeliver" item="item" index="index" open="(" separator="," close=")">
+					#{item,jdbcType=VARCHAR}
+				</foreach>
+				and d.unload_gaprep_id = g.id
+            )
+            and not exists (select 1 from TFR.T_OPT_UNLOAD_GAPREP_ID_TEMP p where p.UNLOAD_GAPREP_ID = g.id)
+	</select>
+	<!-- 根据差异报告ID查询符合上报OA条件的的明细  chigo-->
+	<select id="queryUnResolvedDiffReportDetail"  parameterType="map"  resultMap="queryUnloadDiffReportDetailResultMap">
+		
+		select id, waybill_no as waybillNo, serial_no as serialNo, difference_type as diffType,vehicle_no AS vehicleNo, unloadTaskId from 
+		(
+			select d.id, d.waybill_no, d.serial_no, d.difference_type,ut.vehicle_no, ut.id unloadTaskId from tfr.t_opt_unload_gaprep_detail d 
+			left join tfr.t_opt_unload_gaprep ug on ug.id=d.unload_gaprep_id
+			left join tfr.t_opt_unload_task ut on ut.id = ug.unload_task_id
+			where d.unload_gaprep_id = #{reportId} 
+			and d.difference_type in
+			<foreach collection="lackGoodsTypeList" item="item" index="index" open="(" separator="," close=")">
+				#{item,jdbcType=VARCHAR}
+			</foreach>
+			and d.handle_time is null
+			<!-- and d.oa_error_no is null -->
+			<![CDATA[and (sysdate - cast(d.create_time as date))*24 > #{timeLimit}]]>
+			
+			<!-- union all
+			
+			select d.id, d.waybill_no, d.serial_no, d.difference_type,ut.vehicle_no, ut.id unloadTaskId from tfr.t_opt_unload_gaprep_detail d 
+			left join tfr.t_opt_unload_gaprep ug on ug.id=d.unload_gaprep_id
+			left join tfr.t_opt_unload_task ut on ut.id = ug.unload_task_id
+			where d.unload_gaprep_id = #{reportId} 
+			and d.difference_type = #{moreGoodsType} 
+			and d.oa_error_no is null -->
+		)
+		order by waybill_no
+	</select>
+	
+	<!--上报少货差错时，插入差错单相关数据-->
+	<insert id="addLackGoodsFoundInfo" parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.LackGoodsFoundEntity">
+			insert into tfr.t_opt_gap_repair
+			  (ID,
+			   WAYBILL_NO,
+			   SERIAL_NO,
+			   OA_ERROR_NO,
+			   REPORT_OA_TIME,
+			   REPORT_TYPE,
+			   REPORT_ID,
+			   LACKGOODS_ORG_CODE
+			   )
+			   values(
+			   #{id,jdbcType=VARCHAR},
+			   #{waybillNo,jdbcType=VARCHAR},
+			   #{serialNo,jdbcType=VARCHAR},
+			   #{oaErrorNo,jdbcType=VARCHAR},
+			   #{reportOATime,jdbcType=TIMESTAMP},
+			   #{reportType,jdbcType=VARCHAR},
+			   #{reportId,jdbcType=VARCHAR},
+			   #{lackGoodsOrgCode,jdbcType=VARCHAR}
+			   )
+	</insert>
+	
+	<!--用于查询未少货找到的少货差错，分组，每个差错只要一条记录-->
+	<select id="queryNoFoundLackGoodsOAErrorNo" parameterType="java.util.HashMap" resultType="java.lang.String">
+		select 
+			gr.oa_error_no 
+		from tfr.t_opt_gap_repair gr 
+		where gr.be_found = 'N'  
+			and gr.report_type = #{reportType}
+			and gr.report_oa_time > #{reportOATime}
+			group by gr.oa_error_no
+	</select>
+	
+	<!--用户少货找到后，更新找到相关字段-->
+	<update id="updateUnloadLackGoodsInfo" 
+			parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.LackGoodsFoundEntity">
+		update tfr.t_opt_gap_repair gr 
+		<set>
+			<if test="beFound != null">
+				gr.BE_FOUND = #{beFound},
+			</if>
+			<if test="foundTime != null">
+				gr.FOUND_TIME = #{foundTime},
+			</if>
+			<if test="discovererCode != null">
+				gr.DISCOVERER_CODE = #{discovererCode},
+			</if>
+			<if test="discovererName != null">
+				gr.DISCOVERER_NAME = #{discovererName},
+			</if>
+			<if test="discovererOrgCode != null">
+				gr.DISCOVERER_ORG_CODE = #{discovererOrgCode},
+			</if>
+			<if test="inStockId != null">
+				gr.IN_STOCK_ID = #{inStockId}
+			</if>
+		</set>
+		<where>
+			gr.id = #{id}
+		</where>
+	</update>
+	
+	<!--用于查询某少货差错单下未找到的少货差错-->
+	<select id="queryNoFoundLackGoodsDetailByOAErrorNo" parameterType="java.lang.String" resultMap="queryNoFoundLackGoodsDetailResultMap">
+		select 
+			gr.id id,
+			gr.waybill_no waybillNo,
+			gr.serial_no serialNo,
+			gr.oa_error_no oaErrorNo,
+			gr.report_oa_time reportOATime,
+			gr.report_type reportType,
+			gr.report_id reportId,
+			gr.lackgoods_org_code lackGoodsOrgCode,
+			gr.be_found beFound,
+			gr.found_time foundTime,
+			gr.discoverer_code discovererCode,
+			gr.discoverer_name discovererName,
+			gr.discoverer_org_code discovererOrgCode,
+			gr.in_stock_id inStockId
+		from tfr.t_opt_gap_repair gr 
+			where gr.oa_error_no = #{oaErrorNo}
+			and gr.be_found = 'N'
+			order by gr.serial_no
+	</select>
+	
+	<!--通过oa差错编号查询存在于少货找到上报记录表中的少货差错，如不存在需要上报少货找到 author 148246 孙建博 2014-10-21-->
+	<select id="queryLackGoodsDetailByOAErrorNo" parameterType="java.lang.String" resultMap="queryNoFoundLackGoodsDetailResultMap">
+		select 
+			gr.id id,
+			gr.waybill_no waybillNo,
+			gr.serial_no serialNo,
+			gr.oa_error_no oaErrorNo,
+			gr.report_oa_time reportOATime,
+			gr.report_type reportType,
+			gr.report_id reportId,
+			gr.lackgoods_org_code lackGoodsOrgCode,
+			gr.be_found beFound,
+			gr.found_time foundTime,
+			gr.discoverer_code discovererCode,
+			gr.discoverer_name discovererName,
+			gr.discoverer_org_code discovererOrgCode,
+			gr.in_stock_id inStockId
+		from tfr.t_opt_gap_repair gr 
+			where gr.oa_error_no = #{oaErrorNo}
+			order by gr.serial_no
+	</select>
+	
+	<!--发现卸车少货，查询入库记录表，从建立卸车任务开始的时间，到当前时间为止，有没有入库动作，如果存在，该流水号不算少货-->
+	<select id="queryInStockNumForLack" parameterType = "map"
+			resultType="Long">
+	 select count(1) as num
+  	 from tfr.t_opt_in_stock st
+ 	 where st.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+     and st.serial_no = #{serialNo,jdbcType=VARCHAR}
+     and st.org_code = #{deptCode,jdbcType=VARCHAR}
+    <![CDATA[
+     and st.in_stock_time >= #{taskTime,jdbcType=TIMESTAMP}       
+     and st.in_stock_time <= sysdate 
+     ]]>
+     and st.is_valid = 'Y'
+	</select>
+	
+	<!--根据id获取差异报告信息-->
+	<select id="queryUnloadDiffReportById" parameterType="String" resultMap="queryUnloadDiffReportResultMap">
+		select rep.id              id,
+		       rep.gaprep_no       diffReportNo,
+		       rep.unload_task_no  unloadTaskNo,
+		       task.vehicle_no     vehicleNo,
+		       task.unload_type    unloadType,
+		       loadMan.Loader_Name loadManName,
+		       loadMan.Loader_Code loadManCode,
+		       rep.create_time     reportCreateTime,
+		       rep.unload_org_code orgCode,
+		       rep.unload_task_id  unloadTaskId
+		  from tfr.T_OPT_UNLOAD_GAPREP rep
+		  left join tfr.T_OPT_UNLOAD_TASK task
+		    on task.id = rep.unload_task_id
+		  left join tfr.T_OPT_LOADER_PARTICIPATION loadMan
+		    on task.id = loadMan.Task_Id
+		   and loadMan.Be_Creator = 'Y'
+		<where>
+			rep.id = #{id}
+		</where>
+	</select>
+	<!--查询运单的少货记录-->
+	<select id="queryLackCountByWaybillNo" parameterType="string" resultType="long">
+		select count(1) from tfr.t_opt_unload_gaprep_detail gd
+		where gd.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		and gd.difference_type = 'LACKGOODS'
+		and gd.oa_error_no is not null
+	</select>	
+	
+	<!--插入上报OA差错失败日志-->
+  <insert id="addReportOaErrorLog" parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.ReportOaErrorLogEntity">
+	  	insert into tfr.t_opt_differ_reportqms_log
+ 			(ID, REPORT_CODE, WAYBILL_NO,REPORT_TYPE,DIFFER_TYPE, REMARK, CREATE_TIME)
+		values (#{id,jdbcType=VARCHAR},
+				#{reportCode,jdbcType=VARCHAR},
+				#{waybillNo,jdbcType=VARCHAR},
+				#{reportType,jdbcType=VARCHAR},
+				#{differType,jdbcType=VARCHAR},
+				#{remark,jdbcType=VARCHAR},
+				#{createDate,jdbcType=TIMESTAMP})
+  </insert>
+  <update id="updateUnloadDiffReportReportOa" parameterType="string">
+  <!-- 此处更改是因为FOSS多货上报会更改状态为N，故只能全部获取，处理之后改成LN状态，来以示区别 -->
+  	 update tfr.t_opt_unload_gaprep g
+    set g.need_report_oa = 'L'
+    where g.id = #{reportId,jdbcType=VARCHAR}
+  </update>
+  
+   <insert id="addUnloadDiffReportReportIdToTemp" parameterType="string">
+  <!-- 插入上报过的卸车差异报告的id到临时表 -->
+  	 insert into tfr.T_OPT_UNLOAD_GAPREP_ID_TEMP  (ID,
+			   unload_gaprep_id,
+			   CREATE_TIME)
+			   values(
+			   SYS_GUID(),
+			   #{reportId,jdbcType=VARCHAR},
+			  sysdate)
+  </insert>
+  
+  <sql id="Where_Clause" >
+		<where >
+			d.unload_gaprep_id = #{reportId,jdbcType=VARCHAR}
+		      AND d.difference_type = #{lackGoodsType,jdbcType=VARCHAR}
+		      and d.handle_time is null
+		      and d.oa_error_no is null
+		      AND t.unload_type = 'DELIVER'
+		      AND s.handover_type = 'RECEIVE'
+		      and w.product_code not in ('PACKAGE','RCP','EPEP')
+		      and w.is_whole_vehicle = 'N'
+		      and w.active = 'Y'
+		</where>
+	</sql>
+  <!-- 查询接货差错中需上报的差错数量 -->
+  <select id="queryUnResolvedLackDetailCount" parameterType="string" resultType="int">
+  	select count(1) from tfr.t_opt_unload_gaprep_detail d
+	    inner JOIN tfr.t_opt_unload_gaprep g ON g.id=d.unload_gaprep_id
+	    INNER JOIN tfr.t_opt_unload_task t on t.id = g.unload_task_id
+	    inner join tfr.t_opt_unload_bill_detail dd on dd.unload_task_id = t.id
+	    inner JOIN pkp.t_srv_stay_handover s ON s.handovertask_no = dd.bill_no
+	    inner join pkp.t_srv_waybill w on w.waybill_no = d.waybill_no
+   		<where >
+			d.unload_gaprep_id = #{reportId,jdbcType=VARCHAR}
+		      AND d.difference_type = #{lackGoodsType,jdbcType=VARCHAR}
+		      and d.handle_time is null
+		     <!--  and d.oa_error_no is null -->
+		      AND t.unload_type = 'DELIVER'
+		      AND s.handover_type = 'RECEIVE'
+		      and w.product_code not in ('PACKAGE','RCP','EPEP')
+		      and w.is_whole_vehicle = 'N'
+		      and w.active = 'Y'
+		</where>
+  </select>
+  <!-- 查询接货差错中需上报的差错明细 -->
+  <select id="queryUnResolvedLackDetail" parameterType="map" resultMap="queryUnloadDiffReportDetailResultMap">
+  	select d.id 				id, 
+  			d.waybill_no  		waybillNo, 
+  			d.serial_no   		serialNo, 
+  			d.difference_type  	diffType,
+  			t.vehicle_no 	 	vehicleNo, 
+  			t.id				unloadTaskId
+  		from tfr.t_opt_unload_gaprep_detail d
+	    inner JOIN tfr.t_opt_unload_gaprep g ON g.id=d.unload_gaprep_id
+	    INNER JOIN tfr.t_opt_unload_task t on t.id = g.unload_task_id
+	    inner join tfr.t_opt_unload_bill_detail dd on dd.unload_task_id = t.id
+	    inner JOIN pkp.t_srv_stay_handover s ON s.handovertask_no = dd.bill_no
+	    inner join pkp.t_srv_waybill w on w.waybill_no = d.waybill_no
+   		<where>
+   			d.unload_gaprep_id = #{reportId,jdbcType=VARCHAR}
+		      AND d.difference_type = #{lackGoodsType,jdbcType=VARCHAR}
+		      and d.handle_time is null
+		     <!--  and d.oa_error_no is null -->
+		      AND t.unload_type = 'DELIVER'
+		      AND s.handover_type = 'RECEIVE'
+		      and w.product_code not in ('PACKAGE','RCP','EPEP')
+		      and w.is_whole_vehicle = 'N'
+		      and w.active = 'Y'
+   		 <![CDATA[and (sysdate - cast(d.create_time as date))*24 > #{timeLimit}]]>
+   		 </where> 
+   		order by d.waybill_no
+  </select>
+  <!--长短途卸车差异中需上报的差错数量  -->
+  <select id="queryUnResolvedDiffReportDetailCount" parameterType="string" resultType="int">
+  	select count(1) from 
+		(
+			select d.id
+			 	from tfr.t_opt_unload_gaprep_detail d 
+				left join tfr.t_opt_unload_gaprep ug on ug.id=d.unload_gaprep_id
+				left join tfr.t_opt_unload_task ut on ut.id = ug.unload_task_id
+			where d.unload_gaprep_id = #{reportId,jdbcType=VARCHAR} 
+				and d.difference_type in
+				<foreach collection="lackGoodsTypeList" item="item" index="index" open="(" separator="," close=")">
+					#{item,jdbcType=VARCHAR}
+				</foreach>
+				and d.handle_time is null
+				<!-- and d.oa_error_no is null -->
+			<!-- wwb修改 ，不再需要多货数据 -->
+		<!-- 	union all
+			
+			select d.id
+				from tfr.t_opt_unload_gaprep_detail d 
+				left join tfr.t_opt_unload_gaprep ug on ug.id=d.unload_gaprep_id
+				left join tfr.t_opt_unload_task ut on ut.id = ug.unload_task_id
+			where d.unload_gaprep_id = #{reportId,jdbcType=VARCHAR} 
+				and d.difference_type = #{moreGoodsType,jdbcType=VARCHAR} 
+				and d.oa_error_no is null -->
+		)
+  </select>
+  <!-- 查询接货人所在部门 -->
+  <select id="queryPickUperOrgCode" parameterType="string" resultType="string">
+  	select e.org_code from pkp.t_srv_stay_handover s
+		inner join bse.t_bas_employee e on e.emp_code = s.create_user_code
+	where s.handovertask_no = #{billNo,jdbcType=VARCHAR}
+		and e.active = 'Y'
+		and rownum = 1
+  </select>
+  <!-- 查询运单所在交接单号 -->
+  <select id="queryPickUpHandOverNo" parameterType="map" resultType="string">
+	  select s.handovertask_no from pkp.t_srv_stay_handover s
+	   inner join pkp.t_srv_stay_handoverdetail d on d.t_srv_stay_handover_id = s.id
+	   where s.handover_type = 'RECEIVE'
+	   and d.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+	   and s.handovertask_no in
+  		<foreach collection="handOverBillNoList" item="item" separator="," close=")" open="(">
+            #{item,jdbcType=VARCHAR}        	
+		</foreach>
+  </select>
+  <!-- 查询运单是否已经作废或者中止 -->
+   <select id="isInvalidWaybillNo" parameterType="map" resultType="int">
+	  Select Count(1)
+	    From  Pkp.t_Srv_Actual_Freight p
+	    Where p.Status In ('ABORTED', 'OBSOLETE')
+	    and p.waybill_no =#{waybillNo,jdbcType=VARCHAR}
+  </select>
+  
+   <!-- 查询运单流水号是否已经已签收 -->
+   <select id="isSignedWaybillNoSerialNo" parameterType="map" resultType="int">
+	 Select Count(1)
+	  From Pkp.T_Srv_Arrivesheet a
+	 Inner Join Pkp.T_Srv_Sign_Detail d
+	    On A.Arrivesheet_No = D.Arrivesheet_No  And  A.Active = 'Y'
+	   where  d.situation is not null
+	   and a.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+	   and d.serial_no = #{serialNo,jdbcType=VARCHAR}
+   
+  </select>
+  
+     <!-- 查询运单流水号是否已经已装车扫描 -->
+   <select id="isLoadDataWaybillNo" parameterType="map" resultType="int">
+	select count(1)
+	  From tfr.t_opt_unload_gaprep_detail d
+	  left join Tfr.T_Opt_Load_Waybill_Detail Lwd
+	    on  lwd.waybill_no = d.waybill_no
+	  left join tfr.T_Opt_Load_Serialno s
+	    on S.Load_Waybill_Detail_Id = Lwd.Id and s.serial_no = d.serial_no
+	 Where <![CDATA[d.create_time < s.load_time]]> <!-- 扫描时间在卸车差异报告之后 -->
+	   And Lwd.Task_Begin_Time Is Not Null 
+	    <![CDATA[    
+	     And S.Goods_State <> 'CANCELED'
+	   ]]>
+	   and s.scan_state = 'SCANED'
+	   and d.serial_no = #{serialNo,jdbcType=VARCHAR}
+	   and d.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+	   and d.unload_gaprep_id = #{unloadGaprepId,jdbcType=VARCHAR}
+  </select>
+  
+  
+     <!-- 查询流水号是否已经无效 -->
+   <select id="isInvalidSerialNo" parameterType="map" resultType="int">
+	 select Count(1) from pkp.t_srv_labeled_good d
+			where d.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+			and d.serial_no = #{serialNo,jdbcType=VARCHAR}
+			and d.active = 'Y'	
+  </select>
+    <!-- 卸车少货上报新增过滤条件 -->
+      <!-- 通过运单号查询是该运单是否进行装车扫描、卸车扫描、单票入库、清仓扫描 -->
+ <select id="querySanAndSignleInStockLessGoods" parameterType="java.lang.String" resultType="int">
+   select count(1) from  tfr.t_opt_unload_task os 
+    where os.unload_start_time =(select max(nk.unload_start_time)
+	   from tfr.t_opt_unload_waybill_detail ml
+	   left join tfr.t_opt_unload_task nk on ml.unload_task_id = nk.id
+	  where ml.waybill_no = #{wayBillNo})
+	    and not exists
+	  <!-- 卸车少货 -->
+	  (select 1
+	           from Tfr.t_Opt_Unload_Serialno so
+	           left join tfr.t_opt_unload_waybill_detail wl 
+	           on so.unload_waybill_detail_id = wl.id
+	           left join tfr.t_opt_unload_task uk on wl.unload_task_id = uk.id
+	          where wl.waybill_no =  #{wayBillNo}
+	           <![CDATA[ and uk.unload_start_time >= os.unload_start_time]]>
+	           <![CDATA[ and uk.unload_start_time <= sysdate]]>
+	            and so.scan_state = 'SCANED'
+	         
+	         )
+	    and not exists
+	  <!-- 单票入库 -->
+	  (Select 1
+	           From Tfr.t_Opt_In_Stock ts
+	          Where ts.Waybill_No =  #{wayBillNo}
+	            And ts.Is_Valid = 'Y'
+	            and ts.in_stock_type in ('SPECIAL_AREA', 'PACKAGE_AREA',
+	                 'VALUABLE_AREA', 'EXCEPTION_AREA','LOSS_GOODS_FIND','SEND_RETURN','PARTIALLINE_RETURN','AIR_RETURN')
+	           <![CDATA[ and ts.in_stock_time >= os.unload_start_time]]>
+	           <![CDATA[and ts.in_stock_time <= sysdate]]>
+	         
+	         )
+	    and not exists
+	  <!-- 清仓扫描 -->
+	  (select 1
+	           from TFR.T_OPT_ST_RESULT_LIST ad
+	           left join tfr.t_opt_st_task ps on ad.st_task_id = ps.id
+	          where ad.waybill_no =  #{wayBillNo}
+	            <![CDATA[and ps.createtime >= os.unload_start_time]]>
+	            <![CDATA[and ps.createtime <= sysdate]]>
+	            and ad.scan_status in('DONE','MANUAL'))
+  	</select>
+</mapper>

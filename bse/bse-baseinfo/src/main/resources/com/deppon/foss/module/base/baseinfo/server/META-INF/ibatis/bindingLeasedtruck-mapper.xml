@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!-- "外请车（拖头、挂车、厢式车）" -->
+<mapper namespace="foss.bse.bse-baseinfo.bindingLeasedtruck">
+	<resultMap id="leasedTruckResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.dto.BindingLeasedTruckDto">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+		<result column="DRIVER_NAME" property="driverName" jdbcType="VARCHAR" />
+		<result column="DRIVER_PHONE" property="driverPhone" jdbcType="VARCHAR" />
+		<result column="OPEN_VEHICLE" property="openVehicle" jdbcType="CHAR" />
+		<result column="TAIL_BOARD" property="tailBoard" jdbcType="CHAR" />
+		<result column="VEHICLE_LENGTH_NAME" property="vehicleLengthName" jdbcType="VARCHAR" />
+		<result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<!-- 订单已外请车列表 -->	
+	<select id="queryBindingLeasedVehicleList" resultMap="leasedTruckResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.BindingLeasedTruckDto">
+		SELECT 
+       		truck.VEHICLE_NO,ttype.VEHICLE_LENGTH_NAME,driver.DRIVER_NAME,
+       		driver.DRIVER_PHONE,truck.TAIL_BOARD,truck.OPEN_VEHICLE
+		FROM
+		     BSE.T_BAS_LEASED_TRUCK truck LEFT JOIN
+		     BSE.T_BAS_LEASED_DRIVER driver ON truck.LEASED_DRIVER_ID_CARD = driver.id_card
+		     ,BSE.T_BAS_LEASED_TRUCK_TEAM team
+		     ,BSE.T_BAS_VEHICLE_TYPE_LENGTH ttype
+		WHERE
+		     driver.ACTIVE='Y' 
+		     AND truck.ACTIVE='Y'
+		     AND truck.VEHICLE_NO = team.VEHICLE_NO
+		     AND team.ACTIVE='Y'
+		     AND ttype.VEHICLE_LENGTH_CODE=truck.VEHICLE_LENGHT_CODE
+		     <if test="vehicleNo != null and vehicleNo != ''">
+		     	AND truck.VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR}
+		     </if>
+		     <if test="vehicleLengthName != null and vehicleLengthName != ''">
+		     	AND ttype.VEHICLE_LENGTH_NAME = #{vehicleLengthName,jdbcType=VARCHAR}
+		     </if>
+		     <if test="driverName != null and driverName != ''">
+		     	AND driver.driver_name = #{driverName,jdbcType=VARCHAR}
+		     </if>
+		     <if test="driverPhone != null and driverPhone != ''">
+		     	AND driver.DRIVER_PHONE = #{driverPhone,jdbcType=VARCHAR}
+		     </if>
+		     <if test="openVehicle != null and openVehicle != ''">
+		     	AND truck.OPEN_VEHICLE = #{openVehicle,jdbcType=VARCHAR}
+		     </if>
+		     <if test="orgCode != null and orgCode != ''">
+		     	AND team.ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+		     </if>
+	</select>
+	
+	<!-- 订单已外请车总数 -->	
+	<select id="queryBindingLeasedVehicleTotal" resultType="java.lang.Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.BindingLeasedTruckDto">
+		SELECT
+		       count(*)
+		FROM
+		     BSE.T_BAS_LEASED_TRUCK truck LEFT JOIN
+		     BSE.T_BAS_LEASED_DRIVER driver ON truck.LEASED_DRIVER_ID_CARD = driver.id_card
+		     ,BSE.T_BAS_LEASED_TRUCK_TEAM team
+		     ,BSE.T_BAS_VEHICLE_TYPE_LENGTH ttype
+		WHERE
+		     driver.ACTIVE='Y' 
+		     AND truck.ACTIVE='Y'
+		     AND truck.VEHICLE_NO = team.VEHICLE_NO
+		     AND team.ACTIVE='Y'
+		     AND ttype.VEHICLE_LENGTH_CODE=truck.VEHICLE_LENGHT_CODE
+		     <if test="vehicleNo != null and vehicleNo != ''">
+		     	AND truck.VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR}
+		     </if>
+		     <if test="vehicleLengthName != null and vehicleLengthName != ''">
+		     	AND ttype.VEHICLE_LENGTH_NAME = #{vehicleLengthName,jdbcType=VARCHAR}
+		     </if>
+		     <if test="driverName != null and driverName != ''">
+		     	AND driver.driver_name = #{driverName,jdbcType=VARCHAR}
+		     </if>
+		     <if test="driverPhone != null and driverPhone != ''">
+		     	AND driver.DRIVER_PHONE = #{driverPhone,jdbcType=VARCHAR}
+		     </if>
+		     <if test="openVehicle != null and openVehicle != ''">
+		     	AND truck.OPEN_VEHICLE = #{openVehicle,jdbcType=VARCHAR}
+		     </if>
+		     <if test="orgCode != null and orgCode != ''">
+		     	AND team.ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+		     </if>
+	</select>
+	
+	<select id="queryOrgNameByVehicleNo" resultType="java.lang.String"
+		parameterType="java.lang.String">
+		<!-- 通过车牌号获取绑定的顶级车队 -->
+		select 
+		   o.name 
+		from 
+		   BSE.T_BAS_LEASED_TRUCK_TEAM t ,bse.t_bas_org o 
+		where 
+		   t.org_code=o.code 
+		   and t.active='Y' 
+		   and o.active='Y'
+		   and t.vehicle_no=#{vehicleNo,jdbcType=VARCHAR}
+	</select>
+</mapper>

@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.platform.loaderefficiency" >
+  <resultMap id="LoaderEfficiencyResultMap" type="com.deppon.foss.module.transfer.platform.api.shared.domain.LoaderEfficiencyEntity" >
+	<id column="id" property="id" />
+	<result column="queryDate" property="queryDate" />
+	<result column="queryMonth" property="queryMonth" />
+	<result column="loaderCode" property="loaderCode" />
+	<result column="loaderName" property="loaderName" />
+	<result column="orgCode" property="orgCode" />
+	<result column="orgName" property="orgName" />
+	<result column="loaderOrgCode" property="loaderOrgCode" />
+	<result column="loaderOrgName" property="loaderOrgName" />
+	<result column="handleType" property="handleType" />
+	<result column="weight" property="weight" />
+	<result column="duration" property="duration" />
+	<result column="efficiencyOfDay" property="efficiencyOfDay" />
+	<result column="efficiencyOfMonth" property="efficiencyOfMonth" />
+  </resultMap>
+
+
+  <!-- 装卸车效率_日均装卸车效率查询 -->
+  <select id="queryLoaderEfficiencyByDay" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.LoaderEfficiencyEntity" resultMap="LoaderEfficiencyResultMap">
+		select queryDate,
+		       queryMonth,
+		       loaderCode,
+		       loaderName,
+		       orgCode,
+		       orgName,
+		       loaderOrgCode,
+		       loaderOrgName,
+		       handleType,
+		       round(sum(weight) / 1000, 2) weight,
+		       round(sum(duration), 3) duration,
+		       round(case sum(duration)
+		               when 0 then
+		                0
+		               else
+		                (sum(weight) / 1000) / sum(duration)
+		             end,
+		             2) efficiencyOfDay
+		  from (select to_date(to_char(lw.leave_time, 'yyyy-mm-dd'), 'yyyy-mm-dd') queryDate,
+		               to_char(lw.leave_time, 'yyyy-mm') queryMonth,
+		               lw.loader_code loaderCode,
+		               lw.loader_name loaderName,
+		               lw.org_code orgCode,
+		               lw.org_name orgName,
+		               lw.loader_org_code loaderOrgCode,
+		               lw.loader_org_name loaderOrgName,
+		               lw.handle_type handleType,
+		               lw.weight weight,
+		               (cast(lw.leave_time as date) -
+		                             cast(lw.join_time as date)) * 24 duration
+		          from tfr.t_opt_loader_workload lw
+		         where 1 = 1
+		           <![CDATA[
+		           and lw.leave_time >= to_date(#{beginDate, jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss') 
+		           and lw.leave_time <= to_date(#{endDate, jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss')
+		           ]]> 
+		           <if test="loaderOrgCodes !=null">	
+		           and lw.loader_org_code in
+		           <foreach collection="loaderOrgCodes" open="(" close=")" item="item" separator="," index="index"> 
+		           		#{item} 
+		           </foreach>
+		           </if>
+		           <if test="loaderCode != null and loaderCode != ''">
+		               and lw.loader_code = #{loaderCode}
+		           </if>
+		           <if test="handleType != null and handleType != '' and handleType != 'ALL'">
+		               and lw.handle_type = #{handleType}
+		           </if>
+		         order by leave_time asc)
+		 group by queryDate,
+		          queryMonth,
+		          loaderCode,
+		          loaderName,
+		          orgCode,
+		          orgName,
+		          loaderOrgCode,
+		          loaderOrgName,
+		          handleType
+  </select>
+  
+  <select id="queryLoaderEfficiencyByDayCount" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.LoaderEfficiencyEntity" resultType="Long">
+		select count(queryDate) from(
+		select queryDate,
+		       queryMonth,
+		       loaderCode,
+		       loaderName,
+		       orgCode,
+		       orgName,
+		       loaderOrgCode,
+		       loaderOrgName,
+		       handleType,
+		       round(sum(weight) / 1000, 2) weight,
+		       round(sum(duration), 3) duration,
+		       round(case sum(duration)
+		               when 0 then
+		                0
+		               else
+		                (sum(weight) / 1000) / sum(duration)
+		             end,
+		             2) efficiencyOfDay
+		  from (select to_date(to_char(lw.leave_time, 'yyyy-mm-dd'), 'yyyy-mm-dd') queryDate,
+		               to_char(lw.leave_time, 'yyyy-mm') queryMonth,
+		               lw.loader_code loaderCode,
+		               lw.loader_name loaderName,
+		               lw.org_code orgCode,
+		               lw.org_name orgName,
+		               lw.loader_org_code loaderOrgCode,
+		               lw.loader_org_name loaderOrgName,
+		               lw.handle_type handleType,
+		               lw.weight weight,
+		               (cast(lw.leave_time as date) -
+		                             cast(lw.join_time as date)) * 24 duration
+		          from tfr.t_opt_loader_workload lw
+		         where 1 = 1
+ 		           <![CDATA[
+		           and lw.leave_time >= to_date(#{beginDate, jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss')
+		           and lw.leave_time <= to_date(#{endDate, jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss')
+		           ]]>
+		           <if test="loaderOrgCodes !=null">	
+		           and lw.loader_org_code in
+		           <foreach collection="loaderOrgCodes" open="(" close=")" item="item" separator="," index="index"> 
+		           		#{item} 
+		           </foreach>
+		           </if>
+		           <if test="loaderCode != null and loaderCode != ''">
+		               and lw.loader_code = #{loaderCode}
+		           </if>
+		           <if test="handleType != null and handleType != '' and handleType != 'ALL'">
+		               and lw.handle_type = #{handleType}
+		           </if>
+		         order by leave_time asc)
+		 group by queryDate,
+		          queryMonth,
+		          loaderCode,
+		          loaderName,
+		          orgCode,
+		          orgName,
+		          loaderOrgCode,
+		          loaderOrgName,
+		          handleType)
+  </select>
+    <!-- 装卸车效率_日均装卸车效率查询end -->
+    
+    <!-- 装卸车效率_月均装卸车效率查询 -->
+  <select id="queryLoaderEfficiencyByMonth" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.LoaderEfficiencyEntity" resultMap="LoaderEfficiencyResultMap">
+		select queryMonth,
+		       loaderCode,
+		       loaderName,
+		       orgCode,
+		       orgName,
+		       loaderOrgCode,
+		       loaderOrgName,
+		       handleType,
+		       round(sum(weight) / 1000, 2) weight,
+		       round(sum(duration), 3) duration,
+		       round(case sum(duration)
+		               when 0 then
+		                0
+		               else
+		                (sum(weight) / 1000) / sum(duration)
+		             end,
+		             2) efficiencyOfMonth
+		  from (select to_date(to_char(lw.leave_time, 'yyyy-mm-dd'), 'yyyy-mm-dd') queryDate,
+		               to_char(lw.leave_time, 'yyyy-mm') queryMonth,
+		               lw.loader_code loaderCode,
+		               lw.loader_name loaderName,
+		               lw.org_code orgCode,
+		               lw.org_name orgName,
+		               lw.loader_org_code loaderOrgCode,
+		               lw.loader_org_name loaderOrgName,
+		               lw.handle_type handleType,
+		               lw.weight weight,
+		               (cast(lw.leave_time as date) -
+		                     cast(lw.join_time as date)) * 24 duration
+		          from tfr.t_opt_loader_workload lw
+		         where 1 = 1
+		           <![CDATA[
+		           and lw.leave_time >= to_date(#{beginDate, jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss') 
+		           and lw.leave_time <= to_date(#{endDate, jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss')
+		           ]]> 
+		           <if test="loaderOrgCodes !=null">	
+		           and lw.loader_org_code in
+		           <foreach collection="loaderOrgCodes" open="(" close=")" item="item" separator="," index="index"> 
+		           		#{item} 
+		           </foreach>
+		           </if>
+		           <if test="loaderCode != null and loaderCode != ''">
+		               and lw.loader_code = #{loaderCode}
+		           </if>
+		           <if test="handleType != null and handleType != '' and handleType != 'ALL'">
+		               and lw.handle_type = #{handleType}
+		           </if>
+		         order by leave_time asc)
+		 group by queryMonth,
+		          loaderCode,
+		          loaderName,
+		          orgCode,
+		          orgName,
+		          loaderOrgCode,
+		          loaderOrgName,
+		          handleType
+  </select>
+  
+  <select id="queryLoaderEfficiencyByMonthCount" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.LoaderEfficiencyEntity" resultType="Long">
+		select count(queryMonth) from(
+		select queryMonth,
+		       loaderCode,
+		       loaderName,
+		       orgCode,
+		       orgName,
+		       loaderOrgCode,
+		       loaderOrgName,
+		       handleType,
+		       round(sum(weight) / 1000, 2) weight,
+		       round(sum(duration), 3) duration,
+		       round(case sum(duration)
+		               when 0 then
+		                0
+		               else
+		                (sum(weight) / 1000) / sum(duration)
+		             end,
+		             2) efficiencyOfMonth
+		  from (select to_date(to_char(lw.leave_time, 'yyyy-mm-dd'), 'yyyy-mm-dd') queryDate,
+		               to_char(lw.leave_time, 'yyyy-mm') queryMonth,
+		               lw.loader_code loaderCode,
+		               lw.loader_name loaderName,
+		               lw.org_code orgCode,
+		               lw.org_name orgName,
+		               lw.loader_org_code loaderOrgCode,
+		               lw.loader_org_name loaderOrgName,
+		               lw.handle_type handleType,
+		               lw.weight weight,
+		               (cast(lw.leave_time as date) -
+		                     cast(lw.join_time as date)) * 24 duration
+		          from tfr.t_opt_loader_workload lw
+		         where 1 = 1
+ 		           <![CDATA[
+		           and lw.leave_time >= to_date(#{beginDate, jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss')
+		           and lw.leave_time <= to_date(#{endDate, jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss')
+		           ]]>
+		           <if test="loaderOrgCodes !=null">	
+		           and lw.loader_org_code in
+		           <foreach collection="loaderOrgCodes" open="(" close=")" item="item" separator="," index="index"> 
+		           		#{item} 
+		           </foreach>
+		           </if>
+		           <if test="loaderCode != null and loaderCode != ''">
+		               and lw.loader_code = #{loaderCode}
+		           </if>
+		           <if test="handleType != null and handleType != '' and handleType != 'ALL'">
+		               and lw.handle_type = #{handleType}
+		           </if>
+		         order by leave_time asc)
+		 group by queryMonth,
+		          loaderCode,
+		          loaderName,
+		          orgCode,
+		          orgName,
+		          loaderOrgCode,
+		          loaderOrgName,
+		          handleType)
+  </select>
+  <!-- 装卸车效率_月均装卸车效率查询end -->
+</mapper>

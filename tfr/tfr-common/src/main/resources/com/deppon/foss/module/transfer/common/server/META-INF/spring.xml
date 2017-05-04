@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:jaxws="http://cxf.apache.org/jaxws"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://cxf.apache.org/jaxws 
+			http://cxf.apache.org/schemas/jaxws.xsd
+			http://www.springframework.org/schema/jee 
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+			http://www.springframework.org/schema/aop 
+			http://www.springframework.org/schema/aop/spring-aop-3.0.xsd" default-autowire="byName" default-lazy-init="true">
+			
+			<context:property-placeholder location="classpath*:foss.properties"/>
+			
+	<bean id="serialNumberRuleDao"	class="com.deppon.foss.module.transfer.common.server.dao.impl.SerialNumberRuleDao" />
+	<bean id="tfrJobProcessDao"	class="com.deppon.foss.module.transfer.common.server.dao.impl.TfrJobProcessDao" />
+	<bean id="tfrJobProcessLogDao"	class="com.deppon.foss.module.transfer.common.server.dao.impl.TfrJobProcessLogDao" />
+	
+	<!-- 待办Job，2015-04-15 shiwei新增 -->
+	<bean id="tfrJobTodoDao" class="com.deppon.foss.module.transfer.common.server.dao.impl.TfrJobTodoDao"/>
+	<bean id="tfrJobTodoService" class="com.deppon.foss.module.transfer.common.server.service.impl.TfrJobTodoService"/>
+	
+	<!-- 后台配置服务，2015-06-09 shiwei新增 -->
+	<bean id="serverConfigDao" class="com.deppon.foss.module.transfer.common.server.dao.impl.ServerConfigDao"/>
+	<bean id="serverConfigService" class="com.deppon.foss.module.transfer.common.server.service.impl.ServerConfigService"/>
+	
+	<!-- lms接口 -->
+	<bean id="fossToLMSService" class="com.deppon.foss.module.transfer.common.server.service.impl.FOSSToLMSService">		
+	</bean>
+	<!-- edi -->	
+	<bean id="fossToEDIService" class="com.deppon.foss.module.transfer.common.server.service.impl.FOSSToEDIService">
+		<property name="ftpPort" value="${edi.ftpport}"/>
+		<property name="ftpDirectory" value="合票清单"/>
+		<property name="ftpUser" value="${edi.ftpuser}"/>
+		<property name="ftpPassword" value="${edi.ftppassword}"/>
+		<property name="ftpHost" value="${edi.ftphost}"/>
+	</bean>
+	
+	<!-- oa接口————2014-03-08————shiwei modify-->
+	<bean id="fossToOAService" class="com.deppon.foss.module.transfer.common.server.service.impl.FOSSToOAService">
+		<property name="oaErrorsForFOSSImpl" ref="oaErrorsForFOSSImpl"></property>
+		<property name="unifiedCodeConvertUtils" ref="unifiedCodeConvertUtils"></property>
+	</bean>
+	
+	<!--==== OA客户端spring配置======== -->
+	<jaxws:client id="oaErrorsForFOSSImpl" serviceClass="dip.integrateportal.businessmanagement.errors.foss.OAErrorsForFOSSImpl" 
+				address="${esb.ws}/foss2dip/workflowService">
+		<jaxws:outInterceptors>
+			<!-- 设置soapHeader -->
+			<bean class="com.deppon.foss.esb.interceptor.ClientHeaderProcessor">
+				
+			</bean>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingOutInterceptor"/>
+		</jaxws:outInterceptors>
+		<jaxws:inInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingInInterceptor"/>
+		</jaxws:inInterceptors>
+		<!-- 打印Log，仅供测试 -->
+		<jaxws:features>
+			<bean class="org.apache.cxf.feature.LoggingFeature"></bean>
+		</jaxws:features>
+	</jaxws:client>
+	
+	<bean id="tfrCommonService" class="com.deppon.foss.module.transfer.common.server.service.impl.TfrCommonService" />
+	
+	
+	<bean id="tfrCommonAction" class="com.deppon.foss.module.transfer.common.server.action.TfrCommonAction" scope="prototype" />
+	
+	<!-- Job日志查询 -->
+	<bean id="tfrJobProcessLogService" class="com.deppon.foss.module.transfer.common.server.service.impl.TfrJobProcessLogService"/>
+	<bean id="tfrJobProcessService" class="com.deppon.foss.module.transfer.common.server.service.impl.TfrJobProcessService"/>
+	
+	<bean id="unifiedCodeConvertUtils" class="com.deppon.foss.module.transfer.common.server.utils.UnifiedCodeConvertUtils" />
+	
+	<bean id="synTaskVehicleInfoToGPSCallBackProcess" class="com.deppon.foss.module.transfer.common.server.service.impl.SynTaskVehicleInfoToGPSCallBackProcess"> 		
+ 	</bean>
+ 	 <!-- CRM接口 -->
+ 	<bean id="fossToCRMService" class="com.deppon.foss.module.transfer.common.server.service.impl.FOSSToCRMService" />
+ 	<bean id="crmToFossDao" class="com.deppon.foss.module.transfer.common.server.dao.impl.CrmToFossDao"></bean>
+	<!-- <bean id="esbInitUtil" class="com.deppon.esb.api.util.ESBInitUtil"
+		init-method="process" lazy-init="false">
+		 <property name="callBackProcessMap">
+			<map>
+				<entry key="ESB_FOSS2ESB_SYNC_VEHTASK" value-ref="synTaskVehicleInfoToGPSCallBackProcess" />
+			</map>
+		</property>  
+	</bean>  -->
+	<!-- TPS接口 -->
+	<bean id="fossToTPSService" class="com.deppon.foss.module.transfer.common.server.service.impl.FOSSToTPSService" />
+	
+	<!-- foss给tps 接口 -->
+	<bean id="tpsToFOSSService" class="com.deppon.foss.module.transfer.common.server.service.impl.TPSToFOSSService"/>
+		<!-- 注入其他模块的bean 部署时可能会导致其他模块报错，找到出错的bean进行注释 -->
+<!-- 	<bean id="handOverBillService" class="com.deppon.foss.module.transfer.load.server.service.impl.HandOverBillService"/>
+	<bean id="vehicleAssembleBillService" class="com.deppon.foss.module.transfer.load.server.service.impl.VehicleAssembleBillService">
+	<bean id="unloadTaskService" class="com.deppon.foss.module.transfer.unload.server.service.impl.UnloadTaskService"/>
+	<bean id="stockService" class="com.deppon.foss.module.transfer.stock.server.service.impl.StockService"></bean>
+	<bean id="expressThroughPackagePathService" class="com.deppon.foss.module.transfer.load.server.service.impl.ExpressThroughPackagePathService"/>
+	<bean id="calculateTransportPathService" class="com.deppon.foss.module.transfer.scheduling.server.service.impl.CalculateTransportPathService">
+		<property name="signInTimeInterval" value="30"/>
+		<property name="unsignInTimeInterval" value="30000"/>
+		<property name="invalidTimeInterval" value="7"/>
+	</bean> -->
+	<bean id="fossToAgentWaybillService" class="com.deppon.foss.module.transfer.common.server.service.impl.FOSSToAgentWaybillService"/>
+	
+	<!-- 派件装车扫描轨迹插入到轨迹表-->
+	<bean id="pushCarGoTrackService" class="com.deppon.foss.module.transfer.common.server.service.impl.PushCarGoTrackService"/>
+	<bean id="pushCarGoTrackDao" class="com.deppon.foss.module.transfer.common.server.dao.impl.PushCarGoTrackDao"/>
+	<!-- 提供dop推送服务 -->
+	<bean id="pushTrackSendDopService" class="com.deppon.foss.module.transfer.common.server.service.impl.PushTrackSendDopService"></bean>
+	<bean id="trackingsDao" class="com.deppon.foss.module.transfer.common.server.dao.impl.TrackingsDao"></bean>
+	
+	<!-- QMS服务类 -->	
+	<bean id="tfrToQmsErrorService" class="com.deppon.foss.module.transfer.common.server.service.impl.TfrToQmsErrorService"/>
+
+	<!-- 上报超方超重类 -->
+	<bean id="waybillFromMachineDao" class="com.deppon.foss.module.transfer.common.server.dao.impl.WaybillFromMachineDao"></bean>
+	<bean id="waybillFromMachineService" class="com.deppon.foss.module.transfer.common.server.service.impl.WaybillFromMachineService"></bean>
+
+	<bean id="billNumService"
+		class="com.deppon.foss.module.transfer.common.server.service.impl.BillNumService"></bean>
+	
+	<bean id="pushTruckTaskToWkService"
+		class="com.deppon.foss.module.transfer.common.server.service.impl.PushTruckTaskToWkService"></bean>
+	<bean id="tfrNotifyService" class="com.deppon.foss.module.transfer.common.server.service.impl.TfrNotifyService"/>
+	<bean id="tfrNotifyDao" class="com.deppon.foss.module.transfer.common.server.dao.impl.TfrNotifyDao"/>
+	<bean id="fossToWkService"
+		class="com.deppon.foss.module.transfer.common.server.service.impl.FOSSToWkService"></bean>
+	<bean id="updateTruckTaskToWkService"
+		class="com.deppon.foss.module.transfer.common.server.service.impl.UpdateTruckTaskToWkService"></bean>
+	<bean id="createWkTruckTaskService"
+		class="com.deppon.foss.module.transfer.common.server.service.impl.CreateWkTruckTaskService"></bean>
+	<bean id="pushUnloadTruckTaskToWKService"
+		class="com.deppon.foss.module.transfer.common.server.service.impl.PushUnloadTruckTaskToWKService"></bean>
+	<bean id="pushLoadToWkService" class="com.deppon.foss.module.transfer.common.server.service.impl.PushLoadToWkService" />
+	<bean id="querySwiftNumberInfoService" class="com.deppon.foss.module.transfer.common.server.service.impl.QuerySwiftNumberInfoService" />
+ 	<bean id="querySwiftNumberInfoDao" class="com.deppon.foss.module.transfer.common.server.dao.impl.QuerySwiftNumberInfoDao"></bean>
+	<bean id="wkBillAddTfrNotifyService" class="com.deppon.foss.module.transfer.common.server.service.impl.WkBillAddTfrNotifyService"></bean>
+	<bean id="wkBillAddTfrNotifyDao" class="com.deppon.foss.module.transfer.common.server.dao.impl.WkBillAddTfrNotifyDao"></bean>
+
+	<!-- 推送航空信息至CUBC 接口 -->
+	<bean id="fossToCubcService" class="com.deppon.foss.module.transfer.common.server.service.impl.FOSSToCUBCService"></bean>
+  
+    <!-- CUBC接口 -->
+	<bean id="fossToCubc" class="com.deppon.foss.module.transfer.common.server.service.impl.FossToCubc"/>
+    <!-- CUBC工具类供灰度使用-->
+    <bean id="cubcUtil" class="com.deppon.foss.module.transfer.common.server.utils.CUBCGrayUtil"/>
+    <bean id="firstTransferCenterHandoverTimeService" class="com.deppon.foss.module.transfer.common.server.service.impl.FirstTransferCenterHandoverTimeService"/>
+    <bean id="firstTransferCenterHandoverTimeDao" class="com.deppon.foss.module.transfer.common.server.dao.impl.FirstTransferCenterHandoverTimeDao"/>
+</beans>

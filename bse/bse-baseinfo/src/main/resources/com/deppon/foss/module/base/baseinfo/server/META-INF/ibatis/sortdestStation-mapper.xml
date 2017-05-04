@@ -1,0 +1,422 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ <mapper namespace="foss.bse.bse-baseinfo.sortdestStation" >
+
+	<resultMap id="sortdestStationQueryResultMap"
+   			type="com.deppon.foss.module.base.baseinfo.api.shared.domain.SortdestStationEntity">
+		<result property="id" column="ID"  jdbcType="VARCHAR" />
+		<result property="origOrgCode" column="ORIG_ORG_CODE"  jdbcType="VARCHAR" />
+		<result property="origOrgName" column="ORIG_ORG_NAME"  jdbcType="VARCHAR" />
+		<result property="schemeCode" column="SCHEMECODE"  jdbcType="VARCHAR" />
+		<result property="schemeName" column="SCHEMENAME"  jdbcType="VARCHAR" />
+		<result property="virtualCode" column="VIRTUAL_CODE"  jdbcType="VARCHAR" />
+		<result property="active" column="ACTIVE"  jdbcType="VARCHAR" />
+		<result property="createDate" column="CREATEDATE"  jdbcType="TIMESTAMP" />
+		<result property="createUser" column="CREATEUSER"  jdbcType="NUMERIC" />
+		<result property="modifyDate" column="MODIFYDATE"  jdbcType="TIMESTAMP" />
+		<result property="modifyUser" column="MODIFYUSER"  jdbcType="VARCHAR" />
+		<result property="status" column="STATUS"  jdbcType="VARCHAR" />
+		<result property="scheme" column="SCHEME"  jdbcType="VARCHAR" />
+		<collection property="sortdestStationDtos"   column="VIRTUAL_CODE" select="sortdestStationInfoQuery"/>
+	</resultMap>
+	
+	<resultMap id="sortdestStationInfoQueryResultMap"
+   			type="com.deppon.foss.module.base.baseinfo.api.shared.dto.SortdestStationDto">
+		<result property="id" column="ID"  jdbcType="VARCHAR" />
+		<result property="parentVirtualCode" column="PARENT_VIRTUAL_CODE"  jdbcType="VARCHAR" />
+		<result property="boxNo" column="BOXNO"  jdbcType="VARCHAR" />
+		<result property="cellNo" column="CELLNO"  jdbcType="TIMESTAMP" />
+		<result property="destOrgCode" column="DEST_ORG_CODE"  jdbcType="TIMESTAMP" />
+		<result property="destOrgName" column="DEST_ORG_NAME"  jdbcType="CHAR" />
+		<result property="packAgeType" column="PACKAGETYPE"  jdbcType="VARCHAR" />
+		<result property="active" column="ACTIVE"  jdbcType="VARCHAR" />
+		<result property="createDate" column="CREATEDATE"  jdbcType="TIMESTAMP" />
+		<result property="createUser" column="CREATEUSER"  jdbcType="NUMERIC" />
+		<result property="modifyDate" column="MODIFYDATE"  jdbcType="TIMESTAMP" />
+		<result property="modifyUser" column="MODIFYUSER"  jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<sql id="sortdestStation_Column_List">
+		ID,
+		ORIG_ORG_CODE,
+		ORIG_ORG_NAME,
+		SCHEMECODE,
+		SCHEMENAME,
+		VIRTUAL_CODE,
+		ACTIVE,
+		CREATEDATE,
+		CREATEUSER,
+		MODIFYDATE,
+		MODIFYUSER,
+		STATUS,
+		SCHEME
+	</sql>
+	<sql id="sortdestStationInfo_Column_List">
+		ID,
+		PARENT_VIRTUAL_CODE,
+		BOXNO,
+		CELLNO,
+		DEST_ORG_CODE,
+		DEST_ORG_NAME,
+		PACKAGETYPE,
+		ACTIVE,
+		CREATEDATE,
+		CREATEUSER,
+		MODIFYDATE,
+		MODIFYUSER
+	</sql>
+	
+	<sql id="queryWhere">
+		<where>
+		    ACTIVE ='Y'
+            <if test="id != null and id != ''">
+                and ID = #{id,jdbcType=VARCHAR}
+            </if>
+            <if test="origOrgCode != null and origOrgCode != ''">
+                and ORIG_ORG_CODE = #{origOrgCode,jdbcType=VARCHAR}
+            </if>
+            <if test="origOrgName != null and origOrgName != ''">
+                and ORIG_ORG_NAME = #{origOrgName,jdbcType=VARCHAR}
+            </if>
+             <if test="schemeCode != null and schemeCode != ''">
+                and SCHEMECODE = #{schemeCode,jdbcType=VARCHAR}
+            </if>
+            <if test="status != null and status != ''">
+                and STATUS = #{status,jdbcType=VARCHAR}
+            </if>
+             <if test="scheme != null and scheme != ''">
+                and SCHEME = #{scheme,jdbcType=VARCHAR}
+            </if>
+            <if test="createUser !=null and createUser !=''">
+                and exists (select 1
+	          from bse.mv_bas_user_org_auth_view v, bse.t_bas_org org
+	         where v.org_code = org.code and org.active='Y'
+	           and t.orig_org_code = org.code
+	           and v.emp_code =#{createUser,jdbcType=VARCHAR})
+            </if>
+            order by STATUS desc
+		</where> 
+	</sql>
+	<!-- 子表查询条件 -->
+	<sql id="queryChildWhere">
+	   <where>
+		    ACTIVE ='Y'
+            <if test="id != null and id != ''">
+                and ID = #{id,jdbcType=VARCHAR}
+            </if>
+            <if test="parentVirtualCode != null and parentVirtualCode != ''">
+                and PARENT_VIRTUAL_CODE = #{parentVirtualCode,jdbcType=VARCHAR}
+            </if>
+            <if test="boxNo != null and boxNo != ''">
+                and BOXNO = #{boxNo,jdbcType=VARCHAR}
+            </if>
+             <if test="cellNo != null and cellNo != ''">
+                and CELLNO = #{cellNo,jdbcType=VARCHAR}
+            </if>
+            <if test="destOrgCode != null and destOrgCode != ''">
+                and DEST_ORG_CODE = #{destOrgCode,jdbcType=VARCHAR}
+            </if>
+            order by BOXNO  
+		</where> 
+	</sql>	
+	<!--查询所有-->
+	<select id="queryAll"  resultMap="sortdestStationQueryResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SortdestStationEntity">
+		<![CDATA[
+			SELECT
+			/** 综合:查询  **/
+		]]>
+		<include refid="sortdestStation_Column_List" />
+		<![CDATA[
+			FROM BSE.t_bas_sortdest_station T
+		]]>
+		<include refid="queryWhere" />
+	</select>
+	<select id="countAll"  resultType="Long" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SortdestStationEntity">
+		<![CDATA[
+			SELECT
+			/** 综合:查询  **/
+		]]>
+		count(*)
+		<![CDATA[
+			FROM BSE.t_bas_sortdest_station T
+		]]>
+		<include refid="queryWhere" />
+	</select>
+	<!--sortdestStationInfo_Column_List-->
+	<select id="sortdestStationInfoQuery"  resultMap="sortdestStationInfoQueryResultMap" parameterType="java.lang.String">
+		<![CDATA[
+			SELECT
+			/** 综合:查询  **/
+		]]>
+		<include refid="sortdestStationInfo_Column_List" />
+		<![CDATA[
+			FROM BSE.t_bas_sortdest_station_info T
+		]]>
+		where t.active='Y' and t.parent_virtual_code = #{virtualCode,jdbcType=VARCHAR}
+	</select>
+	<!--insert-->
+	
+	<insert id='sortdestStationInsert'>
+		insert into t_bas_sortdest_station (
+		<include refid="sortdestStation_Column_List" />
+		)   
+	    values  
+	        (#{id,jdbcType=VARCHAR},
+			#{origOrgCode,jdbcType=CHAR},
+			#{origOrgName,jdbcType=VARCHAR},
+			#{schemeCode,jdbcType=VARCHAR}, 
+			#{schemeName,jdbcType=VARCHAR},
+			#{virtualCode,jdbcType=VARCHAR},
+			#{active,jdbcType=VARCHAR},
+			#{createDate,jdbcType=TIMESTAMP},
+			#{createUser,jdbcType=VARCHAR},
+			#{modifyDate,jdbcType=TIMESTAMP},
+			#{modifyUser,jdbcType=VARCHAR},
+			#{status,jdbcType=VARCHAR},
+			#{scheme,jdbcType=VARCHAR})
+	</insert>
+	 
+
+	
+ <update id="sortdestStationUpdate" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SortdestStationEntity" >
+    update bse.t_bas_sortdest_station
+    <set >
+      <if test="active != null" >
+        ACTIVE = #{active,jdbcType=VARCHAR},
+      </if>
+      <if test="origOrgCode != null" >
+        ORIG_ORG_CODE = #{origOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="origOrgName != null" >
+        ORIG_ORG_NAME = #{origOrgName,jdbcType=VARCHAR},
+      </if>
+      <if test="schemeCode != null" >
+        SCHEMECODE = #{schemeCode,jdbcType=VARCHAR},
+      </if>
+      <if test="schemeName != null" >
+        SCHEMENAME = #{schemeName,jdbcType=VARCHAR},
+      </if>
+      <if test="virtualCode != null" >
+        VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyDate != null" >
+        MODIFYDATE = #{modifyDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifyUser != null" >
+        MODIFYUSER = #{modifyUser,jdbcType=VARCHAR},
+      </if>
+      <if test="scheme != null" >
+        SCHEME = #{scheme,jdbcType=VARCHAR},
+      </if>
+      <if test="status != null" >
+        STATUS = #{status,jdbcType=VARCHAR}
+      </if>
+    </set>
+    <where>
+    	<if test="id != null" >
+         ID = #{id,jdbcType=VARCHAR}
+        </if>
+    	<if test="origOrgCode != null" >
+         and ORIG_ORG_CODE = #{origOrgCode,jdbcType=VARCHAR}
+        </if>
+        <if test="virtualCode != null" >
+         and VIRTUAL_CODE = #{virtualCode,jdbcType=VARCHAR}
+      </if>
+    </where>
+  </update>
+ <!-- 作废 -->  
+<update id="deleteByCode" parameterType="map">
+		update/** 综合:作废   **/ BSE.t_bas_sortdest_station
+		<set>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				MODIFYUSER = #{modifyUser, jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate != null and modifyDate!= ''">
+				MODIFYDATE = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="status != null and status!= ''">
+				STATUS = #{status,jdbcType=VARCHAR}
+			</if>
+		</set>
+
+		<where>
+			<if test="codes!=null and codes.length > 0">
+				VIRTUAL_CODE in
+				<foreach collection="codes" index="index" item="code" open="("
+					separator="," close=")">
+					#{code}
+				</foreach>
+			</if>
+		</where>
+		</update>
+<!--update 子表-->
+<update id="sortdestStationInfoUpdate" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.SortdestStationDto" >
+    update bse.t_bas_sortdest_station_info
+    <set >
+      <if test="active != null" >
+        ACTIVE = #{active,jdbcType=VARCHAR},
+      </if>
+      <if test="boxNo != null" >
+        BOXNO = #{boxNo,jdbcType=VARCHAR},
+      </if>
+      <if test="cellNo != null" >
+        CELLNO = #{cellNo,jdbcType=VARCHAR},
+      </if>
+      <if test="destOrgCode != null" >
+        DEST_ORG_CODE = #{destOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="destOrgName != null" >
+        DEST_ORG_NAME = #{destOrgName,jdbcType=VARCHAR},
+      </if>
+      <if test="packAgeType != null" >
+        PACKAGETYPE = #{packAgeType,jdbcType=VARCHAR},
+      </if>
+      <if test="modifyUser != null and modifyUser != ''">
+		MODIFYUSER = #{modifyUser, jdbcType=VARCHAR},
+	  </if>
+	  <if test="modifyDate != null and modifyDate!= ''">
+		MODIFYDATE = #{modifyDate,jdbcType=TIMESTAMP}
+	  </if>
+    </set>
+    <where>
+    	<if test="id != null" >
+         ID = #{id,jdbcType=VARCHAR}
+        </if>
+    	<if test="parentVirtualCode != null" >
+         and PARENT_VIRTUAL_CODE = #{parentVirtualCode,jdbcType=VARCHAR}
+        </if>
+    </where>
+  </update>
+  
+ <!--child insert-->
+<insert id='sortdestStationInfoInserts' parameterType="java.util.List">
+		insert into t_bas_sortdest_station_info (
+		<include refid="sortdestStationInfo_Column_List" />
+		)   
+	    values  
+	    <foreach collection="list" item="item" index="index" separator="," >  
+	        (#{id,jdbcType=VARCHAR},
+			#{parentVirtualCode,jdbcType=CHAR},
+			#{boxNo,jdbcType=VARCHAR},
+			#{cellNo,jdbcType=VARCHAR}, 
+			#{destOrgCode,jdbcType=VARCHAR},
+			#{destOrgName,jdbcType=VARCHAR},
+			#{packAgeType,jdbcType=VARCHAR},
+			#{active,jdbcType=VARCHAR},
+			#{createDate,jdbcType=TIMESTAMP},
+			#{createUser,jdbcType=VARCHAR},
+			#{modifyDate,jdbcType=TIMESTAMP},
+			#{modifyUser,jdbcType=VARCHAR}
+			)
+	    </foreach>  
+	</insert> 
+  <!-- 单条插入 -->
+<insert id='sortDestStationInfoInsert' parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.SortdestStationDto">
+		insert into t_bas_sortdest_station_info (
+		<include refid="sortdestStationInfo_Column_List" />
+		)   
+	    values  
+ 	        (#{id,jdbcType=VARCHAR},
+			#{parentVirtualCode,jdbcType=CHAR},
+			#{boxNo,jdbcType=VARCHAR},
+			#{cellNo,jdbcType=VARCHAR}, 
+			#{destOrgCode,jdbcType=VARCHAR},
+			#{destOrgName,jdbcType=VARCHAR},
+			#{packAgeType,jdbcType=VARCHAR},
+			#{active,jdbcType=VARCHAR},
+			#{createDate,jdbcType=TIMESTAMP},
+			#{createUser,jdbcType=VARCHAR},
+			#{modifyDate,jdbcType=TIMESTAMP},
+			#{modifyUser,jdbcType=VARCHAR}
+			)
+ 	</insert> 
+ 	
+<select id="countAllSortChild"  resultType="Long" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.SortdestStationDto">
+		<![CDATA[
+			SELECT
+			/** 综合:查询  **/
+		]]>
+		count(*)
+		<![CDATA[
+			FROM BSE.t_bas_sortdest_station_info T
+		]]>
+		<include refid="queryChildWhere" />
+	</select>
+ 	
+ 	 
+<select id="querySortChildAll"  resultMap="sortdestStationInfoQueryResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.SortdestStationDto">
+		<![CDATA[
+			SELECT
+			/** 综合:查询  **/
+		]]>
+		<include refid="sortdestStationInfo_Column_List" />
+		<![CDATA[
+			FROM BSE.t_bas_sortdest_station_info T
+		]]>
+		<include refid="queryChildWhere" />
+	</select>	
+<!-- 根据ID作废 -->
+	<update id="sortDestStationInfoDel" parameterType="map">
+		update/** 综合:作废   **/ BSE.t_bas_sortdest_station_info
+		<set>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				MODIFYUSER = #{modifyUser, jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate != null and modifyDate!= ''">
+				MODIFYDATE = #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+		</set>
+
+		<where>
+			<if test="codes!=null and codes.length > 0">
+				ID in
+				<foreach collection="codes" index="index" item="code" open="("
+					separator="," close=")">
+					#{code}
+				</foreach>
+			</if>
+			<if test="parentVirtualCodes!=null and parentVirtualCodes.length > 0">
+				and PARENT_VIRTUAL_CODE in
+				<foreach collection="parentVirtualCodes" index="index" item="code" open="("
+					separator="," close=")">
+					#{code}
+				</foreach>
+			</if>
+		</where>
+		</update>
+		
+<!-- 根据虚拟编码作废 -->
+	<update id="sortDestStationInfoByVirtualCodeDel" parameterType="map">
+		update/** 综合:作废   **/ BSE.t_bas_sortdest_station_info
+		<set>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				MODIFYUSER = #{modifyUser, jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate != null and modifyDate!= ''">
+				MODIFYDATE = #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+		</set>
+		<where>
+		   ACTIVE='Y'
+			<if test="codes!=null and codes.length > 0">
+			 and  parent_virtual_code in 
+			  <foreach collection="codes" index="index" item="code" open="("
+					separator="," close=")">
+					   #{code}
+			 </foreach>
+			</if>
+		</where>
+		</update>
+
+</mapper>

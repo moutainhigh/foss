@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.pda.bdm.module.foss.login.server.dao.impl.LoginPdaDao" >
+    
+	<insert id="savePdaLoginInfo" parameterType="com.deppon.pda.bdm.module.foss.login.shared.domain.PdaLoginDeviceEntity">
+	    insert into pda.T_PDA_DEVICE_LOGIN_DETAIL(ID,DVCCODE,USERCODE,USERNAME,DEPTCODE,DEPTNAME,LASTLOGINDATE,LOGINOUTDATE,STATUS)
+	    values(#{id,jdbcType=VARCHAR},#{dvcCode,jdbcType=VARCHAR},#{userCode,jdbcType=VARCHAR},#{userName,jdbcType=VARCHAR},
+	    #{deptCode,jdbcType=VARCHAR},#{deptName,jdbcType=VARCHAR},#{loginDate,jdbcType=TIMESTAMP},#{loginOutDate,jdbcType=TIMESTAMP},#{status,jdbcType=VARCHAR})
+	</insert>
+	<update id="updPdaLoginInfo" parameterType="com.deppon.pda.bdm.module.foss.login.shared.domain.PdaLoginDeviceEntity">
+		update pda.T_PDA_DEVICE_LOGIN_DETAIL set status ='1'
+		<where>
+			dvccode=#{dvcCode,jdbcType=VARCHAR} 
+		</where>
+	</update>
+	
+	<select id="chekLastLoginOutDate" resultType="long" parameterType="com.deppon.pda.bdm.module.foss.login.shared.domain.PdaLoginDeviceEntity">
+		 <![CDATA[
+		 		SELECT count(*) from  pda.T_PDA_DEVICE_LOGIN_DETAIL
+		 			WHERE DVCCODE=#{dvcCode,jdbcType=VARCHAR} and STATUS='0'
+		 			and LOGINOUTDATE > #{loginOutDate,jdbcType=TIMESTAMP}
+	 		]]>
+	</select>
+	<update id="updPdaLoginOutDate" parameterType="com.deppon.pda.bdm.module.foss.login.shared.domain.PdaLoginDeviceEntity">
+		update pda.T_PDA_DEVICE_LOGIN_DETAIL set LOGINOUTDATE=#{loginOutDate,jdbcType=TIMESTAMP}
+		where dvccode=#{dvcCode,jdbcType=VARCHAR}  and STATUS='0'
+	</update>
+</mapper>

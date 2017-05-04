@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.expressline" >
+
+	<resultMap id="expressLineResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressLineEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="line_name" property="lineName" jdbcType="VARCHAR" />
+		<result column="simple_code" property="simpleCode" jdbcType="VARCHAR" />
+		<result column="management" property="organizationCode" jdbcType="VARCHAR" />
+		<result column="orig_org_code" property="orginalOrganizationCode" jdbcType="VARCHAR" />
+		<result column="dest_org_code" property="destinationOrganizationCode" jdbcType="VARCHAR" />
+		<result column="distance" property="distance" jdbcType="NUMERIC" />
+		<result column="trans_type" property="transType" jdbcType="VARCHAR" />
+		<result column="line_type" property="lineType" jdbcType="VARCHAR" />
+		<result column="line_sort" property="lineSort" jdbcType="VARCHAR" />
+		<result column="virtual_code" property="virtualCode" jdbcType="VARCHAR" />
+		<result column="is_default" property="isDefault" jdbcType="CHAR" />
+		<result column="dept_city_code" property="orginalCityCode" jdbcType="VARCHAR" />
+		<result column="arrive_city_code" property="destinationCityCode" jdbcType="VARCHAR" />
+		<result column="common_aging" property="commonAging" jdbcType="NUMERIC" />
+		<result column="fast_aging" property="fastAging" jdbcType="NUMERIC" />
+		<result column="other_aging" property="otherAging" jdbcType="NUMERIC" />
+		<result column="active" property="active" jdbcType="CHAR" />
+		<result column="notes" property="notes" jdbcType="VARCHAR" />
+		<result column="create_time" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="modify_time" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="VERSION_NO" property="version" jdbcType="NUMERIC" />
+		<result column="VALID" property="valid" jdbcType="CHAR" />
+		<result column="IS_NOREWARD_PUNISH" property="isNorewardPunish" jdbcType="CHAR" />
+		
+		<result column="leaveTime" property="leaveTime" jdbcType="CHAR" />
+		<result column="arriveTime" property="arriveTime" jdbcType="CHAR" />
+		<result column="modifyUserCode" property="modifyUserCode" jdbcType="CHAR" />
+		<result column="modifyTime" property="modifyTime" jdbcType="TIMESTAMP" />
+		<result column="frequencyNo" property="frequencyNo" jdbcType="NUMERIC" />
+		<result column="arriveDeadTime" property="arriveDeadTime" jdbcType="CHAR" />
+		<result column="arriveDeadDay" property="arriveDeadDay" jdbcType="NUMERIC" />
+		<result column="arriveDay" property="arriveDay" jdbcType="NUMERIC" />
+		
+
+		<!-- 冗余属性	 -->
+		<result column="sourceName" property="orginalOrganizationName" jdbcType="VARCHAR" />
+		<result column="targetName" property="destinationOrganizationName" jdbcType="VARCHAR" />
+		<result column="managementName" property="organizationName" jdbcType="VARCHAR" />
+		<result column="sourceCityName" property="orginalCityName" jdbcType="VARCHAR" />
+		<result column="targetCityName" property="destinationCityName" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<sql id="extColumns">
+		M.NAME as sourceName, 
+		N.NAME as targetName, 
+		V.NAME as managementName, 
+		D.NAME as sourceCityName, 
+		E.NAME as targetCityName,
+		
+		S.LEAVE_TIME as leaveTime,
+        S.ARRIVE_TIME as arriveTime,
+        S.MODIFY_USER_CODE as modifyUserCode,
+        S.MODIFY_TIME as modifyTime,
+        S.FREQUENCY_NO as frequencyNo,
+        S.ARRIVE_DEAD_TIME as arriveDeadTime,
+        S.ARRIVE_DEAD_DAY as arriveDeadDay,
+        s.ARRIVE_DAY as arriveDay,
+	</sql>
+
+	<sql id="extTables">
+		FROM BSE.T_BAS_EXPRESS_LINE T 
+		LEFT JOIN BSE.MV_DEST_NET M ON T.ORIG_ORG_CODE = M.CODE AND M.ACTIVE = 'Y' 
+		LEFT JOIN BSE.MV_DEST_NET N ON T.DEST_ORG_CODE = N.CODE AND N.ACTIVE = 'Y'
+		LEFT JOIN BSE.MV_DEST_NET V ON T.MANAGEMENT = V.CODE AND V.ACTIVE = 'Y'
+		LEFT JOIN BSE.T_BAS_DISTRICT D ON T.DEPT_CITY_CODE = D.CODE AND D.ACTIVE = 'Y'
+		LEFT JOIN BSE.T_BAS_DISTRICT E ON T.ARRIVE_CITY_CODE = E.CODE AND E.ACTIVE = 'Y'
+		LEFT JOIN BSE.T_BAS_EXPRESS_DEPARTURE_STD S ON T.VIRTUAL_CODE = S.LINE_VIRTUAL_CODE AND S.ACTIVE = 'Y'
+	</sql>
+	
+	<sql id="columns">
+		T.ID,
+		T.LINE_NAME,
+		T.SIMPLE_CODE,
+		T.MANAGEMENT,
+		T.ORIG_ORG_CODE,
+		T.DEST_ORG_CODE,
+		T.DISTANCE,
+		T.TRANS_TYPE,
+		T.DEPT_CITY_CODE,
+		T.ARRIVE_CITY_CODE,
+		T.LINE_TYPE,
+		T.COMMON_AGING,
+		T.FAST_AGING,
+		T.OTHER_AGING,
+		T.LINE_SORT,
+		T.CREATE_TIME,
+		T.MODIFY_TIME,
+		T.ACTIVE,
+		T.CREATE_USER_CODE,
+		T.MODIFY_USER_CODE,
+		T.NOTES,
+		T.VIRTUAL_CODE,
+		T.IS_DEFAULT,
+		T.VERSION_NO,
+		T.VALID,
+		T.IS_NOREWARD_PUNISH
+	</sql>
+
+	<sql id="values">
+		#{id,jdbcType=VARCHAR},
+		#{lineName,jdbcType=VARCHAR}, 
+		#{simpleCode,jdbcType=VARCHAR}, 
+		#{organizationCode,jdbcType=VARCHAR}, 
+		#{orginalOrganizationCode,jdbcType=VARCHAR},  
+		#{destinationOrganizationCode,jdbcType=VARCHAR}, 
+		#{distance, jdbcType=NUMERIC}, 
+		#{transType, jdbcType=VARCHAR}, 
+		#{orginalCityCode,jdbcType=VARCHAR},
+		#{destinationCityCode,jdbcType=VARCHAR},
+		#{lineType, jdbcType=VARCHAR}, 
+		#{commonAging,jdbcType=NUMERIC}, 
+		#{fastAging,jdbcType=NUMERIC},  
+		#{otherAging,jdbcType=NUMERIC}, 
+		#{lineSort, jdbcType=VARCHAR}, 
+		#{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=CHAR}, 
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR}, 
+		#{notes,jdbcType=VARCHAR}, 
+		#{virtualCode, jdbcType=VARCHAR}, 
+		#{isDefault,jdbcType=CHAR}, 
+		#{version, jdbcType=NUMERIC},
+		#{valid, jdbcType=CHAR},
+		#{isNorewardPunish, jdbcType=CHAR}
+	</sql>
+
+	<insert id="addExpressLine" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressLineEntity">
+		insert into BSE.T_BAS_EXPRESS_LINE T(
+		<include refid="columns"/>
+		) values (
+		<include refid="values"/>
+		)
+	</insert>
+
+	<update id="deleteExpressLine" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressLineEntity">
+		update BSE.T_BAS_EXPRESS_LINE T
+		set T.active = #{active, jdbcType=CHAR} 
+		, T.modify_time = #{modifyDate,jdbcType=TIMESTAMP} 
+		, T.version_no = #{version,jdbcType=NUMERIC}
+		, T.modify_user_code = #{modifyUser,jdbcType=VARCHAR} 
+		where T.VIRTUAL_CODE = #{virtualCode, jdbcType=VARCHAR}
+		and T.active = 'Y'
+	</update>
+	
+	<update id="validExpressLine" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressLineEntity">
+		update BSE.T_BAS_EXPRESS_LINE T
+		set T.valid = #{valid, jdbcType=CHAR} 
+		, T.modify_time = #{modifyDate,jdbcType=TIMESTAMP} 
+		, T.version_no = #{version,jdbcType=NUMERIC}
+		, T.modify_user_code = #{modifyUser,jdbcType=VARCHAR} 
+		where T.VIRTUAL_CODE = #{virtualCode, jdbcType=VARCHAR}
+		and T.active = #{active, jdbcType=CHAR}
+	</update>
+
+	<select id="queryExpressLineById" resultMap="expressLineResultMap" parameterType="java.lang.String">
+		select 
+		<include refid="columns"/>
+		 from BSE.T_BAS_EXPRESS_LINE T where T.id = #{id}
+	</select>
+
+	<select id="queryExpressLineByVirtualCode" resultMap="expressLineResultMap" parameterType="map">
+		select 
+		<include refid="columns"/>
+		 from BSE.T_BAS_EXPRESS_LINE T where T.virtual_code = #{virtualCode} and T.active = #{active}
+	</select>
+	
+	<sql id="whereLineListByCondition">
+		<where>
+			<if test="active != null and active != ''">
+				AND T.active = #{active}  
+			</if>
+			<if test="lineName != null and lineName != ''">
+				AND T.line_name like CONCAT(CONCAT('%', #{lineName}), '%')  
+			</if>
+			<if test="organizationCode != null and organizationCode != ''">
+				AND T.management = #{organizationCode} 
+			</if>
+			<if test="orginalOrganizationCode != null and orginalOrganizationCode != ''">
+				AND T.ORIG_ORG_CODE = #{orginalOrganizationCode} 
+			</if>
+			<if test="destinationOrganizationCode != null and destinationOrganizationCode != ''">
+				AND T.DEST_ORG_CODE = #{destinationOrganizationCode} 
+			</if>
+			<if test="orginalCityCode != null and orginalCityCode != ''">
+				AND T.dept_city_code = #{orginalCityCode} 
+			</if>
+			<if test="destinationCityCode != null and destinationCityCode != ''">
+				AND T.arrive_city_code = #{destinationCityCode} 
+			</if>
+			<if test="transType != null and transType != ''">
+				AND T.trans_type = #{transType} 
+			</if>
+			<if test="lineType != null and lineType != ''">
+				AND T.line_type = #{lineType} 
+			</if>
+			<if test="lineSort != null and lineSort != ''">
+				AND T.line_sort = #{lineSort} 
+			</if>
+			<if test="simpleCode != null and simpleCode != ''">
+				<![CDATA[AND T.simple_code LIKE CONCAT(CONCAT('%',#{simpleCode,jdbcType=VARCHAR}),'%')]]>
+			</if>
+			<if test="isDefault != null and isDefault != ''">
+				AND T.is_default = #{isDefault} 
+			</if>
+			<if test="valid != null and valid != ''">
+				AND T.valid = #{valid} 
+			</if>
+			<if test="isNorewardPunish != null and isNorewardPunish != ''">
+					<choose>  
+                        <when test='isNorewardPunish=="Y"'>
+                        AND T.IS_NOREWARD_PUNISH = #{isNorewardPunish}
+                        </when>  
+                        <otherwise>AND (T.IS_NOREWARD_PUNISH = #{isNorewardPunish} or T.IS_NOREWARD_PUNISH is null) </otherwise>  
+                    </choose>  
+			</if>
+<!-- 			<if test="modifyDate != null">
+				<![CDATA[ AND create_time <= #{modifyDate} ]]>
+				<![CDATA[ AND #{modifyDate} < modify_time ]]>
+			</if> -->
+		</where>
+	</sql>
+
+	<select id="queryExpressLineListByCondition" resultMap="expressLineResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressLineEntity">
+		select 
+		<include refid="columns"/>
+		FROM BSE.T_BAS_EXPRESS_LINE T
+		<include refid="whereLineListByCondition"/>
+		order by T.VERSION_NO desc
+	</select>
+	<!-- 根据线路简码查询 -->
+	<select id="queryExpressLineEntityBySimpleCode" resultMap="expressLineResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressLineEntity">
+		select 
+		<include refid="columns"/>
+		FROM BSE.T_BAS_EXPRESS_LINE T
+		where
+		T.simple_code = #{simpleCode,jdbcType=VARCHAR} 
+		and 
+		T.active = #{active}
+	</select>
+	
+	<select id="queryExpressLineListForExport" resultMap="expressLineResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressLineEntity">
+		select
+		<include refid="extColumns"/>
+		<include refid="columns"/>
+		<include refid="extTables"/>
+		<include refid="whereLineListByCondition"/>
+		order by T.VERSION_NO desc
+	</select>
+	
+	
+	<select id="countExpressLineListByCondition" resultType="long" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressLineEntity">
+		select count(1) 
+		FROM BSE.T_BAS_EXPRESS_LINE T
+		<include refid="whereLineListByCondition"/>
+	</select>
+	
+	<select id="queryExpressLineListBySourceAndType" resultMap="expressLineResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressLineEntity">
+		select 
+		<include refid="columns"/>
+		FROM BSE.T_BAS_EXPRESS_LINE T
+		WHERE T.ORIG_ORG_CODE = #{orginalOrganizationCode} 
+		AND ( T.trans_type = #{transType} OR T.line_type = #{lineType} )
+		AND T.active = #{active}  
+	</select>
+
+	<select id="queryExpressLineListForDownload" resultMap="expressLineResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.ExpressLineEntity">
+		select 
+		<include refid="columns"/>
+		from BSE.T_BAS_EXPRESS_LINE T
+		<where>
+			<if test="version != null">
+				<![CDATA[ AND T.version_no >= #{version}  ]]>
+			</if>
+			<if test="organizationCode != null">
+				AND T.management = #{organizationCode}
+			</if>
+		</where>
+		order by T.version_no,T.ID ASC
+	</select>
+
+	<!-- 按出发营业部查找始发线路和全量中转线路以及全量到达线路 -->
+	<select id="queryExpressLineListForDownloadViaFilter" resultMap="expressLineResultMap" parameterType="map">
+		select 
+		/** 综合:按出发营业部查找始发线路和全量中转线路以及全量到达线路  **/
+		<include refid="columns"/>
+		from BSE.T_BAS_EXPRESS_LINE T
+		<where>
+			<if test="organizationCode != null">
+				<![CDATA[ AND ((T.LINE_SORT = #{lineSortSource} and T.ORIG_ORG_CODE = #{sourceCode}) or T.LINE_SORT <> #{lineSortSource})  ]]>
+			</if>
+			<if test="version != null">
+				<![CDATA[ AND T.version_no >= #{version}  ]]>
+			</if>
+		</where>
+		order by T.version_no ASC
+	</select>
+
+
+	<!-- 以下为 cache 使用 -->
+	<select id="queryExpressLastVersion" resultType="long">
+		<![CDATA[
+			SELECT MAX(T.VERSION_NO)
+			FROM BSE.T_BAS_EXPRESS_LINE T
+		]]>
+	</select>
+	
+	<select id="queryExpressLineListForCache" resultMap="expressLineResultMap" parameterType="string">
+		select 
+		<include refid="columns"/>
+		FROM BSE.T_BAS_EXPRESS_LINE T
+		where T.active = #{active,jdbcType=CHAR}
+		order by T.version_no ASC
+	</select>
+
+</mapper>

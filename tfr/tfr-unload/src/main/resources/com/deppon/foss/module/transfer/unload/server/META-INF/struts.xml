@@ -1,0 +1,748 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE struts PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN" "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="unload-default" extends="foss-default">
+		<interceptors>
+			<interceptor name="bampInterceptor" class="com.deppon.foss.module.transfer.common.server.interceptor.CommonBampInterceptor"></interceptor>
+			<interceptor-stack name="unloadStack">
+				<interceptor-ref name="fossStack" />
+				<interceptor-ref name="bampInterceptor" />
+			</interceptor-stack>
+		</interceptors>
+		<default-interceptor-ref name="unloadStack" />
+	</package> 
+	
+	<package name="unload" namespace="/unload" extends="unload-default">
+		<!-- 模块主页面 -->
+		<action name="assignunloadtaskindex">
+			<result name="success">assignunloadtaskindex.jsp</result>
+		</action>
+		<!-- 分配卸货任务 嵌入GUI -->
+		<action name="assignunloadtaskindex_include">
+			<result name="success">assignunloadtaskindex_include.jsp</result>
+		</action>
+		<action name="assignunloadtaskqueryindex">
+			<result name="success">assignunloadtaskqueryindex.jsp</result>
+		</action>
+		<!-- 查询已分配卸货任务 嵌入GUI -->
+		<action name="assignunloadtaskqueryindex_include">
+			<result name="success">assignunloadtaskqueryindex_include.jsp</result>
+		</action>
+		
+		<action name="queryArriveVehicle" class="assignUnloadTaskAction" method="queryArriveVehicle">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<action name="queryArriveVehicletotal" class="assignUnloadTaskAction" method="queryArriveVehicletotal">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="queryArriveBill" class="assignUnloadTaskAction" method="queryArriveBill">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 导出未分配的卸车任务 -->
+		<action name="exportAssignunloadtask" class="assignUnloadTaskAction" method="exportAssignunloadtask">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel;charset=UTF-8</param>
+                <param name="inputName">excelStream</param>
+                <param name="contentDisposition">attachment;filename="${fileName}.xls"</param>
+                <param name="bufferSize">1024</param>
+            </result>
+            <result name="error" type="json"/>
+		</action>
+		
+		<!-- 导出已分配的卸车任务 -->
+		<action name="exportAssignunloadedtask" class="assignUnloadTaskAction" method="exportAssignunloadedtask">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel;charset=UTF-8</param>
+                <param name="inputName">excelStream</param>
+                <param name="contentDisposition">attachment;filename="${fileName}.xls"</param>
+                <param name="bufferSize">1024</param>
+            </result>
+            <result name="error" type="json"/>
+		</action>
+		
+		<action name="queryLoader" class="assignUnloadTaskAction" method="queryLoader">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="assign" class="assignUnloadTaskAction" method="assign">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="refreshAssignedTaskList" class="assignUnloadTaskAction" method="refreshAssignedTaskList">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="cancelAssignedUnloadTask" class="assignUnloadTaskAction" method="cancelAssignedUnloadTask">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="queryAssignUnloadTask" class="assignUnloadTaskAction" method="queryAssignUnloadTask">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="queryAssignUnloadTaskDetail" class="assignUnloadTaskAction" method="queryAssignUnloadTaskDetail">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="refreshAssignedTaskDetail" class="assignUnloadTaskAction" method="refreshAssignedTaskDetail">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 查询预分配月台号 -->
+		<action name="queryPrePlatformNo" class="assignUnloadTaskAction" method="queryPrePlatformNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 查询重贴标签货物 begin-->
+		<action name="changelabelgoodsindex">
+			<result name="success">changelabelgoodsindex.jsp</result>
+		</action>
+		<!-- 查询重贴标签货物-嵌入GUI-->
+		<action name="changelabelgoodsindex_include">
+			<result name="success">changelabelgoodsindex_include.jsp</result>
+		</action>
+		<action name="queryChangeLabelGoodsUnload" class="changeLabelGoodsAction" method="queryChangeLabelGoodsUnload">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="queryChangeLabelGoodsStock" class="changeLabelGoodsAction" method="queryChangeLabelGoodsStock">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="printChangeLabelGoodsAgain" class="changeLabelGoodsAction" method="printChangeLabelGoodsAgain">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="updateChangeLabelGoods" class="changeLabelGoodsAction" method="updateChangeLabelGoods">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 查询重贴标签货物 end-->
+
+		<!-- 查询卸车任务 begin-->
+		<action name="unloadtaskqueryindex" class="unloadTaskQueryAction" method="queryOutfieldCode">
+			<result name="success">unloadtaskqueryindex.jsp</result>
+		</action>
+		<!-- 查询卸车任务 嵌入GUI-->
+		<action name="unloadtaskqueryindex_include">
+			<result name="success">unloadtaskqueryindex_include.jsp</result>
+		</action>
+		<action name="unloadtaskdetailqueryindex">
+			<result name="success">unloadtaskdetailindex.jsp</result>
+			<result name="error" type="json" />
+		</action>
+		<action name="unloadtaskdetailqueryindex_include">
+			<result name="success">unloadtaskdetailindex_include.jsp</result>
+			<result name="error" type="json" />
+		</action>
+		<action name="queryUnloadTask" class="unloadTaskQueryAction" method="queryUnloadTask">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="queryUnloadTaskDetail" class="unloadTaskQueryAction" method="queryUnloadTaskDetail">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="queryUnloadTaskDetailExpress" class="unloadTaskQueryAction" method="queryUnloadTaskDetailExpress">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="exportUnloadWayBillByTaskNo" class="unloadTaskQueryAction" method="exportUnloadWayBillByTaskNo">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel;charset=UTF-8</param>
+                <param name="inputName">excelStream</param>
+                <param name="contentDisposition">attachment;filename="${fileName}.xls"</param>
+                <param name="bufferSize">1024</param>
+            </result>
+            <result name="error" type="json"/>
+		</action>
+		<action name="exportUnloadTask" class="unloadTaskQueryAction" method="exportUnloadTask">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel;charset=UTF-8</param>
+                <param name="inputName">excelStream</param>
+                <param name="contentDisposition">attachment;filename="${fileName}.xls"</param>
+                <param name="bufferSize">1024</param>
+            </result>
+            <result name="error" type="json"/>
+		</action>
+		<action name="queryUnloadSerialNoByUnloadWaybillDetailId" class="unloadTaskQueryAction" method="queryUnloadSerialNoByUnloadWaybillDetailId">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="queryLoaderByTaskId" class="unloadTaskQueryAction" method="queryLoaderByTaskId">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 查询卸车任务 end-->
+		
+		<!--————————————卸车差异报告begin——————————————-->
+		<!--查询卸车差异报告页面跳转-->
+		<action name="unloaddiffenencesreportqueryindex">
+			<result name="success">unloaddiffenencesreportqueryindex.jsp</result>
+		</action>
+		<!--查询卸车差异报告  嵌入GUI-->
+		<action name="unloaddiffenencesreportqueryindex_include">
+			<result name="success">unloaddiffenencesreportqueryindex_include.jsp</result>
+		</action>
+		<!--查询卸车差异报告--> 
+		<action name="queryUnloadDiffReport" class="unloadDiffReportAction" method="queryUnloadDiffReport">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--查询当前部门的顶级部门--> 
+		<action name="querySuperiorOrgByOrgCode" class="unloadDiffReportAction" method="querySuperiorOrgByOrgCode">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--卸车差异报告详情界面跳转-->
+		<action name="unloaddiffenencesreportshowindex">
+			<result name="success">unloaddiffenencesreportshowindex.jsp</result>
+		</action>
+		<!--卸车差异报告详情界面跳转嵌入GUI-->
+		<action name="unloaddiffenencesreportshowindex_include">
+			<result name="success">unloaddiffenencesreportshowindex_include.jsp</result>
+		</action>
+		<!--根据卸车差异编号获取基本信息及详情  (零担)--> 
+		<action name="showUnloadDiffReportAndDetail" class="unloadDiffReportAction" method="showUnloadDiffReportAndDetail">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!--根据卸车差异编号获取基本信息及详情  (快递)--> 
+		<action name="showUnloadDiffReportMarkDetail" class="unloadDiffReportAction" method="showUnloadDiffReportMarkDetail">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--手动处理卸货差异报告中的少货异常-->
+		<action name="handleUnloadLackGoodsException" class="unloadDiffReportAction" method="handleUnloadLackGoodsException">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--卸车差异报告明细导出-->
+		<action name="exportUnloadDifferencesReportDetail" class="unloadDiffReportAction" method="exportUnloadDifferencesReportDetail">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel;charset=UTF-8</param>
+                <param name="inputName">excelStream</param>
+                <param name="contentDisposition">attachment;filename="${fileName}.xls"</param>
+                <param name="bufferSize">1024</param>
+            </result>
+            <result name="error" type="json"/>
+		</action>
+		<!--————————————卸车差异报告end——————————————-->
+		
+		<!--————————————shiwei卸车任务begin——————————————-->
+		<!--新增卸车任务界面跳转-->
+		<action name="unloadtaskaddnewindex" class="unloadTaskAction" method="unloadTaskAddNewIndex">
+			<result name="success">unloadtaskaddnewindex.jsp</result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--新增卸车任务界面跳转 嵌入GUI-->
+		<action name="unloadtaskaddnewindex_include" class="unloadTaskAction" method="unloadTaskAddNewIndex">
+			<result name="success">unloadtaskaddnewindex_include.jsp</result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--根据车牌号获取待卸单据list-->
+		<action name="queryBillInfoListByVehicleNo" class="unloadTaskAction" method="queryBillInfoListByVehicleNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--根据单据编号获取单据信息-->
+		<action name="queryBillInfoByBillNo" class="unloadTaskAction" method="queryBillInfoByBillNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--新增卸车任务-->
+		<action name="addUnloadTask" class="unloadTaskAction" method="addUnloadTask">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--修改卸车任务界面跳转-->
+		<action name="unloadtaskmodifyindex" class="unloadTaskAction" method="unloadTaskAddNewIndex">
+			<result name="success">unloadtaskmodifyindex.jsp</result>
+			<result name="error" type="json"></result>
+		</action>
+			<!--修改卸车任务界面跳转 嵌入GUI-->
+		<action name="unloadtaskmodifyindex_include" class="unloadTaskAction" method="unloadTaskAddNewIndex">
+			<result name="success">unloadtaskmodifyindex_include.jsp</result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--修改卸车任务界面加载修改前的数据-->
+		<action name="loadUnloadTaskInfo" class="unloadTaskAction" method="loadUnloadTaskInfo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--修改卸车任务-->
+		<action name="updateUnloadTask" class="unloadTaskAction" method="updateUnloadTask">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--取消卸车任务-->
+		<action name="cancelUnloadTask" class="unloadTaskAction" method="cancelUnloadTask">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--提交卸车任务-->
+		<action name="confirmPDAUnloadTask" class="unloadTaskAction" method="confirmPDAUnloadTask">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--确认卸车任务——短途——界面跳转-->
+		<action name="unloadtaskconfirmindex">
+			<result name="success">unloadtaskconfirmindex.jsp</result>
+		</action>
+		<!--确认卸车任务——短途——界面跳转 嵌入GUI改造-->
+		<action name="unloadtaskconfirmindex_include">
+			<result name="success">unloadtaskconfirmindex_include.jsp</result>
+		</action>
+		<!--根据交接单号获取运单列表-->
+		<action name="queryWaybillListByHandOverBillNo" class="unloadTaskAction" method="queryWaybillListByHandOverBillNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--根据交接单号、运单号获取流水号列表-->
+		<action name="querySerialNoListByHandOverBillNoAndWaybillNo" class="unloadTaskAction" method="querySerialNoListByHandOverBillNoAndWaybillNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--根据运单号、卸车任务ID获取交接单号list-->
+		<action name="queryHandOverBillListByWaybillNo" class="unloadTaskAction" method="queryHandOverBillListByWaybillNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--确认卸车任务——短途-->
+		<action name="confirmUnloadTask" class="unloadTaskAction" method="confirmUnloadTask">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!--确认卸车任务——长途——界面跳转-->
+		<action name="unloadtaskconfirmlongindex">
+			<result name="success">unloadtaskconfirmlongindex.jsp</result>
+		</action>
+		<!--确认卸车任务——长途——界面跳转 嵌入GUI-->
+		<action name="unloadtaskconfirmlongindex_include">
+			<result name="success">unloadtaskconfirmlongindex_include.jsp</result>
+		</action>
+		<!--长途卸车任务确认界面，根据配载车次号获取交接单列表-->
+		<action name="queryHandOverBillListByVehicleAssembleNo" class="unloadTaskAction" method="queryHandOverBillListByVehicleAssembleNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--确认卸车任务——对添加的运单、流水号进行校验-->
+		<action name="validateWaybillNoAndSerialNo" class="unloadTaskAction" method="validateWaybillNoAndSerialNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--确认卸车任务-长途——根据运单号快速定位-->
+		<action name="queryBillNosListByWaybillNo" class="unloadTaskAction" method="queryBillNosListByWaybillNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--————————————shiwei卸车任务end——————————————-->
+		
+		<!-- 查询卸车进度 begin-->
+		<action name="queryunloadingprogressindex">
+			<result name="success">queryunloadingprogressindex.jsp</result>
+		</action>
+		<action name="queryunloadingprogressindex_include">
+			<result name="success">queryunloadingprogressindex_include.jsp</result>
+		</action>
+		
+		<action name="queryUnloadingProgressInfo" class="queryUnloadingProgressAction" method="queryUnloadingProgressInfo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<action name="queryLoadAndUnloadStd" class="queryUnloadingProgressAction" method="queryLoadAndUnloadStd">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!-- 查询卸车进度end -->
+		<!-- 分拣扫描 -->
+		<action name="querysortingscanindex" class = "sortingScanAction" method = "querySortingScanIndex">
+			<result name="success">querysortingscanindex.jsp</result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="querysortingscanindex_include">
+			<result name="success">querysortingscanindex_include.jsp</result>
+		</action>
+ 		<action name="querySortingScan" class="sortingScanAction" method="querySortingScan"> 
+ 			<result name="success" type="json" ></result> 
+ 			<result name="error"	type="json" /> 
+ 		</action> 
+		<action name="exportSortingScanToExcel"  class = "sortingScanAction" method = "exportSortingScanToExcel">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel;charset=UTF-8</param>
+                <param name="inputName">sortingScanExcelStream</param>
+                <param name="contentDisposition">attachment;filename="${excelFileName}.xls"</param>
+                <param name="bufferSize">1024</param>
+            </result>
+            <result name="error" type="json"/>
+		</action>
+		
+		   
+        <!--分拣扫描 比对-->
+        <action name="querySortingScanCompare" class = "sortingScanAction" method = "querySortingScanCompare">
+        	<result name="success" type="json" />
+ 			<result name="error" type="json" /> 
+        </action>
+        
+		
+		<!--**************************分拣扫描 End*******************************-->
+
+		<!--=====================================叉车离线扫描信息模块============================================================-->
+		<!-- 查询叉车扫描信息页面跳转 -->
+		<action name="trayofflinescanqueryindex" >
+			<result name="success">trayofflinescanqueryindex.jsp</result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 查询叉车离线扫描信息 零担-->
+		<action name="queryTrayOfflineScanList" class="trayOfflineScanAction" method="queryTrayOfflineScanList">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 查询叉车离线扫描信息 快递-->
+		<action name="queryTrayOfflineScanListExpress" class="trayOfflineScanAction" method="queryTrayOfflineScanListExpress">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 叉车离线查询界面，导出叉车离线扫描信息  零担 -->
+		<action name="exportTrayOfflineScanTaskExcel"  class = "trayOfflineScanAction" method = "exportTrayOfflineScanTaskExcel">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel;charset=UTF-8</param>
+                <param name="inputName">trayOfflineScanExcelStream</param>
+                <param name="contentDisposition">attachment;filename="${excelFileName}.xls"</param>
+                <param name="bufferSize">1024</param>
+            </result>
+            <result name="error" type="json"/>
+		</action>
+		
+		<!-- 叉车离线查询界面，导出叉车离线扫描信息  快递-->
+		<action name="exportTrayOfflineScanTaskExcelExpress"  class = "trayOfflineScanAction" method = "exportTrayOfflineScanTaskExcelExpress">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel;charset=UTF-8</param>
+                <param name="inputName">trayOfflineScanExcelStream</param>
+                <param name="contentDisposition">attachment;filename="${excelFileName}.xls"</param>
+                <param name="bufferSize">1024</param>
+            </result>
+            <result name="error" type="json"/>
+		</action>
+
+		
+        <!--**************************托盘扫描  begin*******************************-->
+        <!--托盘绑定管理界面跳转-->
+		<action name="traybindmanagerindex">
+			<result name="success">traybindmanagerindex.jsp</result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 卸车任务绑定托盘明细  零担-->
+		<action name="queryUnloadTaskbindTrayList" class="traybindAction" method="queryUnloadTaskbindTrayList">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 卸车任务绑定托盘明细  快递-->
+		<action name="queryUnloadTaskbindTrayListExpress" class="traybindAction" method="queryUnloadTaskbindTrayListExpress">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 卸车任务绑定托盘明细   零担-->
+		<action name="queryUnloadTaskbindTray" class="traybindAction" method="queryUnloadTaskbindTray">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!-- 卸车任务绑定托盘明细   快递-->
+		<action name="queryUnloadTaskbindTrayExpress" class="traybindAction" method="queryUnloadTaskbindTrayExpress">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!-- 卸车任务绑定托盘查询界面，导出数据    零担-->
+		<action name="exportUnloadTaskbindTrayExcel"  class = "traybindAction" method = "exportUnloadTaskbindTrayExcel">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel;charset=UTF-8</param>
+                <param name="inputName">unloadTaskbindTrayExcelStream</param>
+                <param name="contentDisposition">attachment;filename="${excelFileName}.xls"</param>
+                <param name="bufferSize">1024</param>
+            </result>
+            <result name="error" type="json"/>
+		</action>
+		<!-- 卸车任务绑定托盘查询界面，导出数据    快递-->
+		<action name="exportUnloadTaskbindTrayExcelExpress"  class = "traybindAction" method = "exportUnloadTaskbindTrayExcelExpress">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel;charset=UTF-8</param>
+                <param name="inputName">unloadTaskbindTrayExcelStream</param>
+                <param name="contentDisposition">attachment;filename="${excelFileName}.xls"</param>
+                <param name="bufferSize">1024</param>
+            </result>
+            <result name="error" type="json"/>
+		</action>
+		<!-- 卸车任务绑定托盘明细界面    零担-->
+		<action name="unloadtaskbindtrayDetailindex">
+			<result name="success">unloadtaskbindtrayDetailindex.jsp</result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 卸车任务绑定托盘明细界面   快递-->
+		<action name="unloadtaskbindtrayDetailindexExpress">
+			<result name="success">unloadtaskbindtrayDetailindexExpress.jsp</result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 根据卸车任务号查询卸车任务绑定托盘明细  零担 -->
+		<action name="queryUnloadbindTrayDetailByUnloadTaskNo" class="traybindAction" method="queryUnloadbindTrayDetailByUnloadTaskNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 根据卸车任务号查询卸车任务绑定托盘明细  快递-->
+		<action name="queryUnloadbindTrayDetailByUnloadTaskNoExpress" class="traybindAction" method="queryUnloadbindTrayDetailByUnloadTaskNoExpress">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!-- 卸车任务绑定托盘运单流水号明细 -->
+		<action name="queryTrayScanDetailByTaskNoAndWaybillNo" class="traybindAction" method="queryTrayScanDetailByTaskNoAndWaybillNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		
+		<!-- 卸车任务绑定明细查询界面，导出数据    零担-->
+		<action name="exportUnloadTaskbindTrayDetailExcel"  class = "traybindAction" method = "exportUnloadTaskbindTrayDetailExcel">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel;charset=UTF-8</param>
+                <param name="inputName">unloadTaskbindTrayExcelStream</param>
+                <param name="contentDisposition">attachment;filename="${excelFileName}.xls"</param>
+                <param name="bufferSize">1024</param>
+            </result>
+            <result name="error" type="json"/>
+		</action>
+		
+		<!-- 卸车任务绑定明细查询界面，导出数据   快递-->
+		<action name="exportUnloadTaskbindTrayDetailExcelExpress"  class = "traybindAction" method = "exportUnloadTaskbindTrayDetailExcelExpress">
+			<result name="success" type="stream">
+                <param name="contentType">application/vnd.ms-excel;charset=UTF-8</param>
+                <param name="inputName">unloadTaskbindTrayExcelStream</param>
+                <param name="contentDisposition">attachment;filename="${excelFileName}.xls"</param>
+                <param name="bufferSize">1024</param>
+            </result>
+            <result name="error" type="json"/>
+		</action>
+        <!--**************************托盘扫描 End*******************************-->
+
+	<!-- 人工补录-操作货量、叉车票 开始 -->
+	<action name="manualInputDetailIndex" class="manualInputAction"
+		method="manualInputDetailIndex">
+		<result name="success">manualInputIndex.jsp</result>
+	</action>
+	<action name="queryForkVoteEntities" class="manualInputAction"
+		method="queryForkVoteEntities">
+		<result name="success" type="json" />
+		<result name="error" type="json" />
+	</action>
+	<action name="queryGoodsQtyEntities" class="manualInputAction"
+		method="queryGoodsQtyEntities">
+		<result name="success" type="json" />
+		<result name="error" type="json" />
+	</action>
+	<action name="insertForkVoteEntity" class="manualInputAction"
+		method="insertForkVoteEntity">
+		<result name="success" type="json" />
+		<result name="error" type="json" />
+	</action>
+	<action name="insertGoodsQtyEntity" class="manualInputAction"
+		method="insertGoodsQtyEntity">
+		<result name="success" type="json" />
+		<result name="error" type="json" />
+	</action>
+	<!-- 人工补录-操作货量、叉车票 结束 -->
+        <!--**************************待叉区货物查询begin*******************************-->
+        
+		<action name="querySubForkAreaGoodsindex" >
+			<result name="success">querySubForkAreaGoodsindex.jsp</result>
+			<result name="error" type="json"/>
+		</action>
+		<!--获取运输性质-->
+		<action name="queryProductList" class="subForkAreaGoodsQueryAction" method="queryProductList">
+			<result name="success"	type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--待叉区货物查询   零担-->
+		<action name="querySubForkAreaGoods" class="subForkAreaGoodsQueryAction" method="querySubForkAreaGoods">
+			<result name="success"	type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--待叉区货物查询  快递-->
+		<action name="querySubForkAreaGoodsExpress" class="subForkAreaGoodsQueryAction" method="querySubForkAreaGoodsExpress">
+			<result name="success"	type="json"/>
+			<result name="error" type="json"/>
+		</action>
+       <!--**************************待叉区货物查询end*******************************-->
+       <!--**************************叉车效率begin*******************************-->
+		<action name="queryForkliftEfficientindex" class="forkliftEfficientQueryAction" method="queryForkliftEfficientindex">
+			<result name="success">queryForkliftEfficientindex.jsp</result>
+			<result name="error" type="json"/>
+		</action>
+		<!--*********叉车数量查询action*****-->
+		<action name="queryForkliftData" class="forkliftEfficientQueryAction" method="queryForkliftData">
+			<result name="success"	type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--*****电叉数量配置action****-->
+		<action name="addForkliftData" class="forkliftEfficientQueryAction" method="addForkliftData">
+			<result name="success"	type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--********电叉数量修改action*********-->
+		<action name="updateForkliftData" class="forkliftEfficientQueryAction" method="updateForkliftData">
+			<result name="success"	type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--********电叉数量信息删除action*********-->
+		<action name="deleteForkliftData" class="forkliftEfficientQueryAction" method="deleteForkliftData">
+			<result name="success"	type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--********************电叉司机数据查询*************************-->
+		<action name="queryForkliftDriverData" class="forkliftEfficientQueryAction" method="queryForkliftDriverData">
+			<result name="success"	type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--********************转运场数据查询*************************-->
+		<action name="queryTransferFieldData" class="forkliftEfficientQueryAction" method="queryTransferFieldData">
+			<result name="success"	type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!--********************计泡机查询界面***************************  -->
+		<action name="querybcmachsortscanindex">
+			<result name="success">querybcmachinesortscanIndex.jsp</result>
+		</action>
+		<action name="queryBCMachSortScan" class="bCMachSortScanQueryAction" method="queryBCMachSortScan">
+			<result name="success"	type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		
+		<!--———————————————————————————————————————————— 点单 差异报告相关action BEGIN—————————————————————————————————————————— -->
+		<!--点单 差异报告 -->
+		<action name="orderDifferReportindex" >
+			<result name="success">orderDifferReport.jsp</result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 点单 查询差异报告 -->
+		<action name="qureyOrderDifferReport" class="orderDifferReportAction" method="qureyOrderDifferReport">
+			<result name="success" type="json"/>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 点单 差异报告处理明细界面 -->
+		<action name="orderDifferReportHandle">
+		    <result name="success">orderDifferReportHandle.jsp</result>
+			<result name="error" type="json"/>
+		</action>
+		<!-- 点单 根据报告编号 查询 报告明细（运单） -->
+		<action name="queryOrderReportDetailByNo" class="orderDifferReportAction" method="queryOrderReportDetailByNo">
+		    <result name="success" type="json" />
+		    <result name="error" type="json" />
+		</action>
+		<!--点单差异报告处理根据运单号  -->
+		<action name="querySerialNoListByDetailId" class="orderDifferReportAction" method="querySerialNoListByDetailId">
+		    <result name="success" type="json" />
+		    <result name="error" type="json" />
+		</action>
+		<!--点单差异报告 处理 根据流水  -->
+		<action name="handleOrderDifferReportBySerialNo" class="orderDifferReportAction" method="handleOrderDifferReportBySerialNo">
+		    <result name="success" type="json" />
+		    <result name="error" type="json" />
+		</action>
+		<!--点单差异报告运单Id 处理 根据流水  -->
+		<action name="handleOrderDifferReportByWaybillNo" class="orderDifferReportAction" method="handleOrderDifferReportByWaybillNo">
+		    <result name="success" type="json" />
+		    <result name="error" type="json" />
+		</action>
+		<!--———————————————————————————————————————————— 点单 差异报告 相关action END—————————————————————————————————————————— -->
+		<!-- ***************点单任务管理********************* -->
+		<action name="orderTaskindex"  class="orderAction" method="orderTaskAddNewIndex">
+			<result name="success">orderTaskindex.jsp</result>
+		</action>
+		<!-- 点单任务主页面 嵌入GUI-->
+		<action name="orderTaskindex_include" class="orderAction" method="orderTaskAddNewIndex">
+			<result name="success">orderTaskindex_include.jsp</result>
+		</action>	
+		<!--新增点单任务界面跳转-->
+		<action name="orderTaskaddnewindex" class="orderAction" method="orderTaskAddNewIndex">
+			<result name="success">orderTaskaddnewindex.jsp</result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--新增点单任务界面跳转 嵌入GUI-->
+		<action name="orderTaskaddnewindex_include" class="orderAction" method="orderTaskAddNewIndex">
+			<result name="success">orderTaskaddnewindex_include.jsp</result>
+			<result name="error" type="json"></result>
+		</action>
+			<action name="queryBillInfoByHandoverNo" class="orderAction" method="queryBillInfoByHandoverNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+			<action name="queryOrderSerialNoListByNo" class="orderAction" method="querySerialNoListByHandOverBillNoAndWaybillNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+			<action name="addOrderTask" class="orderAction" method="addOrderTask">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="queryOrderTask" class="orderAction" method="queryOrderTask">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--处理点单任务界面跳转-->
+		<action name="orderTaskmodifyindex">
+			<result name="success">orderTaskmodifyindex.jsp</result>
+		</action>
+		<!--处理点单任务界面跳转 嵌入GUI-->
+		<action name="orderTaskmodifyindex_include">
+			<result name="success">orderTaskmodifyindex_include.jsp</result>
+		</action>
+		<action name="loadOrderTaskInfo" class="orderAction" method="loadOrderTaskInfo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="queryOrderTaskSerialNoListByBillNo" class="orderAction" method="queryOrderTaskSerialNoListByBillNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="queryValidateWaybillNoAndSerialNo" class="orderAction" method="queryValidateWaybillNoAndSerialNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="updateOrderTask" class="orderAction" method="updateOrderTask">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="updateOrderTaskorderReportType" class="orderAction" method="updateOrderTaskorderReportType">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="insertMoreSerialNo" class="orderAction" method="insertMoreSerialNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="queryOrderTaskSerialNo" class="orderAction" method="queryOrderTaskSerialNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<action name="queryOrderTaskMoreSerialNoListByNo" class="orderAction" method="queryOrderTaskMoreSerialNoListByNo">
+			<result name="success" type="json"></result>
+			<result name="error" type="json"></result>
+		</action>
+		<!--查看点单任务界面跳转-->
+		<action name="orderTaskfinishindex">
+			<result name="success">orderTaskfinishindex.jsp</result>
+		</action>
+		<!--查看点单任务界面跳转 嵌入GUI-->
+		<action name="orderTaskfinishindex_include">
+			<result name="success">orderTaskfinishindex_include.jsp</result>
+		</action>
+<!-- ***************点单任务管理end********************* -->
+	</package>
+</struts>

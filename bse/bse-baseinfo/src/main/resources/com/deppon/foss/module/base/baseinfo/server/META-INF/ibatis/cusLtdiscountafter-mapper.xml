@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.cusLtdiscountafter" >
+
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusLtdiscountafterEntity">
+    <id column="ID" jdbcType="VARCHAR" property="id" />
+    <result column="CRM_ID" jdbcType="VARCHAR" property="fid" />
+    <result column="ACTIVE" jdbcType="CHAR" property="active" />
+    <result column="CREATE_USER_CODE" jdbcType="VARCHAR" property="createUser" />
+    <result column="MODIFY_USER_CODE" jdbcType="VARCHAR" property="modifyUser" />
+    <result column="CREATE_DATE" jdbcType="TIMESTAMP" property="createDate" />
+    <result column="MODIFY_DATE" jdbcType="TIMESTAMP" property="modifyDate" />
+    <result column="PROGRAM_CODING" jdbcType="VARCHAR" property="dealNumber" />
+    <result column="EFFECTIVE_TIME" jdbcType="TIMESTAMP" property="beginTime" />
+    <result column="FAILURE_TIME" jdbcType="TIMESTAMP" property="endTime" />
+    <result column="PROGRAM_NAME" jdbcType="VARCHAR" property="dealName" />
+    <result column="PROGRAM_STATUS" jdbcType="VARCHAR" property="status" />
+    <result column="FTYPE" jdbcType="VARCHAR" property="preferType" />
+    <result column="CUSTOMER_CODE" jdbcType="VARCHAR" property="customerCode" />
+    <result column="CUSTOMER_NAME" jdbcType="VARCHAR" property="customerName" />
+    <result column="APPLY_CONTENT" jdbcType="VARCHAR" property="applyContent" />
+    <result column="WORKFLOW_NUM" jdbcType="VARCHAR" property="workflowNum" />
+    <!--  合同表里的部分字段 -->
+	<result column="BEGIN_TIME" property="programBeginTime" jdbcType="TIMESTAMP" />
+	<result column="END_TIME" property="programEndTime" jdbcType="TIMESTAMP" />
+	<result column="UNIFIED_CODE" property="unifiedCode" jdbcType="VARCHAR" />
+  </resultMap>
+  
+  <!-- 根据客户编码查询梯度折扣表中ID和和详情表中的ITEM_ID -->
+  <resultMap id="CusLtDiscountItemDtoResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.dto.CusLtDiscountItemDto">
+		<!-- 折扣基础资料部分字段映射 -->
+		<result column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="CRM_ID" property="fid" jdbcType="VARCHAR" />
+		<result column="PROGRAM_NAME" property="dealName" jdbcType="VARCHAR" />
+		<result column="CUSTOMER_NAME" property="custName" jdbcType="VARCHAR" />
+		<result column="CUSTOMER_CODE" property="custNum" jdbcType="VARCHAR" />
+		<result column="EFFECTIVE_TIME" property="beginTime" jdbcType="TIMESTAMP" />
+		<result column="FAILURE_TIME" property="endTime" jdbcType="TIMESTAMP" />
+		<result column="PROGRAM_CODING" property="dealNumber" jdbcType="VARCHAR" />
+		<result column="PROGRAM_STATUS" property="status" jdbcType="VARCHAR" />
+		<result column="FTYPE" property="preferType" jdbcType="VARCHAR" />
+		<result column="WORKFLOW_NUM" property="workflowNum" jdbcType="VARCHAR" />
+		<result column="APPLY_CONTENT" property="applyContent" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="VARCHAR" />
+		<!--  合同表里的部分字段映射 -->
+		<result column="BEGIN_TIME" property="programBeginTime" jdbcType="TIMESTAMP" />
+		<result column="END_TIME" property="programEndTime" jdbcType="TIMESTAMP" />
+		<result column="UNIFIED_CODE" property="unifiedCode" jdbcType="VARCHAR" />
+		<!--  折扣基础资料详情部分字段映射 -->
+		<result column="ITEM_ID" property="itemId" jdbcType="VARCHAR" />
+		<result column="DEGREE" property="degree" jdbcType="VARCHAR" />
+		<result column="MIN_MONEY" property="minAmount" jdbcType="DECIMAL" />
+		<result column="MAX_MONEY" property="maxAmount" jdbcType="DECIMAL" />
+		<result column="CARRIAGE_REBATE" property="rate" jdbcType="DECIMAL" />
+		<result column="DESCRIPTION" property="itemDesc" jdbcType="VARCHAR" />
+		<result column="DISCOUNT_CRM_ID" property="dealId" jdbcType="VARCHAR" />
+		<result column="MODIFY_DATE" property="modifyDate" jdbcType="TIMESTAMP" />
+	</resultMap>
+	
+	<sql id="CusLtDiscountItemDtoResultMap_Column_Two">
+		T.ID,M.ITEM_ID
+	</sql>
+  
+  	<!-- 根据客户编码查询梯度折扣表中ID和和详情表中的ITEM_ID-->
+	<select id="queryCusLtdiscountafterByCode"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusLtdiscountafterEntity"
+		resultMap="CusLtDiscountItemDtoResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有(梯度折基础信息资料)信息**/
+		]]>
+		<include refid="CusLtDiscountItemDtoResultMap_Column_Two" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUS_LTDISCOUNTAFTER T LEFT JOIN BSE.T_BAS_CUS_LTDISCOUNTAFTER_ITEM M
+			ON T.CRM_ID=M.DISCOUNT_CRM_ID
+		]]>
+		<include refid="queryWhere" />
+	</select>
+	
+	<!-- 统计总记录数 -->
+	<select id="queryCusLtdiscountafterNum" 
+			parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusLtdiscountafterEntity"
+			resultType="Long">
+	    <![CDATA[
+	       	SELECT/** 综合:统计总记录数 **/ COUNT(*) FROM bse.T_BAS_CUS_LTDISCOUNTAFTER T    
+	    ]]>
+        <include refid="queryWhere" />
+	</select>
+	
+	<!-- 根据条件查询零担梯度折记录数  查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<if test="custNum != null and custNum != ''">
+				T.CUSTOMER_CODE = #{custNum,jdbcType=VARCHAR}
+			</if>
+			<if test="preferType != null and preferType != ''">
+				AND T.FTYPE = #{preferType,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</sql>
+	
+	
+	<sql id="CusLtDiscountItemDtoResultMap_Column_All">
+		A.ID,A.PROGRAM_CODING,A.EFFECTIVE_TIME,A.FAILURE_TIME,A.PROGRAM_NAME,A.PROGRAM_STATUS,A.FTYPE,
+  		A.CUSTOMER_CODE,A.CUSTOMER_NAME,A.APPLY_CONTENT,A.WORKFLOW_NUM,A.ACTIVE,
+  		B.ITEM_ID,B.DEGREE,B.MIN_MONEY/100 as MIN_MONEY,B.MAX_MONEY/100 as MAX_MONEY,B.CARRIAGE_REBATE,B.DESCRIPTION,B.DISCOUNT_CRM_ID,B.MODIFY_DATE,
+  		D.BEGIN_TIME,D.END_TIME,D.UNIFIED_CODE,D.CRM_ID
+	</sql>
+	
+	<!-- 根据客户编码+（方案类型）查询 提供给接送货开发组调用-->
+	<select id="queryCusLtdiscountafterByCondition"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusLtdiscountafterEntity"
+		resultMap="CusLtDiscountItemDtoResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有(梯度折基础信息资料)信息,以及合同表中合同起止时间，部门标杆编码**/
+		]]>
+		<include refid="CusLtDiscountItemDtoResultMap_Column_All" />
+		<![CDATA[
+			from bse.T_BAS_CUS_LTDISCOUNTAFTER A
+			left join bse.T_BAS_CUS_LTDISCOUNTAFTER_ITEM B on A.CRM_ID = B.DISCOUNT_CRM_ID 
+			left join bse.t_bas_customer C 				on A.Customer_Code = C.Code and C.ACTIVE='Y'
+			left join bse.t_bas_cus_bargain D 			on C.CRM_CUS_ID = D.CRM_CUS_ID and D.Active='Y' and C.Active='Y'
+		]]>
+		<include refid="queryWhereTwo" />
+	</select>
+	
+	<!-- 提供给接送货开发组 -->
+	<sql id="queryWhereTwo">
+		<where>
+			<if test="custNum != null and custNum != ''">
+				A.CUSTOMER_CODE = #{custNum,jdbcType=VARCHAR}
+			</if>
+			<if test="preferType != null and preferType != ''">
+				AND A.FTYPE = #{preferType,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</sql>
+
+	<!--梯度折基础资料   修改信息 -->
+	<update id="updateCusLtdiscountafter"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusLtdiscountafterEntity">
+		update/** 综合:梯度折基础资料 修改信息 **/ bse.T_BAS_CUS_LTDISCOUNTAFTER
+		<set>
+			<if test="modifyDate != null">
+				MODIFY_DATE = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="active != null">
+				ACTIVE = #{active,jdbcType=VARCHAR},
+			</if>
+			<if test="status != null">
+				PROGRAM_STATUS = #{status,jdbcType=VARCHAR},
+			</if>
+			<if test="endTime != null">
+				FAILURE_TIME = #{endTime,jdbcType=VARCHAR},
+			</if>
+		</set>
+		<where>
+			<if test="id != null and id != ''">
+				ID = #{id,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</update>
+	
+	<!--梯度折基础资料详情   修改信息 -->
+	<update id="updateCusLtdiscountafterItem"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusLtdiscountafterItemEntity">
+		update/** 综合:梯度折基础资料详情修改信息 **/ bse.T_BAS_CUS_LTDISCOUNTAFTER_ITEM
+		<set>
+			<if test="modifyDate != null">
+				MODIFY_DATE = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="active != null">
+				ACTIVE = #{active,jdbcType=VARCHAR},
+			</if>
+		</set>
+		<where>
+			<if test="itemId != null and itemId != ''">
+				ITEM_ID = #{itemId,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</update>
+	
+	<sql id="CusLtdiscountafter_Column_insert">
+		T.ID, T.CREATE_DATE,T.CREATE_USER_CODE, T.MODIFY_DATE,T.MODIFY_USER_CODE,T.CRM_ID,T.PROGRAM_NAME,T.CUSTOMER_NAME,
+		T.CUSTOMER_CODE,T.EFFECTIVE_TIME,T.FAILURE_TIME,T.PROGRAM_CODING,T.PROGRAM_STATUS,T.FTYPE,T.WORKFLOW_NUM,T.APPLY_CONTENT,
+		T.ACTIVE
+	</sql>
+	
+	<!-- 新增“零担梯度折基础资料”信息 -->
+	<insert id="addCusLtdiscountafter"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusLtdiscountafterEntity">
+		<![CDATA[
+			INSERT/** 综合:新增(零担梯度折基础资料)信息**/ INTO bse.T_BAS_CUS_LTDISCOUNTAFTER T	(
+		]]>
+		<include refid="CusLtdiscountafter_Column_insert" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, 
+		#{createDate,jdbcType=TIMESTAMP},
+		#{createUser,jdbcType=VARCHAR}, 
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{modifyUser,jdbcType=VARCHAR},
+		#{fid,jdbcType=VARCHAR},
+		#{dealName,jdbcType=VARCHAR},
+		#{custName,jdbcType=VARCHAR},
+		#{custNum,jdbcType=VARCHAR}, 
+		#{beginTime,jdbcType=TIMESTAMP},
+		#{endTime,jdbcType=TIMESTAMP},
+		#{dealNumber,jdbcType=VARCHAR},
+		#{status,jdbcType=VARCHAR},
+		#{preferType,jdbcType=VARCHAR},
+		#{workflowNum,jdbcType=VARCHAR}, 
+		#{applyContent,jdbcType=VARCHAR},
+		#{active,jdbcType=VARCHAR}
+		<![CDATA[
+		)
+		]]>
+	</insert>	
+	
+	<sql id="CusLtdiscountafterItem_Column_insert">
+		M.ITEM_ID,M.CREATE_DATE,M.CREATE_USER_CODE,M.MODIFY_DATE,M.MODIFY_USER_CODE,M.CRM_ID,M.DISCOUNT_CRM_ID,
+		M.DEGREE,M.MIN_MONEY,M.MAX_MONEY,M.CARRIAGE_REBATE,M.DESCRIPTION,M.ACTIVE
+	</sql>
+	
+	<!-- 新增“梯度折基础资料详情”信息 -->
+	<insert id="addCusLtdiscountafterItem"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusLtdiscountafterItemEntity">
+		<![CDATA[
+			INSERT/** 综合:新增(梯度折基础资料详情)信息**/ into bse.T_BAS_CUS_LTDISCOUNTAFTER_ITEM M	(
+		]]>
+		<include refid="CusLtdiscountafterItem_Column_insert" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{itemId,jdbcType=VARCHAR}, 
+		#{createDate,jdbcType=TIMESTAMP},
+		#{createUser,jdbcType=VARCHAR}, 
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{modifyUser,jdbcType=VARCHAR},
+		#{fid,jdbcType=VARCHAR},
+		#{dealId,jdbcType=VARCHAR},
+		#{degree,jdbcType=VARCHAR}, 
+		#{minAmount,jdbcType=DECIMAL},
+		#{maxAmount,jdbcType=DECIMAL},
+		#{rate,jdbcType=DECIMAL},
+		#{itemDesc,jdbcType=VARCHAR},
+		#{active,jdbcType=VARCHAR}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+  
+
+  
+</mapper>

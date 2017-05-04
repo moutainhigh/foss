@@ -1,0 +1,493 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.sign.airAgencySign">
+	<sql id="select_Where1">
+			<if test="receiveCustomerName != null and receiveCustomerName!=''">
+				and airWaybill.Receive_Customer_Contact = #{receiveCustomerName,jdbcType=VARCHAR}
+			</if>
+			<if test="receiveCustomerPhone != null and receiveCustomerPhone!=''">
+				and airWaybill.RECEIVE_CUSTOMER_PHONE = #{receiveCustomerPhone,jdbcType=VARCHAR}
+			</if>
+			<if test="receiveCustomerMobilephone != null and receiveCustomerMobilephone!=''">
+				and airWaybill.RECEIVE_CUSTOMER_MOBILEPHONE = #{receiveCustomerMobilephone,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active!=''">
+				and airWaybill.ACTIVE = #{active,jdbcType=VARCHAR}
+			</if>
+			<if test="waybillNo != null and waybillNo!=''">
+				and airWaybill.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+			</if>
+			<if test="endStockOrgCode != null and endStockOrgCode !=''">
+			and airAf.end_stock_org_code = #{endStockOrgCode,jdbcType=VARCHAR}
+			</if>
+			<if test="arriveTimeBegin!=null and arriveTimeBegin!=''">
+			<![CDATA[and airAf.Arrive_Time >= #{arriveTimeBegin,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="arriveTimeEnd!=null and arriveTimeEnd!='' ">	
+			<![CDATA[and airAf.Arrive_Time <= #{arriveTimeEnd,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="waybillStatus!= null and waybillStatus.size>0">
+				AND( airAf.status is null or  airAf.status not in
+				<foreach collection="waybillStatus" open="(" close=")" separator=","
+				item="status">
+				<if test="status!=null and status != ''">
+        	      <![CDATA[	#{status,jdbcType=VARCHAR} ]]>
+                </if>
+			</foreach>
+			)
+	    </if>
+	</sql>
+	<sql id="select_Where2">
+		<where>
+			<choose>
+				<when test="waybillNo != null and waybillNo!=''">
+					and waybill.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+				</when>
+				<otherwise>
+					and waybill.WAYBILL_NO = ''
+				</otherwise>
+			</choose>
+			<if test="active != null and active!=''">
+				and waybill.ACTIVE = #{active,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</sql>
+	<sql id="select_Where3">
+		<if test="productCode != null and productCode!=''">
+			and airWaybill.PRODUCT_CODE = #{productCode,jdbcType=VARCHAR}
+		</if>
+		<if test="lastLoadOrgCode != null and lastLoadOrgCode !=''">
+			and airWaybill.Last_Load_Org_Code = #{lastLoadOrgCode,jdbcType=VARCHAR}
+		</if>
+		<if test="inOutStockType != null and inOutStockType !=''">
+			and airOutStock.out_stock_type = #{inOutStockType,jdbcType=VARCHAR}
+		</if>
+		
+	</sql>
+	<sql id="select_Where4">
+		<choose>
+			<when test="productCode != null and productCode!=''">
+				 waybill.PRODUCT_CODE = #{productCode,jdbcType=VARCHAR}
+			</when>
+			<otherwise>
+				 waybill.PRODUCT_CODE = ''
+			</otherwise>
+		</choose>
+		<if test="lastLoadOrgCode != null and lastLoadOrgCode !=''">
+			and waybill.Last_Load_Org_Code = #{lastLoadOrgCode,jdbcType=VARCHAR}
+		</if>
+		<if test="active != null and active!=''">
+			and waybill.ACTIVE = #{active,jdbcType=VARCHAR}
+		</if>
+	</sql>
+	<sql id="select_Where5">
+			<if test="receiveCustomerName != null and receiveCustomerName!=''">
+				and airWaybill.Receive_Customer_Contact = #{receiveCustomerName,jdbcType=VARCHAR}
+			</if>
+			<if test="receiveCustomerPhone != null and receiveCustomerPhone!=''">
+				and airWaybill.RECEIVE_CUSTOMER_PHONE = #{receiveCustomerPhone,jdbcType=VARCHAR}
+			</if>
+			<if test="receiveCustomerMobilephone != null and receiveCustomerMobilephone!=''">
+				and airWaybill.RECEIVE_CUSTOMER_MOBILEPHONE = #{receiveCustomerMobilephone,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active!=''">
+				and airWaybill.ACTIVE = #{active,jdbcType=VARCHAR}
+			</if>
+			<if test="waybillNos!= null and waybillNos.size>0 ">
+				and airWaybill.WAYBILL_NO in
+							<foreach collection="waybillNos" open="(" close=")" separator=","
+			                        item="waybillNoTmp">
+			                        <if test="waybillNoTmp!=null and waybillNoTmp != ''">
+			                                <![CDATA[	#{waybillNoTmp,jdbcType=VARCHAR} ]]>
+			                        </if>
+			                </foreach>
+			</if>
+			<if test="endStockOrgCode != null and endStockOrgCode !=''">
+			and airAf.end_stock_org_code = #{endStockOrgCode,jdbcType=VARCHAR}
+			</if>
+			<if test="arriveTimeBegin!=null and arriveTimeBegin!=''">
+			<![CDATA[and airAf.Arrive_Time >= #{arriveTimeBegin,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="arriveTimeEnd!=null and arriveTimeEnd!='' ">	
+			<![CDATA[and airAf.Arrive_Time <= #{arriveTimeEnd,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="waybillStatus!= null and waybillStatus.size>0">
+				 AND( airAf.status is null or  airAf.status not in
+			<foreach collection="waybillStatus" open="(" close=")" separator=","
+				item="status">
+				<if test="status!=null and status != ''">
+        	      <![CDATA[	#{status,jdbcType=VARCHAR} ]]>
+                </if>
+			</foreach>
+			)
+	    </if>
+	</sql>
+	<!--  签收偏线    运输性质为 精准空运  Precision air-->
+	<select id="queryWaybillNoByAir" parameterType="com.deppon.foss.module.pickup.sign.api.shared.dto.AirAgencyQueryDto"
+			resultType="com.deppon.foss.module.pickup.sign.api.shared.dto.AirAgencyQueryDto">
+select /*模块：接送货-签收偏线空运-运输性质为精准空运  */ distinct airWaybill.Waybill_No waybillNo
+  from pkp.t_srv_waybill airWaybill
+ inner join pkp.t_srv_actual_freight airAf
+    on airWaybill.Waybill_No = airAf.waybill_no
+  inner join tfr.t_opt_air_waybill_detail toawd on toawd.waybill_no = airAf.Waybill_No
+ inner join tfr.t_opt_air_waybill toaw on toaw.id=toawd.air_waybill_id
+ inner join tfr.T_OPT_OUT_STOCK airOutStock
+    on airWaybill.Waybill_No = airOutStock.Waybill_No
+ where 
+  not exists
+   (select stock.waybill_no
+          from tfr.T_OPT_STOCK stock
+         where stock.waybill_no = airWaybill.waybill_no
+           )
+ and not exists
+           (select signResult.Waybill_No From pkp.t_srv_waybill_sign_result signResult
+            where signResult.Waybill_No = airWaybill.waybill_no
+            and signResult.Active = #{active,jdbcType=VARCHAR})
+    <include refid = "select_Where3" /> 
+    <include refid = "select_Where1" />
+ 	<if test="airCreateOrgCode != null and airCreateOrgCode !=''">
+		and toaw.create_org_code = #{airCreateOrgCode,jdbcType=VARCHAR}
+	</if>
+	<if test="endStockOrgCodes!= null and endStockOrgCodes.size>0">
+				and airAf.end_stock_org_code in
+			<foreach collection="endStockOrgCodes" open="(" close=")" separator=","
+				item="endstock">
+				<if test="endstock!=null and endstock != ''">
+        	      <![CDATA[	#{endstock,jdbcType=VARCHAR} ]]>
+                </if>
+			</foreach>
+	    </if>
+	</select>
+	<!--  签收偏线    运输性质为 汽运偏线  partial line 查询外发单号-->
+	<select id="queryWaybillNoByPartialLine" parameterType="com.deppon.foss.module.pickup.sign.api.shared.dto.AirAgencyQueryDto"
+			resultType="com.deppon.foss.module.pickup.sign.api.shared.dto.AirAgencyQueryDto">
+select /*模块：接送货-签收偏线空运-运输性质为汽运偏线查询 */
+ waybillNo_list.Waybill_No waybillNo, exter.external_bill_no externalBillNo
+  from (select distinct airWaybill.Waybill_No
+          from pkp.t_srv_waybill airWaybill
+         inner join pkp.t_srv_actual_freight airAf
+            on airWaybill.Waybill_No = airAf.waybill_no
+         inner join tfr.T_OPT_OUT_STOCK airOutStock
+            on airWaybill.Waybill_No = airOutStock.Waybill_No
+           and airOutStock.Org_Code = airAf.end_stock_org_code
+            where  not exists
+         (select stock.Waybill_No
+                  from tfr.T_OPT_STOCK stock
+                 where stock.waybill_no = airWaybill.waybill_no
+                   and stock.ORG_CODE = airAf.end_stock_org_code)
+           and not exists
+           (select * From pkp.t_srv_waybill_sign_result signResult
+            where signResult.Waybill_No = airWaybill.waybill_no
+            and signResult.Active = #{active,jdbcType=VARCHAR}
+           )
+           <include refid = "select_Where3" /> 
+           <include refid = "select_Where1" />
+       ) waybillNo_list
+ inner join tfr.T_OPT_EXTERNAL_BILL exter
+    on exter.waybill_no = waybillNo_list.Waybill_No
+ where exter.IS_TRANSFER_EXTERNAL =  #{transferExternal,jdbcType=VARCHAR}
+  <![CDATA[ and exter.AUDIT_STATUS <> #{auditStatus,jdbcType=VARCHAR} ]]>
+	</select>
+	
+	
+	<!-- 签收快递代理，运输性质为 经济快递 ，查询外发单号 -->
+	<select id="queryExpressByPartialLine"
+		parameterType="com.deppon.foss.module.pickup.sign.api.shared.dto.AirAgencyQueryDto"
+		resultType="com.deppon.foss.module.pickup.sign.api.shared.dto.AirAgencyQueryDto">
+		select /*模块：接送货-签收本地配-运输性质为经济快递查询 */
+		waybillNo_list.Waybill_No waybillNo,waybillNo_list.Goods_Qty_Total goodsQtyTotal,  exter.external_bill_no externalBillNo,waybillNo_list.Arrive_Notout_Goods_Qty arriveNotoutGoodsQty
+		from (select distinct airWaybill.Waybill_No,airWaybill.Goods_Qty_Total,airAf.Arrive_Notout_Goods_Qty
+		from pkp.t_srv_waybill airWaybill
+		inner join pkp.t_srv_actual_freight airAf
+		on airWaybill.Waybill_No = airAf.waybill_no
+		inner join tfr.T_OPT_OUT_STOCK airOutStock
+		on airWaybill.Waybill_No = airOutStock.Waybill_No
+		and airOutStock.Org_Code = airAf.end_stock_org_code
+		where not exists
+		(select stock.Waybill_No
+		from tfr.T_OPT_STOCK stock
+		where stock.waybill_no = airWaybill.waybill_no
+		and stock.ORG_CODE = airAf.end_stock_org_code)
+		<include refid="select_Where3" />
+		<include refid="select_Where1" />
+		and not exists
+		(select * From pkp.t_srv_waybill_sign_result signResult
+		where signResult.Waybill_No = airWaybill.waybill_no
+		and signResult.Active = #{active,jdbcType=VARCHAR}
+		)
+		) waybillNo_list
+		inner join TFR.T_OPT_LDP_EXTERNAL_BILL exter
+		on exter.waybill_no = waybillNo_list.Waybill_No
+		where exter.IS_TRANSFER_EXTERNAL = #{transferExternal,jdbcType=VARCHAR}
+  <![CDATA[ and exter.AUDIT_STATUS <> #{auditStatus,jdbcType=VARCHAR} ]]>
+	</select>
+	<!-- 签收快递代理，运输性质为 经济快递 ，查询外发单号 -->
+	<select id="queryExpressByImportWaybillNo"
+		parameterType="com.deppon.foss.module.pickup.sign.api.shared.dto.AirAgencyQueryDto"
+		resultType="com.deppon.foss.module.pickup.sign.api.shared.dto.AirAgencyQueryDto">
+	select /*模块：接送货-签收本地配-运输性质为经济快递查询 */
+		Airwaybill.Waybill_No waybillNo,
+		Airwaybill.Goods_Qty_Total goodsQtyTotal, 
+		exter.external_bill_no externalBillNo,
+		airAf.Arrive_Notout_Goods_Qty arriveNotoutGoodsQty,
+	 	exter.serial_no SerialNo
+	From TFR.T_OPT_LDP_EXTERNAL_BILL Exter
+		Inner Join Pkp.T_Srv_Actual_Freight Airaf On Exter.Waybill_No = Airaf.Waybill_No
+	 	Inner Join Pkp.T_Srv_Waybill Airwaybill On Airaf.Waybill_No = Airwaybill.Waybill_No
+	where exter.IS_TRANSFER_EXTERNAL = #{transferExternal,jdbcType=VARCHAR}
+		<![CDATA[ and exter.AUDIT_STATUS <> #{auditStatus,jdbcType=VARCHAR} ]]>
+		<if test="waybillNos!= null and waybillNos.size>0 ">
+			and airWaybill.WAYBILL_NO in
+			<foreach collection="waybillNos" open="(" close=")" separator="," item="waybillNoTmp">
+	            <if test="waybillNoTmp!=null and waybillNoTmp != ''">
+	                <![CDATA[	#{waybillNoTmp,jdbcType=VARCHAR} ]]>
+	            </if>
+	    	</foreach>
+		</if>
+		<if test="productCode != null and productCode!=''">
+			and airWaybill.PRODUCT_CODE = #{productCode,jdbcType=VARCHAR} /*运输性质的过滤 新加的 会不会对sql性能产生影响 ？*/
+		</if>
+		<if test="receiveCustomerName != null and receiveCustomerName!=''">
+			and airWaybill.Receive_Customer_Contact = #{receiveCustomerName,jdbcType=VARCHAR}
+		</if>
+		<if test="receiveCustomerPhone != null and receiveCustomerPhone!=''">
+			and airWaybill.RECEIVE_CUSTOMER_PHONE = #{receiveCustomerPhone,jdbcType=VARCHAR}
+		</if>
+		<if test="receiveCustomerMobilephone != null and receiveCustomerMobilephone!=''">
+			and airWaybill.RECEIVE_CUSTOMER_MOBILEPHONE = #{receiveCustomerMobilephone,jdbcType=VARCHAR}
+		</if>
+		<if test="active != null and active!=''">
+			and airWaybill.ACTIVE = #{active,jdbcType=VARCHAR}
+		</if>
+		<if test="waybillNo != null and waybillNo!=''">
+			and airWaybill.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+		</if>
+		<if test="arriveTimeBegin!=null and arriveTimeBegin!=''">
+			<![CDATA[and airAf.Arrive_Time >= #{arriveTimeBegin,jdbcType=TIMESTAMP}]]>
+		</if>
+		<if test="arriveTimeEnd!=null and arriveTimeEnd!='' ">	
+			<![CDATA[and airAf.Arrive_Time <= #{arriveTimeEnd,jdbcType=TIMESTAMP}]]>
+		</if>
+		<if test="waybillStatus!= null and waybillStatus.size>0">
+		 	AND( airAf.status is null or  airAf.status not in
+				<foreach collection="waybillStatus" open="(" close=")" separator="," item="status">
+					<if test="status!=null and status != ''">
+	        	      <![CDATA[	#{status,jdbcType=VARCHAR} ]]>
+	                </if>
+				</foreach>
+			)
+	    </if>
+		and not exists( select Signresult.Waybill_No From Pkp.T_Srv_Waybill_Sign_Result Signresult
+	 	Where Signresult.Waybill_No = Airaf.Waybill_No
+	   	And Signresult.Active = 'Y' and Signresult.Sign_Status = 'SIGN_STATUS_ALL' /*全部签收*/)
+	   	and not exists( select serialResult.Waybill_No,serialResult.Serial_No
+	  	from pkp.t_srv_serial_sign_result serialResult 
+	  	where serialResult.Waybill_No = Airaf.Waybill_No and serialResult.Serial_No = exter.serial_no and serialResult.Active = 'Y')
+		<if test="lastLoadOrgCode != null and lastLoadOrgCode !=''">
+			and airWaybill.Last_Load_Org_Code = #{lastLoadOrgCode,jdbcType=VARCHAR}
+		</if>
+		<if test="endStockOrgCode != null and endStockOrgCode !=''">
+			and airAf.end_stock_org_code = #{endStockOrgCode,jdbcType=VARCHAR}
+		</if>
+	</select>
+	<!--  签收偏线    点击运单号查询运单基本信息-->
+  	<select id="selectWaybillInfoByWaybillNo" resultType="com.deppon.foss.module.pickup.sign.api.shared.dto.WaybillDto"
+			parameterType="com.deppon.foss.module.pickup.sign.api.shared.dto.WaybillDto" >
+    	 select /*模块：接送货-签收偏线空运-查询运单基本信息  */ waybill.RECEIVE_CUSTOMER_CONTACT  receiveCustomerName, 
+     waybill.receive_customer_address receiveCustomerAddress,
+     waybill.receive_customer_phone receiveCustomerPhone,
+     waybill.receive_customer_prov_code receiveCustomerProvCode,
+     waybill.receive_customer_city_code receiveCustomerCityCode,
+     waybill.receive_customer_dist_code receiveCustomerDistCode,
+     waybill.receive_customer_code      receiveCustomerCode,
+     waybill.receive_customer_mobilephone receiveCustomerMobilephone,
+     waybill.waybill_no waybillNo,
+     actual.arrive_time arriveTime,
+     actual.settle_status  settleStatus,
+     actual.NOTIFICATION_RESULT notificationResult,
+     actual.notification_time notificationTime,
+     actual.RECEIVE_CUSTOMER_ADDRESS_NOTE receiveCustomerAddressNote,
+     waybill.to_Pay_Amount/100 toPayAmount,
+     waybill.cod_amount/100 codAmount,
+     waybill.transport_fee/100 transportFee,
+     waybill.delivery_goods_fee/100 deliveryGoodsFee,
+     waybill.insurance_fee/100 insuranceFee,
+     waybill.paid_method paidMethod,
+     waybill.other_fee/100 otherFee,
+     waybill.insurance_amount/100 insuranceAmount,
+     waybill.receive_method receiveMethod,
+     waybill.create_time createTime,
+     waybill.delivery_customer_city_code deliveryCustomerCityCode,
+     waybill.receive_org_code receiveOrgCode,
+     waybill.goods_name goodsName,
+     waybill.is_whole_vehicle isWholeVehicle,
+     waybill.goods_qty_total goodsQtyTotal,
+     waybill.goods_weight_total goodsWeightTotal,
+     waybill.goods_volume_total goodsVolumeTotal,
+     waybill.goods_package goodsPackage,
+     waybill.delivery_customer_contact deliveryCustomerName,
+     waybill.transport_type transportType,
+     waybill.product_code productCode,
+     waybill.RETURN_BILL_TYPE returnbillType,
+     waybill.CUSTOMER_PICKUP_ORG_CODE customerpickuporgcode,
+     actual.STORAGE_CHARGE/100 storageCharge,
+     actual.arrive_notout_goods_qty oldArriveNotoutGoodsQty,
+     actual.invoice,
+     actual.RECEIVE_CUSTOMER_VILLAGE_CODE receiveCustomerVillageCode,
+     waybill.IS_EXPRESS isExpress
+      from pkp.t_srv_waybill waybill 
+      left join pkp.t_srv_actual_freight actual on actual.waybill_no=waybill.waybill_no
+  		<include refid="select_Where2"/>
+	</select>
+	<resultMap id="airAgencyDto" type="com.deppon.foss.module.pickup.sign.api.shared.dto.AirAgencyDto" >
+		<result column="waybill_no" property="waybillNo" jdbcType="VARCHAR" />	<!-- 运单号-->
+		<result column="last_load_org_code" property="lastLoadOrgCode" jdbcType="VARCHAR" />	<!-- 最终配载部门-->
+		<result column="product_Code" property="productCode" jdbcType="VARCHAR" />	<!-- 运输性质-->
+		<result column="end_stock_org_code" property="endStockOrgCode" jdbcType="VARCHAR" />	<!-- 最终库存部门-->
+	</resultMap>
+	
+	<!--根据运单号查询运单表里的最终配载部门,运输性质,左表关联运单签收结果,查询运单签收结果里的运单号-->
+	<select id="queryWaybillPartByCondition" resultMap="airAgencyDto" parameterType="com.deppon.foss.module.pickup.sign.api.shared.dto.AirAgencyQueryDto" >
+   select /*模块：接送货-查询运单签收结果，运单表里的部分信息*/ t.waybill_no,w.last_load_org_code,w.product_Code,af.end_stock_org_code 
+   from pkp.t_srv_waybill w inner join pkp.t_srv_actual_freight af on w.waybill_no = af.waybill_no 
+   left join pkp.t_srv_waybill_sign_result t
+     on af.waybill_no = t.waybill_no
+    and t.active = #{active,jdbcType=VARCHAR} 
+    where w.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+     and w.active = #{active,jdbcType=VARCHAR}
+	</select>
+	
+		<!--根据运单号判断当前运单是否录入外发单-->
+	<select id="queryIsTransferExternalByWaybillNo" resultType="java.lang.Long" parameterType="com.deppon.foss.module.pickup.sign.api.shared.dto.AirAgencyQueryDto" >
+   select /*模块：接送货-签收偏线空运-判断当前运单是否录入外发单*/ count(1) from pkp.t_srv_waybill w
+   inner join tfr.T_OPT_EXTERNAL_BILL e
+    on e.waybill_no = w.Waybill_No
+ where e.IS_TRANSFER_EXTERNAL = #{transferExternal,jdbcType=VARCHAR}
+  and w.active = #{active,jdbcType=VARCHAR} 
+  and w.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+	</select>
+
+	<!--根据运单号判断当前运单是否录入快递代理外发单 -->
+	<select id="queryIsExpressExternalByWaybillNo" resultType="java.lang.Long"
+		parameterType="com.deppon.foss.module.pickup.sign.api.shared.dto.AirAgencyQueryDto">
+		select /*模块：接送货-快递代理签收-判断当前运单是否录入快递代理外发单*/ count(1) from pkp.t_srv_waybill w
+		inner join TFR.T_OPT_LDP_EXTERNAL_BILL e
+		on e.waybill_no = w.Waybill_No
+		where e.IS_TRANSFER_EXTERNAL = #{transferExternal,jdbcType=VARCHAR}
+		and w.active = #{active,jdbcType=VARCHAR}
+		and w.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+	</select>
+	
+	<!--根据运单号查询快递代理外发单审核状态 -->
+	<select id="queryExpressExternalBillStatusByNo" resultType="java.lang.String"
+		parameterType="com.deppon.foss.module.pickup.sign.api.shared.dto.AirAgencyQueryDto">
+		select /*模块：接送货-快递代理签收-判断当前运单是否录入快递代理外发单*/ e.Audit_Status from pkp.t_srv_waybill w
+		inner join TFR.T_OPT_LDP_EXTERNAL_BILL e
+		on e.waybill_no = w.Waybill_No
+		where e.IS_TRANSFER_EXTERNAL = #{transferExternal,jdbcType=VARCHAR}
+		and w.active = #{active,jdbcType=VARCHAR}
+		and w.waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		<![CDATA[ and e.AUDIT_STATUS <> #{auditStatus,jdbcType=VARCHAR} ]]>
+		
+	</select>
+	
+	
+		<!--根据运单号,部门判断登录部门与做航空正单的部门是否一致-->
+	<select id="queryairWaybillOrgCodeIsSameByWaybillNo" resultType="java.lang.Long" parameterType="com.deppon.foss.module.pickup.sign.api.shared.dto.AirAgencyQueryDto" >
+   select count(1)
+  from tfr.t_opt_air_waybill_detail toawd
+ inner join tfr.t_opt_air_waybill toaw
+    on toaw.id = toawd.air_waybill_id
+    <where>
+    	<choose>
+			<when test="waybillNo != null and waybillNo!=''">
+				and toawd.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+			</when>
+			<otherwise>
+				and toawd.WAYBILL_NO = ''
+			</otherwise>
+		</choose>
+    	and toaw.create_org_code=#{airCreateOrgCode,jdbcType=VARCHAR} 
+    </where> 
+	</select>
+		<!--查询空运总调的所有外场-->
+	<select id="queryAirTransferCenter" resultType="java.lang.String" parameterType="java.lang.String" >
+   	 select TC.ORG_CODE value /*查询空运总调的所有外场*/
+             from bse.t_bas_org org
+            INNER JOIN BSE.T_BAS_TRANSFER_CENTER TC
+               ON ORG.CODE = TC.AIR_DISPATCH_CODE
+            where org.air_dispatch = #{value,jdbcType=VARCHAR}
+            AND ORG.ACTIVE = #{value,jdbcType=VARCHAR}
+            AND TC.ACTIVE = #{value,jdbcType=VARCHAR}
+	</select>
+	
+	<!-- 签收快递代理，运输性质为 经济快递 ，查询外发单号  -->
+	<select id="queryExpressByPartialLineWaybillNos" parameterType="com.deppon.foss.module.pickup.sign.api.shared.dto.AirAgencyQueryDto" resultType="com.deppon.foss.module.pickup.sign.api.shared.dto.AirAgencyQueryDto">
+	select/*模块：接送货-签收本地配-运输性质为经济快递查询 */ Airwaybill.Waybill_No Waybillno,
+ 	Airwaybill.Goods_Qty_Total Goodsqtytotal,
+ 	Exter.External_Bill_No Externalbillno,
+ 	Airaf.Arrive_Notout_Goods_Qty Arrivenotoutgoodsqty,
+ 	Airwaybill.Receive_Customer_Contact Receivecustomername,
+ 	exter.serial_no SerialNo
+  	From TFR.T_OPT_LDP_EXTERNAL_BILL Exter
+ 	Inner Join Tfr.T_Opt_Handoverbill Handoverbill On Handoverbill.Handover_No = Exter.Handover_No
+ 	Inner Join Pkp.T_Srv_Actual_Freight Airaf On Exter.Waybill_No = Airaf.Waybill_No
+ 	Inner Join Pkp.T_Srv_Waybill Airwaybill On Airaf.Waybill_No = Airwaybill.Waybill_No
+ 	Where exter.IS_TRANSFER_EXTERNAL = #{transferExternal,jdbcType=VARCHAR}
+   	<![CDATA[ and exter.AUDIT_STATUS <> #{auditStatus,jdbcType=VARCHAR} ]]>
+   	<!--外场与外发交接时间查询 开始268377 yl -->
+   	<if test="successionTimingBegin !=null and successionTimingBegin !=''">
+		<![CDATA[and HANDOVERBILL.CREATE_TIME >= #{successionTimingBegin,jdbcType=TIMESTAMP}]]>
+	</if>
+	<if test="successionTimingEnd !=null and successionTimingEnd !=''">
+		<![CDATA[and HANDOVERBILL.CREATE_TIME <= #{successionTimingEnd,jdbcType=TIMESTAMP}]]>
+	</if>
+	<if test="receiveCustomerName != null and receiveCustomerName!=''">
+		and airWaybill.Receive_Customer_Contact = #{receiveCustomerName,jdbcType=VARCHAR}
+	</if>
+	<!--外场与外发交接时间查询 结束268377 yl -->
+	<if test="receiveCustomerPhone != null and receiveCustomerPhone!=''">
+		and airWaybill.RECEIVE_CUSTOMER_PHONE = #{receiveCustomerPhone,jdbcType=VARCHAR}
+	</if>
+	<if test="receiveCustomerMobilephone != null and receiveCustomerMobilephone!=''">
+		and airWaybill.RECEIVE_CUSTOMER_MOBILEPHONE = #{receiveCustomerMobilephone,jdbcType=VARCHAR}
+	</if>
+   	<if test="active != null and active!=''">
+		and airWaybill.ACTIVE = #{active,jdbcType=VARCHAR}
+	</if>
+   	<if test="waybillStatus!= null and waybillStatus.size>0">
+	 	AND( airAf.status is null or  airAf.status not in
+			<foreach collection="waybillStatus" open="(" close=")" separator="," item="status">
+				<if test="status!=null and status != ''">
+        	      <![CDATA[	#{status,jdbcType=VARCHAR} ]]>
+                </if>
+			</foreach>
+		)
+    </if>
+   	and not exists( select Signresult.Waybill_No From Pkp.T_Srv_Waybill_Sign_Result Signresult
+ 	Where Signresult.Waybill_No = Airaf.Waybill_No
+   	And Signresult.Active = 'Y' and Signresult.Sign_Status = 'SIGN_STATUS_ALL' /*全部签收*/)
+   	and not exists( select serialResult.Waybill_No,serialResult.Serial_No
+  	from pkp.t_srv_serial_sign_result serialResult 
+  	where serialResult.Waybill_No = Airaf.Waybill_No and serialResult.Serial_No = exter.serial_no and serialResult.Active = 'Y') /*过滤已签收流水*/
+   	<if test="productCode != null and productCode!=''">
+		and airWaybill.PRODUCT_CODE = #{productCode,jdbcType=VARCHAR} /*运输性质的过滤 新加的 会不会对sql性能产生影响 ？*/
+	</if>
+   	<if test="endStockOrgCode != null and endStockOrgCode !=''">
+		and airAf.end_stock_org_code = #{endStockOrgCode,jdbcType=VARCHAR}
+	</if>
+   	<if test="lastLoadOrgCode != null and lastLoadOrgCode !=''">
+		and airWaybill.Last_Load_Org_Code = #{lastLoadOrgCode,jdbcType=VARCHAR}
+	</if>
+	<if test="waybillNos!= null and waybillNos.size>0 ">
+		and airWaybill.WAYBILL_NO in
+		<foreach collection="waybillNos" open="(" close=")" separator="," item="waybillNoTmp">
+            <if test="waybillNoTmp!=null and waybillNoTmp != ''">
+                <![CDATA[	#{waybillNoTmp,jdbcType=VARCHAR} ]]>
+            </if>
+    	</foreach>
+	</if>
+	</select>
+</mapper>

@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.partialline.LdpAgencySystemReportMapper" >
+
+<!-- 落地配全盘代理报表ResultMap -->
+<resultMap id="LdpAgencySystemReportResultMap" type="com.deppon.foss.module.transfer.partialline.api.shared.dto.LdpAgencySystemReportResultDto" >
+    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+    <result column="RECEIVE_ORG_CODE" property="receiveOrgCode" jdbcType="VARCHAR" />
+    <result column="BILL_DATE" property="billDate" jdbcType="TIMESTAMP" />
+    <result column="PAYMENT_METHOD" property="paymentMethod" jdbcType="VARCHAR" />
+    <result column="HANDOVER_TIME" property="handOverTime" jdbcType="TIMESTAMP" />
+    <result column="AGENCY_COMPANY_NAME" property="agencyCompanyName" jdbcType="VARCHAR" />
+    <result column="REGISTER_FLAG" property="registerFlag" jdbcType="VARCHAR" />
+    <result column="AMOUNT" property="amount" jdbcType="DECIMAL" />
+    <result column="TOTAL_WEIGHT" property="totalWeight" jdbcType="DECIMAL" />
+    <result column="TOTAL_VOLUME" property="totalVolume" jdbcType="DECIMAL" />
+    <result column="TARGET_ORG_NAME" property="targetOrgName" jdbcType="VARCHAR" />
+    <result column="ARRIVE_TIME" property="arriveTime" jdbcType="TIMESTAMP" />
+    <result column="AUDIT_STATUS" property="auditStatus" jdbcType="VARCHAR" />
+    <result column="TOTAL_RECORDS_IN_DB" property="totalRecordsInDB" jdbcType="DECIMAL" />
+    <result column="LAST_LOAD_ORG_CODE" property="lastLoadOrgCode" jdbcType="VARCHAR" />
+  </resultMap>
+
+<select id="queryLdpAgencySystemReportByDto" resultMap="LdpAgencySystemReportResultMap"	parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.LdpAgencySystemReportQueryDto">
+	SELECT /*结算-代理管理-按时间进行查询*/ 
+	W.WAYBILL_NO AS WAYBILL_NO,BASORG.NAME AS RECEIVE_ORG_CODE,W.BILL_TIME AS BILL_DATE,W.PAID_METHOD AS PAYMENT_METHOD,
+	B.REGISTER_TIME AS HANDOVER_TIME,B.AGENT_COMPANY_NAME AS AGENCY_COMPANY_NAME,W.GOODS_QTY_TOTAL AS AMOUNT,W.GOODS_WEIGHT_TOTAL AS TOTAL_WEIGHT,
+	W.GOODS_VOLUME_TOTAL AS TOTAL_VOLUME,W.TARGET_ORG_CODE AS TARGET_ORG_NAME,B.AUDIT_STATUS AS AUDIT_STATUS,
+	B.WAYBILL_NO AS REGISTER_FLAG  <!-- 外发单中的运单号，判断是否已外发   -->
+	,W.LAST_LOAD_ORG_CODE
+	FROM  PKP.T_SRV_WAYBILL W  <!--  接送货运单表   -->
+	INNER JOIN TFR.T_OPT_HANDOVERBILL_DETAIL HDETIAL <!--  中转交接单表，只查询交接类型为落地配的   -->
+	ON W.WAYBILL_NO=HDETIAL.WAYBILL_NO
+	INNER JOIN TFR.T_OPT_HANDOVERBILL H  
+	ON H.HANDOVER_NO=HDETIAL.HANDOVER_NO AND H.HANDOVER_TYPE='LDP_HANDOVER'   and h.handoverbill_state IN(20,30)
+	INNER JOIN BSE.T_BAS_ORG BASORG  <!-- 部门表查询部门名称使用   -->
+	ON BASORG.CODE = W.RECEIVE_ORG_CODE
+	AND BASORG.ACTIVE = #{active}
+	LEFT JOIN TFR.T_OPT_LDP_EXTERNAL_BILL B  <!-- 中转落地配外发单表 -->
+	on W.WAYBILL_NO = B.WAYBILL_NO
+	WHERE W.ACTIVE='Y'
+	<if test="startBusinessDate != null and endBusinessDate != null">
+		<![CDATA[ AND W.CREATE_TIME>=#{ startBusinessDate ,jdbcType=TIMESTAMP} AND W.CREATE_TIME <#{endBusinessDate ,jdbcType=TIMESTAMP}   ]]>
+	</if>
+	AND HDETIAL.HANDOVER_TYPE = #{productType} <!-- 交接类型为落地配  -->
+	<!-- 外发时间,外发单的录入日期   -->
+	<if test="handOverStartTime!=null and handOverEndTime!= null">
+		<![CDATA[ AND B.REGISTER_TIME>=#{ handOverStartTime ,jdbcType=TIMESTAMP} AND B.REGISTER_TIME <#{handOverEndTime,jdbcType=TIMESTAMP}   ]]>
+	</if>
+	<if test="lastLoadOrgCode!=null and lastLoadOrgCode!= ''">
+		AND W.LAST_LOAD_ORG_CODE = #{lastLoadOrgCode}
+	</if>
+	<if test="waybillNo!=null and waybillNo!= ''">
+		AND W.WAYBILL_NO = #{waybillNo}
+	</if>
+	<!--if test="arriveOrgCode!=null and arriveOrgCode!= ''">
+		AND H.dest_org_code = #{arriveOrgCode}
+	</if-->
+	 <choose>
+			<when  test="registerFlag!=null and registerFlag!= '' and registerFlag==REGISTER_FLAG_YES ">
+				AND B.WAYBILL_NO IS NOT  NULL 
+			</when>
+			<when test="registerFlag!=null and registerFlag!= '' and registerFlag==REGISTER_FLAG_NO ">
+				 AND B.WAYBILL_NO IS  NULL
+			</when>
+			<otherwise>
+				AND 1=1
+			</otherwise>
+	</choose>	
+	AND EXISTS
+	(SELECT V.ORG_CODE FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V WHERE V.EMP_CODE = #{empCode}
+		AND V.ORG_CODE=W.LAST_LOAD_ORG_CODE   <!--  最后配置部门编码   -->)
+	
+	ORDER BY W.CREATE_TIME ASC
+</select>
+
+<select id="queryTotalRecordsInDBByDto" resultType="Long" parameterType="com.deppon.foss.module.transfer.partialline.api.shared.dto.LdpAgencySystemReportQueryDto">
+	SELECT /*结算-代理管理-按时间进行查询*/ 
+	count(*)
+	FROM  PKP.T_SRV_WAYBILL W  <!--  接送货运单表   -->
+	INNER JOIN TFR.T_OPT_HANDOVERBILL_DETAIL HDETIAL <!--  中转交接单表，只查询交接类型为落地配的   -->
+	ON W.WAYBILL_NO=HDETIAL.WAYBILL_NO
+	INNER JOIN TFR.T_OPT_HANDOVERBILL H  
+	ON H.HANDOVER_NO=HDETIAL.HANDOVER_NO AND H.HANDOVER_TYPE='LDP_HANDOVER'   and h.handoverbill_state IN(20,30)
+	INNER JOIN BSE.T_BAS_ORG BASORG  <!-- 部门表查询部门名称使用   -->
+	ON BASORG.CODE = W.RECEIVE_ORG_CODE
+	AND BASORG.ACTIVE = #{active}
+	LEFT JOIN TFR.T_OPT_LDP_EXTERNAL_BILL B  <!-- 中转落地配外发单表 -->
+	on W.WAYBILL_NO = B.WAYBILL_NO
+	WHERE W.ACTIVE='Y'
+	<if test="startBusinessDate != null and endBusinessDate != null">
+		<![CDATA[ AND W.CREATE_TIME>=#{ startBusinessDate ,jdbcType=TIMESTAMP} AND W.CREATE_TIME <#{endBusinessDate ,jdbcType=TIMESTAMP}   ]]>
+	</if>
+	AND HDETIAL.HANDOVER_TYPE = #{productType} <!-- 交接类型为落地配  -->
+	<!-- 外发时间,外发单的录入日期   -->
+	<if test="handOverStartTime!=null and handOverEndTime!= null">
+		<![CDATA[ AND B.REGISTER_TIME>=#{ handOverStartTime ,jdbcType=TIMESTAMP} AND B.REGISTER_TIME <#{handOverEndTime,jdbcType=TIMESTAMP}   ]]>
+	</if>
+	<if test="lastLoadOrgCode!=null and lastLoadOrgCode!= ''">
+		AND W.LAST_LOAD_ORG_CODE = #{lastLoadOrgCode}
+	</if>
+	<if test="waybillNo!=null and waybillNo!= ''">
+		AND W.WAYBILL_NO = #{waybillNo}
+	</if>
+	<!--if test="arriveOrgCode!=null and arriveOrgCode!= ''">
+		AND H.dest_org_code = #{arriveOrgCode}
+	</if-->
+	 <choose>
+			<when  test="registerFlag!=null and registerFlag!= '' and registerFlag==REGISTER_FLAG_YES ">
+				AND B.WAYBILL_NO IS NOT  NULL 
+			</when>
+			<when test="registerFlag!=null and registerFlag!= '' and registerFlag==REGISTER_FLAG_NO ">
+				 AND B.WAYBILL_NO IS  NULL
+			</when>
+			<otherwise>
+				AND 1=1
+			</otherwise>
+	</choose>	
+	AND EXISTS
+	(SELECT V.ORG_CODE FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V WHERE V.EMP_CODE = #{empCode}
+		AND V.ORG_CODE=W.LAST_LOAD_ORG_CODE   <!--  最后配置部门编码   -->)
+	
+	ORDER BY W.CREATE_TIME ASC
+</select>
+</mapper>

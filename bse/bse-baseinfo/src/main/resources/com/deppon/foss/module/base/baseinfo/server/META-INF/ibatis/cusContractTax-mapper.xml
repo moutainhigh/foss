@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.cusContractTax">
+	<!-- 客户发票标记信息 -->
+	<resultMap id="cusContractTaxResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusContractTaxEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="CRM_ID" property="crmId" jdbcType="DECIMAL" />
+		<result column="BARGAIN_CRM_ID" property="bargainCrmId" jdbcType="DECIMAL" />
+		<result column="BEGIN_TIME" property="beginTime" jdbcType="TIMESTAMP" />
+		<result column="END_TIME" property="endTime" jdbcType="TIMESTAMP" />
+		<result column="INVOICE_TYPE" property="invoiceType" jdbcType="VARCHAR" />
+		<result column="SIGN_COMPANY" property="signCompany" jdbcType="VARCHAR" />	
+	</resultMap>
+	
+	<!-- 数据字段 -->
+	<sql id="cusContractTax_Column_List">
+		T.ID,
+		T.CREATE_TIME, 
+		T.MODIFY_TIME,
+		T.CREATE_USER_CODE,
+		T.MODIFY_USER_CODE,
+		T.CRM_ID,
+		T.BARGAIN_CRM_ID,
+		T.BEGIN_TIME,
+		T.END_TIME,
+		T.INVOICE_TYPE,
+		T.SIGN_COMPANY
+	</sql>
+	<!-- 根据客户编码、联系方式、时间查询客户当前时间内的客户发票标记信息-->
+	<select id="queryCurrentUseInvoiceMark" parameterType="map" resultMap="cusContractTaxResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据客户编码、联系方式、时间查询客户当前时间内的客户发票标记信息 **/
+		]]>
+		<include refid="cusContractTax_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUS_BARGAIN_CONTRACT_TAX T,BSE.T_BAS_CUS_BARGAIN B,BSE.T_BAS_CUSTOMER C
+		]]>
+		<where>
+		    C.CRM_CUS_ID = B.CRM_CUS_ID(+)
+           	AND B.CRM_ID = T.BARGAIN_CRM_ID(+)
+		    <if test="condition.custCode != null and condition.custCode != ''">
+		        AND C.CODE = #{condition.custCode,jdbcType=VARCHAR}
+		    </if>
+		     <if test="condition.mobilePhone != null and condition.mobilePhone != ''">
+		        AND C.MOBILE_PHONE = #{condition.mobilePhone,jdbcType=VARCHAR}
+		    </if>
+		     <if test="condition.contactPhone != null and condition.contactPhone != ''">
+		        AND C.CONTACT_PHONE = #{condition.contactPhone,jdbcType=VARCHAR}
+		    </if>
+		    <if test="date != null">
+		    and B.begin_time <![CDATA[  <=  ]]> #{date ,jdbcType=TIMESTAMP}
+		    and B.end_time <![CDATA[  >=  ]]> #{date,jdbcType=TIMESTAMP} 
+		    </if>
+		</where>
+	</select>
+
+	<!-- 验证客户发票标记信息是否存在 -->
+	<select id="queryCusContractTaxByCrmId" parameterType="map" resultMap="cusContractTaxResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:验证客户发票标记信息是否存在 **/
+		]]>
+		<include refid="cusContractTax_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_CUS_BARGAIN_CONTRACT_TAX T
+		]]>
+		<where>
+		    <if test="crmId != null and crmId != ''">
+		        CRM_ID = #{crmId,jdbcType=DECIMAL}
+		    </if>
+		    <if test="modifyDate != null and modifyDate != ''">
+		        AND MODIFY_TIME >=  #{modifyDate,jdbcType=TIMESTAMP}
+		    </if>
+		</where>
+	</select>
+
+	<!-- 新增发票标记信息 -->
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusContractTaxEntity">
+		
+		<![CDATA[
+			INSERT/** 综合:新增发票标记信息 **/ INTO BSE.T_BAS_CUS_BARGAIN_CONTRACT_TAX T	(
+		]]>
+		<include refid="cusContractTax_Column_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, #{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR},
+		#{crmId,jdbcType=DECIMAL},
+		#{bargainCrmId,jdbcType=DECIMAL},
+		#{beginTime,jdbcType=TIMESTAMP},
+		#{endTime,jdbcType=TIMESTAMP},
+		#{invoiceType,jdbcType=VARCHAR},
+		#{signCompany,jdbcType=VARCHAR}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+
+	<!-- 修改发票标记信息 -->
+	<update id="update"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CusContractTaxEntity">
+		update/** 综合:修改发票标记信息 **/ BSE.T_BAS_CUS_BARGAIN_CONTRACT_TAX
+		<set>
+				CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+				CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+				BARGAIN_CRM_ID = #{bargainCrmId,jdbcType=DECIMAL},
+				BEGIN_TIME = #{beginTime,jdbcType=TIMESTAMP},
+				END_TIME = #{endTime,jdbcType=TIMESTAMP},
+				INVOICE_TYPE = #{invoiceType,jdbcType=VARCHAR},
+				SIGN_COMPANY = #{signCompany,jdbcType=VARCHAR}
+		</set>
+		<where>
+			<if test="crmId != null and crmId != ''">
+				CRM_ID = #{crmId,jdbcType=DECIMAL}
+			</if>
+		</where>
+	</update>
+
+</mapper>

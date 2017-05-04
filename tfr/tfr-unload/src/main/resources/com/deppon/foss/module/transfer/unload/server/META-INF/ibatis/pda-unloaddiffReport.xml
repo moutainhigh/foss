@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.unload.pdaunloaddiffreport" >
+	<resultMap id="pdaUnloadDiffReportDtoResultMap"
+		type="com.deppon.foss.module.transfer.pda.api.shared.dto.PDAUnloadDiffReportDto">
+		<result property="diffReportNo" column="diffReportNo" />
+		<result property="vehicleNo" column="vehicleNo" />
+		<result property="lackGoodsPieces" column="lackGoodsPieces" />
+		<result property="reportCreateTime" column="reportCreateTime" />
+		<result property="exceedGoodsQty" column="exceedGoodsQty" />
+		<result property="opreateCode" column="opreateCode" />
+		<result property="createDate" column="createDate" />
+	</resultMap>
+	
+	<resultMap id="pdaUnloadDiffReportDetailDtoResultMap"
+		type="com.deppon.foss.module.transfer.pda.api.shared.dto.PDAUnloadDiffReportDetailDto">
+		<result property="waybillNo" column="waybillNo" />
+		<result property="serialNo" column="serialNo" />
+		<result property="targetOrg" column="targetOrg" />
+		<result property="status" column="status" />
+		<result property="packageNo" column="packageNo" />
+		<result property="differenceType" column="differenceType" />
+		<result property="vehicleNo" column="vehicleNo" />
+		<result property="opreator" column="opreator" />
+		<result property="createTime" column="createTime" />
+		<result property="oaErrorNo" column="oaErrorNo" />
+	</resultMap>
+	
+	<!--PDA查询卸车差异报告-->
+	<select id="queryPDAUnloadDiffReportList" parameterType="map"
+			resultMap="pdaUnloadDiffReportDtoResultMap">
+		select g.gaprep_no diffReportNo, count(d.serial_no) lackGoodsPieces, 
+			t.vehicle_no vehicleNo,g.create_time reportCreateTime
+        from tfr.t_opt_unload_gaprep g
+        join tfr.t_opt_unload_gaprep_detail d on d.unload_gaprep_id = g.id
+        join pkp.t_srv_waybill w on w.waybill_no = d.waybill_no
+                          and w.active = 'Y'
+        join tfr.t_opt_unload_task t on t.id = g.unload_task_id 
+		<where>
+			 g.create_time >= sysdate - #{hours,jdbcType=DECIMAL}/24
+  			 and g.unload_org_code in 
+			<foreach collection="deptCodes" item="item" separator="," close=")" open="(">
+            	#{item}
+            </foreach>
+   			and g.handle_status = 'RESOLVING'
+  			and d.difference_type in ('LACKGOODS','BYHANDGOODS')
+   			and (w.product_code = 'PACKAGE'  or  w.product_code = 'RCP'  or  w.product_code = 'EPEP' or  w.product_code = 'DEAP')
+   			--and d.handle_time is null
+   			and g.pda_handle_status = 'N'
+ 			group by g.gaprep_no, t.vehicle_no,g.create_time
+ 			order by g.gaprep_no
+		</where>
+	</select> 
+	
+	<!--PDA根据卸车差异编号查询卸车差异明细-->
+	<select id="queryPDAUnloadDiffDetailList" parameterType="String"
+			resultMap="pdaUnloadDiffReportDetailDtoResultMap">
+		select d.waybill_no waybillNo,
+			wd.package_no packageNo, 
+       	  d.serial_no serialNo,
+     	  (case
+        	 when d.handle_time is null then
+       	   	'未处理'
+       	   else
+       	    '已处理'
+      	  end) status,
+     	  w.target_org_code targetOrg
+  		from tfr.t_opt_unload_gaprep g
+  		join tfr.t_opt_unload_gaprep_detail d on d.unload_gaprep_id = g.id
+  		join pkp.t_srv_waybill w on w.waybill_no = d.waybill_no
+                          and w.active = 'Y'
+  		join tfr.t_opt_unload_task t on t.id = g.unload_task_id 
+  		join tfr.t_opt_unload_waybill_detail wd on wd.unload_task_id = t.id and wd.waybill_no = d.waybill_no
+  		join tfr.t_opt_unload_serialno s on s.unload_waybill_detail_id = wd.id
+                                      and  s.serial_no = d.serial_no
+		<where>
+			 g.gaprep_no = #{reportCode,jdbcType=VARCHAR}
+   			and d.difference_type in ('LACKGOODS','BYHANDGOODS')
+   			and (w.product_code = 'PACKAGE'  or  w.product_code = 'RCP' or  w.product_code = 'EPEP' or  w.product_code = 'DEAP')
+		</where>
+	</select> 
+	
+	<!--PDA提交卸车差异任务更新卸车差异报告的PDA状态为“Y”-->
+	<update id="updateUnloadDiffReportHandleState" parameterType="String">
+		update tfr.t_opt_unload_gaprep g
+		<set>
+			g.pda_handle_status = 'Y'
+		</set>
+		<where>
+			g.gaprep_no = #{reportCode,jdbcType=VARCHAR}
+		</where>
+	</update>
+	
+	<!--插入PDA扫描卸车差异明细记录-->
+	<insert id="addPDAScanDetailLog" parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.PDAUnloadDiffReportDetailLogEntity">
+		INSERT INTO TFR.T_OPT_UNLOAD_GAPREP_DETAIL_PDA
+		  (
+  			ID,
+  			UNLOAD_GAPREP_NO,
+  			WAYBILL_NO,
+  			SERIAL_NO,
+  			SCAN_TIME,
+  			PDA_NO,
+  			OPERATOR_CODE,
+  			CREATE_TIME
+			)
+		VALUES
+		  (#{id,jdbcType=VARCHAR},
+		  	#{reportCode,jdcbType=VARCHAR},
+		  	#{waybillNo,jdbcType=VARCHAR},
+		  	#{serialNo,jdbcType=VARCHAR},
+		  	#{scanTime,jdcbType=TIMESTAMP},
+		  	#{pdaNo,jdbcType=TIMESTAMP},
+		  	#{createUser,jdbcType=VARCHAR},
+		  	#{createDate,jdbcType=TIMESTAMP})
+	</insert>
+	
+	<!--插入pda处理卸车差异报告记录-->
+	<insert id="addPDAReportLog" parameterType="com.deppon.foss.module.transfer.unload.api.shared.domain.PDAUnloaddiffReportLogEntity">
+		INSERT INTO TFR.T_OPT_UNLOAD_GAPREP_PDA
+		  (
+ 			ID,
+ 			UNLOAD_GAPREP_NO,
+			STATUS,
+  			PDA_NO,
+  			OPERATOR_CODE,
+  			CREATE_TIME
+			)
+		VALUES
+		  (#{id,jdbcType=VARCHAR},
+		   #{reportCode,jdbcType=VARCHAR},
+		   #{status,jdbcType=VARCHAR},
+		   #{pdaNo,jdbcType=VARCHAR},
+		   #{createUser,jdbcType=VARCHAR},
+		   #{createDate,jdbcType=TIMESTAMP})
+	</insert>
+	
+	<select id="querySCPDAUnloadDiffReportList" parameterType="map"
+			resultMap="pdaUnloadDiffReportDtoResultMap">
+			
+		select /**中转-卸车模块-查询二程接驳卸车差异报告**/
+			g.gaprep_no         diffReportNo,
+			g.exceed_goods_qty  exceedGoodsQty,
+			g.lack_goods_qty    lackGoodsPieces,
+			t.vehicle_no        vehicleNo,
+			p.loader_code       opreateCode,
+			g.create_time       reportCreateTime
+			
+			 from tfr.t_opt_unload_gaprep g
+			 join tfr.t_opt_unload_task t on t.id=g.unload_task_id
+			 join tfr.t_opt_loader_participation p on p.task_id=t.id
+		<where>	
+			 t.unload_type ='SC_EXPRESS'
+			and trunc(g.create_time ,'dd')=trunc(sysdate,'dd')
+			and g.unload_org_code=#{deptCode}
+			and p.loader_code=#{operatorCode}
+			and p.be_creator='Y'
+	   </where>
+	</select> 
+	
+	<select id="querySCPDAUnloadDiffReportByDate" parameterType="map"
+			resultMap="pdaUnloadDiffReportDtoResultMap">
+			
+		select /**中转-卸车模块-根据日期和差异报告编号查询二程接驳卸车差异报告**/
+			g.gaprep_no         diffReportNo,
+			g.exceed_goods_qty  exceedGoodsQty,
+			g.lack_goods_qty    lackGoodsPieces,
+			t.vehicle_no        vehicleNo,
+			p.loader_code       opreateCode,
+			g.create_time       reportCreateTime
+			
+			 from tfr.t_opt_unload_gaprep g
+			 join tfr.t_opt_unload_task t on t.id=g.unload_task_id
+			 join tfr.t_opt_loader_participation p on p.task_id=t.id
+		<where>	
+			 t.unload_type ='SC_EXPRESS'
+			and g.unload_org_code=#{deptCode}
+			and p.loader_code=#{operatorCode}
+			and p.be_creator='Y'
+			 <if test="queryDate != null">
+		     	and  trunc(g.create_time ,'dd')=trunc(#{queryDate},'dd')
+			 </if>
+			 <if test="reportCode != null and reportCode!='' ">
+		     	and  g.gaprep_no = #{reportCode}
+			 </if>
+	   </where>
+	</select> 
+	
+	<!--查询二程接驳交卸车差异报告明细  -->
+	<select id="querySCPDAUnloadDiffReportDetailList" parameterType="map"
+			resultMap="pdaUnloadDiffReportDetailDtoResultMap">
+			
+		select  /**中转-卸车模块-查询二程接驳卸车差异报告**/
+			d.waybill_no         waybillNo ,
+			d.serial_no          serialNo    ,
+			(case
+			   when d.difference_type='MOREGOODS'
+			    then '多货'
+			   when  d.difference_type='LACKGOODS'
+			    then '少货'
+			   when  d.difference_type='BYHANDGOODS'
+			   then  '手输'
+			  end 
+			) differenceType,
+			
+			(
+			case
+			     when d.handle_time is not null  or d.difference_type ='MOREGOODS'  
+			          or (d.oa_error_no is not null and d.oa_error_no != 'N/A')
+			     then
+			        '已处理'
+			     else
+			      '未处理'
+			  end) status,
+			
+			t.vehicle_no         vehicleNo,
+			#{operatorCode}      opreator,
+			g.create_time        createTime,
+			d.oa_error_no       oaErrorNo
+
+		 from tfr.t_opt_unload_gaprep g
+			join tfr.t_opt_unload_gaprep_detail d on d.unload_gaprep_id=g.id
+			join tfr.t_opt_unload_task t on t.id=g.unload_task_id 
+		<where>
+		 
+			 g.gaprep_no=#{reportCode}
+	
+		</where>
+	</select> 
+	
+</mapper>

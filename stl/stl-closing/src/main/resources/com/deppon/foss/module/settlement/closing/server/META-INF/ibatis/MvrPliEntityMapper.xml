@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stv.MvrPliEntityMapper" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.closing.api.shared.domain.MvrPliEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="PERIOD" property="period" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+    <result column="ORG_TYPE" property="orgType" jdbcType="VARCHAR" />
+    <result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+    <result column="ORG_NAME" property="orgName" jdbcType="VARCHAR" />
+  
+    <result column="PL_COST_WO_DEST_RCV_POD" property="plCostWoDestRcvPod" jdbcType="DECIMAL" />
+    <result column="PL_COST_WO_DEST_RCV_NPOD" property="plCostWoDestRcvNpod" jdbcType="DECIMAL" />
+    
+    <result column="UR_DEST_CH_NPOD" property="urDestChNpod" jdbcType="DECIMAL" />
+    <result column="UR_DEST_CD_NPOD" property="urDestCdNpod" jdbcType="DECIMAL" />
+    <result column="UR_DEST_CH_POD" property="urDestChPod" jdbcType="DECIMAL" />
+    <result column="UR_DEST_CD_POD" property="urDestCdPod" jdbcType="DECIMAL" />
+    
+    <result column="PL_DR_WO_DEST_RCV_POD" property="plDrWoDestRcvPod" jdbcType="DECIMAL" />
+    <result column="PL_DR_WO_DEST_RCV_NPOD" property="plDrWoDestRcvNpod" jdbcType="DECIMAL" />
+   
+  </resultMap>
+  <sql id="Base_Column_List" >
+	ID, PERIOD, CUSTOMER_CODE, CUSTOMER_NAME, ORG_TYPE, ORG_CODE, ORG_NAME, 
+	PL_COST_WO_DEST_RCV_POD / 100 PL_COST_WO_DEST_RCV_POD,
+	PL_COST_WO_DEST_RCV_NPOD / 100 PL_COST_WO_DEST_RCV_NPOD,
+	UR_DEST_CH_NPOD / 100 UR_DEST_CH_NPOD,
+	UR_DEST_CD_NPOD / 100 UR_DEST_CD_NPOD,
+	UR_DEST_CH_POD / 100 UR_DEST_CH_POD,
+	UR_DEST_CD_POD / 100 UR_DEST_CD_POD,
+	PL_DR_WO_DEST_RCV_POD / 100 PL_DR_WO_DEST_RCV_POD,
+	PL_DR_WO_DEST_RCV_NPOD / 100 PL_DR_WO_DEST_RCV_NPOD
+  </sql>
+  <select id="selectByConditions" resultMap="BaseResultMap" parameterType="java.util.Map" >
+    select /*结算-凭证报表-查询始发偏线往来月报表*/
+    <include refid="Base_Column_List" />
+    from STV.T_STL_MVR_PLI
+  </select>
+   <select id="selectMvrPliByConditions" resultMap="BaseResultMap" parameterType="java.util.Map" >
+    SELECT /*结算-凭证报表-根据条件查询始发偏线往来月报表*/
+    <include refid="Base_Column_List" />
+    FROM STV.T_STL_MVR_PLI
+    WHERE 
+    	PERIOD = #{period} 
+		<if test="customerCode!=null and customerCode!=''">
+			AND CUSTOMER_CODE = #{customerCode} <!-- 客户不为空时，根据客户编码过滤 -->
+		</if>
+	   	<if test="orgCode!=null and orgCode!=''">
+			AND ORG_CODE = #{orgCode} 
+		</if>
+		<if test="orgType!=null and orgType!=''">
+			AND ORG_TYPE = #{orgType} 
+		</if>
+  </select>
+  <select id="selectMvrPliByConditionsCount" resultType="long" parameterType="java.util.Map" >
+    SELECT /*结算-凭证报表-根据条件查询始发偏线往来月报表总条数*/  COUNT(*)
+    FROM STV.T_STL_MVR_PLI
+    WHERE 
+    	PERIOD = #{period} 
+		<if test="customerCode!=null and customerCode!=''">
+			AND CUSTOMER_CODE = #{customerCode} <!-- 客户不为空时，根据客户编码过滤 -->
+		</if>
+	   	<if test="orgCode!=null and orgCode!=''">
+			AND ORG_CODE = #{orgCode} 
+		</if>
+		<if test="orgType!=null and orgType!=''">
+			AND ORG_TYPE = #{orgType} 
+		</if>
+  </select>
+   <select id="selectMvrPliByConditionsSum" resultMap="BaseResultMap" parameterType="java.util.Map" >
+    SELECT /*结算-凭证报表-根据条件查询始发偏线月报表总金额*/
+    SUM(PL_COST_WO_DEST_RCV_POD) / 100 PL_COST_WO_DEST_RCV_POD,
+	SUM(PL_COST_WO_DEST_RCV_NPOD) / 100 PL_COST_WO_DEST_RCV_NPOD,
+	SUM(UR_DEST_CH_NPOD) / 100 UR_DEST_CH_NPOD,
+	SUM(UR_DEST_CD_NPOD) / 100 UR_DEST_CD_NPOD,
+	SUM(UR_DEST_CH_POD) / 100 UR_DEST_CH_POD,
+	SUM(UR_DEST_CD_POD) / 100 UR_DEST_CD_POD,
+	SUM(PL_DR_WO_DEST_RCV_POD) / 100 PL_DR_WO_DEST_RCV_POD,
+	SUM(PL_DR_WO_DEST_RCV_NPOD) / 100 PL_DR_WO_DEST_RCV_NPOD
+    FROM STV.T_STL_MVR_PLI
+    WHERE 
+    	PERIOD = #{period} 
+		<if test="customerCode!=null and customerCode!=''">
+			AND CUSTOMER_CODE = #{customerCode} <!-- 客户不为空时，根据客户编码过滤 -->
+		</if>
+	   	<if test="orgCode!=null and orgCode!=''">
+			AND ORG_CODE = #{orgCode} 
+		</if>
+		<if test="orgType!=null and orgType!=''">
+			AND ORG_TYPE = #{orgType} 
+		</if>
+  </select>
+</mapper>

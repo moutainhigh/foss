@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.login.announcement" >
+	<resultMap id="announcementResultMap"
+		type="com.deppon.foss.module.login.shared.domain.AnnouncementEntity">
+		<id property="id" column="ID" />
+		<result property="topic" column="TOPIC" />
+		<result property="announcement" column="ANNOUNCEMENT" />
+		<result property="active" column="ACTIVE" />
+		<result property="createUser" column="CREATE_USER_CODE" javaType="String" jdbcType="VARCHAR" />
+		<result property="createDate" column="CREATE_TIME" javaType="Date" jdbcType="TIMESTAMP" />
+		<result property="modifyUser" column="MODIFY_USER_CODE" javaType="String" jdbcType="VARCHAR" />
+		<result property="modifyDate" column="MODIFY_TIME" javaType="Date" jdbcType="TIMESTAMP" />
+	</resultMap>
+	<sql id="select_simple_alias_param">
+		ID AS ID,
+		TOPIC AS TOPIC,
+		ANNOUNCEMENT AS ANNOUNCEMENT,
+		ACTIVE AS ACTIVE,
+		CREATE_USER_CODE AS CREATE_USER_CODE,
+		CREATE_TIME AS CREATE_TIME,
+		MODIFY_USER_CODE AS MODIFY_USER_CODE,
+		MODIFY_TIME AS MODIFY_TIME
+	</sql>
+	<insert id="insert">
+		INSERT INTO BSE.T_BAS_ANNOUNCEMENT(
+			ID,
+			TOPIC,
+			ANNOUNCEMENT,
+			ACTIVE,
+			CREATE_TIME,
+			MODIFY_TIME,
+			CREATE_USER_CODE,
+			MODIFY_USER_CODE) 
+		VALUES(
+			#{id, jdbcType=VARCHAR},
+			#{topic, jdbcType=VARCHAR},
+			#{announcement, jdbcType=VARCHAR},
+			#{active, jdbcType=CHAR},
+			#{createDate, jdbcType=TIMESTAMP},
+			#{modifyDate, jdbcType=TIMESTAMP},
+			#{createUser, jdbcType=VARCHAR},
+			#{modifyUser, jdbcType=VARCHAR}
+		)
+	</insert>
+	<delete id="delete">
+		<![CDATA[
+			DELETE FROM BSE.T_BAS_ANNOUNCEMENT WHERE ID=#{id}
+		]]>
+	</delete>
+	<select id="getAnnouncementById" resultMap="announcementResultMap">
+		<![CDATA[
+			SELECT
+		]]>
+		<include refid="select_simple_alias_param" />
+		<![CDATA[
+			FROM BSE.T_BAS_ANNOUNCEMENT
+			WHERE ID=#{id}
+		]]>
+	</select>
+	<select id="getAnnouncementByCount" resultMap="announcementResultMap">
+		<![CDATA[
+			SELECT
+		]]>
+		<include refid="select_simple_alias_param" />
+		<![CDATA[
+			FROM BSE.T_BAS_ANNOUNCEMENT
+			WHERE ACTIVE=#{active,jdbcType=CHAR}
+			ORDER BY MODIFY_TIME DESC
+		]]>
+	</select>
+	<select id="getAnnouncementCount" resultType="long">
+		<![CDATA[
+			SELECT	COUNT(0)
+			FROM BSE.T_BAS_ANNOUNCEMENT
+			WHERE ACTIVE=#{active,jdbcType=CHAR}
+		]]>
+	</select>
+</mapper>

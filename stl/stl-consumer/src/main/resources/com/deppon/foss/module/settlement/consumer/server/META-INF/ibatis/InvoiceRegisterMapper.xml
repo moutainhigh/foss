@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.InvoiceRegisterDao">
+	<resultMap id="WaybillInvoiceResultMap"
+		type="com.deppon.foss.module.settlement.consumer.api.shared.dto.WaybillInvoiceDto">
+		<result column="waybill_no" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="product" property="product" jdbcType="VARCHAR" />
+		<result column="invoice_mark" property="invoiceMark" jdbcType="VARCHAR" />
+		<result column="pre_pay_amount" property="prePayAmount" jdbcType="DECIMAL" />
+		<result column="to_pay_amount" property="toPayAmount" jdbcType="DECIMAL" />
+		<result column="delivery_customer_code" property="deliverCustomerCode" jdbcType="VARCHAR" />
+		<result column="receive_customer_code" property="receiveCustomerCode" jdbcType="VARCHAR" />
+		<result column="receive_org_code" property="receiveOrgCode" jdbcType="VARCHAR" />
+		<result column="desc_org_code" property="descOrgCode" jdbcType="VARCHAR" />
+		<result column="bill_time" property="billTime" jdbcType="TIMESTAMP" />
+		<result column="transfer_line" property="transferLine" jdbcType="VARCHAR" />
+		
+		<result column="other_revenue_no" property="otherRevenueNo" jdbcType="VARCHAR" />
+		<result column="otherrevenue_customer_code" property="otherRevenueCustomerCode" jdbcType="VARCHAR" />
+		<result column="customer_name" property="customerName" jdbcType="VARCHAR" />
+		
+		<result column="receive_Dunning_Dept_Code" property="receiveDunningDeptCode" jdbcType="VARCHAR" />
+		<result column="desc_Dunning_Dept_Code" property="descDunningDeptCode" jdbcType="VARCHAR" />
+		<result column="receive_Contract_Dept_Code" property="receiveContractDeptCode" jdbcType="VARCHAR" />
+		<result column="desc_Contract_Dept_Code" property="descContractDeptCode" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<!-- 配合发票-查询运单信息集合 -->
+	<select id="queryWaybillInfoForInvoiceList" resultMap="WaybillInvoiceResultMap"
+		parameterType="java.util.Map" >
+	   select/*结算-配合发票-查询运单信息集合    */  
+	   wb.waybill_no,
+       case when wb.product_code in (
+              SELECT PRODUCT_CODE FROM STV.T_STL_PRODUCT P WHERE P.IS_BELONG_PACKAGE='Y'
+            ) then '01'
+            when wb.product_code = 'WVH' then '03'
+            else '02'
+       end product,
+       decode(af.invoice,
+              'INVOICE_TYPE_01',
+              '01',
+              'INVOICE_TYPE_02',
+              '02',
+              af.invoice) invoice_mark, -- 发票标记
+       decode(af.PRE_PAY_AMOUNT_DISCOUN,
+	          '',
+	          wb.pre_Pay_Amount,
+  	          nvl(wb.pre_pay_amount, 0) - nvl(af.pre_pay_amount_discoun, 0)) / 100 pre_pay_amount, --预付金额
+	   decode(af.to_pay_amount_discount,
+	          '',
+	          nvl(wb.to_Pay_Amount, 0) - nvl(wb.COD_AMOUNT, 0),
+	          nvl(wb.to_Pay_Amount, 0) - nvl(wb.COD_AMOUNT, 0) - 
+	          nvl(af.to_pay_amount_discount, 0)) / 100 to_pay_amount, --到付金额
+       wb.delivery_customer_code, --发货方客户编码
+       wb.receive_customer_code, --收货方客户编码
+       --wb.receive_org_code
+       nvl((SELECT A.Unified_Code
+                 FROM BSE.T_BAS_ORG A where A.Code = wb.receive_Org_Code
+                 and A.Active = 'Y'),wb.receive_Org_Code) receive_Org_Code
+       , --发货部门编码
+       --wb.customer_pickup_org_code desc_org_code
+       nvl((SELECT A.Unified_Code
+                 FROM BSE.T_BAS_ORG A where A.Code = wb.Customer_Pickup_Org_Code
+                 and A.Active = 'Y'), wb.Customer_Pickup_Org_Code) desc_org_code
+       , --到达部门编码
+       wb.bill_time, --开单日期
+       --客户名称
+       decode(wb.Pickup_Centralized,
+              #{active,jdbcType=CHAR}, --集中接货，取创建城市，否则取收货城市
+              nvl((SELECT B.name
+                    FROM BSE.T_BAS_ORG A
+                    left join BSE.T_BAS_DISTRICT B
+                      on A.City_Code = B.Code AND A.ACTIVE = B.ACTIVE
+                   where A.CODE = wb.Create_Org_Code
+                     AND A.ACTIVE = #{active,jdbcType=CHAR}),
+                  wb.Create_Org_Code),
+              nvl((SELECT B.name
+                    FROM BSE.T_BAS_ORG A
+                    left join BSE.T_BAS_DISTRICT B 
+                      on A.city_code = B.code AND A.ACTIVE = B.ACTIVE
+                   where A.CODE = wb.receive_org_code
+                     AND A.ACTIVE = #{active,jdbcType=CHAR}),
+                  wb.receive_org_code)) || '-' ||
+       (case
+          when wb.product_code in ('PLF', 'AF') then --偏线或者空运
+           nvl((SELECT a.NAME
+                 FROM BSE.T_BAS_OUTER_BRANCH T
+                 left join BSE.T_BAS_DISTRICT A
+                   on t.city_code = a.code
+                  and t.active = a.active
+                where t.AGENT_DEPT_CODE = wb.Customer_Pickup_Org_Code
+                  AND t.ACTIVE = #{active,jdbcType=CHAR}),
+               wb.Customer_Pickup_Org_Code)
+          when wb.product_code IN (SELECT PRODUCT_CODE FROM STV.T_STL_PRODUCT P WHERE P.IS_BELONG_PACKAGE='Y') then --快递代理
+           nvl((SELECT B.NAME
+                 FROM BSE.T_BAS_OUTER_BRANCH T
+                 LEFT JOIN BSE.T_BAS_DISTRICT B
+                   ON T.CITY_CODE = B.CODE
+                  AND T.ACTIVE = B.ACTIVE
+                  where T.AGENT_DEPT_CODE = wb.Customer_Pickup_Org_Code
+                  AND T.BRANCHTYPE = 'LD'
+                  AND T.ACTIVE = #{active,jdbcType=CHAR}),
+               wb.Customer_Pickup_Org_Code)
+          else
+           nvl((SELECT B.name
+                 FROM BSE.T_BAS_ORG A
+                 left join BSE.T_BAS_DISTRICT B
+                   on A.city_code = B.code AND A.ACTIVE = B.ACTIVE
+                where A.CODE = wb.Customer_Pickup_Org_Code
+                  AND A.ACTIVE = #{active,jdbcType=CHAR}),
+               wb.Customer_Pickup_Org_Code)
+        end) as transfer_line --运输路线(出发城市—到达城市)
+		,DECODE(af.start_centralized_settlement,'Y',AF.START_REMINDER_ORG_CODE,'') as receive_Dunning_Dept_Code,
+		DECODE(af.arrive_centralized_settlement,'Y',AF.ARRIVE_REMINDER_ORG_CODE,'') as desc_Dunning_Dept_Code,
+		DECODE(af.start_centralized_settlement,'Y',AF.START_CONTRACT_ORG_CODE,'') as receive_Contract_Dept_Code,
+		DECODE(af.arrive_centralized_settlement,'Y',AF.ARRIVE_CONTRACT_ORG_CODE,'') as desc_Contract_Dept_Code
+  from pkp.t_srv_waybill wb, pkp.t_srv_actual_freight af
+ where wb.waybill_no = af.waybill_no
+   and wb.active = #{active,jdbcType=CHAR}
+   and af.status not IN 
+    	<foreach collection="statusList"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+		</foreach>
+   and wb.pending_type not IN 
+    	<foreach collection="pendingTypeList"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+		</foreach>
+   and wb.waybill_no IN 
+    	<foreach collection="waybillNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+		</foreach>
+		
+	</select>
+	
+	<!-- 配合发票-查询小票信息集合 -->
+	<select id="queryOtherRevenueInfoForInvoiceList" resultMap="WaybillInvoiceResultMap" 
+		parameterType="java.util.Map" >
+		select /*结算-配合发票-查询小票信息集合    */   
+		t.waybill_no, -- 运单号
+       t.other_revenue_no, -- 小票单号
+       case when t.product_code in (
+              SELECT PRODUCT_CODE FROM STV.T_STL_PRODUCT P WHERE P.IS_BELONG_PACKAGE='Y'
+            ) then '01'
+            when t.product_code = 'WVH' then '03'
+            else '02'
+       end product,
+       t.amount / 100 pre_pay_amount, -- 预付金额 付款金额  小票金额
+       decode(t.generating_org_code,
+              t.create_org_code,
+              t.customer_code,
+              null) otherrevenue_customer_code, -- 小票客户编码
+       t.customer_name, -- 客户名称
+       t.business_date bill_time, -- 开单日期
+       decode(t.invoice_mark,
+              'INVOICE_TYPE_01',
+              '01',
+              'INVOICE_TYPE_02',
+              '02',
+              t.invoice_mark) invoice_mark, -- 发票标记
+       --t.generating_org_code receive_org_code 
+       nvl((SELECT A.Unified_Code
+                 FROM BSE.T_BAS_ORG A where A.Code = t.generating_org_code
+                 and A.Active = 'Y'),t.generating_org_code) receive_org_code
+       -- 发货部门编码
+       ,nvl((SELECT A.Unified_Code
+                 FROM BSE.T_BAS_ORG A where A.Code = rcvb.DUNNING_ORG_CODE
+                 and A.Active = 'Y'),rcvb.DUNNING_ORG_CODE) as receive_Dunning_Dept_Code,
+		nvl((SELECT A.Unified_Code
+                 FROM BSE.T_BAS_ORG A where A.Code = rcvb.CONTRACT_ORG_CODE
+                 and A.Active = 'Y'),rcvb.CONTRACT_ORG_CODE) as receive_Contract_Dept_Code
+       
+  from stl.t_stl_other_revenue t left join stl.t_stl_bill_receivable rcvb
+ on rcvb.source_bill_no = t.other_revenue_no
+ and rcvb.bill_type='RR'
+ and rcvb.active = #{active,jdbcType=CHAR}
+ 
+ where  ( 
+   		<if test="waybillNos != null ">
+	   		t.waybill_no in 
+	   		<foreach collection="waybillNos"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+			</foreach>
+		</if>
+   		
+   		<if test="waybillNos != null and otherRevenues != null">
+        or
+        </if>
+        
+        <if test="otherRevenues != null ">
+	         t.other_revenue_no in 
+	        <foreach collection="otherRevenues"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+			</foreach>
+		</if>
+        )
+		and t.active = #{active,jdbcType=CHAR}
+   and t.is_disable = #{disable,jdbcType=CHAR}
+	</select>	
+	
+	<select id="queryOtherRevenueNosByWaybillNos" resultType="string" parameterType="java.util.Map" >
+		SELECT O.OTHER_REVENUE_NO
+		  FROM STL.T_STL_OTHER_REVENUE O
+		 WHERE O.ACTIVE = 'Y'
+		   AND O.WAYBILL_NO IN
+		<foreach collection="waybillNos"  index="index" item="item"  open="(" separator="," close=")">  
+			#{item}
+		</foreach>
+	</select>
+	<!-- add by 329757 根据运单号查询发货客户是否是事后折客户   快递-->
+	<select id="queryIsDisCountByWaybill" resultType="java.lang.String" parameterType="java.lang.String">
+		select ba.Prefer_Type/*结算-配合发票-根据运单号查询发货客户是否是事后折客户   快递    */ 
+			  from BSE.T_BAS_CUS_DISCOUNTBACK ba
+			  INNER join BSE.T_BAS_CUS_DISCOUNTBACK_ITEM t
+			    on ba.crm_id = t.discount_crm_id AND ba.active='Y'
+					INNER JOIN STL.T_STL_BILL_RECEIVABLE R ON R.DELIVERY_CUSTOMER_CODE=ba.cus_code
+			      and ba.active='Y' AND r.active='Y'
+			   WHERE R.WAYBILL_NO = #{waybillNo,jdbcType=CHAR}
+	</select>
+	
+	<!-- add by 329757 根据运单号查询发货客户是否是事后折客户   零担-->
+	<select id="queryIsDisCountNoExp" resultType="Integer" parameterType="java.lang.String">
+		  SELECT COUNT(1)/*结算-配合发票-根据运单号查询发货客户是否是事后折客户   零担    */ 
+			    FROM BSE.T_BAS_CUS_LTDISCOUNTAFTER_ITEM BI
+			   INNER JOIN BSE.T_BAS_CUS_LTDISCOUNTAFTER AF
+			      ON BI.DISCOUNT_CRM_ID = AF.CRM_ID
+			   INNER JOIN STL.T_STL_BILL_RECEIVABLE R
+			      ON AF.CUSTOMER_CODE = R.CUSTOMER_CODE
+			   WHERE R.WAYBILL_NO = #{waybillNo,jdbcType=CHAR}
+	</select>
+	
+	<!-- add by 329757 根据运单号判断发货客户是否存在折扣单 快递-->
+	<select id="queryDisCountExe" resultType="Integer" parameterType="java.lang.String">
+		SELECT COUNT(1) /*结算-配合发票-根据运单号判断快递发货客户是否存在折扣单 快递  */
+			  FROM STL.T_STL_BILL_DISCOUNT D
+			 INNER JOIN STL.T_STL_BILL_RECEIVABLE R
+			    ON D.CUSTOMER_NO = R.CUSTOMER_CODE
+			   AND R.ACTIVE = 'Y'
+			 INNER JOIN STL.T_STL_BILL_DISCOUNT_DETAIL L
+			    ON L.RECEIVABLE_ID = R.ID
+			   AND L.DISCUONT_NO = D.DISCOUNT_NO
+			   AND L.ACTIVE = 'Y'
+			 WHERE R.WAYBILL_NO = #{waybillNo,jdbcType=CHAR}
+			   AND D.STATUS = 'C'
+	</select>
+	
+	<!-- add by 329757 根据运单号查询零担是否存在折扣应付单 零担-->
+	<select id="queryDisCountNoexe" resultType="Integer" parameterType="java.lang.String">
+		SELECT COUNT(1)  /*结算-配合发票-根据运单号判断零担发货客户是否存在折扣单  零担 */
+			  FROM STL.T_STL_BILL_PAYABLE P
+			   WHERE P.WAYBILL_NO = #{waybillNo,jdbcType=CHAR}
+			   AND P.BILL_TYPE = 'FDC'
+			   AND P.ACTIVE = 'Y'
+	</select>
+</mapper>

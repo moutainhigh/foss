@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.platform.returnRate" >
+	<!-- 退单率查询 -->
+	<resultMap id="returnRateResultMap" type="com.deppon.foss.module.transfer.platform.api.shared.domain.ReturnRateEntity" >
+		<result property="returnRateId" column="return_rate_id"/>
+		<result property="orgCode" column="org_code"/>
+		<result property="orgName" column="org_name"/>
+		<result property="forecastWaybill" column="forecast_waybill"/>
+		<result property="quantityCarReality" column="quantity_car_reality"/>
+		<result property="quantityReturn" column="quantity_return"/>
+		<result property="returnRate" column="return_rate"/>
+		<result property="statisticsTimeTheory" column="statistics_time_theory"/>
+		<result property="goodsAreaCode" column="goods_area_code"/>
+		<result property="forecastWaybillAll" column="forecast_waybill_day"/>
+		<result property="quantityCarRealityAll" column="quantity_car_reality_day"/>
+		<result property="quantityReturnAll" column="quantity_return_day"/>
+		<result property="loadWaybillQty" column="LOADWAYBILLQTY"/>
+	</resultMap>
+	<!-- 日退单率                  begin -->
+	<select id="queryReturnRateList" resultMap="returnRateResultMap" parameterType="map">
+		select t.ORG_CODE,t.name as org_name,tb1.waybill_qty forecast_waybill, tb2.load_waybill_qty as quantity_car_reality,
+			 WAYBILL_QTY-LOAD_WAYBILL_QTY AS quantity_return
+			  from (select a.ORG_CODE, a.name, b.goods_area_code, b.goods_area_name
+			          from bse.t_bas_transfer_center a
+			          left join BSE.T_BAS_GOODS_AREA b
+			            on b.org_code = a.ORG_CODE
+			           and b.goods_area_type = 'BSE_GOODSAREA_TYPE_STATION'
+			           and b.active = 'Y'
+			         where a.active = 'Y'
+			           and b.goods_area_type = 'BSE_GOODSAREA_TYPE_STATION'
+			           and b.active = 'Y'
+			           <if test="orgCode!=null and orgCode !='' ">
+			           		and a.org_code=#{orgCode}
+			           </if>
+			           ) t
+			  left join (select a.transfer_center as org_code,
+			                    sum(a.waybill_qty_total) as waybill_qty
+			               from pkp.t_srv_deliverbill a
+			              where a.SUBMIT_TIME between to_date(to_char(sysdate,'yyyy-mm-dd')  || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+			        and  to_date(to_char(sysdate,'yyyy-mm-dd') || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+			              group by a.transfer_center) tb1
+			    on t.org_code = tb1.org_code
+			  left join (
+			  <!-- 实际的装车件数 -->
+			  SELECT S2.TRANSFER_CENTER AS ORG_CODE,
+			                    COUNT(distinct S1.WAYBILL_NO) AS LOAD_WAYBILL_QTY
+			               FROM TFR.T_OPT_LOAD_WAYBILL_DETAIL S1
+			               LEFT JOIN (SELECT D1.WAYBILL_NO,
+			                                D1.PRE_ARRANGE_GOODS_QTY,
+			                                D.TRANSFER_CENTER
+			                           FROM PKP.T_SRV_DELIVERBILL_DETAIL D1
+			                           LEFT JOIN PKP.T_SRV_DELIVERBILL D
+			                             ON D.ID = D1.T_SRV_DELIVERBILL_ID
+			                            AND D.SUBMIT_TIME between to_date(to_char(sysdate,'yyyy-mm-dd')  || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+			        and  to_date(to_char(sysdate,'yyyy-mm-dd') || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+			                          WHERE D.SUBMIT_TIME between to_date(to_char(sysdate,'yyyy-mm-dd')  || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+			        and  to_date(to_char(sysdate,'yyyy-mm-dd') || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+			                                ) S2
+			                 ON S1.WAYBILL_NO = S2.WAYBILL_NO
+			                AND S1.LOAD_QTY = S2.PRE_ARRANGE_GOODS_QTY
+			               LEFT JOIN TFR.T_OPT_LOAD_TASK W
+			                 ON s1.load_task_id = w.id
+			                 <![CDATA[
+			                 AND w.task_type = 'DELIVER_LOAD'
+			                and w.task_state <> 'CANCELED'
+			                ]]>
+			                AND W.LOAD_START_TIME between to_date(to_char(sysdate,'yyyy-mm-dd')  || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+			        and  to_date(to_char(sysdate,'yyyy-mm-dd') || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+			              WHERE S1.WAYBILL_NO = S2.WAYBILL_NO
+			                AND S1.LOAD_QTY = S2.PRE_ARRANGE_GOODS_QTY
+			                AND s1.load_task_id = w.id
+			                  <![CDATA[
+			                   AND w.task_type = 'DELIVER_LOAD'
+			                and w.task_state <> 'CANCELED'
+			                ]]>
+			                AND W.LOAD_START_TIME between to_date(to_char(sysdate,'yyyy-mm-dd')  || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+			        and  to_date(to_char(sysdate,'yyyy-mm-dd') || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+			              GROUP BY S2.TRANSFER_CENTER
+			              ) tb2
+			    on t.org_code = tb2.org_code
+	</select>
+	<select id="queryReturnRateListCount" resultType="int" parameterType="map" >
+		select count(0)
+		  from (select a.ORG_CODE, a.name, b.goods_area_code, b.goods_area_name
+		          from bse.t_bas_transfer_center a
+		          left join BSE.T_BAS_GOODS_AREA b
+		            on b.org_code = a.ORG_CODE
+		           and b.goods_area_type = 'BSE_GOODSAREA_TYPE_STATION'
+		           and b.active = 'Y'
+		         where a.active = 'Y'
+		           and b.goods_area_type = 'BSE_GOODSAREA_TYPE_STATION'
+		           and b.active = 'Y'
+		           <if test="orgCode!=null and orgCode !='' ">
+		           		and a.org_code=#{orgCode}
+		           </if>
+		           ) t
+		  left join (select a.transfer_center as org_code,
+		                    sum(a.waybill_qty_total) as waybill_qty
+		               from pkp.t_srv_deliverbill a
+		              where a.SUBMIT_TIME between to_date(to_char(sysdate,'yyyy-mm-dd')  || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+		        and  to_date(to_char(sysdate,'yyyy-mm-dd') || ' 23:59:59','yyyy-mm-dd hh24:mi:ss') 
+		              group by a.transfer_center) tb1
+		    on t.org_code = tb1.org_code
+		  left join (SELECT S2.TRANSFER_CENTER AS ORG_CODE,
+		                    COUNT(distinct S1.WAYBILL_NO) AS LOAD_WAYBILL_QTY
+		               FROM TFR.T_OPT_LOAD_WAYBILL_DETAIL S1
+		               LEFT JOIN (SELECT D1.WAYBILL_NO,
+		                                D1.PRE_ARRANGE_GOODS_QTY,
+		                                D.TRANSFER_CENTER
+		                           FROM PKP.T_SRV_DELIVERBILL_DETAIL D1
+		                           LEFT JOIN PKP.T_SRV_DELIVERBILL D
+		                             ON D.ID = D1.T_SRV_DELIVERBILL_ID
+		                            AND D.SUBMIT_TIME between to_date(to_char(sysdate,'yyyy-mm-dd')  || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+		        and  to_date(to_char(sysdate,'yyyy-mm-dd') || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+		                          WHERE D.SUBMIT_TIME between to_date(to_char(sysdate,'yyyy-mm-dd')  || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+		        and  to_date(to_char(sysdate,'yyyy-mm-dd') || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+		                                ) S2
+		                 ON S1.WAYBILL_NO = S2.WAYBILL_NO
+		                AND S1.LOAD_QTY = S2.PRE_ARRANGE_GOODS_QTY
+		               LEFT JOIN TFR.T_OPT_LOAD_TASK W
+		                 ON s1.load_task_id = w.id
+		                <![CDATA[
+		                 AND w.task_type = 'DELIVER_LOAD'
+		                and w.task_state <> 'CANCELED'
+		                ]]>
+		                AND W.LOAD_START_TIME between to_date(to_char(sysdate,'yyyy-mm-dd')  || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+		        and  to_date(to_char(sysdate,'yyyy-mm-dd') || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+		              WHERE S1.WAYBILL_NO = S2.WAYBILL_NO
+		                AND S1.LOAD_QTY = S2.PRE_ARRANGE_GOODS_QTY
+		                AND s1.load_task_id = w.id
+		                <![CDATA[
+		                 AND w.task_type = 'DELIVER_LOAD'
+		                and w.task_state <> 'CANCELED'
+		                ]]>
+		                AND W.LOAD_START_TIME between to_date(to_char(sysdate,'yyyy-mm-dd')  || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+		        and  to_date(to_char(sysdate,'yyyy-mm-dd') || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+		              GROUP BY S2.TRANSFER_CENTER) tb2
+		    on t.org_code = tb2.org_code
+	</select>
+	<!-- 日退单率                  end -->
+	<!-- 累计退单率查询                  begin -->
+		<!-- 具体外场明细  begin  -->
+			<select id="queryReturnRateLogList" parameterType="map" resultMap="returnRateResultMap">
+			 select b.*,
+					sum(b.forecast_waybill) over(order by b.org_code,b.statistics_time_theory) forecast_waybill_day,
+					sum(b.quantity_car_reality) over(order by b.org_code,b.statistics_time_theory) quantity_car_reality_day,
+					sum(b.quantity_return) over(order by b.org_code,b.statistics_time_theory) quantity_return_day
+					 from tfr.t_opt_return_rate b
+					 where 
+					 <![CDATA[ 
+					 b.statistics_time_theory between to_date(#{beginDate}  || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+		        and  to_date(#{endDate} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+					 ]]>
+					 and b.org_code=#{orgCode}
+				</select>
+					<!-- 分页使用 只需要对应的总记录数 正确 即可 -->
+					<select id="queryReturnRateLogListCount" resultType="int" parameterType="map" >
+					<![CDATA[
+						select count(0) from tfr.t_opt_return_rate t 
+							where t.statistics_time_theory between to_date(#{beginDate}  || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+		        and  to_date(#{endDate} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+							  ]]>
+							 <if test="orgCode !=null and orgCode !='' ">
+							 	and t.org_code=#{orgCode} 
+							 </if>
+			</select>
+		<!-- 具体外场明细  end  -->
+		
+		<!-- 全国外场  begin  -->
+			<select id="queryReturnRateLogAllList" parameterType="map" resultMap="returnRateResultMap">
+			select tb.org_code,tb.name as org_name,tb1.forecast_waybill,tb1.quantity_car_reality,tb1.quantity_return,
+				tb2.forecast_waybill as forecast_waybill_day,
+				tb2.quantity_car_reality as quantity_car_reality_day,
+				tb2.quantity_return as quantity_return_day
+				 from (
+				 select a.ORG_CODE, a.name, b.goods_area_code, b.goods_area_name
+				          from bse.t_bas_transfer_center a
+				          left join BSE.T_BAS_GOODS_AREA b
+				            on b.org_code = a.ORG_CODE
+				           and b.goods_area_type = 'BSE_GOODSAREA_TYPE_STATION'
+				           and b.active = 'Y'
+				         where a.active = 'Y'
+				           and b.goods_area_type = 'BSE_GOODSAREA_TYPE_STATION'
+				           and b.active = 'Y'
+				) tb
+				left join
+				 (
+				select k.org_code
+				,sum(k.forecast_waybill) as forecast_waybill,sum(k.quantity_car_reality) as quantity_car_reality,
+				sum(k.quantity_return) as quantity_return
+				 from tfr.t_opt_return_rate k
+				 where 
+				  <![CDATA[
+				  k.statistics_time_theory between to_date(#{beginDate}  || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{endDate} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+				  group by k.org_code
+				  ) tb1 on tb.org_code=tb1.org_code
+				  left join tfr.t_opt_return_rate tb2 on tb.org_code=tb2.org_code
+				  and tb2.statistics_time_theory  between to_date(#{endDate}  || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+        and  to_date(#{endDate} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+					]]>
+			</select>
+			<!-- 分页使用，只需要统计外场记录数即可 -->
+			<select id="queryReturnRateLogAllListCount" resultType="int" parameterType="map" >
+				select count(0)
+				          from bse.t_bas_transfer_center a
+				          left join BSE.T_BAS_GOODS_AREA b
+				            on b.org_code = a.ORG_CODE
+				           and b.goods_area_type = 'BSE_GOODSAREA_TYPE_STATION'
+				           and b.active = 'Y'
+				         where a.active = 'Y'
+				           and b.goods_area_type = 'BSE_GOODSAREA_TYPE_STATION'
+				           and b.active = 'Y'
+			</select>
+		<!-- 全国外场  end  -->
+	<!-- 累计退单率查询                  end -->
+
+	<!-- 定时任务   begin -->
+		<insert id="insertReturnRatePojo" parameterType="com.deppon.foss.module.transfer.platform.api.shared.domain.ReturnRateEntity">
+			insert into tfr.t_opt_return_rate (
+			  return_rate_id,
+			  org_code,
+			  org_name,
+			  forecast_waybill,
+			  quantity_car_reality,
+			  quantity_return,
+			  return_rate,
+			  statistics_time_theory,
+			  goods_area_code
+			)values (
+			        #{returnRateId jdbcType=VARCHAR},#{orgCode jdbcType=VARCHAR},#{orgName jdbcType=VARCHAR}
+			        ,#{forecastWaybill jdbcType=NUMERIC},#{quantityCarReality jdbcType=NUMERIC},#{quantityReturn jdbcType=NUMERIC}
+			        ,#{returnRate jdbcType=NUMERIC}
+			        ,#{statisticsTimeTheory jdbcType=TIMESTAMP},#{goodsAreaCode jdbcType=VARCHAR}
+			)
+		</insert>
+		
+		<insert id="batchInsertReturnRatePojo" parameterType="java.util.List" >
+		begin
+		<foreach collection="list" item="item" separator=";">
+			insert into tfr.t_opt_return_rate (
+			  return_rate_id,
+			  org_code,
+			  org_name,
+			  forecast_waybill,
+			  quantity_car_reality,
+			  quantity_return,
+			  return_rate,
+			  statistics_time_theory,
+			  goods_area_code
+			)values (
+			        #{item.returnRateId jdbcType=VARCHAR},#{item.orgCode jdbcType=VARCHAR},#{item.orgName jdbcType=VARCHAR}
+			        ,#{item.forecastWaybill jdbcType=NUMERIC},#{item.quantityCarReality jdbcType=NUMERIC},#{item.quantityReturn jdbcType=NUMERIC}
+			        ,#{item.returnRate jdbcType=NUMERIC}
+			        ,#{item.statisticsTimeTheory jdbcType=TIMESTAMP},#{item.goodsAreaCode jdbcType=VARCHAR}
+			)
+		</foreach>
+		;end;
+	</insert>
+		
+		<select id="queryReturnRateJobList" resultMap="returnRateResultMap" parameterType="map">
+		select t.ORG_CODE,t.name as org_name,t.goods_area_code,tb1.waybill_qty forecast_waybill, tb2.load_waybill_qty as quantity_car_reality, 
+		WAYBILL_QTY-LOAD_WAYBILL_QTY AS quantity_return
+		 
+		  from (select a.ORG_CODE, a.name, b.goods_area_code, b.goods_area_name
+		          from bse.t_bas_transfer_center a
+		          left join BSE.T_BAS_GOODS_AREA b
+		            on b.org_code = a.ORG_CODE
+		           and b.goods_area_type = 'BSE_GOODSAREA_TYPE_STATION'
+		           and b.active = 'Y'
+		         where a.active = 'Y'
+		           and b.goods_area_type = 'BSE_GOODSAREA_TYPE_STATION'
+		           and b.active = 'Y'
+		           ) t
+		  left join (select a.transfer_center as org_code,
+		                    sum(a.waybill_qty_total) as waybill_qty
+		               from pkp.t_srv_deliverbill a
+		              where a.SUBMIT_TIME between to_date(#{queyDate}  || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+		        and  to_date(#{queyDate} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+		              group by a.transfer_center) tb1
+		    on t.org_code = tb1.org_code
+		  left join (SELECT S2.TRANSFER_CENTER AS ORG_CODE,
+		                    COUNT(distinct S1.WAYBILL_NO) AS LOAD_WAYBILL_QTY
+		               FROM TFR.T_OPT_LOAD_WAYBILL_DETAIL S1
+		               LEFT JOIN (SELECT D1.WAYBILL_NO,
+		                                D1.PRE_ARRANGE_GOODS_QTY,
+		                                D.TRANSFER_CENTER
+		                           FROM PKP.T_SRV_DELIVERBILL_DETAIL D1
+		                           LEFT JOIN PKP.T_SRV_DELIVERBILL D
+		                             ON D.ID = D1.T_SRV_DELIVERBILL_ID
+		                            AND  D.SUBMIT_TIME between to_date(#{queyDate}  || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+		        and  to_date(#{queyDate} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+		                          WHERE D.SUBMIT_TIME between to_date(#{queyDate}  || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+		        and  to_date(#{queyDate} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+		                                ) S2
+		                 ON S1.WAYBILL_NO = S2.WAYBILL_NO
+		                AND S1.LOAD_QTY = S2.PRE_ARRANGE_GOODS_QTY
+		               LEFT JOIN TFR.T_OPT_LOAD_TASK W
+		                 ON s1.load_task_id = w.id
+		                <![CDATA[
+		                 AND w.task_type = 'DELIVER_LOAD'
+		                and w.task_state <> 'CANCELED'
+		                ]]>
+		                AND W.LOAD_START_TIME between to_date(#{queyDate}  || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+		        and  to_date(#{queyDate} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+		              WHERE S1.WAYBILL_NO = S2.WAYBILL_NO
+		                AND S1.LOAD_QTY = S2.PRE_ARRANGE_GOODS_QTY
+		                AND s1.load_task_id = w.id
+		                <![CDATA[
+		                 AND w.task_type = 'DELIVER_LOAD'
+		                and w.task_state <> 'CANCELED'
+		                ]]>
+		                AND W.LOAD_START_TIME between to_date(#{queyDate}  || ' 00:00:00','yyyy-mm-dd hh24:mi:ss')
+		        and  to_date(#{queyDate} || ' 23:59:59','yyyy-mm-dd hh24:mi:ss')
+		              GROUP BY S2.TRANSFER_CENTER) tb2
+		    on t.org_code = tb2.org_code
+		     where  ORA_HASH(t.org_code, #{threadCount}) = #{threadNo}
+	</select>
+	<!-- 定时任务  end -->
+	
+	<!-- 查询外场提交派送装车任务票数  -->
+	<select id="queryDeliverLoadWaybillQty" parameterType="java.util.List" resultMap="returnRateResultMap">
+		SELECT T.ORIG_ORG_CODE ORG_CODE,COUNT(D.WAYBILL_NO) LOADWAYBILLQTY
+		  FROM TFR.T_OPT_LOAD_TASK T
+		  JOIN TFR.T_OPT_LOAD_WAYBILL_DETAIL D
+		    ON T.ID = D.LOAD_TASK_ID
+		 WHERE T.ORIG_ORG_CODE in
+		      <foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+				     #{item}
+		      </foreach>
+		   AND T.TASK_TYPE = 'DELIVER_LOAD'
+		  <![CDATA[ AND T.TASK_STATE <> 'CANCELED']]>
+		   AND T.LOAD_END_TIME BETWEEN
+		       TO_DATE(TO_CHAR(SYSDATE, 'yyyy-mm-dd') || '00:00:00',
+		               'yyyy-mm-dd hh24:mi:ss') AND
+		       TO_DATE(TO_CHAR(SYSDATE, 'yyyy-mm-dd') || '23:59:59',
+		               'yyyy-mm-dd hh24:mi:ss')
+		 GROUP BY T.ORIG_ORG_CODE, T.ORIG_ORG_NAME
+	</select>
+	
+	
+	
+</mapper>

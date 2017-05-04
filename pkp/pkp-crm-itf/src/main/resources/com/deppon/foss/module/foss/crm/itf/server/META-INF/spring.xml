@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://www.springframework.org/schema/jee 
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+			http://www.springframework.org/schema/aop 
+			http://www.springframework.org/schema/aop/spring-aop-3.0.xsd"
+	default-autowire="byName" default-lazy-init="true">
+
+	<!-- 阿里更改单 -->
+	<bean id="aLiChangeJMSProcessor"
+		class="com.deppon.foss.module.pickup.crm.server.service.impl.ALiChangeJMSProcessor">
+		<property name="waybillManagerService" ref="waybillManagerService"></property>
+		<property name="waybillRfcService" ref="waybillRfcService"></property>
+	</bean>
+	<!-- CRM投诉正常签收运单，FOSS自动变更异常签收处理器-->
+	<bean id="complChangeSignResultProcessor"
+		class="com.deppon.foss.module.pickup.crm.server.service.impl.ComplChangeSignResultProcessor"></bean>
+	<!-- 异步约车接口 -->
+	<!-- <bean id="asynCrmAddOrder2FossProcessor"
+		class="com.deppon.foss.module.pickup.crm.server.service.impl.AsynCrmAddOrder2FossProcessor"></bean> -->
+	<!-- OMS异步约车接口 -->
+	<bean id="asynOmsAddOrder2FossProcessor"
+		class="com.deppon.foss.module.pickup.crm.server.service.impl.AsynOmsAddOrder2FossProcessor"></bean>
+	<!-- 修改电子运单类型订单信息接口 -->
+	<bean id="asynUpdateEOrderProcessor"
+		class="com.deppon.foss.module.pickup.crm.server.service.impl.AsynUpdateEOrderProcessor"></bean>
+		
+	<!-- 零担电子运单同步接口 -->
+	<bean id="asynOmsOrder2FossProcessor"
+		class="com.deppon.foss.module.pickup.oms.server.service.impl.AsynOmsOrder2FossProcessor"></bean>	
+		
+	<!-- 启动MQ监听 -->
+	<bean id="esbInitUtil" class="com.deppon.esb.api.util.ESBInitUtil"
+		init-method="process" lazy-init="false">
+		<property name="processMap">
+			<map>
+				<entry key="FOSS_ESB2FOSS_UPDATE_ORDER_APPLY" value-ref="aLiChangeJMSProcessor" />
+				<entry key="FOSS_ESB2FOSS_COMPLAIN_NSIGN2UNSIGN" value-ref="complChangeSignResultProcessor" />
+				<!-- <entry key="FOSS_ESB2FOSS_ORDER_ABOUT" value-ref="asynCrmAddOrder2FossProcessor" /> -->
+<!-- 				<entry key="FOSS_ESB2FOSS_ELECTRONIC_WAYBILL_UPDATE_FOSS" value-ref="asynUpdateEOrderProcessor" /> -->
+				<entry key="FOSS_ESB2FOSS_WAYBILL_DELETE" value-ref="asynUpdateEOrderProcessor" />
+				<entry key="FOSS_ESB2FOSS_WAYBILLINFO_ERC" value-ref="fossToWicsService" /> 
+				<entry key="FOSS_ESB2FOSS_FAILINFO_RCRS" value-ref="fossFailInfoToWicsService" />
+				<entry key="FOSS_ESB2FOSS_ABOUT_CAR" value-ref="asynOmsAddOrder2FossProcessor" />
+				<entry key="FOSS_ESB2FOSS_SYNC_ORDER_ABOUT" value-ref="asynOmsOrder2FossProcessor"/>
+			</map>
+		</property>
+	</bean> 
+	<bean id="fossToWicsService" class="com.deppon.foss.module.pickup.crm.server.service.impl.FossToWicsService" />
+ 	<bean id="fossFailInfoToWicsService" class="com.deppon.foss.module.pickup.crm.server.service.impl.FossFailInfoToWicsService" />
+</beans>

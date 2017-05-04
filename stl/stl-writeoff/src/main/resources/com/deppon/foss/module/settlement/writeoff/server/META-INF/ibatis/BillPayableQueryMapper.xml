@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.BillPayableEntityDao">
+	<!-- 根据输入应付单号查询可用于核销的应付单 -->
+	<select id="selectBillPayableNos" resultMap="BaseResultMap"
+		parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.AdvPayWriteoffBillPayDto">
+		SELECT /*结算-核销-根据输入应付单号查询可用于核销的应付单*/
+		<include refid="Base_Column_List" /> 
+		FROM STL.T_STL_BILL_PAYABLE T
+		WHERE ACTIVE = #{active} <!-- 有效 -->
+			AND UNVERIFY_AMOUNT >0 
+			AND (PAYMENT_NO = #{paymentNo}<!-- 付款单号 ：无付款单号：'N/A' --> 
+       			OR  (UNVERIFY_AMOUNT >0 
+              			AND EXISTS (
+                 			SELECT P.PAYMENT_NO 
+                  			FROM STL.T_STL_BILL_PAYMENT P
+                   			WHERE P.REMIT_STATUS = #{remitStatus}<!-- 付款单的汇款状态：已汇款'TD' -->
+                  			AND P.PAYMENT_NO = T.PAYMENT_NO
+                  			AND P.ACTIVE = #{active}<!-- 付款单有效 -->
+              				)
+          				)
+         			)
+			AND APPROVE_STATUS=#{approveStatus}<!-- 审核状态 -->
+		<if test="isRedBack!=null and isRedBack!=''">
+			AND IS_RED_BACK = #{isRedBack} <!-- 非红单 -->
+		</if>
+		<if test="billTypes!=null and billTypes!=''">
+			AND BILL_TYPE IN
+				<foreach collection="billTypes" index="index" item="item"
+					open="(" separator="," close=")">
+					#{item} 
+				</foreach>  <!--可核销应付单类型：空运到付运费、空运机场代理应付、空运机场其他应付 -->
+		</if>
+			AND PAYABLE_NO IN
+			<foreach collection="payableNos" index="index" item="item"
+				open="(" separator="," close=")">
+				#{item} 
+			</foreach>
+		<if test="payableOrgCode!=null and payableOrgCode!=''"><!--应付部门编码-->
+	    	AND PAYABLE_ORG_CODE = #{payableOrgCode} 
+	    </if>
+	</select>
+
+	<!-- 根据输入参数查询可用于核销的应付单 -->
+	<select id="selectBillPayableParams" resultMap="BaseResultMap"
+		parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.AdvPayWriteoffBillPayDto">
+		select /*结算-核销-据输入参数查询可用于核销的应付单*/
+		<include refid="Base_Column_List" /> 
+		from STL.T_STL_BILL_PAYABLE T
+		where ACTIVE = #{active} <!-- 有效 -->
+			AND APPROVE_STATUS=#{approveStatus}<!-- 审核状态 -->
+		<if test="isRedBack!=null and isRedBack!=''">
+			AND IS_RED_BACK = #{isRedBack} <!-- 非红单 -->
+		</if>
+		AND UNVERIFY_AMOUNT>0  <!-- 未核销金额大于0 -->
+		AND (PAYMENT_NO = #{paymentNo}<!-- 付款单号 ：无付款单号：'N/A' --> 
+       			OR (UNVERIFY_AMOUNT >0 
+              			AND EXISTS (
+                 			SELECT P.PAYMENT_NO 
+                  			FROM STL.T_STL_BILL_PAYMENT P
+                   			WHERE P.REMIT_STATUS = #{remitStatus}<!-- 付款单的汇款状态：已汇款'TD' -->
+                  			AND P.PAYMENT_NO = T.PAYMENT_NO
+                  			AND P.ACTIVE = #{active}<!-- 付款单有效 -->
+              				)
+          				)
+         			)
+		<if test="billTypes!=null ">
+			AND BILL_TYPE IN
+				<foreach collection="billTypes" index="index" item="item"
+					open="(" separator="," close=")">
+					#{item} 
+				</foreach>  <!--可核销应付单类型：空运到付运费、空运机场代理应付、空运机场其他应付 -->
+		</if>
+		<if test="customerCode!=null and customerCode!=''">
+			AND CUSTOMER_CODE = #{customerCode} <!-- 客户不为空时，根据客户编码过滤 -->
+		</if>
+	   	<![CDATA[ AND   BUSINESS_DATE >= #{startBusinessDate} AND BUSINESS_DATE <= #{endBusinessDate} 
+	   			AND  ACCOUNT_DATE>=#{startBusinessDate} ]]>
+		<if test="payableOrgCode!=null and payableOrgCode!=''"> <!--部门编码-->
+	    	AND PAYABLE_ORG_CODE = #{payableOrgCode} 
+	    </if>
+	</select>
+</mapper>

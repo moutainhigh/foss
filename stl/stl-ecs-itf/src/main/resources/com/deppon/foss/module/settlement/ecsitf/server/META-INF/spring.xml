@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://www.springframework.org/schema/jee 
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+			http://www.springframework.org/schema/aop 
+			http://www.springframework.org/schema/aop/spring-aop-3.0.xsd"
+	default-autowire="byName" default-lazy-init="true">
+	<!-- 快递长途交接单接口 -->
+	<bean id="ecsTruckStowageService" class="com.deppon.foss.module.settlement.ecsitf.server.rs.impl.EcsTruckStowageService" />
+	<!-- 快递开单、更改单接口 -->
+	<bean id="ecsWaybillPickupService" class="com.deppon.foss.module.settlement.ecsitf.server.rs.impl.EcsWaybillPickupService" />
+	<!-- 快递补码 接口 -->
+	<bean id="ecsComplementFunctionService" class="com.deppon.foss.module.settlement.ecsitf.server.rs.impl.EcsComplementFunctionService" />
+	<!-- 快递丢货、弃货、违禁品红冲 接口 -->
+	<bean id="ecsOutWarehouseExceptionService" class="com.deppon.foss.module.settlement.ecsitf.server.rs.impl.EcsOutWarehouseExceptionService" />
+	<!-- 快递综合查询财务信息 接口 -->
+	<bean id="ecsSettlementInfoQueryService" class="com.deppon.foss.module.settlement.ecsitf.server.rs.impl.EcsSettlementInfoQueryService" />
+	<!--快递签收业务调用相关结算接口-->
+	<bean id="ecsSignForSettlement" class="com.deppon.foss.module.settlement.ecsitf.server.rs.impl.EcsSignForSettlement"/>
+	
+	<bean id="ecsFossSignForService" class="com.deppon.foss.module.settlement.ecsitf.server.jms.EcsFossSignForServiceProcessor"></bean>
+	
+	<!--快递 外发单业务调用相关结算接口-->
+	<bean id="ecsLdpExternalBillForSettlement" class="com.deppon.foss.module.settlement.ecsitf.server.rs.impl.EcsLdpExternalBillForSettlement"/>
+	
+	<!--快递 派送业务调用相关结算接口-->
+	<bean id="ecsDeliverForSettlement" class="com.deppon.foss.module.settlement.ecsitf.server.rs.impl.EcsDeliverForSettlement"/>
+	
+	<!-- start add by 269044-zhurongrong -->
+	<!-- 灰名单响应回调 -->
+	<bean id="grayCustomerToECSCallBack" class="com.deppon.foss.module.settlement.ecsitf.server.jms.GrayCustomerToECSCallBack">
+	</bean>
+	
+	<!-- 同步运单信息 接口 -->
+	<bean id="ecsSendWaybillProcessor" class="com.deppon.foss.module.settlement.ecsitf.server.jms.EcsSendWaybillProcessor"/>
+		<!-- 快递开单生成财务单据异步接口 -->
+	<bean id="ecsWaybillPickupProcessor" class="com.deppon.foss.module.settlement.ecsitf.server.jms.EcsWaybillPickupProcessor" autowire="byName"/>
+	<!-- 快递补码异步接口 -->
+	<bean id="ecsComplementFunctionProcessor" class="com.deppon.foss.module.settlement.ecsitf.server.jms.EcsComplementFunctionProcessor" autowire="byName" />
+
+    <bean id="ecsPosCardProcess" class="com.deppon.foss.module.settlement.ecsitf.server.jms.EcsPosCardProcess"/>
+ 	<!-- 启动MQ监听 -->
+ 	<bean id="esbInitUtil" class="com.deppon.esb.api.util.ESBInitUtil" init-method="process" lazy-init="false">
+		<property name="callBackProcessMap">
+			<map>
+				 <entry key="ESB_FOSS2ESB_GET_GREYLIST" value-ref="grayCustomerToECSCallBack"></entry>
+			</map>
+		</property>
+		<property name="processMap">
+			<map>
+				<entry key="FOSS_ESB2FOSS_ECS_WAYBILL_BILLING" value-ref="ecsWaybillPickupProcessor" />
+				<entry key="FOSS_ESB2FOSS_COMPLEMENT_FUNCTION" value-ref="ecsComplementFunctionProcessor" />
+				<entry key="FOSS_ESB2FOSS_ECS_SYNC_WAYBILL" value-ref="ecsSendWaybillProcessor" />
+			    <!-- <entry key="FOSS_ESB2FOSS_ECS_SYNC_SIGNRESULT" value-ref="ecsFossSignForService" /> -->
+               <entry key="FOSS_ESB2FOSS_ECS_FOSS_SEND_POSCARD" value-ref="ecsPosCardProcess" />
+			</map>
+		</property>
+	</bean>
+	<!-- end -->
+</beans>

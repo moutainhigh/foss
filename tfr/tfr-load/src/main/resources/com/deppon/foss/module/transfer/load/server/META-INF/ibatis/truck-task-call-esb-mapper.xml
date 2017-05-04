@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tfr-load">
+	<!-- 查询未修改走货路径交接单 -->
+	<select id = "queryUnupdateCRMHandOverBill" resultMap="foss.load.handoverbill.handOverBillDtoResultMap">
+		select h.orig_org_code as origOrgCode,
+	       h.dest_org_code as destOrgCode, 
+	       h.handover_no as handOverBillNo,
+	       h.vehicle_no as vehicleNo,
+	       hd.waybill_no as waybillNo,
+	       hd.handover_goods_qty as pieces,
+	       hd.be_join_car as beJoinCar,
+	       w.order_no as orderNo,
+	       h.driver_mobile_phone as driverPhone,
+	       h.driver_name as driverName,
+	       nvl(h.create_user_code,p.loader_code) as creatorCode
+	  from tfr.t_opt_handoverbill h
+	  inner join tfr.t_opt_handoverbill_detail hd on hd.handover_no =
+	                                                h.handover_no
+	  left join tfr.t_opt_load_task t on t.task_no = h.load_task_no
+      left join tfr.t_opt_loader_participation p on p.task_id = t.id and p.be_creator = 'Y'
+	  inner join pkp.t_srv_waybill w on w.waybill_no = hd.waybill_no and w.active='Y'
+		<where>
+			<![CDATA[h.handoverbill_state <> '10']]>
+		   <![CDATA[and h.handoverbill_state <> '90']]>
+		   <![CDATA[and h.be_update_crm='N']]>
+		   and ORA_HASH(h.id, #{threadCount}-1) = #{threadNo}
+		   and <![CDATA[h.MODIFY_TIME >= #{bizJobStartTime,jdbcType=TIMESTAMP} ]]>
+	       and <![CDATA[h.MODIFY_TIME < #{bizJobEndTime,jdbcType=TIMESTAMP} ]]>
+	        <![CDATA[ and rownum<=5000 ]]>
+	       and h.is_init='N'
+		</where>
+	</select> 
+	
+	<update id="updateHandOverBillBeUpdateCRM" parameterType="String">
+		update tfr.t_opt_handoverbill h set h.be_update_crm = 'Y',h.MODIFY_TIME=sysdate where h.handover_no = #{handBillNo}
+	</update>
+</mapper>

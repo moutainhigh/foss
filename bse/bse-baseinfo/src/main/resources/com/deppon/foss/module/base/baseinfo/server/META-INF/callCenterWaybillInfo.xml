@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:jaxws="http://cxf.apache.org/jaxws" 
+	xmlns:jee="http://www.springframework.org/schema/jee" 
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+	http://cxf.apache.org/jaxws http://cxf.apache.org/schemas/jaxws.xsd"
+	default-autowire="byName" default-lazy-init="true">
+			
+	<!-- callCenter 呼叫中心 callCenterWaybillInfo.xml -->
+	<!-- 数据访问层  -->
+	<bean id="callCenterWaybillInfoDao" 
+			class="com.deppon.foss.module.base.baseinfo.server.dao.impl.CallCenterWaybillInfoDao">
+	</bean>	
+	<!-- 业务服务层 -->
+	<bean id="callCenterWaybillInfoService" 
+		  class="com.deppon.foss.module.base.baseinfo.server.service.impl.CallCenterWaybillInfoService">
+	</bean>	
+	<!-- 向cc系统同步催运单反馈信息 -->
+	<bean id="syncBackCallCenterInfoToCCService" class="com.deppon.foss.module.base.baseinfo.server.service.impl.esb.SyncBackCallCenterInfoToCCService">
+		<property name="fossToCCService" ref="fossToCCService"></property>
+	</bean>
+	<!-- Action层-->
+	<bean id="callCenterWaybillInfoAction" 
+		  class="com.deppon.foss.module.base.baseinfo.server.action.CallCenterWaybillInfoAction" scope="prototype">
+	</bean>	
+	<!-- 向CC同步催单反馈信息客户端 client-->
+	<jaxws:client id="fossToCCService" serviceClass="com.deppon.cc.module.foss.server.service.IFossToCCService" 
+	address="${esb.ws}/foss2ccs/fossToccsService">
+		<jaxws:inInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingInInterceptor"/>
+		</jaxws:inInterceptors>
+		<jaxws:outInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingOutInterceptor"/>
+		</jaxws:outInterceptors>
+	</jaxws:client>
+</beans>

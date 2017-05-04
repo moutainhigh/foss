@@ -1,0 +1,616 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.PartnerPayStatementDao" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.writeoff.api.shared.domain.PartnerPayStatementEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="STATEMENT_BILL_NO" property="statementBillNo" jdbcType="VARCHAR" />
+    <result column="CREATE_ORG_CODE" property="createOrgCode" jdbcType="VARCHAR" />
+    <result column="CREATE_ORG_NAME" property="createOrgName" jdbcType="VARCHAR" />
+    <result column="COMPANY_CODE" property="companyCode" jdbcType="VARCHAR" />
+    <result column="COMPANY_NAME" property="companyName" jdbcType="VARCHAR" />
+    <result column="UNIFIED_CODE" property="unifiedCode" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+    <result column="BILL_TYPE" property="billType" jdbcType="VARCHAR" />
+    <result column="PERIOD_AMOUNT" property="periodAmount" jdbcType="DECIMAL" />
+    <result column="PERIOD_PAY_AMOUNT" property="periodPayAmount" jdbcType="DECIMAL" />
+    <result column="PERIOD_UNVERIFY_PAY_AMOUNT" property="periodUnverifyPayAmount" jdbcType="DECIMAL" />
+    <result column="PERIOD_BEGIN_DATE" property="periodBeginDate" jdbcType="TIMESTAMP" />
+    <result column="PERIOD_END_DATE" property="periodEndDate" jdbcType="TIMESTAMP" />
+    <result column="SETTLE_NUM" property="settleNum" jdbcType="DECIMAL" />
+    <result column="CONFIRM_TIME" property="confirmTime" jdbcType="TIMESTAMP" />
+    <result column="COMPANY_ACCOUNT_BANK_NO" property="companyAccountBankNo" jdbcType="VARCHAR" />
+    <result column="ACCOUNT_USER_NAME" property="accountUserName" jdbcType="VARCHAR" />
+    <result column="BANK_BRANCH_NAME" property="bankBranchName" jdbcType="VARCHAR" />
+    <result column="STATEMENT_STATUS" property="statementStatus" jdbcType="VARCHAR" />
+    <result column="PERIOD_RRPAY_AMOUNT" property="periodRrpayAmount" jdbcType="DECIMAL" />
+    <result column="PERIOD_NPAY_AMOUNT" property="periodNpayAmount" jdbcType="DECIMAL" />
+    <result column="BILL_BEGIN_TIME" property="billBeginTime" jdbcType="TIMESTAMP" />
+    <result column="STATEMENT_DES" property="statementDes" jdbcType="VARCHAR" />
+  </resultMap>
+   	<resultMap type="com.deppon.foss.module.settlement.writeoff.api.shared.dto.PartnerPayStatementDto" id="DtoResultMap">
+    	<result column="TOTALCOUNT" property="totalCount" jdbcType="DECIMAL" />
+    	<result column="TOTALAMOUNT" property="totalAmount" jdbcType="DECIMAL" />
+  	</resultMap>
+  <sql id="Base_Column_List">
+    ID, 
+    STATEMENT_BILL_NO, 
+    CREATE_ORG_CODE, 
+    CREATE_ORG_NAME, 
+    COMPANY_CODE, 
+    COMPANY_NAME, 
+    UNIFIED_CODE, 
+    CUSTOMER_CODE, 
+    CUSTOMER_NAME, 
+    BILL_TYPE, 
+    PERIOD_AMOUNT/100 PERIOD_AMOUNT, 
+    PERIOD_PAY_AMOUNT/100 PERIOD_PAY_AMOUNT, 
+    PERIOD_UNVERIFY_PAY_AMOUNT/100 PERIOD_UNVERIFY_PAY_AMOUNT, 
+    PERIOD_BEGIN_DATE, 
+    PERIOD_END_DATE, 
+    SETTLE_NUM, 
+    CONFIRM_TIME, 
+    COMPANY_ACCOUNT_BANK_NO, 
+    ACCOUNT_USER_NAME, 
+    BANK_BRANCH_NAME, 
+    STATEMENT_STATUS, 
+    PERIOD_RRPAY_AMOUNT/100 PERIOD_RRPAY_AMOUNT, 
+    PERIOD_NPAY_AMOUNT/100 PERIOD_NPAY_AMOUNT, 
+    BILL_BEGIN_TIME, 
+    STATEMENT_DES
+  </sql>
+ 
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.String" >
+    select 
+    <include refid="Base_Column_List" />
+    from stl.T_STL_STATEMENT_PARTNER_PAY
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String" >
+    delete from stl.T_STL_STATEMENT_PARTNER_PAY
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  <insert id="insert" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.domain.PartnerPayStatementEntity" >
+    insert into stl.T_STL_STATEMENT_PARTNER_PAY (ID, STATEMENT_BILL_NO, CREATE_ORG_CODE, 
+      CREATE_ORG_NAME, COMPANY_CODE, COMPANY_NAME, 
+      UNIFIED_CODE, CUSTOMER_CODE, CUSTOMER_NAME, 
+      BILL_TYPE, PERIOD_AMOUNT, PERIOD_PAY_AMOUNT, 
+      PERIOD_UNVERIFY_PAY_AMOUNT, PERIOD_BEGIN_DATE, 
+      PERIOD_END_DATE, SETTLE_NUM, CONFIRM_TIME, 
+      COMPANY_ACCOUNT_BANK_NO, ACCOUNT_USER_NAME, 
+      BANK_BRANCH_NAME, STATEMENT_STATUS, PERIOD_RRPAY_AMOUNT, 
+      PERIOD_NPAY_AMOUNT, BILL_BEGIN_TIME, STATEMENT_DES
+      ) 
+	SELECT SYS_GUID(), 
+	  #{statementBillNo,jdbcType=VARCHAR}, #{createOrgCode,jdbcType=VARCHAR}, 
+      #{createOrgName,jdbcType=VARCHAR}, #{companyCode,jdbcType=VARCHAR}, 
+      #{companyName,jdbcType=VARCHAR}, #{unifiedCode,jdbcType=VARCHAR}, 
+      #{customerCode,jdbcType=VARCHAR}, #{customerName,jdbcType=VARCHAR}, #{billType,jdbcType=VARCHAR}, 
+      NVL(SUM(PD.AMOUNT),0) PERIOD_AMOUNT,
+      NVL(SUM(PD.AMOUNT),0) PERIOD_PAY_AMOUNT, 
+      #{periodUnverifyPayAmount,jdbcType=DECIMAL},
+      #{periodBeginDate,jdbcType=TIMESTAMP},#{periodEndDate,jdbcType=TIMESTAMP}, 
+      #{settleNum,jdbcType=DECIMAL}, #{confirmTime,jdbcType=TIMESTAMP}, 
+      #{companyAccountBankNo,jdbcType=VARCHAR}, #{accountUserName,jdbcType=VARCHAR}, 
+      #{bankBranchName,jdbcType=VARCHAR}, #{statementStatus,jdbcType=VARCHAR}, #{periodRrpayAmount,jdbcType=DECIMAL}, 
+      #{periodNpayAmount,jdbcType=DECIMAL}, #{billBeginTime,jdbcType=TIMESTAMP}, #{statementDes,jdbcType=VARCHAR}
+      
+      FROM stl.T_STL_STATEMENT_PARTNER_PAY_D PD
+      WHERE PD.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+      
+  </insert>
+  <insert id="insertSelective" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.domain.PartnerPayStatementEntity" >
+    insert into stl.T_STL_STATEMENT_PARTNER_PAY
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="statementBillNo != null" >
+        STATEMENT_BILL_NO,
+      </if>
+      <if test="createOrgCode != null" >
+        CREATE_ORG_CODE,
+      </if>
+      <if test="createOrgName != null" >
+        CREATE_ORG_NAME,
+      </if>
+      <if test="companyCode != null" >
+        COMPANY_CODE,
+      </if>
+      <if test="companyName != null" >
+        COMPANY_NAME,
+      </if>
+      <if test="unifiedCode != null" >
+        UNIFIED_CODE,
+      </if>
+      <if test="customerCode != null" >
+        CUSTOMER_CODE,
+      </if>
+      <if test="customerName != null" >
+        CUSTOMER_NAME,
+      </if>
+      <if test="billType != null" >
+        BILL_TYPE,
+      </if>
+      <if test="periodAmount != null" >
+        PERIOD_AMOUNT,
+      </if>
+      <if test="periodPayAmount != null" >
+        PERIOD_PAY_AMOUNT,
+      </if>
+      <if test="periodUnverifyPayAmount != null" >
+        PERIOD_UNVERIFY_PAY_AMOUNT,
+      </if>
+      <if test="periodBeginDate != null" >
+        PERIOD_BEGIN_DATE,
+      </if>
+      <if test="periodEndDate != null" >
+        PERIOD_END_DATE,
+      </if>
+      <if test="settleNum != null" >
+        SETTLE_NUM,
+      </if>
+      <if test="confirmTime != null" >
+        CONFIRM_TIME,
+      </if>
+      <if test="companyAccountBankNo != null" >
+        COMPANY_ACCOUNT_BANK_NO,
+      </if>
+      <if test="accountUserName != null" >
+        ACCOUNT_USER_NAME,
+      </if>
+      <if test="bankBranchName != null" >
+        BANK_BRANCH_NAME,
+      </if>
+      <if test="statementStatus != null" >
+        STATEMENT_STATUS,
+      </if>
+      <if test="periodRrpayAmount != null" >
+        PERIOD_RRPAY_AMOUNT,
+      </if>
+      <if test="periodNpayAmount != null" >
+        PERIOD_NPAY_AMOUNT,
+      </if>
+      <if test="billBeginTime != null" >
+        BILL_BEGIN_TIME,
+      </if>
+      <if test="statementDes != null" >
+        STATEMENT_DES,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="statementBillNo != null" >
+        #{statementBillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="createOrgCode != null" >
+        #{createOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="createOrgName != null" >
+        #{createOrgName,jdbcType=VARCHAR},
+      </if>
+      <if test="companyCode != null" >
+        #{companyCode,jdbcType=VARCHAR},
+      </if>
+      <if test="companyName != null" >
+        #{companyName,jdbcType=VARCHAR},
+      </if>
+      <if test="unifiedCode != null" >
+        #{unifiedCode,jdbcType=VARCHAR},
+      </if>
+      <if test="customerCode != null" >
+        #{customerCode,jdbcType=VARCHAR},
+      </if>
+      <if test="customerName != null" >
+        #{customerName,jdbcType=VARCHAR},
+      </if>
+      <if test="billType != null" >
+        #{billType,jdbcType=VARCHAR},
+      </if>
+      <if test="periodAmount != null" >
+        #{periodAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="periodPayAmount != null" >
+        #{periodPayAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="periodUnverifyPayAmount != null" >
+        #{periodUnverifyPayAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="periodBeginDate != null" >
+        #{periodBeginDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="periodEndDate != null" >
+        #{periodEndDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="settleNum != null" >
+        #{settleNum,jdbcType=DECIMAL},
+      </if>
+      <if test="confirmTime != null" >
+        #{confirmTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="companyAccountBankNo != null" >
+        #{companyAccountBankNo,jdbcType=VARCHAR},
+      </if>
+      <if test="accountUserName != null" >
+        #{accountUserName,jdbcType=VARCHAR},
+      </if>
+      <if test="bankBranchName != null" >
+        #{bankBranchName,jdbcType=VARCHAR},
+      </if>
+      <if test="statementStatus != null" >
+        #{statementStatus,jdbcType=VARCHAR},
+      </if>
+      <if test="periodRrpayAmount != null" >
+        #{periodRrpayAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="periodNpayAmount != null" >
+        #{periodNpayAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="billBeginTime != null" >
+        #{billBeginTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="statementDes != null" >
+        #{statementDes,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.domain.PartnerPayStatementEntity" >
+    update /*合伙人付款对账单管理-更新对账单*/ stl.T_STL_STATEMENT_PARTNER_PAY
+    <set >
+      <if test="statementBillNo != null" >
+        STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="createOrgCode != null" >
+        CREATE_ORG_CODE = #{createOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="createOrgName != null" >
+        CREATE_ORG_NAME = #{createOrgName,jdbcType=VARCHAR},
+      </if>
+      <if test="companyCode != null" >
+        COMPANY_CODE = #{companyCode,jdbcType=VARCHAR},
+      </if>
+      <if test="companyName != null" >
+        COMPANY_NAME = #{companyName,jdbcType=VARCHAR},
+      </if>
+      <if test="unifiedCode != null" >
+        UNIFIED_CODE = #{unifiedCode,jdbcType=VARCHAR},
+      </if>
+      <if test="customerCode != null" >
+        CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR},
+      </if>
+      <if test="customerName != null" >
+        CUSTOMER_NAME = #{customerName,jdbcType=VARCHAR},
+      </if>
+      <if test="billType != null" >
+        BILL_TYPE = #{billType,jdbcType=VARCHAR},
+      </if>
+      <if test="periodAmount != null" >
+        PERIOD_AMOUNT = #{periodAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="periodPayAmount != null" >
+        PERIOD_PAY_AMOUNT = #{periodPayAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="periodUnverifyPayAmount != null" >
+        PERIOD_UNVERIFY_PAY_AMOUNT = #{periodUnverifyPayAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="periodBeginDate != null" >
+        PERIOD_BEGIN_DATE = #{periodBeginDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="periodEndDate != null" >
+        PERIOD_END_DATE = #{periodEndDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="settleNum != null" >
+        SETTLE_NUM = #{settleNum,jdbcType=DECIMAL},
+      </if>
+      <if test="confirmTime != null" >
+        CONFIRM_TIME = #{confirmTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="companyAccountBankNo != null" >
+        COMPANY_ACCOUNT_BANK_NO = #{companyAccountBankNo,jdbcType=VARCHAR},
+      </if>
+      <if test="accountUserName != null" >
+        ACCOUNT_USER_NAME = #{accountUserName,jdbcType=VARCHAR},
+      </if>
+      <if test="bankBranchName != null" >
+        BANK_BRANCH_NAME = #{bankBranchName,jdbcType=VARCHAR},
+      </if>
+      <if test="statementStatus != null" >
+        STATEMENT_STATUS = #{statementStatus,jdbcType=VARCHAR},
+      </if>
+      <if test="periodRrpayAmount != null" >
+        PERIOD_RRPAY_AMOUNT = #{periodRrpayAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="periodNpayAmount != null" >
+        PERIOD_NPAY_AMOUNT = #{periodNpayAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="billBeginTime != null" >
+        BILL_BEGIN_TIME = #{billBeginTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="statementDes != null" >
+        STATEMENT_DES = #{statementDes,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.domain.PartnerPayStatementEntity" >
+    update stl.T_STL_STATEMENT_PARTNER_PAY
+    set STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR},
+      CREATE_ORG_CODE = #{createOrgCode,jdbcType=VARCHAR},
+      CREATE_ORG_NAME = #{createOrgName,jdbcType=VARCHAR},
+      COMPANY_CODE = #{companyCode,jdbcType=VARCHAR},
+      COMPANY_NAME = #{companyName,jdbcType=VARCHAR},
+      UNIFIED_CODE = #{unifiedCode,jdbcType=VARCHAR},
+      CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR},
+      CUSTOMER_NAME = #{customerName,jdbcType=VARCHAR},
+      BILL_TYPE = #{billType,jdbcType=VARCHAR},
+      PERIOD_AMOUNT = #{periodAmount,jdbcType=DECIMAL},
+      PERIOD_PAY_AMOUNT = #{periodPayAmount,jdbcType=DECIMAL},
+      PERIOD_UNVERIFY_PAY_AMOUNT = #{periodUnverifyPayAmount,jdbcType=DECIMAL},
+      PERIOD_BEGIN_DATE = #{periodBeginDate,jdbcType=TIMESTAMP},
+      PERIOD_END_DATE = #{periodEndDate,jdbcType=TIMESTAMP},
+      SETTLE_NUM = #{settleNum,jdbcType=DECIMAL},
+      CONFIRM_TIME = #{confirmTime,jdbcType=TIMESTAMP},
+      COMPANY_ACCOUNT_BANK_NO = #{companyAccountBankNo,jdbcType=VARCHAR},
+      ACCOUNT_USER_NAME = #{accountUserName,jdbcType=VARCHAR},
+      BANK_BRANCH_NAME = #{bankBranchName,jdbcType=VARCHAR},
+      STATEMENT_STATUS = #{statementStatus,jdbcType=VARCHAR},
+      PERIOD_RRPAY_AMOUNT = #{periodRrpayAmount,jdbcType=DECIMAL},
+      PERIOD_NPAY_AMOUNT = #{periodNpayAmount,jdbcType=DECIMAL},
+      BILL_BEGIN_TIME = #{billBeginTime,jdbcType=TIMESTAMP},
+      STATEMENT_DES = #{statementDes,jdbcType=VARCHAR}
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  
+      <!-- 按合伙人查询对账单 -->
+    <select id="selectPayStatementByCustomer"
+        parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.PartnerPayStatementDto"
+        resultMap="BaseResultMap">
+        select /*合伙人付款对账单管理-按合伙人查询对账单*/
+		<include refid="Base_Column_List" />
+		from STL.T_STL_STATEMENT_PARTNER_PAY P, BSE.MV_BAS_USER_ORG_AUTH_VIEW V
+		<where>
+			V.ORG_CODE = P.CREATE_ORG_CODE
+			AND V.EMP_CODE =
+			#{empCode,jdbcType=VARCHAR}
+			<if test="orgCodeList!=null and orgCodeList.size>0">
+				AND P.CREATE_ORG_CODE IN
+				<foreach collection="orgCodeList" index="index" item="item"
+					open="(" separator="," close=")">
+					#{item}
+				</foreach>
+			</if>
+			<if test="orgCodeList==null or orgCodeList.size==0">
+				and P.CREATE_ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+			</if>
+	 	  <![CDATA[AND P.BILL_BEGIN_TIME>=#{periodBeginDate} AND P.BILL_BEGIN_TIME<#{periodEndDate}]]>
+			<if test="customerCode!=null and customerCode!='' ">
+				and P.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+			</if>
+			<if test="confirmStatus!=null and confirmStatus!=''">
+				and P.STATEMENT_STATUS = #{confirmStatus,jdbcType=VARCHAR}
+			</if>
+			<!-- 已结清 -->
+			<if	test="settleStatus!=null and settleStatus!='' and settleStatus==statementSettleStatus">
+				and P.PERIOD_PAY_AMOUNT = 0
+			</if>
+			<!-- 未结清 -->
+			<if	test="settleStatus!=null and settleStatus!='' and settleStatus==statementUnSettleStatus">
+				and P.PERIOD_PAY_AMOUNT !=0
+			</if>
+			<if	test="billType!=null and billType!='' and billType!='ALL'">
+				and P.BILL_TYPE = #{billType, jdbcType=VARCHAR}
+			</if>				
+		</where>
+		ORDER BY P.BILL_BEGIN_TIME DESC
+    </select>
+    
+      <!-- 按合伙人查询对账单计数 -->
+    <select id="countPayStatementByCustomer"
+        parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.PartnerPayStatementDto"
+        resultMap="DtoResultMap">
+        select /*合伙人付款对账单管理-按合伙人查询对账单-计数*/
+		COUNT(1) TOTALCOUNT,SUM(P.PERIOD_PAY_AMOUNT/100) TOTALAMOUNT
+		from STL.T_STL_STATEMENT_PARTNER_PAY P, BSE.MV_BAS_USER_ORG_AUTH_VIEW V
+		<where>
+			V.ORG_CODE = P.CREATE_ORG_CODE
+			AND V.EMP_CODE =
+			#{empCode,jdbcType=VARCHAR}
+			<if test="orgCodeList!=null and orgCodeList.size>0">
+				AND P.CREATE_ORG_CODE IN
+				<foreach collection="orgCodeList" index="index" item="item"
+					open="(" separator="," close=")">
+					#{item}
+				</foreach>
+			</if>
+			<if test="orgCodeList==null or orgCodeList.size==0">
+				and P.CREATE_ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+			</if>
+	 	  <![CDATA[AND P.BILL_BEGIN_TIME>=#{periodBeginDate} AND P.BILL_BEGIN_TIME<#{periodEndDate}]]>
+			<if test="customerCode!=null and customerCode!='' ">
+				and P.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+			</if>
+			<if test="confirmStatus!=null and confirmStatus!=''">
+				and P.STATEMENT_STATUS = #{confirmStatus,jdbcType=VARCHAR}
+			</if>
+			<if	test="settleStatus!=null and settleStatus!='' and settleStatus==statementSettleStatus">
+				and P.PERIOD_PAY_AMOUNT = 0
+			</if>
+			<if	test="settleStatus!=null and settleStatus!='' and settleStatus==statementUnSettleStatus">
+				and P.PERIOD_PAY_AMOUNT !=0
+			</if>
+			<if	test="billType!=null and billType!=''">
+				and P.BILL_TYPE = #{billType, jdbcType=VARCHAR}
+			</if>				
+		</where>
+    </select>
+    
+      <!-- 根据对账单单号集合查询对账单(只查询本部门的对账单信息，供按对账单、对账单明细单号集合查询对账单使用) -->
+    <select id="queryPayStatementByBillNos"
+        parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.PartnerPayStatementDto"
+        resultMap="BaseResultMap">
+        select /*合伙人付款对账单管理-根据对账单单号集合查询对账单*/
+		<include refid="Base_Column_List" />
+		from STL.T_STL_STATEMENT_PARTNER_PAY P
+		<where>
+			P.STATEMENT_BILL_NO IN
+		  <foreach collection="payableBillNosList" index="index" item="item" open="(" separator="," close=")">
+           #{item}
+          </foreach>
+          <if test="orgCode!=null and orgCode!='' ">
+          	AND p.CREATE_ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+          </if>
+		</where>
+    </select>
+    
+    <!-- 更新对账单 更新应付金额-->
+	<update id="partnerStatementUpdateByStatementBillNo"
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.PartnerPayStatementDto">
+	    UPDATE /*合伙人付款对账单管理-更新应付金额*/ 
+	    		STL.T_STL_STATEMENT_PARTNER_PAY W
+		   SET W.PERIOD_PAY_AMOUNT    = #{periodPayAmount,jdbcType=DECIMAL} * 100,
+		       W.SETTLE_NUM = #{settleNum, jdbcType=VARCHAR}
+		 <where>
+		 	 W.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+	 	 </where>
+	</update>
+	
+	<!-- 批量付款 更新对账单 更新应付金额-->
+	<update id="partnerStatementUpdateByStatementBillNos"
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.PartnerPayStatementDto">
+	    UPDATE /*合伙人付款对账单管理-批量付款-更新对账单-更新应付金额*/
+	    STL.T_STL_STATEMENT_PARTNER_PAY W
+	     SET 	
+	     	<if test='isPaid != null and isPaid != "" and isPaid == "Y"'>
+	     		W.PERIOD_PAY_AMOUNT    =  0,
+	     	</if>
+	     	
+	     	<if test='isPaid != null and isPaid != "" and isPaid != "Y"'>
+	     		W.PERIOD_PAY_AMOUNT    =  W.PERIOD_AMOUNT,
+	     	</if>
+		       W.SETTLE_NUM = #{settleNum, jdbcType=VARCHAR}
+		 <where>
+		 	 W.STATEMENT_BILL_NO IN
+	 			<foreach collection="statementBillNoList" index="index" item="item" open="(" separator="," close=")">
+       			#{item}
+    	 	 </foreach>
+	 	 </where>
+	</update>
+	
+	<!-- 付款成功，更新付款次数和本期应付金额 -->
+	<update id="updatePartnerStatementPayAmount"
+		parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.PartnerPayStatementDto">
+		UPDATE /*合伙人付款对账单管理-批量付款成功-更新合伙人付款对账单本期应付金额*/
+	    	STL.T_STL_STATEMENT_PARTNER_PAY W
+	    SET W.PERIOD_PAY_AMOUNT = 0,
+		    W.SETTLE_NUM = #{settleNum, jdbcType=VARCHAR}
+		 <where>
+		 	 W.STATEMENT_BILL_NO IN
+	 		 <foreach collection="statementBillNoList" index="index" item="item" open="(" separator="," close=")">
+       			#{item}
+    	 	 </foreach>
+	 	 </where>
+	</update>
+	
+	<!-- 付款失败，更新付款次数和本期应付金额 -->
+	<update id="updatePartnerStatementForPayFail"
+		parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.PartnerPayStatementDto">
+		UPDATE /*合伙人付款对账单管理-批量付款失败-更新合伙人付款对账单本期应付金额*/
+	    	STL.T_STL_STATEMENT_PARTNER_PAY W
+	    SET W.PERIOD_PAY_AMOUNT = W.PERIOD_AMOUNT,
+		    W.SETTLE_NUM = #{settleNum, jdbcType=VARCHAR}
+		 <where>
+		 	 W.STATEMENT_BILL_NO IN
+	 		 <foreach collection="statementBillNoList" index="index" item="item" open="(" separator="," close=")">
+       			#{item}
+    	 	 </foreach>
+	 	 </where>
+	</update>
+	
+	<!-- 确认对账单 -->
+	<update id="updateStatusByStatementNo"
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.PartnerPayStatementDto">
+	    UPDATE /*合伙人付款对账单管理-确认对账单*/ 
+	    STL.T_STL_STATEMENT_PARTNER_PAY W
+		   SET W.STATEMENT_STATUS = #{confirmStatus,jdbcType=VARCHAR},
+		       W.CONFIRM_TIME = SYSDATE
+		<where>
+			 W.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+		 </where>
+	</update>
+	<!-- 更新对账单本期发生额、应付金额（删除对账单明细,更新本期发生额和应付金额） -->
+	<update id="updateAmountByStatementNo"
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.PartnerPayStatementDto">
+	    UPDATE /*合伙人付款对账单管理-更新对账单本期发生额、应付金额*/
+	    STL.T_STL_STATEMENT_PARTNER_PAY W
+		   SET 
+		   <if test="periodBeginDate != null and periodBeginDate !=''">
+		   		W.PERIOD_BEGIN_DATE = #{periodBeginDate, jdbcType=TIMESTAMP},
+		   </if>
+		    <if test="periodEndDate != null and periodEndDate!=''">
+		   		W.PERIOD_END_DATE = #{periodEndDate, jdbcType=TIMESTAMP},
+		   </if>
+		   <![CDATA[W.PERIOD_AMOUNT = #{periodAmount,jdbcType=DECIMAL} * 100]]>,
+		   <![CDATA[W.PERIOD_PAY_AMOUNT = #{periodAmount,jdbcType=DECIMAL} * 100]]>
+		<where>
+			 W.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+		 </where>
+	</update>
+	
+   <!-- 根据部门查询查询 对账单信息 -->
+   <select id="selectByFailingInvoice" resultMap="BaseResultMap"	parameterType="java.util.Map">
+		select /*合伙人付款对账单管理-根据部门查询查询 对账单信息*/
+		<include refid="Base_Column_List" />
+		from STL.T_STL_STATEMENT_PARTNER_PAY AC, BSE.MV_BAS_USER_ORG_AUTH_VIEW V
+		<where>
+			V.ORG_CODE = AC.CREATE_ORG_CODE
+			AND V.EMP_CODE = #{empCode,jdbcType=VARCHAR}
+			<!-- <![CDATA[AND AC.PERIOD_PAY_AMOUNT <> 0]]> -->
+			<if test="orgCodeList==null or orgCodeList.size==0">
+				and AC.CREATE_ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+			</if>
+		</where>
+		ORDER BY AC.BILL_BEGIN_TIME DESC
+	</select>
+	
+	<!-- 根据部门查询查询 对账单信息 (计数)-->
+ 	<select id="countStatementByFailingInvoice" 
+ 		parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.PartnerPayStatementDto"
+        resultMap="DtoResultMap">
+		select /*合伙人付款对账单管理-根据部门查询查询对账单信息(计数)*/
+			COUNT(1) TOTALCOUNT,
+			NVL(SUM(AC.PERIOD_PAY_AMOUNT/100),0) TOTALAMOUNT
+		from STL.T_STL_STATEMENT_PARTNER_PAY AC, BSE.MV_BAS_USER_ORG_AUTH_VIEW V
+		<where>
+			V.ORG_CODE = AC.CREATE_ORG_CODE
+			AND V.EMP_CODE = #{empCode,jdbcType=VARCHAR}
+			<if test="orgCodeList==null or orgCodeList.size==0">
+				and AC.CREATE_ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 根据对账单号查询合伙人付款对账单 -->
+	<select id="queryPayStatementByBillNo" parameterType="string" resultMap="BaseResultMap">
+		SELECT /*合伙人付款对账单管理-根据对账单号查询合伙人付款对账单*/
+		<include refid="Base_Column_List" />
+		FROM STL.T_STL_STATEMENT_PARTNER_PAY P
+		WHERE P.STATEMENT_BILL_NO = #{statementBillNo,jdbcType=VARCHAR}
+	</select>
+	
+		<!-- 根据对账单号集合查询合伙人付款对账单 -->
+   <select id="selectPartnerByStatementNos" resultMap="BaseResultMap" parameterType="java.util.Map" >
+    select /*反签收时生成对账单不能直接反签收-按对账单号集合查询对账单明细*/
+    <include refid="Base_Column_List" />
+    from STL.T_STL_STATEMENT_PARTNER_PAY
+    <where> 
+      <if test="statementsNos!=null and statementsNos.size>0">
+    	  STATEMENT_BILL_NO IN
+      <foreach collection="statementsNos" index="index" item="item" open="(" separator="," close=")">
+       #{item}
+      </foreach>
+     </if>
+    </where>
+   </select>
+</mapper>

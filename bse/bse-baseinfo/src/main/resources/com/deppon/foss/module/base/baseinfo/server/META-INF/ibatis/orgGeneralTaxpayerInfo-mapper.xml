@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.generalTaxpayer">
+	<!-- 一般纳税人信息 -->
+	<resultMap id="taxpayerResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.GeneralTaxpayerInfoEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="CRM_ID" property="crmId" jdbcType="VARCHAR" />
+		<result column="TAX_ID" property="taxId" jdbcType="VARCHAR" />
+		<result column="BILL_TITLE" property="billTitle" jdbcType="VARCHAR" />
+		<result column="BANK_NAME" property="bankName" jdbcType="VARCHAR" />
+		<result column="BANK_NUMBER" property="bankNumber" jdbcType="VARCHAR" />
+		<result column="IS_TAXPAYER" property="isTaxpayer" jdbcType="CHAR" />
+		<result column="REG_TEL" property="regTel" jdbcType="VARCHAR" />
+		<result column="REG_ADDRESS" property="regAddress" jdbcType="VARCHAR" />
+		<result column="CREATE_DEPARTMENT" property="createDepartment" jdbcType="VARCHAR" />
+		<result column="CREATE_USER" property="createUser" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_USER" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="VERSION_NO" property="versionNo" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<!-- 插入数据 ： -->
+	<insert id="addGeneralTaxpayerInfo"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.GeneralTaxpayerInfoEntity">
+		INSERT/** 综合:插入数据  **/ INTO BSE.T_BAS_GENERALTAXPAYERINFO(
+		ID, /** ID     **/ 
+		CRM_ID,/** crmID 唯一标识     **/ 
+		TAX_ID,/** 税务登记号    **/ 
+		BILL_TITLE,/** 发票抬头     **/ 
+		BANK_NAME,/** 开户行     **/ 
+		BANK_NUMBER,/** 银行账号     **/ 
+		IS_TAXPAYER,/** 是否一般纳税人    **/ 
+		REG_TEL,/** 注册电话     **/ 
+		REG_ADDRESS,/** 注册地址     **/ 
+		CREATE_DEPARTMENT,/** 创建部门     **/ 
+		CREATE_USER,/** 创建人    **/ 
+		CREATE_TIME,/** 创建时间     **/ 
+		MODIFY_TIME,/** 修改时间   **/ 
+		MODIFY_USER,/** 修改人     **/ 
+		ACTIVE,/** 是否可用    **/ 
+		VERSION_NO /** 版本号     **/ 
+		) VALUES	
+	(
+		#{id, jdbcType=VARCHAR},
+		#{crmId, jdbcType=VARCHAR},
+		#{taxId, jdbcType=VARCHAR},
+		#{billTitle, jdbcType=VARCHAR},
+		#{bankName, jdbcType=VARCHAR},
+		#{bankNumber, jdbcType=VARCHAR},
+		#{isTaxpayer, jdbcType=CHAR},
+		#{regTel, jdbcType=VARCHAR},
+		#{regAddress, jdbcType=VARCHAR},
+		#{createDepartment, jdbcType=VARCHAR},
+		#{createUser, jdbcType=VARCHAR},
+		#{createDate, jdbcType=TIMESTAMP},
+		#{modifyDate, jdbcType=TIMESTAMP},
+		#{modifyUser, jdbcType=VARCHAR},
+		#{active, jdbcType=CHAR},
+		#{versionNo, jdbcType=VARCHAR}
+	)
+	</insert> 
+	
+	
+	<!-- 根据crmId 作废一般纳税人信息数据： -->
+	<update id="deleteTaxpayerInfo" 
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.GeneralTaxpayerInfoEntity">
+		UPDATE/** 综合:根据crmId 作废数据  **/ BSE.T_BAS_GENERALTAXPAYERINFO A 
+		SET A.ACTIVE='N',
+			A.MODIFY_USER=#{modifyUser,jdbcType=VARCHAR}, 
+			A.MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			A.VERSION_NO=#{versionNo,jdbcType=VARCHAR}
+		<where>
+			A.CRM_ID=#{crmId,jdbcType=VARCHAR} 
+			AND A.ACTIVE='Y'
+		</where>
+	</update>
+	
+	<!-- 数据字段 -->
+	<sql id="query_taxpayer_Info_param">
+		a.ID AS ID, /** ID    **/
+		a.CRM_ID AS CRM_ID,/** 唯一标识列   **/
+		a.TAX_ID AS TAX_ID, /** 税务登记号     **/
+		a.BILL_TITLE AS BILL_TITLE,/** 发票抬头   **/ 
+		a.BANK_NAME AS BANK_NAME, /** 开户行   **/
+		a.BANK_NUMBER AS BANK_NUMBER,/** 银行账号    **/ 
+		a.IS_TAXPAYER AS IS_TAXPAYER,/** 是否一般纳税人   **/
+		a.REG_TEL AS REG_TEL, /** 注册电话   **/
+		a.REG_ADDRESS AS REG_ADDRESS,/** 注册地址  **/ 
+		a.CREATE_DEPARTMENT AS CREATE_DEPARTMENT, /** 创建部门   **/
+		a.CREATE_TIME AS CREATE_TIME, /**  创建时间   **/
+		a.MODIFY_TIME AS MODIFY_TIME, /** 修改时间  **/
+		a.ACTIVE AS ACTIVE,/** 是否启用    **/
+		a.CREATE_USER AS CREATE_USER, /** 创建人    **/
+		a.MODIFY_USER AS MODIFY_USER,/** 修改人  **/
+		a.VERSION_NO AS VERSION_NO /** 版本号  **/
+	</sql>
+	
+	<!-- 根据 crmId和active 精确查询一般纳税人信息数据 -->
+	<select id="queryTaxpayerInfoBycrmId" resultMap="taxpayerResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.GeneralTaxpayerInfoEntity">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据 crmId和active 精确查询一般纳税人信息数据  **/
+		]]>
+		<include refid="query_taxpayer_Info_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_GENERALTAXPAYERINFO A 
+		]]>
+		<where>
+			A.CRM_ID=#{crmId, jdbcType=VARCHAR} 
+			AND A.ACTIVE= #{active,jdbcType=CHAR}
+		</where>
+	</select>
+	
+</mapper>

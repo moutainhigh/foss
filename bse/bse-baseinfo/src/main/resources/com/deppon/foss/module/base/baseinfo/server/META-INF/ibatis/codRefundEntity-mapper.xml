@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.codRefund" >
+
+	<resultMap id="codRefundResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.CodRefundEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="DEPT_NAME" property="deptName" jdbcType="VARCHAR" />
+		<result column="DEPT_CODE" property="deptCode" jdbcType="VARCHAR" />
+		<result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+		<result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+		<result column="OPERATOR_NAME" property="operatorName" jdbcType="VARCHAR" />
+		<result column="OPERATOR_CODE" property="operatorCode" jdbcType="VARCHAR" />
+		<result column="TIME_LIMIT" property="timeLimit" jdbcType="VARCHAR" />
+		<result column="TIME_LIMIT_START" property="timeLimitStart" jdbcType="TIMESTAMP" />
+		<result column="TIME_LIMIT_END" property="timeLimitEnd" jdbcType="TIMESTAMP" />
+		<result column="ENTERING_TIME" property="enteringTime" jdbcType="TIMESTAMP" />
+		<result column="ADDITIONAL" property="additional" jdbcType="VARCHAR" />
+		<result column="REMARK" property="remark" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_USER" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="VERSION_NO" property="version" jdbcType="DECIMAL" />
+	</resultMap>
+	
+	<sql id="columns">
+		ID,
+		DEPT_NAME,
+		DEPT_CODE,
+		CUSTOMER_NAME,
+		CUSTOMER_CODE,
+		OPERATOR_NAME,
+		OPERATOR_CODE,
+		TIME_LIMIT,
+		TIME_LIMIT_START,
+		TIME_LIMIT_END,
+		ENTERING_TIME,
+		ADDITIONAL,
+		REMARK,
+		CREATE_TIME,
+		CREATE_USER,
+		MODIFY_TIME,
+		MODIFY_USER,
+		ACTIVE,
+		VERSION_NO
+	</sql>
+	
+	<sql id="values">
+		#{id,jdbcType=VARCHAR},
+		#{deptName,jdbcType=VARCHAR}, 
+		#{deptCode,jdbcType=VARCHAR}, 
+		#{customerName,jdbcType=VARCHAR}, 
+		#{customerCode,jdbcType=VARCHAR}, 
+		#{operatorName,jdbcType=VARCHAR}, 
+		#{operatorCode,jdbcType=VARCHAR}, 
+		#{timeLimit,jdbcType=VARCHAR}, 
+		#{timeLimitStart,jdbcType=TIMESTAMP}, 
+		#{timeLimitEnd,jdbcType=TIMESTAMP}, 
+		#{enteringTime,jdbcType=TIMESTAMP},
+		#{additional,jdbcType=VARCHAR},
+		#{remark,jdbcType=VARCHAR}, 
+		#{createDate,jdbcType=TIMESTAMP},
+		#{createUser,jdbcType=VARCHAR}, 
+		#{modifyDate,jdbcType=TIMESTAMP}, 
+		#{modifyUser,jdbcType=VARCHAR}, 
+		#{active,jdbcType=CHAR},
+		#{version,jdbcType=DECIMAL}
+	</sql>
+
+	<insert id="addCodRefund" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CodRefundEntity">
+		insert into BSE.T_BAS_CODREFUNDBASEINFO (
+		<include refid="columns"/>
+		) values ( 
+		<include refid="values"/>
+		)
+	</insert>
+
+	<update id="deleteCodRefund" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CodRefundEntity">
+		UPDATE BSE.T_BAS_CODREFUNDBASEINFO 
+		SET ACTIVE = #{active, jdbcType=CHAR} 
+		, MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP} 
+		, VERSION_NO = #{version,jdbcType=DECIMAL}
+		, MODIFY_USER = #{modifyUser,jdbcType=VARCHAR} 
+		WHERE CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+	</update>
+	
+	<update id="deleteCodRefunds" parameterType="map">
+		UPDATE BSE.T_BAS_CODREFUNDBASEINFO 
+		SET ACTIVE = #{inactive, jdbcType=CHAR} 
+		, MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP} 
+		, MODIFY_USER = #{modifyUser,jdbcType=VARCHAR}
+		, VERSION_NO = #{version, jdbcType=DECIMAL} 
+		WHERE ACTIVE = #{active, jdbcType=CHAR}
+		AND CUSTOMER_CODE in 
+		<foreach collection="customerCodes" open="(" close=")" separator="," item="customerCode">
+			#{customerCode,jdbcType=VARCHAR} 
+		</foreach>
+	</update>
+
+	<select id="queryCodRefundById" resultMap="codRefundResultMap" parameterType="java.lang.String">
+		SELECT 
+		<include refid="columns"/>
+		FROM BSE.T_BAS_CODREFUNDBASEINFO WHERE 
+		ACTIVE= #{active,jdbcType=CHAR} 
+		AND ID= #{id,jdbcType=VARCHAR}
+	</select>
+
+	<sql id="whereCodRefundListByCondition">
+		FROM BSE.T_BAS_CODREFUNDBASEINFO WHERE ACTIVE = #{active,jdbcType=CHAR} 
+		<if test="deptCode != null and deptCode != ''">
+			AND DEPT_CODE = #{deptCode,jdbcType=VARCHAR} 
+		</if>
+		<if test="customerCode != null and customerCode != ''">
+			AND CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+		</if>
+		<if test="enteringTimeStart != null and enteringTimeStart != ''">
+			AND ENTERING_TIME 
+			<![CDATA[
+			>=#{enteringTimeStart}  
+			]]>
+		</if>
+		<if test="enteringTimeEnd != null and enteringTimeEnd != ''">
+			AND ENTERING_TIME
+			<![CDATA[
+			<= #{enteringTimeEnd}
+			]]>
+		</if>
+	</sql>
+
+	<select id="queryCodRefundListByCondition" resultMap="codRefundResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CodRefundEntity">
+		SELECT   
+		<include refid="columns"/>
+		<include refid="whereCodRefundListByCondition"/>
+		ORDER BY DEPT_CODE, CUSTOMER_CODE
+	</select>
+	
+	<select id="countCodRefundListByCondition" resultType="long" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CodRefundEntity">
+		SELECT COUNT(1) 
+		<include refid="whereCodRefundListByCondition"/>
+	</select>
+
+	<select id="queryCodRefundListForExport" resultMap="codRefundResultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CodRefundEntity">
+		SELECT
+		<include refid="columns"/>
+		FROM BSE.T_BAS_CODREFUNDBASEINFO
+		<where>
+			<if test="version != null">
+				<![CDATA[ AND VERSION_NO >= #{version, jdbcType=DECIMAL} ]]>
+			</if>
+			<if test="deptCode != null and deptCode != ''">
+				AND DEPT_CODE = #{deptCode,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+		ORDER BY VERSION_NO,ID ASC
+	</select>
+
+</mapper>

@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.RentCarForPayReport" >
+ 
+  <sql id="Base_Column_List" >
+    M.TEMPRENTAL_MARK_NO  RENTCARNO,
+    P.PAYABLE_NO          PAYABLENO,
+    PAY.REMIT_STATUS      PAYSTATUS,
+    DECODE(PAY.WORKFLOW_NO,
+           NULL,
+           PAY.APPLY_WORK_FLOW_NO,
+           PAY.WORKFLOW_NO)   PAYWORKFLOWNO,
+     Case 
+       WHEN PAY.PAYMENT_TYPE = 'CH' AND PAY.REMIT_STATUS IN('TG','TD')  THEN 'Y'
+       WHEN PAY.PAYMENT_TYPE='TT' AND PAY.REMIT_STATUS = 'TD' AND PAY.REIMBURSEMENT='Y' THEN 'Y' 
+       ELSE 'N' END  REIMBURSEMENT,
+     M.VEHICLE_NO VEHICLENO,
+     M.RENTAL_CAR_USETYPE RENTCARUSETYPE,
+     (M.RENTAL_AMOUNT/100) RENTCARAMOUNT,
+     PAY.COST_DEPT_CODE        COSTDEPT,
+     PAY.COST_TYPE             COSTTYPE,
+     PD.BUSINESS_DATE          BUSINESSDATE ,
+     DECODE(M.ACCRUED_STATE,null,'NT',M.ACCRUED_STATE) WITHHOLDINGSTATUS,
+     M.ACCRUED_WORK_NO WITHHOLDINGWORKFLOWNO,
+     M.ACCRUED_WORK_RESULT WITHHOLDINGRESULT, 
+     W.COST_DATE  COSTDATE,
+     M.WEIGHT_TOTAL TOTALWEIGHT,
+     M.VOLUME_TOTAL TOTALVOLUME,
+     M.KMS_NUM KILOMETRE,
+     M.DEPARTURE_NAME DEPARTURE,
+     M.DESTINATION_NAME DESTINATION,
+     M.USECAR_DATE USECARDATE,
+     M.USERCAR_REASON USECARREASION,
+     M.SHALL_TAKEGOODS_QYT SHALLTAKEGOODSQYT,
+     M.ACTUAL_TAKEGOODS_QYT ACTUALTAKEGOODSQYT,
+     BL.VEHICLE_LENGTH_NAME CARTYPE,
+     M.DRIVER_NAME DRIVERNAME,
+     M.DRIVER_CODE DRIVERCODE,
+     M.DRIVER_POHE DRIVERPHONE,
+     M.CREATE_DATE RENTCARTIME,
+     M.MARK_DEPART_NAME RENTCARDEPTNAME,
+     M.CREATE_USER_NAME RENTMARKUSERINFO,
+     M.ISREPEATEMARK isRepeateMark,
+     P.PAY_STATUS payablePayStatus,
+     p.payable_org_code payableOrgCode,
+     p.version_no version,
+     M.MARK_DEPART_CODE,
+     L.DEPT_NAME  costDeptName,
+     M.notes notes,
+     W.Costdept_Name withholdingCostDeptName
+  </sql>
+  <!-- 查询租车信息 -->
+  <select id="selectByParams" resultType="com.deppon.foss.module.settlement.pay.api.shared.dto.RentCarReportDto"
+  								  parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.RentCarReportDto" >
+    SELECT 
+    <include refid="Base_Column_List" />
+    FROM TFR.T_OPT_TEMPRENTALMARK M
+    JOIN STL.T_STL_BILL_PAYABLE P ON P.SOURCE_BILL_NO = M.TEMPRENTAL_MARK_NO AND P.ACTIVE = 'Y'
+ 	LEFT JOIN STL.T_STL_BILL_PAYMENT PAY ON PAY.PAYMENT_NO = P.PAYMENT_NO AND PAY.ACTIVE = 'Y' 
+  	LEFT JOIN STL.T_STL_BILL_PAYMENT_D PD ON PD.PAYMENT_NO = PAY.PAYMENT_NO  AND PD.SOURCE_BILL_NO = P.PAYABLE_NO 
+  	LEFT JOIN STL.T_STL_BILL_WITHHOLDING W ON W.WORKFLOW_NO = M.Accrued_Work_No AND W.ACTIVE='Y'
+  	LEFT JOIN BSE.T_BAS_COST_CENTER_DEPARTINFOR L ON L.dept_code = PAY.COST_DEPT_CODE AND L.ACTIVE='Y'
+ 	LEFT JOIN BSE.T_BAS_VEHICLE_TYPE_LENGTH BL ON BL.VEHICLE_LENGTH_CODE = M.VEHICLE_LENGHT_CODE AND BL.ACTIVE='Y'
+ 	where 
+ 		M.ACTIVE = #{active}  AND ( 
+ 		EXISTS( 
+ 			SELECT 1 FROM  BSE.MV_BAS_USER_ORG_AUTH_VIEW V 
+ 			WHERE V.EMP_CODE = #{empCode,jdbcType=VARCHAR} AND V.ORG_CODE = P.PAYABLE_ORG_CODE
+ 			) OR M.MARK_DEPART_CODE = #{currentDeptCode,jdbcType=VARCHAR}
+	    ) AND
+ 	<choose>
+ 		<!--============== 按日期查询 ==============-->
+ 		<when test="queryType!=null and queryType!='' and queryType=='TD' ">
+ 			<!-- 按用车日期查询 -->
+ 			<if test="queryDateType!=null and queryDateType!='' and queryDateType=='UT' ">
+ 				<![CDATA[ M.USECAR_DATE > =#{startDate} AND M.USECAR_DATE <#{endDate}]]>
+ 			</if>
+ 			<!-- 按租车日期查询 -->
+ 			<if test="queryDateType!=null and queryDateType!='' and queryDateType=='RT' ">
+ 				<![CDATA[ M.CREATE_DATE > =#{startDate} AND M.CREATE_DATE <#{endDate} ]]> 
+ 			</if>
+ 			<!-- 按车牌号 -->
+ 			<if test="vehicleNo!=null and vehicleNo!='' ">
+ 				AND M.VEHICLE_NO = #{vehicleNo}
+ 			</if>
+ 			<!-- 按租车用途 -->
+ 			<if test="rentCarUseType!=null and rentCarUseType!='' ">
+ 				AND M.RENTAL_CAR_USETYPE = #{rentCarUseType}
+ 			</if>
+ 			<!-- 按付款状态 -->
+			<if test="payStatus!=null and payStatus!='' ">
+				AND PAY.REMIT_STATUS = #{payStatus}
+			</if>
+ 			<!-- 按预提状态 -->
+ 			<if test="withholdingStatus!=null and withholdingStatus!=''">
+ 				<if test="withholdingStatus=='NT' ">
+ 					AND (M.ACCRUED_STATE IS NULL or M.ACCRUED_STATE =  #{withholdingStatus})
+ 				</if>
+ 				<if test="withholdingStatus!='NT' ">
+ 					AND M.ACCRUED_STATE = #{withholdingStatus}
+ 				</if>
+ 			</if>
+ 			<!-- 是否已经报销/转报销 -->
+ 			<if test="reimbursement!=null and reimbursement!='' ">
+ 				AND (CASE WHEN PAY.PAYMENT_TYPE = 'CH' AND PAY.REMIT_STATUS IN('TG','TD')  THEN 'Y'
+        			 	  WHEN PAY.PAYMENT_TYPE = 'TT' AND PAY.REMIT_STATUS = 'TD' AND
+              				   PAY.REIMBURSEMENT = 'Y' THEN 'Y' ELSE 'N' END)=#{reimbursement}	
+ 			</if>
+ 			<!-- 部门查询 -->
+ 			<if test="orgCodeList!=null and orgCodeList.size>0  ">
+ 				AND M.MARK_DEPART_CODE IN
+ 				<foreach collection="orgCodeList" index="index" item="item" open="(" separator="," close=")">
+ 					#{item}
+ 				</foreach>
+ 			</if>
+ 			<!-- 按司机查询状态 -->
+			<if test="driverCode!=null and driverCode!='' ">
+				AND P.CUSTOMER_CODE = #{driverCode,jdbcType=VARCHAR}
+			</if>
+ 		</when>
+ 		<!--==============  按租车编号查询 ============== -->
+ 		<when test="queryType!=null and queryType!='' and queryType=='RCB' ">
+ 			<if test="billNos!=null and billNos.size>0 ">
+ 				 M.TEMPRENTAL_MARK_NO IN
+ 				<foreach collection="billNos" index="index" item="item" open="(" separator="," close=")">
+ 					#{item}
+ 				</foreach>
+ 			</if>
+ 		</when>
+ 		<!--============== 按应付单号查询 ==============-->
+ 		<when test="queryType!=null and queryType!='' and queryType=='TP' ">
+ 			<if test="billNos!=null and billNos.size>0">
+ 				P.PAYABLE_NO IN 
+ 				<foreach collection="billNos" index="index" item="item" open="(" separator="," close=")">
+ 					#{item}
+ 				</foreach>
+ 			</if>
+ 		</when>
+ 		<when test="queryType!=null and queryType!='' and queryType=='BN' ">
+	 		 M.TEMPRENTAL_MARK_NO IN
+		       (
+			       SELECT DISTINCT M.TEMPRENTAL_MARK_NO TEMPNO
+			          FROM TFR.T_OPT_TEMPRENTALMARK_DETAIL D
+			          JOIN TFR.T_OPT_TEMPRENTALMARK M
+			            ON M.ACTIVE = 'Y'
+			           AND M.ID = D.TEMPRENTALMARK_ID
+			         WHERE D.BILL_NO IN
+		 				<foreach collection="billNos" index="index" item="item" open="(" separator="," close=")">
+		 					#{item}
+		 				</foreach>
+		         )
+ 		</when>
+ 		<!--==============  按工作流号查询 ==============-->
+ 		<when test="queryType!=null and queryType!='' and queryType=='WO' ">
+ 			<if test="billNos!=null and billNos.size>0 ">
+ 			(   PAY.WORKFLOW_NO IN
+ 				<foreach collection="billNos" index="index" item="item" open="(" separator="," close=")">
+ 					#{item}
+ 				</foreach> 
+ 				OR PAY.APPLY_WORK_FLOW_NO IN
+ 				<foreach collection="billNos" index="index" item="item" open="(" separator="," close=")">
+ 					#{item}
+ 				</foreach> 
+ 				OR M.ACCRUED_WORK_NO IN
+ 				<foreach collection="billNos" index="index" item="item" open="(" separator="," close=")">
+ 					#{item}
+ 				</foreach> 
+ 				)
+ 			</if>
+ 		</when>
+ 		<otherwise>
+ 			1=2
+ 		</otherwise>
+ 	</choose>
+  </select>
+  
+    <!-- 查询租车信息供CUBC查询使用    需求DN201704100011 add by 378375  @date 2017年4月10日 14:40:32 -->
+  <select id="selectByParamsForCUBC" resultType="com.deppon.foss.module.settlement.pay.api.shared.dto.RentCarReportDto"
+  								  parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.RentCarReportDto" >
+    SELECT 
+    <include refid="Base_Column_List" />
+    FROM TFR.T_OPT_TEMPRENTALMARK M
+    JOIN STL.T_STL_BILL_PAYABLE P ON P.SOURCE_BILL_NO = M.TEMPRENTAL_MARK_NO AND P.ACTIVE = 'Y'
+ 	LEFT JOIN STL.T_STL_BILL_PAYMENT PAY ON PAY.PAYMENT_NO = P.PAYMENT_NO AND PAY.ACTIVE = 'Y' 
+  	LEFT JOIN STL.T_STL_BILL_PAYMENT_D PD ON PD.PAYMENT_NO = PAY.PAYMENT_NO  AND PD.SOURCE_BILL_NO = P.PAYABLE_NO 
+  	LEFT JOIN STL.T_STL_BILL_WITHHOLDING W ON W.WORKFLOW_NO = M.Accrued_Work_No AND W.ACTIVE='Y'
+  	LEFT JOIN BSE.T_BAS_COST_CENTER_DEPARTINFOR L ON L.dept_code = PAY.COST_DEPT_CODE AND L.ACTIVE='Y'
+ 	LEFT JOIN BSE.T_BAS_VEHICLE_TYPE_LENGTH BL ON BL.VEHICLE_LENGTH_CODE = M.VEHICLE_LENGHT_CODE AND BL.ACTIVE='Y'
+ 	where 
+ 		M.ACTIVE = #{active}  AND 
+ 	<choose>
+ 		<!--==============  按租车编号查询 ============== -->
+ 		<when test="queryType!=null and queryType!='' and queryType=='RCB' ">
+ 			<if test="billNos!=null and billNos.size>0 ">
+ 				 M.TEMPRENTAL_MARK_NO IN
+ 				<foreach collection="billNos" index="index" item="item" open="(" separator="," close=")">
+ 					#{item}
+ 				</foreach>
+ 			</if>
+ 		</when>
+ 		<otherwise>
+ 			1=2
+ 		</otherwise>
+ 	</choose>
+  </select>
+  
+   <!-- 查询租车信息 -->
+  <select id="selectCountByParams" resultType="com.deppon.foss.module.settlement.pay.api.shared.dto.RentCarReportDto"
+  								  parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.RentCarReportDto" >
+    SELECT 
+       count(1) totalCount,
+       sum(M.RENTAL_AMOUNT)/100 totalAmount,
+       sum(M.ACTUAL_TAKEGOODS_QYT) totalTakeGoodsQyt
+    FROM TFR.T_OPT_TEMPRENTALMARK M
+    JOIN STL.T_STL_BILL_PAYABLE P ON P.SOURCE_BILL_NO = M.TEMPRENTAL_MARK_NO AND P.ACTIVE = 'Y'
+ 	LEFT JOIN STL.T_STL_BILL_PAYMENT PAY ON PAY.PAYMENT_NO = P.PAYMENT_NO AND PAY.ACTIVE = 'Y' 
+ 	where 
+ 		M.ACTIVE = #{active} AND  ( 
+ 		EXISTS( 
+ 			SELECT 1 FROM  BSE.MV_BAS_USER_ORG_AUTH_VIEW V 
+ 			WHERE V.EMP_CODE = #{empCode,jdbcType=VARCHAR} AND V.ORG_CODE = P.PAYABLE_ORG_CODE
+ 			) OR M.MARK_DEPART_CODE = #{currentDeptCode,jdbcType=VARCHAR}
+	    ) AND
+ 	<choose>
+ 		<!--============== 按日期查询 ==============-->
+ 		<when test="queryType!=null and queryType!='' and queryType=='TD' ">
+ 			<!-- 按用车日期查询 -->
+ 			<if test="queryDateType!=null and queryDateType!='' and queryDateType=='UT' ">
+ 				<![CDATA[ M.USECAR_DATE > =#{startDate} AND M.USECAR_DATE <#{endDate}]]>
+ 			</if>
+ 			<!-- 按租车日期查询 -->
+ 			<if test="queryDateType!=null and queryDateType!='' and queryDateType=='RT' ">
+ 				<![CDATA[ M.CREATE_DATE > =#{startDate} AND M.CREATE_DATE <#{endDate} ]]> 
+ 			</if>
+ 			<!-- 按车牌号 -->
+ 			<if test="vehicleNo!=null and vehicleNo!='' ">
+ 				AND M.VEHICLE_NO = #{vehicleNo}
+ 			</if>
+ 			<!-- 按租车用途 -->
+ 			<if test="rentCarUseType!=null and rentCarUseType!='' ">
+ 				AND M.RENTAL_CAR_USETYPE = #{rentCarUseType}
+ 			</if>
+ 			<!-- 按付款状态 -->
+			<if test="payStatus!=null and payStatus!='' ">
+				AND PAY.REMIT_STATUS = #{payStatus}
+			</if>
+ 			<!-- 按预提状态 -->
+ 			<if test="withholdingStatus!=null and withholdingStatus!=''">
+ 				<if test="withholdingStatus=='NT'">
+ 					 AND (M.ACCRUED_STATE IS NULL or M.ACCRUED_STATE =  #{withholdingStatus})
+ 				</if>
+ 				<if test="withholdingStatus!='NT'">
+ 					AND M.ACCRUED_STATE = #{withholdingStatus}
+ 				</if>
+ 			</if>
+ 			<!-- 是否已经报销/转报销 -->
+ 			<if test="reimbursement!=null and reimbursement!='' ">
+ 				AND (CASE WHEN PAY.PAYMENT_TYPE = 'CH' AND PAY.REMIT_STATUS IN('TG','TD')  THEN 'Y'
+        			 	  WHEN PAY.PAYMENT_TYPE = 'TT' AND PAY.REMIT_STATUS = 'TD' AND
+              				   PAY.REIMBURSEMENT = 'Y' THEN 'Y' ELSE 'N' END)=#{reimbursement}	
+ 			</if>
+ 			<!-- 部门查询 -->
+ 			<if test="orgCodeList!=null and orgCodeList.size>0  ">
+ 				AND M.MARK_DEPART_CODE IN
+ 				<foreach collection="orgCodeList" index="index" item="item" open="(" separator="," close=")">
+ 					#{item}
+ 				</foreach>
+ 			</if>
+ 			<!-- 按司机查询状态 -->
+			<if test="driverCode!=null and driverCode!='' ">
+				AND P.CUSTOMER_CODE = #{driverCode,jdbcType=VARCHAR}
+			</if>
+ 		</when>
+ 		<!--==============  按租车编号查询 ============== -->
+ 		<when test="queryType!=null and queryType!='' and queryType=='RCB' ">
+ 			<if test="billNos!=null and billNos.size>0 ">
+ 				 M.TEMPRENTAL_MARK_NO IN
+ 				<foreach collection="billNos" index="index" item="item" open="(" separator="," close=")">
+ 					#{item}
+ 				</foreach>
+ 			</if>
+ 		</when>
+ 		<!--============== 按应付单号查询 ==============-->
+ 		<when test="queryType!=null and queryType!='' and queryType=='TP' ">
+ 			<if test="billNos!=null and billNos.size>0">
+ 				P.PAYABLE_NO IN 
+ 				<foreach collection="billNos" index="index" item="item" open="(" separator="," close=")">
+ 					#{item}
+ 				</foreach>
+ 			</if>
+ 		</when>
+ 		<!--============== 按业务单号查询==============-->
+ 		<when test="queryType!=null and queryType!='' and queryType=='BN' ">
+ 		 M.TEMPRENTAL_MARK_NO IN
+	       (
+		       SELECT DISTINCT M.TEMPRENTAL_MARK_NO TEMPNO
+		          FROM TFR.T_OPT_TEMPRENTALMARK_DETAIL D
+		          JOIN TFR.T_OPT_TEMPRENTALMARK M
+		            ON M.ACTIVE = 'Y'
+		           AND M.ID = D.TEMPRENTALMARK_ID
+		         WHERE D.BILL_NO IN
+	 				<foreach collection="billNos" index="index" item="item" open="(" separator="," close=")">
+	 					#{item}
+	 				</foreach>
+	         )
+ 		</when>
+ 		<!--==============  按工作流号查询 ==============-->
+ 		<when test="queryType!=null and queryType!='' and queryType=='WO' ">
+ 			<if test="billNos!=null and billNos.size>0 ">
+ 				(   PAY.WORKFLOW_NO IN
+ 				<foreach collection="billNos" index="index" item="item" open="(" separator="," close=")">
+ 					#{item}
+ 				</foreach> 
+ 				OR PAY.APPLY_WORK_FLOW_NO IN
+ 				<foreach collection="billNos" index="index" item="item" open="(" separator="," close=")">
+ 					#{item}
+ 				</foreach> 
+ 				OR M.ACCRUED_WORK_NO IN
+ 				<foreach collection="billNos" index="index" item="item" open="(" separator="," close=")">
+ 					#{item}
+ 				</foreach> 
+ 				)
+ 			</if>
+ 		</when>
+ 		<otherwise>
+ 			1=2
+ 		</otherwise>
+ 	</choose>
+  </select>
+  
+   <!-- 查询已经预提的租车记录 -->
+  <select id="queryWithholdingedRentCar" resultType="com.deppon.foss.module.settlement.pay.api.shared.dto.RentCarReportDto"
+  								  parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.RentCarReportDto" >
+    SELECT 
+      M.TEMPRENTAL_MARK_NO  RENTCARNO
+    FROM TFR.T_OPT_TEMPRENTALMARK M
+ 	where 
+ 		M.ACTIVE = 'Y' AND M.ACCRUED_STATE IN('TG','TD') AND
+		M.TEMPRENTAL_MARK_NO IN
+		<foreach collection="billNos" index="index" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+  </select>
+</mapper>

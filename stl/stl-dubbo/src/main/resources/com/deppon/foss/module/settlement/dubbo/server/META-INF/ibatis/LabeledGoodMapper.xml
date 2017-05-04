@@ -1,0 +1,380 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!--zxy 20131118 ISSUE-4391 增加包装类型 ：PACKAGE_TYPE-->
+<mapper namespace="foss.uip.LabeledGoodMapper" >
+
+  <resultMap id="labeledGoodResultMap" type="com.deppon.foss.module.settlement.dubbo.api.define.LabeledGoodEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="SERIAL_NO" property="serialNo" jdbcType="VARCHAR" />
+    <result column="ACTIVE" property="active" jdbcType="VARCHAR" />
+    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+    <result column="BILL_TIME" property="billTime" jdbcType="TIMESTAMP" />
+    <result column="OLD_SERIAL_NO" property="oldSerialNo" jdbcType="VARCHAR" />
+    <result column="NUMBER_CHANG_ITEMS" property="numberChangItems" jdbcType="VARCHAR" />
+    <result column="INITIAL_VALUE" property="initalVale" jdbcType="CHAR" />
+    <result column="IS_NEED_WOODEN" property="isNeedWooden" jdbcType="CHAR" />
+    <result column="PACKAGE_TYPE" property="packageType" jdbcType="VARCHAR" />
+  </resultMap>
+  
+  <sql id="labeledGood_Column_List" >
+    ID, SERIAL_NO, ACTIVE, WAYBILL_NO, CREATE_TIME, MODIFY_TIME, BILL_TIME, 
+    OLD_SERIAL_NO, NUMBER_CHANG_ITEMS, INITIAL_VALUE, IS_NEED_WOODEN,PACKAGE_TYPE
+  </sql>
+  
+  <select id="selectLabeledGoodByPrimaryKey" resultMap="labeledGoodResultMap" parameterType="java.lang.String" >
+    select /*模块：接送货-运单-通过主键查询*/
+    <include refid="labeledGood_Column_List" />
+    from PKP.T_SRV_LABELED_GOOD
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+  
+  <select id="selectLabeledGoodByTwoNo" resultMap="labeledGoodResultMap" parameterType="java.util.Map" >
+    select /*模块：接送货-运单-通过运单号和流水号查询*/
+    <include refid="labeledGood_Column_List" />
+    from PKP.T_SRV_LABELED_GOOD
+    where WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+    	and SERIAL_NO = #{serialNo,jdbcType=VARCHAR}
+	    and ACTIVE = #{active,jdbcType=CHAR}
+  </select>
+  
+  <select id="queryLabeledGoodByWaybillNoAndSerialNo" resultMap="labeledGoodResultMap" parameterType="java.util.Map" >
+    select /*模块：接送货-运单-通过运单号和流水号查询(为中转提供)*/
+    <include refid="labeledGood_Column_List" />
+    from PKP.T_SRV_LABELED_GOOD
+    where 1=1
+    	<if test="waybillNo != null" >
+	       and WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+	    </if> 
+    	<if test="serialNo != null" >
+	       and SERIAL_NO = #{serialNo,jdbcType=VARCHAR}
+	    </if> 
+	    <if test="active != null" >
+	       and ACTIVE = #{active,jdbcType=VARCHAR}
+	    </if>  	
+  </select>
+  
+  <select id="selectlastSerialNoBywaybillNo" resultMap="labeledGoodResultMap" parameterType="java.util.Map">
+    select /*模块：接送货-运单-通过运单号查询最大的序列号*/
+    <include refid="labeledGood_Column_List" />
+    from PKP.T_SRV_LABELED_GOOD
+    where WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+    <if test="active != null and active !='' ">
+    	AND ACTIVE = #{active,jdbcType=VARCHAR}
+    </if>
+    order by serial_no asc
+  </select>
+  
+  <select id="selectActiveSerialNoBywaybillNo" resultMap="labeledGoodResultMap" parameterType="java.util.Map" >
+    select /*模块：接送货-运单-通过运单号查询所有激活流水号*/
+    <include refid="labeledGood_Column_List" />
+    from PKP.T_SRV_LABELED_GOOD
+    where WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR} 
+    	and ACTIVE = 'Y'
+    	order by serial_no asc
+  </select>
+  
+  <delete id="deleteLabeledGoodByPrimaryKey" parameterType="java.lang.String" >
+    delete from PKP.T_SRV_LABELED_GOOD
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  
+  <insert id="insertLabeledGood" parameterType="com.deppon.foss.module.settlement.dubbo.api.define.LabeledGoodEntity" >
+    insert into PKP.T_SRV_LABELED_GOOD (ID, SERIAL_NO, ACTIVE, 
+      WAYBILL_NO, CREATE_TIME, MODIFY_TIME, BILL_TIME, 
+      OLD_SERIAL_NO, NUMBER_CHANG_ITEMS, INITIAL_VALUE, IS_NEED_WOODEN,Package_type)
+    values (#{id,jdbcType=VARCHAR}, #{serialNo,jdbcType=VARCHAR}, #{active,jdbcType=CHAR}, 
+      #{waybillNo,jdbcType=VARCHAR}, #{createTime,jdbcType=TIMESTAMP}, #{modifyTime,jdbcType=TIMESTAMP}, 
+      #{billTime,jdbcType=TIMESTAMP}, #{oldSerialNo,jdbcType=VARCHAR}, #{numberChangItems,jdbcType=VARCHAR},
+      #{initalVale,jdbcType=CHAR}, #{isNeedWooden,jdbcType=CHAR}, #{packageType,jdbcType=VARCHAR})
+  </insert>
+  
+  <insert id="insertLabeledGoodBatch" parameterType="java.util.List" >
+  	begin
+  	<foreach collection="list" item="item" index="index" separator=";" >
+	    insert into PKP.T_SRV_LABELED_GOOD
+	    <trim prefix="(" suffix=")" suffixOverrides="," >
+	      <if test="item.id != null" >
+	        ID,
+	      </if>
+	      <if test="item.serialNo != null" >
+	        SERIAL_NO,
+	      </if>
+	      <if test="item.active != null" >
+	        ACTIVE,
+	      </if>
+	      <if test="item.waybillNo != null" >
+	        WAYBILL_NO,
+	      </if>
+	      <if test="item.createTime != null" >
+	        CREATE_TIME,
+	      </if>
+	      <if test="item.modifyTime != null" >
+	        MODIFY_TIME,
+	      </if>
+	      <if test="item.billTime != null" >
+	        BILL_TIME,
+	      </if>
+	      <if test="item.oldSerialNo != null" >
+	        OLD_SERIAL_NO,
+	      </if>
+	      <if test="item.numberChangItems != null" >
+	        NUMBER_CHANG_ITEMS,
+	      </if>
+	      <if test="item.initalVale != null" >
+	        INITIAL_VALUE,
+	      </if>
+	      <if test="item.isNeedWooden != null" >
+	        IS_NEED_WOODEN,
+	      </if>
+	    </trim>
+	    <trim prefix="values (" suffix=")" suffixOverrides="," >
+	      <if test="item.id != null" >
+	        #{item.id,jdbcType=VARCHAR},
+	      </if>
+	      <if test="item.serialNo != null" >
+	        #{item.serialNo,jdbcType=VARCHAR},
+	      </if>
+	      <if test="item.active != null" >
+	        #{item.active,jdbcType=VARCHAR},
+	      </if>
+	      <if test="item.waybillNo != null" >
+	        #{item.waybillNo,jdbcType=VARCHAR},
+	      </if>
+	      <if test="item.createTime != null" >
+	        #{item.createTime,jdbcType=TIMESTAMP},
+	      </if>
+	      <if test="item.modifyTime != null" >
+	        #{item.modifyTime,jdbcType=TIMESTAMP},
+	      </if>
+	      <if test="item.billTime != null" >
+	        #{item.billTime,jdbcType=TIMESTAMP},
+	      </if>
+	      <if test="item.oldSerialNo != null" >
+	        #{item.oldSerialNo,jdbcType=VARCHAR},
+	      </if>
+	      <if test="item.numberChangItems != null" >
+	        #{item.numberChangItems,jdbcType=VARCHAR},
+	      </if>
+	      <if test="item.initalVale != null" >
+	        #{item.initalVale,jdbcType=CHAR},
+	      </if>
+	      <if test="item.isNeedWooden != null" >
+	        #{item.isNeedWooden,jdbcType=CHAR},
+	      </if>
+	    </trim>
+	</foreach>
+	;end;
+  </insert>
+  
+  <insert id="insertLabeledGoodSelective" parameterType="com.deppon.foss.module.settlement.dubbo.api.define.LabeledGoodEntity" >
+    insert into PKP.T_SRV_LABELED_GOOD
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="serialNo != null" >
+        SERIAL_NO,
+      </if>
+      <if test="active != null" >
+        ACTIVE,
+      </if>
+      <if test="waybillNo != null" >
+        WAYBILL_NO,
+      </if>
+      <if test="createTime != null" >
+        CREATE_TIME,
+      </if>
+      <if test="modifyTime != null" >
+        MODIFY_TIME,
+      </if>
+      <if test="billTime != null" >
+        BILL_TIME,
+      </if>
+      <if test="oldSerialNo != null" >
+        OLD_SERIAL_NO,
+      </if>
+      <if test="numberChangItems != null" >
+        NUMBER_CHANG_ITEMS,
+      </if>
+      <if test="initalVale != null" >
+        INITIAL_VALUE,
+      </if>
+      <if test="isNeedWooden != null" >
+        IS_NEED_WOODEN,
+      </if>
+       <if test="packageType != null and packageType !=''" >
+        PACKAGE_TYPE,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="serialNo != null" >
+        #{serialNo,jdbcType=VARCHAR},
+      </if>
+      <if test="active != null" >
+        #{active,jdbcType=VARCHAR},
+      </if>
+      <if test="waybillNo != null" >
+        #{waybillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null" >
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifyTime != null" >
+        #{modifyTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="billTime != null" >
+        #{billTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="oldSerialNo != null" >
+        #{oldSerialNo,jdbcType=VARCHAR},
+      </if>
+      <if test="numberChangItems != null" >
+        #{numberChangItems,jdbcType=VARCHAR},
+      </if>
+      <if test="initalVale != null" >
+        #{initalVale,jdbcType=CHAR},
+      </if>
+      <if test="isNeedWooden != null" >
+        #{isNeedWooden,jdbcType=CHAR},
+      </if>
+      <if test="packageType !=null and packageType !=''">
+         #{packageType,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  
+  <update id="updateLabeledGoodByPrimaryKeySelective" parameterType="com.deppon.foss.module.settlement.dubbo.api.define.LabeledGoodEntity" >
+    update PKP.T_SRV_LABELED_GOOD
+    <set >
+      <if test="serialNo != null" >
+        SERIAL_NO = #{serialNo,jdbcType=VARCHAR},
+      </if>
+      <if test="active != null" >
+        ACTIVE = #{active,jdbcType=VARCHAR},
+      </if>
+      <if test="waybillNo != null" >
+        WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null" >
+        CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifyTime != null" >
+        MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="billTime != null" >
+        BILL_TIME = #{billTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="oldSerialNo != null" >
+        OLD_SERIAL_NO = #{oldSerialNo,jdbcType=VARCHAR},
+      </if>
+      <if test="numberChangItems != null" >
+        NUMBER_CHANG_ITEMS = #{numberChangItems,jdbcType=VARCHAR},
+      </if>
+      <if test="initalVale != null" >
+        INITIAL_VALUE = #{initalVale,jdbcType=CHAR},
+      </if>
+      <if test="isNeedWooden != null" >
+        IS_NEED_WOODEN = #{isNeedWooden,jdbcType=CHAR},
+      </if>
+      <if test="packageType != null" >
+        PACKAGE_TYPE = #{packageType,jdbcType=CHAR},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  
+  <update id="updateLabeledGoodByPrimaryKey" parameterType="com.deppon.foss.module.settlement.dubbo.api.define.LabeledGoodEntity" >
+    update PKP.T_SRV_LABELED_GOOD
+    set SERIAL_NO = #{serialNo,jdbcType=VARCHAR},
+      ACTIVE = #{active,jdbcType=VARCHAR},
+      WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR},
+      CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+      MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP},
+      BILL_TIME = #{billTime,jdbcType=TIMESTAMP},
+      OLD_SERIAL_NO = #{oldSerialNo,jdbcType=VARCHAR},
+      NUMBER_CHANG_ITEMS = #{numberChangItems,jdbcType=VARCHAR},
+      INITIAL_VALUE = #{initalVale,jdbcType=CHAR},
+      IS_NEED_WOODEN = #{isNeedWooden,jdbcType=CHAR}
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  
+  <update id="deleteGoodEntity"   parameterType="com.deppon.foss.module.settlement.dubbo.api.define.LabeledGoodEntity">
+ 	 	UPDATE  PKP.T_SRV_LABELED_GOOD
+ 	 		SET ACTIVE = 'N' 
+  		WHERE WAYBILL_NO=#{waybillNo,jdbcType=VARCHAR}
+  		AND SERIAL_NO=#{serialNo,jdbcType=VARCHAR}
+  </update>
+  
+  
+  <update id="modifyWaybillNo"  >
+        UPDATE  PKP.T_SRV_LABELED_GOOD
+            SET WAYBILL_NO = #{newWaybillNo,jdbcType=VARCHAR} 
+        WHERE WAYBILL_NO=#{oldWaybillNo,jdbcType=VARCHAR}
+  </update>
+  
+  <update id="deleteLabeledGoodByWaybillNo" parameterType="java.util.Map">
+ 	 	UPDATE PKP.T_SRV_LABELED_GOOD
+ 	 	 SET ACTIVE =  #{active,jdbcType=CHAR}
+  		 WHERE WAYBILL_NO=#{waybillNo,jdbcType=VARCHAR} AND ACTIVE =  #{conActive,jdbcType=CHAR}  			
+  </update>  
+ 
+ <select id="queryLabeledGoodByWaybillNoWithSerial" resultMap="labeledGoodResultMap" parameterType="java.util.Map">
+ 	select /*模块：接送货-运单-通过运单号和流水号集合查询*/
+    <include refid="labeledGood_Column_List" />
+    from PKP.T_SRV_LABELED_GOOD
+    <where>
+    	<if test="waybillNo != null" >
+	       and WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+	    </if> 
+    	<if test="active != null" >
+	       and ACTIVE = #{active,jdbcType=VARCHAR}
+	    </if> 
+	    <choose>
+	    	<when test="serialNoList">
+	    	and SERIAL_NO in
+	    		<foreach collection="serialNoList" open="(" close=")" separator=","
+					item="labeledGoodId">
+					<if test="labeledGoodId!=null and labeledGoodId != ''">
+		    	      <![CDATA[	#{labeledGoodId,jdbcType=VARCHAR} ]]>
+		            </if>
+				</foreach>
+	    	</when>
+	    	<otherwise>
+	    		and SERIAL_NO = ''
+	    	</otherwise>
+	    </choose>
+    </where>
+ </select>
+ <insert id="insertBatchLabeledGoods" parameterType="com.deppon.foss.module.settlement.dubbo.api.define.LabeledGoodEntity" >
+  	begin
+  	<foreach collection="list" item="item" index="index" separator=";" >
+	  	insert into PKP.T_SRV_LABELED_GOOD (ID, SERIAL_NO, ACTIVE, 
+      WAYBILL_NO, CREATE_TIME, MODIFY_TIME, BILL_TIME, 
+      OLD_SERIAL_NO, NUMBER_CHANG_ITEMS, INITIAL_VALUE, IS_NEED_WOODEN,Package_type)
+    values
+       (#{item.id,jdbcType=VARCHAR}, #{item.serialNo,jdbcType=VARCHAR}, #{item.active,jdbcType=CHAR}, 
+      #{item.waybillNo,jdbcType=VARCHAR}, #{item.createTime,jdbcType=TIMESTAMP}, #{item.modifyTime,jdbcType=TIMESTAMP}, 
+      #{item.billTime,jdbcType=TIMESTAMP}, #{item.oldSerialNo,jdbcType=VARCHAR}, #{item.numberChangItems,jdbcType=VARCHAR},
+      #{item.initalVale,jdbcType=CHAR}, #{item.isNeedWooden,jdbcType=CHAR}, #{item.packageType,jdbcType=VARCHAR})
+  	</foreach>
+  	;end;
+  </insert>
+  <delete id="deleteLabByWaybillNos" parameterType="java.util.List">
+	    delete from  PKP.T_SRV_LABELED_GOOD
+		       where WAYBILL_NO in
+		        <foreach collection="list" item= "item" index ="index"
+                 open= "(" close =")" separator=",">
+                 #{item}
+               </foreach>		       				
+	</delete>
+	
+	 <delete id="deleteLabByWaybillNo" parameterType="java.lang.String">
+	    delete from  PKP.T_SRV_LABELED_GOOD
+		       where WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}      	       				
+	</delete>
+</mapper>

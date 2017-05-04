@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.owedLimitRegion">
+	<!-- 临欠额度区间信息 -->
+	<resultMap id="owedLimitRegionResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.OwedLimitRegionEntity">
+		<result column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="OWEDLIMIT_MIN" property="owedlimitMin"
+			jdbcType="DECIMAL" />
+		<result column="OWEDLIMIT_MAX" property="owedlimitMax"
+			jdbcType="DECIMAL" />
+		<result column="OWEDLIMIT" property="owedlimit" jdbcType="DECIMAL" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 数据字段 -->
+	<sql id="owedLimitRegion_Column_List">
+		ID, OWEDLIMIT_MIN/100 OWEDLIMIT_MIN, OWEDLIMIT_MAX/100 OWEDLIMIT_MAX,
+		OWEDLIMIT/100 OWEDLIMIT, CREATE_TIME,
+		MODIFY_TIME,
+		ACTIVE, CREATE_USER_CODE, MODIFY_USER_CODE
+	</sql>
+	
+	<!-- 插入数据：数据字段 -->
+	<sql id="owedLimitRegion_insert_List">
+		ID, OWEDLIMIT_MIN, OWEDLIMIT_MAX,
+		OWEDLIMIT, CREATE_TIME,
+		MODIFY_TIME,
+		ACTIVE, CREATE_USER_CODE, MODIFY_USER_CODE
+	</sql>
+
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="owedlimit != null and owedlimit != ''">
+				and OWEDLIMIT = #{owedlimit,jdbcType=DECIMAL}*100
+			</if>
+			ORDER BY OWEDLIMIT_MIN
+		</where>
+
+	</sql>
+
+	<!-- 查询所有临欠额度区间信息 -->
+	<select id="queryAllInfos"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.OwedLimitRegionEntity"
+		resultMap="owedLimitRegionResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有临欠额度区间信息 **/
+		]]>
+		<include refid="owedLimitRegion_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_OWEDLIMIT_REGION T
+		]]>
+		<include refid="queryWhere" />
+	</select>
+	
+	<!-- 根据传入的营业部收入查询营业部最大临欠额度 -->
+	<select id="queryInfoByTaking"
+		parameterType="map"
+		resultMap="owedLimitRegionResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据传入的营业部收入查询营业部最大临欠额度 **/
+		]]>
+		<include refid="owedLimitRegion_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_OWEDLIMIT_REGION T
+		]]>
+		<where>
+			<if test="active != null and active != ''">
+				and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="taking != null and taking != ''">
+				and OWEDLIMIT_MIN <![CDATA[ <= ]]> #{taking,jdbcType=DECIMAL}*100 
+				and OWEDLIMIT_MAX <![CDATA[ > ]]> #{taking,jdbcType=DECIMAL}*100
+			</if>
+			<if test="id != null and id != ''">
+				and ID != #{id,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 验证额度是否在临欠区间范围内 -->
+	<select id="queryInfoByRegionValues"
+		parameterType="map"
+		resultMap="owedLimitRegionResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据传入的营业部收入查询营业部最大临欠额度 **/
+		]]>
+		<include refid="owedLimitRegion_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_OWEDLIMIT_REGION T
+		]]>
+		<where>
+			<if test="active != null and active != ''">
+				and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="minValue != null and minValue != ''">
+				and OWEDLIMIT_MIN = #{minValue,jdbcType=DECIMAL}*100
+			</if>
+			<if test="maxValue != null and maxValue != ''">
+				and OWEDLIMIT_MAX = #{maxValue,jdbcType=DECIMAL}*100
+			</if>
+			<if test="id != null and id != ''">
+				and ID != #{id,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 验证额度是否在临欠区间范围内 -->
+	<select id="queryInfoByRegionValue"
+		parameterType="map"
+		resultMap="owedLimitRegionResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:根据传入的营业部收入查询营业部最大临欠额度 **/
+		]]>
+		<include refid="owedLimitRegion_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_OWEDLIMIT_REGION T
+		]]>
+		<where>
+			<if test="active != null and active != ''">
+				and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="taking != null">
+				and OWEDLIMIT_MIN <![CDATA[ < ]]> #{taking,jdbcType=DECIMAL}*100 
+				and OWEDLIMIT_MAX <![CDATA[ > ]]> #{taking,jdbcType=DECIMAL}*100
+			</if>
+			<if test="id != null and id != ''">
+				and ID != #{id,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</select>
+
+	<!-- 统计总记录数 -->
+	<select id="queryCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.OwedLimitRegionEntity">
+	    <![CDATA[
+	       	select/** 综合:统计总记录数 **/ count(*) from BSE.T_BAS_OWEDLIMIT_REGION T
+	    ]]>
+		<include refid="queryWhere" />
+
+	</select>
+
+	<!-- 新增信息 -->
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.OwedLimitRegionEntity">
+		
+		<![CDATA[
+			INSERT/** 综合:新增信息 **/ INTO BSE.T_BAS_OWEDLIMIT_REGION T	(
+		]]>
+		<include refid="owedLimitRegion_insert_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, #{owedlimitMin,jdbcType=DECIMAL}*100,
+		#{owedlimitMax,jdbcType=DECIMAL}*100,
+		#{owedlimit,jdbcType=DECIMAL}*100,
+		#{createDate,jdbcType=TIMESTAMP}, #{modifyDate,jdbcType=TIMESTAMP},
+		#{active,jdbcType=CHAR}, #{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+
+	<!-- 修改信息 -->
+	<update id="update"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.OwedLimitRegionEntity">
+		update/** 综合:修改信息 **/ BSE.T_BAS_OWEDLIMIT_REGION
+		<set>
+			<!-- <if test="id != null">
+				ID = #{id,jdbcType=VARCHAR},
+			</if> -->
+			<if test="owedlimitMin != null">
+				OWEDLIMIT_MIN = #{owedlimitMin,jdbcType=DECIMAL}*100,
+			</if>
+			<if test="owedlimitMax != null">
+				OWEDLIMIT_MAX = #{owedlimitMax,jdbcType=DECIMAL}*100,
+			</if>
+			<if test="owedlimit != null">
+				OWEDLIMIT = #{owedlimit,jdbcType=DECIMAL}*100,
+			</if>
+			<if test="createDate != null">
+				CREATE_TIME = #{createDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			<!-- <if test="active != null">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if> -->
+			<!-- <if test="createUser != null">
+				CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR},
+			</if> -->
+			<if test="modifyUser != null">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+
+		</set>
+
+		<where>
+			<if test="id != null">
+				ID = #{id,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				and active = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+
+	</update>
+
+	<!-- 作废信息 -->
+	<update id="deleteById" parameterType="map">
+		update/** 综合:作废信息 **/ BSE.T_BAS_OWEDLIMIT_REGION
+
+		<set>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				MODIFY_USER_CODE = #{modifyUser, jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+
+		</set>
+
+		<where>
+			<if test="ids !=null and ids.size > 0">
+				ID in
+				<foreach collection="ids" index="index" item="id" open="("
+					separator="," close=")">
+					#{id}
+				</foreach>
+			</if>
+		</where>
+	</update>
+	
+	
+	<!-- 更新营业部最大临欠额度 -->
+	<update id="updateDepartmentAmountOwed" parameterType="map">
+		update/** 综合:更新营业部最大临欠额度 **/ BSE.T_BAS_SALES_DEPARTMENT
+
+		<set>
+			<if test="dto.owedLimit != null">
+				max_temp_arrears = #{dto.owedLimit,jdbcType=DECIMAL}*100
+			</if>
+		</set>
+
+		<where>
+			<if test="dto.deptCode != null and dto.deptCode != ''">
+				CODE = #{dto.deptCode,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</update>
+	
+	<!-- 批量更新营业部最大临欠额度 -->
+	<!-- <update id="batchUpdateDeptAmountOwed" parameterType="map">
+		begin
+		/** 综合:批量更新营业部最大临欠额度 **/
+		<foreach collection="list" item="dto" index="index" separator=";">
+		
+			update BSE.T_BAS_SALES_DEPARTMENT
+			<set>
+			<if test="dto.owedLimit != null">
+				max_temp_arrears = #{dto.owedLimit,jdbcType=DECIMAL}*100
+			</if>
+			</set>
+			<where>
+			<if test="dto.deptCode != null and dto.deptCode != ''">
+				CODE = #{dto.deptCode,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			</where>
+		</foreach>
+	    ;end;
+	</update> -->
+
+</mapper>

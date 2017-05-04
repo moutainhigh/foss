@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.BillDepositReceivedEntityDao">
+	<!-- 根据传入的参数，获取预收单列表信息 -->
+	
+	 <!-- 按输入参数查询付款单总条数、总金额 --> 
+ 	<resultMap id="BillDepositReceivedTotalResultMap" type="com.deppon.foss.module.settlement.pay.api.shared.dto.BillDepositReceivedPayDto" >
+    	<result column="DP_TOTAL_ROWS" property="totalNum" jdbcType="DECIMAL" />
+    	<result column="DP_TOTAL_AMOUNT" property="totalAmount" jdbcType="DECIMAL" />
+    	<result column="DP_TOTAL_VERIFY_AMOUNT" property="totalVerifyAmount" jdbcType="DECIMAL" />
+    	<result column="DP_TOTAL_UNVERIFY_AMOUNT" property="totalUnverifyAmount" jdbcType="DECIMAL" />
+  	</resultMap>
+  	
+	<select id="queryDepositReceivedParams" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillDepositReceivedPayDto" >
+    SELECT /*根据传入的参数，获取预收单列表信息*/
+    <include refid="Base_Column_List" />
+    FROM STL.T_STL_BILL_DEPOSIT_RECEIVED T WHERE 
+    	<![CDATA[ ACCOUNT_DATE >=#{startBusinessDate} AND   ACCOUNT_DATE < #{endBusinessDate} ]]>
+	    <if test="paymentType!=null and paymentType!=''"> <!-- 收款方式  -->
+	    	AND PAYMENT_TYPE = #{paymentType} 
+	    </if>
+	    <if test="customerCode!=null and customerCode!=''">
+			AND CUSTOMER_CODE = #{customerCode} <!-- 客户不为空时，根据客户编码过滤 -->
+		</if>
+		<if test="active!=null and active!='' ">
+			AND ACTIVE=#{active}
+		</if>
+		<if test="isInit!=null and isInit!='' ">
+			AND IS_INIT=#{isInit}
+		</if>
+		<if test="isRedBack!=null and isRedBack!='' ">
+			AND IS_Red_Back=#{isRedBack}
+		</if>
+		<choose>
+			<when test='isLeagueSaleDept=="Y" '>
+				AND CREATE_ORG_CODE = #{createOrgCode}
+			</when>
+			<when test='isLeagueSaleDept!="Y" '>
+				<if test="generatingOrgCode!=null and generatingOrgCode!='' ">
+					AND GENERATING_ORG_CODE = #{generatingOrgCode}
+				</if>
+				AND EXISTS (SELECT ORG_CODE
+					FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+						 WHERE V.EMP_CODE = #{empCode}
+									 AND <!--用财务单据的部门编码和数据权限表的部门编码进行比较-->
+									T.GENERATING_ORG_CODE = V.ORG_CODE
+		               )
+			</when>
+			<otherwise>
+				1=0
+			</otherwise>
+		</choose>
+	</select>
+	<!-- 根据传入的参数，获取预收单提条数 -->
+	<select id="queryDepositReceivedParamsCount" resultType="long" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillDepositReceivedPayDto" >
+    SELECT COUNT(*) FROM  /*根据传入的参数，获取预收单总条数*/
+    STL.T_STL_BILL_DEPOSIT_RECEIVED T WHERE 
+    	<![CDATA[ ACCOUNT_DATE >=#{startBusinessDate} AND   ACCOUNT_DATE < #{endBusinessDate} ]]>
+	    <if test="paymentType!=null and paymentType!=''"> <!-- 收款方式  -->
+	    	AND PAYMENT_TYPE = #{paymentType} 
+	    </if>
+	    <if test="customerCode!=null and customerCode!=''">
+			AND CUSTOMER_CODE = #{customerCode} <!-- 客户不为空时，根据客户编码过滤 -->
+		</if>
+		<if test="active!=null and active!='' ">
+			AND ACTIVE=#{active}
+		</if>
+		<if test="isInit!=null and isInit!='' ">
+			AND IS_INIT=#{isInit}
+		</if>
+		<if test="isRedBack!=null and isRedBack!='' ">
+			AND IS_Red_Back=#{isRedBack}
+		</if>
+		<if test="generatingOrgCode!=null and generatingOrgCode!='' ">
+			AND GENERATING_ORG_CODE = #{generatingOrgCode}
+		</if>
+		AND EXISTS (SELECT ORG_CODE
+			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+				 WHERE V.EMP_CODE = #{empCode}
+							 AND <!--用财务单据的部门编码和数据权限表的部门编码进行比较-->
+								T.GENERATING_ORG_CODE = V.ORG_CODE
+               )
+	</select>
+	
+	<!-- 预收单查询界面 按日期查询 -->
+	<select id="queryDepositReceivedParamsCountAndAmount" resultMap="BillDepositReceivedTotalResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillDepositReceivedPayDto" >
+     SELECT  /*根据传入的参数，获取预收单条数*/ 
+	    COUNT(*) AS DP_TOTAL_ROWS,
+	    SUM(T.AMOUNT)/100 AS DP_TOTAL_AMOUNT,
+	    SUM(T.UNVERIFY_AMOUNT)/100 AS DP_TOTAL_UNVERIFY_AMOUNT,
+	    SUM(T.VERIFY_AMOUNT)/100 AS DP_TOTAL_VERIFY_AMOUNT  
+    FROM STL.T_STL_BILL_DEPOSIT_RECEIVED T WHERE 
+    	<![CDATA[ ACCOUNT_DATE >=#{startBusinessDate} AND   ACCOUNT_DATE < #{endBusinessDate} ]]>
+	    <if test="paymentType!=null and paymentType!=''"> <!-- 收款方式  -->
+	    	AND PAYMENT_TYPE = #{paymentType} 
+	    </if>
+	    <if test="customerCode!=null and customerCode!=''">
+			AND CUSTOMER_CODE = #{customerCode} <!-- 客户不为空时，根据客户编码过滤 -->
+		</if>
+		<if test="active!=null and active!='' ">
+			AND ACTIVE=#{active}
+		</if>
+		<if test="isInit!=null and isInit!='' ">
+			AND IS_INIT=#{isInit}
+		</if>
+		<if test="isRedBack!=null and isRedBack!='' ">
+			AND IS_Red_Back=#{isRedBack}
+		</if>
+		<choose>
+			<when test='isLeagueSaleDept=="Y" '>
+				AND CREATE_ORG_CODE = #{createOrgCode}
+			</when>
+			<when test='isLeagueSaleDept!="Y" '>
+				<if test="generatingOrgCode!=null and generatingOrgCode!='' ">
+					AND GENERATING_ORG_CODE = #{generatingOrgCode}
+				</if>
+				AND EXISTS (SELECT ORG_CODE
+					FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+						 WHERE V.EMP_CODE = #{empCode}
+									 AND <!--用财务单据的部门编码和数据权限表的部门编码进行比较-->
+									T.GENERATING_ORG_CODE = V.ORG_CODE
+		               )
+			</when>
+			<otherwise>
+				1=0
+			</otherwise>
+		</choose>
+	</select>
+
+	<!-- 根据传入的多个预收单号，获取预收单列表信息 -->
+	<select id="queryDepositReceivedNos" resultMap="BaseResultMap" parameterType="java.util.Map" >
+    SELECT /*根据传入的多个预收单号，获取预收单列表信息*/
+    <include refid="Base_Column_List" />
+    FROM STL.T_STL_BILL_DEPOSIT_RECEIVED T WHERE
+		 DEPOSIT_RECEIVED_NO IN
+		<foreach collection="depositReceivedNos"  index="index" item="item"  open="(" separator="," close=")">  
+		        #{item} 
+		</foreach>
+		<if test='isLeagueSaleDept=="Y" '>
+			AND CREATE_ORG_CODE = #{createOrgCode}
+		</if>
+		<if test='isLeagueSaleDept!="Y" '>
+			AND EXISTS (SELECT ORG_CODE
+				FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+					 WHERE V.EMP_CODE = #{empCode}
+								 AND <!--用财务单据的部门编码和数据权限表的部门编码进行比较-->
+								T.GENERATING_ORG_CODE = V.ORG_CODE
+	               )
+        </if>
+	</select>
+	<!-- 根据传入的多个预收单号，获取预收单总条数 -->
+	<select id="queryDepositReceivedNosCount" resultMap="BillDepositReceivedTotalResultMap" parameterType="java.util.Map" >
+    SELECT /*根据传入的多个预收单号，获取预收单总条数 */
+    COUNT(*) AS DP_TOTAL_ROWS,
+    SUM(T.AMOUNT)/100 AS DP_TOTAL_AMOUNT,
+    SUM(T.UNVERIFY_AMOUNT)/100 AS DP_TOTAL_UNVERIFY_AMOUNT,
+    SUM(T.VERIFY_AMOUNT)/100 AS DP_TOTAL_VERIFY_AMOUNT
+    FROM STL.T_STL_BILL_DEPOSIT_RECEIVED T WHERE
+		 DEPOSIT_RECEIVED_NO IN
+		<foreach collection="depositReceivedNos"  index="index" item="item"  open="(" separator="," close=")">  
+		        #{item} 
+		</foreach>
+		<if test='isLeagueSaleDept=="Y" '>
+			AND CREATE_ORG_CODE = #{createOrgCode}
+		</if>
+		<if test='isLeagueSaleDept!="Y" '>
+			AND EXISTS (SELECT ORG_CODE
+				FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+					 WHERE V.EMP_CODE = #{empCode}
+								 AND <!--用财务单据的部门编码和数据权限表的部门编码进行比较-->
+								T.GENERATING_ORG_CODE = V.ORG_CODE
+	               )
+        </if>
+	</select>
+	
+	<!-- 根据传入的参数，获取预收单列表信息 -->
+	<select id="queryDepositReceivedUnverifyParams" resultMap="BaseResultMap" parameterType="java.util.Map" >
+    SELECT /*根据传入的参数，获取预收单列表信息*/
+    <include refid="Base_Column_List" />
+    FROM STL.T_STL_BILL_DEPOSIT_RECEIVED T WHERE 
+    	<![CDATA[ ACCOUNT_DATE >= #{startBusinessDate} AND   ACCOUNT_DATE < #{endBusinessDate} ]]> 
+    	AND UNVERIFY_AMOUNT>0  
+    	<if test="active!=null and active!='' ">
+			AND ACTIVE = #{active}
+		</if>
+	    <if test="depositReceivedNo!=null and depositReceivedNo!=''"> <!-- 单号  -->
+	    	AND DEPOSIT_RECEIVED_NO = #{depositReceivedNo} 
+	    </if>
+	    <if test="customerCode!=null and customerCode!=''">
+			AND CUSTOMER_CODE = #{customerCode} <!-- 客户不为空时，根据客户编码过滤 -->
+		</if>
+		<if test="isRedBack!=null and isRedBack!='' ">
+			AND IS_RED_BACK = #{isRedBack}
+		</if>
+		<if test="isInit!=null and isInit!='' ">
+			AND IS_INIT=#{isInit}
+		</if>
+		<if test="generatingOrgCode!=null and generatingOrgCode!='' ">
+			AND GENERATING_ORG_CODE = #{generatingOrgCode}
+		</if>
+		AND EXISTS (SELECT ORG_CODE
+			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+				 WHERE V.EMP_CODE = #{empCode}
+							 AND <!--用财务单据的部门编码和数据权限表的部门编码进行比较-->
+								 T.GENERATING_ORG_CODE = V.ORG_CODE
+               )
+	</select>
+	<select id="queryDepositReceivedUnverifyParamsCount" resultMap="BillDepositReceivedTotalResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillDepositReceivedPayDto" >
+    SELECT  /*根据传入的参数，获取预收单条数*/ 
+    COUNT(*) AS DP_TOTAL_ROWS,
+    SUM(T.AMOUNT)/100 AS DP_TOTAL_AMOUNT,
+    SUM(T.UNVERIFY_AMOUNT)/100 AS DP_TOTAL_UNVERIFY_AMOUNT,
+    SUM(T.VERIFY_AMOUNT)/100 AS DP_TOTAL_VERIFY_AMOUNT
+    FROM STL.T_STL_BILL_DEPOSIT_RECEIVED T WHERE 
+    	<![CDATA[ ACCOUNT_DATE >= #{startBusinessDate} AND   ACCOUNT_DATE < #{endBusinessDate} ]]> 
+    	AND UNVERIFY_AMOUNT>0 
+    	<if test="active!=null and active!='' ">
+			AND ACTIVE = #{active}
+		</if>
+	    <if test="depositReceivedNo!=null and depositReceivedNo!=''"> <!-- 单号  -->
+	    	AND DEPOSIT_RECEIVED_NO = #{depositReceivedNo} 
+	    </if>
+	    <if test="customerCode!=null and customerCode!=''">
+			AND CUSTOMER_CODE = #{customerCode} <!-- 客户不为空时，根据客户编码过滤 -->
+		</if>
+		<if test="isRedBack!=null and isRedBack!='' ">
+			AND IS_RED_BACK = #{isRedBack}
+		</if>
+		<if test="isInit!=null and isInit!='' ">
+			AND IS_INIT=#{isInit}
+		</if>
+		<if test="generatingOrgCode!=null and generatingOrgCode!='' ">
+			AND GENERATING_ORG_CODE = #{generatingOrgCode}
+		</if>
+		AND EXISTS (SELECT ORG_CODE
+			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+				 WHERE V.EMP_CODE = #{empCode}
+							 AND <!--用财务单据的部门编码和数据权限表的部门编码进行比较-->
+								 T.GENERATING_ORG_CODE = V.ORG_CODE
+               )
+	</select>
+	
+	<!-- 根据付款单号获取预收单 -->
+	<select id="queryListByPaymentNo" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillDepositReceivedPayDto" >
+    	SELECT /*根据付款单号获取预收单*/
+		<include refid="Base_Column_List" />
+  		FROM STL.T_STL_BILL_DEPOSIT_RECEIVED 
+ 		<where>
+ 			IS_RED_BACK = #{isRedBack}
+ 			AND DEPOSIT_RECEIVED_NO IN 
+ 				(
+       				SELECT D.SOURCE_BILL_NO
+       				FROM STL.T_STL_BILL_PAYMENT_D D
+       				WHERE D.SOURCE_BILL_TYPE = #{sourceBillTypeFkd}
+       				AND D.PAYMENT_NO = #{paymentNo}
+       			UNION 
+        			SELECT P.DEPOSIT_RECEIVED_NO
+               		FROM STL.T_STL_BILL_DEPOSIT_RECEIVED P
+               		WHERE P.PAYMENT_NO = #{paymentNo}
+ 				)
+ 		</where> 
+	</select>
+	
+	
+	<!-- 按输入参数查询付款单总条数、总金额 --> 
+ 	<resultMap id="StlBillResultMap" type="com.deppon.foss.module.settlement.common.api.shared.dto.StlBillDetailDto" >
+    	<result column="DP_TOTAL_ROWS" property="flowTotalNum" jdbcType="DECIMAL" />
+    	<result column="DP_TOTAL_AMOUNT" property="flowTotalAmount" jdbcType="DECIMAL" />
+  	</resultMap>
+  	
+	<!-- （ptp监控使用）查询合伙人预收单总记录数和总金额 -->
+	<select id="countDepositReceivedBills" parameterType="com.deppon.foss.module.settlement.common.api.shared.dto.BillingQueryRequestDto" resultMap="StlBillResultMap">
+		SELECT  /*根据传入的参数，获取预收单总条数和总金额*/ 
+	    COUNT(1) AS DP_TOTAL_ROWS,
+	    NVL(SUM(T.AMOUNT)/100,0) AS DP_TOTAL_AMOUNT
+	    from STL.T_STL_BILL_DEPOSIT_RECEIVED T where
+		<![CDATA[ t.CREATE_TIME >= #{startTime} AND   t.CREATE_TIME < #{endTime} ]]>
+		and t.BILL_TYPE = 'DP' and t.active = 'Y'
+	</select>
+</mapper>

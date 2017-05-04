@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cxf="http://cxf.apache.org/core"
+	xmlns:jaxws="http://cxf.apache.org/jaxws" xmlns:jaxrs="http://cxf.apache.org/jaxrs"
+	xsi:schemaLocation="
+		      http://www.springframework.org/schema/beans
+		      http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		      http://cxf.apache.org/core
+		      http://cxf.apache.org/schemas/core.xsd
+		      http://cxf.apache.org/jaxws
+		      http://cxf.apache.org/schemas/jaxws.xsd
+		      http://cxf.apache.org/jaxrs
+		      http://cxf.apache.org/schemas/jaxrs.xsd"
+	default-autowire="byName">
+
+	<!-- Load CXF modules from cxf.jar
+    <import resource="classpath:META-INF/cxf/cxf.xml"/>
+    <import resource="classpath:META-INF/cxf/cxf-servlet.xml"/> -->
+    
+    <!-- restful服务端接口 -->
+	<bean id="baseinfoRestfulService" class="com.deppon.foss.module.base.baseinfo.server.service.impl.esb.RestfulService"></bean>
+	<!-- 访问地址配置 -->
+	<jaxrs:server id="restfulServiceRs" address="/restfulService" >
+		<jaxrs:serviceBeans>
+			<ref bean="baseinfoRestfulService"/>
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>	
+    
+	<bean id="syncExpressLineScheduleService" class="com.deppon.foss.module.base.baseinfo.server.service.impl.esb.SyncExpressLineScheduleService">
+		<property name="expressTrainProgramService" ref="expressTrainProgramService"></property>
+		<property name="expressLineScheduleService" ref="expressLineScheduleService"></property>
+	</bean>
+    
+	<!-- GIS web service-->
+	<jaxws:endpoint id="syncGisExpressLineInfosService" implementor="#syncExpressLineScheduleService" address="/syncGisExpressLineInfosService">
+		<jaxws:features>
+			<bean class="org.apache.cxf.feature.LoggingFeature"></bean>	
+		</jaxws:features>
+		<jaxws:inInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingInInterceptor"/>
+		</jaxws:inInterceptors>
+		<jaxws:outInterceptors>
+			<bean class="com.deppon.foss.module.base.common.server.interceptor.BusinessLoggingOutInterceptor"/>
+		</jaxws:outInterceptors>
+	</jaxws:endpoint>
+	
+	<!-- 同步给移动开发GIS，FOSS的组织坐标 restful方式的web服务-->
+	<jaxrs:server id="gisShortUrlService" address="/gisUrl">
+		<jaxrs:serviceBeans>
+			<ref bean="orgGisUrlService"/>
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	
+	<!-- CRM返货工单上报restful -->
+	<bean id="syncReturnGoodsService" class="com.deppon.foss.module.base.baseinfo.server.service.impl.esb.SyncReturnGoodsService"></bean>
+
+	<jaxrs:server id="syncReturnGoodsServiceRs" address="/returnGoods">
+		<jaxrs:serviceBeans>
+			<ref bean="syncReturnGoodsService"/>
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	
+	<!-- 部门查询的restful -->
+	<bean id="queryOrgAttributeService" class="com.deppon.foss.module.base.baseinfo.server.service.impl.QueryOrgAttributeService"></bean>
+	<!-- 服务端接口 -->
+	<jaxrs:server id="queryOrgAttributeServiceRs" address="/queryOrgAttributeServiceToApp" >
+		<jaxrs:serviceBeans>
+			<ref bean="queryOrgAttributeService"/>
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	
+	<bean id="syncReturnSortingsService" class="com.deppon.foss.module.base.baseinfo.server.service.impl.esb.SyncReturnSortingsService"></bean>
+	<!-- 智能分拣柜 -->
+	<jaxrs:server id="queryOrgSortingsServiceRs" address="/querySortingsServiceToSort" >
+		<jaxrs:serviceBeans>
+			<ref bean="syncReturnSortingsService"/>
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	
+	<!-- 数据字典 -->
+	<jaxrs:server id="queryOrgDataDictionaryServiceRs" address="/queryDataDictionaryServiceToSort" >
+		<jaxrs:serviceBeans>
+			<ref bean="syncReturnSortingsService"/>
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	
+	<!--同Gis短链接给CC-->
+	<bean id="orgCodeShortUrlService" class="com.deppon.foss.module.base.baseinfo.server.service.impl.OrgCodeShortUrlService"></bean>
+	
+	<jaxrs:server id="orgCodeShortUrlServiceRs" address="/orgCodeShortUrlService">
+		<jaxrs:serviceBeans>
+			<ref bean="orgCodeShortUrlService"/>
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	<!-- CRM梯度折扣需求restful 218392  zhangyongxue -->
+	<bean id="syncGradientDiscountService" class="com.deppon.foss.module.base.baseinfo.server.service.impl.esb.SyncGradientDiscountService">
+	</bean>
+	<jaxrs:server id="syncGradientDiscountRs" address="/gradientDiscount">
+		<jaxrs:serviceBeans>
+			<ref bean="syncGradientDiscountService"/>
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+		<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	
+	<!-- CRM传递的零担梯度折信息restful 261997 css-->
+	<bean id="syncCusLtdiscountafterService" class="com.deppon.foss.module.base.baseinfo.server.service.impl.esb.SyncCusLtdiscountafterService"></bean>
+	<!-- 服务端接口 -->
+	<jaxrs:server id="syncCusLtdiscountafterServiceRs" address="/cusLtdiscountafter">
+		<jaxrs:serviceBeans>
+			<ref bean="syncCusLtdiscountafterService"/>
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>
+	
+	<!-- 运单号段生成 -->
+	<bean id="synWayBillNoSectionService" class="com.deppon.foss.module.base.baseinfo.server.service.impl.esb.SyncWayBillNoSectionService"></bean>
+
+	<jaxrs:server id="synWayBillNoSectionServiceRs" address="/wayBillNoSection">
+		<jaxrs:serviceBeans>
+			<ref bean="synWayBillNoSectionService"/>
+		</jaxrs:serviceBeans>
+		<jaxrs:inInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxrs:inInterceptors>
+		<jaxrs:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxrs:outInterceptors>
+	</jaxrs:server>	
+</beans>

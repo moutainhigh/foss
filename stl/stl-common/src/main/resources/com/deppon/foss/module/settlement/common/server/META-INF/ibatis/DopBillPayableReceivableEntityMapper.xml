@@ -1,0 +1,500 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.DopBillPayableReceivableEntityDao">
+	<!-- 查询应收单，应付单,查询是否已经被反审核  -->	
+	<select id="queryDopPayRec" parameterType="java.util.List" resultType="com.deppon.foss.module.settlement.common.api.shared.domain.DopBillEntity">
+		/*****查询应收单，应付单,查询是否已经被反审核********/
+		select p.waybill_no waybillNo,
+			   p.statement_bill_no statementNo,
+			   p.verify_amount verifyAmount
+	    from stl.t_stl_bill_payable p
+	    where p.active = 'Y'
+	    and p.customer_code in
+	  	<foreach collection = "list" item="item"  open="(" close=")" index ="index" separator="," > 
+			 #{item.customerCode} 
+	    </foreach>
+	    and p.waybill_no in 
+	    <foreach collection = "list" item="item"  open="(" close=")" index ="index" separator="," > 
+			 #{item.wayBillNo} 
+	    </foreach>
+		union all
+		select r.waybill_no waybillNo ,
+			   r.statement_bill_no statementNo,
+			   r.verify_amount verifyAmount
+		from stl.t_stl_bill_receivable r
+		where r.active = 'Y'
+		and r.waybill_no in 
+		<foreach collection = "list" item="item"  open="(" close=")" index ="index" separator="," > 
+			 #{item.wayBillNo} 
+	    </foreach>
+	    and r.CUSTOMER_CODE  in
+	    <foreach collection = "list" item="item"  open="(" close=")" index ="index" separator="," > 
+			 #{item.customerCode} 
+	    </foreach>
+	</select>
+	
+	<!-- 结算-应付单-新增应付单 -->
+	<insert id="insertDopPayable"
+		parameterType="com.deppon.foss.module.settlement.common.api.shared.domain.DopBillEntity">
+		insert into /*结算-DOP--应付单-新增应付单*/ STL.T_STL_BILL_PAYABLE (
+		ID,    --ID
+		PAYABLE_NO,
+		WAYBILL_NO,
+		WAYBILL_ID,
+		PAYMENT_NO,
+		CREATE_TYPE,
+		BILL_TYPE, 
+		SOURCE_BILL_NO,
+		SOURCE_BILL_TYPE,
+		PRODUCT_CODE,  
+		PAYABLE_ORG_CODE,
+		PAYABLE_ORG_NAME,
+		PAYABLE_COM_CODE,
+		PAYABLE_COM_NAME,
+		ORIG_ORG_CODE,
+		ORIG_ORG_NAME,
+		DEST_ORG_CODE,
+		DEST_ORG_NAME,
+		CUSTOMER_CODE,
+		CUSTOMER_NAME,
+		AMOUNT,
+		VERIFY_AMOUNT,
+		UNVERIFY_AMOUNT,
+		CURRENCY_CODE,
+		PRODUCT_ID,
+		ACCOUNT_DATE,
+		BUSINESS_DATE,
+		SIGN_DATE,	 
+		EFFECTIVE_DATE,
+		ACTIVE,
+		IS_RED_BACK,
+		IS_INIT,
+		VERSION_NO,
+		EFFECTIVE_STATUS,
+		PAY_STATUS,
+		STATEMENT_BILL_NO,
+		CREATE_TIME,
+		APPROVE_STATUS,
+		IS_DISABLE,
+		NOTES,
+		UNIFIED_SETTLEMENT,
+		FROZEN_STATUS,
+		INVOICE_MARK)
+		SELECT SYS_GUID() ID,
+		         'YF83' || LPAD(STL.SQ_YF83.NEXTVAL, 8, '0') PAYABLE_NO,
+		         W.WAYBILL_NO WAYBILL_NO,
+		         W.ID WAYBILL_ID,
+		         'N/A' PAYMENT_NO,
+		         'A' CREATE_TYPE,
+		         'HIP' BILL_TYPE,
+		         W.WAYBILL_NO SOURCE_BILL_NO,
+		         'W' SOURCE_BILL_TYPE,
+		         W.PRODUCT_CODE PRODUCT_CODE,
+		         #{orgCode,jdbcType=VARCHAR} PAYABLE_ORG_CODE,
+		         #{orgName,jdbcType=VARCHAR} PAYABLE_ORG_NAME,
+		         #{subCompanyCode,jdbcType=VARCHAR} PAYABLE_COM_CODE,
+		         #{subCompanyName,jdbcType=VARCHAR} PAYABLE_COM_NAME,
+		         #{orgCode,jdbcType=VARCHAR} ORIG_ORG_CODE,
+		         #{orgName,jdbcType=VARCHAR} ORIG_ORG_NAME,
+		         W.RECEIVE_ORG_CODE DEST_ORG_CODE,/**到达部门编码**/
+		         W.RECEIVE_ORG_NAME DEST_ORG_NAME,/**到达部门**/
+		         #{customerCode,jdbcType=VARCHAR} CUSTOMER_CODE,
+		         #{customerName,jdbcType=VARCHAR} CUSTOMER_NAME,
+		         #{payAmount,jdbcType=DECIMAL}*100 AMOUNT, 
+		         0 VERIFY_AMOUNT,
+		         #{payAmount,jdbcType=DECIMAL}*100 UNVERIFY_AMOUNT,
+		         'RMB' CURRENCY_CODE,
+		         W.PRODUCT_ID PRODUCT_ID,
+		         SYSDATE ACCOUNT_DATE,
+		         SYSDATE BUSINESS_DATE,
+		         #{signTime,jdbcType=TIMESTAMP} SIGN_DATE,
+		         SYSDATE EFFECTIVE_DATE,
+		         'Y' ACTIVE,--
+		         'N' IS_RED_BACK,
+		         'N' IS_INIT,
+		         1 VERSION_NO, --
+		         'Y' EFFECTIVE_STATUS,
+		         'N' PAY_STATUS, 
+		         'N/A' STATEMENT_BILL_NO,
+		         SYSDATE CREATE_TIME,
+		         'AA' APPROVE_STATUS, 
+		         'N' IS_DISABLE,  
+		         #{payDetail,jdbcType=VARCHAR},
+		         'Y' UNIFIED_SETTLEMENT, 
+		         'N' FROZEN_STATUS, 
+		         'INVOICE_TYPE_02' INVOICE_MARK 
+		    FROM PKP.T_SRV_WAYBILL W 
+		    WHERE  W.ACTIVE = 'Y'
+		    AND    W.WAYBILL_NO = #{wayBillNo,jdbcType=VARCHAR}
+	</insert>
+
+	<!-- 家装-应收单-新增应收单 -->
+	<insert id="insertDopReceive"
+		parameterType="com.deppon.foss.module.settlement.common.api.shared.domain.DopBillEntity">
+		INSERT INTO STL.T_STL_BILL_RECEIVABLE
+		  (ID, --id
+		   RECEIVABLE_NO,
+		   WAYBILL_NO,
+		   WAYBILL_ID,
+		   CREATE_TYPE,
+		   SOURCE_BILL_NO,
+		   SOURCE_BILL_TYPE,
+		   BILL_TYPE,
+		   RECEIVABLE_ORG_CODE,
+		   RECEIVABLE_ORG_NAME,
+		   GENERATING_ORG_CODE,
+		   GENERATING_ORG_NAME,
+		   GENERATING_COM_CODE,
+		   GENERATING_COM_NAME,
+		   DUNNING_ORG_CODE,
+		   DUNNING_ORG_NAME,
+		   ORIG_ORG_CODE,
+		   ORIG_ORG_NAME,
+		   DEST_ORG_CODE,
+		   DEST_ORG_NAME,
+		   CUSTOMER_CODE,
+		   CUSTOMER_NAME,
+		   AMOUNT,
+		   VERIFY_AMOUNT,
+		   UNVERIFY_AMOUNT,
+		   CURRENCY_CODE,
+		   BUSINESS_DATE,
+		   ACCOUNT_DATE,
+		   CONREVEN_DATE,/**确认收入时间**/
+		   PAYMENT_TYPE,
+		   PRODUCT_CODE,
+		   PRODUCT_ID,
+		   VERSION_NO,
+		   ACTIVE,
+		   IS_RED_BACK,
+		   IS_INIT,
+		   CREATE_USER_CODE,
+		   CREATE_USER_NAME,
+		   CREATE_TIME,
+		   STATEMENT_BILL_NO,
+		   APPROVE_STATUS,
+		   IS_DISABLE,
+		   NOTES,
+		   STAMP,
+		   INVOICE_MARK,
+		   UNIFIED_SETTLEMENT)
+		   SELECT SYS_GUID() ID,
+		         'YS81' || LPAD(STL.SQ_YS81.NEXTVAL, 8, '0') RECEIVABLE_NO,
+		         W.WAYBILL_NO WAYBILL_NO,
+		         W.ID WAYBILL_ID,
+		         'A' CREATE_TYPE,
+		         W.WAYBILL_NO SOURCE_BILL_NO,
+		         'W' SOURCE_BILL_TYPE,
+		         'HIR' BILL_TYPE,
+		         #{orgCode,jdbcType=VARCHAR} RECEIVABLE_ORG_CODE,
+		         #{orgName,jdbcType=VARCHAR} RECEIVABLE_ORG_NAME,
+		         #{orgCode,jdbcType=VARCHAR} GENERATING_ORG_CODE,
+		         #{orgName,jdbcType=VARCHAR} GENERATING_ORG_NAME,
+		         #{subCompanyCode,jdbcType=VARCHAR} GENERATING_COM_CODE,/**所属子公司编码**/
+		         #{subCompanyName,jdbcType=VARCHAR} GENERATING_COM_NAME,/**所属子公司名称**/
+		         #{orgCode,jdbcType=VARCHAR} DUNNING_ORG_CODE,
+		         #{orgName,jdbcType=VARCHAR} DUNNING_ORG_NAME,
+		         #{orgCode,jdbcType=VARCHAR} ORIG_ORG_CODE,
+		         #{orgName,jdbcType=VARCHAR} ORIG_ORG_NAME,
+		         W.RECEIVE_ORG_CODE DEST_ORG_CODE,/**到达部门编码**/
+		         W.RECEIVE_ORG_NAME DEST_ORG_NAME,/**到达部门**/
+		         #{customerCode,jdbcType=VARCHAR} CUSTOMER_CODE,
+		         #{customerName,jdbcType=VARCHAR} CUSTOMER_NAME,
+		         #{recAmount,jdbcType=DECIMAL}*100 AMOUNT,
+		         0 VERIFY_AMOUNT,
+		         #{recAmount,jdbcType=DECIMAL}*100 UNVERIFY_AMOUNT,
+		         'RMB' CURRENCY_CODE,
+		         SYSDATE BUSINESS_DATE,
+		         SYSDATE ACCOUNT_DATE, 
+		         SYSDATE CONREVEN_DATE,/**确认收入时间**/
+		         'TT' PAYMENT_TYPE,    
+		         W.PRODUCT_CODE PRODUCT_CODE,
+		         W.PRODUCT_ID PRODUCT_ID,
+		         1 VERSION_NO,
+		         'Y' ACTIVE,
+		         'N' IS_RED_BACK,
+		         'N' IS_INIT,
+		         'DOP' CREATE_USER_CODE, 
+		         'DOP' CREATE_USER_NAME,
+		         SYSDATE CREATE_TIME, 
+		         'N/A' STATEMENT_BILL_NO,
+		         'AA' APPROVE_STATUS,
+		         'N' IS_DISABLE,	
+		         #{recDetail,jdbcType=VARCHAR},
+		         'N' STAMP,
+		         'INVOICE_TYPE_02' INVOICE_MARK,
+		         'Y' UNIFIED_SETTLEMENT
+		    FROM PKP.T_SRV_WAYBILL W 
+		    WHERE  W.ACTIVE = 'Y'		
+		    AND    W.WAYBILL_NO = #{wayBillNo,jdbcType=VARCHAR}	
+	</insert>
+	
+	<!-- 更新应付单 -->
+	<update id="updateDopPayable" parameterType="java.util.List">
+		 update stl.t_stl_bill_payable p set
+		        p.active = 'N',
+		        p.modify_time = SYSDATE,
+		        p.modify_user_name ='DOP',
+		        p.modify_user_code = 'DOP'
+		 where p.bill_type = 'HIP'
+		        and p.active = 'Y'
+		        and p.IS_RED_BACK = 'N'
+		        and p.waybill_no in
+		 <foreach collection = "list" item="item"  open="(" close=")" index ="index" separator="," > 
+			 #{item.wayBillNo,jdbcType=VARCHAR} 
+   	     </foreach>     
+	</update>	
+	
+	<!-- 更新应收单 -->
+	<update id="updateDopReceive" parameterType="java.util.List">
+		  update stl.t_stl_bill_receivable r
+		    set r.active           = 'N',
+		        r.modify_time      = SYSDATE,
+		        r.modify_user_name = 'DOP',
+		        r.modify_user_code = 'DOP'
+		  where r.bill_type = 'HIR'
+		    and r.active = 'Y'
+		    and r.IS_RED_BACK = 'N'
+		    and r.waybill_no in
+		  <foreach collection = "list" item="item"  open="(" close=")" index ="index" separator="," > 
+			 	#{item.wayBillNo,jdbcType=VARCHAR} 
+   	      </foreach> 
+	</update>
+	
+	<!-- 插入应付单红单 -->
+	<insert id="insetDopRedPayable" parameterType="java.util.List">
+		insert into stl.t_stl_bill_payable p(
+	      ID,    /**ID**/
+	      PAYABLE_NO,/**应付单号**/
+	      WAYBILL_NO,/**运单号**/
+	      WAYBILL_ID,/**运单ID**/
+	      PAYMENT_NO,/**支付方式**/
+	      CREATE_TYPE,/**系统生成方式**/
+	      BILL_TYPE,  /**单据子类型**/
+	      SOURCE_BILL_NO,/**来源单据类型**/
+	      SOURCE_BILL_TYPE,/**来源单据编号**/
+	      PRODUCT_CODE,    /**运输执行**/
+	      PAYABLE_ORG_CODE,
+	      PAYABLE_ORG_NAME,
+	      PAYABLE_COM_CODE,
+	      PAYABLE_COM_NAME,
+	      ORIG_ORG_CODE,
+	      ORIG_ORG_NAME,
+	      DEST_ORG_CODE,
+	      DEST_ORG_NAME,
+	      CUSTOMER_CODE,
+	      CUSTOMER_NAME,
+	      AMOUNT,
+	      VERIFY_AMOUNT,
+	      UNVERIFY_AMOUNT,
+	      CURRENCY_CODE,
+	      PRODUCT_ID,
+	      ACCOUNT_DATE,/**记账日期**/
+	      BUSINESS_DATE,/**业务日期**/
+	      SIGN_DATE,   /**签收日期**/
+	      EFFECTIVE_DATE,
+	      ACTIVE,
+	      IS_RED_BACK,
+	      IS_INIT,
+	      VERSION_NO,
+	      EFFECTIVE_STATUS,
+	      PAY_STATUS,
+	      STATEMENT_BILL_NO,
+	      CREATE_TIME,
+	      APPROVE_STATUS,
+	      IS_DISABLE,
+	      NOTES,
+	      UNIFIED_SETTLEMENT,
+	      FROZEN_STATUS,
+	      INVOICE_MARK)
+	      select 
+            SYS_GUID() ID,
+            pa.payable_no PAYABLE_NO,
+            pa.waybill_no WAYBILL_NO,
+            pa.waybill_id WAYBILL_ID,
+            pa.payment_no PAYMENT_NO ,
+            pa.create_type CREATE_TYPE,
+            pa.bill_type BILL_TYPE,
+            pa.source_bill_no SOURCE_BILL_NO,
+            pa.source_bill_type SOURCE_BILL_TYPE,
+            pa.product_code PRODUCT_CODE,
+            pa.payable_org_code PAYABLE_ORG_CODE,
+            pa.payable_org_name PAYABLE_ORG_NAME,
+            pa.payable_com_code PAYABLE_COME_CODE,
+            pa.payable_com_name PATABLE_COM_NAME,
+            pa.orig_org_code ORIG_ORG_CODE,
+            pa.orig_org_name ORIG_ORG_NAME,
+            pa.dest_org_code DEST_ORG_CODE,
+            pa.dest_org_name DEST_ORG_NAME,
+            pa.customer_code CUSTOMER_CODE,
+            pa.customer_name CUSTOMER_NAME,
+            -pa.amount AMOUNT,
+            pa.verify_amount VERITY_AMOUNT,
+            pa.unverify_amount UNVERIFY_AMOUNT,
+            pa.currency_code CURRENCY_CODE,
+            pa.product_id PRODUCT_ID,
+            pa.account_date ACCOUNT_DATE,
+            pa.business_date BUSINESS_DATE,
+            pa.sign_date SIGN_DATE,
+            pa.effective_date EFFECTIVE_DATE,
+            'N' ACTIVE,
+            'Y' IS_RED_BACK,
+            pa.is_init IS_INIT,
+            pa.version_no VERSION_NO,
+            pa.effective_status EFFECTIVE_STATUS,
+            pa.pay_status PAY_STATUS,
+            pa.statement_bill_no STATEMENT_BILL_NO,
+            pa.create_time CREATE_TIME,
+            pa.approve_status APPROVE_STATUS,
+            pa.is_disable IS_DISABLE,
+            pa.notes NOTES,
+            pa.unified_settlement UNIFIED_SETTLEMENT,
+            pa.frozen_status FROZEN_STATUS,
+            pa.invoice_mark INVOICE_MARK
+       from stl.t_stl_bill_payable pa 
+       where pa.active = 'Y' 
+        and pa.bill_type = 'HIP'
+        and pa.waybill_no in
+	  <foreach collection = "list" item="item"  index ="index" open="(" close=")" separator="," >
+         #{item.wayBillNo,jdbcType=VARCHAR}
+   	  </foreach> 
+	</insert>
+	
+	<!-- 插入红冲应收单 -->
+	<insert id="insetDopRedReceive" parameterType="java.util.List">
+		INSERT INTO STL.T_STL_BILL_RECEIVABLE
+		  (ID, --id
+		   RECEIVABLE_NO,/**应收单号**/
+		   WAYBILL_NO,/**运单号**/
+		   WAYBILL_ID,
+		   CREATE_TYPE,
+		   SOURCE_BILL_NO,
+		   SOURCE_BILL_TYPE,
+		   BILL_TYPE,
+		   RECEIVABLE_ORG_CODE,
+		   RECEIVABLE_ORG_NAME,
+		   GENERATING_ORG_CODE,
+		   GENERATING_ORG_NAME,
+		   GENERATING_COM_CODE,
+		   GENERATING_COM_NAME,
+		   DUNNING_ORG_CODE,
+		   DUNNING_ORG_NAME,
+		   ORIG_ORG_CODE,
+		   ORIG_ORG_NAME,
+		   DEST_ORG_CODE,
+		   DEST_ORG_NAME,
+		   CUSTOMER_CODE,
+		   CUSTOMER_NAME,
+		   AMOUNT,
+		   VERIFY_AMOUNT,
+		   UNVERIFY_AMOUNT,
+		   CURRENCY_CODE,
+		   BUSINESS_DATE,
+		   ACCOUNT_DATE,
+		   PAYMENT_TYPE,
+		   PRODUCT_CODE,
+		   PRODUCT_ID,
+		   VERSION_NO,
+		   ACTIVE,
+		   IS_RED_BACK,
+		   IS_INIT,
+		   CREATE_USER_CODE,
+		   CREATE_USER_NAME,
+		   CREATE_TIME,
+		   STATEMENT_BILL_NO,
+		   APPROVE_STATUS,
+		   IS_DISABLE,
+		   NOTES,
+		   STAMP,
+		   INVOICE_MARK,
+		   UNIFIED_SETTLEMENT)
+		   select 
+                SYS_GUID() ID,
+                re.receivable_no RECEIVABLE_NO,
+                re.waybill_no WAYBILL_NO,
+                re.waybill_id WAYBILL_ID,
+                re.create_type CREATE_TYPE,
+                re.source_bill_no SOURCE_BILL_NO,
+                re.source_bill_type SOURCE_BILL_TYPE,
+                re.bill_type BILL_TYPE,
+                re.receivable_org_code RECEIVABLE_ORG_CODE,
+                re.receivable_org_name RECEIVABLE_ORG_NAME,
+                re.generating_org_code GENERATING_ORG_CODE,
+                re.generating_org_name GENERATING_ORG_NAME,
+                re.generating_com_code GENERATION_COM_CODE,
+                re.generating_com_name GENERATION_COM_NAME,
+                re.dunning_org_code DUNNING_ORG_CODE, 
+                re.dunning_org_name DUNNING_ORG_NAME,
+                re.orig_org_code ORIG_ORG_CODE,
+                re.orig_org_name ORIG_ORG_NAME,
+                re.dest_org_code DEST_ORG_CODE,
+                re.dest_org_name DEST_ORG_NAME,
+                re.customer_code CUSTOMER_CODE,
+                re.customer_name CUSTOMER_NAME,
+                -re.amount AMOUNT,
+                re.verify_amount VERIFY_AMOUNT,
+                re.unverify_amount UNVERIFY_AMOUNT,
+                re.currency_code CURRENCY_CODE,
+                re.business_date BUSINESS_DATE,
+                re.account_date ACOUNT_DATE,
+                re.payment_type PATMENT_TYPE,
+                re.product_code PRODUCT_CODE,
+                re.product_id PRODUCT_ID,
+                re.version_no VERSION_NO,
+                'N' ACTIVE,
+                'Y' IS_RED_BACK,
+                re.is_init IS_INIT,
+                re.create_user_code CREATE_USER_CODE,
+                re.create_user_name CREATE_USER_NAME,
+                re.create_time CREATE_TIME,
+                re.statement_bill_no STATEMENT_BILL_NO,
+                re.approve_status APPROVE_STATUS,
+                re.is_disable IS_DISABLE,
+                re.notes NOTES,
+                re.stamp STAMP,
+                re.invoice_mark INVOICE_MARK,
+                re.unified_settlement UNIFIED_SETTLEMENT   
+        from stl.t_stl_bill_receivable re
+        where re.active = 'Y'
+             and re.bill_type = 'HIR'
+             and re.waybill_no in 
+	    <foreach collection = "list" item="item"  index ="index" open="(" close=")" separator="," >
+			 #{item.wayBillNo,jdbcType=VARCHAR}
+        </foreach> 
+	</insert>
+	
+	<!-- 通过部门编码获取部门名称获取子公司名称和编码 -->
+	<select id="getSubCompanyNameAndCode" parameterType="java.util.List" resultType="com.deppon.foss.module.settlement.common.api.shared.domain.DopBillEntity">
+		select 
+			rg.name subCompanyName, /**所属子公司名称**/
+			rg.code subCompanyCode  /**所属子公司编码**/
+	    from bse.t_bas_org g
+	    left join bse.t_bas_fin_org rg
+		on g.subsidiary_code = rg.code
+		where g.active = 'Y'
+		and g.code in 
+		<foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+ 			#{item.orgCode,jdbcType=VARCHAR}
+		</foreach>
+		group by rg.name,
+			     rg.code
+	</select>
+	
+	<!-- 判断是否已经生成应付单 -->
+	<select id="judgePayable" parameterType="com.deppon.foss.module.settlement.common.api.shared.domain.DopBillEntity" resultType="com.deppon.foss.module.settlement.common.api.shared.domain.DopBillEntity">
+		 	select /**结算--DOP--判断是否已经生成应付单**/ p.waybill_no wayBillNo
+		 	from stl.t_stl_bill_payable p
+		 	where p.active = 'Y'
+		 	and p.waybill_no = #{wayBillNo,jdbcType=VARCHAR}
+		 	and p.customer_code = #{customerCode,jdbcType=VARCHAR} 
+	</select>
+	
+	<!-- 判断是否已经生成应收单 -->
+	<select id="judgeReceive" parameterType="com.deppon.foss.module.settlement.common.api.shared.domain.DopBillEntity" resultType="com.deppon.foss.module.settlement.common.api.shared.domain.DopBillEntity">
+		 	select /**结算--DOP--判断是否已经生成应收单**/ r.waybill_no wayBillNo 
+		 	from stl.t_stl_bill_receivable r
+		 	where r.active = 'Y'
+			and r.waybill_no = #{wayBillNo,jdbcType=VARCHAR}
+			and r.customer_code = #{customerCode,jdbcType=VARCHAR} 
+	</select>
+</mapper>

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper
+	namespace="com.deppon.foss.module.pickup.order.api.shared.domain.RegionCourierReportEntity">
+	<resultMap id="BaseResultMap"
+		type="com.deppon.foss.module.pickup.order.api.shared.domain.RegionCourierReportEntity">
+		<result column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="REGION_CODE" property="regionCode" jdbcType="VARCHAR" />
+		<result column="COURIER_CODE" property="courierCode" jdbcType="VARCHAR" />
+		<result column="RECIEVE_ORDERS" property="recieveOrders"
+			jdbcType="DECIMAL" />
+		<result column="OPERATE_TIME" property="operateTime" jdbcType="TIMESTAMP" />
+	</resultMap>
+
+	<sql id="Base_Column_List">
+		ID, REGION_CODE, COURIER_CODE, RECIEVE_ORDERS, OPERATE_TIME
+	</sql>
+
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.domain.RegionCourierReportEntity">
+		insert into PKP.T_SRV_REGIONCOURIERREPORT
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				ID,
+			</if>
+			<if test="regionCode != null">
+				REGION_CODE,
+			</if>
+			<if test="courierCode != null">
+				COURIER_CODE,
+			</if>
+			<if test="recieveOrders != null">
+				RECIEVE_ORDERS,
+			</if>
+			<if test="operateTime != null">
+				OPERATE_TIME,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id,jdbcType=VARCHAR},
+			</if>
+			<if test="regionCode != null">
+				#{regionCode,jdbcType=VARCHAR},
+			</if>
+			<if test="courierCode != null">
+				#{courierCode,jdbcType=VARCHAR},
+			</if>
+			<if test="recieveOrders != null">
+				#{recieveOrders,jdbcType=DECIMAL},
+			</if>
+			<if test="operateTime != null">
+				#{operateTime,jdbcType=TIMESTAMP},
+			</if>
+		</trim>
+	</insert>
+
+	<update id="update" parameterType="com.deppon.foss.module.pickup.order.api.shared.domain.RegionCourierReportEntity">
+		update PKP.T_SRV_REGIONCOURIERREPORT
+		<set>
+			<if test="regionCode != null">
+				REGION_CODE = #{regionCode,jdbcType=VARCHAR},
+			</if>
+			<if test="courierCode != null">
+				COURIER_CODE = #{courierCode,jdbcType=VARCHAR},
+			</if>
+			<if test="recieveOrders != null">
+				RECIEVE_ORDERS = RECIEVE_ORDERS + #{recieveOrders,jdbcType=DECIMAL},
+			</if>
+			<if test="operateTime != null">
+				OPERATE_TIME = #{operateTime,jdbcType=TIMESTAMP},
+			</if>
+		</set>
+		WHERE ID = #{id,jdbcType=VARCHAR}
+	</update>
+
+	<select id="queryOneByCommon" resultMap="BaseResultMap" parameterType="String">
+		SELECT
+		<include refid="Base_Column_List" />
+		FROM PKP.T_SRV_REGIONCOURIERREPORT
+		WHERE 1=1
+		AND	COURIER_CODE = #{courierCode,jdbcType=VARCHAR}
+
+	</select>
+	
+	<select id="queryMinCourierByCommon" resultType="String">
+		 SELECT T.EMP_CODE  FROM (SELECT EMP.EMP_CODE, NVL(OT.FCOUNT, 0) FCOUNT
+                FROM PKP.T_SRV_EMPLOYEEWORKSTATUS EMP
+                LEFT JOIN (SELECT COURIER_CODE, RECIEVE_ORDERS FCOUNT
+                        FROM PKP.T_SRV_REGIONCOURIERREPORT OT
+                       WHERE OT.COURIER_CODE IN
+							 <foreach collection="list" item="item" index="index" open="("
+								separator="," close=")">
+								#{item}
+							</foreach>
+                      ) OT
+              ON EMP.EMP_CODE = OT.COURIER_CODE
+           WHERE EMP.WORK_STATUS = 'OPEN'
+             AND EMP.ACTIVE = 'Y'
+				AND	EMP.EMP_CODE IN
+				 <foreach collection="list" item="item" index="index" open="("
+						separator="," close=")">
+					#{item}
+				</foreach>
+           ORDER BY FCOUNT) T
+ 		WHERE ROWNUM = 1
+	</select>
+
+	<delete id="delete"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.domain.RegionCourierReportEntity">
+		DELETE
+		FROM PKP.T_SRV_REGIONCOURIERREPORT
+		WHERE 1=1 
+		<![CDATA[ AND OPERATE_TIME >=TRUNC(SYSDATE-1)+3/24]]>
+		<![CDATA[ AND OPERATE_TIME < TRUNC(SYSDATE)+3/24]]>
+	</delete>
+
+</mapper>

@@ -1,0 +1,472 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.BillReceivableEntityDao" >  
+	<!-- 声明resultMap -->
+	<resultMap id="FreightResultMap" type="com.deppon.foss.module.settlement.consumer.api.shared.dto.BillFreightToCollectResultDto">
+		<result column="BUSINESS_DATE" property="businessDate" jdbcType="TIMESTAMP" />
+		<result column="ACCOUNT_DATE" property="accountDate" jdbcType="TIMESTAMP" />
+		<result column="RECEIVABLE_NO" property="receivableNo" jdbcType="VARCHAR" />
+		<result column="ORIG_ORG_NAME" property="origOrgName"  jdbcType="VARCHAR" />
+		<result column="DEST_ORG_NAME" property="destOrgName" jdbcType="VARCHAR" />
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="BILL_TYPE" property="billType" jdbcType="VARCHAR" />
+		<result column="STOCKSTATUS" property="stockStatus" jdbcType="VARCHAR" />
+		<result column="GOODS_QTY_TOTAL" property="goodsQtyTotal" jdbcType="DECIMAL" />
+		<result column="PRODUCT_CODE" property="productCode" jdbcType="VARCHAR" />
+		<result column="CONREVEN_DATE" property="conrevenDate" jdbcType="TIMESTAMP" />
+		<result column="AMOUNT" property="amount" jdbcType="DECIMAL" />
+		<result column="VERIFY_AMOUNT" property="verifyAmount" jdbcType="DECIMAL" />
+		<result column="UNVERIFY_AMOUNT" property="unverifyAmount" jdbcType="DECIMAL" />
+	</resultMap>
+		
+  <sql id="STOCKSTATUS">
+     T.BUSINESS_DATE BUSINESS_DATE,
+     T.ACCOUNT_DATE ACCOUNT_DATE,
+     T.RECEIVABLE_NO RECEIVABLE_NO,
+     T.ORIG_ORG_NAME ORIG_ORG_NAME,
+     T.DEST_ORG_NAME DEST_ORG_NAME,
+     T.WAYBILL_NO WAYBILL_NO,
+     T.BILL_TYPE BILL_TYPE,
+     T.GOODS_QTY_TOTAL GOODS_QTY_TOTAL,
+     T.PRODUCT_CODE PRODUCT_CODE,
+     T.CONREVEN_DATE CONREVEN_DATE,
+     T.AMOUNT/100 AMOUNT,
+     T.VERIFY_AMOUNT/100 VERIFY_AMOUNT,
+     T.UNVERIFY_AMOUNT/100 UNVERIFY_AMOUNT,
+  	 CASE
+  	 	  WHEN PT.SIGN_SITUATION is not null and
+              PT.SIGN_SITUATION = 'NORMAL_SIGN' THEN
+          'NORMAL_SIGN_STOCK' 
+          WHEN PT.SIGN_SITUATION is not null THEN
+          'UNNORMAL_SIGN'
+         when (SELECT 
+                SUM(STOCK_GOODS_QTY)
+                 FROM TFR.T_OPT_WAYBILL_STOCK
+                WHERE WAYBILL_NO = T.WAYBILL_NO
+                 AND (ORG_CODE = T.DEST_ORG_CODE or exists (
+                   select 1
+                      from bse.t_bas_sales_department b
+                     where b.code = T.DEST_ORG_CODE
+                       and b.active = 'Y'
+                       and org_code = b.transfer_center))
+                  ) = T.GOODS_QTY_TOTAL then
+          'IN_STOCK'
+         WHEN (SELECT 
+                COUNT(GD.ID)
+                 FROM TFR.T_OPT_UNLOAD_GAPREP_DETAIL GD
+                WHERE GD.DIFFERENCE_TYPE = 'LACKGOODS'
+                  AND GD.HANDLE_TIME IS NULL
+                  AND GD.WAYBILL_NO = T.Waybill_No) > 0 THEN
+          'LOSE_STOCK'
+         WHEN (SELECT COUNT(ID)
+                 FROM TFR.T_OPT_ST_DIFFER_DETAIL
+                WHERE WAYBILL_NO = T.Waybill_No
+                  AND DIFFERENCE_TYPE = 'LACK'
+                  AND HANDLE_STATUS = 'DOING') > 0 THEN
+          'LOSE_STOCK'
+         WHEN (SELECT
+                SUM(STOCK_GOODS_QTY)
+                 FROM TFR.T_OPT_WAYBILL_STOCK
+                WHERE WAYBILL_NO = T.WAYBILL_NO
+                  AND (ORG_CODE = T.DEST_ORG_CODE  or exists (
+                   select 1
+                      from bse.t_bas_sales_department b
+                     where b.code = T.DEST_ORG_CODE
+                       and b.active = 'Y'
+                       and org_code = b.transfer_center))) is null then
+          'NO_STOCK'
+         ELSE
+          'EXCEPTION_STOCK'
+       END STOCKSTATUS
+  </sql>
+  
+  <!-- 通过业务日期获得到付清查信息 -->
+  <select id="queryFreightToCollectBillByBusinessDate" resultMap="FreightResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.BillFreightToCollectQueryDto" >
+    SELECT * FROM (
+		    SELECT/*结算-客户管理- 通过业务日期获得到付清查信息 */
+		    <include refid="STOCKSTATUS"/>
+		    FROM STL.T_STL_BILL_RECEIVABLE T
+		    LEFT JOIN PKP.T_SRV_WAYBILL_SIGN_RESULT PT ON PT.WAYBILL_NO =
+                                                T.WAYBILL_NO
+                                            AND PT.ACTIVE = 'Y'
+		    	WHERE
+					<!-- 日期查询 -->
+					<![CDATA[T.BUSINESS_DATE >=#{ startDate ,jdbcType=TIMESTAMP} AND T.BUSINESS_DATE <#{endDate ,jdbcType=TIMESTAMP} ]]>
+					<!-- 默认查询有效的 且未核销金额大于0的 -->
+					AND T.ACTIVE = 'Y' AND UNVERIFY_AMOUNT>0 
+					<!-- 单据类别 -->
+					<choose>
+						<when test="billType != null and billType != ''">
+							AND T.BILL_TYPE = #{billType}	
+						</when>
+						<when test="billTypeList !=null and billTypeList.size()>0 ">
+							AND T.BILL_TYPE IN
+								<foreach collection="billTypeList" item="item" index="index" open="(" separator="," close=")">
+		 						#{item}
+		 						</foreach>
+						</when>
+						<otherwise>
+								1=0
+						</otherwise>
+					</choose>
+					<!-- 产品类型 
+					<if test="productCode != null and productCode != ''">
+						AND T.PRODUCT_CODE = #{productCode}
+					</if>-->
+					<!-- 运输性质 -->
+					<if test="productCodeList != null">
+				    and T.PRODUCT_CODE in
+					   <foreach collection="productCodeList" item="productCode" open="(" close=")" separator=",">
+					   	#{productCode,jdbcType=VARCHAR}
+					   </foreach>
+				    </if>
+					
+					<choose>
+						<!-- 按照出发查询 -->
+						<when test="deptType =='FROM' ">
+							<if test="department != null and department != ''">
+								AND T.ORIG_ORG_CODE = #{department}
+							</if>
+							<!-- 所选大区小区下的全部网点编码 -->
+							<if test="orgCodeInArea!=null and orgCodeInArea.size()>0">
+								AND T.ORIG_ORG_CODE IN
+				     			<foreach collection="orgCodeInArea"  index="index" item="item"  open="(" separator="," close=")">  
+							        #{item} 
+								</foreach>
+					 		</if>
+					 		<!-- 加入数据权限 -->
+							<if test="empCode != null and empCode != ''">
+								AND EXISTS (SELECT ORG_CODE
+									FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V 
+								 WHERE V.EMP_CODE = #{empCode}
+											 AND T.ORIG_ORG_CODE = V.ORG_CODE) <!-- 应收单可以按照应收部门进行查询   -->		
+							</if>	
+						</when>
+						<!-- 按照到达查询 -->
+						<when test="deptType =='TO' ">
+							<if test="department != null and department != ''">
+								AND T.DEST_ORG_CODE = #{department}
+							</if>
+							<!-- 所选大区小区下的全部网点编码 -->
+							<if test="orgCodeInArea!=null and orgCodeInArea.size()>0">
+								AND T.DEST_ORG_CODE IN
+				     			<foreach collection="orgCodeInArea"  index="index" item="item"  open="(" separator="," close=")">  
+							        #{item} 
+								</foreach>
+					 		</if>
+					 		<!-- 加入数据权限 -->
+							<if test="empCode != null and empCode != ''">
+								AND EXISTS (SELECT ORG_CODE
+									FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V 
+								 WHERE V.EMP_CODE = #{empCode}
+											 AND T.DEST_ORG_CODE = V.ORG_CODE) <!-- 应收单可以按照应收部门进行查询   -->		
+							</if>	
+						</when>
+						<otherwise>
+								1=0
+						</otherwise>
+					</choose>
+				)RE
+		<where>
+			<if test=" stockStatus!=null and stockStatus!='' ">
+				RE.STOCKSTATUS=#{stockStatus}
+			</if>
+		</where>
+		ORDER BY RE.BUSINESS_DATE ASC
+  </select>
+  
+  <!-- 通过记账日期得到付清查信息 -->
+  <select id="queryFreightToCollectBillByAccountDate" resultMap="FreightResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.BillFreightToCollectQueryDto" >
+		 SELECT * FROM (    
+		    SELECT /*结算-客户管理- 通过记账日期得到付清查信息 */
+		    <include refid="STOCKSTATUS"/>
+		    FROM STL.T_STL_BILL_RECEIVABLE T
+		    LEFT JOIN PKP.T_SRV_WAYBILL_SIGN_RESULT PT ON PT.WAYBILL_NO =T.WAYBILL_NO  AND PT.ACTIVE = 'Y'
+		    	WHERE
+					<!-- 日期查询 -->
+					<![CDATA[T.ACCOUNT_DATE >=#{ startDate ,jdbcType=TIMESTAMP} AND T.ACCOUNT_DATE <#{endDate ,jdbcType=TIMESTAMP} ]]>
+					<!-- 默认查询有效的 且未核销金额大于0的 -->
+					AND T.ACTIVE = 'Y' AND UNVERIFY_AMOUNT>0 
+					<!-- 单据类别 -->
+					<choose>
+						<when test="billType != null and billType != ''">
+							AND T.BILL_TYPE = #{billType}	
+						</when>
+						<when test="billTypeList !=null and billTypeList.size()>0 ">
+							AND T.BILL_TYPE IN
+								<foreach collection="billTypeList" item="item" index="index" open="(" separator="," close=")">
+		 						#{item}
+		 						</foreach>
+						</when>
+						<otherwise>
+								1=0
+						</otherwise>
+					</choose>
+					<!-- 产品类型 
+					<if test="productCode != null and productCode != ''">
+						AND T.PRODUCT_CODE = #{productCode}
+					</if>-->
+					<!-- 运输性质 -->
+					<if test="productCodeList != null">
+				    and T.PRODUCT_CODE in
+					   <foreach collection="productCodeList" item="productCode" open="(" close=")" separator=",">
+					   	#{productCode,jdbcType=VARCHAR}
+					   </foreach>
+				    </if>
+					
+					<choose>
+						<!-- 按照出发查询 -->
+						<when test="deptType =='FROM' ">
+							<if test="department != null and department != ''">
+								AND T.ORIG_ORG_CODE = #{department}
+							</if>
+							<!-- 所选大区小区下的全部网点编码 -->
+							<if test="orgCodeInArea!=null and orgCodeInArea.size()>0">
+								AND T.ORIG_ORG_CODE IN
+				     			<foreach collection="orgCodeInArea"  index="index" item="item"  open="(" separator="," close=")">  
+							        #{item} 
+								</foreach>
+					 		</if>
+					 		<!-- 加入数据权限 -->
+							<if test="empCode != null and empCode != ''">
+								AND EXISTS (SELECT ORG_CODE
+									FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V 
+								 WHERE V.EMP_CODE = #{empCode}
+											 AND T.ORIG_ORG_CODE = V.ORG_CODE) <!-- 应收单可以按照应收部门进行查询   -->		
+							</if>	
+						</when>
+						<!-- 按照到达查询 -->
+						<when test="deptType =='TO' ">
+							<if test="department != null and department != ''">
+								AND T.DEST_ORG_CODE = #{department}
+							</if>
+							<!-- 所选大区小区下的全部网点编码 -->
+							<if test="orgCodeInArea!=null and orgCodeInArea.size()>0">
+								AND T.DEST_ORG_CODE IN
+				     			<foreach collection="orgCodeInArea"  index="index" item="item"  open="(" separator="," close=")">  
+							        #{item} 
+								</foreach>
+					 		</if>
+					 		<!-- 加入数据权限 -->
+							<if test="empCode != null and empCode != ''">
+								AND EXISTS (SELECT ORG_CODE
+									FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V 
+								 WHERE V.EMP_CODE = #{empCode}
+											 AND T.DEST_ORG_CODE = V.ORG_CODE) <!-- 应收单可以按照应收部门进行查询   -->		
+							</if>	
+						</when>
+						<otherwise>
+								1=0
+						</otherwise>
+					</choose>)RE
+		<where>
+			<if test=" stockStatus!=null and stockStatus!='' ">
+				RE.STOCKSTATUS=#{stockStatus}
+			</if>
+		</where>
+		ORDER BY RE.ACCOUNT_DATE ASC
+  </select>
+  
+  <!-- 查询到付清查单记录条数，总金额，核销总金额和未核销总金额resultMap -->
+  <resultMap id="TotalAmountResultMapInFreightToCollectBill" type="com.deppon.foss.module.settlement.consumer.api.shared.dto.BillFreightToCollectQueryDto" >
+    <result column="Total_Records_In_DB" property="totalRecordsInDB" jdbcType="DECIMAL" />
+    <result column="Total_Amount" property="totalAmount" jdbcType="DECIMAL" />
+    <result column="Total_VerifyAmount" property="totalVerifyAmount" jdbcType="DECIMAL" />
+    <result column="Total_UnverifyTotalAmount" property="totalUnverifyAmount" jdbcType="DECIMAL" />
+  </resultMap>
+  
+  <!-- 通过业务日前哦查询应收单总记录条数，总金额，未核销总金额，核销总金额 -->
+  <select id="queryTotalAmountInFreightToCollectBillByBusiness" resultMap="TotalAmountResultMapInFreightToCollectBill" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.BillFreightToCollectQueryDto">
+		SELECT /*结算-客户管理- 通过业务日前哦查询应收单总记录条数，总金额，未核销总金额，核销总金额 */ 
+				count(1) as Total_Records_In_DB,
+				sum(AMOUNT) as Total_Amount,
+				sum(VERIFY_AMOUNT) as totalVerifyAmount,
+				sum(UNVERIFY_AMOUNT) as Total_UnverifyTotalAmount 
+		FROM ( 
+		  SELECT * FROM (
+		    SELECT/*结算-客户管理- 通过业务日期获得到付清查信息 */
+		    <include refid="STOCKSTATUS"/>
+		    FROM STL.T_STL_BILL_RECEIVABLE T
+		    LEFT JOIN PKP.T_SRV_WAYBILL_SIGN_RESULT PT ON PT.WAYBILL_NO =T.WAYBILL_NO  AND PT.ACTIVE = 'Y'
+		    	WHERE
+					<!-- 日期查询 -->
+					<![CDATA[T.BUSINESS_DATE >=#{ startDate ,jdbcType=TIMESTAMP} AND T.BUSINESS_DATE <#{endDate ,jdbcType=TIMESTAMP} ]]>
+					<!-- 默认查询有效的 且未核销金额大于0的 -->
+					AND T.ACTIVE = 'Y' AND UNVERIFY_AMOUNT>0 
+					<!-- 单据类别 -->
+					<choose>
+						<when test="billType != null and billType != ''">
+							AND T.BILL_TYPE = #{billType}	
+						</when>
+						<when test="billTypeList !=null and billTypeList.size()>0 ">
+							AND T.BILL_TYPE IN
+								<foreach collection="billTypeList" item="item" index="index" open="(" separator="," close=")">
+		 						#{item}
+		 						</foreach>
+						</when>
+						<otherwise>
+								1=0
+						</otherwise>
+					</choose>
+					<!-- 产品类型
+					<if test="productCode != null and productCode != ''">
+						AND T.PRODUCT_CODE = #{productCode}
+					</if> -->
+					<!-- 运输性质 -->
+					<if test="productCodeList != null">
+				    and T.PRODUCT_CODE in
+					   <foreach collection="productCodeList" item="productCode" open="(" close=")" separator=",">
+					   	#{productCode,jdbcType=VARCHAR}
+					   </foreach>
+				    </if>
+					<choose>
+						<!-- 按照出发查询 -->
+						<when test="deptType =='FROM' ">
+							<if test="department != null and department != ''">
+								AND T.ORIG_ORG_CODE = #{department}
+							</if>
+							<!-- 所选大区小区下的全部网点编码 -->
+							<if test="orgCodeInArea!=null and orgCodeInArea.size()>0">
+								AND T.ORIG_ORG_CODE IN
+				     			<foreach collection="orgCodeInArea"  index="index" item="item"  open="(" separator="," close=")">  
+							        #{item} 
+								</foreach>
+					 		</if>
+					 		<!-- 加入数据权限 -->
+							<if test="empCode != null and empCode != ''">
+								AND EXISTS (SELECT ORG_CODE
+									FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V 
+								 WHERE V.EMP_CODE = #{empCode}
+											 AND T.ORIG_ORG_CODE = V.ORG_CODE) <!-- 应收单可以按照应收部门进行查询   -->		
+							</if>	
+						</when>
+						<!-- 按照到达查询 -->
+						<when test="deptType =='TO' ">
+							<if test="department != null and department != ''">
+								AND T.DEST_ORG_CODE = #{department}
+							</if>
+							<!-- 所选大区小区下的全部网点编码 -->
+							<if test="orgCodeInArea!=null and orgCodeInArea.size()>0">
+								AND T.DEST_ORG_CODE IN
+				     			<foreach collection="orgCodeInArea"  index="index" item="item"  open="(" separator="," close=")">  
+							        #{item} 
+								</foreach>
+					 		</if>
+					 		<!-- 加入数据权限 -->
+							<if test="empCode != null and empCode != ''">
+								AND EXISTS (SELECT ORG_CODE
+									FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V 
+								 WHERE V.EMP_CODE = #{empCode}
+											 AND T.DEST_ORG_CODE = V.ORG_CODE) <!-- 应收单可以按照应收部门进行查询   -->		
+							</if>	
+						</when>
+						<otherwise>
+								1=0
+						</otherwise>
+					</choose>
+				)RE
+		<where>
+			<if test=" stockStatus!=null and stockStatus!='' ">
+				RE.STOCKSTATUS=#{stockStatus}
+			</if>
+		</where>
+		)	
+	  </select>   
+  
+  <!-- 查询记账日期应收单总记录条数，总金额，未核销总金额，核销总金额 -->
+  <select id="queryTotalAmountInFreightToCollectBillByAccountDate" resultMap="TotalAmountResultMapInFreightToCollectBill" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.BillFreightToCollectQueryDto">
+		SELECT  /*结算-客户管理-查询记账日期应收单总记录条数，总金额，未核销总金额，核销总金额 */
+				count(1) as Total_Records_In_DB,
+				sum(AMOUNT) as Total_Amount,
+				sum(VERIFY_AMOUNT) as totalVerifyAmount,
+				sum(UNVERIFY_AMOUNT) as Total_UnverifyTotalAmount 
+		FROM (
+			SELECT * FROM (    
+			    SELECT /*结算-客户管理- 通过记账日期得到付清查信息 */
+			    <include refid="STOCKSTATUS"/>
+			    FROM STL.T_STL_BILL_RECEIVABLE T
+			    LEFT JOIN PKP.T_SRV_WAYBILL_SIGN_RESULT PT ON PT.WAYBILL_NO =T.WAYBILL_NO  AND PT.ACTIVE = 'Y'
+			    	WHERE
+						<!-- 日期查询 -->
+						<![CDATA[T.ACCOUNT_DATE >=#{ startDate ,jdbcType=TIMESTAMP} AND T.ACCOUNT_DATE <#{endDate ,jdbcType=TIMESTAMP} ]]>
+						<!-- 默认查询有效的 且未核销金额大于0的 -->
+						AND T.ACTIVE = 'Y' AND UNVERIFY_AMOUNT>0 
+						<!-- 单据类别 -->
+						<choose>
+							<when test="billType != null and billType != ''">
+								AND T.BILL_TYPE = #{billType}	
+							</when>
+							<when test="billTypeList !=null and billTypeList.size()>0 ">
+								AND T.BILL_TYPE IN
+									<foreach collection="billTypeList" item="item" index="index" open="(" separator="," close=")">
+			 						#{item}
+			 						</foreach>
+							</when>
+							<otherwise>
+									1=0
+							</otherwise>
+						</choose>
+						<!-- 产品类型
+						<if test="productCode != null and productCode != ''">
+							AND T.PRODUCT_CODE = #{productCode}
+						</if> -->
+						<!-- 运输性质 -->
+						<if test="productCodeList != null">
+					    and T.PRODUCT_CODE in
+						   <foreach collection="productCodeList" item="productCode" open="(" close=")" separator=",">
+						   	#{productCode,jdbcType=VARCHAR}
+						   </foreach>
+					    </if>
+						<choose>
+							<!-- 按照出发查询 -->
+							<when test="deptType =='FROM' ">
+								<if test="department != null and department != ''">
+									AND T.ORIG_ORG_CODE = #{department}
+								</if>
+								<!-- 所选大区小区下的全部网点编码 -->
+								<if test="orgCodeInArea!=null and orgCodeInArea.size()>0">
+									AND T.ORIG_ORG_CODE IN
+					     			<foreach collection="orgCodeInArea"  index="index" item="item"  open="(" separator="," close=")">  
+								        #{item} 
+									</foreach>
+						 		</if>
+						 		<!-- 加入数据权限 -->
+								<if test="empCode != null and empCode != ''">
+									AND EXISTS (SELECT ORG_CODE
+										FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V 
+									 WHERE V.EMP_CODE = #{empCode}
+												 AND T.ORIG_ORG_CODE = V.ORG_CODE) <!-- 应收单可以按照应收部门进行查询   -->		
+								</if>	
+							</when>
+							<!-- 按照到达查询 -->
+							<when test="deptType =='TO' ">
+								<if test="department != null and department != ''">
+									AND T.DEST_ORG_CODE = #{department}
+								</if>
+								<!-- 所选大区小区下的全部网点编码 -->
+								<if test="orgCodeInArea!=null and orgCodeInArea.size()>0">
+									AND T.DEST_ORG_CODE IN
+					     			<foreach collection="orgCodeInArea"  index="index" item="item"  open="(" separator="," close=")">  
+								        #{item} 
+									</foreach>
+						 		</if>
+						 		<!-- 加入数据权限 -->
+								<if test="empCode != null and empCode != ''">
+									AND EXISTS (SELECT ORG_CODE
+										FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V 
+									 WHERE V.EMP_CODE = #{empCode}
+												 AND T.DEST_ORG_CODE = V.ORG_CODE) <!-- 应收单可以按照应收部门进行查询   -->		
+								</if>	
+							</when>
+							<otherwise>
+									1=0
+							</otherwise>
+						</choose>)RE
+			<where>
+				<if test=" stockStatus!=null and stockStatus!='' ">
+					RE.STOCKSTATUS=#{stockStatus}
+				</if>
+			</where>
+		)
+  </select>  
+</mapper>

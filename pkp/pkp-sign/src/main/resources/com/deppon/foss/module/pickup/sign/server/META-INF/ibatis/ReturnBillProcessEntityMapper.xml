@@ -1,0 +1,582 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.deppon.foss.module.pickup.sign.api.shared.domain.ReturnBillProcessEntity" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.pickup.sign.api.shared.domain.ReturnBillProcessEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+    <result column="RETURNBILL_STATUS" property="returnbillStatus" jdbcType="VARCHAR" />
+    <result column="RETURNBILL_TYPE" property="returnbillType" jdbcType="VARCHAR" />
+    <result column="RETURNBILL_TIME" property="returnbillTime" jdbcType="TIMESTAMP" />
+    <result column="HANDLER" property="handler" jdbcType="VARCHAR" />
+    <result column="VERIFY_TIME" property="verifyTime" jdbcType="TIMESTAMP" />
+    <result column="FEEDBACK_INFO" property="feedbackInfo" jdbcType="VARCHAR" />
+    <result column="EXPRESS_NO" property="expressNo" jdbcType="VARCHAR" />
+    <result column="EXPRESS_COMPANY" property="expressCompany" jdbcType="VARCHAR" />
+    <result column="CREATE_USER_NAME" property="createUserName" jdbcType="VARCHAR" />
+    <result column="CREATE_USER_CODE" property="createUserCode" jdbcType="VARCHAR" />
+    <result column="CREATE_ORG_NAME" property="createOrgName" jdbcType="VARCHAR" />
+    <result column="CREATE_ORG_CODE" property="createOrgCode" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="CONFIRM_TIME" property="confirmTime" jdbcType="TIMESTAMP" />
+    <result column="RETURNBILL_CONFIRM" property="returnbillConfirm" jdbcType="VARCHAR" />
+    <result column="CONFIRM_HANDLER" property="confirmHandler" jdbcType="VARCHAR" />
+  </resultMap>
+  
+  
+  
+  <!-- ReturnBillProcessEntity查询返回 dto resultMap -->
+	<resultMap id="ReturnBillProcessVoRM" 
+		type="com.deppon.foss.module.pickup.sign.api.shared.dto.RtSearchReturnBillProcessDto">
+		 <id column="ID" property="id" jdbcType="VARCHAR" />
+	    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+	    <result column="RETURNBILL_STATUS" property="returnbillStatus" jdbcType="VARCHAR" />
+	    <result column="RETURNBILL_TYPE" property="returnbillType" jdbcType="VARCHAR" />
+	    <result column="RETURNBILL_TIME" property="returnbillTime" jdbcType="TIMESTAMP" />
+	    <result column="HANDLER" property="handler" jdbcType="VARCHAR" />
+	    <result column="VERIFY_TIME" property="verifyTime" jdbcType="TIMESTAMP" />
+	    <result column="FEEDBACK_INFO" property="feedbackInfo" jdbcType="VARCHAR" />
+	    <result column="EXPRESS_NO" property="expressNo" jdbcType="VARCHAR" />
+	    <result column="EXPRESS_COMPANY" property="expressCompany" jdbcType="VARCHAR" />
+	    <result column="CREATE_USER_NAME" property="createUserName" jdbcType="VARCHAR" />
+	    <result column="CREATE_USER_CODE" property="createUserCode" jdbcType="VARCHAR" />
+	    <result column="CREATE_ORG_NAME" property="createOrgName" jdbcType="VARCHAR" />
+	    <result column="CREATE_ORG_CODE" property="createOrgCode" jdbcType="VARCHAR" />
+	    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+	    <result column="IS_SEND_SMS" property="issendSms" jdbcType="VARCHAR" />
+	    <result column="DELIVERY_CUSTOMER_CONTACT" property="deliveryCustomerContact" jdbcType="VARCHAR" />
+	    <result column="DELIVERY_CUSTOMER_MOBILEPHONE" property="deliveryCustomerMobilephone" jdbcType="VARCHAR" />
+	    <result column="delivery_customer_phone" property="deliveryCustomerTel" jdbcType="VARCHAR" />
+	    <result column="receive_org_name" property="receiveOrgName" jdbcType="VARCHAR" />
+      <result column="CONFIRM_TIME" property="confirmTime" jdbcType="TIMESTAMP" />
+      <result column="RETURNBILL_CONFIRM" property="returnbillConfirm" jdbcType="VARCHAR" />
+      <result column="CONFIRM_HANDLER" property="confirmHandler" jdbcType="VARCHAR" />
+	</resultMap>
+  
+  
+  
+  
+  <sql id="Base_Column_List" >
+    ID, WAYBILL_NO, RETURNBILL_TYPE, RETURNBILL_STATUS, RETURNBILL_TIME, HANDLER, 
+    VERIFY_TIME, FEEDBACK_INFO, EXPRESS_NO,EXPRESS_COMPANY, CREATE_USER_NAME, CREATE_USER_CODE, CREATE_ORG_NAME, 
+    CREATE_ORG_CODE, CREATE_TIME,confirm_time,confirm_handler,returnbill_confirm
+  </sql>
+  
+   <sql id="Complex_Column_List" >
+    rbp.ID, rbp.WAYBILL_NO, rbp.RETURNBILL_TYPE, rbp.RETURNBILL_STATUS, rbp.RETURNBILL_TIME, rbp.HANDLER, 
+    rbp.VERIFY_TIME, rbp.FEEDBACK_INFO, rbp.EXPRESS_NO, rbp.EXPRESS_COMPANY, rbp.CREATE_USER_NAME, rbp.CREATE_USER_CODE, rbp.CREATE_ORG_NAME, 
+    rbp.CREATE_ORG_CODE, rbp.CREATE_TIME,rbp.confirm_time,rbp.confirm_handler,rbp.returnbill_confirm
+  </sql>
+  
+   <sql id="Complex_NotificationColumn_List" >
+    rbp.ID, rbp.WAYBILL_NO, rbp.RETURNBILL_TYPE, rbp.RETURNBILL_STATUS, rbp.RETURNBILL_TIME, rbp.HANDLER, 
+    rbp.VERIFY_TIME, rbp.FEEDBACK_INFO, rbp.EXPRESS_NO, rbp.EXPRESS_COMPANY, rbp.CREATE_USER_NAME, rbp.CREATE_USER_CODE, rbp.CREATE_ORG_NAME, 
+    rbp.CREATE_ORG_CODE, rbp.CREATE_TIME, tmp.IS_SEND_SMS,rbp.confirm_time,rbp.confirm_handler,rbp.returnbill_confirm,
+    waybill.DELIVERY_CUSTOMER_CONTACT,waybill.DELIVERY_CUSTOMER_MOBILEPHONE,waybill.delivery_customer_phone,
+    waybill.receive_org_name
+  </sql>
+  
+  
+  <select id="searchReturnBillProcessList" resultMap="ReturnBillProcessVoRM">
+    select /*模块：接送货-签收单返单-查询签收单返单数据集合*/
+    <include refid="Complex_NotificationColumn_List" />
+    <!-- left join T_SRV_NOTIFICATION获得最新的纪录的发送短信状态为最终状态 -->
+    from PKP.T_SRV_RETURNBILL_PROCESS rbp left join
+    (
+    	SELECT WAYBILL_NO, IS_SEND_SMS from 
+    		(
+				SELECT WAYBILL_NO, 
+				   NOTICE_RESULT as IS_SEND_SMS, 
+  				   ROW_NUMBER() OVER(PARTITION BY MODULE_NAME, WAYBILL_NO  ORDER BY operate_time DESC)  AS maxId
+ 				from PKP.T_SRV_NOTIFICATION  
+ 				WHERE  MODULE_NAME='PKP_SIGNRETURNPROCESS' 
+ 			)
+  		WHERE maxId = 1    
+    ) tmp on rbp.WAYBILL_NO = tmp.waybill_no
+    JOIN PKP.T_SRV_WAYBILL waybill ON rbp.waybill_no = waybill.waybill_no
+	JOIN PKP.T_SRV_ACTUAL_FREIGHT AF ON rbp.waybill_no = af.waybill_no
+	LEFT JOIN BSE.T_BAS_SALES_DEPARTMENT S ON S.CODE =
+                                            waybill.LAST_LOAD_ORG_CODE
+                                        and S.ACTIVE = 'Y'
+	LEFT join bse.t_bas_goods_area station on station.ORG_CODE =
+	                                            S.TRANSFER_CENTER
+	                                        AND station.ACTIVE = 'Y'
+	                                        and station.GOODS_AREA_TYPE =
+	                                            'BSE_GOODSAREA_TYPE_STATION'
+	LEFT join bse.t_bas_goods_area other on other.ORG_CODE =
+	                                          waybill.last_load_org_code
+	                                      AND other.ACTIVE = 'Y'
+	                                      and other.GOODS_AREA_TYPE =
+	                                          'BSE_GOODSAREA_TYPE_OTHER'
+	LEFT join bse.t_bas_goods_area station1 on station1.ORG_CODE =
+                                    	S.TRANSFER_CENTER
+                                        AND station1.ACTIVE = 'Y'
+                                        and station1.GOODS_AREA_TYPE =
+                                        'BSE_GOODSAREA_TYPE_EXPRESS_STATION'	                                
+	LEFT JOIN BSE.T_BAS_TRANSFER_CENTER A on A.AIR_DISPATCH_CODE =
+	                                           waybill.LAST_LOAD_ORG_CODE
+	                                       and A.ACTIVE = 'Y'
+	left join bse.t_bas_goods_area air on air.org_code = a.org_code
+	                                    and air.active = 'Y'
+	                                    and air.goods_area_type =
+	                                        'BSE_GOODSAREA_TYPE_AIRFREIGHT'
+	<if test="signStartTime != null  ">
+		LEFT JOIN PKP.T_SRV_WAYBILL_SIGN_RESULT result ON rbp.waybill_no = result.waybill_no
+	</if>
+	<if test="instockStartTime != null ">
+		LEFT JOIN TFR.T_OPT_WAYBILL_STOCK WS ON rbp.waybill_no = ws.waybill_no
+	</if>
+    
+    <include refid="select_Where_return_bill_process" />
+  </select>
+  
+  <select id="getTotalCount" resultType="Long" >
+		select count(1) 
+		from PKP.T_SRV_RETURNBILL_PROCESS rbp
+		JOIN PKP.T_SRV_WAYBILL waybill ON rbp.waybill_no = waybill.waybill_no
+		JOIN PKP.T_SRV_ACTUAL_FREIGHT AF ON rbp.waybill_no = af.waybill_no
+		<if test="signStartTime != null  ">
+			LEFT JOIN PKP.T_SRV_WAYBILL_SIGN_RESULT result ON rbp.waybill_no = result.waybill_no
+		</if>
+		<if test="instockStartTime != null ">
+			LEFT JOIN TFR.T_OPT_WAYBILL_STOCK WS ON rbp.waybill_no = ws.waybill_no
+		</if>
+		<if test="arriveStartTime != null or instockStartTime != null"> 
+        <!--SQL优化，关联的bse表是查询的where条件使用，当条件满足使用到这些表时才是必须关联，不使用可不关联-->
+		LEFT JOIN BSE.T_BAS_SALES_DEPARTMENT S ON S.CODE =
+                                            waybill.LAST_LOAD_ORG_CODE
+                                        and S.ACTIVE = 'Y'
+		LEFT join bse.t_bas_goods_area station on station.ORG_CODE =
+		                                            S.TRANSFER_CENTER
+		                                        AND station.ACTIVE = 'Y'
+		                                        and station.GOODS_AREA_TYPE =
+		                                            'BSE_GOODSAREA_TYPE_STATION'
+		LEFT join bse.t_bas_goods_area other on other.ORG_CODE =
+		                                          waybill.last_load_org_code
+		                                      AND other.ACTIVE = 'Y'
+		                                      and other.GOODS_AREA_TYPE =
+		                                          'BSE_GOODSAREA_TYPE_OTHER'
+		LEFT join bse.t_bas_goods_area station1 on station1.ORG_CODE =
+                                    	      S.TRANSFER_CENTER
+                                    		  AND station1.ACTIVE = 'Y'
+                                    		  and station1.GOODS_AREA_TYPE =
+                                    		       'BSE_GOODSAREA_TYPE_EXPRESS_STATION'
+		LEFT JOIN BSE.T_BAS_TRANSFER_CENTER A on A.AIR_DISPATCH_CODE =
+		                                           waybill.LAST_LOAD_ORG_CODE
+		                                       and A.ACTIVE = 'Y'
+		left join bse.t_bas_goods_area air on air.org_code = a.org_code
+		                                    and air.active = 'Y'
+		                                    and air.goods_area_type =
+		                                        'BSE_GOODSAREA_TYPE_AIRFREIGHT'
+     </if>
+	 /*模块：接送货-签收单返单-查询签收单返单数据集合总数*/
+		<include refid="select_Where_return_bill_process" />
+	</select>
+  
+  
+  <sql id="select_Where_return_bill_process">
+		<where>
+			<if test="type != null and type != ''">
+			<![CDATA[ AND rbp.RETURNBILL_TYPE =#{type} ]]>
+			</if>
+			
+			<if test="waybillNo != null and waybillNo != ''">
+			<![CDATA[ AND rbp.WAYBILL_NO =#{waybillNo} ]]>
+			</if>
+			
+			
+			<if test="status != null and status != ''">
+			<![CDATA[ AND rbp.RETURNBILL_STATUS =#{status} ]]>
+			</if>
+			
+			<if test="fromDepartmentCode != null and fromDepartmentCode != ''">
+			<![CDATA[ AND waybill.RECEIVE_ORG_CODE =#{fromDepartmentCode} ]]>
+			</if>
+			
+			<if test="toDepartmentCode != null and toDepartmentCode != ''">
+				AND waybill.LAST_LOAD_ORG_CODE =#{toDepartmentCode} 
+			</if>
+			
+			
+			<!-- 开单时间查询 -->
+			<if test="billStartTime != null  ">
+			<![CDATA[and waybill.BILL_TIME >= #{billStartTime,jdbcType=TIMESTAMP}]]>
+			</if>
+			
+			<if test="billEndTime != null  ">
+			<![CDATA[and waybill.BILL_TIME <= #{billEndTime,jdbcType=TIMESTAMP}]]>
+			</if>
+			
+			<!-- 签收时间查询 -->
+			<if test="signStartTime != null  ">
+			<![CDATA[
+				and result.SIGN_TIME >= #{signStartTime,jdbcType=TIMESTAMP}
+				AND result.create_org_code = waybill.LAST_LOAD_ORG_CODE
+				AND result.ACTIVE='Y' 
+			]]>
+			</if>
+			
+			<if test="signEndTime != null ">
+			<![CDATA[
+				and result.SIGN_TIME <= #{signEndTime,jdbcType=TIMESTAMP}
+			]]>
+			</if>
+			<!-- 到达时间查询 -->
+			<if test="arriveStartTime != null ">
+			<![CDATA[
+				and af.arrive_time >= #{arriveStartTime,jdbcType=TIMESTAMP}
+				and ((af.end_stock_org_code = waybill.last_load_org_code) or
+			       (af.end_stock_org_code = s.transfer_center and
+			       af.goods_area_code = station.goods_area_code) or
+			       (af.end_stock_org_code = waybill.last_load_org_code and
+			       af.goods_area_code = other.goods_area_code) or
+			       (af.end_stock_org_code = s.transfer_center and
+			       af.goods_area_code = station1.goods_area_code) or
+			       (af.end_stock_org_code = A.Org_Code and
+			       af.goods_area_code = air.goods_area_code))
+			]]>
+			</if>
+			
+			<if test="arriveEndTime != null ">
+			<![CDATA[and af.arrive_time <= #{arriveEndTime,jdbcType=TIMESTAMP}]]>
+			</if>
+			<!-- 入库时间查询 -->
+			<if test="instockStartTime != null ">
+			<![CDATA[
+				and ws.in_stock_time >= #{instockStartTime,jdbcType=TIMESTAMP}
+				and ((ws.org_code = waybill.last_load_org_code) or
+			       (ws.org_code = s.transfer_center and
+			       ws.goods_area_code = station.goods_area_code) or
+			       (ws.org_code = waybill.last_load_org_code and
+			       ws.goods_area_code = other.goods_area_code) or
+			       (ws.org_code = s.transfer_center and
+			       ws.goods_area_code = station1.goods_area_code) or
+			       (ws.org_code = A.Org_Code and
+			       ws.goods_area_code = air.goods_area_code))
+			]]>
+			</if>
+			
+			<if test="instockEndTime != null ">
+			<![CDATA[and ws.in_stock_time <= #{instockEndTime,jdbcType=TIMESTAMP}]]>
+			</if>
+			<![CDATA[  AND waybill.ACTIVE='Y']]>
+		</where>
+	</sql>
+  
+  <select id="querySignedBillByWaybillNo" resultMap="BaseResultMap" parameterType="java.lang.String" >
+    select /*模块：接送货-签收单返单-根据运单号查询签收单信息*/
+    <include refid="Base_Column_List" />
+    from PKP.T_SRV_RETURNBILL_PROCESS rbp 
+    where  rbp.WAYBILL_NO =  #{waybillNo,jdbcType=VARCHAR}
+  </select>
+  
+  
+  <select id="selectByPrimaryKey" resultMap="ReturnBillProcessVoRM" parameterType="java.lang.String" >
+    select /*模块：接送货-签收单返单-根据ID查询*/
+    <include refid="Complex_Column_List" />
+    from PKP.T_SRV_RETURNBILL_PROCESS rbp,  PKP.T_SRV_WAYBILL waybill
+    where  rbp.WAYBILL_NO = waybill.WAYBILL_NO  AND rbp.ID = #{id,jdbcType=VARCHAR}  AND waybill.ACTIVE='Y'
+  </select>
+  
+  
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String" >
+    delete from PKP.T_SRV_RETURNBILL_PROCESS
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  <insert id="insert" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.ReturnBillProcessEntity" >
+    insert into PKP.T_SRV_RETURNBILL_PROCESS (ID, WAYBILL_NO, RETURNBILL_TYPE, 
+      RETURNBILL_STATUS, RETURNBILL_TIME, HANDLER, 
+      VERIFY_TIME, FEEDBACK_INFO, 
+      EXPRESS_NO,EXPRESS_COMPANY, CREATE_USER_NAME, CREATE_USER_CODE, 
+      CREATE_ORG_NAME, CREATE_ORG_CODE, CREATE_TIME
+      )
+    values (#{id,jdbcType=VARCHAR}, #{waybillNo,jdbcType=VARCHAR}, #{returnbillType,jdbcType=CHAR}, 
+      #{returnbillStatus,jdbcType=VARCHAR}, #{returnbillTime,jdbcType=TIMESTAMP}, #{handler,jdbcType=VARCHAR}, 
+      #{verifyTime,jdbcType=TIMESTAMP}, #{feedbackInfo,jdbcType=VARCHAR}, 
+      #{expressNo,jdbcType=VARCHAR},#{expressCompany,jdbcType=VARCHAR},  #{createUserName,jdbcType=VARCHAR}, #{createUserCode,jdbcType=VARCHAR}, 
+      #{createOrgName,jdbcType=VARCHAR}, #{createOrgCode,jdbcType=VARCHAR}, #{createTime,jdbcType=TIMESTAMP}
+      )
+  </insert>
+  <insert id="insertSelective" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.ReturnBillProcessEntity" >
+    insert into PKP.T_SRV_RETURNBILL_PROCESS
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="waybillNo != null" >
+        WAYBILL_NO,
+      </if>
+      <if test="isVerify != null" >
+        RETURNBILL_TYPE,
+      </if>
+      <if test="returnbillStatus != null" >
+        RETURNBILL_STATUS,
+      </if>
+      <if test="returnbillTime != null" >
+        RETURNBILL_TIME,
+      </if>
+      <if test="handler != null" >
+        HANDLER,
+      </if>
+      
+      <if test="verifyTime != null" >
+        VERIFY_TIME,
+      </if>
+      <if test="feedbackInfo != null" >
+        FEEDBACK_INFO,
+      </if>
+      <if test="expressNo != null" >
+        EXPRESS_NO,
+      </if>
+         <if test="expressCompany != null" >
+        EXPRESS_COMPANY,
+      </if>
+      <if test="createUserName != null" >
+        CREATE_USER_NAME,
+      </if>
+      <if test="createUserCode != null" >
+        CREATE_USER_CODE,
+      </if>
+      <if test="createOrgName != null" >
+        CREATE_ORG_NAME,
+      </if>
+      <if test="createOrgCode != null" >
+        CREATE_ORG_CODE,
+      </if>
+      <if test="createTime != null" >
+        CREATE_TIME,
+      </if>
+      <if test="confirmTime != null and confirmTime!='' ">
+        CONFIRM_TIME,
+      </if>
+      <if test="returnbillConfirm != null and returnbillConfirm!='' ">
+        RETURNBILL_CONFIRM,
+      </if>
+      <if test="confirmHandler != null and confirmHandler!='' ">
+        CONFIRM_HANDLER,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="waybillNo != null" >
+        #{waybillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="isVerify != null" >
+        #{returnbillType,jdbcType=CHAR},
+      </if>
+      <if test="returnbillStatus != null" >
+        #{returnbillStatus,jdbcType=VARCHAR},
+      </if>
+      <if test="returnbillTime != null" >
+        #{returnbillTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="handler != null" >
+        #{handler,jdbcType=VARCHAR},
+      </if>
+      
+      <if test="verifyTime != null" >
+        #{verifyTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="feedbackInfo != null" >
+        #{feedbackInfo,jdbcType=VARCHAR},
+      </if>
+      <if test="expressNo != null" >
+        #{expressNo,jdbcType=VARCHAR},
+      </if>
+       <if test="expressCompany != null" >
+        #{expressCompany,jdbcType=VARCHAR},
+      </if>
+      <if test="createUserName != null" >
+        #{createUserName,jdbcType=VARCHAR},
+      </if>
+      <if test="createUserCode != null" >
+        #{createUserCode,jdbcType=VARCHAR},
+      </if>
+      <if test="createOrgName != null" >
+        #{createOrgName,jdbcType=VARCHAR},
+      </if>
+      <if test="createOrgCode != null" >
+        #{createOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null" >
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="confirmTime != null and confirmTime!='' ">
+		#{confirmTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="returnbillConfirm != null and returnbillConfirm!='' ">
+		#{returnbillConfirm,jdbcType=VARCHAR},
+      </if>
+      <if test="confirmHandler != null and confirmHandler!='' ">
+        #{confirmHandler,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.ReturnBillProcessEntity" >
+    update PKP.T_SRV_RETURNBILL_PROCESS
+    <set >
+      <if test="waybillNo != null" >
+        WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="isVerify != null" >
+        RETURNBILL_TYPE = #{returnbillType,jdbcType=CHAR},
+      </if>
+      <if test="returnbillStatus != null" >
+        RETURNBILL_STATUS = #{returnbillStatus,jdbcType=VARCHAR},
+      </if>
+      <if test="returnbillTime != null" >
+        RETURNBILL_TIME = #{returnbillTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="handler != null" >
+        HANDLER = #{handler,jdbcType=VARCHAR},
+      </if>
+      
+      <if test="verifyTime != null" >
+        VERIFY_TIME = #{verifyTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="feedbackInfo != null" >
+        FEEDBACK_INFO = #{feedbackInfo,jdbcType=VARCHAR},
+      </if>
+      <if test="expressNo != null" >
+        EXPRESS_NO = #{expressNo,jdbcType=VARCHAR},
+      </if>
+      <if test="expressCompany != null" >
+        EXPRESS_COMPANY = #{expressCompany,jdbcType=VARCHAR},
+      </if>
+      <if test="createUserName != null" >
+        CREATE_USER_NAME = #{createUserName,jdbcType=VARCHAR},
+      </if>
+      <if test="createUserCode != null" >
+        CREATE_USER_CODE = #{createUserCode,jdbcType=VARCHAR},
+      </if>
+      <if test="createOrgName != null" >
+        CREATE_ORG_NAME = #{createOrgName,jdbcType=VARCHAR},
+      </if>
+      <if test="createOrgCode != null" >
+        CREATE_ORG_CODE = #{createOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="confirmTime != null and confirmTime!='' ">
+        CONFIRM_TIME = #{confirmTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="returnbillConfirm != null and returnbillConfirm!='' ">
+        RETURNBILL_CONFIRM = #{returnbillConfirm,jdbcType=VARCHAR},
+      </if>
+      <if test="confirmHandler != null and confirmHandler!='' ">
+        CONFIRM_HANDLER = #{confirmHandler,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null" >
+        CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+      </if> 
+
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  <update id="updateReturnBillProcess" 
+  	parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.ReturnBillProcessEntity" >
+    update PKP.T_SRV_RETURNBILL_PROCESS
+    <set >
+     
+      <if test="returnbillStatus != null" >
+        RETURNBILL_STATUS = #{returnbillStatus,jdbcType=VARCHAR},
+      </if>
+      <if test="verifyTime != null" >
+        VERIFY_TIME = #{verifyTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="returnbillTime != null" >
+        RETURNBILL_TIME = #{returnbillTime,jdbcType=TIMESTAMP},
+      </if>
+       <if test="handler != null" >
+        HANDLER = #{handler,jdbcType=VARCHAR},
+      </if>
+     
+      <if test="expressNo != null" >
+        EXPRESS_NO = #{expressNo,jdbcType=VARCHAR},
+      </if>
+      <if test="expressCompany != null" >
+        EXPRESS_COMPANY = #{expressCompany,jdbcType=VARCHAR},
+      </if>
+      /*268377 返单确认*/
+      <if test="confirmTime != null and confirmTime!='' ">
+        CONFIRM_TIME = #{confirmTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="returnbillConfirm != null and returnbillConfirm!='' ">
+        RETURNBILL_CONFIRM = #{returnbillConfirm,jdbcType=VARCHAR},
+      </if>
+      <if test="confirmHandler != null and confirmHandler!='' ">
+        CONFIRM_HANDLER = #{confirmHandler,jdbcType=VARCHAR},
+      </if>
+      <if test="feedbackInfo != null" >
+        FEEDBACK_INFO = #{feedbackInfo,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  <update id="updateByPrimaryKey" 
+  	parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.ReturnBillProcessEntity" >
+    update PKP.T_SRV_RETURNBILL_PROCESS
+    set WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR},
+      RETURNBILL_TYPE   = #{returnbillType,jdbcType=CHAR},
+      RETURNBILL_STATUS = #{returnbillStatus,jdbcType=VARCHAR},
+      RETURNBILL_TIME = #{returnbillTime,jdbcType=TIMESTAMP},
+      HANDLER = #{handler,jdbcType=VARCHAR},
+      VERIFY_TIME = #{verifyTime,jdbcType=TIMESTAMP},
+      FEEDBACK_INFO = #{feedbackInfo,jdbcType=VARCHAR},
+      EXPRESS_NO = #{expressNo,jdbcType=VARCHAR},
+      EXPRESS_COMPANY = #{expressCompany,jdbcType=VARCHAR},
+      CREATE_USER_NAME = #{createUserName,jdbcType=VARCHAR},
+      CREATE_USER_CODE = #{createUserCode,jdbcType=VARCHAR},
+      CREATE_ORG_NAME = #{createOrgName,jdbcType=VARCHAR},
+      CREATE_ORG_CODE = #{createOrgCode,jdbcType=VARCHAR},
+      CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+       CONFIRM_TIME = #{confirmTime,jdbcType=TIMESTAMP},
+        RETURNBILL_CONFIRM = #{returnbillConfirm,jdbcType=VARCHAR},
+        CONFIRM_HANDLER = #{confirmHandler,jdbcType=VARCHAR} 
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+
+  <update id="updateBatchRetrunBillProcess" parameterType="com.deppon.foss.module.pickup.sign.api.shared.dto.RtSearchReturnBillProcessDto">
+      update PKP.T_SRV_RETURNBILL_PROCESS/*返单处理批量修改*/
+      <set >
+
+        <if test="returnbillStatus != null" >
+          RETURNBILL_STATUS = #{returnbillStatus,jdbcType=VARCHAR},
+        </if>
+        <if test="verifyTime != null" >
+          VERIFY_TIME = #{verifyTime,jdbcType=TIMESTAMP},
+        </if>
+        <if test="returnbillTime != null" >
+          RETURNBILL_TIME = #{returnbillTime,jdbcType=TIMESTAMP},
+        </if>
+        <if test="handler != null" >
+          HANDLER = #{handler,jdbcType=VARCHAR},
+        </if>
+
+        <if test="expressNo != null" >
+          EXPRESS_NO = #{expressNo,jdbcType=VARCHAR},
+        </if>
+        <if test="expressCompany != null" >
+          EXPRESS_COMPANY = #{expressCompany,jdbcType=VARCHAR},
+        </if>
+        <if test="feedbackInfo != null" >
+          FEEDBACK_INFO = #{feedbackInfo,jdbcType=VARCHAR},
+        </if>
+        /*268377 返单确认*/
+        <if test="confirmTime != null and confirmTime!='' ">
+          CONFIRM_TIME = #{confirmTime,jdbcType=TIMESTAMP},
+        </if>
+        <if test="returnbillConfirm != null and returnbillConfirm!='' ">
+          RETURNBILL_CONFIRM = #{returnbillConfirm,jdbcType=VARCHAR},
+        </if>
+        <if test="confirmHandler != null and confirmHandler!='' ">
+          CONFIRM_HANDLER = #{confirmHandler,jdbcType=VARCHAR},
+        </if>
+      </set>
+    <if test="ids !=null and ids.length > 0">
+      where ID in
+        <foreach collection="ids" index="index" item="id" open="(" separator="," close=")">
+           #{id}
+        </foreach>
+    </if>
+  </update>
+</mapper>

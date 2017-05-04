@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	  "-//mybatis.org//DTD Mapper 3.0//EN" 
+	  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.stl.noteQueryDao">
+	<resultMap id="queryNoteResultMap"  type="com.deppon.foss.module.settlement.consumer.api.shared.dto.NoteQueryDto">
+	<id column="NOTE_DETAILS_ID" property="noteDetailsId" jdbcType="VARCHAR" />
+    <result column="NOTE_APP_ID" property="noteAppId" jdbcType="VARCHAR" />
+    <result column="NOTE_STOCKIN_ID" property="noteStockInId" jdbcType="VARCHAR" />
+    <result column="NOTE_DETAILS_NO" property="detailsNo" jdbcType="VARCHAR" />
+    <result column="APPLY_ORG_CODE" property="applyOrgCode" jdbcType="VARCHAR" />
+    <result column="APPLY_ORG_NAME" property="applyOrgName" jdbcType="VARCHAR" />
+    <result column="APPLY_TIME" property="applyTime" jdbcType="TIMESTAMP" />
+    <result column="BEGIN_NO" property="beginNo" jdbcType="DECIMAL" />
+    <result column="END_NO" property="endNo" jdbcType="DECIMAL" />
+    <result column="ISSUED_USER_CODE" property="issuedUserCode" jdbcType="VARCHAR" />
+    <result column="ISSUED_USER_NAME" property="issuedUserName" jdbcType="VARCHAR" />
+    <result column="ISSUED_TIME" property="issuedTime" jdbcType="TIMESTAMP" />
+    <result column="STORAGE_TIME" property="storageTime" jdbcType="TIMESTAMP" />
+    <result column="STORAGE_USER_CODE" property="storageUserCode" jdbcType="VARCHAR" />
+    <result column="STORAGE_USER_NAME" property="storageUserName" jdbcType="VARCHAR" />
+    <result column="WRITEOFF_TIME" property="writeoffTime" jdbcType="TIMESTAMP" />
+    <result column="WRITEOFF_STATUS" property="writeoffStatus" jdbcType="VARCHAR" />
+    <result column="WRITEOFF_USER_CODE" property="writeoffUserCode" jdbcType="VARCHAR" />
+    <result column="WRITEOFF_USER_NAME" property="writeoffUserName" jdbcType="VARCHAR" />
+    <result column="STATUS" property="status" jdbcType="VARCHAR" /> 
+    <result column="BEGIN_WITH_END_NO" property="beginWithEndNo" jdbcType="VARCHAR" /> 
+	</resultMap>
+  <!-- 查询字段 -->
+	<sql id="select_param">
+		NOTE_DETAILS_ID, 
+		NOTE_APP_ID, 
+		NOTE_STOCKIN_ID, 
+		NOTE_DETAILS_NO, 
+		APPLY_ORG_CODE, 
+		APPLY_ORG_NAME, 
+		APPLY_TIME, 
+    	BEGIN_NO, 
+    	END_NO, 
+    	ISSUED_USER_CODE,
+    	ISSUED_USER_NAME, 
+    	ISSUED_TIME, 
+    	STORAGE_TIME, 
+    	STORAGE_USER_CODE, 
+    	STORAGE_USER_NAME, 
+    	WRITEOFF_TIME, 
+    	WRITEOFF_STATUS, 
+    	WRITEOFF_USER_CODE, 
+    	WRITEOFF_USER_NAME, 
+    	STATUS 
+	</sql>
+  
+  	<!-- 根据条件查询单据 总条数-->
+	<select id="countNoteQueryById" resultType="long" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.NoteQueryDto">
+			SELECT /*结算-客户管理-根据条件查询单据 总条数   */ COUNT(1)
+			  FROM STL.T_STL_NOTE_APPLICATION T1,STL.T_STL_NOTE_STOCK_IN T2,STL.T_STL_NOTE_DETAILS T3
+			  WHERE T1.ID = T2.NOTE_APP_ID
+		          AND T2.ID = T3.NOTE_STOCKIN_ID
+		          AND T3.NOTE_APP_ID=T1.ID
+				  AND T3.NOTE_APP_ID = #{noteAppId}
+	</select>
+	<!-- 根据条件查询单据  -->
+	<select id="queryNoteById" resultMap="queryNoteResultMap" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.NoteQueryDto">
+			SELECT  /*结算-客户管理- 根据条件查询单据   */ 
+		        T3.ID AS NOTE_DETAILS_ID,
+		        T3.NOTE_APP_ID AS NOTE_APP_ID,
+		        T3.NOTE_STOCKIN_ID AS NOTE_STOCKIN_ID,
+		        T3.NOTE_DETAILS_NO,
+		        T1.APPLY_ORG_CODE,
+		        T1.APPLY_ORG_NAME,
+		        T1.APPLY_TIME,
+		        T2.BEGIN_NO||'--'||T2.END_NO as BEGIN_WITH_END_NO,
+		        T2.BEGIN_NO,
+		        T2.END_NO,
+		        T1.ISSUED_USER_CODE,
+		        T1.ISSUED_USER_NAME,
+		        T1.ISSUED_TIME,
+		        T1.STORAGE_TIME,
+		        T1.STORAGE_USER_CODE,
+		        T1.STORAGE_USER_NAME,
+		        T1.WRITEOFF_TIME,
+		        T1.WRITEOFF_STATUS,
+		        T1.WRITEOFF_USER_CODE,
+		        T1.WRITEOFF_USER_NAME,
+		        T3.STATUS
+		   FROM STL.T_STL_NOTE_APPLICATION T1,STL.T_STL_NOTE_STOCK_IN T2,STL.T_STL_NOTE_DETAILS T3
+		   WHERE T1.ID = T2.NOTE_APP_ID
+		        AND T2.ID = T3.NOTE_STOCKIN_ID
+		        AND T3.NOTE_APP_ID=T1.ID
+		    	AND T3.NOTE_APP_ID = #{noteAppId} 
+			ORDER BY T3.NOTE_DETAILS_NO ASC
+	</select>  
+	<!-- 小票新增时根据明细单据号    -->
+	<select id="queryNoteApplyInfo" resultMap="queryNoteResultMap" parameterType="java.util.Map">
+			SELECT   /*结算-客户管理-小票新增时根据明细单据号*/
+		        T3.NOTE_DETAILS_NO,
+		        T1.APPLY_ORG_CODE, 
+		        T1.APPLY_TIME,
+		        T2.BEGIN_NO,
+		        T2.END_NO,
+		        T3.STATUS,
+		        T1.WRITEOFF_STATUS
+		   FROM STL.T_STL_NOTE_APPLICATION T1,
+		   		STL.T_STL_NOTE_STOCK_IN T2,
+		   		STL.T_STL_NOTE_DETAILS T3
+		   WHERE T1.ID=T2.NOTE_APP_ID
+             	AND T2.ID=T3.NOTE_STOCKIN_ID
+             	AND T1.ID=T3.NOTE_APP_ID
+		    	AND T3.NOTE_DETAILS_NO = #{noteDetailsNo}
+		    	<if test="status != null and status != '' ">
+					AND T3.STATUS=#{status}
+				</if>
+				<if test="applyOrgCode != null and applyOrgCode != '' ">
+					AND T1.APPLY_ORG_CODE = #{applyOrgCode} 
+				</if>  
+	</select>  
+	<!-- 判断跳部门单号上一本结束编码对应的小票单号是否已使用    -->
+	<select id="queryMixNoUseDetailsNo" resultMap="queryNoteResultMap" parameterType="java.util.Map">
+          SELECT   /*结算-客户管理-判断跳部门单号上一本结束编码对应的小票单号是否已使用     */
+		        MIN(T3.NOTE_DETAILS_NO) NOTE_DETAILS_NO
+		   FROM STL.T_STL_NOTE_APPLICATION T1,
+		   		STL.T_STL_NOTE_STOCK_IN T2,
+		   		STL.T_STL_NOTE_DETAILS T3
+		   WHERE T1.ID=T2.NOTE_APP_ID
+             	AND T2.ID=T3.NOTE_STOCKIN_ID
+             	AND T1.ID=T3.NOTE_APP_ID
+		    	AND T1.APPLY_ORG_CODE = #{applyOrgCode}
+		    	AND T1.WRITEOFF_STATUS = #{writeoffStatus}
+		    	AND T3.STATUS = #{status}
+		    	<![CDATA[ AND T2.END_NO <= #{endNo}]]>  
+		
+     </select>  
+</mapper>

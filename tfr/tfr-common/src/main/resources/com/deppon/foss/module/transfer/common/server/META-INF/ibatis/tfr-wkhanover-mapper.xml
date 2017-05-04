@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.tfr.wkhandover" >
+  <resultMap id="notifyResultMap" type="com.deppon.foss.module.transfer.common.api.shared.dto.WkHandOverBillEntity" >
+    <result column="handoverbillno" property="handoverBillNo" jdbcType="TIMESTAMP" />
+	<result column="departorgcode" property="operationOrgCode" jdbcType="TIMESTAMP" />
+  </resultMap>
+
+  <select id="queryWkHandOverBillByTruckTaskDetailId" parameterType="java.lang.String"
+  	resultMap="notifyResultMap">
+	select tbill.handoverbillno as handoverBillNo, 
+			tbill.departorgcode as operationOrgCode
+		from tfr.t_wk_trf_bill tbill
+	 inner join tfr.t_opt_truck_task_bill taskbill
+			on tbill.handoverbillno = taskbill.bill_no
+	 where taskbill.truck_task_detail_id = #{truckTaskDetailId}	
+  </select>
+  
+  <insert id="addTfrNotify" parameterType="com.deppon.foss.module.transfer.common.api.shared.domain.TfrNotifyEntity">
+  	insert into TFR.T_OPT_FOSSTOWK_NOTIFY
+  	/*中转-通用模块-将需要通知快递系统的任务添加到待通知表*/
+  	(
+  		 ID,                
+		 CREATE_TIME,      
+		 NOTIFY_TYPE,       
+		 NOTIFY_PARAM1,    
+		 NOTIFY_PARAM2,     
+		 NOTIFY_PARAM3, 
+		 PARAM_JSON,   
+		 NOTIFY_NUM      
+  	)
+  	values 
+  	(
+  		#{id,jdbcType=VARCHAR},
+  		sysdate,
+  		#{notifyType,jdbcType=VARCHAR},
+  		#{notifyParam1,jdbcType=VARCHAR},
+  		#{notifyParam2,jdbcType=VARCHAR},
+  		#{notifyParam3,jdbcType=VARCHAR},
+  		#{paramJson,jdbcType=CLOB},
+  		0
+  	)
+  </insert>
+  
+</mapper>

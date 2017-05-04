@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!-- 组织收支平衡表 -->
+<mapper namespace="foss.stl.CreditOrgEntityDao">
+	<!-- 基本返回Map -->
+	<resultMap id="BaseResultMap"
+		type="com.deppon.foss.module.settlement.common.api.shared.domain.CreditOrgEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+		<result column="ORG_NAME" property="orgName" jdbcType="VARCHAR" />
+		<result column="USED_AMOUNT" property="usedAmount" jdbcType="DECIMAL" />
+		<result column="IS_OVERDUE" property="isOverdue" jdbcType="CHAR" />
+		<result column="BUSINESS_DATE" property="businessDate"
+			jdbcType="TIMESTAMP" />
+		<result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_USER_NAME" property="modifyUserName"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUserCode"
+			jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+		<result column="MAX_ACCOUNT_DAYS" property="maxAccountDays" jdbcType="INTEGER"/>
+	</resultMap>
+
+	<!-- 组织基本欠款额度信息Map -->
+	<resultMap
+		type="com.deppon.foss.module.settlement.common.api.shared.dto.CreditOrgDto"
+		id="OrgDebitDto">
+		<result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+		<result column="USED_AMOUNT" property="usedAmount" jdbcType="DECIMAL" />
+		<result column="IS_OVERDUE" property="isOverdue" jdbcType="CHAR" />
+		<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+		<result column="MAX_ACCOUNT_DAYS" property="maxAccountDays" jdbcType="INTEGER"/>
+        <result column="MINDEBITDATE" property="minDebitDate" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+	<sql id="Base_Column_List">
+		ID, ORG_CODE, ORG_NAME, 
+		USED_AMOUNT/100 USED_AMOUNT, IS_OVERDUE,
+		BUSINESS_DATE,
+		CREATE_TIME,
+		MODIFY_TIME, MODIFY_USER_NAME,
+		MODIFY_USER_CODE, ACTIVE,NOTES,MAX_ACCOUNT_DAYS
+	</sql>
+
+	<!-- 按组织Id进行查询 -->
+	<select id="queryByOrgCode" resultMap="BaseResultMap"
+		parameterType="java.lang.String">
+		select
+		<include refid="Base_Column_List" />
+		from STL.T_STL_CREDIT_ORG
+		where ORG_CODE =
+		#{orgCode,jdbcType=VARCHAR}
+	</select>
+	
+	<!-- 安客户编码查询组织可用额度信息 -->
+	<select id="queryDebitByOrgCode" resultMap="OrgDebitDto"
+		parameterType="java.lang.String">
+		select ORG_CODE,USED_AMOUNT/100 USED_AMOUNT, IS_OVERDUE,NOTES,MAX_ACCOUNT_DAYS
+		from
+		STL.T_STL_CREDIT_ORG
+		where ORG_CODE =
+		#{orgCode,jdbcType=VARCHAR}
+	</select>
+
+	<!-- 查询总行数 -->
+	<select id="queryTotalRows" resultType="int">
+		select count(1) as
+		totalRows
+		from STL.T_STL_CREDIT_ORG
+	</select>
+
+
+	<!-- 通过分页的方式进行查询 -->
+	<select id="queryOrgByPage" resultMap="OrgDebitDto">
+		select ORG_CODE,
+		IS_OVERDUE,NOTES,MAX_ACCOUNT_DAYS
+		from
+		STL.T_STL_CREDIT_ORG
+	</select>
+
+
+	<!-- 插入组织可用额度 -->
+	<insert id="addCreditOrg"
+		parameterType="com.deppon.foss.module.settlement.common.api.shared.domain.CreditOrgEntity">
+		insert into STL.T_STL_CREDIT_ORG (ID, ORG_CODE,
+		ORG_NAME, USED_AMOUNT, IS_OVERDUE,
+		BUSINESS_DATE,
+		CREATE_TIME, MODIFY_TIME,
+		MODIFY_USER_NAME, MODIFY_USER_CODE,
+		ACTIVE,NOTES
+		)
+		values (#{id,jdbcType=VARCHAR},
+		#{orgCode,jdbcType=VARCHAR},
+		#{orgName,jdbcType=VARCHAR},
+		#{usedAmount,jdbcType=DECIMAL}*100, #{isOverdue,jdbcType=CHAR},
+		#{businessDate,jdbcType=TIMESTAMP}, #{createTime,jdbcType=TIMESTAMP},
+		#{modifyTime,jdbcType=TIMESTAMP},
+		#{modifyUserName,jdbcType=VARCHAR},
+		#{modifyUserCode,jdbcType=VARCHAR}, #{active,jdbcType=CHAR},
+		#{notes,jdbcType=VARCHAR}
+		)
+	</insert>
+
+	<!-- 更新已用额度信息 -->
+	<update id="updateUsedAmount"
+		parameterType="com.deppon.foss.module.settlement.common.api.shared.domain.CreditOrgEntity">
+		update STL.T_STL_CREDIT_ORG
+		set
+		<!-- 已用额度 等于历史已用额度 - 本次使用额度   与用户确认，如果已用额度被减为负数，则默认0-->
+		USED_AMOUNT = (case when (USED_AMOUNT + #{usedAmount,jdbcType=DECIMAL}*100)>0 then (USED_AMOUNT + #{usedAmount,jdbcType=DECIMAL}*100) else 0 end),
+		BUSINESS_DATE = #{businessDate,jdbcType=TIMESTAMP},
+		MODIFY_TIME =
+		#{modifyTime,jdbcType=TIMESTAMP},
+		MODIFY_USER_NAME =
+		#{modifyUserName,jdbcType=VARCHAR},
+		MODIFY_USER_CODE =
+		#{modifyUserCode,jdbcType=VARCHAR}
+		<!-- 按组织更新 -->
+		where ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+	</update>
+
+
+	<!-- 更新组织的超期欠款标记 -->
+	<update id="updateOverdueState"
+		parameterType="com.deppon.foss.module.settlement.common.api.shared.domain.CreditOrgEntity">
+		update STL.T_STL_CREDIT_ORG
+		set
+		<!-- 超期欠款 -->
+		IS_OVERDUE = #{isOverdue,jdbcType=CHAR},
+		MAX_ACCOUNT_DAYS = #{maxAccountDays,jdbcType=INTEGER},
+		BUSINESS_DATE =
+		#{businessDate,jdbcType=TIMESTAMP},
+		MODIFY_TIME =
+		#{modifyTime,jdbcType=TIMESTAMP},
+		MODIFY_USER_NAME =
+		#{modifyUserName,jdbcType=VARCHAR},
+		NOTES = #{notes,jdbcType=VARCHAR}
+		<!-- 安客户编码更新 -->
+		where ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+	</update>
+    <select id="queryOrgDebitInfo" parameterType="java.lang.String" resultMap="OrgDebitDto">
+        SELECT SUM(R.UNVERIFY_AMOUNT)/100 AS  USED_AMOUNT,
+        R.RECEIVABLE_ORG_CODE AS ORG_CODE,
+        MIN(R.BUSINESS_DATE) AS MINDEBITDATE
+      FROM STL.T_STL_BILL_RECEIVABLE R
+     WHERE R.PAYMENT_TYPE = 'DT'
+       AND R.STAMP = 'N'
+       AND R.IS_INIT = 'N'
+       <![CDATA[AND R.UNVERIFY_AMOUNT > 0]]>
+       AND R.RECEIVABLE_ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+       AND R.ACTIVE = 'Y'
+     GROUP BY R.RECEIVABLE_ORG_CODE
+    </select>
+
+</mapper>

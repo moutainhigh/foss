@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.airfreight.airProtocolFlight" >
+
+	<resultMap id="queryAirProtocolFlightMap" type="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirProtocolFlightDto">
+	     <result property="flightNo" column="flightNo"/>
+	     <result property="departCity" column="departCity"/>
+	     <result property="arriveCity" column="arriveCity"/>
+		 <result property="currMonthGoodsAmount" column="currMonthGoodsAmount"/>
+		 <result property="currTimeOptGoodsAmount" column="currTimeOptGoodsAmount"/>
+		 <result property="currMonthTotalOptGoodsAmount" column="currMonthTotalOptGoodsAmount"/>
+		 <result property="currMonthTimeschedule" column="currMonthTimeschedule"/>
+		 <result property="currMonthGoodschedule" column="currMonthGoodschedule"/>
+		 <result property="reDateOptGoodsAmount" column="reDateOptGoodsAmount"/> 
+	
+	</resultMap>
+	  <!-- 用户有权限操作的部门code -->
+	<!-- <resultMap id="userOptOrgCodeMap" type="">
+	   <result property="orgCode" column="orgCode"/>
+	</resultMap> -->
+	
+	<!-- 统计协议航班货量 -->
+	<select id="queryProtocolFlightList" parameterType="com.deppon.foss.module.transfer.airfreight.api.shared.dto.AirProtocolFlightQueryDto" resultMap="queryAirProtocolFlightMap">	
+	  select tab1.flightNo flightNo,
+                         departCity,
+                         arriveCity,
+                         currMonthGoodsAmount,
+                         currTimeOptGoodsAmount,
+                         currMonthTotalOptGoodsAmount from(
+               select f.flight_no flightNo,
+                      f.departure_airport departCity,
+                      f.destination_airport arriveCity,
+                      max(f.dailyagreementvolume)  currMonthGoodsAmount,
+                      f.belongsairfreightdispatch  orgCode
+                 from bse.t_bas_flight f
+                where f.isagreementflight = #{isProtocol}
+                   and f.belongsairfreightdispatch in
+                   <foreach collection="orgCodeList" index="index" item="item" open="(" separator="," close=")">
+						     #{item}
+					</foreach>
+                   <if test="flightNo !=null and flightNo!=''"> and f.flight_no=#{flightNo}</if>
+                   <if test="departCity !=null and departCity !=''">and f.departure_airport like '%'||#{departCity}||'%'</if>
+                   <if test="arriveCity !=null and arriveCity !=''"> and f.destination_airport like '%'||#{arriveCity}||'%'</if>
+                   group by f.belongsairfreightdispatch,f.flight_no,f.departure_airport,f.destination_airport
+                   ) tab1
+                 left join (select w.flight_no flightNo,
+                                   sum(w.billing_weight) currTimeOptGoodsAmount,
+                                   w.dept_region_name deptCity,
+                                   w.arrv_region_name arryCity,
+                                   w.create_org_code orgCode
+                              from tfr.t_opt_air_waybill w
+                             where w.create_org_code in
+                             <foreach collection="orgCodeList" index="index" item="item" open="(" separator="," close=")">
+						          #{item}
+					        </foreach>
+                             <if test="currQueryTime !=null and currQueryTime !=''">
+                               and w.create_time between
+                                   trunc(to_date(#{currQueryTime},
+                                           'yyyy-MM-dd hh24:mi:ss')) and
+                                   to_date(#{currQueryTime},
+                                           'yyyy-MM-dd hh24:mi:ss')
+                             </if>
+                             group by w.flight_no, w.create_org_code,w.dept_region_name,w.arrv_region_name) tab2
+                   on tab1.flightNo = tab2.flightNo and tab1.orgCode=tab2.orgCode
+                   and tab1.departCity=tab2.deptCity
+                   and tab1.arriveCity=tab2.arryCity
+                 left join (select w.flight_no flightNo,
+                                   sum(w.billing_weight) currMonthTotalOptGoodsAmount,
+                                   w.dept_region_name deptCity,
+                                   w.arrv_region_name arryCity,
+                                   w.create_org_code orgCode
+                              from tfr.t_opt_air_waybill w
+                             where w.create_org_code in
+                             <foreach collection="orgCodeList" index="index" item="item" open="(" separator="," close=")">
+						          #{item}
+					        </foreach>
+                              <if test="currQueryTime !=null and currQueryTime !=''">
+                                   and w.create_time between
+                                   trunc(to_date(#{currQueryTime},
+                                           'yyyy-MM-dd hh24:mi:ss'),'mm') and
+                                   to_date(#{currQueryTime},
+                                           'yyyy-MM-dd hh24:mi:ss')
+                             </if>
+                             group by w.flight_no, w.create_org_code,w.dept_region_name,w.arrv_region_name) tab3
+                   on tab1.flightNo = tab3.flightNo and tab1.orgCode=tab3.orgCode
+                   and tab1.departCity=tab3.deptCity
+                   and tab1.arriveCity=tab3.arryCity
+	</select>
+	<!-- 根据用户code查询用户有权限操作的部门code -->
+	<select id="queryOptAllOrgCodeByUserCode" parameterType="String" resultType="String">
+	  select v.ORG_CODE orgCode 
+	    from bse.mv_bas_user_org_auth_view v
+	      join bse.t_bas_org o
+	       on v.ORG_CODE=o.CODE
+	    where v.emp_code=#{userCode}
+	      and o.active='Y'
+	      and o.AIR_DISPATCH='Y'
+	</select>
+	
+</mapper>

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.CommonAirAgentAndOutfield">
+	<resultMap id="AirPartAndDeptResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.CommonAirPartAndDeptEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="NAME" property="agentDeptName" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CODE" property="agentDeptCode" jdbcType="VARCHAR" />
+		<result column="CITY_CODE" property="cityCode" jdbcType="VARCHAR" />
+		<result column="CONTACT_PHONE" property="contactPhone" jdbcType="VARCHAR" />
+		<result property="createDate" column="CREATE_TIME"  jdbcType="TIMESTAMP" />
+		<result property="modifyDate" column="MODIFY_TIME"  jdbcType="TIMESTAMP" />
+		<result property="createUser" column="CREATE_USER_CODE"  jdbcType="VARCHAR" />
+		<result property="modifyUser" column="MODIFY_USER_CODE"  jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<sql id="queryAirAgentWhere">
+		<where>
+			<if test="active != null and active != ''">
+				AND B.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="cityCode != null and cityCode != ''">
+				AND B.CITY_CODE = #{cityCode,jdbcType=VARCHAR}
+			</if> 
+			<if test="agentDeptName != null and agentDeptName != ''">   		
+				AND (
+					     B.AGENT_DEPT_NAME like CONCAT(CONCAT('%',#{agentDeptName,jdbcType=VARCHAR}),'%') 
+					 OR
+					 	 B.AGENT_DEPT_CODE LIKE  CONCAT(CONCAT('%',#{agentDeptName,jdbcType=VARCHAR}),'%')
+					 )
+		</if>
+				AND B.BRANCHTYPE = 'KY'
+		</where>
+	</sql>
+	
+	<sql id="queryOutFieldWhere">
+		<where>
+			<if test="active != null and active != ''">
+				AND O.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="cityCode != null and cityCode != ''">
+				AND O.CITY_CODE = #{cityCode,jdbcType=VARCHAR}
+			</if> 
+			<if test="agentDeptName != null and agentDeptName != ''">   		
+				 AND (
+					     O.NAME like CONCAT(CONCAT('%',#{agentDeptName,jdbcType=VARCHAR}),'%') 
+					 OR
+					 	 O.CODE LIKE  CONCAT(CONCAT('%',#{agentDeptName,jdbcType=VARCHAR}),'%')
+					 )
+		</if>
+			AND  O.TRANSFER_CENTER= 'Y'
+			AND  <![CDATA[ nvl(O.EXPRESS_BRANCH, '0') in ('N', '0')]]> 
+		</where>
+	</sql>
+	<!-- 分页查询 -->
+	<select id="queryDepartmentsByEntity" resultMap="AirPartAndDeptResultMap" 
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CommonAirPartAndDeptEntity">
+		SELECT B.id       as ID,
+		       B.AGENT_DEPT_CODE  AS CODE,
+		       B.AGENT_DEPT_NAME  AS NAME,
+		       B.ACTIVE           AS ACTIVE,
+		       B.CITY_CODE		  AS CITY_CODE,
+		       B.CONTACT_PHONE    AS CONTACT_PHONE,
+		       B.CREATE_TIME      AS CREATE_TIME,
+		       B.MODIFY_TIME      AS MODIFY_TIME,
+		       B.CREATE_USER_CODE AS CREATE_USER_CODE,
+		       B.MODIFY_USER_CODE AS MODIFY_USER_CODE
+		  FROM BSE.T_BAS_OUTER_BRANCH B
+		 	<include refid="queryAirAgentWhere"/>
+		UNION ALL
+		SELECT O.ID              as ID,
+		       O.CODE             AS CODE,
+		       O.NAME             AS NAME,
+		       O.ACTIVE           AS ACTIVE,
+		       O.CITY_CODE		  AS CITY_CODE,
+		       O.DEP_TELEPHONE    AS CONTACT_PHONE,
+		       O.CREATE_TIME      AS CREATE_TIME,
+		       O.MODIFY_TIME      AS MODIFY_TIME,
+		       O.CREATE_USER_CODE AS CREATE_USER_CODE,
+		       O.MODIFY_USER_CODE AS MODIFY_USER_CODE
+		  FROM BSE.T_BAS_ORG O
+			<include refid="queryOutFieldWhere"/>
+	</select>
+	<!-- 查询总数 -->
+	<select id="queryCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CommonAirPartAndDeptEntity">
+		SELECT COUNT(*) FROM (
+			SELECT B.id       as ID,
+			       B.AGENT_DEPT_CODE  AS CODE,
+			       B.AGENT_DEPT_NAME  AS NAME,
+			       B.ACTIVE           AS ACTIVE,
+			       B.CITY_CODE		  AS CITY_CODE,
+			       B.CONTACT_PHONE    AS CONTACT_PHONE,
+			       B.CREATE_TIME      AS CREATE_TIME,
+			       B.MODIFY_TIME      AS MODIFY_TIME,
+			       B.CREATE_USER_CODE AS CREATE_USER_CODE,
+			       B.MODIFY_USER_CODE AS MODIFY_USER_CODE
+			  FROM BSE.T_BAS_OUTER_BRANCH B
+			 	<include refid="queryAirAgentWhere"/>
+			UNION ALL
+			SELECT O.ID              as ID,
+			       O.CODE             AS CODE,
+			       O.NAME             AS NAME,
+			       O.ACTIVE           AS ACTIVE,
+			       O.CITY_CODE		  AS CITY_CODE,
+		       	   O.DEP_TELEPHONE    AS CONTACT_PHONE,
+			       O.CREATE_TIME      AS CREATE_TIME,
+			       O.MODIFY_TIME      AS MODIFY_TIME,
+			       O.CREATE_USER_CODE AS CREATE_USER_CODE,
+			       O.MODIFY_USER_CODE AS MODIFY_USER_CODE
+			  FROM BSE.T_BAS_ORG O
+				<include refid="queryOutFieldWhere"/>)
+		
+	</select>
+</mapper>

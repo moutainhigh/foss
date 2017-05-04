@@ -1,0 +1,405 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.deppon.pda.bdm.module.foss.accept.server.dao.impl.AcctDao">
+
+	<!-- 保存开单扫描信息 -->
+	<insert id="saveScanBilling" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.BillingScanEntity"> 
+		insert into pda.T_PDA_SCANMSG(ID,SCANUSER,SCANPDACODE,SCANTIME,SCANTYPE,SCANDEPT,LABELCODE,WAYBILLCODE,SCANFLAG,SYNCSTATUS,UPLOADTIME,TRUCKCODE) 
+		  values(#{id},#{scanUser},#{pdaCode},#{scanTime},#{scanType},#{deptCode},#{orderCode,jdbcType=VARCHAR},#{wblCode},#{scanFlag},#{syncStatus},#{uploadTime},#{truckCode}) 
+	</insert>
+	
+	<!-- 保存开单信息 -->
+		<insert id="saveBilling" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.BillingScanEntity"> 
+		insert into pda.T_PDA_BILLING(ID,SCANPDACODE,DRIVERCODE,DRIVERDEPTCODE,TRUCKCODE,ORDERCODE,WAYBILLCODE,BILLINGTTIME,DEPARTDEPTCODE,ARRDEPTCODE,COUPONCODE,COUPONMONEY,TAKETYPE,TRANSTYPE,PIECE,WEIGHT,VOLUME,FREIGHT,PAIDFREIGHT,PAIDTYPE,WRAPTYPE,CARGOTYPE,ISGALLOWS,GALLOWSVOLUME,BOXVOLUME,PDATYPE,BILLBEGINTM,UPLOADTIME,marketingCode,marketingName,provinceCode,cityCode,regionCode)
+		  values(#{id},#{pdaCode},#{scanUser},#{deptCode},#{truckCode},#{orderCode,jdbcType=VARCHAR},#{wblCode},#{scanTime},#{departDeptCode},#{destinationCode},#{couponCode,jdbcType=VARCHAR},#{couponMoney},#{takeType},#{transType},#{pieces},#{weight},#{volume},#{freight},#{paidFreight},#{paidType},#{wrapType},#{crgType,jdbcType=VARCHAR},#{isGallows,jdbcType=VARCHAR},#{gallowsVolume},#{boxVolume},
+		  <choose>
+			<when test="pdaType != null  and pdaType != ''">
+				#{pdaType},
+			</when>
+			<otherwise>
+				null,
+			</otherwise>
+		  </choose>
+		  <choose>
+			<when test="billBeginTm != null">
+				#{billBeginTm},
+			</when>
+			<otherwise>
+				null,
+			</otherwise>
+		  </choose>
+		  #{uploadTime},
+		    <choose>
+			<when test="marketingCode != null  and marketingCode != ''">
+				#{marketingCode},
+			</when>
+			<otherwise>
+				null,
+			</otherwise>
+		  </choose>
+		  
+		  <choose>
+			<when test="marketingName != null  and marketingName != ''">
+				#{marketingName},
+					</when>
+			<otherwise>
+				null,
+			</otherwise>
+		  </choose>	
+	     <choose>
+			<when test="province != null  and province != ''">
+				#{province},
+			</when>
+			<otherwise>
+				null,
+			</otherwise>
+		  </choose>
+		  <choose>
+			<when test="city != null  and city != ''">
+				#{city},
+			</when>
+			<otherwise>
+				null,
+			</otherwise>
+		  </choose>
+		   <choose>
+			<when test="region != null  and region != ''">
+				#{region}
+			</when>
+			<otherwise>
+					null
+			</otherwise>
+		  </choose>
+		   )
+	</insert>
+	
+	<!-- 保存快递开单扫描信息 -->
+	<insert id="saveScanBillingExpress" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.WaybillExpressEntity"> 
+	    insert into pda.T_PDA_SCANMSG(ID,SCANUSER,SCANPDACODE,SCANTIME,SCANTYPE,SCANDEPT,LABELCODE,WAYBILLCODE,SCANFLAG,SYNCSTATUS,UPLOADTIME,TRUCKCODE,REMARK) 
+		  values(#{id},#{scanUser},#{pdaCode},#{scanTime},#{scanType},#{deptCode},#{orderCode,jdbcType=VARCHAR},#{wblCode},#{scanFlag},#{syncStatus},#{uploadTime},#{truckCode},#{sendEmployeeCode}) 
+	</insert>	
+	<!-- 保存快递开单信息 -->
+	<insert id="saveBillingExpress" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.WaybillExpressEntity"> 
+		insert into pda.T_PDA_BILLING(ID,SCANPDACODE,DRIVERCODE,DRIVERDEPTCODE,TRUCKCODE,ORDERCODE,WAYBILLCODE,BILLINGTTIME,DEPARTDEPTCODE,ARRDEPTCODE,COUPONCODE,COUPONMONEY,TAKETYPE,TRANSTYPE,PIECE,WEIGHT,VOLUME,FREIGHT,PAIDFREIGHT,PAIDTYPE,WRAPTYPE,CARGOTYPE,ISGALLOWS,GALLOWSVOLUME,BOXVOLUME,UPLOADTIME,marketingCode,marketingName)
+		  values(#{id},#{pdaCode},#{scanUser},#{deptCode},#{truckCode},#{orderCode,jdbcType=VARCHAR},#{wblCode},#{scanTime},#{departDeptCode},#{destinationCode},#{couponCode,jdbcType=VARCHAR},#{couponMoney},#{takeType},#{transType},#{pieces},#{weight},#{volume},#{freight},#{paidFreight},#{paidType},#{wrapType},#{crgType,jdbcType=VARCHAR},#{isGallows,jdbcType=VARCHAR},#{gallowsVolume},#{boxVolume},#{uploadTime},
+		    <choose>
+			<when test="marketingCode != null  and marketingCode != ''">
+				#{marketingCode},
+			</when>
+			<otherwise>
+				null,
+			</otherwise>
+		  </choose>
+		  <choose>
+			<when test="marketingName != null  and marketingName != ''">
+				#{marketingName}
+			</when>
+			<otherwise>
+				null
+			</otherwise>
+		  </choose>	)
+	</insert>
+	
+	<!-- 保存快递开单信息分录 -->
+		<insert id="saveBillingExpressDetail" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.WaybillExpressEntity"> 		
+		  insert into PDA.T_PDA_BILLING_Express(id,parentid,expressEmpCode,expressEmpName,expressOrgCode,expressOrgName,pdaSerial,bankTradeSerail,isSMS,marketingCode,marketingName)
+		values
+		  (sys_guid(),#{id},#{expressEmpCode},#{expressEmpName},#{expressOrgCode},#{expressOrgName},#{pdaSerial},#{bankTradeSerail},#{isSMS},
+		   <choose>
+			<when test="marketingCode != null  and marketingCode != ''">
+				#{marketingCode},
+			</when>
+			<otherwise>
+				null,
+			</otherwise>
+		  </choose>
+		  <choose>
+			<when test="marketingName != null  and marketingName != ''">
+				#{marketingName}
+			</when>
+			<otherwise>
+				null
+			</otherwise>
+		  </choose>	)
+	</insert>
+	
+	<!-- 保存运单增值服务项-->
+	<insert id="saveBillVolAddService" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.ValueAddServiceEntity">
+		insert into pda.t_pda_valaddservice(ID,BILLINGID,SERVICECODE,SERVICEAMOUNT,UPLOADTIME)
+  		  values(#{id},#{billingID},#{code,jdbcType=VARCHAR},#{amount},SYSTIMESTAMP)
+	</insert> 
+	
+	<!-- 保存标签打印信息-->
+	<insert id="saveLabelPrint" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.LabelPrintEntity">
+		insert into pda.T_PDA_SCANMSG(id,scanUser,scanPdaCode,scanType,scanTime,scanDept,labelCode,scanFlag,syncStatus,waybillCode,uploadTime)
+		  values (#{id},#{scanUser},#{pdaCode},#{scanType},#{scanTime},#{deptCode},#{labelCode},#{scanFlag},#{syncStatus},#{wblCode},#{uploadTime})
+	</insert> 
+		
+	<!-- 保存已接收订单扫描信息  -->
+	<insert id="saveRcvOrder" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.RcvOrderScanEntity"> 
+		insert into pda.T_PDA_SCANMSG (ID,SCANUSER,SCANPDACODE,SCANTIME,SCANTYPE,UPLOADTIME,SCANDEPT,LABELCODE,ORDERTYPE,ORDERSTATUS,SCANFLAG,SYNCSTATUS,TRUCKCODE)
+	 	  values(#{id},#{scanUser},#{pdaCode},#{scanTime},#{scanType},#{uploadTime},#{deptCode},#{orderCode},#{orderType},#{orderStatus},#{scanFlag},#{syncStatus},#{truckCode,jdbcType=VARCHAR})
+	</insert>
+
+	<!-- 保存已读取订单扫描信息  -->
+	<insert id="saveReadOrder" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.ReadOrderScanEntity"> 
+		insert into pda.T_PDA_SCANMSG (ID,SCANUSER,SCANPDACODE,SCANTIME,SCANTYPE,UPLOADTIME,SCANDEPT,LABELCODE,ORDERTYPE,ORDERSTATUS,SCANFLAG,SYNCSTATUS,TRUCKCODE)
+		  values(#{id},#{scanUser},#{pdaCode},#{scanTime},#{scanType},#{uploadTime},#{deptCode},#{orderCode},#{orderType},#{orderStatus},#{scanFlag},#{syncStatus},#{truckCode,jdbcType=VARCHAR})
+	</insert>
+
+	<!--保存已退回订单扫描信息 -->
+	<insert id="saveBackOrder" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.BackOrderScanEntity"> 
+		insert into pda.T_PDA_SCANMSG (ID,SCANUSER,SCANPDACODE,SCANTIME,SCANTYPE,UPLOADTIME,SCANDEPT,LABELCODE,ORDERTYPE,ORDERSTATUS,SCANFLAG,SYNCSTATUS,BACKCAUSE,TRUCKCODE,REMARK)
+		  values(#{id},#{scanUser},#{pdaCode},#{scanTime},#{scanType},#{uploadTime},#{deptCode},#{orderCode},#{orderType},#{orderStatus},#{scanFlag},#{syncStatus},#{backReason},#{truckCode,jdbcType=VARCHAR},#{remark,jdbcType=VARCHAR})
+	</insert>
+	
+	<!-- 保存货物重量体积 -->
+	<insert id="saveWghtAndVole" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.WblWghtAndVoleEntity">
+		insert into pda.T_PDA_SCANMSG(ID,SCANUSER,SCANPDACODE,SCANDEPT,SCANTIME,SCANTYPE,SCANFLAG,WAYBILLCODE,WEIGHT,SYNCSTATUS,UPLOADTIME)
+		  values(#{id},#{scanUser},#{pdaCode},#{deptCode},#{scanTime},#{scanType},#{scanFlag},#{wblCode},#{weight},#{syncStatus},#{uploadTime})
+	</insert>
+
+	<!-- 保存接收约车任务 -->
+	<insert id="saveReceiveCarTask" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.ReceiveCarTaskEntity">
+		insert into pda.T_PDA_SCANMSG(ID,SCANUSER,SCANPDACODE,SCANDEPT,SCANTIME,SCANTYPE,SCANFLAG,TRUCKCODE,LABELCODE,ORDERTYPE,ORDERSTATUS,SYNCSTATUS,UPLOADTIME)
+		  values(#{id},#{scanUser},#{pdaCode},#{deptCode},#{scanTime},#{scanType},#{scanFlag},#{truckCode,jdbcType=VARCHAR},#{orderCode},#{orderType},#{orderStatus},#{syncStatus},#{uploadTime})
+	</insert>
+	
+	<!-- 保存未开单录入扫描信息 -->
+	<insert id="saveUnBillingScan" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.UnBillingEntity"> 
+		insert into pda.T_PDA_SCANMSG(ID,SCANUSER,SCANPDACODE,SCANTIME,SCANTYPE,SCANDEPT,WAYBILLCODE,SCANFLAG,TRUCKCODE,SYNCSTATUS,UPLOADTIME) 
+		  values(#{id},#{scanUser},#{pdaCode},#{scanTime},#{scanType},#{deptCode},#{wblCode},#{scanFlag},#{truckCode,jdbcType=VARCHAR},#{syncStatus},#{uploadTime}) 
+	</insert>
+	
+	<!-- 保存未开单录入信息 -->
+	<insert id="saveUnBilling" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.UnBillingEntity"> 
+		insert into pda.T_PDA_BILLING(ID,SCANPDACODE,DRIVERCODE,DRIVERDEPTCODE,WAYBILLCODE,BILLINGTTIME,PIECE,PAIDFREIGHT,TRUCKCODE,UPLOADTIME)
+		  values(#{id},#{pdaCode},#{scanUser},#{deptCode},#{wblCode},#{scanTime},#{pieces},#{amount},#{truckCode,jdbcType=VARCHAR},#{uploadTime})
+	</insert>
+	<select id="queryNoSyncScanMsgCount" parameterType="map" resultType="int">
+		select count(*) from pda.t_pda_asyncmsg s
+		where (asyncStatus <![CDATA[<]]> 2  or (asyncStatus = 3 and synccount <![CDATA[<]]> 3)) 
+		and s.pdaCode = #{pdaCode}
+		and s.userCode = #{userCode}
+		and s.uploadTime between to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss') and to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+	</select>
+	
+	<!-- 查询是否有正在同步的大客户电子运单-->
+	<select id="queryNoSyncBEwaybillCount" parameterType="map" resultType="int">
+		select count(*) from pda.t_pda_asyncmsg s
+		where (asyncStatus <![CDATA[<]]> 2  or (asyncStatus = 3 and synccount <![CDATA[<]]> 3)) 
+		and s.pdaCode = #{pdaCode}
+		and s.userCode = #{userCode}
+		and s.taskCode = #{customCode}
+		and s.uploadTime between to_date(#{startTime},'yyyy-mm-dd hh24:mi:ss') and to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+	</select>
+	
+	<!-- 保存GPS采集地址信息 -->
+	<insert id="saveGpsAddress" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.GpsAddressCollectEntity"> 
+      		insert into pda.t_pda_gpscollect
+			 (ID,BILLNO,ADRESSTYPE,GPSLONGITUDE, GPSLATITUDE,USERCODE,DEPTCODE,COLLECTTIME)  
+			values 
+			 (#{id},#{billNo},#{addressType},#{gpsLongitude},#{gpsLatitude},#{scanUser},#{deptCode},#{collectTime}
+			  )
+	</insert>
+	
+	<!-- 保存GPS采集扫描信息 -->
+	<insert id="saveGpsScanAddress" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.GpsAddressCollectEntity">
+		insert into pda.T_PDA_SCANMSG(ID,SCANUSER,SCANPDACODE,SCANDEPT,SCANTIME,SCANTYPE,UPLOADTIME)
+		  values(#{id},#{scanUser},#{pdaCode},#{deptCode},#{collectTime},#{scanType},#{uploadTime})
+	</insert>
+	<!-- *************************************************************************************-->
+	<!-- 保存大客户运单明细-->
+	<insert id="saveBigScanEBillExpress" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.electronicbill.ElecBillingScanEntity">
+		insert into pda.T_PDA_SCANMSG(id,scanUser,scanPdaCode,scanType,scanTime,scanDept,taskCode,waybillCode,uploadTime)
+		  values (#{id},#{scanUser},#{pdaCode},#{scanType},#{scanTime},#{deptCode},#{taskCode},#{wblCode},#{uploadTime})
+	</insert> 
+	<!-- 保存大客户运单明细 -->
+	<insert id="saveBigEBillExpress" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.electronicbill.ElecBillingScanEntity"> 
+		insert into pda.T_PDA_BILLING(ID,SCANPDACODE,DRIVERCODE,DRIVERDEPTCODE,TRUCKCODE,BILLINGTTIME,WAYBILLCODE,waybilltype,UPLOADTIME,ORDERCODE)
+		  values(#{id},#{pdaCode},#{scanUser},#{deptCode},#{truckCode},#{scanTime},#{wblCode},#{waybillType},#{uploadTime},#{taskCode})
+	</insert>
+	
+		<!-- 保存散客开单扫描信息 -->
+	<insert id="saveIndividualScanEBillExpress" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.electronicbill.ElecBillingScanEntity"> 
+	    insert into pda.T_PDA_SCANMSG(ID,SCANUSER,SCANPDACODE,SCANTIME,SCANTYPE,SCANDEPT,WAYBILLCODE,UPLOADTIME,TRUCKCODE) 
+		  values(#{id},#{scanUser},#{pdaCode},#{scanTime},#{scanType},#{deptCode},#{wblCode},#{uploadTime},#{truckCode}) 
+	</insert>	
+	<!-- 保存快递开单信息 -->
+	<insert id="saveIndividualEBillExpress" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.electronicbill.ElecBillingScanEntity"> 
+		insert into pda.T_PDA_BILLING(ID,SCANPDACODE,DRIVERCODE,DRIVERDEPTCODE,TRUCKCODE,ORDERCODE,WAYBILLCODE,BILLINGTTIME,COUPONCODE,COUPONMONEY,TAKETYPE,TRANSTYPE,PIECE,WEIGHT,VOLUME,FREIGHT,PAIDFREIGHT,PAIDTYPE,UPLOADTIME,waybilltype)
+		  values(#{id},#{pdaCode},#{scanUser},#{deptCode},#{truckCode},#{taskCode},#{wblCode},#{scanTime},#{couponNum,jdbcType=VARCHAR},#{couponMoney},#{takeType},#{transType},#{pieces},#{weight},#{volume},#{freight},#{paidFreight},#{paidType},#{uploadTime},#{waybillType})
+	</insert>
+	
+	<!-- 保存快递开单信息分录 -->
+		<insert id="saveIndividualEBillExpressDetail" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.electronicbill.ElecBillingScanEntity"> 		
+		  insert into PDA.T_PDA_BILLING_Express(id,parentid,expressEmpCode,expressOrgCode,expressOrgName,bankTradeSerail)
+		values
+		  (sys_guid(),#{id},#{scanUser},#{expressOrgCode},#{expressOrgName},#{bankTradeSerail})
+	</insert>
+	
+	<!--保存已退回电子运单扫描信息 -->
+	<insert id="saveBackEWaybill" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.BackOrderScanEntity"> 
+		insert into pda.T_PDA_SCANMSG (ID,SCANUSER,SCANPDACODE,SCANTIME,SCANTYPE,UPLOADTIME,SCANDEPT,LABELCODE,ORDERTYPE,ORDERSTATUS,SCANFLAG,SYNCSTATUS,BACKCAUSE,TRUCKCODE,REMARK)
+		  values(#{id},#{scanUser},#{pdaCode},#{scanTime},#{scanType},#{uploadTime},#{deptCode},#{orderCode},#{orderType},#{orderStatus},#{scanFlag},#{syncStatus},#{backReason},#{truckCode,jdbcType=VARCHAR},#{remark,jdbcType=VARCHAR})
+	</insert>
+	
+	<insert id="saveBackEWaybills" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.BackOrderScanEntity">
+	
+		  insert into pda.T_PDA_SCANMSG (
+			  ID,
+			  SCANUSER,
+			  SCANPDACODE,
+			  SCANTIME,
+			  SCANTYPE,
+			  UPLOADTIME,
+			  SCANDEPT,
+			  LABELCODE,
+			  ORDERTYPE,
+			  ORDERSTATUS,
+			  SCANFLAG,
+			  SYNCSTATUS,
+			  BACKCAUSE,
+			  TRUCKCODE,
+			  REMARK
+		  )
+		  values(
+			  #{id}, 
+			  #{scanUser}, 
+		      #{pdaCode}, 
+			  #{scanTime}, 
+			  #{scanType}, 
+			  #{uploadTime}, 
+		      #{deptCode}, 
+			  #{orderCode}, 
+			  'EWAYBILL',
+			  'BACK',
+			  '1',
+			  '2',
+			  #{backReason}, 
+		      #{truckCode}, 
+			  #{remark}					
+		  )
+	 
+	
+	</insert>
+	
+	<!-- 保存电子运单二期扫描数据 -->
+	<insert id="saveEWaybillScan" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.electronicbill.ElecBillingScanEntity">
+		insert into pda.T_PDA_SCANMSG(
+			id,
+			scanUser,
+			scanPdaCode,
+			scanType,
+			scanTime,
+			scanDept,
+			taskCode,
+			waybillCode,
+			uploadTime,
+			LABELCODE,
+			ORDERTYPE)
+	  values (
+	  		#{id,jdbcType=VARCHAR},
+	  		#{scanUser,jdbcType=VARCHAR},
+	  		#{pdaCode,jdbcType=VARCHAR},
+	  		#{scanType,jdbcType=VARCHAR},
+	  		#{scanTime,jdbcType=TIMESTAMP},
+	  		#{deptCode,jdbcType=VARCHAR},
+	  		#{taskCode,jdbcType=VARCHAR},
+	  		#{wblCode,jdbcType=VARCHAR},
+	  		#{uploadTime,jdbcType=TIMESTAMP},
+	  		#{labelCode,jdbcType=VARCHAR},
+	  		'EWAYBILL')
+	</insert>
+	
+	<!-- 保存电子运单二期开单信息 -->
+	<insert id="saveEWaybillBilling" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.electronicbill.ElecBillingScanEntity"> 
+		insert into pda.T_PDA_BILLING(
+			ID,
+			SCANPDACODE,
+			DRIVERCODE,
+			DRIVERDEPTCODE,
+			TRUCKCODE,
+			BILLINGTTIME,
+			WAYBILLCODE,
+			waybilltype,
+			UPLOADTIME,
+			ORDERCODE)
+		values(
+			#{id,jdbcType=VARCHAR},
+			#{pdaCode,jdbcType=VARCHAR},
+			#{scanUser,jdbcType=VARCHAR},
+			#{deptCode,jdbcType=VARCHAR},
+			#{truckCode,jdbcType=VARCHAR},
+			#{scanTime,jdbcType=TIMESTAMP},
+			#{wblCode,jdbcType=VARCHAR},
+			#{waybillType,jdbcType=VARCHAR},
+			#{uploadTime,jdbcType=TIMESTAMP},
+			#{taskCode,jdbcType=VARCHAR})
+	</insert>
+	
+	<!-- 查询是否有正在同步的电子运单-->
+	<select id="queryNoSyncScanMsgCountByTaskCode" parameterType="string" resultType="int">
+		select count(*) from pda.t_pda_asyncmsg s
+		where (asyncStatus <![CDATA[<]]> 2  or (asyncStatus = 3 and synccount <![CDATA[<]]> 3)) 
+		and s.taskCode = #{taskCode}
+		and s.uploadTime > trunc(sysdate-5)
+	</select>
+	
+	<!-- 保存完成装车任务信息 -->
+	<!-- <insert id="saveFnshLoadTaskScan" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.electronicbill.FinishTaskEntity">
+		insert into pda.T_PDA_SCANMSG(id,scanUser,scanPdaCode,scanType,scanTime,scanDept,taskCode,
+		syncStatus,uploadTime) values(#{id},#{scanUser},#{pdaCode},#{scanType},#{scanTime},#{deptCode},
+		#{taskCode},#{syncStatus},#{uploadTime})
+	</insert> -->
+	
+	
+	
+	
+	<!-- *************************************************************************************-->
+	<!-- 保存裹裹渠道单号和验证码信息 --> 
+	<insert id="saveVerifyCode" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.GougouPdaJmsEntity">
+		INSERT INTO pda.T_PDA_VERIFYCODE(
+			ID,
+			VERIFYCODE,
+			LOGISTICNO, 
+			REMARK)
+		 VALUES(
+		 	sys_guid(),
+		 	#{verifyCode,jdbcType=VARCHAR},
+		 	#{logisticNo,jdbcType=VARCHAR},
+		 	#{remark,jdbcType=VARCHAR}
+		 	)
+	</insert>
+	
+	<!-- 保存零担电子面单扫描数据 -->
+	<insert id="saveEWaybillScanData" parameterType="com.deppon.pda.bdm.module.foss.accept.shared.domain.electronicbill.ScanDataUploadEntity">
+	INSERT INTO PDA.T_PDA_SCANMSG(
+	       ID,
+	       SCANUSER,
+	       SCANPDACODE,
+	       SCANTIME,
+           SCANTYPE,
+           UPLOADTIME,
+           SCANDEPT,
+           TASKCODE,
+           WAYBILLCODE,
+           ORDERSTATUS) 
+    VALUES(
+    		sys_guid(),
+    		#{driverCode,jdbcType=VARCHAR},
+    		#{pdaCode,jdbcType=VARCHAR},
+    		#{scanTime,jdbcType=VARCHAR},
+    		#{scanType,jdbcType=VARCHAR},
+    		#{uploadTime,jdbcType=VARCHAR},
+    		#{deptCode,jdbcType=VARCHAR},
+    		#{taskCode,jdbcType=VARCHAR},
+    		#{wblCode,jdbcType=VARCHAR},
+    		'EWAYBILL'
+    )
+	</insert>
+	
+	
+</mapper>

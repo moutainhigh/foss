@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.deppon.pda.bdm.module.foss.delivery.server.dao.impl.DeliveryPdaDao">
+	
+	<!-- 保存快递异常签收各时间节点 -->
+	<insert id="saveExpAbnormalSignTimeNode" parameterType="com.deppon.pda.bdm.module.foss.delivery.shared.domain.ExpExcpSignEntity">
+		INSERT INTO T_BASE_KD_SEND(ID, WAYBILLCODE, EMPCODE, SENDSTART, SENDEND, SIGNSTART, SIGNEND, SIGNTYPEE, PAYSTART, PAYEND,UNNORMALSIGN, PAYTYPE,CURTIME,DEPTCODE)
+		VALUES(#{id},#{wblCode,jdbcType=VARCHAR},#{scanUser,jdbcType=VARCHAR},#{sendstart,jdbcType=TIMESTAMP},#{sendend,jdbcType=TIMESTAMP},#{signstart,jdbcType=TIMESTAMP},#{signTime,jdbcType=TIMESTAMP},#{signtypee,jdbcType=VARCHAR},#{paystart,jdbcType=TIMESTAMP},#{payend,jdbcType=TIMESTAMP},#{excpReason,jdbcType=VARCHAR},#{payType,jdbcType=VARCHAR},sysdate,#{deptCode,jdbcType=VARCHAR})
+	</insert>
+	
+	<!-- 保存快递正常签收各时间节点 -->
+	<insert id="saveExpNormalSignTimeNode" parameterType="com.deppon.pda.bdm.module.foss.delivery.shared.domain.ExpNormSignEntity">
+		INSERT INTO T_BASE_KD_SEND(ID, WAYBILLCODE, EMPCODE, SENDSTART, SENDEND, SIGNSTART, SIGNEND, SIGNTYPEE, PAYSTART, PAYEND,PAYTYPE,CURTIME,DEPTCODE)                       
+		VALUES(#{id},#{wblCode,jdbcType=VARCHAR},#{scanUser,jdbcType=VARCHAR},#{sendstart,jdbcType=TIMESTAMP},#{sendend,jdbcType=TIMESTAMP},#{signstart,jdbcType=TIMESTAMP},#{signTime,jdbcType=TIMESTAMP},#{signtypee,jdbcType=VARCHAR},#{paystart,jdbcType=TIMESTAMP},#{payend,jdbcType=TIMESTAMP},#{payType,jdbcType=VARCHAR},sysdate,#{deptCode,jdbcType=VARCHAR})
+	</insert>
+	
+	<!-- 保存快递派送拉回各时间节点 -->
+	<insert id="saveDeryExcepTimeNode" parameterType="com.deppon.pda.bdm.module.foss.delivery.shared.domain.DeryExcpScanEntity">
+		INSERT INTO T_BASE_KD_SEND(ID, WAYBILLCODE, EMPCODE, SENDSTART, SENDEND, SIGNSTART, SIGNEND, SIGNTYPEE,CURTIME,DEPTCODE)
+		VALUES(#{id},#{wblCode,jdbcType=VARCHAR},#{scanUser,jdbcType=VARCHAR},#{sendstart,jdbcType=TIMESTAMP},#{sendend,jdbcType=TIMESTAMP},#{signstart,jdbcType=TIMESTAMP},#{signTime,jdbcType=TIMESTAMP},#{signtypee,jdbcType=VARCHAR},sysdate,#{deptCode,jdbcType=VARCHAR})
+	</insert>
+
+    <!-- 保存快递子母件正常签收信息   245955 Date:2015-09-16-->
+    <insert id="saveExpParentNode" parameterType="com.deppon.pda.bdm.module.foss.delivery.shared.domain.MotherSonSignList">
+	    INSERT INTO T_BASE_KD_SEND(ID, WAYBILLCODE, EMPCODE,SIGNSTART,SIGNTYPEE,CURTIME,DEPTCODE)
+		VALUES(#{id},#{wblCode,jdbcType=VARCHAR},#{scanUser,jdbcType=VARCHAR},#{signTime,jdbcType=TIMESTAMP},
+		      #{signtypee,jdbcType=VARCHAR},sysdate,#{deptCode,jdbcType=VARCHAR})
+	</insert>
+	<!-- 非现金盘点   查询司机的部门编码 author:268974 -->
+	<select id="queryDriverDeptCode" parameterType="String" resultType="com.deppon.pda.bdm.module.foss.delivery.shared.domain.DriverSerDeptResultEntity">
+		SELECT d.deptcode deptriverCode, d.deptName deptName 
+		from t_svr_dept d 
+		WHERE d.deptname LIKE CONCAT(CONCAT('%',#{deptName,jdbcType=VARCHAR}),'%') AND d.operflag='1'
+	</select>
+	<!-- 非现金盘点 保存刷卡失败数据 -->
+	<insert id="saveNCIPaymentCard" parameterType="com.deppon.pda.bdm.module.foss.delivery.shared.domain.AccountStatementEntitys">
+		insert into t_nci_card(id ,userCode,tradeSerialNo ,serialAmount ,operateTime 
+		,cardDeptCode ,belongModule ,errorCause,billDetail)
+		values(sys_guid(),#{createUserCode,jdbcType=VARCHAR} ,#{tradeSerialNo,jdbcType=VARCHAR},
+		#{serialAmount,jdbcType=VARCHAR},#{operateTime,jdbcType=TIMESTAMP},#{cardDeptCode,jdbcType=VARCHAR},
+		#{belongModule,jdbcType=VARCHAR},#{errorCause,jdbcType=VARCHAR},#{content,jdbcType=VARCHAR})
+	</insert>
+	<!-- 非现金盘点 保存刷卡失败数据待刷卡模块 -->	
+	<insert id="saveNCIPaymentCardByBush" parameterType="com.deppon.pda.bdm.module.foss.delivery.shared.domain.GetBushCardEntitys">
+		insert into t_nci_card(id ,userCode,tradeSerialNo ,serialAmount ,operateTime 
+		,cardDeptCode ,belongModule,errorCause,billDetail)
+		values(sys_guid(),#{createUserCode,jdbcType=VARCHAR} ,#{tradeSerialNo,jdbcType=VARCHAR},
+		#{serialAmount,jdbcType=VARCHAR},#{operateTime,jdbcType=TIMESTAMP},#{createDeptCode,jdbcType=VARCHAR},
+		#{belongModule,jdbcType=VARCHAR},#{errorCause,jdbcType=VARCHAR},#{content,jdbcType=VARCHAR})
+	</insert>
+	<!-- 非现金盘点 保存刷卡数据 预存款模块 -->	
+	<insert id="saveNCIPrepaymentCard" parameterType="com.deppon.pda.bdm.module.foss.delivery.shared.domain.AccountStatementEntitys">
+		insert into t_nci_card(id ,userCode,tradeSerialNo ,serialAmount ,operateTime 
+		,cardDeptCode ,belongModule ,errorCause)
+		values(sys_guid(),#{createUserCode,jdbcType=VARCHAR} ,#{tradeSerialNo,jdbcType=VARCHAR},
+		#{serialAmount,jdbcType=VARCHAR},#{operateTime,jdbcType=TIMESTAMP},#{cardDeptCode,jdbcType=VARCHAR},
+		#{belongModule,jdbcType=VARCHAR},#{errorCause,jdbcType=VARCHAR})
+	</insert>
+	<!-- 非现金盘点 保存刷卡数据  结清货款模块 -->                                                                           
+	<insert id="saveNCIPaymentCardSuccess" parameterType="com.deppon.pda.bdm.module.foss.delivery.shared.domain.GetPaymentSuccessEntitys">
+		insert into t_nci_card(id ,userCode,tradeSerialNo ,serialAmount ,operateTime 
+		,cardDeptCode ,belongModule ,errorCause,billDetail)
+		values(sys_guid(),#{createUserCode,jdbcType=VARCHAR},#{tradeSerialNo,jdbcType=VARCHAR},
+		#{serialAmount,jdbcType=VARCHAR},#{operateTime,jdbcType=TIMESTAMP},#{cardDeptCode,jdbcType=VARCHAR},
+		#{belongModule,jdbcType=VARCHAR},#{errorCause,jdbcType=VARCHAR},#{content,jdbcType=VARCHAR})
+	</insert>
+</mapper>
+													

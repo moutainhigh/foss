@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context 
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://www.springframework.org/schema/jee
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+			http://www.springframework.org/schema/aop 
+			http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">
+
+
+	<!-- 数据源 -->
+	<bean id="dataSource"
+		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver" />
+		<property name="url" value="jdbc:oracle:thin:@192.168.10.111:1521:fossdbsb" />
+		<property name="username" value="tfr" />
+		<property name="password" value="tfr" />
+	</bean>
+
+	<!-- JDBC模版 -->
+	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+		<constructor-arg ref="dataSource" />
+	</bean>
+
+	<!-- 数据连接管理 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<!-- 事务注解支持 -->
+	<tx:annotation-driven transaction-manager="transactionManager" />
+	<aop:config proxy-target-class="true"></aop:config>
+
+	<!-- myBatis文件 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="configLocation"
+			value="/com/deppon/foss/module/transfer/stock/server/mybatis.xml" />
+		<!-- 正式测试环境路径 -->
+		<property name="mapperLocations"
+			value="classpath*:com/deppon/**/META-INF/ibatis/*-mapper.xml" />
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<context:annotation-config />
+	<tx:annotation-driven/>
+	<context:component-scan base-package="com.deppon.foss.module.transfer.stock" />
+	<bean id="stockDao"	class="com.deppon.foss.module.transfer.stock.server.dao.impl.StockDao" >
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+	<!--
+	<bean id="waybillStockDao"	class="com.deppon.foss.module.transfer.stock.server.dao.impl.WaybillStockDao" >
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+	<bean id="inOutStockDao"	class="com.deppon.foss.module.transfer.stock.server.dao.impl.InOutStockDao" >
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+
+-->
+	<bean id="togetherTruckStockDao" class="com.deppon.foss.module.transfer.stock.server.dao.impl.TogetherTruckStockDao">
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+	<bean id="MQtemplate" class="com.deppon.dpap.rocketmq.core.send.DefaultMQProducerTemplate">
+		<!-- 分组名 -->
+		<property name="producerGroup" value="TFR_GROUP"></property>
+		<!-- 命名服务地址，多个用逗号分隔 -->
+		<property name="namesrvAddr" value="10.230.28.63:9876" />
+		<!-- 消息主题，生产环境需要申请 -->
+		<property name="topic" value="FOSS_PUSH_STOCK_CODE"></property>
+		<!-- 发消息超时时间 默认10000 -->
+		<!-- <property name="sendMsgTimeout" value="10000"></property>  -->
+		<property name="serialize" value="JSON"></property>
+	</bean>
+
+	<!--<bean id="advice" class="com.deppon.foss.module.transfer.stock.server.message.aop.RocketMQAfterStockAdvice">-->
+		<!--<property name="mqProducerTemplate" ref="MQtemplate"/>-->
+	<!--</bean>-->
+	<!--<aop:config proxy-target-class="true">
+		&lt;!&ndash;切面 &ndash;&gt;
+		<aop:aspect ref="advice">
+			&lt;!&ndash; 切点 &ndash;&gt;
+			<aop:pointcut expression="execution(@com.deppon.foss.module.transfer.stock.server.message.annotaion.StockAdd public * com.deppon.foss.module.transfer.stock.server.dao.impl.StockDao.*(..)) and args(..)" id="add"/>
+			&lt;!&ndash;连接通知方法与切点 &ndash;&gt;
+			<aop:after-returning returning="retVal" method="afterAdd" pointcut-ref="add" arg-names="joinPoint, retVal"/>
+		</aop:aspect>
+		<aop:aspect ref="advice">
+			<aop:pointcut expression="execution(@com.deppon.foss.module.transfer.stock.server.message.annotaion.StockDelete public * com.deppon.foss.module.transfer.stock.server.dao.impl.StockDao.*(..)) and args(..)" id="delete"/>
+			<aop:after-returning returning="retVal" method="afterDelete" pointcut-ref="delete" arg-names="joinPoint, retVal" />
+		</aop:aspect>
+		<aop:aspect ref="advice">
+			<aop:pointcut expression="execution(@com.deppon.foss.module.transfer.stock.server.message.annotaion.SaleStockAdd public * com.deppon.foss.module.transfer.stock.server.dao.impl.StockDao.*(..)) and args(..)" id="saleAdd"/>
+			<aop:after-returning returning="retVal" method="afterSaleStockAdd" pointcut-ref="saleAdd" arg-names="joinPoint, retVal" />
+		</aop:aspect>
+		<aop:aspect ref="advice">
+			<aop:pointcut expression="execution(@com.deppon.foss.module.transfer.stock.server.message.annotaion.SaleStockDelete public * com.deppon.foss.module.transfer.stock.server.dao.impl.StockDao.*(..)) and args(..)" id="saleDel"/>
+			<aop:after-returning returning="retVal" method="afterSaleStockDel" pointcut-ref="saleDel" arg-names="joinPoint, retVal" />
+		</aop:aspect>
+		<aop:aspect ref="advice">
+			<aop:pointcut expression="execution(@com.deppon.foss.module.transfer.stock.server.message.annotaion.TogetherAdd public * com.deppon.foss.module.transfer.stock.server.dao.impl.TogetherTruckStockDao.*(..)) and args(..)" id="togeAdd"/>
+			<aop:after-returning returning="retVal" method="afterTogetherAdd" pointcut-ref="togeAdd" arg-names="joinPoint, retVal" />
+		</aop:aspect>
+		<aop:aspect ref="advice">
+			<aop:pointcut expression="execution(@com.deppon.foss.module.transfer.stock.server.message.annotaion.TogetherDelete public * com.deppon.foss.module.transfer.stock.server.dao.impl.TogetherTruckStockDao.*(..)) and args(..)" id="togeDel"/>
+			<aop:after-returning returning="retVal" method="afterTogetherDel" pointcut-ref="togeDel" arg-names="joinPoint, retVal" />
+		</aop:aspect>
+	</aop:config>-->
+	<aop:aspectj-autoproxy />
+	<bean class="com.deppon.foss.module.transfer.stock.server.message.aop.StockAspect">
+		<property name="mqProducerTemplate" ref="MQtemplate" />
+	</bean>
+</beans>

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.noteDetailDao" >
+  <resultMap id="noteDetailsResultMap" type="com.deppon.foss.module.settlement.consumer.api.shared.domain.NoteDetailsEntity" >
+    <id column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="NOTE_DETAILS_NO" property="noteDetailsNo" jdbcType="VARCHAR" />
+    <result column="NOTE_APP_ID" property="noteAppId" jdbcType="VARCHAR" />
+    <result column="NOTE_STOCKIN_ID" property="noteStockinId" jdbcType="VARCHAR" />
+    <result column="BUSINESS_DATE" property="businessDate" jdbcType="TIMESTAMP" />
+    <result column="USE_TIME" property="useTime" jdbcType="TIMESTAMP" />
+    <result column="USER_CODE" property="userCode" jdbcType="VARCHAR" />
+    <result column="USER_NAME" property="userName" jdbcType="VARCHAR" />
+    <result column="USE_ORG_CODE" property="useOrgCode" jdbcType="VARCHAR" />
+    <result column="USE_ORG_NAME" property="useOrgName" jdbcType="VARCHAR" />
+    <result column="NOTEREQ_TYPE" property="notereqType" jdbcType="VARCHAR" />
+    <result column="STATUS" property="status" jdbcType="VARCHAR" />
+    <result column="WRITEOFF_STATUS" property="writeoffStatus" jdbcType="VARCHAR" />
+    <result column="WRITEOFF_TIME" property="writeoffTime" jdbcType="TIMESTAMP" />
+    <result column="ACTIVE" property="active" jdbcType="CHAR" />
+  </resultMap>
+  
+  <sql id="select_param" >
+    ID, NOTE_DETAILS_NO, NOTE_APP_ID, NOTE_STOCKIN_ID, BUSINESS_DATE, USE_TIME, USER_CODE, 
+    USER_NAME, USE_ORG_CODE, USE_ORG_NAME, NOTEREQ_TYPE, STATUS, WRITEOFF_STATUS, WRITEOFF_TIME, 
+    ACTIVE
+  </sql>
+  <insert id="insert" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.domain.NoteDetailsEntity" >
+    INSERT /*结算-客户管理- 插入记录   */INTO STL.T_STL_NOTE_DETAILS (ID, NOTE_DETAILS_NO, NOTE_APP_ID, 
+      NOTE_STOCKIN_ID, BUSINESS_DATE, USE_TIME, 
+      USER_CODE, USER_NAME, USE_ORG_CODE, 
+      USE_ORG_NAME, NOTEREQ_TYPE, STATUS, 
+      WRITEOFF_STATUS, WRITEOFF_TIME, ACTIVE
+      )
+    VALUES (#{id,jdbcType=VARCHAR}, #{noteDetailsNo,jdbcType=VARCHAR}, #{noteAppId,jdbcType=VARCHAR}, 
+      #{noteStockinId,jdbcType=VARCHAR}, #{businessDate,jdbcType=TIMESTAMP}, #{useTime,jdbcType=TIMESTAMP}, 
+      #{userCode,jdbcType=VARCHAR}, #{userName,jdbcType=VARCHAR}, #{useOrgCode,jdbcType=VARCHAR}, 
+      #{useOrgName,jdbcType=VARCHAR}, #{notereqType,jdbcType=VARCHAR}, #{status,jdbcType=VARCHAR}, 
+      #{writeoffStatus,jdbcType=VARCHAR}, #{writeoffTime,jdbcType=TIMESTAMP}, #{active,jdbcType=CHAR}
+      )
+  </insert>
+ <!-- 单据明细批量插入 -->
+	<insert id="batchSaveNoteDetailsIn" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.domain.NoteDetailsEntity">
+				INSERT/*结算-客户管理-  单据明细批量插入   */ INTO STL.T_STL_NOTE_DETAILS
+				(
+					ID, 
+					NOTE_DETAILS_NO, 
+					NOTE_APP_ID, 
+					NOTE_STOCKIN_ID, 
+					BUSINESS_DATE,  
+    				WRITEOFF_STATUS, 
+    				STATUS,  
+    				ACTIVE
+				)
+				  VALUES
+				  (
+					#{id,jdbcType=VARCHAR} ,
+					#{noteDetailsNo,jdbcType=VARCHAR},
+				    #{noteAppId,jdbcType=VARCHAR}, 
+				    #{noteStockinId,jdbcType=VARCHAR}, 
+					#{businessDate,jdbcType=TIMESTAMP}, 
+                    #{writeoffStatus,jdbcType=VARCHAR},
+                    #{status,jdbcType=VARCHAR},
+                    #{active,jdbcType=CHAR}
+   				  )
+	</insert>
+   <!-- 入库操作 -->
+   <update id="updateStorageByNoteAppIds" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.NoteDetailsDto">
+		UPDATE /*结算-客户管理- 入库操作    */STL.T_STL_NOTE_DETAILS T
+		  SET
+			   T.STATUS = #{status, jdbcType=VARCHAR}
+		WHERE  T.NOTE_APP_ID IN
+			<foreach collection="noteAppIds"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+			</foreach>
+  </update>
+   <!-- 核销操作 -->
+   <update id="updateWriteoffByNoteAppIds" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.NoteDetailsDto">
+		UPDATE /*结算-客户管理-核销操作    */STL.T_STL_NOTE_DETAILS T
+		   SET
+			   T.WRITEOFF_STATUS = #{writeoffStatus,jdbcType=VARCHAR},
+			   T.WRITEOFF_TIME = #{writeoffTime,jdbcType=TIMESTAMP}
+		WHERE  T.NOTE_APP_ID IN
+			<foreach collection="noteAppIds"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+			</foreach>
+  </update>
+  <!-- 小票新增时回写使用人及使用部门等信息 -->
+   <update id="updateUserInfoByDetailNo" parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.NoteDetailsDto">
+		UPDATE /*结算-客户管理-小票新增时回写使用人及使用部门等信息   */STL.T_STL_NOTE_DETAILS T
+		  SET
+		   	  	T.USE_TIME = #{useTime,jdbcType=TIMESTAMP}, 
+      			T.USER_CODE = #{userCode,jdbcType=VARCHAR}, 
+      			T.USER_NAME = #{userName,jdbcType=VARCHAR}, 
+      			T.USE_ORG_CODE = #{useOrgCode,jdbcType=VARCHAR}, 
+      			T.USE_ORG_NAME = #{useOrgName,jdbcType=VARCHAR}, 
+      			T.NOTEREQ_TYPE = #{notereqType,jdbcType=VARCHAR}, 
+			    T.STATUS = #{status, jdbcType=VARCHAR}
+		  WHERE T.NOTE_DETAILS_NO = #{noteDetailsNo,jdbcType=VARCHAR}
+  </update>
+  
+  <!-- 查询小票单据申请记录下发起止编号 -->
+  <select id="queryApplyDetailBeginAndEndNo" parameterType="string" resultType="com.deppon.foss.module.settlement.consumer.api.shared.dto.NoteApplyDto">
+  	SELECT /*结算-客户管理-  查询小票单据申请记录下发起止编号  */MIN(T.NOTE_DETAILS_NO) BEGINNO, MAX(T.NOTE_DETAILS_NO) ENDNO
+		FROM STL.T_STL_NOTE_DETAILS T
+ 	WHERE T.NOTE_APP_ID = #{noteApplyId}
+  </select>
+  
+  <!-- 查询小票明细是否存在重复 -->
+  <select id="queryIsNotesDetailNos"  parameterType="java.util.Map"  resultType="com.deppon.foss.module.settlement.consumer.api.shared.dto.NoteApplyDto">
+  	SELECT /*结算-客户管理-小票发放时，判断明细是否存在   */ 
+  	 <include refid="select_param"/>
+  	FROM STL.T_STL_NOTE_DETAILS TS
+ 	WHERE TS.NOTE_DETAILS_NO =#{beginNo,jdbcType=VARCHAR}
+    OR TS.NOTE_DETAILS_NO = #{endNo,jdbcType=VARCHAR}
+  </select>
+</mapper>

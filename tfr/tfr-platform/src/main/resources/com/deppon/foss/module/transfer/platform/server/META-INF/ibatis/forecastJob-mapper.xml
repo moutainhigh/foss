@@ -1,0 +1,936 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="Foss.platform.forecastQuantityJOB" >
+    	<resultMap id="BaseResultMap" type="com.deppon.foss.module.transfer.scheduling.api.shared.domain.PathDetailEntity" >
+		<id column="PATH_DETAIL_ID" property="pathDetailId" jdbcType="VARCHAR" />
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="GOODS_NO" property="goodsNo" jdbcType="VARCHAR" />
+		<result column="ORIG_ORG_CODE" property="origOrgCode" jdbcType="VARCHAR" />
+		<result column="OBJECTIVE_ORG_CODE" property="objectiveOrgCode" jdbcType="VARCHAR" />
+		<result column="ORIG_ORG_NAME" property="origOrgName" jdbcType="VARCHAR" />
+		<result column="OBJECTIVE_ORG_NAME" property="objectiveOrgName" jdbcType="VARCHAR" />
+		<result column="ROUTE_NO" property="routeNo" jdbcType="VARCHAR" />
+		<result column="PLAN_START_TIME" property="planStartTime" jdbcType="TIMESTAMP"/>
+		<result column="ACTUAL_START_TIME" property="actualStartTime" jdbcType="TIMESTAMP"/>
+		<result column="ARRIVE_OR_LEAVE" property="arriveOrLeave" jdbcType="VARCHAR" />
+		<result column="PLAN_ARRIVE_TIME" property="planArriveTime" jdbcType="TIMESTAMP"/>
+		<result column="ACTUAL_ARRIVE_TIME" property="actualArriveTime" jdbcType="TIMESTAMP"/>
+		<result column="BILLING_ORG_CODE" property="billingOrgCode" jdbcType="VARCHAR" />
+		<result column="NEXT_DEST_ORG_CODE" property="nextDestOrgCode" jdbcType="VARCHAR" />
+		<result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+		<result column="BEFORE_VEHICLE_NO" property="beforeVehicleNo" jdbcType="VARCHAR" />
+		<result column="IF_CHANGE_TIME" property="ifChangeTime" jdbcType="VARCHAR" />
+		<result column="MODIFY_START_TIME" property="modifyStartTime" jdbcType="TIMESTAMP"/>
+		<result column="MODITY_ARRIVE_TIME" property="modifyArriveTime" jdbcType="TIMESTAMP"/>
+		<result column="TRUCK_DETAIL_ID" property="truckDetailId" jdbcType="VARCHAR" />
+		<result column="NEXT_ARRIVE_TIME" property="nextArriveTime" jdbcType="TIMESTAMP"/>
+		<result column="PLAN_PICKUP_TIME" property="planPickupTime" jdbcType="TIMESTAMP"/>
+		<result column="waybillNoCount" property="waybillNoCount" jdbcType="VARCHAR"/>
+	</resultMap>
+	<select id="selectBasOrgByCode" resultType="java.lang.String" parameterType="Map" >
+	   SELECT 
+	   		a.code 
+	   FROM 
+	   		BSE.T_BAS_ORG a 
+	   WHERE 
+	   		a.active='Y'
+	   <if test="transferCenter != null and transferCenter != ''" >
+       		AND a.TRANSFER_CENTER = #{transferCenter,jdbcType=VARCHAR}
+	   </if>
+	   <if test="salesDepartment != null and salesDepartment != ''" >
+       		AND a.SALES_DEPARTMENT = #{salesDepartment,jdbcType=VARCHAR}
+	   </if>
+	   <if test="threadNo != null" >
+	   		AND ORA_HASH(a.code, #{threadCount}) = #{threadNo}
+	   </if>
+	</select>
+
+	<!-- 根据外场code查所有始发线路出发部门code -->
+	<select id="queryDeptCodeSource" resultType="java.lang.String" parameterType="String" >
+		select distinct l.orig_org_code
+		  from bse.t_bas_line l
+		 where l.active = 'Y'
+		   AND l.valid = 'Y'
+		   and l.line_sort = 'BSE_LINE_SORT_SOURCE'
+		   and l.dest_org_code = #{orgCode}
+	</select>
+
+	<!-- 根据外场code查所有到达线路到达部门code -->
+	<select id="queryDeptCodeTarget" resultType="java.lang.String" parameterType="String" >
+		select distinct l.dest_org_code
+		  from bse.t_bas_line l
+		 where l.active = 'Y'
+		   AND l.valid = 'Y'
+		   and l.line_sort = 'BSE_LINE_SORT_TARGET'
+		   and l.orig_org_code = #{orgCode}
+	</select>
+
+	<!-- 返回中转到中转线路orgCode出发的所有到达部门 -->
+	<select id="queryDeptCodeArrivalTransfer" resultType="java.lang.String" parameterType="String" >
+		select distinct l.dest_org_code
+		  from bse.t_bas_line l
+		 where l.active = 'Y'
+		   AND l.valid = 'Y'
+		   and l.line_sort = 'BSE_LINE_SORT_TRANSFER'
+		   and l.orig_org_code = #{orgCode}
+	</select>
+
+	<!-- 返回中转到中转线路orgCode到达的所有出发部门 -->
+	<select id="queryDeptCodeDepartTransfer" resultType="java.lang.String" parameterType="String" >
+		select distinct l.orig_org_code
+		  from bse.t_bas_line l
+		 where l.active = 'Y'
+		   AND l.valid = 'Y'
+		   and l.line_sort = 'BSE_LINE_SORT_TRANSFER'
+		   and l.dest_org_code = #{orgCode}
+	</select>
+
+	<!-- 所有驻地派送部code -->
+	<select id="queryAlldeliveryStation" resultType="java.lang.String" parameterType="Map" >
+	   select code from bse.t_bas_sales_department
+		where delivery = 'Y'
+		  and station = 'Y'
+		  and active = 'Y'
+	</select>
+	
+	<!-- 查询集中开单组开的单 -->
+	<select id="selectPathDetailByOrgCodeAndRouteNo"  parameterType="map" resultMap="BaseResultMap">
+		SELECT
+		WAYBILL_NO,
+        max(PATH_DETAIL_ID) AS PATH_DETAIL_ID,
+        max(GOODS_NO) AS GOODS_NO,
+        max(ORIG_ORG_CODE) AS ORIG_ORG_CODE,
+        max(OBJECTIVE_ORG_CODE) AS OBJECTIVE_ORG_CODE,
+        max(ROUTE_NO) AS ROUTE_NO,
+        max(PLAN_START_TIME) AS PLAN_START_TIME,
+        max(ACTUAL_START_TIME) AS ACTUAL_START_TIME,
+        max(ARRIVE_OR_LEAVE) AS ARRIVE_OR_LEAVE,
+        max(PLAN_ARRIVE_TIME) AS PLAN_ARRIVE_TIME,
+        max(ACTUAL_ARRIVE_TIME) AS ACTUAL_ARRIVE_TIME,
+        max(BILLING_ORG_CODE) AS BILLING_ORG_CODE,
+        max(NEXT_DEST_ORG_CODE) AS NEXT_DEST_ORG_CODE,
+        max(VEHICLE_NO) AS VEHICLE_NO,
+        max(BEFORE_VEHICLE_NO) AS BEFORE_VEHICLE_NO,
+        max(IF_CHANGE_TIME) AS IF_CHANGE_TIME,
+        max(MODIFY_START_TIME) AS MODIFY_START_TIME,
+        max(MODITY_ARRIVE_TIME) AS MODITY_ARRIVE_TIME,
+        max(TRUCK_DETAIL_ID) AS TRUCK_DETAIL_ID,
+        max(NEXT_ARRIVE_TIME) AS NEXT_ARRIVE_TIME,
+		max(PLAN_PICKUP_TIME) AS PLAN_PICKUP_TIME,
+		count(WAYBILL_NO) AS waybillNoCount
+		<![CDATA[
+		FROM TFR.T_OPT_PATH_DETAIL 
+		WHERE
+			ORIG_ORG_CODE = #{origOrgCode}
+		AND #{countStartTime} <= MODIFY_START_TIME
+		AND #{countEndTime} > MODIFY_START_TIME
+		AND ROUTE_NO = 1
+		GROUP BY WAYBILL_NO
+		]]>
+	</select>
+	<!-- 查询-派送货量 -->
+	<select id="selectPathDetailByDepartDeliveryvolume"  parameterType="map" resultMap="BaseResultMap">
+		SELECT
+		pd.WAYBILL_NO AS WAYBILL_NO,
+		pd.ORIG_ORG_CODE AS ORIG_ORG_CODE,
+        pd.OBJECTIVE_ORG_CODE AS OBJECTIVE_ORG_CODE,
+        pd.ROUTE_NO AS ROUTE_NO,
+        max(pd.PATH_DETAIL_ID) AS PATH_DETAIL_ID,
+        max(pd.GOODS_NO) AS GOODS_NO,
+        max(pd.PLAN_START_TIME) AS PLAN_START_TIME,
+        max(pd.ACTUAL_START_TIME) AS ACTUAL_START_TIME,
+        max(pd.ARRIVE_OR_LEAVE) AS ARRIVE_OR_LEAVE,
+        max(pd.PLAN_ARRIVE_TIME) AS PLAN_ARRIVE_TIME,
+        max(pd.ACTUAL_ARRIVE_TIME) AS ACTUAL_ARRIVE_TIME,
+        max(pd.BILLING_ORG_CODE) AS BILLING_ORG_CODE,
+        max(pd.NEXT_DEST_ORG_CODE) AS NEXT_DEST_ORG_CODE,
+        max(pd.VEHICLE_NO) AS VEHICLE_NO,
+        max(pd.BEFORE_VEHICLE_NO) AS BEFORE_VEHICLE_NO,
+        max(pd.IF_CHANGE_TIME) AS IF_CHANGE_TIME,
+        max(pd.MODIFY_START_TIME) AS MODIFY_START_TIME,
+        max(pd.MODITY_ARRIVE_TIME) AS MODITY_ARRIVE_TIME,
+        max(pd.TRUCK_DETAIL_ID) AS TRUCK_DETAIL_ID,
+        max(pd.NEXT_ARRIVE_TIME) AS NEXT_ARRIVE_TIME,
+		max(pd.PLAN_PICKUP_TIME) AS PLAN_PICKUP_TIME,
+		count(pd.WAYBILL_NO) AS waybillNoCount
+		<![CDATA[
+		FROM TFR.T_OPT_PATH_DETAIL pd
+			inner join (
+						select 
+							WAYBILL_NO,
+							max(ROUTE_NO) ROUTE_NO 
+						from 
+							TFR.T_OPT_PATH_DETAIL 
+						where
+						OBJECTIVE_ORG_CODE = #{objectiveOrgCode}
+						AND ORIG_ORG_CODE = #{origOrgCode} 
+						AND	#{countStartTime} <= MODIFY_START_TIME
+						AND #{countEndTime} > MODIFY_START_TIME
+						]]>
+						<if test="arriveOrLeave != null" >
+				       		AND ARRIVE_OR_LEAVE = #{arriveOrLeave}
+					    </if>
+						<if test="beforeVehicleNo == null or beforeVehicleNo == ''" >
+				       		AND BEFORE_VEHICLE_NO = 'N/A'
+					    </if>
+						<if test="beforeVehicleNo != null and beforeVehicleNo != ''" >
+				       		AND BEFORE_VEHICLE_NO != 'N/A'
+					    </if>
+						<if test="ifChangeTime != null" >
+							AND IF_CHANGE_TIME = #{ifChangeTime}
+					    </if>
+	   <![CDATA[
+						group by WAYBILL_NO
+						) PDT
+		    on PD.WAYBILL_NO = PDT.WAYBILL_NO
+		    and PD.ROUTE_NO = PDT.ROUTE_NO
+		WHERE
+			pd.OBJECTIVE_ORG_CODE = #{objectiveOrgCode}
+		AND pd.ORIG_ORG_CODE = #{origOrgCode}
+		AND #{countStartTime} <= pd.MODIFY_START_TIME
+		AND #{countEndTime} > pd.MODIFY_START_TIME
+		]]>
+		<if test="arriveOrLeave != null" >
+			AND PD.ARRIVE_OR_LEAVE = #{arriveOrLeave,jdbcType=VARCHAR}
+		</if>
+		<if test="beforeVehicleNo == null or beforeVehicleNo == ''" >
+			AND BEFORE_VEHICLE_NO = 'N/A'
+		</if>
+		<if test="beforeVehicleNo != null and beforeVehicleNo != ''" >
+			AND BEFORE_VEHICLE_NO != 'N/A'
+		</if>
+		<if test="ifChangeTime != null" >
+			AND PD.IF_CHANGE_TIME = #{ifChangeTime}
+		</if>
+		GROUP BY pd.WAYBILL_NO,pd.ORIG_ORG_CODE,pd.OBJECTIVE_ORG_CODE,pd.ROUTE_NO
+	</select>
+			<!-- 查询 -->
+	<select id="queryStockWhitInStockByOrgCode"  parameterType="map" resultMap="BaseResultMap">
+	SELECT tstock.waybill_no AS WAYBILL_NO,
+		count(tstock.waybill_no) waybillNoCount
+	from tfr.t_opt_stock tstock
+	left join bse.t_bas_goods_area b
+     on  b.org_code = #{origOrgCode}
+     and b.goods_area_code = tstock.goods_area_code
+     and b.goods_area_type =#{goodsAreaType}
+     and b.active = 'Y'
+	WHERE
+	tstock.org_code = #{origOrgCode}
+	and tstock.next_org_code = #{objectiveOrgCode}
+      group by tstock.waybill_no
+	</select>
+
+	<select id="queryStockWhitInStock"  parameterType="map" resultMap="BaseResultMap">
+		select s.waybill_no WAYBILL_NO, count(s.waybill_no) waybillNoCount
+		  from tfr.t_opt_stock s
+		 where s.org_code = #{origOrgCode}
+		   and s.next_org_code = #{objectiveOrgCode}
+		 group by s.waybill_no
+	</select>
+	
+	<!-- 查询外场到达 -->
+	<select id="queryPathDetailByArrive"  parameterType="map" resultMap="BaseResultMap">
+		select
+		d.WAYBILL_NO AS WAYBILL_NO,
+		max(d.PATH_DETAIL_ID) AS PATH_DETAIL_ID,
+        max(d.GOODS_NO) AS GOODS_NO,
+        max(d.ORIG_ORG_CODE) AS ORIG_ORG_CODE,
+        max(d.OBJECTIVE_ORG_CODE) AS OBJECTIVE_ORG_CODE,
+        max(d.ROUTE_NO) AS ROUTE_NO,
+        max(d.PLAN_START_TIME) AS PLAN_START_TIME,
+        max(d.ACTUAL_START_TIME) AS ACTUAL_START_TIME,
+        max(d.ARRIVE_OR_LEAVE) AS ARRIVE_OR_LEAVE,
+        max(d.PLAN_ARRIVE_TIME) AS PLAN_ARRIVE_TIME,
+        max(d.ACTUAL_ARRIVE_TIME) AS ACTUAL_ARRIVE_TIME,
+        max(d.BILLING_ORG_CODE) AS BILLING_ORG_CODE,
+        max(d.NEXT_DEST_ORG_CODE) AS NEXT_DEST_ORG_CODE,
+        max(d.VEHICLE_NO) AS VEHICLE_NO,
+        max(d.BEFORE_VEHICLE_NO) AS BEFORE_VEHICLE_NO,
+        max(d.IF_CHANGE_TIME) AS IF_CHANGE_TIME,
+        max(d.MODIFY_START_TIME) AS MODIFY_START_TIME,
+        max(d.MODITY_ARRIVE_TIME) AS MODITY_ARRIVE_TIME,
+        max(d.TRUCK_DETAIL_ID) AS TRUCK_DETAIL_ID,
+        max(d.NEXT_ARRIVE_TIME) AS NEXT_ARRIVE_TIME,
+		max(d.PLAN_PICKUP_TIME) AS PLAN_PICKUP_TIME,
+		count(d.WAYBILL_NO) AS waybillNoCount
+		FROM TFR.T_OPT_PATH_DETAIL d
+		  inner join PKP.T_SRV_WAYBILL W
+		    on W.WAYBILL_NO = D.WAYBILL_NO
+		    and W.ACTIVE='Y'
+		<if test="pickupCentralizedFalse != null and  pickupCentralizedFalse != ''">
+		    and W.PICKUP_CENTRALIZED != 'Y'
+		</if>
+		<if test="pickupCentralizedTrue != null and  pickupCentralizedTrue != ''">
+		    and W.PICKUP_CENTRALIZED = 'Y'
+		</if>
+		WHERE 
+		d.ORIG_ORG_CODE = #{origOrgCode}
+		<if test="objectiveOrgCode != null and objectiveOrgCode != '' ">
+		AND d.OBJECTIVE_ORG_CODE = #{objectiveOrgCode}
+		</if>
+		<if test="arriveOrLeaveList!=null and  arriveOrLeaveList!='' ">
+			AND d.ARRIVE_OR_LEAVE IN
+			<foreach collection="arriveOrLeaveList" close=")" open="(" item="arriveOrLeave1" separator=",">
+				#{arriveOrLeave1}
+			</foreach>
+		</if>
+		<if test="arriveOrLeave !=null and arriveOrLeave !='' ">
+		AND d.ARRIVE_OR_LEAVE = #{arriveOrLeave}
+		</if>
+		<![CDATA[
+		AND #{countStartTime} <= d.MODITY_ARRIVE_TIME
+		AND #{countEndTime} > d.MODITY_ARRIVE_TIME
+		GROUP BY d.WAYBILL_NO
+		]]>
+	</select>
+	
+	<!-- 开单未交接  没有被调用-->
+	<select id="queryBillingUnHandover"  parameterType="map" resultMap="BaseResultMap">
+		SELECT
+		WAYBILL_NO,
+        max(PATH_DETAIL_ID) AS PATH_DETAIL_ID,
+        max(GOODS_NO) AS GOODS_NO,
+        max(ORIG_ORG_CODE) AS ORIG_ORG_CODE,
+        max(OBJECTIVE_ORG_CODE) AS OBJECTIVE_ORG_CODE,
+        max(ROUTE_NO) AS ROUTE_NO,
+        max(PLAN_START_TIME) AS PLAN_START_TIME,
+        max(ACTUAL_START_TIME) AS ACTUAL_START_TIME,
+        max(ARRIVE_OR_LEAVE) AS ARRIVE_OR_LEAVE,
+        max(PLAN_ARRIVE_TIME) AS PLAN_ARRIVE_TIME,
+        max(ACTUAL_ARRIVE_TIME) AS ACTUAL_ARRIVE_TIME,
+        max(BILLING_ORG_CODE) AS BILLING_ORG_CODE,
+        max(NEXT_DEST_ORG_CODE) AS NEXT_DEST_ORG_CODE,
+        max(VEHICLE_NO) AS VEHICLE_NO,
+        max(BEFORE_VEHICLE_NO) AS BEFORE_VEHICLE_NO,
+        max(IF_CHANGE_TIME) AS IF_CHANGE_TIME,
+        max(MODIFY_START_TIME) AS MODIFY_START_TIME,
+        max(MODITY_ARRIVE_TIME) AS MODITY_ARRIVE_TIME,
+        max(TRUCK_DETAIL_ID) AS TRUCK_DETAIL_ID,
+        max(NEXT_ARRIVE_TIME) AS NEXT_ARRIVE_TIME,
+		max(PLAN_PICKUP_TIME) AS PLAN_PICKUP_TIME,
+		count(WAYBILL_NO) AS waybillNoCount
+		FROM TFR.T_OPT_PATH_DETAIL 
+		WHERE 
+		ORIG_ORG_CODE = #{orgCode} 
+		AND OBJECTIVE_ORG_CODE = #{relevantOrgCode}
+		<if test="allTransfreCenterCodes!=null">
+		AND NEXT_DEST_ORG_CODE IN
+		<foreach collection="allTransfreCenterCodes" close=")" open="(" item="deptCode" separator=",">
+			#{deptCode}
+		</foreach>
+		</if>
+		<![CDATA[
+		AND ARRIVE_OR_LEAVE = 'NOTLEAVE'
+		AND MODIFY_START_TIME >= #{countStartTime} 
+		AND MODIFY_START_TIME < #{countEndTime} 
+		AND BEFORE_VEHICLE_NO = 'N/A'
+		GROUP BY WAYBILL_NO
+		]]>
+	</select>
+
+	<!-- 在途(为了以后便于修改, 所以不和开单未交接共用)  没有被调用-->
+	<select id="queryOntheway"  parameterType="map" resultMap="BaseResultMap">
+		SELECT
+		WAYBILL_NO,
+        max(PATH_DETAIL_ID) AS PATH_DETAIL_ID,
+        max(GOODS_NO) AS GOODS_NO,
+        max(ORIG_ORG_CODE) AS ORIG_ORG_CODE,
+        max(OBJECTIVE_ORG_CODE) AS OBJECTIVE_ORG_CODE,
+        max(ROUTE_NO) AS ROUTE_NO,
+        max(PLAN_START_TIME) AS PLAN_START_TIME,
+        max(ACTUAL_START_TIME) AS ACTUAL_START_TIME,
+        max(ARRIVE_OR_LEAVE) AS ARRIVE_OR_LEAVE,
+        max(PLAN_ARRIVE_TIME) AS PLAN_ARRIVE_TIME,
+        max(ACTUAL_ARRIVE_TIME) AS ACTUAL_ARRIVE_TIME,
+        max(BILLING_ORG_CODE) AS BILLING_ORG_CODE,
+        max(NEXT_DEST_ORG_CODE) AS NEXT_DEST_ORG_CODE,
+        max(VEHICLE_NO) AS VEHICLE_NO,
+        max(BEFORE_VEHICLE_NO) AS BEFORE_VEHICLE_NO,
+        max(IF_CHANGE_TIME) AS IF_CHANGE_TIME,
+        max(MODIFY_START_TIME) AS MODIFY_START_TIME,
+        max(MODITY_ARRIVE_TIME) AS MODITY_ARRIVE_TIME,
+        max(TRUCK_DETAIL_ID) AS TRUCK_DETAIL_ID,
+        max(NEXT_ARRIVE_TIME) AS NEXT_ARRIVE_TIME,
+		max(PLAN_PICKUP_TIME) AS PLAN_PICKUP_TIME,
+		count(WAYBILL_NO) AS waybillNoCount
+		FROM TFR.T_OPT_PATH_DETAIL 
+		WHERE 
+		ORIG_ORG_CODE = #{orgCode} 
+		AND OBJECTIVE_ORG_CODE = #{relevantOrgCode}
+		<if test="allTransfreCenterCodes!=null">
+		AND NEXT_DEST_ORG_CODE IN
+		<foreach collection="allTransfreCenterCodes" close=")" open="(" item="deptCode" separator=",">
+			#{deptCode}
+		</foreach>
+		</if>
+		<![CDATA[
+		AND ARRIVE_OR_LEAVE = 'HANDOVER'
+		AND MODIFY_START_TIME >= #{countStartTime} 
+		AND MODIFY_START_TIME < #{countEndTime} 
+		GROUP BY WAYBILL_NO
+		]]>
+	</select>
+	
+	<!-- 本地出发-开单未交接 -->
+	<select id="queryBillingUnHandoverLocal"  parameterType="map" resultMap="BaseResultMap">
+		SELECT
+		PD.WAYBILL_NO,
+        max(PD.PATH_DETAIL_ID) AS PATH_DETAIL_ID,
+        max(PD.GOODS_NO) AS GOODS_NO,
+        max(PD.ORIG_ORG_CODE) AS ORIG_ORG_CODE,
+        max(PD.OBJECTIVE_ORG_CODE) AS OBJECTIVE_ORG_CODE,
+        max(PD.ROUTE_NO) AS ROUTE_NO,
+        max(PD.PLAN_START_TIME) AS PLAN_START_TIME,
+        max(PD.ACTUAL_START_TIME) AS ACTUAL_START_TIME,
+        max(PD.ARRIVE_OR_LEAVE) AS ARRIVE_OR_LEAVE,
+        max(PD.PLAN_ARRIVE_TIME) AS PLAN_ARRIVE_TIME,
+        max(PD.ACTUAL_ARRIVE_TIME) AS ACTUAL_ARRIVE_TIME,
+        max(PD.BILLING_ORG_CODE) AS BILLING_ORG_CODE,
+        max(PD.NEXT_DEST_ORG_CODE) AS NEXT_DEST_ORG_CODE,
+        max(PD.VEHICLE_NO) AS VEHICLE_NO,
+        max(PD.BEFORE_VEHICLE_NO) AS BEFORE_VEHICLE_NO,
+        max(PD.IF_CHANGE_TIME) AS IF_CHANGE_TIME,
+        max(PD.MODIFY_START_TIME) AS MODIFY_START_TIME,
+        max(PD.MODITY_ARRIVE_TIME) AS MODITY_ARRIVE_TIME,
+        max(PD.TRUCK_DETAIL_ID) AS TRUCK_DETAIL_ID,
+        max(PD.NEXT_ARRIVE_TIME) AS NEXT_ARRIVE_TIME,
+		max(PD.PLAN_PICKUP_TIME) AS PLAN_PICKUP_TIME,
+		count(PD.WAYBILL_NO) AS waybillNoCount
+		FROM TFR.T_OPT_PATH_DETAIL PD 
+		WHERE 
+		EXISTS
+		(SELECT L.ORIG_ORG_CODE
+			FROM BSE.T_BAS_LINE L
+			WHERE PD.ORIG_ORG_CODE = L.ORIG_ORG_CODE
+			AND L.ACTIVE = 'Y'
+			AND L.VALID = 'Y'
+			AND L.LINE_SORT = 'BSE_LINE_SORT_SOURCE'
+			AND L.DEST_ORG_CODE = PD.OBJECTIVE_ORG_CODE)
+			AND PD.ORIG_ORG_CODE = #{orgCode} 
+			AND PD.OBJECTIVE_ORG_CODE = #{relevantOrgCode}
+		<![CDATA[
+		AND ARRIVE_OR_LEAVE = 'NOTLEAVE'
+		AND MODIFY_START_TIME >= #{countStartTime} 
+		AND MODIFY_START_TIME < #{countEndTime} 
+		GROUP BY WAYBILL_NO
+		]]>
+		<!-- AND BEFORE_VEHICLE_NO = 'N/A' -->
+	</select>
+	
+	<!-- 本地出发-在途(为了以后便于修改, 所以不和开单未交接共用) -->
+	<select id="queryOnthewayLocal"  parameterType="map" resultMap="BaseResultMap">
+		SELECT
+		PD.WAYBILL_NO,
+        max(PD.PATH_DETAIL_ID) AS PATH_DETAIL_ID,
+        max(PD.GOODS_NO) AS GOODS_NO,
+        max(PD.ORIG_ORG_CODE) AS ORIG_ORG_CODE,
+        max(PD.OBJECTIVE_ORG_CODE) AS OBJECTIVE_ORG_CODE,
+        max(PD.ROUTE_NO) AS ROUTE_NO,
+        max(PD.PLAN_START_TIME) AS PLAN_START_TIME,
+        max(PD.ACTUAL_START_TIME) AS ACTUAL_START_TIME,
+        max(PD.ARRIVE_OR_LEAVE) AS ARRIVE_OR_LEAVE,
+        max(PD.PLAN_ARRIVE_TIME) AS PLAN_ARRIVE_TIME,
+        max(PD.ACTUAL_ARRIVE_TIME) AS ACTUAL_ARRIVE_TIME,
+        max(PD.BILLING_ORG_CODE) AS BILLING_ORG_CODE,
+        max(PD.NEXT_DEST_ORG_CODE) AS NEXT_DEST_ORG_CODE,
+        max(PD.VEHICLE_NO) AS VEHICLE_NO,
+        max(PD.BEFORE_VEHICLE_NO) AS BEFORE_VEHICLE_NO,
+        max(PD.IF_CHANGE_TIME) AS IF_CHANGE_TIME,
+        max(PD.MODIFY_START_TIME) AS MODIFY_START_TIME,
+        max(PD.MODITY_ARRIVE_TIME) AS MODITY_ARRIVE_TIME,
+        max(PD.TRUCK_DETAIL_ID) AS TRUCK_DETAIL_ID,
+        max(PD.NEXT_ARRIVE_TIME) AS NEXT_ARRIVE_TIME,
+		max(PD.PLAN_PICKUP_TIME) AS PLAN_PICKUP_TIME,
+		count(PD.WAYBILL_NO) AS waybillNoCount
+		FROM TFR.T_OPT_PATH_DETAIL PD
+		WHERE 
+		EXISTS
+		(SELECT L.ORIG_ORG_CODE
+			FROM BSE.T_BAS_LINE L
+			WHERE PD.ORIG_ORG_CODE = L.ORIG_ORG_CODE
+			AND L.ACTIVE = 'Y'
+			AND L.VALID = 'Y'
+			AND L.LINE_SORT = 'BSE_LINE_SORT_SOURCE'
+			AND L.DEST_ORG_CODE = PD.OBJECTIVE_ORG_CODE)
+			AND PD.ORIG_ORG_CODE = #{orgCode}
+			AND PD.OBJECTIVE_ORG_CODE = #{relevantOrgCode}
+		<![CDATA[
+		AND (PD.ARRIVE_OR_LEAVE = 'HANDOVER' OR PD.ARRIVE_OR_LEAVE = 'LEAVE')
+		AND PD.MODIFY_START_TIME >= #{countStartTime} 
+		AND PD.MODIFY_START_TIME < #{countEndTime} 
+		GROUP BY PD.WAYBILL_NO
+		]]>
+	</select>
+	
+	<!-- 二次中转-开单未交接 -->
+	<select id="queryBillingUnHandoverSecond"  parameterType="map" resultMap="BaseResultMap">
+		SELECT
+		PD.WAYBILL_NO,
+        max(PD.PATH_DETAIL_ID) AS PATH_DETAIL_ID,
+        max(PD.GOODS_NO) AS GOODS_NO,
+        max(PD.ORIG_ORG_CODE) AS ORIG_ORG_CODE,
+        max(PD.OBJECTIVE_ORG_CODE) AS OBJECTIVE_ORG_CODE,
+        max(PD.ROUTE_NO) AS ROUTE_NO,
+        max(PD.PLAN_START_TIME) AS PLAN_START_TIME,
+        max(PD.ACTUAL_START_TIME) AS ACTUAL_START_TIME,
+        max(PD.ARRIVE_OR_LEAVE) AS ARRIVE_OR_LEAVE,
+        max(PD.PLAN_ARRIVE_TIME) AS PLAN_ARRIVE_TIME,
+        max(PD.ACTUAL_ARRIVE_TIME) AS ACTUAL_ARRIVE_TIME,
+        max(PD.BILLING_ORG_CODE) AS BILLING_ORG_CODE,
+        max(PD.NEXT_DEST_ORG_CODE) AS NEXT_DEST_ORG_CODE,
+        max(PD.VEHICLE_NO) AS VEHICLE_NO,
+        max(PD.BEFORE_VEHICLE_NO) AS BEFORE_VEHICLE_NO,
+        max(PD.IF_CHANGE_TIME) AS IF_CHANGE_TIME,
+        max(PD.MODIFY_START_TIME) AS MODIFY_START_TIME,
+        max(PD.MODITY_ARRIVE_TIME) AS MODITY_ARRIVE_TIME,
+        max(PD.TRUCK_DETAIL_ID) AS TRUCK_DETAIL_ID,
+        max(PD.NEXT_ARRIVE_TIME) AS NEXT_ARRIVE_TIME,
+		max(PD.PLAN_PICKUP_TIME) AS PLAN_PICKUP_TIME,
+		count(PD.WAYBILL_NO) AS waybillNoCount
+		FROM TFR.T_OPT_PATH_DETAIL PD
+		WHERE 
+		EXISTS
+		(SELECT L.ORIG_ORG_CODE
+			FROM BSE.T_BAS_LINE L
+			WHERE PD.ORIG_ORG_CODE = L.ORIG_ORG_CODE
+			AND L.ACTIVE = 'Y'
+			AND L.VALID = 'Y'
+			AND L.LINE_SORT = 'BSE_LINE_SORT_TRANSFER'
+			AND L.DEST_ORG_CODE = PD.OBJECTIVE_ORG_CODE)
+			AND PD.ORIG_ORG_CODE = #{orgCode} 
+			AND PD.OBJECTIVE_ORG_CODE = #{relevantOrgCode}
+		<![CDATA[
+		AND PD.ARRIVE_OR_LEAVE = 'NOTLEAVE'
+		AND PD.MODIFY_START_TIME >= #{countStartTime} 
+		AND PD.MODIFY_START_TIME < #{countEndTime} 
+		GROUP BY PD.WAYBILL_NO
+		]]>
+		<!-- AND PD.BEFORE_VEHICLE_NO = 'N/A' -->
+	</select>
+	
+	<!-- 二次中转-在途(为了以后便于修改, 所以不和开单未交接共用) -->
+	<select id="queryOnthewaySecond"  parameterType="map" resultMap="BaseResultMap">
+		SELECT
+		WAYBILL_NO,
+        max(PD.PATH_DETAIL_ID) AS PATH_DETAIL_ID,
+        max(PD.GOODS_NO) AS GOODS_NO,
+        max(PD.ORIG_ORG_CODE) AS ORIG_ORG_CODE,
+        max(PD.OBJECTIVE_ORG_CODE) AS OBJECTIVE_ORG_CODE,
+        max(PD.ROUTE_NO) AS ROUTE_NO,
+        max(PD.PLAN_START_TIME) AS PLAN_START_TIME,
+        max(PD.ACTUAL_START_TIME) AS ACTUAL_START_TIME,
+        max(PD.ARRIVE_OR_LEAVE) AS ARRIVE_OR_LEAVE,
+        max(PD.PLAN_ARRIVE_TIME) AS PLAN_ARRIVE_TIME,
+        max(PD.ACTUAL_ARRIVE_TIME) AS ACTUAL_ARRIVE_TIME,
+        max(PD.BILLING_ORG_CODE) AS BILLING_ORG_CODE,
+        max(PD.NEXT_DEST_ORG_CODE) AS NEXT_DEST_ORG_CODE,
+        max(PD.VEHICLE_NO) AS VEHICLE_NO,
+        max(PD.BEFORE_VEHICLE_NO) AS BEFORE_VEHICLE_NO,
+        max(PD.IF_CHANGE_TIME) AS IF_CHANGE_TIME,
+        max(PD.MODIFY_START_TIME) AS MODIFY_START_TIME,
+        max(PD.MODITY_ARRIVE_TIME) AS MODITY_ARRIVE_TIME,
+        max(PD.TRUCK_DETAIL_ID) AS TRUCK_DETAIL_ID,
+        max(PD.NEXT_ARRIVE_TIME) AS NEXT_ARRIVE_TIME,
+		max(PD.PLAN_PICKUP_TIME) AS PLAN_PICKUP_TIME,
+		count(PD.WAYBILL_NO) AS waybillNoCount
+		FROM TFR.T_OPT_PATH_DETAIL PD
+		WHERE 
+		EXISTS
+		(SELECT L.ORIG_ORG_CODE
+			FROM BSE.T_BAS_LINE L
+			WHERE PD.ORIG_ORG_CODE = L.ORIG_ORG_CODE
+			AND L.ACTIVE = 'Y'
+			AND L.VALID = 'Y'
+			AND L.LINE_SORT = 'BSE_LINE_SORT_TRANSFER'
+			AND L.DEST_ORG_CODE = PD.OBJECTIVE_ORG_CODE)
+			AND PD.ORIG_ORG_CODE = #{orgCode} 
+			AND PD.OBJECTIVE_ORG_CODE = #{relevantOrgCode}
+		<![CDATA[
+		AND (PD.ARRIVE_OR_LEAVE = 'HANDOVER' OR PD.ARRIVE_OR_LEAVE = 'LEAVE')
+		AND PD.MODIFY_START_TIME >= #{countStartTime} 
+		AND PD.MODIFY_START_TIME < #{countEndTime} 
+		GROUP BY PD.WAYBILL_NO
+		]]>
+	</select>
+	
+	<!-- 到达中转-开单未交接 -->
+	<select id="queryBillingUnHandoverArrival"  parameterType="map" resultMap="BaseResultMap">
+		SELECT
+		PD.WAYBILL_NO,
+        max(PD.PATH_DETAIL_ID) AS PATH_DETAIL_ID,
+        max(PD.GOODS_NO) AS GOODS_NO,
+        max(PD.ORIG_ORG_CODE) AS ORIG_ORG_CODE,
+        max(PD.OBJECTIVE_ORG_CODE) AS OBJECTIVE_ORG_CODE,
+        max(PD.ROUTE_NO) AS ROUTE_NO,
+        max(PD.PLAN_START_TIME) AS PLAN_START_TIME,
+        max(PD.ACTUAL_START_TIME) AS ACTUAL_START_TIME,
+        max(PD.ARRIVE_OR_LEAVE) AS ARRIVE_OR_LEAVE,
+        max(PD.PLAN_ARRIVE_TIME) AS PLAN_ARRIVE_TIME,
+        max(PD.ACTUAL_ARRIVE_TIME) AS ACTUAL_ARRIVE_TIME,
+        max(PD.BILLING_ORG_CODE) AS BILLING_ORG_CODE,
+        max(PD.NEXT_DEST_ORG_CODE) AS NEXT_DEST_ORG_CODE,
+        max(PD.VEHICLE_NO) AS VEHICLE_NO,
+        max(PD.BEFORE_VEHICLE_NO) AS BEFORE_VEHICLE_NO,
+        max(PD.IF_CHANGE_TIME) AS IF_CHANGE_TIME,
+        max(PD.MODIFY_START_TIME) AS MODIFY_START_TIME,
+        max(PD.MODITY_ARRIVE_TIME) AS MODITY_ARRIVE_TIME,
+        max(PD.TRUCK_DETAIL_ID) AS TRUCK_DETAIL_ID,
+        max(PD.NEXT_ARRIVE_TIME) AS NEXT_ARRIVE_TIME,
+		max(PD.PLAN_PICKUP_TIME) AS PLAN_PICKUP_TIME,
+		count(PD.WAYBILL_NO) AS waybillNoCount
+		FROM TFR.T_OPT_PATH_DETAIL PD
+		WHERE 
+		PD.ORIG_ORG_CODE = #{orgCode} 
+		AND PD.OBJECTIVE_ORG_CODE = #{relevantOrgCode}
+		<![CDATA[
+		AND PD.ARRIVE_OR_LEAVE = 'NOTLEAVE'
+		AND PD.MODIFY_START_TIME >= #{countStartTime} 
+		AND PD.MODIFY_START_TIME < #{countEndTime} 
+		GROUP BY PD.WAYBILL_NO
+		]]>
+		<!-- AND BEFORE_VEHICLE_NO = 'N/A' -->
+	</select>
+	
+	<!-- 到达中转-在途(为了以后便于修改, 所以不和开单未交接共用) -->
+	<select id="queryOnthewayArrival"  parameterType="map" resultMap="BaseResultMap">
+		SELECT
+		PD.WAYBILL_NO,
+        max(PD.PATH_DETAIL_ID) AS PATH_DETAIL_ID,
+        max(PD.GOODS_NO) AS GOODS_NO,
+        max(PD.ORIG_ORG_CODE) AS ORIG_ORG_CODE,
+        max(PD.OBJECTIVE_ORG_CODE) AS OBJECTIVE_ORG_CODE,
+        max(PD.ROUTE_NO) AS ROUTE_NO,
+        max(PD.PLAN_START_TIME) AS PLAN_START_TIME,
+        max(PD.ACTUAL_START_TIME) AS ACTUAL_START_TIME,
+        max(PD.ARRIVE_OR_LEAVE) AS ARRIVE_OR_LEAVE,
+        max(PD.PLAN_ARRIVE_TIME) AS PLAN_ARRIVE_TIME,
+        max(PD.ACTUAL_ARRIVE_TIME) AS ACTUAL_ARRIVE_TIME,
+        max(PD.BILLING_ORG_CODE) AS BILLING_ORG_CODE,
+        max(PD.NEXT_DEST_ORG_CODE) AS NEXT_DEST_ORG_CODE,
+        max(PD.VEHICLE_NO) AS VEHICLE_NO,
+        max(PD.BEFORE_VEHICLE_NO) AS BEFORE_VEHICLE_NO,
+        max(PD.IF_CHANGE_TIME) AS IF_CHANGE_TIME,
+        max(PD.MODIFY_START_TIME) AS MODIFY_START_TIME,
+        max(PD.MODITY_ARRIVE_TIME) AS MODITY_ARRIVE_TIME,
+        max(PD.TRUCK_DETAIL_ID) AS TRUCK_DETAIL_ID,
+        max(PD.NEXT_ARRIVE_TIME) AS NEXT_ARRIVE_TIME,
+		max(PD.PLAN_PICKUP_TIME) AS PLAN_PICKUP_TIME,
+		count(PD.WAYBILL_NO) AS waybillNoCount
+		FROM TFR.T_OPT_PATH_DETAIL PD
+		WHERE 
+		PD.ORIG_ORG_CODE = #{orgCode} 
+		AND PD.OBJECTIVE_ORG_CODE = #{relevantOrgCode}
+		<![CDATA[
+		AND (PD.ARRIVE_OR_LEAVE = 'HANDOVER' OR PD.ARRIVE_OR_LEAVE = 'LEAVE')
+		AND PD.MODIFY_START_TIME >= #{countStartTime} 
+		AND PD.MODIFY_START_TIME < #{countEndTime} 
+		GROUP BY PD.WAYBILL_NO
+		]]>
+	</select>
+	
+	<!-- 派送货量-开单未交接 -->
+	<select id="queryBillingUnHandoverTransit"  parameterType="map" resultMap="BaseResultMap">
+		SELECT
+		WAYBILL_NO,
+        max(PATH_DETAIL_ID) AS PATH_DETAIL_ID,
+        max(GOODS_NO) AS GOODS_NO,
+        max(ORIG_ORG_CODE) AS ORIG_ORG_CODE,
+        max(OBJECTIVE_ORG_CODE) AS OBJECTIVE_ORG_CODE,
+        max(ROUTE_NO) AS ROUTE_NO,
+        max(PLAN_START_TIME) AS PLAN_START_TIME,
+        max(ACTUAL_START_TIME) AS ACTUAL_START_TIME,
+        max(ARRIVE_OR_LEAVE) AS ARRIVE_OR_LEAVE,
+        max(PLAN_ARRIVE_TIME) AS PLAN_ARRIVE_TIME,
+        max(ACTUAL_ARRIVE_TIME) AS ACTUAL_ARRIVE_TIME,
+        max(BILLING_ORG_CODE) AS BILLING_ORG_CODE,
+        max(NEXT_DEST_ORG_CODE) AS NEXT_DEST_ORG_CODE,
+        max(VEHICLE_NO) AS VEHICLE_NO,
+        max(BEFORE_VEHICLE_NO) AS BEFORE_VEHICLE_NO,
+        max(IF_CHANGE_TIME) AS IF_CHANGE_TIME,
+        max(MODIFY_START_TIME) AS MODIFY_START_TIME,
+        max(MODITY_ARRIVE_TIME) AS MODITY_ARRIVE_TIME,
+        max(TRUCK_DETAIL_ID) AS TRUCK_DETAIL_ID,
+        max(NEXT_ARRIVE_TIME) AS NEXT_ARRIVE_TIME,
+		max(PLAN_PICKUP_TIME) AS PLAN_PICKUP_TIME,
+		count(WAYBILL_NO) AS waybillNoCount
+		FROM TFR.T_OPT_PATH_DETAIL 
+		WHERE 
+		ORIG_ORG_CODE = #{orgCode} 
+		AND OBJECTIVE_ORG_CODE = #{relevantOrgCode}
+		<![CDATA[
+		AND ARRIVE_OR_LEAVE = 'NOTLEAVE'
+		AND MODIFY_START_TIME >= #{countStartTime} 
+		AND MODIFY_START_TIME < #{countEndTime} 
+		GROUP BY WAYBILL_NO
+		]]>
+		<!-- AND BEFORE_VEHICLE_NO = 'N/A' -->
+	</select>
+
+	<!-- 派送货量-在途(为了以后便于修改, 所以不和开单未交接共用) -->
+	<select id="queryOnthewayTransit"  parameterType="map" resultMap="BaseResultMap">
+		SELECT
+		PD.WAYBILL_NO,
+        max(PD.PATH_DETAIL_ID) AS PATH_DETAIL_ID,
+        max(PD.GOODS_NO) AS GOODS_NO,
+        max(PD.ORIG_ORG_CODE) AS ORIG_ORG_CODE,
+        max(PD.OBJECTIVE_ORG_CODE) AS OBJECTIVE_ORG_CODE,
+        max(PD.ROUTE_NO) AS ROUTE_NO,
+        max(PD.PLAN_START_TIME) AS PLAN_START_TIME,
+        max(PD.ACTUAL_START_TIME) AS ACTUAL_START_TIME,
+        max(PD.ARRIVE_OR_LEAVE) AS ARRIVE_OR_LEAVE,
+        max(PD.PLAN_ARRIVE_TIME) AS PLAN_ARRIVE_TIME,
+        max(PD.ACTUAL_ARRIVE_TIME) AS ACTUAL_ARRIVE_TIME,
+        max(PD.BILLING_ORG_CODE) AS BILLING_ORG_CODE,
+        max(PD.NEXT_DEST_ORG_CODE) AS NEXT_DEST_ORG_CODE,
+        max(PD.VEHICLE_NO) AS VEHICLE_NO,
+        max(PD.BEFORE_VEHICLE_NO) AS BEFORE_VEHICLE_NO,
+        max(PD.IF_CHANGE_TIME) AS IF_CHANGE_TIME,
+        max(PD.MODIFY_START_TIME) AS MODIFY_START_TIME,
+        max(PD.MODITY_ARRIVE_TIME) AS MODITY_ARRIVE_TIME,
+        max(PD.TRUCK_DETAIL_ID) AS TRUCK_DETAIL_ID,
+        max(PD.NEXT_ARRIVE_TIME) AS NEXT_ARRIVE_TIME,
+		max(PD.PLAN_PICKUP_TIME) AS PLAN_PICKUP_TIME,
+		count(PD.WAYBILL_NO) AS waybillNoCount
+		FROM TFR.T_OPT_PATH_DETAIL PD
+		WHERE 
+		PD.ORIG_ORG_CODE = #{orgCode} 
+		AND PD.OBJECTIVE_ORG_CODE = #{relevantOrgCode}
+		<![CDATA[
+		AND (PD.ARRIVE_OR_LEAVE = 'HANDOVER' OR PD.ARRIVE_OR_LEAVE = 'LEAVE')
+		AND PD.MODIFY_START_TIME >= #{countStartTime} 
+		AND PD.MODIFY_START_TIME < #{countEndTime} 
+		GROUP BY PD.WAYBILL_NO
+		]]>
+	</select>
+	
+	<!-- 长途到达-开单未交接 -->
+	<select id="queryBillingUnHandoverLongReach"  parameterType="map" resultMap="BaseResultMap">
+		SELECT
+		PD.WAYBILL_NO,
+        max(PD.PATH_DETAIL_ID) AS PATH_DETAIL_ID,
+        max(PD.GOODS_NO) AS GOODS_NO,
+        max(PD.ORIG_ORG_CODE) AS ORIG_ORG_CODE,
+        max(PD.OBJECTIVE_ORG_CODE) AS OBJECTIVE_ORG_CODE,
+        max(PD.ROUTE_NO) AS ROUTE_NO,
+        max(PD.PLAN_START_TIME) AS PLAN_START_TIME,
+        max(PD.ACTUAL_START_TIME) AS ACTUAL_START_TIME,
+        max(PD.ARRIVE_OR_LEAVE) AS ARRIVE_OR_LEAVE,
+        max(PD.PLAN_ARRIVE_TIME) AS PLAN_ARRIVE_TIME,
+        max(PD.ACTUAL_ARRIVE_TIME) AS ACTUAL_ARRIVE_TIME,
+        max(PD.BILLING_ORG_CODE) AS BILLING_ORG_CODE,
+        max(PD.NEXT_DEST_ORG_CODE) AS NEXT_DEST_ORG_CODE,
+        max(PD.VEHICLE_NO) AS VEHICLE_NO,
+        max(PD.BEFORE_VEHICLE_NO) AS BEFORE_VEHICLE_NO,
+        max(PD.IF_CHANGE_TIME) AS IF_CHANGE_TIME,
+        max(PD.MODIFY_START_TIME) AS MODIFY_START_TIME,
+        max(PD.MODITY_ARRIVE_TIME) AS MODITY_ARRIVE_TIME,
+        max(PD.TRUCK_DETAIL_ID) AS TRUCK_DETAIL_ID,
+        max(PD.NEXT_ARRIVE_TIME) AS NEXT_ARRIVE_TIME,
+		max(PD.PLAN_PICKUP_TIME) AS PLAN_PICKUP_TIME,
+		count(PD.WAYBILL_NO) AS waybillNoCount
+		FROM TFR.T_OPT_PATH_DETAIL PD
+		WHERE 
+		PD.OBJECTIVE_ORG_CODE = #{orgCode} 
+		AND PD.ORIG_ORG_CODE = #{relevantOrgCode}
+		<![CDATA[
+		AND PD.ARRIVE_OR_LEAVE = 'NOTLEAVE'
+		AND PD.MODIFY_START_TIME >= #{countStartTime} 
+		AND PD.MODIFY_START_TIME < #{countEndTime} 
+		GROUP BY PD.WAYBILL_NO
+		]]>
+	</select>
+	
+	<!-- 长途到达-在途 -->
+	<select id="queryOnthewayPickLongReach"  parameterType="map" resultMap="BaseResultMap">
+		SELECT
+		PD.WAYBILL_NO,
+        max(PD.PATH_DETAIL_ID) AS PATH_DETAIL_ID,
+        max(PD.GOODS_NO) AS GOODS_NO,
+        max(PD.ORIG_ORG_CODE) AS ORIG_ORG_CODE,
+        max(PD.OBJECTIVE_ORG_CODE) AS OBJECTIVE_ORG_CODE,
+        max(PD.ROUTE_NO) AS ROUTE_NO,
+        max(PD.PLAN_START_TIME) AS PLAN_START_TIME,
+        max(PD.ACTUAL_START_TIME) AS ACTUAL_START_TIME,
+        max(PD.ARRIVE_OR_LEAVE) AS ARRIVE_OR_LEAVE,
+        max(PD.PLAN_ARRIVE_TIME) AS PLAN_ARRIVE_TIME,
+        max(PD.ACTUAL_ARRIVE_TIME) AS ACTUAL_ARRIVE_TIME,
+        max(PD.BILLING_ORG_CODE) AS BILLING_ORG_CODE,
+        max(PD.NEXT_DEST_ORG_CODE) AS NEXT_DEST_ORG_CODE,
+        max(PD.VEHICLE_NO) AS VEHICLE_NO,
+        max(PD.BEFORE_VEHICLE_NO) AS BEFORE_VEHICLE_NO,
+        max(PD.IF_CHANGE_TIME) AS IF_CHANGE_TIME,
+        max(PD.MODIFY_START_TIME) AS MODIFY_START_TIME,
+        max(PD.MODITY_ARRIVE_TIME) AS MODITY_ARRIVE_TIME,
+        max(PD.TRUCK_DETAIL_ID) AS TRUCK_DETAIL_ID,
+        max(PD.NEXT_ARRIVE_TIME) AS NEXT_ARRIVE_TIME,
+		max(PD.PLAN_PICKUP_TIME) AS PLAN_PICKUP_TIME,
+		count(PD.WAYBILL_NO) AS waybillNoCount
+		FROM TFR.T_OPT_PATH_DETAIL PD
+		WHERE 
+		PD.OBJECTIVE_ORG_CODE = #{orgCode} 
+		AND PD.ORIG_ORG_CODE = #{relevantOrgCode}
+		<![CDATA[
+		AND (PD.ARRIVE_OR_LEAVE = 'HANDOVER' OR PD.ARRIVE_OR_LEAVE = 'LEAVE')
+		AND PD.MODIFY_START_TIME >= #{countStartTime} 
+		AND PD.MODIFY_START_TIME < #{countEndTime} 
+		GROUP BY PD.WAYBILL_NO
+		]]>
+	</select>
+
+	<!-- 短途到达-开单未交接 -->
+	<select id="queryBillingUnHandoverShortReach"  parameterType="map" resultMap="BaseResultMap">
+		SELECT
+		PD.WAYBILL_NO,
+        max(PD.PATH_DETAIL_ID) AS PATH_DETAIL_ID,
+        max(PD.GOODS_NO) AS GOODS_NO,
+        max(PD.ORIG_ORG_CODE) AS ORIG_ORG_CODE,
+        max(PD.OBJECTIVE_ORG_CODE) AS OBJECTIVE_ORG_CODE,
+        max(PD.ROUTE_NO) AS ROUTE_NO,
+        max(PD.PLAN_START_TIME) AS PLAN_START_TIME,
+        max(PD.ACTUAL_START_TIME) AS ACTUAL_START_TIME,
+        max(PD.ARRIVE_OR_LEAVE) AS ARRIVE_OR_LEAVE,
+        max(PD.PLAN_ARRIVE_TIME) AS PLAN_ARRIVE_TIME,
+        max(PD.ACTUAL_ARRIVE_TIME) AS ACTUAL_ARRIVE_TIME,
+        max(PD.BILLING_ORG_CODE) AS BILLING_ORG_CODE,
+        max(PD.NEXT_DEST_ORG_CODE) AS NEXT_DEST_ORG_CODE,
+        max(PD.VEHICLE_NO) AS VEHICLE_NO,
+        max(PD.BEFORE_VEHICLE_NO) AS BEFORE_VEHICLE_NO,
+        max(PD.IF_CHANGE_TIME) AS IF_CHANGE_TIME,
+        max(PD.MODIFY_START_TIME) AS MODIFY_START_TIME,
+        max(PD.MODITY_ARRIVE_TIME) AS MODITY_ARRIVE_TIME,
+        max(PD.TRUCK_DETAIL_ID) AS TRUCK_DETAIL_ID,
+        max(PD.NEXT_ARRIVE_TIME) AS NEXT_ARRIVE_TIME,
+		max(PD.PLAN_PICKUP_TIME) AS PLAN_PICKUP_TIME,
+		count(PD.WAYBILL_NO) AS waybillNoCount
+		FROM TFR.T_OPT_PATH_DETAIL PD
+		WHERE 
+		PD.OBJECTIVE_ORG_CODE = #{orgCode} 
+		AND PD.ORIG_ORG_CODE = #{relevantOrgCode}
+		<![CDATA[
+		AND PD.ARRIVE_OR_LEAVE = 'NOTLEAVE'
+		AND PD.MODIFY_START_TIME >= #{countStartTime} 
+		AND PD.MODIFY_START_TIME < #{countEndTime} 
+		GROUP BY PD.WAYBILL_NO
+		]]>
+	</select>
+	
+	<!-- 短途到达-在途 -->
+	<select id="queryOnthewayPickShortReach"  parameterType="map" resultMap="BaseResultMap">
+		SELECT
+		PD.WAYBILL_NO,
+        max(PD.PATH_DETAIL_ID) AS PATH_DETAIL_ID,
+        max(PD.GOODS_NO) AS GOODS_NO,
+        max(PD.ORIG_ORG_CODE) AS ORIG_ORG_CODE,
+        max(PD.OBJECTIVE_ORG_CODE) AS OBJECTIVE_ORG_CODE,
+        max(PD.ROUTE_NO) AS ROUTE_NO,
+        max(PD.PLAN_START_TIME) AS PLAN_START_TIME,
+        max(PD.ACTUAL_START_TIME) AS ACTUAL_START_TIME,
+        max(PD.ARRIVE_OR_LEAVE) AS ARRIVE_OR_LEAVE,
+        max(PD.PLAN_ARRIVE_TIME) AS PLAN_ARRIVE_TIME,
+        max(PD.ACTUAL_ARRIVE_TIME) AS ACTUAL_ARRIVE_TIME,
+        max(PD.BILLING_ORG_CODE) AS BILLING_ORG_CODE,
+        max(PD.NEXT_DEST_ORG_CODE) AS NEXT_DEST_ORG_CODE,
+        max(PD.VEHICLE_NO) AS VEHICLE_NO,
+        max(PD.BEFORE_VEHICLE_NO) AS BEFORE_VEHICLE_NO,
+        max(PD.IF_CHANGE_TIME) AS IF_CHANGE_TIME,
+        max(PD.MODIFY_START_TIME) AS MODIFY_START_TIME,
+        max(PD.MODITY_ARRIVE_TIME) AS MODITY_ARRIVE_TIME,
+        max(PD.TRUCK_DETAIL_ID) AS TRUCK_DETAIL_ID,
+        max(PD.NEXT_ARRIVE_TIME) AS NEXT_ARRIVE_TIME,
+		max(PD.PLAN_PICKUP_TIME) AS PLAN_PICKUP_TIME,
+		count(PD.WAYBILL_NO) AS waybillNoCount
+		FROM TFR.T_OPT_PATH_DETAIL PD
+		WHERE 
+		PD.OBJECTIVE_ORG_CODE = #{orgCode} 
+		AND PD.ORIG_ORG_CODE = #{relevantOrgCode}
+		<![CDATA[
+		AND (PD.ARRIVE_OR_LEAVE = 'HANDOVER' OR PD.ARRIVE_OR_LEAVE = 'LEAVE')
+		AND PD.MODIFY_START_TIME >= #{countStartTime} 
+		AND PD.MODIFY_START_TIME < #{countEndTime} 
+		GROUP BY PD.WAYBILL_NO
+		]]>
+	</select>
+	
+	<!-- 集中接货-开单未交接 -->
+	<select id="queryBillingUnHandoverPick"  parameterType="map" resultMap="BaseResultMap">
+		SELECT
+		PD.WAYBILL_NO,
+        max(PD.PATH_DETAIL_ID) AS PATH_DETAIL_ID,
+        max(PD.GOODS_NO) AS GOODS_NO,
+        max(PD.ORIG_ORG_CODE) AS ORIG_ORG_CODE,
+        max(PD.OBJECTIVE_ORG_CODE) AS OBJECTIVE_ORG_CODE,
+        max(PD.ROUTE_NO) AS ROUTE_NO,
+        max(PD.PLAN_START_TIME) AS PLAN_START_TIME,
+        max(PD.ACTUAL_START_TIME) AS ACTUAL_START_TIME,
+        max(PD.ARRIVE_OR_LEAVE) AS ARRIVE_OR_LEAVE,
+        max(PD.PLAN_ARRIVE_TIME) AS PLAN_ARRIVE_TIME,
+        max(PD.ACTUAL_ARRIVE_TIME) AS ACTUAL_ARRIVE_TIME,
+        max(PD.BILLING_ORG_CODE) AS BILLING_ORG_CODE,
+        max(PD.NEXT_DEST_ORG_CODE) AS NEXT_DEST_ORG_CODE,
+        max(PD.VEHICLE_NO) AS VEHICLE_NO,
+        max(PD.BEFORE_VEHICLE_NO) AS BEFORE_VEHICLE_NO,
+        max(PD.IF_CHANGE_TIME) AS IF_CHANGE_TIME,
+        max(PD.MODIFY_START_TIME) AS MODIFY_START_TIME,
+        max(PD.MODITY_ARRIVE_TIME) AS MODITY_ARRIVE_TIME,
+        max(PD.TRUCK_DETAIL_ID) AS TRUCK_DETAIL_ID,
+        max(PD.NEXT_ARRIVE_TIME) AS NEXT_ARRIVE_TIME,
+		max(PD.PLAN_PICKUP_TIME) AS PLAN_PICKUP_TIME,
+		count(PD.WAYBILL_NO) AS waybillNoCount
+		FROM TFR.T_OPT_PATH_DETAIL PD
+		INNER JOIN PKP.T_SRV_WAYBILL W
+		ON PD.WAYBILL_NO = W.WAYBILL_NO
+		AND W.ACTIVE = 'Y'
+		WHERE 
+		PD.ORIG_ORG_CODE = #{orgCode} 
+		AND W.RECEIVE_ORG_CODE = #{relevantOrgCode}
+		<![CDATA[
+		AND W.PICKUP_CENTRALIZED = 'Y'
+		AND PD.ARRIVE_OR_LEAVE = 'NOTLEAVE'
+		AND PD.MODIFY_START_TIME >= #{countStartTime} 
+		AND PD.MODIFY_START_TIME < #{countEndTime} 
+		AND PD.BEFORE_VEHICLE_NO = 'N/A'
+		GROUP BY PD.WAYBILL_NO
+		]]>
+	</select>
+
+	<!-- 集中接货-在途 -->
+	<select id="queryOnthewayPick"  parameterType="map" resultMap="BaseResultMap">
+		SELECT
+		PD.WAYBILL_NO,
+        max(PD.PATH_DETAIL_ID) AS PATH_DETAIL_ID,
+        max(PD.GOODS_NO) AS GOODS_NO,
+        max(PD.ORIG_ORG_CODE) AS ORIG_ORG_CODE,
+        max(PD.OBJECTIVE_ORG_CODE) AS OBJECTIVE_ORG_CODE,
+        max(PD.ROUTE_NO) AS ROUTE_NO,
+        max(PD.PLAN_START_TIME) AS PLAN_START_TIME,
+        max(PD.ACTUAL_START_TIME) AS ACTUAL_START_TIME,
+        max(PD.ARRIVE_OR_LEAVE) AS ARRIVE_OR_LEAVE,
+        max(PD.PLAN_ARRIVE_TIME) AS PLAN_ARRIVE_TIME,
+        max(PD.ACTUAL_ARRIVE_TIME) AS ACTUAL_ARRIVE_TIME,
+        max(PD.BILLING_ORG_CODE) AS BILLING_ORG_CODE,
+        max(PD.NEXT_DEST_ORG_CODE) AS NEXT_DEST_ORG_CODE,
+        max(PD.VEHICLE_NO) AS VEHICLE_NO,
+        max(PD.BEFORE_VEHICLE_NO) AS BEFORE_VEHICLE_NO,
+        max(PD.IF_CHANGE_TIME) AS IF_CHANGE_TIME,
+        max(PD.MODIFY_START_TIME) AS MODIFY_START_TIME,
+        max(PD.MODITY_ARRIVE_TIME) AS MODITY_ARRIVE_TIME,
+        max(PD.TRUCK_DETAIL_ID) AS TRUCK_DETAIL_ID,
+        max(PD.NEXT_ARRIVE_TIME) AS NEXT_ARRIVE_TIME,
+		max(PD.PLAN_PICKUP_TIME) AS PLAN_PICKUP_TIME,
+		count(PD.WAYBILL_NO) AS waybillNoCount
+		FROM TFR.T_OPT_PATH_DETAIL PD
+		INNER JOIN PKP.T_SRV_WAYBILL W
+		ON PD.WAYBILL_NO = W.WAYBILL_NO
+		AND W.ACTIVE = 'Y'
+		WHERE 
+		PD.OBJECTIVE_ORG_CODE = #{orgCode} 
+		AND PD.ORIG_ORG_CODE = #{relevantOrgCode}
+		<![CDATA[
+		AND W.PICKUP_CENTRALIZED = 'Y'
+		AND (PD.ARRIVE_OR_LEAVE = 'HANDOVER' OR PD.ARRIVE_OR_LEAVE = 'LEAVE')
+		AND PD.MODIFY_START_TIME >= #{countStartTime} 
+		AND PD.MODIFY_START_TIME < #{countEndTime} 
+		GROUP BY PD.WAYBILL_NO
+		]]>
+	</select>
+</mapper>

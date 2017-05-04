@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- orgGisUrl-mapper.xml 组织的GIS地址信息 -->
+<mapper namespace="foss.bse.bse-baseinfo.orgGisUrl" >
+
+	<resultMap id="orgGisUrlInfoQueryResultMap"
+   			type="com.deppon.foss.module.base.baseinfo.api.shared.domain.OrgGisUrlEntity">
+		<result property="id" column="ID"  jdbcType="VARCHAR" />
+		<result property="orgCode" column="ORG_CODE"  jdbcType="VARCHAR" />
+		<result property="depCoodinate" column="DEP_COORDINATE"  jdbcType="VARCHAR" />
+		<result property="shortUrl" column="SHORT_URL"  jdbcType="VARCHAR" />
+		<result property="createUser" column="CREATE_USER_ORG_CODE"  jdbcType="VARCHAR" />
+		<result property="modifyUser" column="MODIFY_USER_ORG_CODE"  jdbcType="VARCHAR" />
+		<result property="active" column="ACTIVE"  jdbcType="CHAR" />
+		<result property="createDate" column="CREATE_TIME"  jdbcType="TIMESTAMP" />
+		<result property="modifyDate" column="MODIFY_TIME"  jdbcType="TIMESTAMP" />
+	</resultMap>
+
+	<sql id="query_orgGisUrl_param">
+		S.ID,
+        S.ORG_CODE,
+        S.DEP_COORDINATE,
+        S.SHORT_URL,
+        S.ACTIVE,
+        S.CREATE_USER_ORG_CODE,
+        S.MODIFY_USER_ORG_CODE,
+        S.CREATE_TIME,
+        S.MODIFY_TIME
+	</sql>
+	
+
+	<!-- 根据 组织Code 精确查询数据 -->
+	<select id="queryGisUrlInfoByOrgCode" resultMap="orgGisUrlInfoQueryResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.OrgGisUrlEntity">
+		<![CDATA[
+		  SELECT 
+		  /** 综合:根据 CODE 精确查询数据  **/
+		]]>
+		<include refid="query_orgGisUrl_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_GIS_SHORTURL S 
+		]]>
+		<where>
+			S.ACTIVE = #{active,jdbcType=CHAR}
+      		AND S.ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+		</where>
+	</select>
+	
+	<!-- 根据 组织shortUrl 精确查询数据 -->
+	<select id="queryLongUrlByShortUrl" resultMap="orgGisUrlInfoQueryResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.OrgGisUrlEntity">
+		<![CDATA[
+		  SELECT 
+		]]>
+		<include refid="query_orgGisUrl_param" />
+		<![CDATA[
+	    	FROM BSE.T_BAS_GIS_SHORTURL S 
+		]]>
+		<where>
+			S.ACTIVE = #{active,jdbcType=CHAR}
+      		AND S.SHORT_URL = #{shortUrl,jdbcType=VARCHAR}
+		</where>
+	</select>
+
+	<!-- 根据CODE 作废数据： -->
+	<update id="deleteGisUrlInfo" 
+		parameterType="map">
+		UPDATE/** 综合:根据CODE 作废数据 **/ BSE.T_BAS_GIS_SHORTURL S 
+		SET S.ACTIVE=#{orgGisUrlEntity.active,jdbcType=CHAR},
+			S.MODIFY_USER_ORG_CODE=#{orgGisUrlEntity.modifyUser,jdbcType=VARCHAR}, 
+			S.MODIFY_TIME = #{orgGisUrlEntity.modifyDate,jdbcType=TIMESTAMP} 
+		<where>
+			S.ORG_CODE=#{orgGisUrlEntity.orgCode,jdbcType=VARCHAR} 
+			AND  S.ACTIVE=#{conditionActive,jdbcType=CHAR}
+		</where>
+	</update>
+	
+	<!-- 插入数据 ： -->
+	<insert id="addGisUrlInfo"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.OrgGisUrlEntity">
+		INSERT/** 综合:插入数据 **/ INTO BSE.T_BAS_GIS_SHORTURL(
+			ID,
+			ORG_CODE,
+			CREATE_TIME,
+			MODIFY_TIME,
+			ACTIVE,
+			CREATE_USER_ORG_CODE,
+			MODIFY_USER_ORG_CODE,
+			DEP_COORDINATE,
+			SHORT_URL
+		) VALUES	
+		(
+			#{id, jdbcType=VARCHAR},
+			#{orgCode, jdbcType=VARCHAR},
+			#{createDate, jdbcType=TIMESTAMP},
+			#{modifyDate, jdbcType=TIMESTAMP},
+			#{active, jdbcType=CHAR},
+			#{createUser, jdbcType=VARCHAR},
+			#{modifyUser, jdbcType=VARCHAR},
+			#{depCoodinate, jdbcType=VARCHAR},
+			#{shortUrl, jdbcType=VARCHAR}
+		)
+	</insert> 
+	
+	<select id="queryAllIsNotNull" resultType="com.deppon.foss.module.base.baseinfo.api.shared.domain.OrgAdministrativeInfoEntity">
+		SELECT O.ID AS id,
+		       O.CODE AS code,
+		       O.DEP_COORDINATE AS depCoordinate,
+		       O.ACTIVE  AS active,
+		       O.CREATE_USER_CODE createUser,
+		       O.MODIFY_USER_CODE modifyUser,
+		       O.CREATE_TIME AS createDate,
+		       O.MODIFY_TIME AS modifyDate
+		  FROM BSE.T_BAS_ORG O
+		 WHERE O.ACTIVE = 'Y'
+		   AND O.DEP_COORDINATE IS NOT NULL
+
+	</select>
+	
+</mapper>

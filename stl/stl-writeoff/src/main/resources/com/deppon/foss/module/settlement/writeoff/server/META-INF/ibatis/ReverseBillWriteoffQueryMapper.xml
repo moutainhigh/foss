@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.BillWriteoffEntityDao" >
+	
+  <!-- 根据参数集合，查询核销单列表 -->
+  <select id="selectEntityListByParams" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.ReverseBillWriteoffDto" >
+    SELECT /*结算-核销-根据参数集合，查询核销单列表*/
+    <include refid="Base_Column_List" />
+    FROM STL.T_STL_BILL_WRITEOFF T
+    <where> 
+    	<![CDATA[ AND ACCOUNT_DATE >=#{startBusinessDate} ]]> <!-- 业务时间 -->
+    	<![CDATA[ AND ACCOUNT_DATE <#{endBusinessDate} ]]>
+    	<if test="active!=null and active!=''">
+    			AND ACTIVE = #{active} <!-- 有效 -->
+		</if>
+    	<if test="orgCode!=null and orgCode!=''">
+    			AND ORG_CODE = #{orgCode} <!-- 部门编码 -->
+		</if>
+		<if test="customerCode!=null and customerCode!=''">
+    			AND CUSTOMER_CODE = #{customerCode} <!-- 客户编码 -->
+		</if>
+    	<if test="isRedBack!=null and isRedBack!=''"><!-- 非红单 -->
+    		 AND IS_RED_BACK =#{isRedBack} 
+		</if>
+		<if test="writeoffType!=null and writeoffType!=''">
+			AND WRITEOFF_TYPE = #{writeoffType} <!-- 核销类型 -->
+		</if>
+		<if test="createType!=null and createType!=''">
+			AND CREATE_TYPE = #{createType} <!-- 核销方式-->
+		</if>
+		<if test="isInit!=null and isInit!=''">
+			AND IS_INIT = #{isInit}
+		</if>
+		AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = T.ORG_CODE<!-- 登录者部门等于核销单部门过滤 -->
+     			)
+	</where> 
+  </select>
+  
+   <!-- 根据核销单号，查询核销单列表 -->
+  <select id="selectEntityByWriteoffBillNo" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.ReverseBillWriteoffDto" >
+    SELECT /*结算-核销-根据核销单号，查询核销单列表*/
+    <include refid="Base_Column_List" />
+    FROM STL.T_STL_BILL_WRITEOFF T
+    <where> 
+    	WRITEOFF_BILL_NO = #{writeoffBillNo}<!-- 核销单号-->
+    	<if test="active!=null and active!=''">
+    			AND ACTIVE = #{active} <!-- 有效 -->
+		</if>
+		AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = T.ORG_CODE<!-- 登录者部门等于核销单部门过滤 -->
+     			)
+	</where> 
+  </select>
+  
+   <!-- 根据运单号，查询核销单列表 -->
+  <select id="selectEntityListByWaybillNo" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.ReverseBillWriteoffDto" >
+    SELECT /*结算-核销-根据运单号，查询核销单列表 */
+    <include refid="Base_Column_List" />
+    FROM STL.T_STL_BILL_WRITEOFF T
+    <where> 
+      	(BEGIN_WAYBILL_NO = #{waybillNo} OR END_WAYBILL_NO = #{waybillNo})  <!-- 运单号-->
+      	<if test="active!=null and active!=''">
+    			AND ACTIVE = #{active} <!-- 有效 -->
+		</if>
+    	AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = T.ORG_CODE<!-- 登录者部门等于核销单部门过滤 -->
+     			)
+	</where>
+  </select>
+
+  <!-- 查询待核销单据列表 -->
+  <select id="selectBillWriteoffEntityListByWirteoffNo" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.ReverseBillWriteoffDto" >
+    SELECT /*结算-核销-查询待核销单据列表 */
+    <include refid="Base_Column_List" />
+    FROM STL.T_STL_BILL_WRITEOFF T
+    <where> 
+    	ACTIVE = #{active} 
+    	AND IS_RED_BACK = #{isRedBack}<!-- 有效,非红单 -->
+	    <if test="loginOrgCodeList!=null and loginOrgCodeList.size()>0"><!-- 当前登录用户所在部门及其下属部门的核销单 -->
+			AND ORG_CODE IN
+			<foreach collection="loginOrgCodeList"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+			</foreach>
+		</if>
+		<if test="createType!=null and createType!=''">
+			AND CREATE_TYPE = #{createType} <!-- 核销方式-->
+		</if>
+		<if test="writeoffBillNoList!=null and writeoffBillNoList.size()>0">
+			AND WRITEOFF_BILL_NO IN<!-- 核销单号-->
+			<foreach collection="writeoffBillNoList"  index="index" item="item"  open="(" separator="," close=")">  
+			        #{item} 
+			</foreach>
+		</if>
+		AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = T.ORG_CODE<!-- 登录者部门等于核销单部门过滤 -->
+     			)
+	</where>	
+  </select>
+  
+  
+   <resultMap id="BillWirteoffTotalResultMap" type="com.deppon.foss.module.settlement.writeoff.api.shared.dto.ReverseBillWriteoffDto" >
+    <result column="WRITEOFFTOTALROWS" property="writeoffTotalRows" jdbcType="DECIMAL" />
+    <result column="WRITEOFFTOTALAMOUNT" property="writeoffTotalAmout" jdbcType="DECIMAL" />
+  </resultMap>
+  
+    <!-- 根据参数集合，查询核销单统计信息 -->
+  <select id="selectWriteoffTotalByParams" resultMap="BillWirteoffTotalResultMap" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.ReverseBillWriteoffDto" >
+    SELECT /*结算-核销-根据参数集合，查询核销单统计信息 */
+    	COUNT(T.ID) AS WRITEOFFTOTALROWS,
+    	SUM(T.AMOUNT)/100 AS WRITEOFFTOTALAMOUNT
+    FROM STL.T_STL_BILL_WRITEOFF T
+    <where>
+    	<![CDATA[ AND ACCOUNT_DATE >=#{startBusinessDate} ]]> <!-- 业务时间 -->
+    	<![CDATA[ AND ACCOUNT_DATE <#{endBusinessDate} ]]>
+    	<if test="active!=null and active!=''">
+    			AND ACTIVE = #{active} <!-- 有效 -->
+		</if>
+		<if test="orgCode!=null and orgCode!=''">
+    			AND ORG_CODE = #{orgCode} <!-- 部门编码 -->
+		</if>
+		<if test="customerCode!=null and customerCode!=''">
+    			AND CUSTOMER_CODE = #{customerCode} <!-- 客户编码 -->
+		</if>
+		<if test="isRedBack!=null and isRedBack!=''"><!-- 非红单 -->
+    		 AND IS_RED_BACK =#{isRedBack} 
+		</if>	
+		<if test="writeoffType!=null and writeoffType!=''">
+			AND T.WRITEOFF_TYPE = #{writeoffType} <!-- 核销类型 -->
+		</if>
+		<if test="createType!=null and createType!=''">
+			AND T.CREATE_TYPE = #{createType} <!-- 核销方式-->
+		</if>
+		<if test="isInit!=null and isInit!=''">
+			AND T.IS_INIT = #{isInit}
+		</if>
+		AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = T.ORG_CODE<!-- 登录者部门等于核销单部门过滤 -->
+     			)
+	  </where>	
+  </select>
+  
+   <!-- 根据核销单号，查询核销单统计信息 -->
+  <select id="selectWriteoffTotalByWriteoffBillNo" resultMap="BillWirteoffTotalResultMap" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.ReverseBillWriteoffDto" >
+    SELECT /*结算-核销-根据核销单号，查询核销单统计信息 */
+    	COUNT(T.ID) AS WRITEOFFTOTALROWS,
+    	SUM(T.AMOUNT)/100 AS WRITEOFFTOTALAMOUNT
+    FROM STL.T_STL_BILL_WRITEOFF T
+    <where> 
+    	T.WRITEOFF_BILL_NO = #{writeoffBillNo}<!-- 核销单号-->
+    	<if test="active!=null and active!=''">
+    			AND ACTIVE = #{active} <!-- 有效 -->
+		</if>
+    	AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = T.ORG_CODE<!-- 登录者部门等于核销单部门过滤 -->
+     			)
+	</where>	
+  </select>
+  
+   <!-- 根据运单号，查询核销单统计信息 -->
+  <select id="selectWriteoffTotalByByWaybillNo" resultMap="BillWirteoffTotalResultMap" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.ReverseBillWriteoffDto" >
+   SELECT /*结算-核销-根据运单号，查询核销单统计信息 */
+   		COUNT(T.ID) AS WRITEOFFTOTALROWS,
+    	SUM(T.AMOUNT)/100 AS WRITEOFFTOTALAMOUNT
+    FROM STL.T_STL_BILL_WRITEOFF T
+    <where> 
+      	(T.BEGIN_WAYBILL_NO = #{waybillNo} OR T.END_WAYBILL_NO = #{waybillNo})  <!-- 运单号-->
+    	<if test="active!=null and active!=''">
+    			AND ACTIVE = #{active} <!-- 有效 -->
+		</if>
+    	AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = T.ORG_CODE<!-- 登录者部门等于核销单部门过滤 -->
+     			)
+	</where>
+  </select>
+
+   <!-- 根据预付单号，查询核销单统计信息 -->
+  <select id="selectWriteoffTotalByAdvPayillNo" resultMap="BillWirteoffTotalResultMap" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.ReverseBillWriteoffDto">
+   SELECT /*结算-核销-根据预付单号，查询核销单统计信息 */
+   		COUNT(T.ID) AS WRITEOFFTOTALROWS,
+    	SUM(T.AMOUNT)/100 AS WRITEOFFTOTALAMOUNT
+    FROM STL.T_STL_BILL_WRITEOFF T
+    <where> 
+      	(T.BEGIN_NO = #{advancePayBillNo} OR T.END_NO = #{advancePayBillNo})  <!-- 运单号-->
+    	<if test="active!=null and active!=''">
+    			AND ACTIVE = #{active} <!-- 有效 -->
+		</if>
+    	AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = T.ORG_CODE<!-- 登录者部门等于核销单部门过滤 -->
+     			)
+	</where>
+  </select>
+
+  
+   <!-- 根据预付单号，查询核销单信息 -->
+  <select id="selectWriteoffEntityByAdvPayillNo" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.ReverseBillWriteoffDto" >
+   SELECT /*结算-核销-根据预付单号，查询核销单信息 */
+    <include refid="Base_Column_List" />
+    FROM STL.T_STL_BILL_WRITEOFF T
+    <where> 
+      	(T.BEGIN_NO = #{advancePayBillNo} OR T.END_NO = #{advancePayBillNo})  <!-- 运单号-->
+    	<if test="active!=null and active!=''">
+    			<![CDATA[ AND ACTIVE = #{active} ]]> <!-- 有效 -->
+		</if>
+    	AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = T.ORG_CODE<!-- 登录者部门等于核销单部门过滤 -->
+     			)
+	</where>
+  </select>
+  
+    
+   <!-- 根据应付单号，查询核销单统计信息 -->
+  <select id="selectWriteoffTotalByPayableBillNo" resultMap="BillWirteoffTotalResultMap" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.ReverseBillWriteoffDto" >
+   SELECT /*结算-核销-根据应付单号，查询核销单统计信息 */
+   		COUNT(T.ID) AS WRITEOFFTOTALROWS,
+    	SUM(T.AMOUNT)/100 AS WRITEOFFTOTALAMOUNT
+    FROM STL.T_STL_BILL_WRITEOFF T
+    <where> 
+      	(T.BEGIN_NO = #{payableBillNo} OR T.END_NO = #{payableBillNo})  <!-- 运单号-->
+    	<if test="active!=null and active!=''">
+    			<![CDATA[ AND ACTIVE = #{active} ]]> <!-- 有效 -->
+		</if>
+    	AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = T.ORG_CODE<!-- 登录者部门等于核销单部门过滤 -->
+     			)
+	</where>
+  </select>
+  
+  <!-- 根据应付单号，查询核销单信息 -->
+  <select id="selectWriteoffEntityByPayableBillNo" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.ReverseBillWriteoffDto" >
+   SELECT /*结算-核销-根据应付单号，查询核销单信息 */
+    <include refid="Base_Column_List" />
+    FROM STL.T_STL_BILL_WRITEOFF T
+    <where> 
+      	(T.BEGIN_NO = #{payableBillNo} OR T.END_NO = #{payableBillNo})  <!-- 运单号-->
+    	<if test="active!=null and active!=''">
+    			<![CDATA[ AND ACTIVE = #{active} ]]> <!-- 有效 -->
+		</if>
+    	AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = T.ORG_CODE<!-- 登录者部门等于核销单部门过滤 -->
+     			)
+	</where>
+  </select>
+  
+  <!-- 根据预收单号，查询核销单统计信息 -->
+  <select id="selectWriteoffTotalByDepositNo" resultMap="BillWirteoffTotalResultMap" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.ReverseBillWriteoffDto" >
+   SELECT /*结算-核销-根据应付单号，查询核销单统计信息 */
+   		COUNT(T.ID) AS WRITEOFFTOTALROWS,
+    	SUM(T.AMOUNT)/100 AS WRITEOFFTOTALAMOUNT
+    FROM STL.T_STL_BILL_WRITEOFF T
+    <where> 
+      	(T.BEGIN_NO = #{depositNo} OR T.END_NO = #{depositNo})  <!-- 运单号-->
+    	<if test="active!=null and active!=''">
+    			<![CDATA[ AND ACTIVE = #{active} ]]> <!-- 有效 -->
+		</if>
+    	AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = T.ORG_CODE<!-- 登录者部门等于核销单部门过滤 -->
+     			)
+	</where>
+  </select>
+  
+  <!-- 根据预收单号，查询核销单信息 -->
+  <select id="selectWriteoffEntityByDepositNo" resultMap="BaseResultMap" parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.ReverseBillWriteoffDto" >
+   SELECT /*结算-核销-根据应付单号，查询核销单信息 */
+    <include refid="Base_Column_List" />
+    FROM STL.T_STL_BILL_WRITEOFF T
+    <where> 
+      	(T.BEGIN_NO = #{depositNo} OR T.END_NO = #{depositNo})  <!-- 运单号-->
+    	<if test="active!=null and active!=''">
+    			<![CDATA[ AND ACTIVE = #{active} ]]> <!-- 有效 -->
+		</if>
+    	AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = T.ORG_CODE<!-- 登录者部门等于核销单部门过滤 -->
+     			)
+	</where>
+  </select>
+  
+  
+</mapper>

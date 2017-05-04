@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.stl.CustomersNotReconciledDao">
+	<resultMap id="ResultMap"
+		type="com.deppon.foss.module.settlement.writeoff.api.shared.domain.CustomersNotReconciledEntity">
+		<result column="LARGEREGION_NAME" property="largeRegion" jdbcType="VARCHAR" />
+		<result column="SMALLREGION_NAME" property="smallRegion" jdbcType="VARCHAR" />
+		<result column="RECEIVABLE_ORG_CODE" property="statementOrgCode" jdbcType="VARCHAR" />
+		<result column="RECEIVABLE_ORG_NAME" property="statementOrgName" jdbcType="VARCHAR" />
+		<result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+		<result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+		<result column="AMOUNT_ONE_MONTH" property="amountOneMonth" jdbcType="DECIMAL" />
+		<result column="AMOUNT_TWO_MONTH" property="amountTwoMonth" jdbcType="DECIMAL" />
+		<result column="AMOUNT_THREE_MONTH" property="amountThreeMonth" jdbcType="DECIMAL" />
+	</resultMap>
+	<select id="queryCustomersNotReconciled" 
+	    parameterType="com.deppon.foss.module.settlement.writeoff.api.shared.dto.CustomersNotReconciledDto" 
+	    resultMap="ResultMap">
+	    SELECT LARGEREGION.NAME LARGEREGION_NAME,
+		       SMALLREGION.NAME SMALLREGION_NAME,
+		       D.RECEIVABLE_ORG_CODE RECEIVABLE_ORG_CODE,
+		       D.RECEIVABLE_ORG_NAME RECEIVABLE_ORG_NAME,
+		       D.CUSTOMER_CODE CUSTOMER_CODE,
+		       D.CUSTOMER_NAME CUSTOMER_NAME,
+		       SUM(D.AMOUNT_ONE_MONTH) AMOUNT_ONE_MONTH,
+		       SUM(D.AMOUNT_TWO_MONTH) AMOUNT_TWO_MONTH,
+		       SUM(D.AMOUNT_THREE_MONTH) AMOUNT_THREE_MONTH
+		  FROM STL.CUSTOMERSNOTRECONCILEDVIEW D
+		 INNER JOIN BSE.T_BAS_ORG O
+		    ON O.CODE = D.RECEIVABLE_ORG_CODE AND O.ACTIVE = 'Y'
+		 INNER JOIN BSE.T_BAS_ORG SMALLREGION
+		    ON SMALLREGION.UNIFIED_CODE = O.PARENT_ORG_UNIFIED_CODE  AND SMALLREGION.ACTIVE = 'Y'
+		 INNER JOIN BSE.T_BAS_ORG LARGEREGION
+		    ON LARGEREGION.UNIFIED_CODE = SMALLREGION.PARENT_ORG_UNIFIED_CODE  AND LARGEREGION.ACTIVE = 'Y'
+		 INNER JOIN BSE.MV_BAS_USER_ORG_AUTH_VIEW V ON V.ORG_CODE = D.RECEIVABLE_ORG_CODE
+		    <where>
+		        <if test="orgCodeList!=null and orgCodeList.size>0">
+					D.RECEIVABLE_ORG_CODE IN
+					<foreach collection="orgCodeList" index="index" item="item"	open="(" separator="," close=")">
+						#{item}
+					</foreach>
+				</if>
+				<if test="customerCode!=null and customerCode!=''">
+				    AND D.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+				</if>
+				AND V.EMP_CODE = #{empCode,jdbcType=VARCHAR}
+		    </where>
+		 GROUP BY LARGEREGION.CODE,
+		          LARGEREGION.NAME,
+		          SMALLREGION.CODE,
+		          SMALLREGION.NAME,
+		          D.RECEIVABLE_ORG_CODE,
+		          D.RECEIVABLE_ORG_NAME,
+		          D.CUSTOMER_CODE,
+		          D.CUSTOMER_NAME
+	</select>
+</mapper>

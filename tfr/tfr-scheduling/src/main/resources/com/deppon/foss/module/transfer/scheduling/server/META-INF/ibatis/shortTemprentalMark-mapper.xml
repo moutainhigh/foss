@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.scheduling.shorttemprentalMark">
+	<!-- 租车标记数据查询的map-->
+	<resultMap id="queryRentalMarkEntityMap"
+		type="com.deppon.foss.module.transfer.scheduling.api.shared.domain.ShortRentalMarkEntity">
+		<result column="INVITE_VEHICLENO" property="inviteVehicleNo" jdbcType="VARCHAR" />
+		<result column="RENTAL_AMOUNT" property="rentalAmount" jdbcType="VARCHAR" />
+		<result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+		<result column="STATUS" property="vehicleState" jdbcType="VARCHAR" />
+		<result column="ACTUAL_DEPART_TIME" property="useCareDate" jdbcType="VARCHAR" />
+		<result column="DEST_ORG_NAME" property="destination" jdbcType="VARCHAR" />
+		<result column="ORIG_ORG_NAME" property="origOrgName" jdbcType="VARCHAR" />
+		<result column="TEMPRENTAL_MARK_NO" property="temprentalMarkNo" jdbcType="VARCHAR" />
+		<result column="ID" property="truckTaskId" jdbcType="VARCHAR" />
+		<result column="ORIG_ORG_CODE" property="origOrgCode" jdbcType="VARCHAR" />
+		<result column="DEST_ORG_CODE" property="destOrgCode" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<!-- 约车编号数据查询的map-->
+	<resultMap id="queryInviteVehicleNoMap"
+		type="com.deppon.foss.module.transfer.scheduling.api.shared.vo.ShortRentalMarkVo">
+		<result property="inviteVehicleNo" column="inviteVehicleNo"/><!--约车编号-->
+		<result property="inviteState" column="inviteState"/><!--约车状态-->
+		<result property="acceptPerson" column="acceptPerson" /><!--约车受理人-->
+		<result property="acceptPersonCode" column="acceptPersonCode" /><!--约车受理编号-->
+	    <result property="rentalAmount" column="rentalAmount" /><!--租车金额-->
+	</resultMap>
+	
+	<!-- 租车标记数据数量查询的sql-->
+	<select id="queryShortRentalMarkEntityCount" resultType="Long" 
+		parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.dto.ShortRentalMarkDto">
+			select  
+				count(1)
+				from tfr.t_opt_truck_task t
+				inner join bse.t_bas_leased_truck lt 
+				on lt.vehicle_no=t.vehicle_no and lt.active='Y'
+				inner join tfr.t_opt_truck_task_detail td
+				on t.id = td.truck_task_id
+				left join TFR.T_OPT_TEMPRENTALMARK tt 
+				on t.id = tt.TRUCK_TASK_ID
+				and tt.active='Y' 
+			<where>
+				<if test="usecarDateBeginTime!=null and usecarDateBeginTime!='' ">
+				  	and td.actual_depart_time<![CDATA[>=]]> #{usecarDateBeginTime}
+				</if>
+				<if test="usecarDateEndTime!=null and usecarDateEndTime!='' ">
+				  	and td.actual_depart_time<![CDATA[<=]]> #{usecarDateEndTime}
+				</if>
+				<if test="vehicleNo != null and vehicleNo != '' ">
+			  			and t.vehicle_no = #{vehicleNo}
+				</if>
+				<if test="useCarDepartment != null and useCarDepartment !=''">
+					and t.orig_org_code = #{useCarDepartment}
+				</if>
+				<if test="useCarDepartment == null or useCarDepartment ==''">
+					<if test="orgCode !=null and orgCode!='' and  departmentSignle=='SalesDepartment'">
+						and td.orig_org_code=#{orgCode}
+					</if>
+					<if test="orgCode!=null and orgCode!='' and  departmentSignle=='SalesDepartmentStation'"><!--营业部-->
+						and td.orig_org_code=#{orgCode}
+					</if>
+					<if test="orgCode !=null and orgCode!='' and  departmentSignle=='TransferCenter' and orgCodeList!=null">
+						and (
+						(td.orig_org_code=#{orgCode} or td.dest_org_code=#{orgCode})
+						or td.orig_org_code in 
+						<foreach collection="orgCodeList" item="item" separator="," close=")" open="(">
+	                    	#{item}
+						</foreach>
+						)
+					</if>
+					<if test="orgCode !=null and orgCode!='' and  departmentSignle=='TransferCenter' and orgCodeList==null">					
+						and (td.orig_org_code=#{orgCode} or td.dest_org_code=#{orgCode})
+					</if>
+					<if test="orgCode !=null and orgCode!='' and  departmentSignle=='TransferChild' and orgCodeList!=null">
+						and (
+						(td.orig_org_code=#{orgCode} or td.dest_org_code=#{orgCode})
+						or td.orig_org_code in 
+						<foreach collection="orgCodeList" item="item" separator="," close=")" open="(">
+	                    	#{item}
+						</foreach>
+						)
+					</if>
+					<if test="orgCode !=null and orgCode!='' and  departmentSignle=='TransferChild' and orgCodeList==null">					
+						and (td.orig_org_code=#{orgCode} or td.dest_org_code=#{orgCode})
+					</if>
+					<if test="departmentSignle=='Profdepartment' and orgCodeList!=null">
+						and td.orig_org_code in 
+						<foreach collection="orgCodeList" item="item" separator="," close=")" open="(">
+	                    	#{item}
+						</foreach>
+					</if>
+				</if>
+				<if test="inviteVehicleNo!=null and inviteVehicleNo!='' ">
+			  			and tt.invite_vehicleno = #{inviteVehicleNo}
+				</if>
+				<if test="vehicleState == 'ARRIVED'">
+					and t.status in ('ARRIVED','UNLOADED')
+				</if>
+				<if test="vehicleState == 'ONTHEWAY'">
+					and t.status = 'ONTHEWAY'
+				</if>
+					and t.BUSINESS_TYPE not in('DIVISION','LONG_DISTANCE')
+			</where>
+	</select>
+	
+	
+	<select id="queryShortRentalMarkEntityList" resultMap="queryRentalMarkEntityMap"
+		parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.dto.ShortRentalMarkDto">
+			select tt.INVITE_VEHICLENO, 
+				(tt.RENTAL_AMOUNT/100) as rentalAmount,
+				t.VEHICLE_NO, 
+				t.STATUS, 
+				td.ACTUAL_DEPART_TIME ,
+				td.DEST_ORG_NAME,
+				td.ORIG_ORG_NAME,
+				tt.TEMPRENTAL_MARK_NO,
+				 t.ID,
+				 td.ORIG_ORG_CODE,
+				 td.DEST_ORG_CODE
+				from tfr.t_opt_truck_task t
+				inner join bse.t_bas_leased_truck lt 
+				on lt.vehicle_no=t.vehicle_no and lt.active='Y'
+				inner join tfr.t_opt_truck_task_detail td
+				on t.id = td.truck_task_id
+				left join TFR.T_OPT_TEMPRENTALMARK tt 
+				on t.id = tt.TRUCK_TASK_ID
+				and tt.active='Y' 
+			<where>
+				<if test="usecarDateBeginTime!=null and usecarDateBeginTime!='' ">
+				  	and td.actual_depart_time<![CDATA[>=]]> #{usecarDateBeginTime}
+				</if>
+				<if test="usecarDateEndTime!=null and usecarDateEndTime!='' ">
+				  	and td.actual_depart_time<![CDATA[<=]]> #{usecarDateEndTime}
+				</if>
+				<if test="vehicleNo != null and vehicleNo != '' ">
+			  			and t.vehicle_no = #{vehicleNo}
+				</if>
+				<if test="useCarDepartment != null and useCarDepartment !=''">
+					and t.orig_org_code = #{useCarDepartment}
+				</if>
+				<if test="useCarDepartment == null or useCarDepartment ==''">
+					<if test="orgCode !=null and orgCode!='' and  departmentSignle=='SalesDepartment'">
+						and td.orig_org_code=#{orgCode}
+					</if>
+					<if test="orgCode!=null and orgCode!='' and  departmentSignle=='SalesDepartmentStation'"><!--营业部-->
+						and td.orig_org_code=#{orgCode}
+					</if>
+					<if test="orgCode !=null and orgCode!='' and  departmentSignle=='TransferCenter' and orgCodeList!=null">
+						and (
+						(td.orig_org_code=#{orgCode} or td.dest_org_code=#{orgCode})
+						or td.orig_org_code in 
+						<foreach collection="orgCodeList" item="item" separator="," close=")" open="(">
+	                    	#{item}
+						</foreach>
+						)
+					</if>
+					<if test="orgCode !=null and orgCode!='' and  departmentSignle=='TransferCenter' and orgCodeList==null">					
+						and (td.orig_org_code=#{orgCode} or td.dest_org_code=#{orgCode})
+					</if>
+					<if test="orgCode !=null and orgCode!='' and  departmentSignle=='TransferChild' and orgCodeList!=null">
+						and (
+						(td.orig_org_code=#{orgCode} or td.dest_org_code=#{orgCode})
+						or td.orig_org_code in 
+						<foreach collection="orgCodeList" item="item" separator="," close=")" open="(">
+	                    	#{item}
+						</foreach>
+						)
+					</if>
+					<if test="orgCode !=null and orgCode!='' and  departmentSignle=='TransferChild' and orgCodeList==null">					
+						and (td.orig_org_code=#{orgCode} or td.dest_org_code=#{orgCode})
+					</if>
+					<if test="departmentSignle=='Profdepartment' and orgCodeList!=null">
+						and td.orig_org_code in 
+						<foreach collection="orgCodeList" item="item" separator="," close=")" open="(">
+	                    	#{item}
+						</foreach>
+					</if>
+				</if>
+				<if test="inviteVehicleNo!=null and inviteVehicleNo!='' ">
+			  			and tt.invite_vehicleno = #{inviteVehicleNo}
+				</if>
+				<if test="vehicleState == 'ARRIVED'">
+					and t.status in ('ARRIVED','UNLOADED')
+				</if>
+				<if test="vehicleState == 'ONTHEWAY'">
+					and t.status = 'ONTHEWAY'
+				</if>
+					and t.BUSINESS_TYPE not in('DIVISION','LONG_DISTANCE')
+			</where>
+	</select>
+	
+	<!--车辆任务查询租车表记录判断是否多次标记-->
+	<select id="queryTruckTaskRepeatMark" resultType="Long" 
+		parameterType="java.util.List">
+		     select count(1)
+        		from TFR.T_OPT_TEMPRENTALMARK tt 
+        		inner join TFR.T_OPT_TEMPRENTALMARK_DETAIL td on tt.temprental_mark_no=td.temprental_mark_no and tt.active='Y'
+			<where>
+				tt.TRUCK_TASK_ID in 
+					<foreach collection="list" item="item" separator="," close=")" open="(">
+                    	#{item}
+					</foreach>
+				
+			</where>
+	</select>
+	
+	<!-- 约车编号数据查询的-->
+	<select id="queryShortInviteVehicleNo" resultMap="queryInviteVehicleNoMap" 
+		parameterType="String">
+			select 
+				iv.invite_no inviteVehicleNo,
+				ia.status inviteState,
+				iv.apply_fees rentalAmount,
+				ia.audit_emp_code acceptPersonCode, 
+				ia.audit_emp_name acceptPerson
+				  from tfr.t_opt_invite_vehicle iv
+				 	INNER JOIN tfr.t_opt_audit_invite_apply ia
+				    ON ia.invite_no=iv.invite_no
+			<where> 
+					 ia.status=iv.status
+				   AND iv.invite_no=#{inviteVehicleNo}
+			</where>
+	</select>
+	
+<select id="queryTruckTaskWaybillCount" resultType="Long" 
+		parameterType="String">
+			select  
+				count(1)
+				from tfr.t_opt_handoverbill_detail hd
+				inner join tfr.t_opt_truck_task_bill b
+					 on hd.handover_no = b.bill_no and b.bill_level='1'
+				inner join tfr.t_opt_truck_task_detail d
+					 on b.truck_task_detail_id = d.id
+			<where>
+				d.truck_task_id = #{truckTaskId}
+			</where>
+	</select>
+	
+	<select id="queryTruckTaskMarkCount" resultType="Long" 
+		parameterType="String">
+			select  
+				count(1)
+				from tfr.t_opt_temprentalmark t
+		<where>
+				t.truck_task_id = #{truckTaskId}
+				and t.active = 'Y'
+		</where>
+	</select>
+	<!--插入租车标记数据-->
+	<insert id="addShortTempRentalMarkEntityList" parameterType="java.util.List">
+		begin
+		<foreach collection="list" item="item" separator=";" >
+		insert into 
+			tfr.t_opt_tempRentalMark(
+				Id,TEMPRENTAL_MARK_NO,RENTAL_CAR_USETYPE,USECAR_DATE,USERCAR_REASON,
+				INVITE_VEHICLENO,ACCEPT_PERSON,ACCEPT_PERSON_CODE,SMALL_TICKET_NUM,rental_amount,KMS_NUM,
+				DEPARTURE_NAME,DEPARTURE_CODE,DESTINATION_NAME,DESTINATION_CODE,NOTES,MARK_DEPART_NAME,
+				MARK_DEPART_CODE,CREATE_USER_NAME,CREATE_USER_CODE,CREATE_DATE,MODIFY_USER_NAME,MODIFY_USER_CODE,
+				MODIFY_DATE,ACTIVE,WEIGHT_TOTAL,VOLUME_TOTAL,ACTUAL_TAKEGOODS_QYT,VEHICLE_NO,VEHICLE_LENGHT_CODE,
+				SELF_VOLUME,DRIVER_CODE,DRIVER_NAME,DRIVER_POHE,ISREPEATEMARK,SALESVEHICLE_PLATFORM_NAME,USE_VEHICLEPLATFORM,
+				TRUCK_TASK_ID
+				)
+		values
+		
+			(
+			#{item.id jdbcType=VARCHAR},#{item.tempRentalMarkNO jdbcType=VARCHAR},#{item.rentalCarUsetype jdbcType=VARCHAR},
+			#{item.useCarDate jdbcType=TIMESTAMP},#{item.userCarReason jdbcType=VARCHAR},#{item.inviteVehicleNo jdbcType=VARCHAR},
+			#{item.acceptPerson jdbcType=VARCHAR},#{item.acceptPersonCode jdbcType=VARCHAR},#{item.smallTicketNum jdbcType=VARCHAR},
+			#{item.rentalAmount jdbcType=NUMERIC},#{item.kmsNum jdbcType=NUMERIC},#{item.departureName jdbcType=VARCHAR},
+			#{item.departureCode jdbcType=VARCHAR},#{item.destinationName jdbcType=VARCHAR},#{item.destinationCode jdbcType=VARCHAR},
+			#{item.notes jdbcType=VARCHAR},#{item.markDepartName jdbcType=VARCHAR},#{item.markDepartCode jdbcType=VARCHAR},
+			#{item.createUserName jdbcType=VARCHAR},#{item.createUserCode jdbcType=VARCHAR},#{item.createDate jdbcType=TIMESTAMP},
+			#{item.modifyUserNme jdbcType=VARCHAR},#{item.modifyUserCode jdbcType=VARCHAR},#{item.modifyDate jdbcType=TIMESTAMP},
+			#{item.active jdbcType=VARCHAR},#{item.weigthTotal jdbcType=NUMERIC},#{item.volumeTotal jdbcType=NUMERIC},
+			#{item.actualTakeGoodsQyt jdbcType=VARCHAR},#{item.vehicleNo jdbcType=VARCHAR},#{item.vehicleLenghtCode jdbcType=VARCHAR},
+			#{item.selfVolume jdbcType=NUMERIC},#{item.driverCode jdbcType=VARCHAR},#{item.driverName jdbcType=VARCHAR},#{item.driverPhone jdbcType=VARCHAR},
+			#{item.isRepeateMark jdbcType=VARCHAR},#{item.salesVehiclePlatformName jdbcType=VARCHAR},#{item.useVehiclePlatform jdbcType=VARCHAR},
+			#{item.truckTaskId jdbcType=VARCHAR})
+		</foreach>
+		;end;
+	</insert>
+	
+	<select id="queryTruckTaskState"  parameterType="String" resultType="String">
+		select t.status from tfr.t_opt_truck_task t 
+	<where>
+		 t.id = #{truckTaskId}
+	</where>
+	</select>
+</mapper>

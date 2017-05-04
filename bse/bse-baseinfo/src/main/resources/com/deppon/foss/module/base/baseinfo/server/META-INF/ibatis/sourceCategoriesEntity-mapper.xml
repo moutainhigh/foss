@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.sourcecategories">
+	
+	<resultMap  id="sourceCategoriesMap" type="com.deppon.foss.module.base.baseinfo.api.shared.dto.SourceCategoriesDto">
+		<result column="CATEGORY" property="category" jdbcType="VARCHAR"/>
+		<result column="NAME" property="name" jdbcType="VARCHAR"/>
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP"/>
+		<result column="CREATE_USER" property="createUser" jdbcType="VARCHAR"/>
+		<result column="CREATE_USER_CODE" property="createUserCode" jdbcType="VARCHAR"/>
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP"/>
+		<result column="MODIFY_USER" property="modifyUser" jdbcType="VARCHAR"/>
+		<result column="MODIFY_USER_CODE" property="modifyUserCode" jdbcType="VARCHAR"/>
+		<result column="ACTIVE" property="active" jdbcType="VARCHAR"/>
+		<result column="ID" property="id" jdbcType="VARCHAR"/>
+	</resultMap>
+	
+	<sql id="insertColumns">
+		ID,CATEGORY,NAME,CREATE_TIME,CREATE_USER_CODE,
+		MODIFY_TIME,MODIFY_USER_CODE,ACTIVE
+	</sql>
+
+	<sql id="queryColumns">
+		<!-- 使用decode函数将Y转化为有效,N转化为无效 -->
+		S.ID ID,S.CATEGORY CATEGORY,S.NAME NAME,S.CREATE_TIME CREATE_TIME,
+		S.CREATE_USER_CODE CREATE_USER_CODE,E.EMP_NAME CREATE_USER,
+		S.MODIFY_USER_CODE MODIFY_USER_CODE,EM.EMP_NAME MODIFY_USER,
+		S.MODIFY_TIME MODIFY_TIME,DECODE(S.ACTIVE,'Y','有效','N','无效') ACTIVE
+	</sql>
+
+	<select id="querySourceCategoriesEntitys" parameterType="com.deppon.foss.module.frameworkimpl.shared.domain.SourceCategoriesCondition"
+		resultMap="sourceCategoriesMap">
+		SELECT <include refid="queryColumns"/>
+		FROM　BSE.T_BAS_SOURCE_CATEGORY S 
+		LEFT JOIN BSE.T_BAS_EMPLOYEE E
+		ON S.CREATE_USER_CODE = E.EMP_CODE
+		AND E.ACTIVE = 'Y'
+		LEFT JOIN BSE.T_BAS_EMPLOYEE EM
+		ON S.MODIFY_USER_CODE = EM.EMP_CODE
+		AND EM.ACTIVE = 'Y'
+		WHERE 1=1
+		<if test="startTime != null">
+			<![CDATA[ AND S.CREATE_TIME >= #{startTime, jdbcType=TIMESTAMP}]]>
+		</if>
+		<if test="endTime != null">
+			<![CDATA[ AND S.CREATE_TIME <= #{endTime, jdbcType=TIMESTAMP}]]>
+		</if>
+		<if test="category != null and category != ''">
+			AND	S.CATEGORY = #{category, jdbcType=VARCHAR}
+		</if>
+		<if test="name != null and name != '%%'">
+			AND	S.NAME like #{name, jdbcType=VARCHAR}
+		</if>
+		<if test="active != null and active != ''">
+			AND	S.ACTIVE = #{active, jdbcType=VARCHAR}
+		</if>
+		ORDER　BY S.CREATE_TIME DESC
+	</select>
+	
+	<select id="exportSourceCategoriesEntitys" parameterType="com.deppon.foss.module.frameworkimpl.shared.domain.SourceCategoriesCondition"
+		resultType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SourceCategoriesEntity">
+		SELECT S.CATEGORY category,S.NAME name
+		FROM　BSE.T_BAS_SOURCE_CATEGORY S 
+		WHERE 1=1
+		<if test="startTime != null">
+			<![CDATA[ AND S.CREATE_TIME >= #{startTime, jdbcType=TIMESTAMP}]]>
+		</if>
+		<if test="endTime != null">
+			<![CDATA[ AND S.CREATE_TIME <= #{endTime, jdbcType=TIMESTAMP}]]>
+		</if>
+		<if test="category != null and category != ''">
+			AND	S.CATEGORY = #{category, jdbcType=VARCHAR}
+		</if>
+		<if test="name != null and name != '%%'">
+			AND	S.NAME like #{name, jdbcType=VARCHAR}
+		</if>
+		<if test="active != null and active != ''">
+			AND	S.ACTIVE = #{active, jdbcType=VARCHAR}
+		</if>
+		ORDER　BY S.CREATE_TIME DESC
+	</select>
+	
+	<select id="querySourceCategoriesEntitysByName" parameterType="map"
+		resultType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SourceCategoriesEntity" >
+		SELECT S.ID id,S.CATEGORY category
+		FROM　BSE.T_BAS_SOURCE_CATEGORY S 
+		WHERE S.NAME = #{name, jdbcType=VARCHAR}
+		AND S.ACTIVE = 'Y'
+	</select>
+	
+	<select id="getToTalRecord" parameterType="com.deppon.foss.module.frameworkimpl.shared.domain.SourceCategoriesCondition"
+		resultType="long">
+		SELECT COUNT(S.ID) FROM　BSE.T_BAS_SOURCE_CATEGORY S 
+		LEFT JOIN BSE.T_BAS_EMPLOYEE E
+		ON S.CREATE_USER_CODE = E.EMP_CODE
+		AND E.ACTIVE = 'Y'
+		WHERE 1=1
+		<if test="startTime != null">
+			<![CDATA[ AND S.CREATE_TIME >= #{startTime, jdbcType=TIMESTAMP}]]>
+		</if>
+		<if test="endTime != null">
+			<![CDATA[ AND S.CREATE_TIME <= #{endTime, jdbcType=TIMESTAMP}]]>
+		</if>
+		<if test="category != null and category != ''">
+			AND	S.CATEGORY = #{category, jdbcType=VARCHAR}
+		</if>
+		<if test="name != null and name != '%%'">
+			AND	S.NAME like #{name, jdbcType=VARCHAR}
+		</if>
+		<if test="active != null and active != ''">
+			AND	S.ACTIVE = #{active, jdbcType=VARCHAR}
+		</if>
+	</select>
+	
+	<insert id="insertSourceCategoriesEntity" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SourceCategoriesEntity">
+		INSERT INTO　BSE.T_BAS_SOURCE_CATEGORY(<include refid="insertColumns"/>)
+		VALUES(#{id, jdbcType=VARCHAR},
+		#{category, jdbcType=VARCHAR},
+		#{name, jdbcType=VARCHAR},
+		#{createDate, jdbcType=TIMESTAMP},
+		#{createUser, jdbcType=VARCHAR},
+		#{modifyDate, jdbcType=TIMESTAMP},
+		#{modifyUser, jdbcType=VARCHAR},
+		#{active, jdbcType=VARCHAR})
+	</insert>
+	<!-- ID,CATEGORY,NAME,CREATE_TIME,CREATE_USER_CODE,
+		MODIFY_TIME,MODIFY_USER_CODE,ACTIVE -->
+	<update id="updateSourceCategoriesEntity" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.SourceCategoriesEntity">
+		UPDATE BSE.T_BAS_SOURCE_CATEGORY T SET 
+			T.CATEGORY = #{category, jdbcType=VARCHAR},
+			T.NAME = #{name, jdbcType=VARCHAR},
+			T.MODIFY_TIME = #{modifyDate, jdbcType=TIMESTAMP},
+			T.MODIFY_USER_CODE = #{modifyUser, jdbcType=VARCHAR},
+			T.ACTIVE = #{active, jdbcType=VARCHAR}
+		<where>
+			T.ID = #{id, jdbcType=VARCHAR}
+		</where>
+	</update>
+	
+	<update id="deleteSourceCategoriesEntity">
+		UPDATE BSE.T_BAS_SOURCE_CATEGORY T SET
+		T.ACTIVE = 'N'
+		WHERE T.ID IN
+		<foreach collection="list" item="sourceCategoriesId" index="index"
+		 open="(" close=")" separator=",">
+			#{sourceCategoriesId,jdbcType=VARCHAR}
+		</foreach>
+	</update>
+	
+	<!-- ID,CATEGORY,NAME,CREATE_TIME,CREATE_USER_CODE,
+		MODIFY_TIME,MODIFY_USER_CODE,ACTIVE -->
+	<insert id="importSourceCategoriesEntitys" >
+		INSERT INTO　BSE.T_BAS_SOURCE_CATEGORY(<include refid="insertColumns"/>)
+		(
+			<foreach collection="list" index="index" item="sourceCategoriesEntity" separator="union ">
+				SELECT #{sourceCategoriesEntity.id,jdbcType=VARCHAR},
+				       #{sourceCategoriesEntity.category,jdbcType=VARCHAR},
+    				   #{sourceCategoriesEntity.name,jdbcType=VARCHAR},
+    				   #{sourceCategoriesEntity.createDate,jdbcType=TIMESTAMP},
+    				   #{sourceCategoriesEntity.createUser,jdbcType=VARCHAR},
+    				   #{sourceCategoriesEntity.modifyDate,jdbcType=TIMESTAMP},
+    				   #{sourceCategoriesEntity.modifyUser,jdbcType=VARCHAR},
+    				   #{sourceCategoriesEntity.active,jdbcType=CHAR} FROM DUAL
+			</foreach>
+		)
+	</insert>
+</mapper>

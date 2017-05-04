@@ -1,0 +1,637 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.stl.BillRepaymentEntityDao" >
+  <!-- 还款单管理多表关联查询-->
+   <resultMap id="query_Repayment_Column_Map" type="com.deppon.foss.module.settlement.pay.api.shared.dto.BillRepaymentManageDto">
+	<id column="ID" property="ID" jdbcType="VARCHAR" />
+	<result column="REPAYMENT_NO" property="repaymentNo" jdbcType="VARCHAR" />
+	<result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+    <result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+    <result column="CURRENCY_CODE" property="currencyCode" jdbcType="VARCHAR" />
+    <result column="ONLINE_PAYMENT_NO" property="onlinePaymentNo" jdbcType="VARCHAR" />
+	<result column="OA_PAYMENT_NO" property="oaPaymentNo" jdbcType="VARCHAR" />
+    <result column="CREATE_ORG_CODE" property="createOrgCode" jdbcType="VARCHAR" />
+    <result column="CREATE_ORG_NAME" property="createOrgName" jdbcType="VARCHAR" />
+    <result column="AUDIT_USER_CODE" property="auditUserCode" jdbcType="VARCHAR" />
+    <result column="AUDIT_USER_NAME" property="auditUserName" jdbcType="VARCHAR" />
+    <result column="MODIFY_USER_CODE" property="modifyUserCode" jdbcType="VARCHAR" />
+    <result column="MODIFY_USER_NAME" property="modifyUserName" jdbcType="VARCHAR" />
+    <result column="CASH_CONFIRM_USER_CODE" property="cashConfirmUserCode" jdbcType="VARCHAR" />
+    <result column="CASH_CONFIRM_USER_NAME" property="cashConfirmUserName" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+    <result column="CASH_CONFIRM_TIME" property="cashConfirmTime" jdbcType="TIMESTAMP" />
+    <result column="CREATE_TYPE" property="createType" jdbcType="VARCHAR" />
+    <result column="IS_INIT" property="isInit" jdbcType="CHAR" />
+	<result column="AMOUNT" property="amount" jdbcType="DECIMAL" />
+	<result column="TRUE_AMOUNT" property="trueAmount" jdbcType="DECIMAL" />
+	<result column="BVERIFY_AMOUNT" property="bverifyAmount" jdbcType="DECIMAL" />
+	<result column="AUDIT_STATUS" property="auditStatus" jdbcType="VARCHAR" />
+	<result column="BILL_TYPE" property="billType" jdbcType="VARCHAR" />
+	<result column="STATUS" property="status" jdbcType="VARCHAR" />
+	<result column="ACTIVE" property="active" jdbcType="CHAR" />
+	<result column="IS_RED_BACK" property="isRedBack" jdbcType="CHAR" />
+	<result column="PAYMENT_TYPE" property="paymentType" jdbcType="VARCHAR" />
+	<result column="COLLECTION_ORG_CODE" property="collectionOrgCode" jdbcType="VARCHAR" />
+	<result column="COLLECTION_ORG_NAME" property="collectionOrgName" jdbcType="VARCHAR" />
+	<result column="COLLECTION_COMPANY_CODE" property="collectionCompanyCode" jdbcType="VARCHAR" />
+	<result column="COLLECTION_COMPANY_NAME" property="collectionCompanyName" jdbcType="VARCHAR" />
+	<result column="GENERATING_ORG_CODE" property="generatingOrgCode" jdbcType="VARCHAR" />
+	<result column="GENERATING_ORG_NAME" property="generatingOrgName" jdbcType="VARCHAR" />
+	<result column="GENERATING_COMPANY_CODE" property="generatingCompanyCode" jdbcType="VARCHAR" />
+	<result column="GENERATING_COMPANY_NAME" property="generatingCompanyName" jdbcType="VARCHAR" />
+	<result column="CONREVEN_DATE" property="conrevenDate" jdbcType="TIMESTAMP" />
+	<result column="BUSINESS_DATE" property="businessDate" jdbcType="TIMESTAMP" />
+	<result column="ACCOUNT_DATE" property="accountDate" jdbcType="TIMESTAMP" />
+	<result column="NOTES" property="notes" jdbcType="VARCHAR" />
+	<result column="VERSION_NO" property="versionNo" jdbcType="DECIMAL" />
+	<result column="SOURCE_BILL_NO" property="sourceBillNo" jdbcType="VARCHAR" />
+	<result column="STATEMENT_BILL_NO" property="statementBillNo" jdbcType="VARCHAR" />
+	<result column="SOURCE_BILL_TYPE" property="sourceBillType" jdbcType="VARCHAR" />
+    <result column="OA_PAYEE" property="oaPayee" jdbcType="VARCHAR" />
+    <result column="POS_SERIAL_NUM" property="posSerialNum" jdbcType="VARCHAR" />
+    <result column="BATCH_NO" property="batchNo" jdbcType="VARCHAR" />
+  </resultMap>
+  
+  <!-- 还款单条数resultMap -->
+  <resultMap type="com.deppon.foss.module.settlement.pay.api.shared.dto.BillRepaymentManageResultDto" id="query_Repayment_Count_Map">
+  		<result property="totalCount" column="total_Count" jdbcType="INTEGER" />
+  		<result column="TOTALAMOUNT" property="totalAmount" jdbcType="DECIMAL" />
+    	<result column="TOTALTRUEAMOUNT" property="totalTrueAmount" jdbcType="DECIMAL" />
+    	<result column="TOTALBVERIFYAMOUNT" property="totalBVerifyAmount" jdbcType="DECIMAL" />
+  </resultMap>
+  
+   <!-- 根据还款单日期查询 add by liqin  -->
+   <sql id="query_RepaymentByDate">
+     SELECT     /*根据还款单日期查询 */
+	 		   	TRT.ID,
+		       	TRT.REPAYMENT_NO,
+		       	TRT.CUSTOMER_CODE,
+		       	TRT.CUSTOMER_NAME,
+		       	TRT.CURRENCY_CODE,
+		       	TRT.AMOUNT / 100 AMOUNT,
+		       	TRT.TRUE_AMOUNT / 100 TRUE_AMOUNT,
+		       	TRT.BVERIFY_AMOUNT / 100 BVERIFY_AMOUNT,
+		       	TRT.AUDIT_STATUS,
+		       	TRT.CREATE_TYPE,
+		       	TRT.OA_PAYMENT_NO,
+		       	TRT.CREATE_ORG_CODE,
+		       	TRT.CREATE_ORG_NAME,
+		       	TRT.COLLECTION_ORG_CODE,
+		       	TRT.COLLECTION_ORG_NAME,
+		       	TRT.COLLECTION_COMPANY_CODE,
+		       	TRT.COLLECTION_COMPANY_NAME,
+		       	TRT.GENERATING_ORG_CODE,
+		       	TRT.GENERATING_ORG_NAME,
+		       	TRT.GENERATING_COMPANY_CODE,
+		       	TRT.GENERATING_COMPANY_NAME,
+		       	TRT.CONREVEN_DATE,
+		       	TRT.BILL_TYPE,
+		       	TRT.STATUS,
+		       	TRT.ACTIVE,
+		       	TRT.IS_RED_BACK,
+		       	TRT.PAYMENT_TYPE,
+		       	TRT.CREATE_USER_CODE,
+		       	TRT.CREATE_USER_NAME,
+		       	TRT.AUDIT_USER_CODE,
+		       	TRT.AUDIT_USER_NAME,
+		       	TRT.MODIFY_USER_CODE,
+		       	TRT.MODIFY_USER_NAME,
+		       	TRT.CASH_CONFIRM_USER_CODE,
+		       	TRT.CASH_CONFIRM_USER_NAME,
+		       	TRT.BUSINESS_DATE,
+		       	TRT.ACCOUNT_DATE,
+		       	TRT.CREATE_TIME,
+		       	TRT.MODIFY_TIME,
+	       		TRT.CASH_CONFIRM_TIME,
+	       		TRT.IS_INIT,
+	       		TRT.NOTES,
+	       		TRT.VERSION_NO,
+	       		TRT.SOURCE_BILL_NO,
+	       		TRT.ONLINE_PAYMENT_NO,	
+	       		TRT.SOURCE_BILL_TYPE,
+	       		TRT.WAYBILL_NO,
+	       		TRT.OA_PAYEE,
+	       		TRT.POS_SERIAL_NUM,
+	       		TRT.BATCH_NO
+           FROM STL.T_STL_BILL_REPAYMENT TRT,(
+												SELECT ORG_CODE
+												FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V
+												WHERE V.EMP_CODE = #{empCode}
+											) V
+   </sql>
+
+   
+	<!-- 按还款单日期查询，还款单条数 add by liqin 2012-12-05-->
+     <sql id="query_CountRepaymentByDate">
+       SELECT /*按还款单日期查询，还款单条数*/ 
+       		COUNT(TRT.ID) TOTAL_COUNT,
+            SUM(TRT.AMOUNT) / 100 TOTALAMOUNT,
+            SUM(TRT.TRUE_AMOUNT) / 100 TOTALTRUEAMOUNT,
+            SUM(TRT.BVERIFY_AMOUNT) / 100 TOTALBVERIFYAMOUNT
+       FROM STL.T_STL_BILL_REPAYMENT TRT, (
+											SELECT ORG_CODE
+											FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V
+											WHERE V.EMP_CODE = #{empCode}
+											) V
+        
+   </sql>
+   
+   <!--根据还款单号查询还款单-->
+   <sql id="query_RepaymentByNOs">
+       SELECT   /*根据还款单号查询还款单*/
+            	TRT.ID,
+		       	TRT.REPAYMENT_NO,
+		       	TRT.CUSTOMER_CODE,
+		       	TRT.CUSTOMER_NAME,
+		       	TRT.CURRENCY_CODE,
+		       	TRT.AMOUNT / 100 AMOUNT,
+		       	TRT.TRUE_AMOUNT / 100 TRUE_AMOUNT,
+		       	TRT.BVERIFY_AMOUNT / 100 BVERIFY_AMOUNT,
+		       	TRT.AUDIT_STATUS,
+		       	TRT.CREATE_TYPE,
+		       	TRT.OA_PAYMENT_NO,
+		       	TRT.CREATE_ORG_CODE,
+		       	TRT.CREATE_ORG_NAME,
+		       	TRT.COLLECTION_ORG_CODE,
+		       	TRT.COLLECTION_ORG_NAME,
+		       	TRT.COLLECTION_COMPANY_CODE,
+		       	TRT.COLLECTION_COMPANY_NAME,
+		       	TRT.GENERATING_ORG_CODE,
+		       	TRT.GENERATING_ORG_NAME,
+		       	TRT.GENERATING_COMPANY_CODE,
+		       	TRT.GENERATING_COMPANY_NAME,
+		       	TRT.CONREVEN_DATE,
+		       	TRT.BILL_TYPE,
+		       	TRT.STATUS,
+		       	TRT.ACTIVE,
+		       	TRT.IS_RED_BACK,
+		       	TRT.PAYMENT_TYPE,
+		       	TRT.CREATE_USER_CODE,
+		       	TRT.CREATE_USER_NAME,
+		       	TRT.AUDIT_USER_CODE,
+		       	TRT.AUDIT_USER_NAME,
+		       	TRT.MODIFY_USER_CODE,
+		       	TRT.MODIFY_USER_NAME,
+		       	TRT.CASH_CONFIRM_USER_CODE,
+		       	TRT.CASH_CONFIRM_USER_NAME,
+		       	TRT.BUSINESS_DATE,
+		       	TRT.ACCOUNT_DATE,
+		       	TRT.CREATE_TIME,
+		       	TRT.MODIFY_TIME,
+	       		TRT.CASH_CONFIRM_TIME,
+	       		TRT.IS_INIT,
+	       		TRT.NOTES,
+	       		TRT.VERSION_NO,
+	       		TRT.SOURCE_BILL_NO,
+	       		TRT.ONLINE_PAYMENT_NO,	
+	       		TRT.SOURCE_BILL_TYPE,
+	       		TRT.WAYBILL_NO,
+	       		TRT.OA_PAYEE,
+	       		TRT.POS_SERIAL_NUM,
+	       		TRT.BATCH_NO
+         FROM STL.T_STL_BILL_REPAYMENT TRT
+   </sql>
+  
+   
+   <!-- 根据对账单号查询还款单 -->
+  <sql id="query_RementByStNos">
+  		 SELECT 
+  		 		/*根据对账单号查询还款单*/
+  		 		TRT.ID,
+		       	TRT.REPAYMENT_NO,
+		       	TRT.CUSTOMER_CODE,
+		       	TRT.CUSTOMER_NAME,
+		       	TRT.CURRENCY_CODE,
+		       	TRT.AMOUNT / 100 AMOUNT,
+		       	TRT.TRUE_AMOUNT / 100 TRUE_AMOUNT,
+		       	TRT.BVERIFY_AMOUNT / 100 BVERIFY_AMOUNT,
+		       	TRT.AUDIT_STATUS,
+		       	TRT.CREATE_TYPE,
+		       	TRT.OA_PAYMENT_NO,
+		       	TRT.CREATE_ORG_CODE,
+		       	TRT.CREATE_ORG_NAME,
+		       	TRT.COLLECTION_ORG_CODE,
+		       	TRT.COLLECTION_ORG_NAME,
+		       	TRT.COLLECTION_COMPANY_CODE,
+		       	TRT.COLLECTION_COMPANY_NAME,
+		       	TRT.GENERATING_ORG_CODE,
+		       	TRT.GENERATING_ORG_NAME,
+		       	TRT.GENERATING_COMPANY_CODE,
+		       	TRT.GENERATING_COMPANY_NAME,
+		       	TRT.CONREVEN_DATE,
+		       	TRT.BILL_TYPE,
+		       	TRT.STATUS,
+		       	TRT.ACTIVE,
+		       	TRT.IS_RED_BACK,
+		       	TRT.PAYMENT_TYPE,
+		       	TRT.CREATE_USER_CODE,
+		       	TRT.CREATE_USER_NAME,
+		       	TRT.AUDIT_USER_CODE,
+		       	TRT.AUDIT_USER_NAME,
+		       	TRT.MODIFY_USER_CODE,
+		       	TRT.MODIFY_USER_NAME,
+		       	TRT.CASH_CONFIRM_USER_CODE,
+		       	TRT.CASH_CONFIRM_USER_NAME,
+		       	TRT.BUSINESS_DATE,
+		       	TRT.ACCOUNT_DATE,
+		       	TRT.CREATE_TIME,
+		       	TRT.MODIFY_TIME,
+	       		TRT.CASH_CONFIRM_TIME,
+	       		TRT.IS_INIT,
+	       		TRT.NOTES,
+	       		TRT.VERSION_NO,
+	       		TRT.SOURCE_BILL_NO,
+	       		TRT.ONLINE_PAYMENT_NO,	
+	       		TRT.SOURCE_BILL_TYPE,
+	       		TRT.WAYBILL_NO,
+	       		TRT.OA_PAYEE,
+	       		TRT.POS_SERIAL_NUM,
+	       		TRT.BATCH_NO
+       FROM STL.T_STL_BILL_REPAYMENT TRT
+       LEFT JOIN STL.T_STL_SOA_REPAYMENT TSRT
+       ON TRT.REPAYMENT_NO = TSRT.REPAYMENT_NO 
+  </sql>
+  
+  <!-- 根据运单查询还款单dp liqin 11-09 -->
+  <sql id="query_RepayByWbNos">
+  	  SELECT  /*根据运单查询还款单*/
+  				TRT.ID,
+		       	TRT.REPAYMENT_NO,
+		       	TRT.CUSTOMER_CODE,
+		       	TRT.CUSTOMER_NAME,
+		       	TRT.CURRENCY_CODE,
+		       	TRT.AMOUNT / 100 AMOUNT,
+		       	TRT.TRUE_AMOUNT / 100 TRUE_AMOUNT,
+		       	TRT.BVERIFY_AMOUNT / 100 BVERIFY_AMOUNT,
+		       	TRT.AUDIT_STATUS,
+		       	TRT.CREATE_TYPE,
+		       	TRT.OA_PAYMENT_NO,
+		       	TRT.CREATE_ORG_CODE,
+		       	TRT.CREATE_ORG_NAME,
+		       	TRT.COLLECTION_ORG_CODE,
+		       	TRT.COLLECTION_ORG_NAME,
+		       	TRT.COLLECTION_COMPANY_CODE,
+		       	TRT.COLLECTION_COMPANY_NAME,
+		       	TRT.GENERATING_ORG_CODE,
+		       	TRT.GENERATING_ORG_NAME,
+		       	TRT.GENERATING_COMPANY_CODE,
+		       	TRT.GENERATING_COMPANY_NAME,
+		       	TRT.CONREVEN_DATE,
+		       	TRT.BILL_TYPE,
+		       	TRT.STATUS,
+		       	TRT.ACTIVE,
+		       	TRT.IS_RED_BACK,
+		       	TRT.PAYMENT_TYPE,
+		       	TRT.CREATE_USER_CODE,
+		       	TRT.CREATE_USER_NAME,
+		       	TRT.AUDIT_USER_CODE,
+		       	TRT.AUDIT_USER_NAME,
+		       	TRT.MODIFY_USER_CODE,
+		       	TRT.MODIFY_USER_NAME,
+		       	TRT.CASH_CONFIRM_USER_CODE,
+		       	TRT.CASH_CONFIRM_USER_NAME,
+		       	TRT.BUSINESS_DATE,
+		       	TRT.ACCOUNT_DATE,
+		       	TRT.CREATE_TIME,
+		       	TRT.MODIFY_TIME,
+	       		TRT.CASH_CONFIRM_TIME,
+	       		TRT.IS_INIT,
+	       		TRT.NOTES,
+	       		TRT.VERSION_NO,
+	       		TRT.SOURCE_BILL_NO,
+	       		TRT.ONLINE_PAYMENT_NO,	
+	       		TRT.SOURCE_BILL_TYPE,
+	       		TRT.WAYBILL_NO,
+	       		TRT.OA_PAYEE,
+	       		TRT.POS_SERIAL_NUM,
+	       		TRT.BATCH_NO   	
+      FROM STL.T_STL_BILL_REPAYMENT TRT
+  </sql>
+  
+  <!-- 根据来源单号查询还款单dp liqin 11-09 -->
+  <sql id="query_RepayByTSBNos">
+  	  SELECT /*根据来源单号查询还款单*/
+  	   <include refid="Base_Column_List" />
+      FROM STL.T_STL_BILL_REPAYMENT TRT
+  </sql>
+  
+  <!-- 按业务日期查询还款单数据 -->
+  <select id="selectBillRepayBunessDateParams" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillRepaymentManageDto" 
+  resultMap="query_Repayment_Column_Map">
+     <include refid="query_RepaymentByDate" />
+     
+     <where>
+     	<!-- 业务日期 -->
+     	  <![CDATA[TRT.BUSINESS_DATE >=#{businessStartDate} AND TRT.BUSINESS_DATE <#{businessEndDate} AND  TRT.ACCOUNT_DATE>=#{businessStartDate}]]>
+   			AND V.ORG_CODE = TRT.COLLECTION_ORG_CODE<!-- 登录者部门等于还款部门过滤 -->
+		<!-- 大区、小区、收款部门 -->
+     	 <if test="collectionOrgCodeList!=null and collectionOrgCodeList.size()>0">
+     	 	AND TRT.COLLECTION_ORG_CODE IN 
+     	 	<foreach collection="collectionOrgCodeList" item="item" index="index" open="(" separator="," close=")">
+ 				#{item}
+ 			</foreach>
+     	 </if>
+		<!-- 客户编码 -->
+		<if test="customerCode!=null and customerCode!=''">
+			AND TRT.CUSTOMER_CODE=#{customerCode}
+		</if>
+		<!-- 审核状态-->
+		<if test="auditStatus!=null and auditStatus!=''">
+			AND TRT.AUDIT_STATUS=#{auditStatus}
+		</if>
+		<!--还款方式 -->
+		<if test="paymentType!=null and paymentType!=''">
+			AND TRT.PAYMENT_TYPE=#{paymentType}
+		</if>
+		<!-- 是否有效 -->
+		<if test="active!=null and active!=''">
+			AND TRT.ACTIVE=#{active}
+		</if>
+		<if test="isInit!=null and isInit!=''"> 
+			AND TRT.IS_INIT=#{isInit}
+		</if>
+		<if test="posSerialNum!=null and posSerialNum!=''"> 
+			AND TRT.POS_SERIAL_NUM=#{posSerialNum}
+		</if>
+
+     </where>
+  </select>
+  
+  <!-- 按业务日期查询还款单总条数数据 -->
+  <select id="selectCountBillRepayBusiDateParams" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillRepaymentManageDto" 
+  resultMap="query_Repayment_Count_Map">
+     <include refid="query_CountRepaymentByDate"/>
+    	<where>
+     	<!-- 业务日期 -->
+     	 <![CDATA[TRT.BUSINESS_DATE >=#{businessStartDate} AND TRT.BUSINESS_DATE <#{businessEndDate} AND  TRT.ACCOUNT_DATE>=#{businessStartDate}]]>
+     	
+   		AND V.ORG_CODE = TRT.COLLECTION_ORG_CODE<!-- 登录者部门等于还款部门过滤 -->
+		<!-- 大区、小区、收款部门 -->
+     	 <if test="collectionOrgCodeList!=null and collectionOrgCodeList.size()>0">
+     	 	AND TRT.COLLECTION_ORG_CODE IN 
+     	 	<foreach collection="collectionOrgCodeList" item="item" index="index" open="(" separator="," close=")">
+ 				#{item}
+ 			</foreach>
+     	 </if>
+		<!-- 客户编码 -->
+		<if test="customerCode!=null and customerCode!=''">
+			AND TRT.CUSTOMER_CODE=#{customerCode}
+		</if>
+		<!-- 审核状态-->
+		<if test="auditStatus!=null and auditStatus!=''">
+			AND TRT.AUDIT_STATUS=#{auditStatus}
+		</if>
+		<!--还款方式 -->
+		<if test="paymentType!=null and paymentType!=''">
+			AND TRT.PAYMENT_TYPE=#{paymentType}
+		</if>
+		<!-- 是否有效 -->
+		<if test="active!=null and active!=''">
+			AND TRT.ACTIVE=#{active}
+		</if>
+		<if test="isInit!=null and isInit!=''"> 
+			AND TRT.IS_INIT=#{isInit}
+		</if>
+		<if test="posSerialNum!=null and posSerialNum!=''"> 
+			AND TRT.POS_SERIAL_NUM=#{posSerialNum}
+		</if>
+    </where>
+  </select>
+  
+   <!-- 按记账日期查询还款单数据 -->
+  <select id="selectBillRepayAccountDateParams" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillRepaymentManageDto" 
+  resultMap="query_Repayment_Column_Map">
+     <include refid="query_RepaymentByDate"/>
+     <where>
+    	<![CDATA[TRT.ACCOUNT_DATE >=#{accountStartDate} AND  TRT.ACCOUNT_DATE <#{accountEndDate} ]]>
+    	
+   		AND V.ORG_CODE = TRT.COLLECTION_ORG_CODE<!-- 登录者部门等于还款部门过滤 -->
+		<!-- 大区、小区、收款部门 -->
+     	 <if test="collectionOrgCodeList!=null and collectionOrgCodeList.size()>0">
+     	 	AND TRT.COLLECTION_ORG_CODE IN 
+     	 	<foreach collection="collectionOrgCodeList" item="item" index="index" open="(" separator="," close=")">
+ 				#{item}
+ 			</foreach>
+     	 </if>
+		
+		<!-- 客户编码 -->
+		<if test="customerCode!=null and customerCode!=''">
+			AND TRT.CUSTOMER_CODE=#{customerCode}
+		</if>
+		<!-- 审核状态-->
+		<if test="auditStatus!=null and auditStatus!=''">
+			AND TRT.AUDIT_STATUS=#{auditStatus}
+		</if>
+		<!--还款方式 -->
+		<if test="paymentType!=null and paymentType!=''">
+			AND TRT.PAYMENT_TYPE=#{paymentType}
+		</if>
+		<!-- 是否有效 -->
+		<if test="active!=null and active!=''">
+			AND TRT.ACTIVE=#{active}
+		</if>
+		<if test="isInit!=null and isInit!=''"> 
+			AND TRT.IS_INIT=#{isInit}
+		</if>
+		<if test="posSerialNum!=null and posSerialNum!=''"> 
+			AND TRT.POS_SERIAL_NUM=#{posSerialNum}
+		</if>
+     </where>
+  </select>
+  
+  
+  <!-- 按记账日期查询还款单总条数数据 -->
+  <select id="selectCountBillRepayAccountDateParams" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillRepaymentManageDto" 
+  resultMap="query_Repayment_Count_Map">
+     <include refid="query_CountRepaymentByDate"/>
+    	<where>
+     	 <!-- 记账日期 -->
+    		<![CDATA[ AND   TRT.ACCOUNT_DATE >=#{accountStartDate} AND  TRT.ACCOUNT_DATE <#{accountEndDate} ]]>
+    		
+   			AND V.ORG_CODE = TRT.COLLECTION_ORG_CODE<!-- 登录者部门等于还款部门过滤 -->
+		<!-- 大区、小区、收款部门 -->
+     	 <if test="collectionOrgCodeList!=null and collectionOrgCodeList.size()>0">
+     	 	AND TRT.COLLECTION_ORG_CODE IN 
+     	 	<foreach collection="collectionOrgCodeList" item="item" index="index" open="(" separator="," close=")">
+ 				#{item}
+ 			</foreach>
+     	 </if>
+		
+		<!-- 客户编码 -->
+		<if test="customerCode!=null and customerCode!=''">
+			AND TRT.CUSTOMER_CODE=#{customerCode}
+		</if>
+		<!-- 审核状态-->
+		<if test="auditStatus!=null and auditStatus!=''">
+			AND TRT.AUDIT_STATUS=#{auditStatus}
+		</if>
+		<!--还款方式 -->
+		<if test="paymentType!=null and paymentType!=''">
+			AND TRT.PAYMENT_TYPE=#{paymentType}
+		</if>
+		<!-- 是否有效 -->
+		<if test="active!=null and active!=''">
+			AND TRT.ACTIVE=#{active}
+		</if>
+		
+		<if test="isInit!=null and isInit!=''"> 
+			AND TRT.IS_INIT=#{isInit}
+		</if>
+		<if test="posSerialNum!=null and posSerialNum!=''"> 
+			AND TRT.POS_SERIAL_NUM=#{posSerialNum}
+		</if>
+    </where>
+  </select>
+    
+    
+     <!-- 根据还款单查询还款单dp liqin 2012-11-09 -->
+     <select id="selectRepaymentByNos" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillRepaymentManageDto" 
+  		resultMap="query_Repayment_Column_Map">
+  		<include refid="query_RepaymentByNOs"/>
+     	<where>
+     		TRT.REPAYMENT_NO IN
+     		<foreach collection="repaymentNos" item="item" index="index" open="(" separator="," close=")"> #{item}</foreach>
+     	</where>
+     	<if test="active != null and active != ''">
+     		AND ACTIVE = #{active,jdbcType=VARCHAR}
+     	</if>
+     	AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = TRT.COLLECTION_ORG_CODE<!-- 登录者部门等于还款部门过滤 -->
+     			)	
+    </select>
+    
+    
+     <!-- 根据对账单查询还款单dp liqin 2012-11-09 -->
+     <select id="selectRepaymentByStNOs" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillRepaymentManageDto" 
+  		resultMap="query_Repayment_Column_Map">
+  		<include refid="query_RementByStNos"/>
+     	<where>
+ 			TSRT.STATEMENT_BILL_NO IN
+ 			<foreach collection="statementBillNos" item="item" index="index" open="(" separator="," close=")">
+ 				#{item}
+ 			</foreach>
+     	</where>
+     	AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = TRT.COLLECTION_ORG_CODE<!-- 登录者部门等于还款部门过滤 -->
+     			)	
+     </select>
+     
+       <!-- 根据运单查询还款单dp liqin 2012-11-09 -->
+       <select id="selectRepaymentByWblNos" parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillRepaymentManageDto" 
+  		resultMap="query_Repayment_Column_Map">
+  		<include refid="query_RepayByWbNos"/>
+     		<where>
+			 TRT.REPAYMENT_NO in
+			(
+         		SELECT 
+         			TWF.BEGIN_NO
+            	FROM 
+            		STL.T_STL_BILL_WRITEOFF TWF
+          		WHERE 
+          			TWF.WRITEOFF_TYPE IN 
+           			<foreach collection="writeoffType" item="item" index="index" open="(" separator="," close=")"> 
+   						#{item}
+   					</foreach>
+             		<if test="wayBillNos!=null and wayBillNos.size>0">
+     					AND TWF.END_WAYBILL_NO IN
+     					<foreach collection="wayBillNos" item="item" index="index" open="(" separator="," close=")"> 
+     						#{item}
+     					</foreach>
+     				</if>
+             )	
+             AND EXISTS (SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = TRT.COLLECTION_ORG_CODE<!-- 登录者部门等于还款部门过滤 -->
+     			)	
+     		</where>
+     </select>
+     
+    <!-- 根据来源单号查询还款单 dp liqin 2013-01-24 -->
+    <select id="selectRepaymentBySourceBillNos" resultMap="query_Repayment_Column_Map" 
+    parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillRepaymentManageDto" >
+    <include refid="query_RepayByTSBNos" />
+    <where>
+     TRT.REPAYMENT_NO IN
+     (
+     	 SELECT 
+     	 	  TWF.BEGIN_NO
+         FROM 
+         		STL.T_STL_BILL_WRITEOFF TWF
+         WHERE 
+         	TWF.WRITEOFF_TYPE IN 
+         	<foreach collection="writeoffType" item="item" index="index" open="(" separator="," close=")"> 
+   				#{item}
+   			</foreach>
+           AND TWF.END_NO IN
+               ( 
+               	  SELECT 
+               			SBR.RECEIVABLE_NO
+                  FROM 
+                  		STL.T_STL_BILL_RECEIVABLE SBR
+                  WHERE 
+                 		SBR.SOURCE_BILL_NO IN 
+                 		<foreach collection="sourceBillNos"  index="index" item="item"  open="(" separator="," close=")">  
+							#{item} 
+						</foreach>
+               )
+     )
+    <!-- TRT.SOURCE_BILL_NO IN
+	<foreach collection="sourceBillNos"  index="index" item="item"  open="(" separator="," close=")">  
+		#{item} 
+	</foreach>
+	 -->
+	 	
+	<if test="active!=null and active!='' ">
+		AND TRT.ACTIVE=#{active}
+	</if>
+	AND EXISTS (
+				SELECT ORG_CODE
+    			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+   				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+   				 AND V.ORG_CODE = TRT.COLLECTION_ORG_CODE<!-- 登录者部门等于还款部门过滤 -->
+     )	
+	</where>
+  </select>
+     
+    
+    <!-- 根据还款单号查询是否存在反核销的还款单 --> 
+    <select id="selectReBackRepaymentByNo" resultMap="BaseResultMap" parameterType="java.util.Map" >
+    SELECT /*根据还款单号查询是否存在反核销的还款单*/
+    <include refid="Base_Column_List" />
+    FROM STL.T_STL_BILL_REPAYMENT
+    <where> 
+      	ACTIVE=#{active}
+      	AND BVERIFY_AMOUNT > 0
+    	AND REPAYMENT_NO=#{repaymentNo}
+    </where>
+  </select>
+  
+   <!-- 根据来源单号查询还款单 dp liqin 2013-01-24 -->
+    <select id="selectRepaymentByBatchBillNos" resultMap="query_Repayment_Column_Map" 
+    parameterType="com.deppon.foss.module.settlement.pay.api.shared.dto.BillRepaymentManageDto" >
+	    <include refid="query_RepayByTSBNos" />
+	    <where>
+	     TRT.BATCH_NO IN
+	     <foreach collection="batchNos" item="item" index="index" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		<if test="active!=null and active!='' ">
+			AND TRT.ACTIVE=#{active}
+		</if>
+		AND EXISTS (
+			SELECT ORG_CODE
+   			FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V <!--当前用户可以操作的营业部信息-->
+  				WHERE V.EMP_CODE = #{empCode}<!-- 登录者员工编码等于配置表编码 -->
+  				 AND V.ORG_CODE = TRT.COLLECTION_ORG_CODE<!-- 登录者部门等于还款部门过滤 -->
+	     )	
+	</where>
+  </select>
+</mapper>

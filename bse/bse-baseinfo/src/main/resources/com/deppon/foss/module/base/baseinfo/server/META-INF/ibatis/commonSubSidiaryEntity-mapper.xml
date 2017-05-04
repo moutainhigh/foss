@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.commonSubSidiary">
+	<!-- 子公司信息 --> 
+	<resultMap id="resultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.dto.CommonSubSidiaryDto">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="CODE" property="code" jdbcType="VARCHAR" />
+		<result column="NAME" property="name" jdbcType="VARCHAR" />
+		<result column="FULL_NAME" property="fullName" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="TIMESTAMP" /> 
+	</resultMap>
+
+	<!-- 数据字段 -->
+	<sql id="query_columns">
+		DISTINCT FIN.ID, 
+		FIN.CODE, 
+		FIN.NAME, 
+		FIN.FULL_NAME,
+		FIN.ACTIVE 
+	</sql>
+
+	<!-- 分页查询条件 -->
+	<sql id="query_params">
+		<where> 
+				  FIN.CODE = ORG.SUBSIDIARY_CODE
+			  AND FIN.ACTIVE = 'Y' 
+			  AND ORG.ACTIVE = 'Y'  
+			<if test="queryParam != null and queryParam != ''">
+				AND 
+				( 
+				    FIN.CODE like CONCAT(CONCAT('%',#{queryParam}),'%')
+				 OR 	
+				 	FIN.NAME like CONCAT(CONCAT('%',#{queryParam}),'%')
+				 OR 	
+				 	FIN.FULL_NAME like CONCAT(CONCAT('%',#{queryParam}),'%')
+				) 
+			</if> 
+			<if test="code != null and code != ''">
+				AND FIN.CODE = #{code,jdbcType=VARCHAR}
+			</if>
+			<if test="name != null and name != ''">
+				AND FIN.NAME = #{name,jdbcType=VARCHAR}
+			</if> 
+			<if test="fullName != null and fullName != ''">
+				AND FIN.FULL_NAME = #{fullName,jdbcType=VARCHAR}
+			</if> 
+		</where> 
+	</sql>
+
+	<!--根据条件查询子公司总条数--> 
+	<select id="queryRecordCount" resultType="Long"	parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.CommonSubSidiaryDto">
+	    SELECT COUNT(*) FROM (
+		    SELECT 
+		    /** 综合:根据条件查询子公司总条数 **/
+			  <include refid="query_columns" />
+			FROM BSE.T_BAS_FIN_ORG FIN, BSE.T_BAS_ORG ORG
+			  <include refid="query_params" />
+		  )  
+	</select>
+	
+	<!-- 根据条件查询子公司信息 -->
+	<select id="querySubSidiaryByCondition" resultMap="resultMap" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.dto.CommonSubSidiaryDto"	>
+		SELECT 
+		/** 综合:根据条件查询子公司信息 **/
+		  <include refid="query_columns" />
+		FROM BSE.T_BAS_FIN_ORG FIN, BSE.T_BAS_ORG ORG
+		  <include refid="query_params" />  
+	</select> 
+</mapper>

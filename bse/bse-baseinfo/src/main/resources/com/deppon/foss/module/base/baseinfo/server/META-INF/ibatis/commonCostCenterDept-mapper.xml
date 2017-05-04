@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="foss.bse.bse-baseinfo.commonCostCenterDept">
+	<!-- 成本中心部门返回的结果集，单表查 -->
+	<resultMap id="resultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.CostCenterDeptEntity">
+		<id property="id" column="ID" jdbcType="VARCHAR" />
+		<result property="deptName" column="DEPT_NAME" jdbcType="VARCHAR" />
+		<result property="deptCode" column="DEPT_CODE" jdbcType="VARCHAR" />
+		<result property="typeName" column="TYPE_NAME" jdbcType="VARCHAR" />
+		<result property="typeCode" column="TYPE_CODE" jdbcType="VARCHAR" />
+		<result property="adminId" column="ADMIN_ID"  jdbcType="VARCHAR" />
+		<result property="simpleCode" column="SIMPLE_CODE"  jdbcType="VARCHAR" />
+		<result property="status" column="STATEUS" jdbcType="CHAR" />
+		<result property="isFreeze" column="ISFREEZE" jdbcType="CHAR" />
+		<result property="isCostOrgUnit" column="ISCOSTORGUNIT" jdbcType="CHAR" />
+		<result property="active" column="ACTIVE" jdbcType="CHAR" />
+		<result property="createUser" column="CREATE_USER_CODE" javaType="String" jdbcType="VARCHAR" />
+		<result property="createDate" column="CREATE_TIME" javaType="Date" jdbcType="TIMESTAMP" />
+		<result property="modifyUser" column="MODIFY_USER_CODE" javaType="String" jdbcType="VARCHAR" />
+		<result property="modifyDate" column="MODIFY_TIME" javaType="Date" jdbcType="TIMESTAMP" />
+	</resultMap>
+
+	<!-- 单表查，操作的字段 -->
+	<sql id="query_columns">
+		C.ID,
+		C.DEPT_NAME, 
+		C.DEPT_CODE,
+		C.TYPE_NAME,
+		C.TYPE_CODE,
+		C.ADMIN_ID,
+		C.SIMPLE_CODE,
+		C.STATEUS,
+		C.ISFREEZE,
+		C.ISCOSTORGUNIT,
+		C.ACTIVE,
+		C.CREATE_USER_CODE,
+		C.CREATE_TIME,
+		C.MODIFY_USER_CODE,
+		C.MODIFY_TIME
+	</sql>
+	
+	<!-- 查询成本中心部门条件 -->
+	<sql id="query_params">
+		<where>
+	      	<if test="deptName!=null and deptName != ''">
+	        	AND C.DEPT_NAME like CONCAT(CONCAT('%', #{deptName,jdbcType=VARCHAR}), '%') 
+	      	</if>
+	      	<if test="active!=null and active != ''">
+	        	AND C.ACTIVE= #{active,jdbcType=CHAR} 
+	      	</if>
+	      	<if test="status!=null and status != ''">
+	        	AND C.STATEUS= #{status,jdbcType=CHAR} 
+	      	</if>
+	      	<if test="isFreeze!=null and isFreeze != ''">
+	        	AND C.ISFREEZE= #{isFreeze,jdbcType=CHAR} 
+	      	</if>
+	      	<if test="isCostOrgUnit!=null and isCostOrgUnit != ''">
+	        	AND C.ISCOSTORGUNIT= #{isCostOrgUnit,jdbcType=CHAR} 
+	      	</if> 
+	      	<if test="deptCode!=null and deptCode != ''">
+	        	AND C.DEPT_CODE= #{deptCode,jdbcType=VARCHAR} 
+	      	</if>
+	      	<if test="simpleCode!=null and simpleCode != ''">
+	        	AND C.SIMPLE_CODE= #{simpleCode,jdbcType=VARCHAR} 
+	      	</if>
+	      	AND C.SIMPLE_CODE is not null
+		</where>
+	</sql>
+	
+
+	<!-- 查询成本中心部门信息 -->
+	<select id="queryCostDeptByCondition" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CostCenterDeptEntity" resultMap="resultMap">
+		SELECT
+		/** 综合:分页查询成本中心部门 **/
+		<include refid="query_columns" />
+		FROM BSE.T_BAS_COST_CENTER_DEPARTINFOR  C  
+		<include refid="query_params" />
+	</select>
+	
+	<!-- 统计总记录数 -->
+	<select id="queryRecordCount" resultType="Long" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CostCenterDeptEntity">
+		SELECT/** 综合:统计总记录数 **/ COUNT(*) FROM BSE.T_BAS_COST_CENTER_DEPARTINFOR C 
+        <include refid="query_params" />
+	</select>
+	
+	<!-- 根据成本中心部门code查询foss表中是否存在该信息 -->
+	<select id="queryCostCenterDeptInfoByDeptCode" parameterType="map"
+		resultMap="resultMap">
+        <![CDATA[
+			SELECT 
+			/** 综合:根据成本中心部门code查询foss表中是否存在该信息 **/
+		]]>
+		<include refid="query_columns" />
+		<![CDATA[
+		    FROM BSE.T_BAS_COST_CENTER_DEPARTINFOR C
+		]]>
+		<where>
+			<if test="deptCode != null and deptCode != ''">
+				DEPT_CODE = #{deptCode,jdbcType=VARCHAR}
+			</if>
+			<if test="active != null and active != ''">
+				AND ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="simpleCode != null and simpleCode != ''">
+				or SIMPLE_CODE=#{simpleCode,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</select>
+	
+	<!--新增成本中心部门信息-->
+	<insert id="insert" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CostCenterDeptEntity">
+		<![CDATA[
+			INSERT /** 综合:新增成本中心部门信息**/ INTO BSE.T_BAS_COST_CENTER_DEPARTINFOR C (
+		]]>
+		<include refid="query_columns"/>
+		<![CDATA[
+			) VALUES (
+		]]>
+		#{id,jdbcType=VARCHAR},
+		#{deptName,jdbcType=VARCHAR},
+		#{deptCode,jdbcType=VARCHAR},
+		#{typeName,jdbcType=VARCHAR},
+		#{typeCode,jdbcType=VARCHAR},
+		#{adminId,jdbcType=VARCHAR},
+		#{simpleCode,jdbcType=VARCHAR},
+		#{status,jdbcType=CHAR},
+		#{isFreeze,jdbcType=CHAR},
+		#{isCostOrgUnit,jdbcType=CHAR},
+		#{active,jdbcType=CHAR},
+		#{createUser,jdbcType=VARCHAR},
+		#{createDate,jdbcType=TIMESTAMP},
+		#{modifyUser,jdbcType=VARCHAR},
+		#{modifyDate,jdbcType=TIMESTAMP}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+	
+	<!--修改成本中心部门信息-->
+	<update id="update" parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.CostCenterDeptEntity">
+		UPDATE /** 修改成本中心部门信息 **/ BSE.T_BAS_COST_CENTER_DEPARTINFOR
+		<set>
+			<if test="deptName != null and deptName != ''">
+				DEPT_NAME = #{deptName,jdbcType=VARCHAR},
+			</if>
+			<if test="deptCode != null and deptCode != ''">
+				DEPT_CODE = #{deptCode,jdbcType=TIMESTAMP},
+			</if>
+			<if test="typeName != null and typeName != ''">
+				TYPE_NAME = #{typeName,jdbcType=VARCHAR},
+			</if>
+			<if test="typeCode != null and typeCode != ''">
+				TYPE_CODE = #{typeCode,jdbcType=VARCHAR},
+			</if>
+			<if test="adminId != null and adminId != ''">
+				ADMIN_ID = #{adminId,jdbcType=VARCHAR},
+			</if>
+			<if test="status != null and status != ''">
+				STATEUS = #{status,jdbcType=CHAR},
+			</if>
+			<if test="isFreeze != null and isFreeze != ''">
+				ISFREEZE = #{isFreeze,jdbcType=CHAR},
+			</if>
+			<if test="isCostOrgUnit != null and isCostOrgUnit != ''">
+				ISCOSTORGUNIT = #{isCostOrgUnit,jdbcType=CHAR},
+			</if>
+			<if test="active != null and active != ''">
+				active = #{active,jdbcType=CHAR},
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyDate != null and modifyDate != ''">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>
+			SIMPLE_CODE=#{simpleCode,jdbcType=VARCHAR}
+		</set>
+		
+		<where>
+			<if test="deptCode != null and deptCode != ''">
+				DEPT_CODE = #{deptCode,jdbcType=VARCHAR}
+			</if>
+			<if test="simpleCode != null and simpleCode != ''">
+				AND SIMPLE_CODE=#{simpleCode,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</update>
+	
+</mapper>

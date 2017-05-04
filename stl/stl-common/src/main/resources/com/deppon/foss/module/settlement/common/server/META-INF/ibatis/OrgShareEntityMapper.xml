@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.OrgShareEntityDao" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.settlement.common.api.shared.domain.OrgShareEntity" >
+    <result column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="SOURCE_BILL_NO" property="sourceBillNo" jdbcType="VARCHAR" />
+    <result column="SOURCE_BILL_TYPE" property="sourceBillType" jdbcType="VARCHAR" />
+    <result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+    <result column="ORG_NAME" property="orgName" jdbcType="VARCHAR" />
+    <result column="AMOUNT" property="amount" jdbcType="DECIMAL" />
+    <result column="ACTIVE" property="active" jdbcType="CHAR" />
+    <result column="EXPRESS_ORG_CODE" property="expressOrgCode" jdbcType="VARCHAR" />
+    <result column="EXPRESS_ORG_NAME" property="expressOrgName" jdbcType="VARCHAR" />
+  </resultMap>
+  <sql id="Base_Column_List">
+  	ID,SOURCE_BILL_NO,SOURCE_BILL_TYPE,ORG_CODE,AMOUNT,ACTIVE,EXPRESS_ORG_CODE,EXPRESS_ORG_NAME
+  </sql>
+  
+  <insert id="insert" parameterType="com.deppon.foss.module.settlement.common.api.shared.domain.OrgShareEntity" >
+    insert into STL.T_STL_ORG_SHARE (ID, SOURCE_BILL_NO, SOURCE_BILL_TYPE, 
+      ORG_CODE, ORG_NAME, AMOUNT, 
+      ACTIVE,EXPRESS_ORG_CODE,EXPRESS_ORG_NAME)
+    values (#{id,jdbcType=VARCHAR}, #{sourceBillNo,jdbcType=VARCHAR}, #{sourceBillType,jdbcType=VARCHAR}, 
+      #{orgCode,jdbcType=VARCHAR}, #{orgName,jdbcType=VARCHAR}, 100*#{amount,jdbcType=DECIMAL}, 
+      #{active,jdbcType=CHAR},#{expressOrgCode,jdbcType=VARCHAR},#{expressOrgName,jdbcType=VARCHAR})
+  </insert>
+  
+  <select id="selectBySourceBillNo" parameterType="map" resultMap="BaseResultMap">
+  	SELECT 
+  		OS.ID ID,
+  		OS.SOURCE_BILL_NO SOURCE_BILL_NO,
+  		OS.SOURCE_BILL_TYPE SOURCE_BILL_TYPE,
+  		O.UNIFIED_CODE ORG_CODE,
+  		OS.AMOUNT/100 AMOUNT,
+  		OS.ACTIVE ACTIVE,
+  		OS.EXPRESS_ORG_CODE,
+  		OS.EXPRESS_ORG_NAME
+  	FROM STL.T_STL_ORG_SHARE OS
+  	JOIN BSE.T_BAS_ORG O ON  OS.ORG_CODE = O.CODE AND O.ACTIVE='Y'
+  	WHERE OS.SOURCE_BILL_NO = #{sourceBillNo,jdbcType=VARCHAR}
+  	<if test="active!=null and active!=''">
+  		AND OS.ACTIVE = #{active,jdbcType=VARCHAR}
+  	</if>
+  </select>
+</mapper>

@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.unload.querySubForkAreaGoods" >
+	
+  <resultMap id="querySubForkAreaGoodsMap" type="com.deppon.foss.module.transfer.unload.api.shared.domain.SubForkAreaGoodsEntity" >
+    <result column="packageNo" property="packageNo" /><!--运单号-->
+    <result column="wayBillNo" property="wayBillNo" /><!--运单号-->
+    <result column="billingNum" property="billingNum" /><!--开单件数-->
+    <result column="bindNum" property="bindNum" /><!--绑定件数-->
+    <result column="unScanNum" property="unScanNum" /><!--未扫描件数-->
+    <result column="transType" property="transType" /><!--运输性质-->
+    <result column="unloadTaskNo" property="unloadTaskNo" /><!--卸车任务号-->
+    <result column="nextDestination" property="nextDestination" /><!--下一部门-->
+    <result column="createPerson" property="createPerson" /><!--创建人-->
+    <result column="createPersonCode" property="createPersonCode" /><!--创建人工号-->
+    <result column="scanTime" property="scanTime" /><!--扫描时间-->
+    <!--<result column="a.operation_goods_qty 卸车总件数," property="a.operation_goods_qty 卸车总件数," />卸车总件数-->
+   	<!-- <result column="nvl(c.ScanCount,0)" property="nvl(c.ScanCount,0)" /> 扫描件数-->
+  </resultMap>
+  <resultMap id="querySubForkAreaGoodsExpressMap" type="com.deppon.foss.module.transfer.unload.api.shared.domain.SubForkAreaGoodsExpressEntity" >
+    <result column="waybillNo" property="waybillNo" /><!--运单/包/笼号-->
+    <result column="billingNum" property="billingNum" /><!--开单件数-->
+    <result column="bindNum" property="bindNum" /><!--绑定件数-->
+    <result column="unScanNum" property="unScanNum" /><!--未扫描件数-->
+    <result column="transType" property="transType" /><!--运输性质-->
+    <result column="unloadTaskNo" property="unloadTaskNo" /><!--卸车任务号-->
+    <result column="nextDestination" property="nextDestination" /><!--下一部门-->
+    <result column="createPerson" property="createPerson" /><!--创建人-->
+    <result column="createPersonCode" property="createPersonCode" /><!--创建人工号-->
+    <result column="scanTime" property="scanTime" /><!--扫描时间-->
+  </resultMap>
+  <!--待叉区货物查询 零担-->
+  <select id="querySubForkAreaGoods" resultMap="querySubForkAreaGoodsMap" 
+  		parameterType="com.deppon.foss.module.transfer.unload.api.shared.vo.SubForkAreaGoodsVo">
+  	
+			select 
+					distinct a.waybill_no wayBillNo,
+					a.package_no packageNo,
+					wb.goods_qty_total billingNum,
+					nvl(b.bangbingCount,0) bindNum,
+					(a.handover_goods_qty-decode(c.ScanCount,null,0,c.ScanCount)) unScanNum,
+					a.transport_type transType,
+					a.unload_task_no unloadTaskNo,
+					og.name nextDestination,
+					lp.loader_name createPerson,
+					lp.loader_code createPersonCode,
+					a.unload_time scanTime,
+					NVl(statu,'UNSCAN') statu
+			from (
+					select ut.id,ut.unload_task_no,ud.waybill_no,ud.package_no,ud.handover_goods_qty,ud.transport_type,ut.unload_start_time unload_time  
+					FROM  tfr.t_opt_unload_task ut
+					inner join
+					tfr.t_opt_unload_waybill_detail ud 
+					on ud.unload_task_id=ut.id  
+					and ut.unload_org_code=#{orgCode}
+			<where>
+					 ut.unload_start_time<![CDATA[>=]]>#{createBeginTime}
+					and ut.unload_start_time<![CDATA[<=]]>#{createEndTime} 
+					and ut.task_state!='CANCELED'
+					and ut.unload_way='PDA'
+				<if test="wayBllNo!=null and wayBllNo!='' ">
+					and ud.waybill_no=#{wayBllNo}
+				</if>
+				<if test="unloadTaskNo!=null and unloadTaskNo!='' ">	
+					and ut.unload_task_no=#{unloadTaskNo}
+				</if>
+			</where>
+				) a
+				left join
+				(
+				select tt.unload_task_no,
+                    ttd.waybill_no,
+                    count(0) bangbingCount,
+                    nvl(max(tt.statu),'UNSCAN') statu
+               from tfr.t_opt_unload_task ut 
+              inner JOIN tfr.t_opt_trayscan_task tt on tt.unload_task_no=ut.unload_task_no
+              inner join  tfr.t_opt_trayscan_task_detail ttd on ttd.trayscan_task_no = tt.task_no
+                                                   and tt.statu not in('CANCEL','HANDSCAN')
+                                                   and tt.outfield_org_code = #{orgCode}
+              
+               WHERE 
+                   ut.unload_start_time<![CDATA[>=]]>#{createBeginTime}
+					and ut.unload_start_time<![CDATA[<=]]>#{createEndTime} 
+					and ut.unload_way='PDA'
+					and ut.task_state!='CANCELED'
+					and ut.unload_org_code=#{orgCode}
+				<if test="wayBllNo!=null and wayBllNo!='' ">
+					and ttd.waybill_no=#{wayBllNo}
+				</if>
+				<if test="unloadTaskNo!=null and unloadTaskNo!='' ">	
+					and ut.unload_task_no=#{unloadTaskNo}
+				</if>                                  
+              group by tt.unload_task_no, ttd.waybill_no) b
+				on a.unload_task_no=b.unload_task_no and a.waybill_no=b.waybill_no
+				
+				left join
+				(
+					select tt.unload_task_no, ttd.waybill_no, count(0) ScanCount
+	              	from   tfr.t_opt_unload_task ut 
+	             	inner join   tfr.t_opt_trayscan_task tt on tt.unload_task_no=ut.unload_task_no
+	              	inner join tfr.t_opt_trayscan_task_detail ttd on ttd.trayscan_task_no =tt.task_no
+	                                                   and tt.statu = 'SCANNED'
+	                                                   and tt.outfield_org_code =#{orgCode}
+	                  WHERE 
+	                   ut.unload_start_time<![CDATA[>=]]>#{createBeginTime}
+					and ut.unload_start_time<![CDATA[<=]]>#{createEndTime} 
+					and ut.unload_way='PDA'
+					and ut.task_state!='CANCELED'
+					and ut.unload_org_code=#{orgCode}
+					<if test="wayBllNo!=null and wayBllNo!='' ">
+						and ttd.waybill_no=#{wayBllNo}
+					</if>
+					<if test="unloadTaskNo!=null and unloadTaskNo!='' ">	
+						and ut.unload_task_no=#{unloadTaskNo}
+					</if>      
+	              group by tt.unload_task_no, ttd.waybill_no) c
+				on a.unload_task_no=c.unload_task_no and a.waybill_no=c.waybill_no
+				
+				LEFT JOIN pkp.t_srv_waybill wb ON wb.waybill_no=a.waybill_no and wb.active='Y'
+				left JOIN tfr.t_opt_waybill_stock os ON os.waybill_no=a.waybill_no  
+				AND os.org_code=#{orgCode}
+				LEFT JOIN bse.t_bas_org og ON og.code=os.next_org_code AND og.active='Y'
+				LEFT JOIN tfr.t_opt_loader_participation lp ON lp.task_id=a.id AND lp.be_creator='Y'
+		<where>
+			 a.handover_goods_qty-decode(c.ScanCount,null,0,c.ScanCount)<![CDATA[<>]]>0 
+			<if test="transType!=null and transType!='' ">	
+				and wb.product_code=#{transType}
+			</if>
+			<if test="nextDestination!=null and nextDestination!='' ">
+				and os.next_org_code=#{nextDestination}
+			</if>
+			    and statu!='HANDSCAN'
+			
+		</where>
+  	
+  </select>
+  <!--分页数 零担-->
+  <select id="querySubForkAreaGoodsCount" resultType="Long" parameterType="com.deppon.foss.module.transfer.unload.api.shared.vo.SubForkAreaGoodsVo">
+  		select count(0) from(
+			select 
+					distinct a.waybill_no wayBillNo,
+					a.package_no packageNo,
+					wb.goods_qty_total billingNum,
+					nvl(b.bangbingCount,0) bindNum,
+					(a.handover_goods_qty-decode(c.ScanCount,null,0,c.ScanCount)) unScanNum,
+					a.transport_type transType,
+					a.unload_task_no unloadTaskNo,
+					og.name nextDestination,
+					lp.loader_name createPerson,
+					lp.loader_code createPersonCode,
+					a.unload_time scanTime,
+					NVl(statu,'UNSCAN') statu
+					 from (
+					select ut.id,ut.unload_task_no,ud.waybill_no,ud.package_no,ud.handover_goods_qty,ud.transport_type,ut.unload_start_time unload_time  
+					FROM  tfr.t_opt_unload_task ut
+					inner join
+					tfr.t_opt_unload_waybill_detail ud 
+					on ud.unload_task_id=ut.id  
+					and ut.unload_org_code=#{orgCode}
+			<where>
+					 ut.unload_start_time<![CDATA[>=]]>#{createBeginTime}
+					and ut.unload_start_time<![CDATA[<=]]>#{createEndTime} 
+					and ut.task_state!='CANCELED'
+					and ut.unload_way='PDA'
+				<if test="wayBllNo!=null and wayBllNo!='' ">
+					and ud.waybill_no=#{wayBllNo}
+				</if>
+				<if test="unloadTaskNo!=null and unloadTaskNo!='' ">	
+					and ut.unload_task_no=#{unloadTaskNo}
+				</if>
+			</where>
+				
+				) a
+				left join
+				(
+				select tt.unload_task_no,
+                    ttd.waybill_no,
+                    count(0) bangbingCount,
+                    nvl(max(tt.statu),'UNSCAN') statu
+               from tfr.t_opt_unload_task ut 
+              inner JOIN tfr.t_opt_trayscan_task tt on tt.unload_task_no=ut.unload_task_no
+              inner join  tfr.t_opt_trayscan_task_detail ttd on ttd.trayscan_task_no = tt.task_no
+                                                   and tt.statu not in('CANCEL','HANDSCAN')
+                                                   and tt.outfield_org_code = #{orgCode}
+              
+               WHERE 
+                   ut.unload_start_time<![CDATA[>=]]>#{createBeginTime}
+					and ut.unload_start_time<![CDATA[<=]]>#{createEndTime} 
+					and ut.unload_way='PDA'
+					and ut.task_state!='CANCELED'
+					and ut.unload_org_code=#{orgCode}
+				<if test="wayBllNo!=null and wayBllNo!='' ">
+					and ttd.waybill_no=#{wayBllNo}
+				</if>
+				<if test="unloadTaskNo!=null and unloadTaskNo!='' ">	
+					and ut.unload_task_no=#{unloadTaskNo}
+				</if>                                  
+              group by tt.unload_task_no, ttd.waybill_no) b
+				on a.unload_task_no=b.unload_task_no and a.waybill_no=b.waybill_no
+				
+				left join
+				(
+					select tt.unload_task_no, ttd.waybill_no, count(0) ScanCount
+	              	from   tfr.t_opt_unload_task ut 
+	             	inner join   tfr.t_opt_trayscan_task tt on tt.unload_task_no=ut.unload_task_no
+	              	inner join tfr.t_opt_trayscan_task_detail ttd on ttd.trayscan_task_no =tt.task_no
+	                                                   and tt.statu = 'SCANNED'
+	                                                   and tt.outfield_org_code =#{orgCode}
+	                  WHERE 
+	                   ut.unload_start_time<![CDATA[>=]]>#{createBeginTime}
+					and ut.unload_start_time<![CDATA[<=]]>#{createEndTime} 
+					and ut.unload_way='PDA'
+					and ut.task_state!='CANCELED'
+					and ut.unload_org_code=#{orgCode}
+					<if test="wayBllNo!=null and wayBllNo!='' ">
+						and ttd.waybill_no=#{wayBllNo}
+					</if>
+					<if test="unloadTaskNo!=null and unloadTaskNo!='' ">	
+						and ut.unload_task_no=#{unloadTaskNo}
+					</if>      
+	              group by tt.unload_task_no, ttd.waybill_no) c
+				on a.unload_task_no=c.unload_task_no and a.waybill_no=c.waybill_no
+				
+				LEFT JOIN pkp.t_srv_waybill wb ON wb.waybill_no=a.waybill_no and wb.active='Y'
+				
+				left JOIN tfr.t_opt_waybill_stock os ON os.waybill_no=a.waybill_no 
+				AND os.org_code=#{orgCode}
+				LEFT JOIN bse.t_bas_org og ON og.code=os.next_org_code AND og.active='Y'
+				LEFT JOIN tfr.t_opt_loader_participation lp ON lp.task_id=a.id AND lp.be_creator='Y'
+		<where>
+			 a.handover_goods_qty-decode(c.ScanCount,null,0,c.ScanCount)<![CDATA[<>]]>0 
+			<if test="transType!=null and transType!='' ">	
+				and wb.product_code=#{transType}
+			</if>
+			<if test="nextDestination!=null and nextDestination!='' ">
+				and os.next_org_code=#{nextDestination}
+			</if>
+			 and statu!='HANDSCAN'
+		</where>
+  	)
+  </select>
+  <!--待叉区货物查询 快递-->
+  <select id="querySubForkAreaGoodsExpress" resultMap="querySubForkAreaGoodsExpressMap" 
+  		parameterType="com.deppon.foss.module.transfer.unload.api.shared.vo.SubForkAreaGoodsVo">
+  	select '123456' waybillNo,2 billingNum,3 bindNum,4 unScanNum,'火箭运输' transType,'天堂' nextDestination,
+	'叶开' createPerson,'328060' createPersonCode,'2016-01-01 08:08:08' scanTime,'234567' unloadTaskNo  
+	from tfr.t_opt_trayscan_task
+  	
+  </select>
+  <!--分页数 快递-->
+  <select id="querySubForkAreaGoodsCountExpress" resultType="Long" parameterType="com.deppon.foss.module.transfer.unload.api.shared.vo.SubForkAreaGoodsVo">
+  		  select count(*) from (select '123456' waybillNo,2 billingNum,3 bindNum,4 unScanNum,'火箭运输' transType,'天堂' nextDestination,
+	'叶开' createPerson,'328060' createPersonCode,'2016-01-01 08:08:08' scanTime,'234567' unloadTaskNo  
+	from tfr.t_opt_trayscan_task) t
+  </select>
+</mapper>

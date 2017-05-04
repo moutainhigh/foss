@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+	http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+	http://www.springframework.org/schema/context 
+	http://www.springframework.org/schema/context/spring-context-3.0.xsd
+	http://www.springframework.org/schema/jee 
+	http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+	http://www.springframework.org/schema/tx 
+	http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+	http://www.springframework.org/schema/aop 
+	http://www.springframework.org/schema/aop/spring-aop-3.0.xsd" default-autowire="byName">
+	
+	<!-- <bean id="dataSource"
+		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver" />
+		<property name="url" value="jdbc:oracle:thin:@192.168.10.120:1521:fossdb" />
+		<property name="username" value="search" />
+		<property name="password" value="search" />
+	</bean> -->
+	
+	<bean id="dataSource"
+		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver" />
+		<property name="url" value="jdbc:oracle:thin:@192.168.10.111:1521:fossdbsb" />
+		<property name="username" value="stl" />
+		<property name="password" value="fosssit" />
+	</bean>
+	
+	<!-- 数据连接管理 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	<!-- 事务注解支持 -->
+	<tx:annotation-driven transaction-manager="transactionManager" />
+	<!-- myBatis文件 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="mapperLocations"
+			value="classpath*:com/deppon/**/META-INF/ibatis/*.xml" />
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	
+	<!-- 因为综合管理继承的mybatisDao不一样，里面的sqlSession配置不同，故增加 下面的sqlSession  add by wujiangtao -->
+	<bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg index="0" ref="sqlSessionFactory" />
+	</bean>
+	
+	<!-- 综合管理行政区域 -->
+	<!-- 数据访问层 -->
+	<bean id="orgAdministrativeInfoDao" 
+		class="com.deppon.foss.module.base.baseinfo.server.dao.impl.OrgAdministrativeInfoDao">
+		<!-- 		<property name="sqlSessionFactory" ref="sqlSessionFactory" /> -->
+	</bean>	
+	<!-- 业务服务层 -->
+	<bean id="orgAdministrativeInfoService" 
+		class="com.deppon.foss.module.base.baseinfo.server.service.impl.OrgAdministrativeInfoService">
+		
+	</bean>	
+	
+	<!-- 数据访问层  财务组织  -->
+	<bean id="financialOrganizationsDao" 
+		class="com.deppon.foss.module.base.baseinfo.server.dao.impl.FinancialOrganizationsDao">
+	</bean>	
+	<!-- 业务服务层  财务组织  -->
+	<bean id="financialOrganizationsService" 
+		class="com.deppon.foss.module.base.baseinfo.server.service.impl.FinancialOrganizationsService">
+	</bean>	
+	<!-- 现金收入缴款信息 liqin dp 2012 12-15 -->
+	<bean id="cashCollectionIncomeDao" class="com.deppon.foss.module.settlement.pay.server.dao.impl.CashCollectionIncomeDao"></bean>
+
+	<!-- 公用 -->
+	<bean id="pdaPosManageService" class="com.deppon.foss.module.settlement.pay.server.service.impl.PdaPosManageService">		
+	</bean>
+	<bean id="pdaPosManageDao" class="com.deppon.foss.module.settlement.pay.server.dao.impl.PdaPosManageDao">
+	</bean>
+	
+	<!-- 待刷卡运单管理 -->
+	<bean id="wscWayBillManageAction" class="com.deppon.foss.module.settlement.pay.server.action.WscWayBillManageAction" scope="prototype"></bean>
+	<bean id="stlPayWscWayBillManageService" class="com.deppon.foss.module.settlement.pay.server.service.impl.WscWayBillManageService" ></bean>
+	<bean id="stlPayWscWayBillManageDao" class="com.deppon.foss.module.settlement.pay.server.dao.impl.WscWayBillManageDao"></bean>
+	
+	<!-- 自动付款 -->
+	<bean id="billAutoPayPtpServiceTest" class="com.deppon.foss.module.settlement.pay.test.service.BillAutoPayPtpServiceTest" />
+	<bean id="billPayablePtpService" class="com.deppon.foss.module.settlement.pay.server.service.impl.BillPayablePtpService" />
+	<bean id="billPayablePtpDao" class="com.deppon.foss.module.settlement.pay.server.dao.impl.BillPayablePtpDao"></bean>
+</beans>

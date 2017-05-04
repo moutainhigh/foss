@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.wayBillNoSection">
+	<resultMap id="wayBillNoSectionResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.WayBillNoSectionEntity">
+		<result property="id" column="ID"  jdbcType="VARCHAR" />
+		<result property="systemName" column="SYSTEM_NAME"  jdbcType="VARCHAR" />
+		<result property="channelSourceCode" column="CHANNEL_SOURCE_CODE"  jdbcType="VARCHAR" />
+		<result property="customerCode" column="CUSTOMER_CODE"  jdbcType="VARCHAR" />
+		<result property="wayBillNoStart" column="WAYBILL_NO_START"  jdbcType="VARCHAR" />
+		<result property="wayBillNoEnd" column="WAYBILL_NO_END"  jdbcType="VARCHAR" />
+		<result property="remark" column="REMARK"  jdbcType="VARCHAR" />
+		<result property="createTime" column="CREATE_TIME"  jdbcType="TIMESTAMP" />
+		<result property="createUserCode" column="CREATE_USER_CODE"  jdbcType="VARCHAR" />
+		<result property="createUserName" column="CREATE_USER_NAME"  jdbcType="VARCHAR" />
+		<result property="active" column="ACTIVE"  jdbcType="CHAR" />
+	</resultMap>
+	
+	<!-- 数据字段 -->
+	<sql id="wayBillNoSection_Column_List">
+		ID, SYSTEM_NAME, CHANNEL_SOURCE_CODE, CUSTOMER_CODE, WAYBILL_NO_START, WAYBILL_NO_END, APPLY_COUNT, REMARK, CREATE_TIME, CREATE_USER_CODE, CREATE_USER_NAME, ACTIVE
+	</sql>
+	
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<if test="systemName != null and systemName != ''">
+				T.SYSTEM_NAME = #{systemName,jdbcType=VARCHAR}
+			</if>
+			<if test="channelSourceCode != null and channelSourceCode != ''">
+				AND T.CHANNEL_SOURCE_CODE = #{channelSourceCode,jdbcType=VARCHAR}
+			</if>
+			<if test="customerCode != null and customerCode != ''">
+				AND T.CUSTOMER_CODE = #{customerCode,jdbcType=VARCHAR}
+			</if>
+			<if test="(wayBillNoStart == null or wayBillNoStart == '') and startDate != null and startDate != ''">
+				AND T.CREATE_TIME <![CDATA[  >=  ]]> #{startDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="(wayBillNoStart == null or wayBillNoStart == '') and startDate != null and startDate != ''">
+				AND T.CREATE_TIME <![CDATA[  <=  ]]> #{endDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="wayBillNoStart != null and wayBillNoStart != '' and (wayBillNoEnd == null or wayBillNoEnd == '')">
+				T.WAYBILL_NO_START <![CDATA[  <=  ]]> #{wayBillNoStart,jdbcType=VARCHAR}
+				AND 
+				T.WAYBILL_NO_END <![CDATA[  >=  ]]> #{wayBillNoStart,jdbcType=VARCHAR}
+			</if>
+			<if test="wayBillNoStart != null and wayBillNoStart != '' and wayBillNoEnd != null and wayBillNoEnd != ''">
+				AND (
+						(
+							T.WAYBILL_NO_START <![CDATA[  >=  ]]> #{wayBillNoStart,jdbcType=VARCHAR}
+						AND 
+							T.WAYBILL_NO_START <![CDATA[  <=  ]]> #{wayBillNoEnd,jdbcType=VARCHAR}
+						)
+						OR 
+						(
+							T.WAYBILL_NO_START <![CDATA[  <=  ]]> #{wayBillNoStart,jdbcType=VARCHAR}
+						AND
+							T.WAYBILL_NO_END <![CDATA[  >=  ]]> #{wayBillNoEnd,jdbcType=VARCHAR}
+						)
+						OR 
+						(
+							T.WAYBILL_NO_END <![CDATA[  >=  ]]> #{wayBillNoStart,jdbcType=VARCHAR}
+						AND 
+							T.WAYBILL_NO_END <![CDATA[  <=  ]]> #{wayBillNoEnd,jdbcType=VARCHAR}
+						)
+						OR 
+						(
+							T.WAYBILL_NO_START <![CDATA[  >=  ]]> #{wayBillNoStart,jdbcType=VARCHAR}
+						AND 
+							T.WAYBILL_NO_END <![CDATA[  <=  ]]> #{wayBillNoEnd,jdbcType=VARCHAR}
+						)
+					)
+			</if>
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</sql>
+	
+	<!-- 查询所有运单号段信息 -->
+	<select id="queryAllWayBillNoSection"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.WayBillNoSectionEntity"
+		resultMap="wayBillNoSectionResultMap">
+		<![CDATA[
+			SELECT
+			/** 综合:查询所有运单号段信息**/
+		]]>
+		<include refid="wayBillNoSection_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_WAYBILLNO_SECTION T
+		]]>
+		<include refid="queryWhere" />
+	</select>
+	
+	<!-- 统计总记录数 -->
+	<select id="queryCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.WayBillNoSectionEntity">
+	    <![CDATA[
+	       	select/** 综合:统计总记录数**/ count(*) FROM BSE.T_BAS_WAYBILLNO_SECTION T 
+	    ]]>
+		<include refid="queryWhere" />
+	</select>
+	
+	<!-- 新增信息 -->
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.WayBillNoSectionEntity">
+		
+		<![CDATA[
+			INSERT/** 综合:新增信息**/ INTO BSE.T_BAS_WAYBILLNO_SECTION T	(
+		]]>
+		<include refid="wayBillNoSection_Column_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, 
+		#{systemName,jdbcType=VARCHAR},
+		#{channelSourceCode,jdbcType=VARCHAR},
+		#{customerCode,jdbcType=VARCHAR},
+		#{wayBillNoStart,jdbcType=VARCHAR},
+		#{wayBillNoEnd,jdbcType=VARCHAR},
+		#{applyCount,jdbcType=NUMERIC},
+		#{remark,jdbcType=VARCHAR},
+		#{createTime,jdbcType=TIMESTAMP}, 
+		#{createUserCode,jdbcType=VARCHAR},
+		#{createUserName,jdbcType=VARCHAR},
+		#{active,jdbcType=CHAR}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+	<!-- 查询起始参数 -->
+	<select id="queryStartValue" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.WayBillNoSectionEntity">
+	    <![CDATA[
+	       	SELECT (CASE WHEN (TO_NUMBER(T.WAYBILLNO_START) + 
+	    ]]>
+	      #{applyCount,jdbcType=NUMERIC}
+	    <![CDATA[
+	    	       ) > TO_NUMBER(T.WAYBILLNO_END) THEN -1 ELSE TO_NUMBER(T.WAYBILLNO_START) END) STARTVALUE 
+				FROM BSE.T_BAS_WAYBILLNO_SECTION_PARAM T WHERE T.ACTIVE = 'Y'
+	    ]]>
+	</select>
+	
+	<!-- 修改起始参数 -->
+	<update id="updateStartValue"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.WayBillNoSectionEntity">
+		<![CDATA[
+			update/** 综合:修改起始参数 **/ BSE.T_BAS_WAYBILLNO_SECTION_PARAM T set T.WAYBILLNO_START = 
+		]]>	
+			#{wayBillNoEnd,jdbcType=VARCHAR}
+		<![CDATA[
+			 where T.ACTIVE = 'Y'
+		]]>	
+	</update>
+</mapper>

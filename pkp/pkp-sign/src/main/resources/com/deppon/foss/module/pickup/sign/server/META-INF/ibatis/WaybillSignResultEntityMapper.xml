@@ -1,0 +1,817 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper
+	namespace="com.deppon.foss.module.pickup.sign.api.shared.domain.WaybillSignResultEntity">
+	<resultMap id="waybillSignResultMap"
+		type="com.deppon.foss.module.pickup.sign.api.shared.domain.WaybillSignResultEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+	    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+	    <result column="SIGN_SITUATION" property="signSituation" jdbcType="VARCHAR" />
+	    <result column="DELIVERYMAN_NAME" property="deliverymanName" jdbcType="VARCHAR" />
+	    <result column="SIGN_GOODS_QTY" property="signGoodsQty" jdbcType="DECIMAL" />
+	    <result column="SIGN_NOTE" property="signNote" jdbcType="VARCHAR" />
+	    <result column="SIGN_TIME" property="signTime" jdbcType="TIMESTAMP" />
+	    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+	    <result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+	    <result column="ACTIVE" property="active" jdbcType="CHAR" />
+	    <result column="IDENTIFY_TYPE" property="identifyType" jdbcType="VARCHAR" />
+	    <result column="IDENTIFY_CODE" property="identifyCode" jdbcType="VARCHAR" />
+	    <result column="IS_PDA_SIGN" property="isPdaSign" jdbcType="CHAR" />
+	    <result column="SIGN_STATUS" property="signStatus" jdbcType="VARCHAR" />
+	    <result column="AGENT_CODE" property="agentCode" jdbcType="VARCHAR" />
+	    <result column="IS_RFCING" property="isRfcing" jdbcType="CHAR" />
+	    <result column="DELIVER_DATE" property="deliverDate" jdbcType="TIMESTAMP" />
+	    <result column="ARRIVE_TIME" property="arriveTime" jdbcType="TIMESTAMP" />
+    	<result column="RECEIVE_METHOD" property="receiveMethod" jdbcType="VARCHAR" />
+    	<result column="CREATE_ORG_CODE" property="createOrgCode" jdbcType="VARCHAR" />
+    	<result column="CREATE_ORG_NAME" property="createOrgName" jdbcType="VARCHAR" />
+    	<result column="CREATOR" property="creator" jdbcType="VARCHAR" />
+    	<result column="CREATOR_CODE" property="creatorCode" jdbcType="VARCHAR" />
+    	
+    	<result column="SEND_EXPRESS_ORG_CODE" property="expressOrgCode" jdbcType="VARCHAR" />
+    	<result column="SEND_EXPRESS_ORG_NAME" property="expressOrgName" jdbcType="VARCHAR" />
+    	<result column="SEND_EXPRESS_EMP_CODE" property="expressEmpCode" jdbcType="VARCHAR" />
+    	<result column="SEND_EXPRESS_EMP_NAME" property="expressEmpName" jdbcType="VARCHAR" />
+	
+		<result column="TO_PAY_AMOUNT" property="toPayAmount" jdbcType="DECIMAL" />
+		<result column="COD_AMOUNT" property="codAmount" jdbcType="DECIMAL" />
+		<result column="COD_PAYMENT_TYPE" property="codPaymentType" jdbcType="VARCHAR" />
+		<result column="COD_BANK_TRADESERAIL" property="codBankTradeSerail" jdbcType="VARCHAR" />
+		<result column="TOTAL_AMOUNT" property="totalAmount" jdbcType="DECIMAL" />
+		<result column="TOTAL_PAYMENT_TYPE" property="totalPaymentType" jdbcType="VARCHAR" />
+
+		<result column="IS_PARTNER" property="isPartner" jdbcType="CHAR" />
+		<result column="PARTNER_NAME" property="partnerName" jdbcType="VARCHAR" />
+		<result column="PARTNER_PHONE" property="partnerPhone" jdbcType="VARCHAR" />
+		
+	</resultMap>
+	<sql id="waybillSignResultFields">
+    ID, WAYBILL_NO, SIGN_SITUATION, DELIVERYMAN_NAME, SIGN_GOODS_QTY, SIGN_NOTE, SIGN_TIME, 
+    CREATE_TIME, MODIFY_TIME, ACTIVE, IDENTIFY_TYPE, IDENTIFY_CODE, IS_PDA_SIGN, SIGN_STATUS, 
+    AGENT_CODE, IS_RFCING, DELIVER_DATE, ARRIVE_TIME, RECEIVE_METHOD, CREATE_ORG_CODE, 
+    CREATE_ORG_NAME, CREATOR, CREATOR_CODE
+	</sql>
+	<update id="updateById"
+		parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.WaybillSignResultEntity">
+		update PKP.T_SRV_WAYBILL_SIGN_RESULT
+		<set>
+			<if test="modifyTime != null and modifyTime != ''">
+				MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="active != null and active != ''">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="signSituation != null and signSituation != ''">
+				SIGN_SITUATION = #{signSituation,jdbcType=VARCHAR},
+			</if>
+		</set>
+		<![CDATA[ 
+			where ID = #{id,jdbcType=VARCHAR}
+    	]]>
+	</update>
+	<select id="queryWaybillSignResult" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.WaybillSignResultEntity"
+		resultMap="waybillSignResultMap">
+    		select /*模块：接送货-签收-查询运单签收结果信息 */
+    		 <include refid="waybillSignResultFields"/>
+    		 from pkp.T_SRV_WAYBILL_SIGN_RESULT  
+    	<where>
+    		<choose>
+				<when test="waybillNo != null and waybillNo != ''">
+					and WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+				</when>
+				<otherwise>
+					and WAYBILL_NO = ''
+				</otherwise>
+			</choose>
+    		<if test="active!=null and active != ''">
+    			and ACTIVE = #{active,jdbcType=CHAR}
+    		</if>
+    	</where>
+    	order by sign_time desc
+	</select>
+	<!-- 根据运单号、active、签收状态 查询第一次全部签收的签收结果信息 -->
+	<select id="queryFirstSignAllByEntity" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.WaybillSignResultEntity"
+			resultMap="waybillSignResultMap">
+		select /* 模块：接送货-签收-查询第一次全部签收的签收结果信息 */
+		<include refid="waybillSignResultFields"/> 
+		from pkp.T_SRV_WAYBILL_SIGN_RESULT r
+		<where>
+    		<choose>
+				<when test="waybillNo != null and waybillNo != ''">
+					and r.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+				</when>
+				<otherwise>
+					and r.WAYBILL_NO = ''
+				</otherwise>
+			</choose>
+			<!--查询第一次全部签收，若有多次全部签收记录(有过多次反签收)，则第一次必然是无效的，所以去掉该条件
+			<if test="active != null and active != ''">
+				and r.ACTIVE = #{active,jdbcType=CHAR}
+			</if>-->
+			<if test="signStatus != null and signStatus != ''">
+				and r.SIGN_STATUS = #{signStatus,jdbcType=VARCHAR}
+			</if>
+    	</where>
+    	order by r.SIGN_TIME
+	</select>
+	<select id="queryWaybillQty" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.WaybillSignResultEntity"
+		resultType="java.lang.Integer">
+    	<![CDATA[ 
+    		select GOODS_QTY_TOTAL goodsQtyTotal
+    		 from pkp.t_srv_waybill  
+    	]]>
+    	<where>
+    		<choose>
+				<when test="waybillNo != null and waybillNo != ''">
+					and WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+				</when>
+				<otherwise>
+					and WAYBILL_NO = ''
+				</otherwise>
+			</choose>
+    		<if test="active!=null and active != ''">
+    			and ACTIVE = #{active,jdbcType=CHAR}
+    		</if>
+    	</where>
+	</select>
+	<!-- 根据运单号查询运单基本信息 -->
+	<select id="selectWaybillActualPartByWaybillNo" resultType="com.deppon.foss.module.pickup.sign.api.shared.dto.WaybillDto"
+		parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.WaybillEntity">
+		 select /*模块：接送货-签收-查询运单部分信息 */ w.product_code productCode,a.generate_goods_qty generateGoodsQty
+		from PKP.T_SRV_WAYBILL w inner join pkp.t_srv_actual_freight a on w.waybill_no = a.waybill_no
+		<where>
+			<choose>
+				<when test="waybillNo != null and waybillNo != ''">
+					and w.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+				</when>
+				<otherwise>
+					and w.WAYBILL_NO = ''
+				</otherwise>
+			</choose>
+			<if test="active != null and active != ''">
+				and w.ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+		</where>
+	</select>
+	<select id="selectByPrimaryKey" resultMap="waybillSignResultMap" parameterType="java.lang.String" >
+    select /*模块：接送货-签收-根据id查询运单签收结果信息 */
+    <include refid="waybillSignResultFields" />
+    from PKP.T_SRV_WAYBILL_SIGN_RESULT
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String" >
+    delete from PKP.T_SRV_WAYBILL_SIGN_RESULT
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  <insert id="insert" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.WaybillSignResultEntity" >
+     insert into PKP.T_SRV_WAYBILL_SIGN_RESULT (ID, WAYBILL_NO, SIGN_SITUATION, 
+      DELIVERYMAN_NAME, SIGN_GOODS_QTY, SIGN_NOTE, 
+      SIGN_TIME, CREATE_TIME, MODIFY_TIME, 
+      ACTIVE, IDENTIFY_TYPE, IDENTIFY_CODE, 
+      IS_PDA_SIGN, SIGN_STATUS, AGENT_CODE, IS_RFCING, DELIVER_DATE, 
+      ARRIVE_TIME, RECEIVE_METHOD, CREATE_ORG_CODE, 
+      CREATE_ORG_NAME, CREATOR, CREATOR_CODE,IS_PARTNER,PARTNER_NAME,PARTNER_PHONE)
+    values (#{id,jdbcType=VARCHAR}, #{waybillNo,jdbcType=VARCHAR}, #{signSituation,jdbcType=VARCHAR}, 
+      #{deliverymanName,jdbcType=VARCHAR}, #{signGoodsQty,jdbcType=DECIMAL}, #{signNote,jdbcType=VARCHAR}, 
+      #{signTime,jdbcType=TIMESTAMP}, #{createTime,jdbcType=TIMESTAMP}, #{modifyTime,jdbcType=TIMESTAMP}, 
+      #{active,jdbcType=CHAR}, #{identifyType,jdbcType=VARCHAR}, #{identifyCode,jdbcType=VARCHAR}, 
+      #{isPdaSign,jdbcType=CHAR}, #{signStatus,jdbcType=VARCHAR}, #{agentCode,jdbcType=VARCHAR}
+      , #{isRfcing,jdbcType=CHAR}, #{deliverDate,jdbcType=TIMESTAMP}, 
+      #{arriveTime,jdbcType=TIMESTAMP}, #{receiveMethod,jdbcType=VARCHAR}, #{createOrgCode,jdbcType=VARCHAR}, 
+      #{createOrgName,jdbcType=VARCHAR}, #{creator,jdbcType=VARCHAR}, #{creatorCode,jdbcType=VARCHAR},
+      #{isPartner,jdbcType=CHAR},#{partnerName,jdbcType=VARCHAR},#{partnerPhone,jdbcType=VARCHAR})
+  </insert>
+  <insert id="insertWaybillsignResult" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.WaybillSignResultEntity" >
+    insert into PKP.T_SRV_WAYBILL_SIGN_RESULT
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null and id != ''" >
+        ID,
+      </if>
+      <if test="waybillNo != null and waybillNo != ''" >
+        WAYBILL_NO,
+      </if>
+      <if test="signSituation != null and signSituation != ''" >
+        SIGN_SITUATION,
+      </if>
+      <if test="deliverymanName != null and deliverymanName != ''" >
+        DELIVERYMAN_NAME,
+      </if>
+      <if test="signGoodsQty != null and signGoodsQty != ''" >
+        SIGN_GOODS_QTY,
+      </if>
+      <if test="signNote != null and signNote != ''" >
+        SIGN_NOTE,
+      </if>
+      <if test="signTime != null and signTime != ''" >
+        SIGN_TIME,
+      </if>
+      <if test="createTime != null and createTime != ''" >
+        CREATE_TIME,
+      </if>
+      <if test="modifyTime != null and modifyTime != ''" >
+        MODIFY_TIME,
+      </if>
+      <if test="active != null and active != ''" >
+        ACTIVE,
+      </if>
+      <if test="identifyType != null and identifyType != ''" >
+        IDENTIFY_TYPE,
+      </if>
+      <if test="identifyCode != null and identifyCode != ''" >
+        IDENTIFY_CODE,
+      </if>
+      <if test="isPdaSign != null and isPdaSign != ''" >
+        IS_PDA_SIGN,
+      </if>
+      <if test="signStatus != null and signStatus != ''" >
+        SIGN_STATUS,
+      </if>
+      <if test="agentCode != null and agentCode != ''" >
+        AGENT_CODE,
+      </if>
+      <if test="isRfcing != null and isRfcing != ''" >
+        IS_RFCING,
+      </if>
+      <if test="deliverDate != null and deliverDate != ''" >
+        DELIVER_DATE,
+      </if>
+      <if test="arriveTime != null and arriveTime != ''" >
+        ARRIVE_TIME,
+      </if>
+      <if test="receiveMethod != null and receiveMethod != ''" >
+        RECEIVE_METHOD,
+      </if>
+      <if test="createOrgCode != null and createOrgCode != ''" >
+        CREATE_ORG_CODE,
+      </if>
+      <if test="createOrgName != null and createOrgName != ''" >
+        CREATE_ORG_NAME,
+      </if>
+      <if test="creator != null and creator != ''" >
+        CREATOR,
+      </if>
+      <if test="creatorCode != null and creatorCode != ''" >
+        CREATOR_CODE,
+      </if>
+      
+      
+      <if test="expressEmpCode != null and expressEmpCode != ''" >
+        SEND_EXPRESS_EMP_CODE,
+      </if>
+      <if test="expressEmpName != null and expressEmpName != ''" >
+        SEND_EXPRESS_EMP_NAME,
+      </if>
+      <if test="expressOrgCode != null and expressOrgCode != ''" >
+        SEND_EXPRESS_ORG_CODE,
+      </if>
+      <if test="expressOrgName != null and expressOrgName != ''" >
+        SEND_EXPRESS_ORG_NAME,
+      </if>
+      
+      <if test="toPayAmount != null and toPayAmount != ''" >
+        TO_PAY_AMOUNT,
+      </if>
+      <if test="codAmount != null and codAmount != ''" >
+        COD_AMOUNT,
+      </if>
+      <if test="codPaymentType != null and codPaymentType != ''" >
+        COD_PAYMENT_TYPE,
+      </if>
+      <if test="codBankTradeSerail != null and codBankTradeSerail != ''" >
+        COD_BANK_TRADESERAIL,
+      </if>
+      <if test="totalAmount != null and totalAmount != ''" >
+        TOTAL_AMOUNT,
+      </if>
+      <if test="totalPaymentType != null and totalPaymentType != ''" >
+        TOTAL_PAYMENT_TYPE,
+      </if>
+      
+      <if test="isPartner != null and isPartner != ''">
+      	IS_PARTNER,
+      </if>
+      <if test="partnerName != null and partnerName != ''">
+      	PARTNER_NAME,
+      </if>
+      <if test="partnerPhone != null and partnerPhone != ''">
+      	PARTNER_PHONE,
+      </if>
+      
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null and id != ''" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="waybillNo != null and waybillNo != ''" >
+        #{waybillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="signSituation != null and signSituation != ''" >
+        #{signSituation,jdbcType=VARCHAR},
+      </if>
+      <if test="deliverymanName != null and deliverymanName != ''" >
+        #{deliverymanName,jdbcType=VARCHAR},
+      </if>
+      <if test="signGoodsQty != null and signGoodsQty != ''" >
+        #{signGoodsQty,jdbcType=DECIMAL},
+      </if>
+      <if test="signNote != null and signNote != ''" >
+        #{signNote,jdbcType=VARCHAR},
+      </if>
+      <if test="signTime != null and signTime != ''" >
+        #{signTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="createTime != null and createTime != ''" >
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifyTime != null and modifyTime != ''" >
+        #{modifyTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="active != null and active != ''" >
+        #{active,jdbcType=CHAR},
+      </if>
+      <if test="identifyType != null and identifyType != ''" >
+        #{identifyType,jdbcType=VARCHAR},
+      </if>
+      <if test="identifyCode != null and identifyCode != ''" >
+        #{identifyCode,jdbcType=VARCHAR},
+      </if>
+      <if test="isPdaSign != null and isPdaSign != ''" >
+        #{isPdaSign,jdbcType=CHAR},
+      </if>
+      <if test="signStatus != null and signStatus != ''" >
+        #{signStatus,jdbcType=VARCHAR},
+      </if>
+      <if test="agentCode != null and agentCode != ''" >
+        #{agentCode,jdbcType=VARCHAR},
+      </if>
+       <if test="isRfcing != null and isRfcing != ''" >
+        #{isRfcing,jdbcType=CHAR},
+      </if>
+      <if test="deliverDate != null and deliverDate != ''" >
+        #{deliverDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="arriveTime != null and arriveTime != ''" >
+        #{arriveTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="receiveMethod != null and receiveMethod != ''" >
+        #{receiveMethod,jdbcType=VARCHAR},
+      </if>
+      <if test="createOrgCode != null and createOrgCode != ''" >
+        #{createOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="createOrgName != null and createOrgName != ''" >
+        #{createOrgName,jdbcType=VARCHAR},
+      </if>
+      <if test="creator != null and creator != ''" >
+        #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="creatorCode != null and creatorCode != ''" >
+        #{creatorCode,jdbcType=VARCHAR},
+      </if>
+      
+      
+      <if test="expressEmpCode != null and expressEmpCode != ''" >
+        #{expressEmpCode,jdbcType=VARCHAR},
+      </if>
+      <if test="expressEmpName != null and expressEmpName != ''" >
+        #{expressEmpName,jdbcType=VARCHAR},
+      </if>
+      <if test="expressOrgCode != null and expressOrgCode != ''" >
+        #{expressOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="expressOrgName != null and expressOrgName != ''" >
+        #{expressOrgName,jdbcType=VARCHAR},
+      </if>
+      
+      <if test="toPayAmount != null and toPayAmount != ''" >
+        #{toPayAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="codAmount != null and codAmount != ''" >
+        #{codAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="codPaymentType != null and codPaymentType != ''" >
+        #{codPaymentType,jdbcType=VARCHAR},
+      </if>
+      <if test="codBankTradeSerail != null and codBankTradeSerail != ''" >
+        #{codBankTradeSerail,jdbcType=VARCHAR},
+      </if>
+      <if test="totalAmount != null and totalAmount != ''" >
+        #{totalAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="totalPaymentType != null and totalPaymentType != ''" >
+        #{totalPaymentType,jdbcType=VARCHAR},
+      </if>
+      
+      <if test="isPartner != null and isPartner != ''">
+      	#{isPartner,jdbcType=CHAR},
+      </if>
+      <if test="partnerName != null and partnerName != ''">
+      	#{partnerName,jdbcType=VARCHAR},
+      </if>
+      <if test="partnerPhone != null and partnerPhone != ''">
+		#{partnerPhone,jdbcType=VARCHAR},
+      </if>
+      
+    </trim>
+  </insert>
+  <update id="updateWaybillSignResultById" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.WaybillSignResultEntity" >
+    update PKP.T_SRV_WAYBILL_SIGN_RESULT
+    <set >
+      <if test="waybillNo != null" >
+        WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR},
+      </if>
+      <if test="signSituation != null" >
+        SIGN_SITUATION = #{signSituation,jdbcType=VARCHAR},
+      </if>
+      <if test="deliverymanName != null" >
+        DELIVERYMAN_NAME = #{deliverymanName,jdbcType=VARCHAR},
+      </if>
+      <if test="signGoodsQty != null" >
+        SIGN_GOODS_QTY = #{signGoodsQty,jdbcType=DECIMAL},
+      </if>
+      <if test="signNote != null" >
+        SIGN_NOTE = #{signNote,jdbcType=VARCHAR},
+      </if>
+      <if test="signTime != null" >
+        SIGN_TIME = #{signTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="createTime != null" >
+        CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifyTime != null" >
+        MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="active != null" >
+        ACTIVE = #{active,jdbcType=CHAR},
+      </if>
+      <if test="identifyType != null" >
+        IDENTIFY_TYPE = #{identifyType,jdbcType=VARCHAR},
+      </if>
+      <if test="identifyCode != null" >
+        IDENTIFY_CODE = #{identifyCode,jdbcType=VARCHAR},
+      </if>
+      <if test="isPdaSign != null" >
+        IS_PDA_SIGN = #{isPdaSign,jdbcType=CHAR},
+      </if>
+      <if test="signStatus != null" >
+        SIGN_STATUS = #{signStatus,jdbcType=VARCHAR},
+      </if>
+      <if test="agentCode != null" >
+        AGENT_CODE = #{agentCode,jdbcType=VARCHAR},
+      </if>
+      <if test="isRfcing != null" >
+        IS_RFCING = #{isRfcing,jdbcType=CHAR},
+      </if>
+      <if test="deliverDate != null" >
+        DELIVER_DATE = #{deliverDate,jdbcType=TIMESTAMP},
+      </if>
+       <if test="arriveTime != null" >
+        ARRIVE_TIME = #{arriveTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="receiveMethod != null" >
+        RECEIVE_METHOD = #{receiveMethod,jdbcType=VARCHAR},
+      </if>
+      <if test="createOrgCode != null" >
+        CREATE_ORG_CODE = #{createOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="createOrgName != null" >
+        CREATE_ORG_NAME = #{createOrgName,jdbcType=VARCHAR},
+      </if>
+      <if test="creator != null" >
+        CREATOR = #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="creatorCode != null" >
+        CREATOR_CODE = #{creatorCode,jdbcType=VARCHAR},
+      </if>
+      
+      <if test="isPartner != null">
+      	IS_PARTNER=#{isPartner,jdbcType=CHAR},
+      </if>
+      <if test="partnerName != null">
+      	PARTNER_NAME=#{partnerName,jdbcType=VARCHAR},
+      </if>
+      <if test="partnerPhone != null ">
+		PARTNER_PHONE=#{partnerPhone,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.deppon.foss.module.pickup.sign.api.shared.domain.WaybillSignResultEntity" >
+    update PKP.T_SRV_WAYBILL_SIGN_RESULT
+    set WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR},
+      SIGN_SITUATION = #{signSituation,jdbcType=VARCHAR},
+      DELIVERYMAN_NAME = #{deliverymanName,jdbcType=VARCHAR},
+      SIGN_GOODS_QTY = #{signGoodsQty,jdbcType=DECIMAL},
+      SIGN_NOTE = #{signNote,jdbcType=VARCHAR},
+      SIGN_TIME = #{signTime,jdbcType=TIMESTAMP},
+      CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+      MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP},
+      ACTIVE = #{active,jdbcType=CHAR},
+      IDENTIFY_TYPE = #{identifyType,jdbcType=VARCHAR},
+      IDENTIFY_CODE = #{identifyCode,jdbcType=VARCHAR},
+      IS_PDA_SIGN = #{isPdaSign,jdbcType=CHAR},
+      SIGN_STATUS = #{signStatus,jdbcType=VARCHAR},
+      AGENT_CODE = #{agentCode,jdbcType=VARCHAR},
+      IS_RFCING = #{isRfcing,jdbcType=CHAR},
+      DELIVER_DATE = #{deliverDate,jdbcType=TIMESTAMP},
+      ARRIVE_TIME = #{arriveTime,jdbcType=TIMESTAMP},
+      RECEIVE_METHOD = #{receiveMethod,jdbcType=VARCHAR},
+      CREATE_ORG_CODE = #{record.createOrgCode,jdbcType=VARCHAR},
+      CREATE_ORG_NAME = #{record.createOrgName,jdbcType=VARCHAR},
+      CREATOR = #{record.creator,jdbcType=VARCHAR},
+      CREATOR_CODE = #{record.creatorCode,jdbcType=VARCHAR},
+      IS_PARTNER=#{isPartner,jdbcType=CHAR},
+      PARTNER_NAME=#{partnerName,jdbcType=VARCHAR},
+      PARTNER_PHONE=#{partnerPhone,jdbcType=VARCHAR}
+      
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  <select id="queryFirstsignTime" parameterType="java.lang.String"
+		resultType="java.util.Date">
+    		select SIGN_TIME 
+    		 from pkp.T_SRV_WAYBILL_SIGN_RESULT  
+    	<where>
+    		<choose>
+				<when test="value != null and value != ''">
+					and WAYBILL_NO = #{value,jdbcType=VARCHAR}
+				</when>
+				<otherwise>
+					and WAYBILL_NO = ''
+				</otherwise>
+			</choose>
+			 and rownum = 1
+    	</where>
+    	order by sign_time
+	</select>
+	<!-- 根据传入的待撤销组织CODE(最终配载部门),返回当前组织的未签收票数 -->
+	<select id="queryNotSignGoodsQty" parameterType="java.util.Map"
+		resultType="java.lang.Integer">
+    	select  /*模块：接送货-签收-返回当前组织的未签收票数 */
+    	nvl(sum(waybill.goods_qty_total) - sum(r.sign_goods_qty),0)
+ 		 from pkp.t_srv_waybill waybill
+ 		 left join pkp.t_srv_waybill_sign_result r on waybill.waybill_no = r.waybill_no 
+   		 and r.active = #{resultaActive,jdbcType=VARCHAR}
+    	<where>
+    		waybill.active = #{active,jdbcType=VARCHAR}
+    		<choose>
+				<when test="lastLoadOrgCode != null and lastLoadOrgCode != ''">
+					and waybill.last_load_org_code = #{lastLoadOrgCode,jdbcType=VARCHAR}
+				</when>
+				<otherwise>
+					and waybill.last_load_org_code = ''
+				</otherwise>
+			</choose>
+    	</where>
+	</select>
+	
+	<!-- 根据传入的起止时间,返回运单号list集合-->
+	<select id="queryByCondition" parameterType="com.deppon.foss.module.pickup.sign.api.shared.dto.WaybillSignResultDto"
+		resultType = "java.lang.String">
+    	select 
+    		waybill_no waybillNo
+ 		 from  pkp.t_srv_waybill_sign_result  
+    	<where>
+    	<if test = "signTimeStart!=null and signTimeStart!=''">
+    		<![CDATA[and SIGN_TIME >= #{signTimeStart,jdbcType=TIMESTAMP}]]>
+    	</if>
+    	<if test = "signTimeEnd!=null and signTimeEnd!=''">
+    		<![CDATA[and SIGN_TIME <= #{signTimeEnd,jdbcType=TIMESTAMP}]]>
+    	</if>
+    	<if test="active != null and active!=''" >
+        	and ACTIVE = #{active,jdbcType=CHAR}
+      	</if>
+		<if test="signStatus != null and signStatus!=''" >
+       		and SIGN_STATUS = #{signStatus,jdbcType=VARCHAR}
+   		</if>
+    	</where>
+	</select>
+
+		<!-- 根据传入的签收起止时间,返回list集合-->
+	<select id="queryWaybillSignTimeResult"  resultType = "com.deppon.esb.inteface.domain.foss2ptp.PartnerUpdateTakeEffectTimeRequest"  parameterType="java.util.Map" >
+    	select 
+    		t.waybill_no sourceBillNo,t.sign_time signDate,1 signType
+ 		 from  bse.t_bas_sales_department d  
+ 		 inner join  pkp.t_srv_waybill w on (w.receive_org_code = d.code OR w.customer_pickup_org_code = d.code) 
+ 		 inner join pkp.t_srv_waybill_sign_result  t on t.waybill_no=w.waybill_no
+    	<where>
+    	<if test = "signTimeStart!=null and signTimeStart!=''">
+    		<![CDATA[and t.SIGN_TIME >= #{signTimeStart,jdbcType=TIMESTAMP}]]>
+    	</if>
+    	<if test = "signTimeEnd!=null and signTimeEnd!=''">
+    		<![CDATA[and t.SIGN_TIME <= #{signTimeEnd,jdbcType=TIMESTAMP}]]>
+    	</if>
+    	AND d.active = 'Y' 
+    	AND d.is_league_saledept = 'Y' 
+    	AND t.active = 'Y'
+    	AND w.active = 'Y'
+    	</where>
+	</select>
+	
+	<resultMap type="com.deppon.foss.module.pickup.sign.api.shared.dto.AirWaybillDto" id="airWaybillResultMap">
+		<result column="ARRIVE_TIME" property="arriveTime" jdbcType="TIMESTAMP"/>
+		<result column="RECEIVE_METHOD" property="deliveryType" jdbcType="VARCHAR"/>
+		<result column="DELIVERYMAN_NAME" property="signer" jdbcType="VARCHAR"/>
+		<result column="SIGN_TIME" property="signTime" jdbcType="TIMESTAMP"/>
+		<result column="DELIVER_DATE" property="deliveryTime" jdbcType="TIMESTAMP"/>
+		<result column="SIGN_SITUATION" property="signState" jdbcType="VARCHAR"/>
+		<result column="Receive_Customer_Contact" property="consignee" jdbcType="VARCHAR"/>
+		<result column="BILL_TIME" property="receiptTime" jdbcType="TIMESTAMP"/>
+		<result column="GOODS_QTY_TOTAL" property="piece" jdbcType="DECIMAL"/>
+		<result column="GOODS_WEIGHT_TOTAL" property="weight" jdbcType="DECIMAL"/>
+		<result column="CREATE_USER_CODE" property="orderCreator" jdbcType="VARCHAR"/>
+		<result column="Product_Code" property="productCode" jdbcType="VARCHAR"/>
+		<result column="DEST_ORG_CODE" property="ladingStationNumber" jdbcType="VARCHAR"/>
+		<result column="dest_org_name" property="ladingStation" jdbcType="VARCHAR"/>
+		<result column="FLIGHT_DATE" property="departureTime" jdbcType="VARCHAR"/>
+		<result column="FLIGHT_NO" property="outBoundFlight" jdbcType="VARCHAR"/>
+	</resultMap>
+	
+	<select id="queryWaybillInfoForEdi" resultMap="airWaybillResultMap">
+		select /*模块：接送货-EDI接口-查询*/
+       f.ARRIVE_TIME,
+         WAYBILL.RECEIVE_METHOD,
+         WSG.DELIVERYMAN_NAME,
+         WSG.SIGN_TIME,
+         WSG.DELIVER_DATE,
+         WSG.SIGN_SITUATION,
+         WAYBILL.Receive_Customer_Contact,
+         WAYBILL.BILL_TIME,
+         WAYBILL.GOODS_QTY_TOTAL,
+         WAYBILL.GOODS_WEIGHT_TOTAL,
+         WAYBILL.CREATE_USER_CODE,
+           WAYBILL.Product_Code,
+           pd.DEST_ORG_CODE, /**代理编码**/
+           pd.dest_org_name, /**代理名称**/
+           pd.FLIGHT_DATE, /**出港日期**/
+           pd.FLIGHT_NO /**航班号**/
+    from PKP.T_SRV_WAYBILL WAYBILL
+    inner join pkp.t_srv_actual_freight f on  WAYBILL.WAYBILL_NO = f.WAYBILL_NO
+    inner join tfr.t_opt_air_pickupbill_detail AIRPICKUPBILLDETAIL on AIRPICKUPBILLDETAIL.WAYBILL_NO = WAYBILL.WAYBILL_NO
+	inner join tfr.t_opt_air_pickupbill pd on AIRPICKUPBILLDETAIL.AIR_PICKUPBILL_ID = pd.ID
+    left join PKP.T_SRV_WAYBILL_SIGN_RESULT WSG on WAYBILL.WAYBILL_NO = WSG.WAYBILL_NO
+	  and WSG.ACTIVE = #{active,jdbcType=VARCHAR}
+	  and WSG.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+	 where WAYBILL.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+	   and WAYBILL.ACTIVE = #{active,jdbcType=VARCHAR} 
+	  <!-- 2016年9月7日09:10:48 合大票为已提交状态Y -->
+	   and nvl(pd.status, 'Y') != 'N'
+	   and rownum = 1
+	</select>
+	
+	
+	<!-- 查询货件库存 -->
+	<select id="stockQuery"  parameterType="com.deppon.foss.module.pickup.sign.api.shared.dto.ContrabandInfoDto"
+	resultType="com.deppon.foss.module.pickup.sign.api.shared.domain.SignDetailEntity">
+		SELECT /*模块：接送货-违禁品丢货签收-查询货件库存*/
+		SERIAL_NO serialNo FROM tfr.t_opt_stock 
+		 where waybill_no = #{waybillNo,jdbcType=VARCHAR}
+		    <!-- 最后库存code=库存的部门编码 -->
+			<if test="orgCode != null and orgCode !=''">	
+				 and ORG_CODE = #{orgCode,jdbcType=VARCHAR}
+			</if>
+			<!-- 库区-->
+			<!--add by chenjunying DMANA-9499 判断保留之前的条件，新加多库区查询条件-->
+			<if test="goodsAreaCode != null and goodsAreaCode !=''">	
+				<![CDATA[ AND NVL(GOODS_AREA_CODE, 'N/A') = #{goodsAreaCode, jdbcType=VARCHAR}]]>
+			</if>
+			<if test="goodsAreaCodes!= null and goodsAreaCodes.size>0">
+		      AND NVL(GOODS_AREA_CODE, 'N/A')  in
+		    <foreach collection="goodsAreaCodes" open="(" close=")" separator=","
+			item="mgoodsAreaCode">
+       	      #{mgoodsAreaCode,jdbcType=VARCHAR}
+		    </foreach>
+    </if>
+	</select>
+	<!-- 根据传入的运单号集合查询满足条件的运单 -->
+	<select id="queryWaybillSignResultWaybillNos" parameterType="com.deppon.foss.module.pickup.sign.api.shared.dto.WaybillSignResultDto"
+		resultType="java.lang.String">
+    		select  /*模块：接送货-签收-根据运单号查询运单签收结果信息*/
+    		 WAYBILL_NO waybillNo
+    		 from pkp.T_SRV_WAYBILL_SIGN_RESULT  
+    	<where>
+    		<choose>
+				<when test="waybillNos != null and waybillNos.size>0">
+					 WAYBILL_NO in
+					<foreach collection="waybillNos" open="(" close=")" separator=","
+						item="waybillNo">
+						<if test="waybillNo!=null and waybillNo != ''">
+		        	      <![CDATA[	#{waybillNo,jdbcType=VARCHAR} ]]>
+		                </if>
+					</foreach>
+				</when>
+				<otherwise>
+					 WAYBILL_NO = ''
+				</otherwise>
+			</choose>
+    		<if test="active!=null and active != ''">
+    			and ACTIVE = #{active,jdbcType=CHAR}
+    		</if>
+    	</where>
+	</select>
+	<!-- 根据传入的运单号,入库时间起止查询满足条件的运单信息 -->
+	<select id="queryLostCargoInfoByCondition" parameterType="com.deppon.foss.module.pickup.sign.api.shared.dto.LostCargoInfoDto"
+		resultType="com.deppon.foss.module.pickup.sign.api.shared.dto.LostCargoInfoDto">
+	  select /*模块：接送货-丢货签收-根据传入的运单号,入库时间起止查询满足条件的运单信息 */
+	 	   w.waybill_no waybillNo,
+	       w.product_code productCode,
+	       w.delivery_customer_contact deliveryCustomerContact,
+	       w.receive_customer_contact receiveCustomerContact,
+	       w.goods_qty_total goodsQtyTotal,
+	       s.stock_goods_qty stockGoodsQty,
+         a.generate_goods_qty generateGoodsQty
+	  from pkp.t_srv_waybill w
+	 inner join tfr.t_opt_waybill_stock s
+    on w.waybill_no = s.waybill_no inner join
+   pkp.t_srv_actual_freight a on w.waybill_no = a.waybill_no
+		<include refid="queryLostCargoInfo_where"/>
+	</select>
+	<!-- 根据传入的运单号,入库时间起止查询满足条件的运单信息总数 -->
+    <select id="queryLostCargoCountByCondition" parameterType="com.deppon.foss.module.pickup.sign.api.shared.dto.LostCargoInfoDto"
+            resultType="Long">
+        select /*模块：接送货-丢货签收-根据传入的运单号,入库时间起止查询满足条件的运单信息总数 */ count(1)
+        from pkp.t_srv_waybill w
+        inner join tfr.t_opt_waybill_stock s
+        on w.waybill_no = s.waybill_no
+        <include refid="queryLostCargoInfo_where"/>
+    </select>
+
+    <resultMap id="signResultInfoToGISMap"
+               type="com.deppon.esb.inteface.domain.gis.HisSignDataRequest">
+        <result column="WAYBILL_NO" property="appnum" jdbcType="VARCHAR" />
+        <result column="PRODUCT_CODE" property="transportType" jdbcType="VARCHAR" />
+        <result column="TRANSPORTTYPE" property="deliveryType" jdbcType="VARCHAR" />
+        <result column="RECEIVE_CUSTOMER_PROV_CODE" property="provinceCode" jdbcType="VARCHAR" />
+        <result column="RECEIVE_CUSTOMER_CITY_CODE" property="cityCode" jdbcType="VARCHAR" />
+        <result column="RECEIVE_CUSTOMER_DIST_CODE" property="countyCode" jdbcType="VARCHAR" />
+        <result column="PROVINCE_NAME" property="provinceName" jdbcType="VARCHAR" />
+        <result column="CITY_NAME" property="cityName" jdbcType="VARCHAR" />
+        <result column="COUNTY_NAME" property="countyName" jdbcType="VARCHAR" />
+        <result column="RECEIVE_CUSTOMER_ADDRESS" property="addressdetails" jdbcType="VARCHAR" />
+        <result column="CUSTOMER_PICKUP_ORG_CODE" property="arriverstation" jdbcType="VARCHAR" />
+    </resultMap>
+<!--
+    FOSS将已全部签收（包含正常签收、异常签收）运单的【运单号】、
+    【收货人地址的省/市/区/四五级地址（分开传输）】、【运输性质】、【提货方式】、【目的站】传给GIS-->
+
+    <select id="queryLTLSigfnResultInfoDuringAllYesterday" resultMap="signResultInfoToGISMap">
+       SELECT distinct T.WAYBILL_NO,
+        W.RECEIVE_CUSTOMER_PROV_CODE,
+        W.RECEIVE_CUSTOMER_CITY_CODE,
+        W.RECEIVE_CUSTOMER_DIST_CODE,
+        (SELECT DISTINCT D.NAME
+        FROM BSE.T_BAS_DISTRICT D
+        WHERE D.CODE = W.RECEIVE_CUSTOMER_PROV_CODE
+        AND D.ACTIVE = 'Y') PROVINCE_NAME,
+        (SELECT DISTINCT D.NAME
+        FROM BSE.T_BAS_DISTRICT D
+        WHERE D.CODE = W.RECEIVE_CUSTOMER_CITY_CODE
+        AND D.ACTIVE = 'Y') CITY_NAME,
+        (SELECT DISTINCT D.NAME
+        FROM BSE.T_BAS_DISTRICT D
+        WHERE D.CODE = W.RECEIVE_CUSTOMER_DIST_CODE
+        AND D.ACTIVE = 'Y') COUNTY_NAME,
+        W.RECEIVE_CUSTOMER_ADDRESS,
+        '汽运' PRODUCT_CODE,
+        CASE
+        WHEN W.RECEIVE_METHOD NOT LIKE '%INGA%' AND
+        W.RECEIVE_METHOD LIKE '%DELIVER%' THEN
+        '送货'
+        WHEN W.RECEIVE_METHOD LIKE '%INGA%' THEN
+        '进仓'
+        WHEN W.RECEIVE_METHOD LIKE 'SELF_PICKUP' THEN
+        '自提'
+        END TRANSPORTTYPE,
+        W.CUSTOMER_PICKUP_ORG_CODE
+        FROM PKP.T_SRV_WAYBILL_SIGN_RESULT T
+        INNER JOIN PKP.T_SRV_WAYBILL W
+        ON W.WAYBILL_NO = T.WAYBILL_NO
+        AND T.SIGN_STATUS = 'SIGN_STATUS_ALL'
+        AND W.ACTIVE = 'Y'
+        AND T.ACTIVE = 'Y'
+        AND W.PRODUCT_CODE NOT IN ('AF', 'PLF')
+        AND W.RECEIVE_METHOD NOT IN ('INNER_PICKUP')
+        LEFT JOIN PKP.T_SRV_WAYBILLRFC C
+        ON T.WAYBILL_NO = C.WAYBILL_NO
+        AND C.RFC_TYPE NOT IN ('TRANSFER', 'RETURN')
+         WHERE T.SIGN_TIME BETWEEN  (trunc(sysdate, 'dd') - 1)   AND   trunc(sysdate, 'dd'); 
+    </select>
+	<sql id="queryLostCargoInfo_where">
+		<where>
+			<if test="waybillNo != null and waybillNo != ''">
+				and w.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}
+			</if>
+    		<if test="active!=null and active != ''">
+    			and w.ACTIVE = #{active,jdbcType=CHAR}
+    		</if>
+    		<if test = "inStockTimeStart !=null and inStockTimeStart !=''">
+    			<![CDATA[and s.in_stock_time >= #{inStockTimeStart,jdbcType=TIMESTAMP}]]>
+    		</if>
+    		<if test = "inStockTimeEnd !=null and inStockTimeEnd !=''">
+    			<![CDATA[and s.in_stock_time <= #{inStockTimeEnd,jdbcType=TIMESTAMP}]]>
+    		</if>
+    		<if test="orgCode != null and orgCode != ''">
+				and s.org_code = #{orgCode,jdbcType=VARCHAR}
+			</if>
+    	</where>
+	</sql>
+</mapper>

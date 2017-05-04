@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.scheduling.PlatformDistribute" >
+	<resultMap type="com.deppon.foss.module.transfer.scheduling.api.shared.domain.PlatformDistributeEntity" id="PlatformDistributeResultMap">
+    	<id  property="id" column="PLATFORM_DISTRIBUTE_ID"/>
+		<result property="transferCenterNo" column="TRANSFER_CENTER_NO"/>
+		<result property="transferCenterName" column="TRANSFER_CENTER_NAME"/>
+		<result property="platformNo" column="PLATFORM_NO"/>
+		<result property="useStartTime" column="USE_START_TIME"/>
+		<result property="useEndTime" column="USE_END_TIME"/>
+		<result property="vehicleModel" column="VEHICLE_MODEL"/>
+		<result property="vehicleNo" column="VEHICLE_NO"/>
+		<result property="loadTaskNo" column="LOAD_TASK_NO"/>
+		<result property="status" column="STATUS"/>
+		<result property="type" column="TYPE"/>
+		<result property="scheduleSource" column="SCHEDULE_SOURCE"/>
+	</resultMap>
+
+	<sql id="PlatformDistributeall_column">
+		PLATFORM_DISTRIBUTE_ID,
+		TRANSFER_CENTER_NO,
+		TRANSFER_CENTER_NAME,
+		PLATFORM_NO,
+		USE_START_TIME,
+		USE_END_TIME,
+		VEHICLE_MODEL,
+		VEHICLE_NO,
+		LOAD_TASK_NO,
+		STATUS,
+		TYPE,
+		SCHEDULE_SOURCE
+	</sql>
+	
+	<!-- 新增  -->
+	<insert id="addPlatformDistribute" parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.PlatformDistributeEntity">
+		INSERT INTO TFR.T_OPT_PLATFORM_DISTRIBUTE(
+						PLATFORM_DISTRIBUTE_ID, TRANSFER_CENTER_NO, TRANSFER_CENTER_NAME, 
+						PLATFORM_NO, USE_START_TIME, USE_END_TIME, 
+						VEHICLE_MODEL, VEHICLE_NO, LOAD_TASK_NO, 
+						STATUS, TYPE, SCHEDULE_SOURCE,CREATE_TIME)
+		VALUES(
+						#{id jdbcType=VARCHAR}, #{transferCenterNo jdbcType=VARCHAR}, #{transferCenterName jdbcType=VARCHAR}, 
+						#{platformNo jdbcType=VARCHAR}, #{useStartTime jdbcType=TIMESTAMP}, #{useEndTime jdbcType=TIMESTAMP}, 
+						#{vehicleModel jdbcType=VARCHAR}, #{vehicleNo jdbcType=VARCHAR}, #{loadTaskNo jdbcType=VARCHAR}, 
+						#{status jdbcType=VARCHAR}, #{type jdbcType=VARCHAR}, #{scheduleSource jdbcType=VARCHAR},
+						#{createDate jdbcType=TIMESTAMP}
+			   )
+	</insert>
+	
+	<!-- 修改  -->
+	<update id="updatePlatformDistribute"	parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.domain.PlatformDistributeEntity">
+		UPDATE TFR.T_OPT_PLATFORM_DISTRIBUTE PlatformDistribute
+			<trim prefix="SET" suffixOverrides=",">
+				<if test="transferCenterNo != null and transferCenterNo != '' ">
+					PLATFORMDISTRIBUTE.TRANSFER_CENTER_NO = #{transferCenterNo jdbcType=VARCHAR}, 
+				</if>
+				<if test="transferCenterName != null and transferCenterName != '' ">
+					PLATFORMDISTRIBUTE.TRANSFER_CENTER_NAME = #{transferCenterName jdbcType=VARCHAR}, 
+				</if>
+				<if test="platformNo != null and platformNo != '' ">
+					PLATFORMDISTRIBUTE.PLATFORM_NO = #{platformNo jdbcType=VARCHAR}, 
+				</if>
+				<if test="useStartTime != null and useStartTime != '' ">
+					PLATFORMDISTRIBUTE.USE_START_TIME = #{useStartTime}, 
+				</if>
+				<if test="useEndTime != null and useEndTime != '' ">
+					PLATFORMDISTRIBUTE.USE_END_TIME = #{useEndTime}, 
+				</if>
+				<if test="vehicleModel != null and vehicleModel != '' ">
+					PLATFORMDISTRIBUTE.VEHICLE_MODEL = #{vehicleModel jdbcType=VARCHAR}, 
+				</if>
+				<if test="vehicleNo != null and vehicleNo != '' ">
+					PLATFORMDISTRIBUTE.VEHICLE_NO = #{vehicleNo jdbcType=VARCHAR}, 
+				</if>
+				<if test="loadTaskNo != null and loadTaskNo != '' ">
+					PLATFORMDISTRIBUTE.LOAD_TASK_NO = #{loadTaskNo jdbcType=VARCHAR}, 
+				</if>
+				<if test="status != null and status != '' ">
+					PlatformDistribute.STATUS = #{status jdbcType=VARCHAR}, 
+				</if>
+				<if test="type != null and type != '' ">
+					PLATFORMDISTRIBUTE.TYPE = #{type jdbcType=VARCHAR},
+				</if>
+				<if test="scheduleSource != null and scheduleSource != '' ">
+					PLATFORMDISTRIBUTE.SCHEDULE_SOURCE = #{scheduleSource jdbcType=VARCHAR},
+				</if>
+			</trim>		
+			WHERE PLATFORMDISTRIBUTE.PLATFORM_DISTRIBUTE_ID = #{id} 
+	</update>
+	
+	<!-- 更新状态 -->
+	<update id="updatePlatformDistributeStatusByIds"	parameterType="map">
+		UPDATE TFR.T_OPT_PLATFORM_DISTRIBUTE PLATFORMDISTRIBUTE
+			SET PLATFORMDISTRIBUTE.STATUS = #{status jdbcType=VARCHAR} 
+		WHERE PLATFORMDISTRIBUTE.PLATFORM_DISTRIBUTE_ID IN 
+		<foreach collection="platformDistributeIds" open="(" close=")" item="item" separator=",">
+			#{item}
+		</foreach>
+	</update>
+	
+	<!-- 按主键查询  -->
+	<select id="queryPlatformDistribute"	resultMap="PlatformDistributeResultMap"  parameterType="String">
+		SELECT 
+		<include refid="PlatformDistributeall_column"/>
+		FROM TFR.T_OPT_PLATFORM_DISTRIBUTE PLATFORMDISTRIBUTE  
+		WHERE PLATFORMDISTRIBUTE.PLATFORM_DISTRIBUTE_ID = #{id}
+	</select>
+	
+	<!-- 按部门，月台号，状态和类型查询 月台信息 -->
+	<select id="queryTaskProgressByPaltformNo"	resultMap="PlatformDistributeResultMap"  parameterType="map">
+		select 	dis.PLATFORM_DISTRIBUTE_ID,
+       			dis.TRANSFER_CENTER_NO,
+       			dis.TRANSFER_CENTER_NAME,
+       			pf.platform_code PLATFORM_NO,
+       			dis.USE_START_TIME,
+       			dis.USE_END_TIME,
+       			dis.VEHICLE_MODEL,
+       			dis.VEHICLE_NO,
+		   		dis.LOAD_TASK_NO
+           from tfr.t_opt_platform_distribute dis
+		  inner join bse.t_bas_platform pf on dis.platform_no=pf.virtual_code
+		  where dis.transfer_center_no=#{deptCode}
+ 		    and pf.platform_code=#{platformNo}
+   			and dis.status=#{status}
+			and dis.type=#{type}
+			order by dis.use_start_time desc
+	</select>
+	
+	<!-- 按部门，月台号，类型，当前时间查询 月台计划信息 -->
+	<select id="queryPlatformPlanByPaltformNo"	resultMap="PlatformDistributeResultMap"  parameterType="map">
+		select 	dis.PLATFORM_DISTRIBUTE_ID,
+       			dis.TRANSFER_CENTER_NO,
+       			dis.TRANSFER_CENTER_NAME,
+       			pf.platform_code PLATFORM_NO,
+       			dis.USE_START_TIME,
+       			dis.USE_END_TIME,
+       			dis.VEHICLE_MODEL,
+       			dis.VEHICLE_NO,
+		   		dis.LOAD_TASK_NO
+           from tfr.t_opt_platform_distribute dis
+		  inner join bse.t_bas_platform pf on dis.platform_no=pf.virtual_code
+		  where dis.transfer_center_no=#{deptCode}
+ 		    and pf.platform_code=#{platformNo}
+   			and dis.use_start_time > #{time}
+			and dis.type=#{type}
+			order by dis.use_start_time desc
+	</select>
+	
+	<sql id="select_Where">
+		<where>
+			 	 	PLATFORMDISTRIBUTE.VEHICLE_NO IS NOT NULL 
+				AND PLATFORMDISTRIBUTE.USE_START_TIME IS NOT NULL 
+			 	AND PLATFORMDISTRIBUTE.USE_END_TIME IS NOT NULL
+			<if test="platformDistributeEntity.transferCenterNo != null and platformDistributeEntity.transferCenterNo !=''">
+				AND PLATFORMDISTRIBUTE.TRANSFER_CENTER_NO = #{platformDistributeEntity.transferCenterNo}    
+			</if>
+			<if test="platformDistributeEntity.transferCenterName != null and platformDistributeEntity.transferCenterName !=''">
+				AND PLATFORMDISTRIBUTE.TRANSFER_CENTER_NAME LIKE '%'||#{platformDistributeEntity.transferCenterName}||'%'   
+			</if>
+			<if test="platformDistributeEntity.platformNo != null and platformDistributeEntity.platformNo !=''">
+				AND PLATFORMDISTRIBUTE.PLATFORM_NO LIKE '%'||#{platformDistributeEntity.platformNo}||'%'   
+			</if>
+			<if test="platformDistributeEntity.useStartTime != null and platformDistributeEntity.useStartTime !=''">
+				AND PLATFORMDISTRIBUTE.USE_START_TIME = #{platformDistributeEntity.useStartTime}    
+			</if>
+			<if test="platformDistributeEntity.useEndTime != null and platformDistributeEntity.useEndTime !=''">
+				AND PLATFORMDISTRIBUTE.USE_END_TIME = #{platformDistributeEntity.useEndTime}    
+			</if>
+			<if test="platformDistributeEntity.vehicleModel != null and platformDistributeEntity.vehicleModel !=''">
+				AND PLATFORMDISTRIBUTE.VEHICLE_MODEL LIKE '%'||#{platformDistributeEntity.vehicleModel}||'%'   
+			</if>
+			<if test="platformDistributeEntity.vehicleNo != null and platformDistributeEntity.vehicleNo !=''">
+				AND PLATFORMDISTRIBUTE.VEHICLE_NO = #{platformDistributeEntity.vehicleNo}    
+			</if>
+			<if test="platformDistributeEntity.loadTaskNo != null and platformDistributeEntity.loadTaskNo !=''">
+				AND PLATFORMDISTRIBUTE.LOAD_TASK_NO = #{platformDistributeEntity.loadTaskNo}   
+			</if>
+			<if test="platformDistributeEntity.status != null and platformDistributeEntity.status !=''">
+				AND PLATFORMDISTRIBUTE.STATUS = (#{platformDistributeEntity.status})   
+			</if>
+			<if test="platformDistributeEntity.type != null and platformDistributeEntity.type !=''">
+				AND PLATFORMDISTRIBUTE.TYPE = #{platformDistributeEntity.type}   
+			</if>
+			<if test="platformDistributeEntity.scheduleSource != null and platformDistributeEntity.scheduleSource !=''">
+				AND PLATFORMDISTRIBUTE.SCHEDULE_SOURCE = #{platformDistributeEntity.scheduleSource}   
+			</if>
+			<if test="useBeginTime != null and useEndTime !=''">
+				AND (
+					PLATFORMDISTRIBUTE.USE_START_TIME BETWEEN #{useBeginTime} AND #{useEndTime}
+					OR 
+					PLATFORMDISTRIBUTE.USE_END_TIME   BETWEEN #{useBeginTime} AND #{useEndTime}
+				)   
+			</if>
+			<if test="statusList != null">
+				AND PLATFORMDISTRIBUTE.STATUS IN 
+				<foreach collection="statusList" close=")" open="(" separator="," item="item">
+					#{item}
+				</foreach>
+			</if>
+		</where>
+	</sql>
+	
+	<!-- 查询集合  -->
+	<select id="queryPlatformDistributeList" resultMap="PlatformDistributeResultMap"  parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.dto.PlatformDistributeDto">
+		SELECT 
+			<include refid="PlatformDistributeall_column"/>
+			FROM TFR.T_OPT_PLATFORM_DISTRIBUTE PLATFORMDISTRIBUTE  
+		<include refid="select_Where"/>
+	</select>
+	
+	<!-- 查询月台结束时间  -->
+	<select id="queryPlatformDistributeEndTime" resultMap="PlatformDistributeResultMap"  parameterType="com.deppon.foss.module.transfer.scheduling.api.shared.dto.PlatformDistributeDto">
+		SELECT 
+			PLATFORM_NO AS PLATFORM_NO, MAX(USE_END_TIME) AS USE_END_TIME
+			FROM TFR.T_OPT_PLATFORM_DISTRIBUTE PLATFORMDISTRIBUTE
+		<include refid="select_Where"/>	
+			GROUP BY PLATFORMDISTRIBUTE.PLATFORM_NO
+	</select>
+	
+	<!-- 强制清空月台 -->
+	<update id="forceDeletePlatFrom"  parameterType="HashMap">
+		update tfr.t_opt_platform_distribute d
+   		   set d.status = #{updateStatus}, d.use_end_time = #{useEndTime}
+         where d.platform_distribute_id in
+              (select dis.platform_distribute_id
+                 from tfr.t_opt_platform_distribute dis
+           inner join bse.t_bas_platform pf on dis.platform_no =
+                                             pf.virtual_code
+                where dis.transfer_center_no = #{deptCode}
+		           and pf.platform_code = #{platformNo}
+		           and dis.status = #{originalStatus}
+		           and dis.type = #{type}
+		           and dis.load_task_no is null)
+	
+	</update>
+</mapper>

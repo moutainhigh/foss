@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="pkp.pickup" >
+	
+	<resultMap id="pickupResultMap" type="com.deppon.foss.module.pickup.predeliver.api.shared.dto.PickupResultDto">
+		<id column="ID" property="id" jdbcType="VARCHAR" /><!--id-->
+		<result property="waybillNo" column="WAYBILL_NO" /><!--单号-->
+		<result property="goodPackage" column="GOODS_PACKAGE" /><!--货物的包装-->
+		<result property="billingGoodsQty" column="GOODS_BILL_QTY" /><!--货物的开单件数-->
+		<result property="goodWeight" column="GOODS_WEIGTH" /><!--货物的重量-->
+		<result property="goodVolume" column="GOODS_VOLUME" /><!--货物的体积-->
+		<result property="goodSize" column="GOODS_SIZE" /><!--货物的尺寸-->
+		<result property="state" column="STATE" /><!--状态-->
+		<result property="operTime" column="OPERATE_TIME" /><!--操作时间 -->
+	</resultMap>
+	
+	
+	<resultMap id="padPickupResultMap" type="com.deppon.foss.module.pickup.pda.api.shared.dto.PadPickupResultDto">
+		<id column="ID" property="id" jdbcType="VARCHAR" /><!--id-->
+		<result property="waybillNo" column="WAYBILL_NO" /><!--单号-->
+		<result property="goodPackage" column="GOODS_PACKAGE" /><!--货物的包装-->
+		<result property="billingGoodsQty" column="GOODS_BILL_QTY" /><!--货物的开单件数-->
+		<result property="goodWeight" column="GOODS_WEIGTH" /><!--货物的重量-->
+		<result property="goodVolume" column="GOODS_VOLUME" /><!--货物的体积-->
+		<result property="goodSize" column="GOODS_SIZE" /><!--货物的尺寸-->
+		<result property="state" column="STATE" /><!--状态-->
+		<result property="operTime" column="OPERATE_TIME" /><!--操作时间 -->
+	</resultMap>
+	
+	<select id="getTotalCount" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.PickupDto" resultType="Long">
+		select /*模块：接送货-提货清单-根据条件查询满足的记录数 */ count(*) 
+		from  pkp.t_SRV_INVENTORY inventory
+		<include refid="select_Where"/>
+	</select> 
+	
+	<select id="queryPickupList" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.PickupDto" resultMap="pickupResultMap">
+		select /*模块：接送货-提货清单-根据条件查询满足的信息 */ *
+		from  pkp.t_SRV_INVENTORY inventory
+		<include refid="select_Where"/>
+	</select>
+	
+	<select id="queryPdaPickupList" parameterType="com.deppon.foss.module.pickup.pda.api.shared.dto.PadPickupDto" resultMap="padPickupResultMap">
+		select /*模块：接送货-pad提货清单-根据条件查询满足的信息 */ *
+		from  pkp.t_SRV_INVENTORY inventory
+		<include refid="select_Where"/>
+	</select>
+	
+	<select id="isExistByWaybill" parameterType="java.lang.String" resultMap="pickupResultMap">
+		select /*模块：接送货-提货清单-根据运单号判断当前运单是否存在 */ *
+		from  pkp.t_SRV_INVENTORY inventory
+		where inventory.WAYBILL_NO = #{value,jdbcType=VARCHAR}
+	</select>
+	
+	<!--<update id="batchUpdatePickupStates" parameterType="java.util.List">
+		update /*模块：接送货-提货清单-批量更新提货状态 */ pkp.t_SRV_INVENTORY inventory set inventory.STATE='GOOD_STATE_REVOCATION'
+		where inventory.WAYBILL_NO in 
+		<foreach collection="list" index="index" item="waybillNo" open="(" separator="," close=")">  
+        	<if test="waybillNo != null and waybillNo != ''">
+      	      <![CDATA[	#{waybillNo,jdbcType=VARCHAR} ]]>
+        	</if>
+        </foreach>  
+	</update>-->
+
+	<update id="updatePickupStateByEntity" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.PickupResultDto">
+		update /*模块：接送货-提货清单-批量更新提货状态 */ pkp.t_SRV_INVENTORY inventory
+			<set>
+				<if test="state!=null and state!='' ">	
+					<![CDATA[ inventory.STATE = #{state,jdbcType=VARCHAR} , ]]>
+				</if>
+				<if test="goodPackage!=null and goodPackage!='' ">	
+					<![CDATA[ inventory.GOODS_PACKAGE = #{goodPackage,jdbcType=VARCHAR} , ]]>
+				</if>
+
+				<if test="billingGoodsQty!=null and billingGoodsQty!='' ">	
+					<![CDATA[ inventory.GOODS_BILL_QTY = #{billingGoodsQty,jdbcType=VARCHAR} , ]]>
+				</if>
+				
+				<if test="goodWeight!=null and goodWeight!='' ">	
+					<![CDATA[ inventory.GOODS_WEIGTH = #{goodWeight,jdbcType=VARCHAR} , ]]>
+				</if>
+				
+				<if test="goodVolume!=null and goodVolume!='' ">	
+					<![CDATA[ inventory.GOODS_VOLUME = #{goodVolume,jdbcType=VARCHAR},  ]]>
+				</if>
+				
+				<if test="goodSize!=null and goodSize!='' ">	
+					<![CDATA[ inventory.GOODS_SIZE = #{goodSize,jdbcType=VARCHAR},  ]]>
+				</if>
+				
+				<if test="operTime!=null and operTime!='' ">	
+					<![CDATA[ inventory.OPERATE_TIME = #{operTime,jdbcType=TIMESTAMP}  ]]>
+				</if>
+			</set>
+			<where>
+				<![CDATA[ 1 = 1  ]]>
+					<if test="waybillNo!=null and waybillNo!='' ">	
+						<![CDATA[ and inventory.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}  ]]>
+					</if>
+					
+			</where>
+	</update>
+	<insert id="insertEntity" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.dto.PickupDto" >
+	    insert into  pkp.t_SRV_INVENTORY inventory 
+    	(ID, WAYBILL_NO, 
+    	GOODS_PACKAGE, 
+    	GOODS_BILL_QTY,
+    	GOODS_WEIGTH,
+    	GOODS_VOLUME,
+    	GOODS_SIZE,
+    	STATE,
+    	OPERATE_TIME,
+    	OPERATE_ORG_NAME,
+    	OPERATE_ORG_CODE,
+    	OPERATE_USER_NAME,
+    	OPERATE_USER_CODE,
+    	END_STOCK_ORG_CODE 
+    	)
+	    values (
+	    #{id,jdbcType=VARCHAR},
+	    #{waybillNo,jdbcType=VARCHAR},
+	    #{goodPackage,jdbcType=VARCHAR},
+	    #{billingGoodsQty,jdbcType=NUMERIC},
+	    #{goodWeight,jdbcType=DECIMAL}, 
+	    #{goodVolume,jdbcType=DECIMAL}, 
+	    #{goodSize,jdbcType=VARCHAR}, 
+	    #{state,jdbcType=VARCHAR},
+	    #{operTime,jdbcType=TIMESTAMP},
+	    #{operateOrgName,jdbcType=VARCHAR},
+	    #{operateOrgCode,jdbcType=VARCHAR},
+	    #{operateUserName,jdbcType=VARCHAR},
+	    #{operateUserCode,jdbcType=VARCHAR},
+	    #{endStockOrgCode,jdbcType=VARCHAR}
+	    )
+    </insert>
+	
+	<sql id="select_Where">
+		<where>
+			<![CDATA[ 1 = 1  ]]>
+			<if test="waybillNo!=null and waybillNo!='' ">	
+			<![CDATA[ and inventory.WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR}  ]]>
+			</if>
+			<if test="state!=null and state!='' ">	
+			<![CDATA[ and inventory.STATE = #{state,jdbcType=VARCHAR}  ]]>
+			</if>
+			<if test="operTimeStart!=null and operTimeStart!=''">
+			<![CDATA[and inventory.OPERATE_TIME >= #{operTimeStart,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="operTimeEnd!=null and operTimeEnd!='' ">	
+			<![CDATA[and inventory.OPERATE_TIME <= #{operTimeEnd,jdbcType=TIMESTAMP}]]>
+			</if>
+			<if test="currentDeptCode!=null and currentDeptCode!='' ">	
+			<![CDATA[and inventory.OPERATE_ORG_CODE = #{currentDeptCode,jdbcType=VARCHAR}]]>
+			</if>
+			<if test="endStockOrgCode!=null and endStockOrgCode!='' ">	
+			<![CDATA[and inventory.END_STOCK_ORG_CODE = #{endStockOrgCode,jdbcType=VARCHAR}]]>
+			</if>
+			order by  inventory.OPERATE_TIME asc
+		</where>
+	</sql>
+	
+</mapper>

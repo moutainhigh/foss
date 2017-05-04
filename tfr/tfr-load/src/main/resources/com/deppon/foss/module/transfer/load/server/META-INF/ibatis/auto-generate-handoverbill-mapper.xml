@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tfr-load">
+<!-- 调用自动生成交接单存储过程 -->
+<!-- duhao-276198-20151212 直发中转场增加存数过程字段（new straight） -->
+	<select id="selectByProcCreateHandOverBill" statementType="CALLABLE">   
+		{call TFR.PKG_OPT_JOB_BUSINESS.P_OPT_CREATE_HANDOVER_BILL(
+												   #{bizJobStartTime,mode=IN,jdbcType=TIMESTAMP},
+        							 			   #{bizJobEndTime,mode=IN,jdbcType=TIMESTAMP},	
+			        							   #{threadCount,mode=IN,jdbcType=DECIMAL},
+			        							   #{threadNo,mode=IN,jdbcType=DECIMAL},
+			        							   #{taskNo,mode=IN,jdbcType=VARCHAR},		        							   
+			        							   #{handOverBillNo,mode=OUT,jdbcType=VARCHAR},
+			        							   #{exceptionInfo,mode=OUT,jdbcType=VARCHAR}
+        										  )}
+	</select> 
+	
+	<!-- 调用自动生成接货交接单存储过程 -->
+	<select id="autoCreatePackHandoverbill" parameterType="map" statementType="CALLABLE">
+        {CALL TFR.PRO_Create_PickHandOver(#{taskNo,mode=IN,jdbcType=VARCHAR},
+        								  #{handOverNo,mode=IN,jdbcType=VARCHAR},
+						        		  #{exceptionInfo,mode=OUT,jdbcType=VARCHAR}
+						        		  )}
+    </select>
+    
+    <!-- 点击营业部卸车，调用自动生成接货交接单存储过程 -->
+	<select id="autoCreatePKPHandoverbill" parameterType="map" statementType="CALLABLE">
+        {CALL TFR.PRO_Create_PickHandOverForPKP(#{taskID,mode=IN,jdbcType=VARCHAR},
+        								  #{handoverNo,mode=IN,jdbcType=VARCHAR},
+        								  #{vehicleNo,mode=IN,jdbcType=VARCHAR},
+        								  #{operatorCode,mode=IN,jdbcType=VARCHAR},
+        								  #{orgCode,mode=IN,jdbcType=VARCHAR},
+						        		  #{exceptionInfo,mode=OUT,jdbcType=VARCHAR}
+						        		  )}
+    </select>
+    
+    <!-- 调用自动生成接驳交接单存储过程 -->
+	<select id="autoCreateConnectionHandover" parameterType="map" statementType="CALLABLE">
+        {CALL TFR.PRO_Create_ConnectionHandOver(#{taskNo,mode=IN,jdbcType=VARCHAR},
+        								  #{handOverNo,mode=IN,jdbcType=VARCHAR},
+						        		  #{exceptionInfo,mode=OUT,jdbcType=VARCHAR}
+						        		  )}
+    </select>
+</mapper>

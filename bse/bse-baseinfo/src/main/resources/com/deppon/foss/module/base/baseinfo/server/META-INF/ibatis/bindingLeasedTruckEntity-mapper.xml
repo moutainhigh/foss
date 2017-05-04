@@ -1,0 +1,36 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.bindingLeasedtruck">
+	<resultMap id="bindingLeasedTruckResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.BindingLeasedTruckEntity">
+		<result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+		<result column="ORG_CODE" property="orgCode" jdbcType="VARCHAR" />
+		<result column="DRIVER_NAME" property="deiverName" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser"
+			jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser"
+			jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<select id="queryBindingLeasedTruck" resultMap="bindingLeasedTruckResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.BindingLeasedTruckEntity">
+		select
+		/** 综合:查询外请车（拖头、挂车、厢式车）绑定车队信息  **/
+		<![CDATA[
+			T.ORG_CODE,T.CREATE_USER_CODE,DRI.DRIVER_NAME
+		]]>
+		from BSE.T_BAS_LEASED_TRUCK_TEAM T LEFT JOIN BSE.T_BAS_LEASED_TRUCK TT 	ON T.VEHICLE_NO = TT.VEHICLE_NO AND TT.ACTIVE='Y'
+			LEFT JOIN BSE.T_BAS_LEASED_DRIVER DRI ON TT.LEASED_DRIVER_ID_CARD = DRI.ID_CARD AND DRI.ACTIVE='Y'
+		<where>
+			1 = 1
+			<if test="active != null and active != ''">
+				AND T.ACTIVE = #{active,jdbcType=VARCHAR}
+			</if>
+			<if test="vehicleNo != null and vehicleNo != ''">
+				AND T.VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</select>
+</mapper>

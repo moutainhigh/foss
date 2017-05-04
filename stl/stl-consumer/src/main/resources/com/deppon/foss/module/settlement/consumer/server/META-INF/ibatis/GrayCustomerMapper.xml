@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.stl.GrayCustomerDao">
+    <resultMap type="com.deppon.foss.module.settlement.consumer.api.shared.domain.GrayCustomerEntity"
+        id="BaseResultMap">
+        <result column="CUSTOMER_CODE" property="customerCode" jdbcType="VARCHAR" />
+        <result column="MIN_DATE" property="minDate" jdbcType="TIMESTAMP" />
+        <result column="OVERDAYS" property="overDays" jdbcType="DECIMAL" />
+        <result column="STATUS" property="status" jdbcType="VARCHAR" />
+    </resultMap>
+	
+	<!-- 查询所有灰名单数据 -->
+	<select id="queryGrayCustomerList" resultMap="BaseResultMap">
+	    SELECT GC.CUSTOMER_CODE, GC.MIN_DATE, GC.OVERDAYS, GC.STATUS
+          FROM STL.T_STL_GRAYCUSTOMER GC
+         WHERE GC.ACTIVE = 'Y' ORDER BY GC.MIN_DATE DESC
+	</select>
+	
+	<!-- 根据客户编码查询灰名单信息 -->
+	<select id="queryGrayCustomerByCustomerCode" parameterType="String" resultMap="BaseResultMap">
+	    SELECT GC.CUSTOMER_CODE, GC.MIN_DATE, GC.OVERDAYS
+	      FROM STL.T_STL_GRAYCUSTOMER GC
+	     WHERE GC.CUSTOMER_CODE= #{CustomerCode,jdbcType=VARCHAR} 
+	       AND GC.ACTIVE='Y'
+	</select>
+	
+	<!-- 根据客户编码的集合查询灰名单信息集合 -->
+	<select id="queryListByCustomerCodes" parameterType="java.util.Map" resultMap="BaseResultMap">
+	    SELECT GC.CUSTOMER_CODE, GC.MIN_DATE, GC.OVERDAYS
+	      FROM STL.T_STL_GRAYCUSTOMER GC
+	     WHERE GC.CUSTOMER_CODE IN 
+	     <foreach collection="customerCodes"  index="index" item="item"  open="(" separator="," close=")">  
+		    #{item} 
+	     </foreach>
+	       AND GC.ACTIVE='Y'
+	</select>
+	
+	<!-- 根据客户编码作废灰名单信息 -->
+	<update id="deleteGrayCustomerByCustomerCode" 
+	    parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.GrayCustomerDto">
+	    UPDATE STL.T_STL_GRAYCUSTOMER GC
+	       SET GC.ACTIVE='N'
+	     WHERE GC.CUSTOMER_CODE=#{customerCode,jdbcType=VARCHAR} 
+	       AND GC.ACTIVE='Y'
+	</update>
+	
+	<!-- 新增灰名单信息（单条插入） -->
+	<insert id="addGrayCustomer" 
+	    parameterType="com.deppon.foss.module.settlement.consumer.api.shared.domain.GrayCustomerEntity">
+	    INSERT INTO STL.T_STL_GRAYCUSTOMER GC 
+	    (ID,CUSTOMER_CODE,MIN_DATE,OVERDAYS,CREATE_TIME,ACTIVE)
+	    VALUES
+	    (#{id,jdbcType=VARCHAR},#{customerCode,jdbcType=VARCHAR},
+	     #{minDate,jdbcType=TIMESTAMP},#{overDays,jdbcType=DECIMAL},
+	     SYSDATE,#{active,jdbcType=CHAR})
+	</insert>
+	
+	<!-- 查询所有灰名单信息的总条数 -->
+	<select id="countQueryGrayCustomer" resultType="Integer">
+	SELECT COUNT(*) FROM STL.T_STL_GRAYCUSTOMER GC 
+	WHERE GC.ACTIVE='Y'
+	</select>
+</mapper>

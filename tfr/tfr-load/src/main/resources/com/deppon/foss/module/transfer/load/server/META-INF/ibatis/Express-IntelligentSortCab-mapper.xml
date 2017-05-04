@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.load.express.intelligentSortCab">
+	<resultMap id="BaseResultMap" type="com.deppon.foss.module.transfer.load.api.shared.domain.PathDetailEntity" >
+		<id column="PATH_DETAIL_ID" property="pathDetailId" jdbcType="VARCHAR" />
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="GOODS_NO" property="goodsNo" jdbcType="VARCHAR" />
+		<result column="ORIG_ORG_CODE" property="origOrgCode" jdbcType="VARCHAR" />
+		<result column="OBJECTIVE_ORG_CODE" property="objectiveOrgCode" jdbcType="VARCHAR" />
+		<result column="ORIG_ORG_NAME" property="origOrgName" jdbcType="VARCHAR" />
+		<result column="OBJECTIVE_ORG_NAME" property="objectiveOrgName" jdbcType="VARCHAR" />
+		<result column="ROUTE_NO" property="routeNo" jdbcType="VARCHAR" />
+		<result column="PLAN_START_TIME" property="planStartTime" jdbcType="TIMESTAMP"/>
+		<result column="ACTUAL_START_TIME" property="actualStartTime" jdbcType="TIMESTAMP"/>
+		<result column="ARRIVE_OR_LEAVE" property="arriveOrLeave" jdbcType="VARCHAR" />
+		<result column="PLAN_ARRIVE_TIME" property="planArriveTime" jdbcType="TIMESTAMP"/>
+		<result column="ACTUAL_ARRIVE_TIME" property="actualArriveTime" jdbcType="TIMESTAMP"/>
+		<result column="BILLING_ORG_CODE" property="billingOrgCode" jdbcType="VARCHAR" />
+		<result column="NEXT_DEST_ORG_CODE" property="nextDestOrgCode" jdbcType="VARCHAR" />
+		<result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+		<result column="BEFORE_VEHICLE_NO" property="beforeVehicleNo" jdbcType="VARCHAR" />
+		<result column="IF_CHANGE_TIME" property="ifChangeTime" jdbcType="VARCHAR" />
+		<result column="MODIFY_START_TIME" property="modifyStartTime" jdbcType="TIMESTAMP"/>
+		<result column="MODITY_ARRIVE_TIME" property="modifyArriveTime" jdbcType="TIMESTAMP"/>
+		<result column="TRUCK_DETAIL_ID" property="truckDetailId" jdbcType="VARCHAR" />
+		<result column="NEXT_ARRIVE_TIME" property="nextArriveTime" jdbcType="TIMESTAMP"/>
+		<result column="PLAN_PICKUP_TIME" property="planPickupTime" jdbcType="TIMESTAMP"/>
+		<result column="waybillNoCount" property="waybillNoCount" jdbcType="VARCHAR"/>
+		<result column="weight" property="weight" />
+		<result column="volumn" property="volumn" />
+	</resultMap>
+	
+	<select id="queryWaybillPathDetail" resultMap="BaseResultMap" parameterType="map">
+		SELECT distinct /** FOSS-中转-建包-智能分拣柜分拣拉取走货路由  0308版本拉取所有除第一条以外的路径 **/ 
+		       p.waybill_no 	WAYBILL_NO,
+		       p.serial_no 		GOODS_NO,
+		       p.route_no 		ROUTE_NO,
+		       p.orig_org_code 	ORIG_ORG_CODE,
+		       p.objective_org_code OBJECTIVE_ORG_CODE,
+		       p.weight			weight,
+		       p.volumn 		volumn
+		FROM (
+
+          SELECT hs.waybill_no,hs.serial_no,pd.route_no,pd.orig_org_code,pd.objective_org_code,
+                round(nvl(wb.goods_weight_total,0)/wb.goods_qty_total,2) weight,
+                round(nvl(wb.goods_volume_total,0)/wb.goods_qty_total,2) volumn
+           FROM TFR.T_OPT_TRUCK_TASK TT 
+           INNER JOIN TFR.T_OPT_TRUCK_TASK_DETAIL TD
+              ON TD.TRUCK_TASK_ID = TT.ID
+           INNER JOIN TFR.T_OPT_TRUCK_TASK_BILL TB
+              ON TB.TRUCK_TASK_DETAIL_ID =  TD.ID
+           INNER JOIN TFR.T_OPT_HANDOVERBILL HB
+              ON HB.HANDOVER_NO = TB.BILL_NO 
+             AND HB.HANDOVERBILL_STATE != '90'
+           INNER JOIN TFR.T_OPT_HANDOVERBILL_DETAIL HD
+              ON HD.HANDOVER_NO =  HB.HANDOVER_NO
+           INNER JOIN TFR.T_OPT_HANDOVERBILL_SERIALNO HS
+              ON HS.HANDOVERBILL_NO = HD.HANDOVER_NO
+              AND HS.WAYBILL_NO = HD.WAYBILL_NO
+           INNER JOIN tfr.t_Opt_Path_Detail pd ON pd.waybill_no =hs.waybill_no  
+              AND (PD.GOODS_NO = HS.SERIAL_NO or PD.GOODS_NO IS NULL)
+           inner join pkp.t_srv_waybill wb on wb.waybill_no=hd.waybill_no and wb.active='Y'       
+           left join tfr.t_Opt_stock st on st.waybill_no = hs.waybill_no and st.serial_no = hs.serial_no
+                
+           WHERE TD.DEST_ORG_CODE = #{depetCode}
+             AND TD.STATUS IN ('ARRIVED', 'ONTHEWAY') 
+             AND TD.ACTUAL_DEPART_TIME <![CDATA[ >=]]> #{startTime}
+             AND TD.ACTUAL_DEPART_TIME <![CDATA[ <]]> #{endTime}
+             AND TB.BILL_TYPE = 'HANDOVER'
+             AND (TB.BILL_NO LIKE 'k%' OR TB.BILL_NO LIKE 'B%')
+             and (st.id is null or  td.DEST_ORG_CODE=st.org_code)
+             and nvl(wb.goods_weight_total,0)/wb.goods_qty_total<![CDATA[ <]]>#{weightLimit}
+              
+         UNION 
+            
+              SELECT hs.waybill_no,hs.serial_no,pd.route_no,pd.orig_org_code,pd.objective_org_code,
+                round(nvl(wb.goods_weight_total,0)/wb.goods_qty_total,2) weight,
+                round(nvl(wb.goods_volume_total,0)/wb.goods_qty_total,2) volumn
+           FROM TFR.T_OPT_TRUCK_TASK TT
+           INNER JOIN TFR.T_OPT_TRUCK_TASK_DETAIL TD
+              ON TD.TRUCK_TASK_ID = TT.ID
+           INNER JOIN TFR.T_OPT_TRUCK_TASK_BILL TB
+              ON TB.TRUCK_TASK_DETAIL_ID =  TD.ID
+           INNER JOIN TFR.T_OPT_HANDOVERBILL HB
+              ON HB.HANDOVER_NO = TB.BILL_NO 
+             AND HB.HANDOVERBILL_STATE != '90'
+           INNER JOIN TFR.T_OPT_HANDOVERBILL_DETAIL HD
+              ON HD.HANDOVER_NO =  HB.HANDOVER_NO
+           INNER JOIN TFR.T_OPT_HANDOVERBILL_SERIALNO HS
+              ON HS.HANDOVERBILL_NO = HD.HANDOVER_NO
+              AND HS.WAYBILL_NO = HD.WAYBILL_NO
+           INNER JOIN tfr.t_Opt_Path_Detail pd ON pd.waybill_no =hs.waybill_no  
+              AND (PD.GOODS_NO = HS.SERIAL_NO or PD.GOODS_NO IS NULL)
+           INNER join pkp.t_srv_waybill wb on wb.waybill_no=hd.waybill_no and wb.active='Y'       
+           INNER join tfr.t_Opt_stock st on st.waybill_no = hs.waybill_no 
+              and st.serial_no = hs.serial_no  AND ST.ORG_CODE=TD.DEST_ORG_CODE
+           WHERE TD.DEST_ORG_CODE = #{depetCode}
+             AND TD.STATUS = 'UNLOADED' 
+             AND TD.ACTUAL_DEPART_TIME <![CDATA[ >=]]> #{startTime}
+             AND TD.ACTUAL_DEPART_TIME <![CDATA[ <]]> #{endTime}
+             AND TB.BILL_TYPE = 'HANDOVER'
+             AND (TB.BILL_NO LIKE 'k%' OR TB.BILL_NO LIKE 'B%')
+             and nvl(wb.goods_weight_total,0)/wb.goods_qty_total<![CDATA[ <]]>#{weightLimit}
+              
+         UNION 
+            
+            SELECT ST.WAYBILL_NO,ST.SERIAL_NO,PD.ROUTE_NO,PD.ORIG_ORG_CODE,PD.OBJECTIVE_ORG_CODE,
+               round(nvl(wb.goods_weight_total,0)/wb.goods_qty_total,2) weight,
+               round(nvl(wb.goods_volume_total,0)/wb.goods_qty_total,2) volumn
+            FROM tfr.T_OPT_STOCK ST
+            INNER JOIN tfr.T_OPT_PATH_DETAIL PD
+               ON  ST.WAYBILL_NO=PD.WAYBILL_NO 
+               AND (ST.SERIAL_NO=PD.GOODS_NO or PD.GOODS_NO IS NULL)
+            INNER JOIN bse.t_Bas_Sales_Department SD 
+               ON  SD.TRANSFER_CENTER = ST.ORG_CODE
+               AND SD.TRANSFER_CENTER=#{depetCode}
+            INNER JOIN pkp.t_Srv_Waybill WB  
+               ON  WB.WAYBILL_NO=ST.WAYBILL_NO 
+               AND WB.ACTIVE='Y'
+               AND WB.RECEIVE_ORG_CODE = SD.CODE 
+            WHERE 
+                SD.ACTIVE='Y'
+              AND SD.STATION='Y'
+              AND ST.ORG_CODE =#{depetCode}              
+              AND WB.product_code in('RCP','PACKAGE','EPEP')
+              AND WB.CREATE_TIME <![CDATA[ >=]]> #{startTime}
+              AND WB.CREATE_TIME  <![CDATA[ <]]> #{endTime}
+               and nvl(wb.goods_weight_total,0)/wb.goods_qty_total<![CDATA[ <]]>#{weightLimit}
+          
+          UNION 
+          <!-- 出发补码后,查询信息 -->
+     Select 
+       lg.waybill_no,
+       sg.serial_no,
+       pd.route_no,
+       pd.orig_org_code,
+       pd.objective_org_code,
+       round(nvl(wb.goods_weight_total, 0) / wb.goods_qty_total, 2) weight,
+       round(nvl(wb.goods_volume_total, 0) / wb.goods_qty_total, 2) volumn
+    From   
+   
+	  tfr.t_opt_complement_log  lg
+	  Inner Join pkp.t_srv_waybill wb On wb.waybill_no=lg.waybill_no And wb.active='Y'
+	  Inner join pkp.t_srv_labeled_good sg  on sg.waybill_no = lg.waybill_no
+	  Inner Join tfr.t_Opt_Path_Detail pd On pd.waybill_no=lg.waybill_no
+	  And  (PD.GOODS_NO  = sg.serial_no or PD.GOODS_NO IS NULL) 
+	  Where lg.operation_org_code = #{depetCode}	  
+	  and sg.active ='Y'
+	  And lg.operation_time <![CDATA[ >=]]> #{startTime}
+	  and lg.operation_time <![CDATA[ <]]> #{endTime}
+	  and nvl(wb.goods_weight_total,0)/wb.goods_qty_total <![CDATA[ <]]>#{weightLimit}
+	  ) p   ORDER BY p.waybill_no,p.serial_no,p.route_no
+	</select>
+	
+	<select id="queryWaybillPathDetailCount" parameterType="map" resultType="java.lang.Integer" >
+	
+		SELECT count(1) 
+		
+		      
+		FROM (
+
+		 SELECT hs.waybill_no,hs.serial_no,pd.route_no,pd.orig_org_code,pd.objective_org_code,
+                round(nvl(wb.goods_weight_total,0)/wb.goods_qty_total,2) weight,
+                round(nvl(wb.goods_volume_total,0)/wb.goods_qty_total,2) volumn
+           FROM TFR.T_OPT_TRUCK_TASK TT
+           INNER JOIN TFR.T_OPT_TRUCK_TASK_DETAIL TD
+              ON TD.TRUCK_TASK_ID = TT.ID
+           INNER JOIN TFR.T_OPT_TRUCK_TASK_BILL TB
+              ON TB.TRUCK_TASK_DETAIL_ID =  TD.ID
+           INNER JOIN TFR.T_OPT_HANDOVERBILL HB
+              ON HB.HANDOVER_NO = TB.BILL_NO 
+             AND HB.HANDOVERBILL_STATE != '90'
+           INNER JOIN TFR.T_OPT_HANDOVERBILL_DETAIL HD
+              ON HD.HANDOVER_NO =  HB.HANDOVER_NO
+           INNER JOIN TFR.T_OPT_HANDOVERBILL_SERIALNO HS
+              ON HS.HANDOVERBILL_NO = HD.HANDOVER_NO
+              AND HS.WAYBILL_NO = HD.WAYBILL_NO
+           INNER JOIN tfr.t_Opt_Path_Detail pd ON pd.waybill_no =hs.waybill_no  
+              AND (PD.GOODS_NO = HS.SERIAL_NO or PD.GOODS_NO IS NULL)
+           inner join pkp.t_srv_waybill wb on wb.waybill_no=hd.waybill_no and wb.active='Y'       
+           left join tfr.t_Opt_stock st on st.waybill_no = hs.waybill_no and st.serial_no = hs.serial_no
+                
+           WHERE TD.DEST_ORG_CODE = #{depetCode}
+             AND TD.STATUS IN ('ARRIVED', 'ONTHEWAY') 
+             AND TD.ACTUAL_DEPART_TIME <![CDATA[ >=]]> #{startTime}
+             AND TD.ACTUAL_DEPART_TIME <![CDATA[ <]]> #{endTime}
+             AND TB.BILL_TYPE = 'HANDOVER'
+             AND (TB.BILL_NO LIKE 'k%' OR TB.BILL_NO LIKE 'B%')
+             and (st.id is null or  td.DEST_ORG_CODE=st.org_code)
+             and nvl(wb.goods_weight_total,0)/wb.goods_qty_total<![CDATA[ <]]>#{weightLimit}
+              
+         UNION 
+            
+              SELECT hs.waybill_no,hs.serial_no,pd.route_no,pd.orig_org_code,pd.objective_org_code,
+                round(nvl(wb.goods_weight_total,0)/wb.goods_qty_total,2) weight,
+                round(nvl(wb.goods_volume_total,0)/wb.goods_qty_total,2) volumn
+           FROM TFR.T_OPT_TRUCK_TASK TT
+           INNER JOIN TFR.T_OPT_TRUCK_TASK_DETAIL TD
+              ON TD.TRUCK_TASK_ID = TT.ID
+           INNER JOIN TFR.T_OPT_TRUCK_TASK_BILL TB
+              ON TB.TRUCK_TASK_DETAIL_ID =  TD.ID
+           INNER JOIN TFR.T_OPT_HANDOVERBILL HB
+              ON HB.HANDOVER_NO = TB.BILL_NO 
+             AND HB.HANDOVERBILL_STATE != '90'
+           INNER JOIN TFR.T_OPT_HANDOVERBILL_DETAIL HD
+              ON HD.HANDOVER_NO =  HB.HANDOVER_NO
+           INNER JOIN TFR.T_OPT_HANDOVERBILL_SERIALNO HS
+              ON HS.HANDOVERBILL_NO = HD.HANDOVER_NO
+              AND HS.WAYBILL_NO = HD.WAYBILL_NO
+           INNER JOIN tfr.t_Opt_Path_Detail pd ON pd.waybill_no =hs.waybill_no  
+              AND (PD.GOODS_NO = HS.SERIAL_NO or  PD.GOODS_NO IS NULL)
+           INNER join pkp.t_srv_waybill wb on wb.waybill_no=hd.waybill_no and wb.active='Y'       
+           INNER join tfr.t_Opt_stock st on st.waybill_no = hs.waybill_no 
+              and st.serial_no = hs.serial_no  AND ST.ORG_CODE=TD.DEST_ORG_CODE
+           WHERE TD.DEST_ORG_CODE = #{depetCode}
+             AND TD.STATUS = 'UNLOADED' 
+             AND TD.ACTUAL_DEPART_TIME <![CDATA[ >=]]> #{startTime}
+             AND TD.ACTUAL_DEPART_TIME <![CDATA[ <]]> #{endTime}
+             AND TB.BILL_TYPE = 'HANDOVER'
+             AND (TB.BILL_NO LIKE 'k%' OR TB.BILL_NO LIKE 'B%')
+             and nvl(wb.goods_weight_total,0)/wb.goods_qty_total<![CDATA[ <]]>#{weightLimit}
+              
+         UNION 
+            
+            SELECT ST.WAYBILL_NO,ST.SERIAL_NO,PD.ROUTE_NO,PD.ORIG_ORG_CODE,PD.OBJECTIVE_ORG_CODE,
+               round(nvl(wb.goods_weight_total,0)/wb.goods_qty_total,2) weight,
+               round(nvl(wb.goods_volume_total,0)/wb.goods_qty_total,2) volumn
+            FROM tfr.T_OPT_STOCK ST
+            INNER JOIN tfr.T_OPT_PATH_DETAIL PD
+               ON  ST.WAYBILL_NO=PD.WAYBILL_NO 
+               AND (ST.SERIAL_NO=PD.GOODS_NO or PD.GOODS_NO IS NULL)
+            INNER JOIN bse.t_Bas_Sales_Department SD 
+               ON  SD.TRANSFER_CENTER = ST.ORG_CODE
+               AND SD.TRANSFER_CENTER=#{depetCode}
+            INNER JOIN pkp.t_Srv_Waybill WB  
+               ON  WB.WAYBILL_NO=ST.WAYBILL_NO 
+               AND WB.ACTIVE='Y'
+               AND WB.RECEIVE_ORG_CODE = SD.CODE 
+            WHERE 
+                SD.ACTIVE='Y'
+              AND SD.STATION='Y'
+              AND ST.ORG_CODE =#{depetCode}
+              AND WB.product_code in('RCP','PACKAGE','EPEP')
+              AND WB.CREATE_TIME <![CDATA[ >=]]> #{startTime}
+              AND WB.CREATE_TIME  <![CDATA[ <]]> #{endTime}
+               and nvl(wb.goods_weight_total,0)/wb.goods_qty_total<![CDATA[ <]]>#{weightLimit}
+		
+		 UNION 
+          
+      Select 
+       lg.waybill_no,
+       sg.serial_no,
+       pd.route_no,
+       pd.orig_org_code,
+       pd.objective_org_code,
+       round(nvl(wb.goods_weight_total, 0) / wb.goods_qty_total, 2) weight,
+       round(nvl(wb.goods_volume_total, 0) / wb.goods_qty_total, 2) volumn
+    From   
+   
+	  tfr.t_opt_complement_log  lg
+	  Inner Join pkp.t_srv_waybill wb On wb.waybill_no=lg.waybill_no And wb.active='Y'
+	  Inner join pkp.t_srv_labeled_good sg  on sg.waybill_no = lg.waybill_no
+	  Inner Join tfr.t_Opt_Path_Detail pd On pd.waybill_no=lg.waybill_no
+	  And  (PD.GOODS_NO  = sg.serial_no or PD.GOODS_NO IS NULL) 
+	  Where lg.operation_org_code = #{depetCode}
+	  and sg.active ='Y'
+	  And lg.operation_time <![CDATA[ >=]]> #{startTime}
+	  and lg.operation_time <![CDATA[ <]]> #{endTime}
+	  and nvl(wb.goods_weight_total,0)/wb.goods_qty_total <![CDATA[ <]]>#{weightLimit}
+		) p  ORDER BY p.waybill_no,p.serial_no,p.route_no
+	</select>
+	<select id="queryWaybillTransportName" parameterType="java.lang.String" resultType="java.lang.String" >
+		     select p.name from pkp.t_srv_product p where p.code =#{productCode} and p.active='Y'
+	</select>
+</mapper>

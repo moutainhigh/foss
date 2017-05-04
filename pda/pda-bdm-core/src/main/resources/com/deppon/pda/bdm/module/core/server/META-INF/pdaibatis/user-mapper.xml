@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deppon.pda.bdm.module.core.server.dao.impl.UserDao" >
+    <resultMap id="userMap" type="com.deppon.pda.bdm.module.core.shared.domain.UserEntity">
+    	<id property="id" column="ID"/>
+    	<result property="empCode" column="EMPCODE"/>
+    	<result property="password" column="PASSWORD"/>
+    	<result property="isCarrier" column="ISCARRIER"/>
+    	<result property="isClearer" column="ISCLEARER"/>
+    	<result property="isAdmin" column="ISADMIN"/>
+    	<result property="deptId" column="DEPTID"/>
+    	<result property="userName" column="USERNAME"/>
+    	<result property="userType" column="USERTYPE"/>
+    	<result property="operFlag" column="OPERFLAG"/>
+    	<result property="updTime" column="UPDTIME"/>
+    	<result property="isActive" column="ISACTIVE"/>
+    	<result property="version" column="VERSION"/>
+    	<result property="activeTime" column="ACTIVETIME"/>
+    </resultMap>
+    
+    <!-- 最后修改时间 -->
+    <select id="getLastModifyTime" resultType="date">
+    	select max(UPDTIME) from t_svr_user
+    </select>
+	
+	<!-- 通过设备号获取设备实体 -->
+	<select id="getEntityById" resultMap="userMap" parameterType="string">
+    	<![CDATA[
+    	SELECT
+    		ID,
+	    	EMPCODE,
+	    	PASSWORD,
+	    	ISCARRIER,
+	    	ISCLEARER,
+	    	ISADMIN,
+	    	DEPTID,
+	    	USERNAME,
+	    	USERTYPE,
+	    	OPERFLAG,
+	    	VERSION,
+	    	to_char(UPDTIME,'yyyy-MM-dd hh24:mi:ss') UPDTIME,
+	    	ISACTIVE,
+	    	to_char(ACTIVETIME,'yyyy-MM-dd hh24:mi:ss') ACTIVETIME
+    	FROM t_svr_user
+    	WHERE OPERFLAG <> '3' AND EMPCODE = #{userCode}
+    	]]>
+    </select>
+    <!-- 获取最后更新时间大于某个时间的实体 -->
+    <select id="getEntitiesByLastModifyTime" resultMap="userMap">
+    	<![CDATA[
+    	SELECT 
+    		ID,
+	    	EMPCODE,
+	    	PASSWORD,
+	    	ISCARRIER,
+	    	ISCLEARER,
+	    	ISADMIN,
+	    	DEPTID,
+	    	USERNAME,
+	    	USERTYPE,
+	    	OPERFLAG,
+	    	VERSION,
+	    	to_char(UPDTIME,'yyyy-MM-dd hh24:mi:ss') UPDTIME,
+	    	ISACTIVE,
+	    	to_char(ACTIVETIME,'yyyy-MM-dd hh24:mi:ss') ACTIVETIME
+    	FROM t_svr_user
+    	WHERE OPERFLAG <> '3' AND UPDTIME > #{date}
+    	]]>
+    </select>
+    
+    <!-- 通过一个PDA编号集合获取设备实体 -->
+    <select id="getEntityByIds" resultMap="userMap">
+    	<![CDATA[
+    	SELECT 
+    		ID,
+	    	EMPCODE,
+	    	PASSWORD,
+	    	ISCARRIER,
+	    	ISCLEARER,
+	    	ISADMIN,
+	    	DEPTID,
+	    	USERNAME,
+	    	USERTYPE,
+	    	OPERFLAG,
+	    	VERSION,
+	    	to_char(UPDTIME,'yyyy-MM-dd hh24:mi:ss') UPDTIME,
+	    	ISACTIVE,
+	    	to_char(ACTIVETIME,'yyyy-MM-dd hh24:mi:ss') ACTIVETIME
+    	FROM t_svr_user
+    	WHERE OPERFLAG <> '3' AND EMPCODE in
+    	]]>
+    	<foreach collection="list" item="userCode" open="(" separator="," close=")">
+    		#{userCode}
+    	</foreach>
+    	
+    </select>
+</mapper>

@@ -1,0 +1,500 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+	"-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- packagingSupplierEntity-mapper.xml 包装供应商基础信息 -->
+<mapper namespace="foss.bse.bse-baseinfo.packagingsupplier" >
+
+    <resultMap id="packagingSupplierResultMap"
+   			type="com.deppon.foss.module.base.baseinfo.api.shared.domain.PackagingSupplierEntity">
+		<result property="id" column="ID"  jdbcType="VARCHAR" />
+		<result property="orgCode" column="PACK_DEPT"  jdbcType="VARCHAR" />
+		<result property="orgCodeCode" column="PACK_DEPT_CODE"  jdbcType="VARCHAR" />
+		<result property="packagingSupplierCode" column="SUPPLIER_CODE"  jdbcType="VARCHAR" />
+		<result property="packagingSupplier" column="SUPPLIER_NAME"  jdbcType="VARCHAR" />
+		<result property="packagingSupplierPhone" column="SUPPLIER_PHONE"  jdbcType="VARCHAR" />
+		<result property="woodenFrame" column="SHELF_UNITPRICE"  jdbcType="VARCHAR" />
+		<result property="woodPallet" column="PALLET_UNITPRICE"  jdbcType="VARCHAR" />
+		<result property="bagLine" column="BELT_UNITPRICE"  jdbcType="VARCHAR" />
+		<result property="wood" column="STRIP_UNITPRICE"  jdbcType="VARCHAR" />
+		<result property="bubblefilm" column="BUBBLE_UNITPRICE"  jdbcType="VARCHAR" />
+		<result property="wrappingFilm" column="WRAP_UNITPRICE"  jdbcType="VARCHAR" />
+		<result property="woodBox" column="BOX_UNITPRICE"  jdbcType="VARCHAR" />
+		<result property="breakageRate" column="DAMAGERATE"  jdbcType="VARCHAR" />
+		<result property="woodenFrameStartVolume" column="SHELF_LOWESTVOL"  jdbcType="VARCHAR" />
+		<result property="woodenFrameMin" column="SHELF_LOWESTCOST"  jdbcType="VARCHAR" />
+		<result property="woodBoxStartVolume" column="BOX_LOWESTVOL"  jdbcType="NUMERIC" />
+		<result property="woodBoxMin" column="BOX_LOWESTCOST"  jdbcType="VARCHAR" />
+		<result property="effectiveDate" column="AVAILABLETIME"  jdbcType="VARCHAR" />
+		<result property="createDate" column="CREATE_TIME"  jdbcType="TIMESTAMP" />
+		<result property="createUser" column="CREATE_USER"  jdbcType="VARCHAR" />
+		<result property="modifyDate" column="MODIFY_TIME"  jdbcType="TIMESTAMP" />
+		<result property="modifyUser" column="MODIFY_USER"  jdbcType="VARCHAR" />
+		<result property="active" column="ACTIVE"  jdbcType="CHAR" />
+		<result property="factoring" column="factoring"  jdbcType="CHAR" />
+		<result property="versionNo" column="VERSION_NO"  jdbcType="DECIMAL" />
+		<result property="cusCode" column="CUS_CODE"  jdbcType="VARCHAR" />
+		<result property="account" column="ACCOUNT"  jdbcType="VARCHAR" />
+		<result property="factorBeginTime" column="FACTOR_BEGIN_TIME"  jdbcType="TIMESTAMP" />
+		<result property="factorEndTime" column="FACTOR_END_TIME"  jdbcType="TIMESTAMP" />		
+	</resultMap>
+	
+	<!-- 数据字段 -->
+	<sql id="PackagingSupplier_Column_List">
+		ID, PACK_DEPT,PACK_DEPT_CODE,SUPPLIER_CODE,SUPPLIER_NAME,SUPPLIER_PHONE,SHELF_UNITPRICE,PALLET_UNITPRICE,
+		BELT_UNITPRICE,STRIP_UNITPRICE,BUBBLE_UNITPRICE,WRAP_UNITPRICE,BOX_UNITPRICE,DAMAGERATE,
+		SHELF_LOWESTVOL,SHELF_LOWESTCOST,BOX_LOWESTVOL,BOX_LOWESTCOST,AVAILABLETIME,CREATE_TIME,
+		CREATE_USER,MODIFY_TIME,MODIFY_USER,ACTIVE,VERSION_NO,factoring,CUS_CODE,ACCOUNT,FACTOR_BEGIN_TIME,FACTOR_END_TIME
+	</sql>
+	
+	<!-- 分页查询条件 -->
+	<sql id="queryWhere">
+		<where>
+			<if test="orgCode != null and orgCode != ''">
+				PACK_DEPT = #{orgCode,jdbcType=VARCHAR}
+			</if>
+			<if test="orgCodeCode != null and orgCodeCode != ''">
+				and PACK_DEPT_CODE = #{orgCodeCode,jdbcType=VARCHAR}
+			</if>	
+			<if test="active != null and active != ''">
+			    and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<![CDATA[
+			    and TO_NUMBER(SUBSTR(AVAILABLETIME,INSTR(AVAILABLETIME,'-')+1,8))>=TO_NUMBER(TO_CHAR(SYSDATE,'yyyymmdd'))
+			    and TO_NUMBER(SUBSTR(AVAILABLETIME,1,8))<=TO_NUMBER(TO_CHAR(SYSDATE,'yyyymmdd'))	
+			]]>			
+		</where>
+	</sql>
+	
+	<!-- 根据包装部门查询条件 -->
+	<sql id="queryOrgCodeWhere">
+		<where>
+			<if test="orgCode != null and orgCode != ''">
+				PACK_DEPT = #{orgCode,jdbcType=VARCHAR}
+			</if>
+			<if test="orgCodeCode != null and orgCodeCode != ''">
+				and PACK_DEPT_CODE = #{orgCodeCode,jdbcType=VARCHAR}
+			</if>	
+			<if test="active != null and active != ''">
+			    and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<![CDATA[
+			    and TO_NUMBER(SUBSTR(AVAILABLETIME,INSTR(AVAILABLETIME,'-')+1,8))>=TO_NUMBER(TO_CHAR(SYSDATE,'yyyymmdd'))
+			    and TO_NUMBER(SUBSTR(AVAILABLETIME,1,8))<=TO_NUMBER(TO_CHAR(SYSDATE,'yyyymmdd'))	
+			]]>	
+		</where>
+	</sql>
+	
+	<!-- 根据包装供应商查询条件 -->
+	<sql id="queryByEntityWhere">
+		<where>
+			<if test="orgCodeCode != null and orgCodeCode != ''">
+				PACK_DEPT_CODE = #{orgCodeCode,jdbcType=VARCHAR}
+			</if>
+			<if test="packagingSupplierCode != null and packagingSupplierCode != ''">
+				and SUPPLIER_CODE = #{packagingSupplierCode,jdbcType=VARCHAR}
+			</if>		
+			<if test="active != null and active != ''">
+			    and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<![CDATA[
+			    and TO_NUMBER(SUBSTR(AVAILABLETIME,INSTR(AVAILABLETIME,'-')+1,8))>=TO_NUMBER(TO_CHAR(SYSDATE,'yyyymmdd'))
+			    and TO_NUMBER(SUBSTR(AVAILABLETIME,1,8))<=TO_NUMBER(TO_CHAR(SYSDATE,'yyyymmdd'))
+			]]>					
+		</where>
+	</sql>
+	
+	<!-- 根据4个字段包装供应商查询条件 -->
+	<sql id="queryByEntityWhereCodes">
+		<where>
+			<if test="orgCodeCode != null and orgCodeCode != ''">
+				PACK_DEPT_CODE = #{orgCodeCode,jdbcType=VARCHAR}
+			</if>
+			<if test="packagingSupplierCode != null and packagingSupplierCode != ''">
+				and SUPPLIER_CODE = #{packagingSupplierCode,jdbcType=VARCHAR}
+			</if>
+			<if test="orgCode != null and orgCode != ''">
+				and PACK_DEPT = #{orgCode,jdbcType=VARCHAR}
+			</if>
+			<if test="packagingSupplier != null and packagingSupplier != ''">
+				and SUPPLIER_NAME = #{packagingSupplier,jdbcType=VARCHAR}
+			</if>		
+			<if test="active != null and active != ''">
+			    and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<![CDATA[
+			    and TO_NUMBER(SUBSTR(AVAILABLETIME,INSTR(AVAILABLETIME,'-')+1,8))>=TO_NUMBER(TO_CHAR(SYSDATE,'yyyymmdd'))
+			    and TO_NUMBER(SUBSTR(AVAILABLETIME,1,8))<=TO_NUMBER(TO_CHAR(SYSDATE,'yyyymmdd'))
+			]]>					
+		</where>
+	</sql>	
+	
+	<!-- 根据包装供应商List查询条件 -->
+	<sql id="queryByEntityListWhere">
+		<where>
+			<if test="orgCodeCode != null and orgCodeCode != ''">
+				PACK_DEPT_CODE = #{orgCodeCode,jdbcType=VARCHAR}
+			</if>
+			<if test="packagingSupplierCodeList != null and packagingSupplierCodeList.size > 0">
+			    and SUPPLIER_CODE in 
+			    <foreach collection="packagingSupplierCodeList" open="(" close=")" separator="," item="packagingSupplierCode">
+				#{packagingSupplierCode} 
+			</foreach>
+		    </if>	
+			<if test="active != null and active != ''">
+			    and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<![CDATA[
+			    and TO_NUMBER(SUBSTR(AVAILABLETIME,INSTR(AVAILABLETIME,'-')+1,8))>=TO_NUMBER(TO_CHAR(SYSDATE,'yyyymmdd'))
+			    and TO_NUMBER(SUBSTR(AVAILABLETIME,1,8))<=TO_NUMBER(TO_CHAR(SYSDATE,'yyyymmdd'))
+			]]>					
+		</where>
+	</sql>
+	
+	<!-- 根据包装部门和供应商名称查询唯一性条件 -->
+	<sql id="queryUniqueWhere">
+		<where>
+			<if test="orgCodeCode != null and orgCodeCode != ''">
+				PACK_DEPT_CODE = #{orgCodeCode,jdbcType=VARCHAR}
+			</if>	
+			<if test="packagingSupplier != null and packagingSupplier != ''">
+				and SUPPLIER_NAME = #{packagingSupplier,jdbcType=VARCHAR}
+			</if>	
+			<if test="packagingSupplierCode != null and packagingSupplierCode != ''">
+				and SUPPLIER_CODE = #{packagingSupplierCode,jdbcType=VARCHAR}
+			</if>		
+			<if test="active != null and active != ''">
+			    and ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<![CDATA[
+			    and TO_NUMBER(SUBSTR(AVAILABLETIME,INSTR(AVAILABLETIME,'-')+1,8))>=TO_NUMBER(TO_CHAR(SYSDATE,'yyyymmdd'))
+			    and TO_NUMBER(SUBSTR(AVAILABLETIME,1,8))<=TO_NUMBER(TO_CHAR(SYSDATE,'yyyymmdd'))
+			]]>			
+		</where>
+	</sql>
+
+
+<!-- 根据包装部门名称和供应商名称查询包装供应商基础信息的唯一性-->
+	<select id="selectUnique"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PackagingSupplierEntity"
+		resultMap="packagingSupplierResultMap">
+		<![CDATA[
+			SELECT
+			/** 查询包装部门包装供应商信息 **/
+		]]>
+		<include refid="PackagingSupplier_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_PackSupplierBaseInfo T
+		]]>
+		<include refid="queryUniqueWhere" />
+	</select>
+	
+	<!-- 根据包装供应商List查询包装供应商基础信息-->
+ 	<select id="selectAccurateList"
+ 		parameterType="Map" 
+ 		resultMap="packagingSupplierResultMap"> 
+ 		<![CDATA[
+ 			SELECT 
+ 			/** 查询包装部门包装供应商信息 **/ -->
+ 		]]>
+ 		<include refid="PackagingSupplier_Column_List" />
+ 		<![CDATA[
+ 			FROM BSE.T_BAS_PackSupplierBaseInfo T
+ 		]]>
+ 		<include refid="queryByEntityListWhere" />
+ 	</select>
+	
+	<!-- 根据包装部门名称查询包装供应商基础信息-->
+	<select id="select"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PackagingSupplierEntity"
+		resultMap="packagingSupplierResultMap">
+		<![CDATA[
+			SELECT
+			/** 查询包装部门包装供应商信息 **/
+		]]>
+		<include refid="PackagingSupplier_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_PackSupplierBaseInfo T
+		]]>
+		<include refid="queryOrgCodeWhere" />
+	</select>
+	
+	<!-- 根据包装供应商名称精确查询包装供应商基础信息-->
+ 	<select id="selectAccurate"
+ 		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PackagingSupplierEntity" 
+ 		resultMap="packagingSupplierResultMap"> 
+ 		<![CDATA[
+ 			SELECT 
+ 			/** 查询包装部门包装供应商信息 **/ -->
+ 		]]>
+ 		<include refid="PackagingSupplier_Column_List" />
+ 		<![CDATA[
+ 			FROM BSE.T_BAS_PackSupplierBaseInfo T
+ 		]]>
+ 		<include refid="queryByEntityWhere" />
+ 	</select>
+ 	
+    <!-- 根据4个字段精确查询包装供应商基础信息-->
+ 	<select id="selectAccurateCodes"
+ 		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PackagingSupplierEntity" 
+ 		resultMap="packagingSupplierResultMap"> 
+ 		<![CDATA[
+ 			SELECT 
+ 			/** 查询包装部门包装供应商信息 **/ -->
+ 		]]>
+ 		<include refid="PackagingSupplier_Column_List" />
+ 		<![CDATA[
+ 			FROM BSE.T_BAS_PackSupplierBaseInfo T
+ 		]]>
+ 		<include refid="queryByEntityWhereCodes" />
+ 	</select>
+ 	
+	
+	<!-- 新增包装部门包装供应商基础信息 -->
+	<insert id="insert"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PackagingSupplierEntity">	
+		<![CDATA[
+			INSERT/** 新增包装供应商信息 **/ INTO BSE.T_BAS_PackSupplierBaseInfo T	(
+		]]>
+		<include refid="PackagingSupplier_Column_List" />
+		<![CDATA[
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR},
+		#{orgCode,jdbcType=VARCHAR},
+		#{orgCodeCode,jdbcType=VARCHAR},
+		#{packagingSupplierCode,jdbcType=VARCHAR},
+		#{packagingSupplier,jdbcType=VARCHAR},
+		#{packagingSupplierPhone,jdbcType=VARCHAR},
+		#{woodenFrame,jdbcType=VARCHAR},
+		#{woodPallet,jdbcType=VARCHAR},
+		#{bagLine,jdbcType=VARCHAR},
+		#{wood,jdbcType=VARCHAR},
+		#{bubblefilm,jdbcType=VARCHAR},
+		#{wrappingFilm,jdbcType=VARCHAR},
+		#{woodBox,jdbcType=VARCHAR},
+		#{breakageRate,jdbcType=VARCHAR},
+		#{woodenFrameStartVolume,jdbcType=VARCHAR},
+		#{woodenFrameMin,jdbcType=VARCHAR},
+		#{woodBoxStartVolume,jdbcType=VARCHAR}, 
+		#{woodBoxMin,jdbcType=VARCHAR},
+		#{effectiveDate,jdbcType=VARCHAR},
+		#{createDate,jdbcType=TIMESTAMP},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{modifyUser,jdbcType=VARCHAR},
+		#{active,jdbcType=CHAR},
+		#{versionNo,jdbcType=DECIMAL},
+		#{factoring,jdbcType=CHAR},
+		#{cusCode,jdbcType=CHAR},
+		#{account,jdbcType=CHAR},
+		#{factorBeginTime,jdbcType=TIMESTAMP},
+		#{factorEndTime,jdbcType=TIMESTAMP}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+	
+	<!-- 修改包装部门包装供应商基础信息 -->
+	<update id="update"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PackagingSupplierEntity">
+		UPDATE/** 修改包装供应商信息 **/ BSE.T_BAS_PackSupplierBaseInfo T
+		<set>
+			<if test="orgCode != null">
+				PACK_DEPT = #{orgCode,jdbcType=VARCHAR},
+			</if>
+			<if test="orgCodeCode != null">
+				PACK_DEPT_CODE = #{orgCodeCode,jdbcType=VARCHAR},
+			</if>
+			<if test="packagingSupplierCode != null">
+				SUPPLIER_CODE = #{packagingSupplierCode,jdbcType=VARCHAR},
+			</if>
+			<if test="packagingSupplier != null">
+				SUPPLIER_NAME = #{packagingSupplier,jdbcType=VARCHAR},
+			</if>
+			<if test="packagingSupplierPhone != null">
+				SUPPLIER_PHONE = #{packagingSupplierPhone,jdbcType=VARCHAR},
+			</if>
+			<if test="woodenFrame != null">
+				SHELF_UNITPRICE = #{woodenFrame,jdbcType=VARCHAR},
+			</if>
+			<if test="woodPallet != null">
+				PALLET_UNITPRICE = #{woodPallet,jdbcType=VARCHAR},
+			</if>
+			<if test="bagLine != null">
+				BELT_UNITPRICE = #{bagLine,jdbcType=VARCHAR},
+			</if>
+			<if test="wood != null">
+				STRIP_UNITPRICE = #{wood,jdbcType=VARCHAR},
+			</if>
+			<if test="bubblefilm != null">
+				BUBBLE_UNITPRICE = #{bubblefilm,jdbcType=VARCHAR},
+			</if>
+			<if test="wrappingFilm != null">
+				WRAP_UNITPRICE = #{wrappingFilm,jdbcType=VARCHAR},
+			</if>
+			<if test="woodBox != null">
+				BOX_UNITPRICE = #{woodBox,jdbcType=VARCHAR},
+			</if>
+			<if test="breakageRate != null">
+				DAMAGERATE = #{breakageRate,jdbcType=VARCHAR},
+			</if>		
+			<if test="woodenFrameStartVolume != null">
+				SHELF_LOWESTVOL = #{woodenFrameStartVolume,jdbcType=VARCHAR},
+			</if>
+			<if test="woodenFrameMin != null">
+				SHELF_LOWESTCOST = #{woodenFrameMin,jdbcType=VARCHAR},
+			</if>			
+			<if test="woodBoxStartVolume != null">
+				BOX_LOWESTVOL = #{woodBoxStartVolume,jdbcType=VARCHAR},
+			</if>
+			<if test="woodBoxMin != null">
+				BOX_LOWESTCOST = #{woodBoxMin,jdbcType=VARCHAR},
+			</if>	
+			<if test="effectiveDate != null">
+				AVAILABLETIME = #{effectiveDate,jdbcType=VARCHAR},
+			</if>	
+			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>				
+			<if test="modifyUser != null">
+				MODIFY_USER = #{modifyUser,jdbcType=VARCHAR},
+			</if>	
+			<if test="active != null">
+				ACTIVE = #{active,jdbcType=CHAR},
+			</if>
+			<if test="versionNo != null">
+				VERSION_NO = #{versionNo,jdbcType=DECIMAL},
+			</if>
+			<if test="factoring != null">
+				factoring = #{factoring,jdbcType=DECIMAL},
+			</if>
+			<if test="cusCode != null">
+				CUS_CODE = #{cusCode,jdbcType=DECIMAL},
+			</if>
+			<if test="account != null">
+				ACCOUNT = #{account,jdbcType=DECIMAL},
+			</if>
+			<if test="factorBeginTime != null">
+				FACTOR_BEGIN_TIME = #{factorBeginTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="factorEndTime != null">
+				FACTOR_END_TIME = #{factorEndTime,jdbcType=TIMESTAMP}
+			</if>
+		</set>
+		<where>
+			<if test="id != null">
+				id = #{id,jdbcType=VARCHAR}
+			</if>
+		</where>
+	</update>
+	
+	<!-- 批量删除部门包装供应商基础信息 -->
+	<update id="deleteByCode" parameterType="map">
+		UPDATE/** 综合:修改信息 **/ BSE.T_BAS_PackSupplierBaseInfo T
+		<set>
+ 			<if test="codeList!=null and codeList.length> 0"> 
+				ACTIVE = #{active,jdbcType=CHAR}
+ 			</if>
+ 			<if test="modifyDate != null">
+				MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+			</if>				
+			<if test="modifyUser != null">
+				MODIFY_USER = #{modifyUser,jdbcType=VARCHAR},
+			</if>	
+			<if test="versionNo != null">
+				VERSION_NO = #{versionNo,jdbcType=DECIMAL}
+			</if>
+		</set>
+		<where>
+			<if test="codeList!=null and codeList.length> 0">
+				ID in
+				<foreach collection="codeList" index="index" item="code" open="("
+					separator="," close=")">
+					#{code}
+				</foreach>
+			</if>
+		</where>
+	</update>
+	
+	
+	<!-- 按照id的list批量查询 -->
+	<select id="queryByCodeList" parameterType="Map" 
+ 		resultMap="packagingSupplierResultMap">
+	    <![CDATA[
+	       	SELECT * FROM BSE.T_BAS_PackSupplierBaseInfo T 
+	    ]]>
+		<where>
+			<if test="codeList!=null and codeList.size > 0">
+				ID in
+				<foreach collection="codeList" index="index" item="code" open="("
+					separator="," close=")">
+					#{code}
+				</foreach>
+			</if>
+		</where>
+	</select>
+	
+	<!-- 按照id的数组批量查询 -->
+	<select id="queryByCodeString" parameterType="Map" 
+ 		resultMap="packagingSupplierResultMap">
+	    <![CDATA[
+	       	SELECT * FROM BSE.T_BAS_PackSupplierBaseInfo T 
+	    ]]>
+		<where>
+			<if test="codeList!=null and codeList.length > 0">
+				ID in
+				<foreach collection="codeList" index="index" item="code" open="("
+					separator="," close=")">
+					#{code}
+				</foreach>
+			</if>
+		</where>
+	</select>
+		
+	<!-- 统计总记录数 -->
+	<select id="queryCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PackagingSupplierEntity">
+	    <![CDATA[
+	       	SELECT/** 统计总记录数**/ count(*) FROM BSE.T_BAS_PackSupplierBaseInfo T 
+	    ]]>
+		<include refid="queryWhere" />
+	</select>
+	
+	<!-- 查询同一个部门的包装供应商信息的条数 -->
+	<select id="queryOrgCodeCount" resultType="Long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.PackagingSupplierEntity">
+	    <![CDATA[
+	       	select/** 统计总记录数**/ count(*) FROM BSE.T_BAS_PackSupplierBaseInfo T 
+	    ]]>
+		<include refid="queryOrgCodeWhere" />
+	</select>
+	
+	<!-- 根据员工工号查询对应外场部门的包装供应商 -->
+	<select id="queryPackagingSupplierListByEmpCode" resultMap="packagingSupplierResultMap"
+		parameterType="Map">
+		<![CDATA[
+ 			SELECT 
+ 			/** 根据员工工号查询对应外场部门的包装供应商信息 **/ 
+ 		]]>
+ 		<include refid="PackagingSupplier_Column_List" />
+ 		     <![CDATA[ 
+ 		     FROM BSE.T_BAS_PackSupplierBaseInfo X where X.PACK_DEPT_CODE in (
+	             	select o.CODE
+					          from bse.T_BAS_ORG o
+					         where o.CODE in (select t.ORG_CODE
+					                            from bse.T_BAS_EMPLOYEE t
+					                           where t.EMP_CODE = #{empCode,jdbcType=VARCHAR}
+					                             and t.ACTIVE = 'Y')
+					           and o.ACTIVE = 'Y'
+					           and o.TRANSFER_CENTER = 'Y')
+	                    ]]>
+	                    <if test="active != null and active != ''">
+				         and X.ACTIVE = #{active,jdbcType=CHAR}
+				        </if>
+				        <![CDATA[
+			    and TO_NUMBER(SUBSTR(AVAILABLETIME,INSTR(AVAILABLETIME,'-')+1,8))>=TO_NUMBER(TO_CHAR(SYSDATE,'yyyymmdd'))
+			    and TO_NUMBER(SUBSTR(AVAILABLETIME,1,8))<=TO_NUMBER(TO_CHAR(SYSDATE,'yyyymmdd'))
+			]]>	
+	</select>
+</mapper>

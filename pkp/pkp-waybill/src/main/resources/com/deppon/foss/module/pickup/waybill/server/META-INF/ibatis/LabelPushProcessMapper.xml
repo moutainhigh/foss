@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.deppon.foss.module.pickup.waybill.shared.domain.LabelPushProcessEntity" >
+	<resultMap id="BaseResultMap" type="com.deppon.foss.module.pickup.waybill.shared.domain.LabelPushProcessEntity" >
+	    <id column="ID" property="id" jdbcType="VARCHAR" />
+	    <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+	    <result column="ORDER_NO" property="orderNo" jdbcType="VARCHAR" />
+	    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+	    <result column="MODIFY_TIME" property="modifyTime" jdbcType="TIMESTAMP" />
+	    <result column="OPERATE_RESULT" property="operateResult" jdbcType="VARCHAR" />
+	    <result column="MESSAGE" property="message" jdbcType="VARCHAR" />
+	    <result column="JOB_ID" property="jobId" jdbcType="VARCHAR" />
+	    <result column="PROCESS_COUNT" property="processCount" jdbcType="DECIMAL" />
+	    <result column="ACTIVE" property="active" jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="Base_Column_List" >
+		ID, ORDER_NO, WAYBILL_NO, CREATE_TIME, MODIFY_TIME, OPERATE_RESULT, MESSAGE, JOB_ID, PROCESS_COUNT, ACTIVE
+	</sql>
+	
+	<insert id="insert" parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.LabelPushProcessEntity" >
+	    insert into PKP.T_SRV_LABEL_PUSH_PROCESS 
+	      	( ID, ORDER_NO, WAYBILL_NO
+	      	, CREATE_TIME, MODIFY_TIME,OPERATE_RESULT
+	    	,MESSAGE, JOB_ID, PROCESS_COUNT
+	    	, ACTIVE)
+	    values (
+	      #{id,jdbcType=VARCHAR}, #{orderNo,jdbcType=VARCHAR}, #{waybillNo,jdbcType=VARCHAR}, 
+	      #{createTime,jdbcType=TIMESTAMP},#{modifyTime,jdbcType=TIMESTAMP},#{operateResult,jdbcType=VARCHAR},
+	      #{message,jdbcType=CLOB}, #{jobId,jdbcType=VARCHAR}, #{processCount,jdbcType=DECIMAL}
+	      ,#{active,jdbcType=VARCHAR} 
+	    )
+  	</insert>
+  	
+  	<select id="queryByWaibillNo" resultMap="BaseResultMap" parameterType="string">
+		select 
+		<include refid="Base_Column_List"/>
+		FROM PKP.T_SRV_LABEL_PUSH_PROCESS
+		where WAYBILL_NO = #{waybillNo,jdbcType=CHAR}
+		and ACTIVE = 'Y'
+	</select>
+	
+	<update id="updateById" parameterType="com.deppon.foss.module.pickup.waybill.shared.domain.LabelPushProcessEntity">
+		update PKP.T_SRV_LABEL_PUSH_PROCESS
+		set MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP}
+		, OPERATE_RESULT = #{operateResult,jdbcType=VARCHAR} 
+		, MESSAGE = #{message,jdbcType=VARCHAR}
+		, JOB_ID = #{jobId,jdbcType=VARCHAR}
+		, PROCESS_COUNT = #{processCount,jdbcType=DECIMAL}
+		, ACTIVE = #{active,jdbcType=VARCHAR}
+		where ID = #{id, jdbcType=VARCHAR}
+	</update>
+	
+	<update id="rollbackWaitingJob" parameterType="map">
+		update PKP.T_SRV_LABEL_PUSH_PROCESS
+		set MODIFY_TIME = SYSDATE
+		, OPERATE_RESULT = #{operateResult,jdbcType=CHAR}
+		, MESSAGE = #{message,jdbcType=CHAR}
+		, JOB_ID = 'N/A'
+		, PROCESS_COUNT = 0
+		where
+			ACTIVE = 'Y'
+			and WAYBILL_NO = #{waybillNo,jdbcType=CHAR}
+	</update>
+
+	<!-- 待处理的任务为operateResult为unpushed的或者是operateResult为fail并且processCount<5的 ,并且active为Y-->	
+	<update id="updateJobIdForWaitingJobs" parameterType="map">
+		update PKP.T_SRV_LABEL_PUSH_PROCESS
+		set JOB_ID = #{jobId,jdbcType=VARCHAR}, OPERATE_RESULT = 'pushing'
+		where ACTIVE = 'Y' 
+			  and (OPERATE_RESULT = 'unpushed'  or OPERATE_RESULT = 'fail' and PROCESS_COUNT <![CDATA[<]]> 5)
+			  and rownum <![CDATA[<]]> #{maxCount,jdbcType=INTEGER} 
+	</update>
+	
+	
+	<select id="queryWaitingProcessWaybillNoByJobId" resultMap="BaseResultMap" parameterType="string">
+		select 
+		<include refid="Base_Column_List"/>
+		from PKP.T_SRV_LABEL_PUSH_PROCESS
+		where JOB_ID = #{jobId,jdbcType=VARCHAR}
+	</select>
+	
+	<update id="updateSelective" parameterType="map">
+		update PKP.T_SRV_LABEL_PUSH_PROCESS
+		set
+			<if test="modifyTime != null"> 
+				MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP}
+			</if>
+			<if test="operateResult != null"> 
+				, OPERATE_RESULT = #{operateResult,jdbcType=VARCHAR} 
+			</if>
+			<if test="message != null"> 
+				, MESSAGE = #{message,jdbcType=VARCHAR}
+			</if>
+			<if test="jobId != null"> 
+				, JOB_ID = #{jobId,jdbcType=VARCHAR}
+			</if>
+			<if test="processCount != null"> 
+				, PROCESS_COUNT = #{processCount,jdbcType=DECIMAL}
+			</if>
+			<if test="attemptCount != null"> 
+				, ACTIVE = #{active,jdbcType=DECIMAL}        
+			</if>
+		where WAYBILL_NO = #{waybillNo, jdbcType=VARCHAR}
+			  and ACTIVE = 'Y'
+	</update>
+	
+</mapper>

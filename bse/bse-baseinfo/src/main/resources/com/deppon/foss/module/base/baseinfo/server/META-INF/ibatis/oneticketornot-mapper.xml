@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="foss.bse.bse-baseinfo.oneticketornot">
+	<!-- 一票多件信息 -->
+	<resultMap id="oneticketornotResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.OneticketornotEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="CODE" property="code" jdbcType="VARCHAR" />
+		<result column="ISONETICKETORNOT" property="isoneticketornot" jdbcType="CHAR" />
+		<result column="TICKETDESCRIPTION" property="ticketdescription" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="CREATE_USER" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+	</resultMap>
+	
+	<!-- 数据字段 -->
+	<sql id="oneticketornot_Column_List">
+		P.ID AS ID,
+		P.CODE AS CODE,
+		P.ISONETICKETORNOT AS ISONETICKETORNOT,
+		P.TICKETDESCRIPTION AS TICKETDESCRIPTION,
+		P.CREATE_TIME AS CREATE_TIME, 
+		P.MODIFY_TIME AS MODIFY_TIME,
+		P.CREATE_USER AS CREATE_USER,
+		P.MODIFY_USER AS MODIFY_USER,
+		P.ACTIVE AS ACTIVE
+	</sql>
+
+	<!-- 根据客户编码查询一票多件信息 -->
+	<select id="queryOneticketornotBycode" resultMap="oneticketornotResultMap"
+			parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.OneticketornotEntity" >
+		<![CDATA[
+			SELECT
+			/** 综合:根据客户编码查询一票多件信息 **/
+		]]>
+		<include refid="oneticketornot_Column_List" />
+		<![CDATA[
+			FROM BSE.T_BAS_ONETICKET P
+		]]>
+		<where>
+		    <if test="code != null and code != ''">
+		        P.CODE = #{code,jdbcType=VARCHAR}
+		    </if>
+		   <![CDATA[
+		        AND P.ACTIVE = 'Y'
+		   ]]>
+		</where>
+	</select>
+	<!-- 新增一票多件信息 -->
+	<insert id="insertOneticketornot"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.OneticketornotEntity">
+		<![CDATA[
+			INSERT 
+			/** 综合:新一票多件信息 **/ INTO BSE.T_BAS_ONETICKET P	(
+		ID,CODE,ISONETICKETORNOT,TICKETDESCRIPTION,CREATE_TIME,MODIFY_TIME,CREATE_USER,MODIFY_USER,ACTIVE
+		)VALUES(
+		]]>
+		#{id,jdbcType=VARCHAR}, 
+		#{code,jdbcType=VARCHAR},
+		#{isoneticketornot,jdbcType=CHAR},
+		#{ticketdescription,jdbcType=VARCHAR},
+		#{createDate,jdbcType=TIMESTAMP},
+		#{modifyDate,jdbcType=TIMESTAMP},
+		#{createUser,jdbcType=VARCHAR},
+		#{modifyUser,jdbcType=VARCHAR},
+		#{active,jdbcType=CHAR}
+		<![CDATA[
+		)
+		]]>
+	</insert>
+	<!-- 修改一件多票信息 -->
+	<update id="deleteOneticketornot"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.OneticketornotEntity">
+		update/** 综合:作一票多件信息 **/ BSE.T_BAS_ONETICKET P
+		<set>
+		P.ISONETICKETORNOT = #{isoneticketornot,jdbcType=CHAR},
+		P.TICKETDESCRIPTION = #{ticketdescription,jdbcType=VARCHAR},
+		P.MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP},
+		P.MODIFY_USER = #{modifyUser,jdbcType=VARCHAR},
+		P.ACTIVE = #{active,jdbcType=CHAR}
+		</set>
+		<where>
+			<if test="code != null and code != ''">
+				P.CODE = #{code,jdbcType=VARCHAR}
+			</if>
+			AND P.ACTIVE='Y'
+		</where>
+	</update>
+</mapper>

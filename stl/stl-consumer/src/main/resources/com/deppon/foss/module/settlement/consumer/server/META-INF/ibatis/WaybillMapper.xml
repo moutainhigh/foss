@@ -1,0 +1,431 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="foss.stl.WaybillDao">
+    <resultMap id="WaybillResult" type="com.deppon.foss.module.settlement.consumer.api.shared.domain.WaybillDetailEntity">
+        <result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+        <result column="PRODUCT" property="product" jdbcType="VARCHAR" />
+        <result column="PRE_PAY_AMOUNT" property="prePayAmount" jdbcType="DECIMAL" />
+        <result column="TO_PAY_AMOUNT" property="toPayAmount" jdbcType="DECIMAL" />
+        <result column="DELIVERY_CUSTOMER_CODE" property="deliveryCustomerCode" jdbcType="VARCHAR" />
+        <result column="DELIVERY_CUSTOMER_NAME" property="deliveryCustomerName" jdbcType="VARCHAR" />
+        <result column="RECEIVE_CUSTOMER_CODE" property="receiveCustomerCode" jdbcType="VARCHAR" />
+        <result column="RECEIVE_CUSTOMER_NAME" property="receiveCustomerName" jdbcType="VARCHAR" />
+        <result column="RECEIVE_ORG_CODE" property="receiveOrgCode" jdbcType="VARCHAR" />
+        <result column="RECEIVE_ORG_NAME" property="receiveOrgName" jdbcType="VARCHAR" />
+        <result column="DEST_ORG_CODE" property="destOrgCode" jdbcType="VARCHAR" />
+        <result column="DEST_ORG_NAME" property="destOrgName" jdbcType="VARCHAR" />
+        <result column="TRANSFER_LINE" property="transferLine" jdbcType="VARCHAR" />
+        <result column="BILL_TIME" property="billTime" jdbcType="TIMESTAMP" />
+        <result column="INVOICE_MARK" property="invoiceMark" jdbcType="VARCHAR" />
+        <result column="ORIG_DUNNING_ORG_CODE" property="origDunningOrgCode" jdbcType="VARCHAR" />
+        <result column="ORIG_DUNNING_ORG_NAME" property="origDunningOrgName" jdbcType="VARCHAR" />
+        <result column="ORIG_CONTRACT_ORG_CODE" property="origContractOrgCode" jdbcType="VARCHAR" />
+        <result column="ORIG_CONTRACT_ORG_NAME" property="origContractOrgName" jdbcType="VARCHAR" />
+        <result column="DEST_DUNNING_ORG_CODE" property="destDunningOrgCode" jdbcType="VARCHAR" />
+        <result column="DEST_DUNNING_ORG_NAME" property="destDunningOrgName" jdbcType="VARCHAR" />
+        <result column="DEST_CONTRACT_ORG_CODE" property="destContractOrgCode" jdbcType="VARCHAR" />
+        <result column="DEST_CONTRACT_ORG_NAME" property="destContractOrgName" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <!--获取总条数-->
+    <select id="queryWaybillByConditionsCount"
+            parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.WaybillQueryDto" resultType="java.lang.Integer">
+        SELECT count(1)
+        FROM PKP.T_SRV_WAYBILL wb, pkp.T_SRV_ACTUAL_FREIGHT af
+        WHERE wb.WAYBILL_NO = af.WAYBILL_NO
+        and af.status not IN ('OBSOLETE','ABORTED')--已终止 ，已作废
+        and wb.pending_type not IN ('PDA_PENDING','PC_PENDING')--PDA补录,运单暂存
+        <if test="startDate != null and endDate != null"><!--开单时间-->
+            AND <![CDATA[ wb.BILL_TIME >=#{ startDate ,jdbcType=TIMESTAMP } and wb.BILL_TIME <#{endDate ,jdbcType=TIMESTAMP} ]]>
+        </if>
+        <if test="customerCodes!=null and customerCodes.length>0"><!--客户编码-->
+            <choose><!--统一结算-->
+                <when test="unifiedSettlement!=null and unifiedSettlement eq 'Y'.toString()"><!--统一结算时 ，只有催款部门才能查到数据-->
+                    <if test="customerType!=null and customerType=='OC'"><!--单据类型 统一结算时，如果是选择的是出发客户，则出发要求是统一结算-->
+                        AND wb.DELIVERY_CUSTOMER_CODE IN
+                        <foreach collection="customerCodes" open="(" separator="," close=")" item="item">
+                            #{item}
+                        </foreach>
+                        AND af.START_CENTRALIZED_SETTLEMENT = 'Y'
+
+                        AND EXISTS (
+                        SELECT 1
+                        FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V
+                        WHERE V.EMP_CODE = #{empCode}
+                        and
+                        V.ORG_CODE = (select code from bse.t_bas_org o where o.unified_code=af.START_REMINDER_ORG_CODE and o.active='Y' )
+                        )
+                    </if>
+                    <if test="customerType!=null and customerType=='DC'">
+                        AND wb.RECEIVE_CUSTOMER_CODE IN
+                        <foreach collection="customerCodes" open="(" separator="," close=")" item="item">
+                            #{item}
+                        </foreach>
+                        AND af.ARRIVE_CENTRALIZED_SETTLEMENT = 'Y'
+                        AND EXISTS (
+                        SELECT 1
+                        FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V
+                        WHERE V.EMP_CODE = #{empCode}
+                        and
+                        V.ORG_CODE = (select code from bse.t_bas_org o where o.unified_code=af.Arrive_Reminder_Org_Code and o.active='Y')
+                        )
+                    </if>
+                    <if test="customerType!=null and customerType=='ALL'">
+                        AND (
+                        wb.DELIVERY_CUSTOMER_CODE IN
+                        <foreach collection="customerCodes" open="(" separator="," close=")" item="item">
+                            #{item}
+                        </foreach>
+                        OR
+                        wb.RECEIVE_CUSTOMER_CODE IN
+                        <foreach collection="customerCodes" open="(" separator="," close=")" item="item">
+                            #{item}
+                        </foreach>
+                        )
+                        AND (af.START_CENTRALIZED_SETTLEMENT = 'Y' OR af.ARRIVE_CENTRALIZED_SETTLEMENT = 'Y')
+                        AND EXISTS (
+                        SELECT 1
+                        FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V
+                        WHERE V.EMP_CODE = #{empCode}
+                        and (
+                        V.ORG_CODE = (select code from bse.t_bas_org o where o.unified_code=af.START_REMINDER_ORG_CODE and o.active='Y' )
+                        or V.ORG_CODE = (select code from bse.t_bas_org o where o.unified_code=af.Arrive_Reminder_Org_Code and o.active='Y')
+                        )
+                        )
+                    </if>
+                </when>
+                <when test="unifiedSettlement!=null and unifiedSettlement eq 'N'.toString()">
+                    <if test="customerType!=null and customerType=='OC'"><!--单据类型 非统一结算时，如果是选择的是出发客户，则出发要求是非统一结算-->
+                        AND wb.DELIVERY_CUSTOMER_CODE IN
+                        <foreach collection="customerCodes" open="(" separator="," close=")" item="item">
+                            #{item}
+                        </foreach>
+                        AND (af.START_CENTRALIZED_SETTLEMENT = 'N' or af.START_CENTRALIZED_SETTLEMENT is null)
+                    </if>
+                    <if test="customerType!=null and customerType=='DC'">
+                        AND wb.RECEIVE_CUSTOMER_CODE IN
+                        <foreach collection="customerCodes" open="(" separator="," close=")" item="item">
+                            #{item}
+                        </foreach>
+                        AND (af.ARRIVE_CENTRALIZED_SETTLEMENT = 'N' or af.ARRIVE_CENTRALIZED_SETTLEMENT is null)
+                    </if>
+                </when>
+            </choose>
+        </if>
+
+        <if test="orgCode != null and orgCode != '' "><!--所属部门 收货部门或者到达部门必须有一个与他相同-->
+            AND ( wb.RECEIVE_ORG_CODE = #{orgCode} OR wb.CUSTOMER_PICKUP_ORG_CODE = #{orgCode} )
+        </if>
+
+        <choose><!--业务类型-->
+            <when test="product != null and product == '01'"><!--业务类型 快递-->
+                AND (wb.IS_EXPRESS = 'Y' OR wb.is_ecs ='Y')
+            </when>
+            <when test="product != null and product == '02'"><!--业务类型 零担-->
+                AND wb.IS_EXPRESS = 'N'  AND wb.IS_WHOLE_VEHICLE = 'N'
+            </when>
+            <when test="product != null and product == '03'"><!--业务类型 整车-->
+                wb.IS_WHOLE_VEHICLE = 'Y'
+            </when>
+            <!--<otherwise>&lt;!&ndash;业务类型 零担&ndash;&gt;-->
+                <!--AND wb.IS_EXPRESS = 'N' AND wb.IS_WHOLE_VEHICLE = 'N'-->
+            <!--</otherwise>-->
+        </choose>
+
+        <if test="paidMethods != null and paidMethods.length>0"><!--开单付款方式-->
+            AND wb.PAID_METHOD IN
+            <foreach collection="paidMethods" open="(" separator="," close=")" item="item">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="invoiceMark != null and invoiceMark != ''"><!--发票标记-->
+            AND af.INVOICE = #{invoiceMark}
+        </if>
+
+        and wb.active='Y'
+        and not EXISTS (
+        select 1 FROM BSE.T_BAS_SALES_DEPARTMENT tbsd
+        WHERE tbsd.is_league_saledept ='Y' AND tbsd.code = wb.receive_org_code
+        AND tbsd.active='Y'
+        )
+        AND wb.WAYBILL_NO NOT IN (<!--过滤掉事后折运单  对应的  折扣单未确认的运单-->
+            SELECT dd.waybill_no FROM stl.t_stl_bill_discount_detail dd,stl.t_stl_bill_discount d
+            WHERE  dd.discuont_no = d.discount_no and
+            d.customer_no in
+            <foreach collection="customerCodes" open="(" separator="," close=")" item="item">
+            #{item}
+            </foreach>
+            and d.status='N'--未确认
+            and dd.waybill_no is not null
+        )
+        AND wb.WAYBILL_NO NOT IN (<!--已经合并的运单不能查出来-->
+        SELECT TWD.WAYBILL_NO FROM stl.t_stl_waybill_detail TWD
+        )
+        AND wb.WAYBILL_NO NOT IN (<!-- 已经开票的运单(状态为已开具的)不能查出来-->
+        SELECT  was.BILL_NO FROM stl.t_stl_waybill_apply_status was
+        WHERE was.STATUS = 'Y'
+        )
+    </select>
+
+    <select id="queryWaybill"
+            parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.WaybillQueryDto" resultMap="WaybillResult">
+
+        SELECT
+        <include refid="querySql"/>
+        FROM PKP.T_SRV_WAYBILL wb, pkp.T_SRV_ACTUAL_FREIGHT af
+        WHERE wb.WAYBILL_NO = af.WAYBILL_NO
+        <if test="waybillNos!=null and waybillNos.length>0">
+            and wb.WAYBILL_NO IN
+            <foreach collection="waybillNos" close=")" separator="," open="(" item="item">
+                #{item}
+            </foreach>
+        </if>
+        <if test="paidMethods!=null and paidMethods.length>0">
+            AND wb.PAID_METHOD IN
+            <foreach collection="paidMethods" close=")" separator="," open="(" item="item">
+                #{item}
+            </foreach>
+        </if>
+        and wb.active='Y'
+    </select>
+
+    <sql id="querySql">
+       wb.waybill_no AS waybill_no,
+       case when wb.product_code in (
+              SELECT PRODUCT_CODE FROM STV.T_STL_PRODUCT P WHERE P.IS_BELONG_PACKAGE='Y'
+            ) then '01'
+            when wb.product_code = 'WVH' then '03'
+            else '02'
+       end product,
+       decode(af.invoice,
+              'INVOICE_TYPE_01',
+              '01',
+              'INVOICE_TYPE_02',
+              '02',
+              af.invoice) invoice_mark, -- 发票标记
+       decode(af.PRE_PAY_AMOUNT_DISCOUN,
+            '',
+            wb.pre_Pay_Amount,
+              nvl(wb.pre_pay_amount, 0) - nvl(af.pre_pay_amount_discoun, 0)) / 100 pre_pay_amount, --预付金额
+       decode(af.to_pay_amount_discount,
+            '',
+            nvl(wb.to_Pay_Amount, 0) - nvl(wb.COD_AMOUNT, 0),
+            nvl(wb.to_Pay_Amount, 0) - nvl(wb.COD_AMOUNT, 0) -
+            nvl(af.to_pay_amount_discount, 0)) / 100 to_pay_amount, --到付金额
+       wb.delivery_customer_code as delivery_customer_code, --发货方客户编码
+       wb.receive_customer_code as receive_customer_code, --收货方客户编码
+       wb.delivery_customer_name as delivery_customer_name,
+       wb.receive_customer_name as receive_customer_name,
+
+       nvl((SELECT A.Unified_Code
+                 FROM BSE.T_BAS_ORG A where A.Code = wb.receive_Org_Code
+                 and A.Active = 'Y'),wb.receive_Org_Code) AS receive_org_code
+       , --发货部门编码
+       wb.receive_org_name AS receive_org_name,
+       nvl((SELECT A.Unified_Code
+                 FROM BSE.T_BAS_ORG A where A.Code = wb.Customer_Pickup_Org_Code
+                 and A.Active = 'Y'), wb.Customer_Pickup_Org_Code) AS dest_org_code
+       , --到达部门编码
+       wb.Customer_Pickup_Org_Name AS dest_org_name,
+       wb.bill_time AS bill_time, --开单日期
+
+       decode(wb.Pickup_Centralized,
+              'Y', --集中接货，取创建城市，否则取收货城市
+              nvl((SELECT B.name
+                    FROM BSE.T_BAS_ORG A
+                    left join BSE.T_BAS_DISTRICT B
+                      on A.City_Code = B.Code AND A.ACTIVE = B.ACTIVE
+                   where A.CODE = wb.Create_Org_Code
+                     AND A.ACTIVE = 'Y'),
+                  wb.Create_Org_Code),
+              nvl((SELECT B.name
+                    FROM BSE.T_BAS_ORG A
+                    left join BSE.T_BAS_DISTRICT B
+                      on A.city_code = B.code AND A.ACTIVE = B.ACTIVE
+                   where A.CODE = wb.receive_org_code
+                     AND A.ACTIVE = 'Y'),
+                  wb.receive_org_code)) || '-' ||
+       (case
+          when wb.product_code in ('PLF', 'AF') then --偏线或者空运
+           nvl((SELECT a.NAME
+                 FROM BSE.T_BAS_OUTER_BRANCH T
+                 left join BSE.T_BAS_DISTRICT A
+                   on t.city_code = a.code
+                  and t.active = a.active
+                where t.AGENT_DEPT_CODE = wb.Customer_Pickup_Org_Code
+                  AND t.ACTIVE = 'Y'),
+               wb.Customer_Pickup_Org_Code)
+          when wb.product_code IN (SELECT PRODUCT_CODE FROM STV.T_STL_PRODUCT P WHERE P.IS_BELONG_PACKAGE='Y') then --快递代理
+           nvl((SELECT B.NAME
+                 FROM BSE.T_BAS_OUTER_BRANCH T
+                 LEFT JOIN BSE.T_BAS_DISTRICT B
+                   ON T.CITY_CODE = B.CODE
+                  AND T.ACTIVE = B.ACTIVE
+                  where T.AGENT_DEPT_CODE = wb.Customer_Pickup_Org_Code
+                  AND T.BRANCHTYPE = 'LD'
+                  AND T.ACTIVE = 'Y'),
+               wb.Customer_Pickup_Org_Code)
+          else
+           nvl((SELECT B.name
+                 FROM BSE.T_BAS_ORG A
+                 left join BSE.T_BAS_DISTRICT B
+                   on A.city_code = B.code AND A.ACTIVE = B.ACTIVE
+                where A.CODE = wb.Customer_Pickup_Org_Code
+                  AND A.ACTIVE = 'Y'),
+               wb.Customer_Pickup_Org_Code)
+        end) as transfer_line, --运输路线(出发城市―到达城市)
+       af.START_REMINDER_ORG_CODE AS ORIG_DUNNING_ORG_CODE,--部门的标杆标码
+        (SELECT BO.NAME FROM bse.T_BAS_ORG BO where BO.UNIFIED_CODE =af.START_REMINDER_ORG_CODE  and BO.ACTIVE='Y') AS ORIG_DUNNING_ORG_NAME,
+       af.ARRIVE_REMINDER_ORG_CODE AS DEST_DUNNING_ORG_CODE,
+        (SELECT BO.NAME FROM bse.T_BAS_ORG BO where BO.UNIFIED_CODE =af.ARRIVE_REMINDER_ORG_CODE and BO.ACTIVE='Y' ) AS DEST_DUNNING_ORG_NAME,
+
+       af.START_CONTRACT_ORG_CODE AS ORIG_CONTRACT_ORG_CODE,
+        (SELECT BO.NAME FROM bse.T_BAS_ORG BO where BO.UNIFIED_CODE =af.START_CONTRACT_ORG_CODE  and BO.ACTIVE='Y') AS ORIG_CONTRACT_ORG_NAME,
+       af.ARRIVE_CONTRACT_ORG_CODE AS DSET_CONTRACT_ORG_CODE,
+         (SELECT BO.NAME FROM bse.T_BAS_ORG BO where BO.UNIFIED_CODE =af.ARRIVE_CONTRACT_ORG_CODE  and BO.ACTIVE='Y') AS DEST_CONTRACT_ORG_NAME
+    </sql>
+
+    <select id="queryWaybillByConditions" resultMap="WaybillResult"
+            parameterType="com.deppon.foss.module.settlement.consumer.api.shared.dto.WaybillQueryDto">
+        SELECT
+        <include refid="querySql"/>
+        FROM PKP.T_SRV_WAYBILL wb, pkp.T_SRV_ACTUAL_FREIGHT af
+        WHERE wb.WAYBILL_NO = af.WAYBILL_NO
+        and af.status not IN ('OBSOLETE','ABORTED')--已终止 ，已作废
+        and wb.pending_type not IN ('PDA_PENDING','PC_PENDING')--PDA补录,运单暂存
+        <if test="startDate != null and endDate != null"><!--开单时间-->
+            AND <![CDATA[ wb.BILL_TIME >=#{ startDate ,jdbcType=TIMESTAMP } and wb.BILL_TIME <#{endDate ,jdbcType=TIMESTAMP} ]]>
+        </if>
+        <if test="customerCodes!=null and customerCodes.length>0"><!--客户编码-->
+            <choose><!--统一结算-->
+                <when test="unifiedSettlement!=null and unifiedSettlement eq 'Y'.toString()"><!--统一结算时 ，只有催款部门才能查到数据-->
+                    <if test="customerType!=null and customerType=='OC'"><!--单据类型 统一结算时，如果是选择的是出发客户，则出发要求是统一结算-->
+                        AND wb.DELIVERY_CUSTOMER_CODE IN
+                        <foreach collection="customerCodes" open="(" separator="," close=")" item="item">
+                            #{item}
+                        </foreach>
+                        AND af.START_CENTRALIZED_SETTLEMENT = 'Y'
+
+                        AND EXISTS (
+                            SELECT 1
+                            FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V
+                            WHERE V.EMP_CODE = #{empCode}
+                            and
+                            V.ORG_CODE = (select code from bse.t_bas_org o where o.unified_code=af.START_REMINDER_ORG_CODE and o.active='Y' )
+                        )
+                    </if>
+                    <if test="customerType!=null and customerType=='DC'">
+                        AND wb.RECEIVE_CUSTOMER_CODE IN
+                        <foreach collection="customerCodes" open="(" separator="," close=")" item="item">
+                            #{item}
+                        </foreach>
+                        AND af.ARRIVE_CENTRALIZED_SETTLEMENT = 'Y'
+                        AND EXISTS (
+                            SELECT 1
+                            FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V
+                            WHERE V.EMP_CODE = #{empCode}
+                            and
+                            V.ORG_CODE = (select code from bse.t_bas_org o where o.unified_code=af.Arrive_Reminder_Org_Code and o.active='Y')
+                        )
+                    </if>
+                    <if test="customerType!=null and customerType=='ALL'">
+                        AND (
+                        wb.DELIVERY_CUSTOMER_CODE IN
+                        <foreach collection="customerCodes" open="(" separator="," close=")" item="item">
+                            #{item}
+                        </foreach>
+                        OR
+                        wb.RECEIVE_CUSTOMER_CODE IN
+                        <foreach collection="customerCodes" open="(" separator="," close=")" item="item">
+                            #{item}
+                        </foreach>
+                        )
+                        AND (af.START_CENTRALIZED_SETTLEMENT = 'Y' OR af.ARRIVE_CENTRALIZED_SETTLEMENT = 'Y')
+                        AND EXISTS (
+                            SELECT 1
+                            FROM BSE.MV_BAS_USER_ORG_AUTH_VIEW V
+                            WHERE V.EMP_CODE = #{empCode}
+                            and (
+                            V.ORG_CODE = (select code from bse.t_bas_org o where o.unified_code=af.START_REMINDER_ORG_CODE and o.active='Y' )
+                            or V.ORG_CODE = (select code from bse.t_bas_org o where o.unified_code=af.Arrive_Reminder_Org_Code and o.active='Y')
+                            )
+                        )
+                    </if>
+                </when>
+                <when test="unifiedSettlement!=null and unifiedSettlement eq 'N'.toString()">
+                    <if test="customerType!=null and customerType=='OC'"><!--单据类型 非统一结算时，如果是选择的是出发客户，则出发要求是非统一结算-->
+                        AND wb.DELIVERY_CUSTOMER_CODE IN
+                        <foreach collection="customerCodes" open="(" separator="," close=")" item="item">
+                            #{item}
+                        </foreach>
+                        AND (af.START_CENTRALIZED_SETTLEMENT = 'N' or af.START_CENTRALIZED_SETTLEMENT is null)
+                    </if>
+                    <if test="customerType!=null and customerType=='DC'">
+                        AND wb.RECEIVE_CUSTOMER_CODE IN
+                        <foreach collection="customerCodes" open="(" separator="," close=")" item="item">
+                            #{item}
+                        </foreach>
+                        AND (af.ARRIVE_CENTRALIZED_SETTLEMENT = 'N' or af.ARRIVE_CENTRALIZED_SETTLEMENT is null)
+                    </if>
+                </when>
+            </choose>
+        </if>
+
+        <if test="orgCode != null and orgCode != '' "><!--所属部门 收货部门或者到达部门必须有一个与他相同-->
+            AND ( wb.RECEIVE_ORG_CODE = #{orgCode} OR wb.CUSTOMER_PICKUP_ORG_CODE = #{orgCode} )
+        </if>
+
+        <choose><!--业务类型-->
+            <when test="product != null and product == '01'"><!--业务类型 快递-->
+                AND (wb.IS_EXPRESS = 'Y' OR wb.is_ecs ='Y')
+            </when>
+            <when test="product != null and product == '02'"><!--业务类型 零担-->
+                AND wb.IS_EXPRESS = 'N'  AND wb.IS_WHOLE_VEHICLE = 'N'
+            </when>
+            <when test="product != null and product == '03'"><!--业务类型 整车-->
+                wb.IS_WHOLE_VEHICLE = 'Y'
+            </when>
+            <!--<otherwise>&lt;!&ndash;业务类型 零担&ndash;&gt;-->
+            <!--AND wb.IS_EXPRESS = 'N' AND wb.IS_WHOLE_VEHICLE = 'N'-->
+            <!--</otherwise>-->
+        </choose>
+
+        <if test="paidMethods != null and paidMethods.length>0"><!--开单付款方式-->
+            AND wb.PAID_METHOD IN
+            <foreach collection="paidMethods" open="(" separator="," close=")" item="item">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="invoiceMark != null and invoiceMark != ''"><!--发票标记-->
+            AND af.INVOICE = #{invoiceMark}
+        </if>
+
+        and wb.active='Y'
+        and not EXISTS (
+        select 1 FROM BSE.T_BAS_SALES_DEPARTMENT tbsd
+        WHERE tbsd.is_league_saledept ='Y' AND tbsd.code = wb.receive_org_code
+        AND tbsd.active='Y'
+        )
+        AND wb.WAYBILL_NO NOT IN (<!--过滤掉事后折运单  对应的  大客户对账单未确认的运单-->
+            SELECT dd.waybill_no FROM stl.t_stl_bill_discount_detail dd,stl.t_stl_bill_discount d
+            WHERE  dd.discuont_no = d.discount_no and
+            d.customer_no in
+            <foreach collection="customerCodes" open="(" separator="," close=")" item="item">
+                #{item}
+            </foreach>
+            and d.status='N'--未确认
+            and dd.waybill_no is not null
+        )
+        AND wb.WAYBILL_NO NOT IN (<!--已经合并的运单不能查出来-->
+            SELECT TWD.WAYBILL_NO FROM stl.t_stl_waybill_detail TWD
+        )
+        AND wb.WAYBILL_NO NOT IN (<!-- 已经开票的运单(状态为已开具的)不能查出来-->
+            SELECT  was.BILL_NO FROM stl.t_stl_waybill_apply_status was
+            WHERE was.STATUS = 'Y'
+        )
+    </select>
+</mapper>

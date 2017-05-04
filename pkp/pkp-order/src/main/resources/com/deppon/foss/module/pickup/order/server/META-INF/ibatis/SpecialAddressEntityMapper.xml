@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.deppon.foss.module.pickup.order.api.shared.domain.SpecialAddressEntity" >
+  <resultMap id="BaseResultMap" type="com.deppon.foss.module.pickup.order.api.shared.domain.SpecialAddressEntity" >
+    <result column="ID" property="id" jdbcType="VARCHAR" />
+    <result column="ADDRESS" property="address" jdbcType="VARCHAR" />
+    <result column="ADDRESS_TYPE" property="addressType" jdbcType="VARCHAR" />
+    <result column="OPERATOR" property="operator" jdbcType="VARCHAR" />
+    <result column="OPERATOR_CODE" property="operatorCode" jdbcType="VARCHAR" />
+    <result column="OPERATE_ORG_NAME" property="operateOrgName" jdbcType="VARCHAR" />
+    <result column="OPERATE_ORG_CODE" property="operateOrgCode" jdbcType="VARCHAR" />
+    <result column="OPERATE_TIME" property="operateTime" jdbcType="TIMESTAMP" />
+    <result column="VEHICLE_NO" property="vehicleNo" jdbcType="VARCHAR" />
+    <result column="VEHICLE_DEPT" property="vehicleDept" jdbcType="VARCHAR" />
+    <result column="VEHICLE_DEPT_CODE" property="vehicleDeptCode" jdbcType="VARCHAR" />
+  </resultMap>
+
+  <sql id="Base_Column_List" >
+    ID, ADDRESS, ADDRESS_TYPE, OPERATOR, OPERATOR_CODE, OPERATE_ORG_NAME, OPERATE_ORG_CODE, 
+    OPERATE_TIME, VEHICLE_NO, VEHICLE_DEPT, VEHICLE_DEPT_CODE
+  </sql>
+ 
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.String" >
+    select 
+    <include refid="Base_Column_List" />
+    from PKP.T_SRV_SPECIALADDRESS
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+  
+  <select id="selectCountByCondition"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.dto.SpecialAddressConditionDto"
+		resultType="Long">
+		select count(s.id)
+		from PKP.T_SRV_SPECIALADDRESS s
+		<include refid="selectByCondition_where" />
+	</select>
+	
+	<select id="selectByCondition"
+		parameterType="com.deppon.foss.module.pickup.order.api.shared.dto.SpecialAddressConditionDto"
+		resultMap="BaseResultMap">
+		 select 
+		    <include refid="Base_Column_List" />
+		    from PKP.T_SRV_SPECIALADDRESS s
+			<include refid="selectByCondition_where" />
+			<![CDATA[order by s.operate_time desc]]>
+	</select>
+	
+	<select id="selectByAddress"
+		parameterType="java.lang.String"
+		resultMap="BaseResultMap">
+		 select 
+		    <include refid="Base_Column_List" />
+		    from PKP.T_SRV_SPECIALADDRESS s
+		    where s.address = #{address,jdbcType=VARCHAR}
+	</select>
+	
+	<sql id="selectByCondition_where">
+		<where>
+					<if test="orgList != null and orgList.size() > 0">
+						and s.operate_org_code in
+						<foreach collection="orgList" item="item"
+							index="index" open="(" separator="," close=")">
+							#{item}
+						</foreach>
+					</if>
+					<if test="address!=null and address!='' ">
+					<![CDATA[and s.address like '%'||#{address, jdbcType=VARCHAR} ||'%']]> /*14.7.15 gcl AUTO-161订单地址进行模糊查询*/
+					</if>
+					<if test="operator!=null and operator!='' ">
+					<![CDATA[and s.operator = #{operator, jdbcType=VARCHAR}]]>
+					</if>
+					<if test="vehicleNo!=null and vehicleNo!='' ">
+					<![CDATA[and s.vehicle_no = #{vehicleNo, jdbcType=VARCHAR}]]>
+					</if>
+					<if test="addressType!=null and addressType!='' ">
+					<![CDATA[and s.address_type = #{addressType, jdbcType=VARCHAR}]]>
+					</if>
+					<if test="queryTimeBegin!=null">	
+					<![CDATA[and s.operate_time >= #{queryTimeBegin, jdbcType=TIMESTAMP}]]>
+					</if>
+					<if test="queryTimeEnd!=null">	
+					<![CDATA[and s.operate_time < #{queryTimeEnd, jdbcType=TIMESTAMP}]]>
+					</if>
+		</where>
+	</sql>
+	
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String" >
+    delete from PKP.T_SRV_SPECIALADDRESS
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+  
+  <insert id="insertSelective" parameterType="com.deppon.foss.module.pickup.order.api.shared.domain.SpecialAddressEntity" >
+    insert into PKP.T_SRV_SPECIALADDRESS
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        ID,
+      </if>
+      <if test="address != null" >
+        ADDRESS,
+      </if>
+      <if test="addressType != null" >
+        ADDRESS_TYPE,
+      </if>
+      <if test="operator != null" >
+        OPERATOR,
+      </if>
+      <if test="operatorCode != null" >
+        OPERATOR_CODE,
+      </if>
+      <if test="operateOrgName != null" >
+        OPERATE_ORG_NAME,
+      </if>
+      <if test="operateOrgCode != null" >
+        OPERATE_ORG_CODE,
+      </if>
+      <if test="operateTime != null" >
+        OPERATE_TIME,
+      </if>
+      <if test="vehicleNo != null" >
+        VEHICLE_NO,
+      </if>
+      <if test="vehicleDept != null" >
+        VEHICLE_DEPT,
+      </if>
+      <if test="vehicleDeptCode != null" >
+        VEHICLE_DEPT_CODE,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="address != null" >
+        #{address,jdbcType=VARCHAR},
+      </if>
+      <if test="addressType != null" >
+        #{addressType,jdbcType=VARCHAR},
+      </if>
+      <if test="operator != null" >
+        #{operator,jdbcType=VARCHAR},
+      </if>
+      <if test="operatorCode != null" >
+        #{operatorCode,jdbcType=VARCHAR},
+      </if>
+      <if test="operateOrgName != null" >
+        #{operateOrgName,jdbcType=VARCHAR},
+      </if>
+      <if test="operateOrgCode != null" >
+        #{operateOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="operateTime != null" >
+        #{operateTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="vehicleNo != null" >
+        #{vehicleNo,jdbcType=VARCHAR},
+      </if>
+      <if test="vehicleDept != null" >
+        #{vehicleDept,jdbcType=VARCHAR},
+      </if>
+      <if test="vehicleDeptCode != null" >
+        #{vehicleDeptCode,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  
+  <update id="updateByPrimaryKeySelective" parameterType="com.deppon.foss.module.pickup.order.api.shared.domain.SpecialAddressEntity" >
+    update PKP.T_SRV_SPECIALADDRESS
+    <set >
+      <if test="address != null" >
+        ADDRESS = #{address,jdbcType=VARCHAR},
+      </if>
+      <if test="addressType != null" >
+        ADDRESS_TYPE = #{addressType,jdbcType=VARCHAR},
+      </if>
+      <if test="operator != null" >
+        OPERATOR = #{operator,jdbcType=VARCHAR},
+      </if>
+      <if test="operatorCode != null" >
+        OPERATOR_CODE = #{operatorCode,jdbcType=VARCHAR},
+      </if>
+      <if test="operateOrgName != null" >
+        OPERATE_ORG_NAME = #{operateOrgName,jdbcType=VARCHAR},
+      </if>
+      <if test="operateOrgCode != null" >
+        OPERATE_ORG_CODE = #{operateOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="operateTime != null" >
+        OPERATE_TIME = #{operateTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="vehicleNo != null" >
+        VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR},
+      </if>
+      <if test="vehicleDept != null" >
+        VEHICLE_DEPT = #{vehicleDept,jdbcType=VARCHAR},
+      </if>
+      <if test="vehicleDeptCode != null" >
+        VEHICLE_DEPT_CODE = #{vehicleDeptCode,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+  
+    <update id="updateByAddress" parameterType="com.deppon.foss.module.pickup.order.api.shared.domain.SpecialAddressEntity" >
+    update PKP.T_SRV_SPECIALADDRESS
+    <set >
+      <if test="addressType != null" >
+        ADDRESS_TYPE = #{addressType,jdbcType=VARCHAR},
+      </if>
+      <if test="operator != null" >
+        OPERATOR = #{operator,jdbcType=VARCHAR},
+      </if>
+      <if test="operatorCode != null" >
+        OPERATOR_CODE = #{operatorCode,jdbcType=VARCHAR},
+      </if>
+      <if test="operateOrgName != null" >
+        OPERATE_ORG_NAME = #{operateOrgName,jdbcType=VARCHAR},
+      </if>
+      <if test="operateOrgCode != null" >
+        OPERATE_ORG_CODE = #{operateOrgCode,jdbcType=VARCHAR},
+      </if>
+      <if test="operateTime != null" >
+        OPERATE_TIME = #{operateTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="vehicleNo != null" >
+        VEHICLE_NO = #{vehicleNo,jdbcType=VARCHAR},
+      </if>
+      <if test="vehicleDept != null" >
+        VEHICLE_DEPT = #{vehicleDept,jdbcType=VARCHAR},
+      </if>
+      <if test="vehicleDeptCode != null" >
+        VEHICLE_DEPT_CODE = #{vehicleDeptCode,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where ADDRESS = #{address,jdbcType=VARCHAR}
+  </update>
+  
+</mapper>

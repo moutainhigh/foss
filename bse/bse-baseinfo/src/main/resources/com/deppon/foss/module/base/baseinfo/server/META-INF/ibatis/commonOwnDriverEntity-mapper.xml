@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!-- "公司司机" -->
+<mapper namespace="foss.bse.bse-baseinfo.commonOwndriver">
+	<resultMap id="ownDriverResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.domain.OwnDriverEntity">
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="EMP_CODE" property="empCode" jdbcType="VARCHAR" />
+		<result column="EMP_NAME" property="empName" jdbcType="VARCHAR" />
+		<result column="EMP_PHONE" property="empPhone" jdbcType="VARCHAR" />
+		<result column="ORG_ID" property="orgId" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="MODIFY_TIME" property="modifyDate" jdbcType="TIMESTAMP" />
+		<result column="ACTIVE" property="active" jdbcType="CHAR" />
+		<result column="CREATE_USER_CODE" property="createUser" jdbcType="VARCHAR" />
+		<result column="MODIFY_USER_CODE" property="modifyUser" jdbcType="VARCHAR" />
+		<result column="LICENSE_TYPE" property="licenseType" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<resultMap id="driverResultMap"
+		type="com.deppon.foss.module.base.baseinfo.api.shared.dto.DriverDto"
+		extends="ownDriverResultMap">
+		<result column="DRIVERTYPE" property="driverType" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<sql id="ownDriver_ResultMap_Param">
+		<![CDATA[
+			    ID,
+			    EMP_CODE,
+			    EMP_NAME, 
+			    EMP_PHONE,
+                CREATE_TIME,
+                MODIFY_TIME,
+                ORG_ID,
+                ACTIVE,
+                CREATE_USER_CODE,
+                MODIFY_USER_CODE
+		]]>
+	</sql>
+
+	<sql id="leasedDriver_ResultMap_Param">
+		<![CDATA[
+			   ID AS ID,
+			   ID_CARD AS EMP_CODE,
+			   DRIVER_NAME AS EMP_NAME,
+			   DRIVER_PHONE AS EMP_PHONE,
+			   CREATE_TIME AS CREATE_TIME,
+			   MODIFY_TIME AS  MODIFY_TIME ,
+			   '' AS ORG_ID,
+			   ACTIVE AS MODIFY_TIME, 	  
+			   CREATE_USER_CODE AS CREATE_USER_CODE,
+			   MODIFY_USER_CODE AS MODIFY_USER_CODE
+		]]>
+	</sql>
+	<!-- 查询公司司机信息 -->
+	<select id="queryOwnDriversByCondition" resultMap="ownDriverResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.OwnDriverEntity">
+		SELECT
+		/** 综合:查询公司司机信息 **/
+		<include refid="ownDriver_ResultMap_Param" />
+		FROM BSE.T_BAS_OWNDRIVER
+		<include refid="queryWhere" />
+	</select>
+	<select id="countOwnDriverByCondition" resultType="long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.OwnDriverEntity">
+		SELECT
+		COUNT (*)
+		FROM BSE.T_BAS_OWNDRIVER
+		<include refid="queryWhere" />
+	</select>
+
+	<select id="queryDriversByCondition" resultMap="driverResultMap"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.OwnDriverEntity">
+		SELECT
+		'公司司机' AS DRIVERTYPE,
+		<include refid="ownDriver_ResultMap_Param" />
+		FROM BSE.T_BAS_OWNDRIVER
+		<include refid="queryWhere" />
+		UNION ALL
+		SELECT 
+		'外请司机' AS DRIVERTYPE,
+		<include refid="leasedDriver_ResultMap_Param" />
+		FROM BSE.T_BAS_LEASED_DRIVER
+		<include refid="queryWhereOfLeasedDriver" />
+	</select>
+	<select id="countDriverByCondition" resultType="long"
+		parameterType="com.deppon.foss.module.base.baseinfo.api.shared.domain.OwnDriverEntity">
+		SELECT COUNT(*) FROM (
+		SELECT
+		ID
+		FROM BSE.T_BAS_OWNDRIVER
+		<include refid="queryWhere" />
+		UNION ALL
+		SELECT
+		ID
+		FROM BSE.T_BAS_LEASED_DRIVER
+		<include refid="queryWhereOfLeasedDriver" />
+		)
+	</select>
+
+
+
+	<sql id="queryWhereOfLeasedDriver">
+		<trim prefix="WHERE" prefixOverrides="AND | OR">
+			<if test="active != null and active != ''">
+				 ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="empCode != null and empCode != ''">
+				AND ID_CARD LIKE CONCAT(CONCAT('%',#{empCode,jdbcType=VARCHAR},'%')
+			</if>
+			<if test="empName != null and empName != ''">
+				AND (
+				  		DRIVER_NAME LIKE CONCAT(CONCAT('%',#{empName,jdbcType=VARCHAR}),'%')
+				     OR
+						ID_CARD LIKE CONCAT(CONCAT('%',#{empName,jdbcType=VARCHAR}),'%')
+					)
+					
+			</if>
+			<if test="empPhone != null and empPhone != ''">
+				AND DRIVER_PHONE = #{empPhone,jdbcType=VARCHAR}
+			</if>
+			<if test="createDate != null and createDate != ''">
+				AND CREATE_TIME = #{createDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="modifyDate != null and modifyDate != ''">
+				AND MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="createUser != null and createUser != ''">
+				AND CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR}
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				AND MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR}
+			</if>
+			<if test="status != null and status != ''">
+				AND STATUS = #{status,jdbcType=VARCHAR}
+			</if>
+			
+				
+
+			
+			
+		</trim>
+	</sql>
+
+	<sql id="queryWhere">
+		<trim prefix="WHERE" prefixOverrides="AND | OR">
+			<if test="active != null and active != ''">
+				 ACTIVE = #{active,jdbcType=CHAR}
+			</if>
+			<if test="empCode != null and empCode != ''">
+				AND EMP_CODE = #{empCode,jdbcType=VARCHAR}
+			</if>
+			<if test="empName != null and empName != ''">
+				AND (
+						EMP_NAME LIKE CONCAT(CONCAT('%',#{empName,jdbcType=VARCHAR}),'%')
+					OR 	
+					    EMP_CODE LIKE CONCAT(CONCAT('%',#{empName,jdbcType=VARCHAR}),'%')
+					 )
+			</if>
+			<if test="empPhone != null and empPhone != ''">
+				AND EMP_PHONE = #{empPhone,jdbcType=VARCHAR}
+			</if>
+			<if test="orgId != null and orgId != ''">
+				AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+			</if>
+			 <if test="subOrgCodeList != null and subOrgCodeList.size() > 0">
+                AND ORG_ID IN
+                <foreach collection="subOrgCodeList"  index="index" item="item"  open="(" separator="," close=")">  
+	           	 #{item} 
+	            </foreach>
+            </if>
+			<if test="createDate != null and createDate != ''">
+				AND CREATE_TIME = #{createDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="modifyDate != null and modifyDate != ''">
+				AND MODIFY_TIME = #{modifyDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="createUser != null and createUser != ''">
+				AND CREATE_USER_CODE = #{createUser,jdbcType=VARCHAR}
+			</if>
+			<if test="modifyUser != null and modifyUser != ''">
+				AND MODIFY_USER_CODE = #{modifyUser,jdbcType=VARCHAR}
+			</if>
+			<if test="licenseType != null and licenseType != ''">
+				AND LICENSE_TYPE = #{licenseType,jdbcType=VARCHAR}
+			</if>
+		</trim>
+	</sql>
+</mapper>

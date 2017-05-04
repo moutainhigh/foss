@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.deppon.foss.module.pickup.predeliver.api.shared.domain.StorageExecdateDetailMapper" >
+	<resultMap id="BaseResultMap" type="com.deppon.foss.module.pickup.predeliver.api.shared.domain.StorageExecdateDetailEntity" >
+		<id column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="EXECDATE_ID" property="execdateId" jdbcType="VARCHAR" />
+		<result column="WAYBILL_NO" property="waybillNo" jdbcType="VARCHAR" />
+		<result column="EXEC_STATUS" property="execStatus" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="OPERATOR_TIME" property="operatorTime" jdbcType="TIMESTAMP" />
+		<result property="goodsVolumeTotal" column="GOODS_VOLUME_TOTAL"  jdbcType = "DECIMAL" />
+		<result property="lastInStockTime" column="LAST_IN_STOCK_TIME"  jdbcType = "TIMESTAMP" />
+		<result property="storageDay" column="STORAGE_DAY" jdbcType = "DECIMAL" />
+		<result property="storageCharge" column="STORAGE_CHARGE"  jdbcType = "DECIMAL" />
+		<result property="overdueDay" column="OVERDUE_DAY"  jdbcType = "VARCHAR" />
+	</resultMap>
+	<sql id="Base_Column_List" >
+    ID, EXECDATE_ID, WAYBILL_NO, EXEC_STATUS, CREATE_TIME, OPERATOR_TIME
+	</sql>
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.String" >
+    select 
+		<include refid="Base_Column_List" />
+    from PKP.T_SRV_STORAGE_EXECDATE_DETAIL
+    where ID = #{id,jdbcType=VARCHAR}
+	</select>
+	<delete id="deleteByPrimaryKey" parameterType="java.lang.String" >
+    delete from PKP.T_SRV_STORAGE_EXECDATE_DETAIL
+    where ID = #{id,jdbcType=VARCHAR}
+	</delete>
+	<insert id="insert" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.domain.StorageExecdateDetailEntity" >
+    insert into PKP.T_SRV_STORAGE_EXECDATE_DETAIL (ID, EXECDATE_ID, WAYBILL_NO, 
+      EXEC_STATUS, CREATE_TIME, OPERATOR_TIME
+      )
+    values (#{id,jdbcType=VARCHAR}, #{execdateId,jdbcType=VARCHAR}, #{waybillNo,jdbcType=VARCHAR}, 
+      #{execStatus,jdbcType=VARCHAR}, #{createTime,jdbcType=TIMESTAMP}, #{operatorTime,jdbcType=TIMESTAMP}
+      )
+	</insert>
+	<insert id="insertSelective" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.domain.StorageExecdateDetailEntity" >
+    insert into PKP.T_SRV_STORAGE_EXECDATE_DETAIL
+		<trim prefix="(" suffix=")" suffixOverrides="," >
+			<if test="id != null" >
+        ID,
+			</if>
+			<if test="execdateId != null" >
+        EXECDATE_ID,
+			</if>
+			<if test="waybillNo != null" >
+        WAYBILL_NO,
+			</if>
+			<if test="execStatus != null" >
+        EXEC_STATUS,
+			</if>
+			<if test="createTime != null" >
+        CREATE_TIME,
+			</if>
+			<if test="operatorTime != null" >
+        OPERATOR_TIME,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides="," >
+			<if test="id != null" >
+        #{id,jdbcType=VARCHAR},
+			</if>
+			<if test="execdateId != null" >
+        #{execdateId,jdbcType=VARCHAR},
+			</if>
+			<if test="waybillNo != null" >
+        #{waybillNo,jdbcType=VARCHAR},
+			</if>
+			<if test="execStatus != null" >
+        #{execStatus,jdbcType=VARCHAR},
+			</if>
+			<if test="createTime != null" >
+        #{createTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="operatorTime != null" >
+        #{operatorTime,jdbcType=TIMESTAMP},
+			</if>
+		</trim>
+	</insert>
+	<update id="updateByPrimaryKeySelective" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.domain.StorageExecdateDetailEntity" >
+    update PKP.T_SRV_STORAGE_EXECDATE_DETAIL
+		<set >
+			<if test="execdateId != null" >
+        EXECDATE_ID = #{execdateId,jdbcType=VARCHAR},
+			</if>
+			<if test="waybillNo != null" >
+        WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR},
+			</if>
+			<if test="execStatus != null" >
+        EXEC_STATUS = #{execStatus,jdbcType=VARCHAR},
+			</if>
+			<if test="createTime != null" >
+        CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="operatorTime != null" >
+        OPERATOR_TIME = #{operatorTime,jdbcType=TIMESTAMP},
+			</if>
+		</set>
+    where ID = #{id,jdbcType=VARCHAR}
+	</update>
+	<update id="updateByPrimaryKey" parameterType="com.deppon.foss.module.pickup.predeliver.api.shared.domain.StorageExecdateDetailEntity" >
+    update PKP.T_SRV_STORAGE_EXECDATE_DETAIL
+    set EXECDATE_ID = #{execdateId,jdbcType=VARCHAR},
+      WAYBILL_NO = #{waybillNo,jdbcType=VARCHAR},
+      EXEC_STATUS = #{execStatus,jdbcType=VARCHAR},
+      CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+      OPERATOR_TIME = #{operatorTime,jdbcType=TIMESTAMP}
+    where ID = #{id,jdbcType=VARCHAR}
+	</update>
+  
+	<!-- 查询出符合下列条件的运单号插入临时表 -->
+	<insert id="batchAdd" parameterType="java.util.Map">
+		<!--1:附加.到达件数 ≥ 开单件数
+			2:运单最后库存所在地=库存的部门编码
+			3:库区相等
+			4:库存件数 > 0
+			5:运输性质  空运、偏线、整车、快递、中转下线的不计算仓储费
+			6:开单付款方式为月结，提货方式为非自提,有丢货记录的货物不计算仓储费
+			7:停止计算仓储费的时间为结清货款时间-->
+	INSERT /*+ append*/ INTO PKP.T_SRV_STORAGE_EXECDATE_DETAIL(ID, EXECDATE_ID, WAYBILL_NO) 
+		SELECT /*+ no_index(wb)*/ SYS_GUID(), #{execdateId, jdbcType=VARCHAR}, WB.WAYBILL_NO AS WAYBILL_NO
+	      FROM PKP.T_SRV_WAYBILL WB
+	     INNER JOIN PKP.T_SRV_ACTUAL_FREIGHT AF
+	        ON WB.WAYBILL_NO = AF.WAYBILL_NO
+	     INNER JOIN TFR.T_OPT_WAYBILL_STOCK WS
+	        ON WB.WAYBILL_NO = WS.WAYBILL_NO
+	     LEFT JOIN BSE.T_BAS_SALES_DEPARTMENT S ON S.CODE = WB.LAST_LOAD_ORG_CODE and S.ACTIVE = 'Y'
+		 LEFT join bse.t_bas_goods_area station on station.ORG_CODE =
+		                                            S.TRANSFER_CENTER
+		                                        AND station.ACTIVE = 'Y'
+		                                        and station.GOODS_AREA_TYPE =
+		                                            'BSE_GOODSAREA_TYPE_STATION'
+		 LEFT join bse.t_bas_goods_area other on other.ORG_CODE =
+		                                          wb.last_load_org_code
+		                                      AND other.ACTIVE = 'Y'
+		                                      and other.GOODS_AREA_TYPE =
+		                                          'BSE_GOODSAREA_TYPE_OTHER'
+		 LEFT JOIN BSE.T_BAS_TRANSFER_CENTER A on A.AIR_DISPATCH_CODE =
+		                                           WB.LAST_LOAD_ORG_CODE
+		                                       and A.ACTIVE = 'Y'
+		 left join bse.t_bas_goods_area air on air.org_code = a.org_code
+		                                    and air.active = 'Y'
+		                                    and air.goods_area_type =
+		                                        'BSE_GOODSAREA_TYPE_AIRFREIGHT'
+		<where>
+		<![CDATA[((AF.ARRIVE_GOODS_QTY - WB.GOODS_QTY_TOTAL) >= 0
+			or (WS.STOCK_GOODS_QTY - WB.GOODS_QTY_TOTAL) >= 0
+		)
+			   AND WS.STOCK_GOODS_QTY > 0
+			   AND AF.ARRIVE_GOODS_QTY > 0
+   			   AND AF.ARRIVE_TIME is not null
+			  -- AND AF.END_STOCK_ORG_CODE = WS.ORG_CODE
+			  -- AND AF.GOODS_AREA_CODE = NVL(WS.GOODS_AREA_CODE,'N/A')
+		]]>
+		   
+		   <if test="settleSTATUS != null" >
+       		AND AF.SETTLE_STATUS <![CDATA[  !=  ]]> #{settleSTATUS,jdbcType=VARCHAR}
+		  </if>
+		  <!-- 根据是否快递字段  过滤快递的运单
+	      <if test="isExpress != null and isExpress !=''" >
+       		AND WB.IS_EXPRESS <![CDATA[  !=  ]]> #{isExpress,jdbcType=VARCHAR}
+		  </if>-->
+		   AND WB.PRODUCT_CODE NOT IN
+			<foreach collection="productCodes" index="index" item="productCodeTmp" open="(" separator="," close=")">
+				#{productCodeTmp}
+			</foreach>
+		   and (wb.last_load_org_code = ws.org_code 
+			 or (af.end_stock_org_code = ws.org_code and af.goods_area_code = ws.goods_area_code)
+			 or (ws.org_code = s.transfer_center and ws.goods_area_code = station.goods_area_code) 
+			 or (ws.org_code = wb.last_load_org_code and ws.goods_area_code = other.goods_area_code)
+			 or (ws.org_code = A.Org_Code and ws.goods_area_code = air.goods_area_code))
+			 and wb.active = 'Y'
+			 AND  NOT EXISTS(SELECT 1 from tfr.t_opt_unload_gaprep_detail gd
+			            WHERE  gd.difference_type = 'LACKGOODS'
+			            AND gd.waybill_no = wb.waybill_no
+			            and gd.oa_error_no is not NULL)
+       		 AND  NOT EXISTS(SELECT  1 from tfr.t_opt_st_differ_detail d
+				        WHERE  d.difference_type = 'LACK'
+				        AND d.waybill_no = wb.waybill_no
+				        and d.oa_error_no <![CDATA[  !=  ]]> 'N/A')		 
+	         <if test="receiveMethod !=null">
+	         AND wb.receive_method  LIKE CONCAT(CONCAT('%', #{receiveMethod,jdbcType=VARCHAR}), '%')  
+	         </if>
+			 <if test="payMethod != null" >
+       		 AND wb.paid_method <![CDATA[  !=  ]]> #{payMethod,jdbcType=VARCHAR}
+		     </if>
+		</where>
+	</insert>
+	
+	<!-- select all status is 0 temp recode count -->
+	<select id="selectCountByParam" resultType="Long" parameterType="java.lang.String" >
+	    select 
+		    count(1)
+	    from 
+	    	PKP.T_SRV_STORAGE_EXECDATE_DETAIL
+	    WHERE
+	    	EXECDATE_ID = #{execdateId, jdbcType=VARCHAR}
+	    	AND EXEC_STATUS = #{execStatus, jdbcType=VARCHAR}
+	</select>
+	<!--批量更新临时表执行状态 -->
+	<update id="batchUpdateByParam" parameterType="java.util.Map" >
+    update PKP.T_SRV_STORAGE_EXECDATE_DETAIL
+		<set >
+        EXEC_STATUS = #{newExecStatus,jdbcType=VARCHAR}
+		</set>
+		<where> 
+		    EXECDATE_ID = #{execdateId, jdbcType=VARCHAR}
+		    AND 
+	        EXEC_STATUS = #{oldExecStatus,jdbcType=VARCHAR}
+		</where>
+	</update>
+	<!-- select all status is 0 temp recodes -->
+	<select id="selectByParam" resultMap="BaseResultMap" parameterType="java.util.Map">
+		SELECT SED.ID AS ID,
+			   WB.WAYBILL_NO AS WAYBILL_NO,
+		       WB.GOODS_VOLUME_TOTAL AS GOODS_VOLUME_TOTAL,
+		       WS.LAST_IN_STOCK_TIME AS LAST_IN_STOCK_TIME,
+		       AF.STORAGE_DAY AS STORAGE_DAY,
+		       AF.STORAGE_CHARGE / 100 AS STORAGE_CHARGE,
+		       AF.OVERDUE_DAY AS OVERDUE_DAY
+		  FROM PKP.T_SRV_WAYBILL WB
+		 INNER JOIN PKP.T_SRV_ACTUAL_FREIGHT AF
+		    ON WB.WAYBILL_NO = AF.WAYBILL_NO
+		 INNER JOIN TFR.T_OPT_WAYBILL_STOCK WS
+		    ON WB.WAYBILL_NO = WS.WAYBILL_NO
+		 LEFT JOIN BSE.T_BAS_SALES_DEPARTMENT S ON S.CODE = WB.LAST_LOAD_ORG_CODE and S.ACTIVE = 'Y'
+		 LEFT join bse.t_bas_goods_area station on station.ORG_CODE =
+		                                            S.TRANSFER_CENTER
+		                                        AND station.ACTIVE = 'Y'
+		                                        and station.GOODS_AREA_TYPE =
+		                                            'BSE_GOODSAREA_TYPE_STATION'
+		  LEFT join bse.t_bas_goods_area other on other.ORG_CODE =
+		                                          wb.last_load_org_code
+		                                      AND other.ACTIVE = 'Y'
+		                                      and other.GOODS_AREA_TYPE =
+		                                          'BSE_GOODSAREA_TYPE_OTHER'
+		 INNER JOIN PKP.T_SRV_STORAGE_EXECDATE_DETAIL SED
+		    ON SED.WAYBILL_NO = WB.WAYBILL_NO
+		<where>
+			SED.EXECDATE_ID = #{execdateId, jdbcType=VARCHAR}
+		   	AND SED.EXEC_STATUS = #{execStatus, jdbcType=VARCHAR}
+		   	AND WB.ACTIVE  = #{active, jdbcType=VARCHAR}
+		   	 and (wb.last_load_org_code = ws.org_code 
+			 or (af.end_stock_org_code = ws.org_code and af.goods_area_code = ws.goods_area_code)
+			 or (ws.org_code = s.transfer_center and ws.goods_area_code = station.goods_area_code) 
+			  or (ws.org_code = wb.last_load_org_code and ws.goods_area_code = other.goods_area_code)
+			 )
+			<if test="rowNum != null and rowNum != '' " >
+			<![CDATA[  AND rownum <= #{rowNum,jdbcType=VARCHAR} ]]>
+			</if>
+		</where>
+	</select>
+</mapper>
